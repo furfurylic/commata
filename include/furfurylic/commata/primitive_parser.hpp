@@ -105,7 +105,8 @@ struct handler<state::in_value>
             parser.change_state(state::left_of_value);
             break;
         case key_chars<typename Parser::char_type>::DQUOTE:
-            throw parse_error("A quotation mark found in an non-escaped value");
+            throw parse_error(
+                "A quotation mark found in a non-escaped value");
         case key_chars<typename Parser::char_type>::CR:
             parser.finalize();
             parser.end_record();
@@ -141,16 +142,12 @@ struct handler<state::right_of_open_quote>
     template <class Parser>
     void normal(Parser& parser, typename Parser::char_type c) const
     {
-        switch (c) {
-        case key_chars<typename Parser::char_type>::DQUOTE:
-            parser.set_first_last();
+        parser.set_first_last();
+        if (c == key_chars<typename Parser::char_type>::DQUOTE) {
             parser.change_state(state::in_quoted_value_after_quote);
-            break;
-        default:
-            parser.set_first_last();
+        } else {
             parser.update_last();
             parser.change_state(state::in_quoted_value);
-            break;
         }
     }
 
@@ -220,7 +217,8 @@ struct handler<state::in_quoted_value_after_quote>
             parser.change_state(state::after_lf);
             break;
         default:
-            throw parse_error("An invalid character found after a closed escaped value");
+            throw parse_error(
+                "An invalid character found after a closed escaped value");
         }
     }
 
@@ -254,7 +252,6 @@ struct handler<state::after_cr>
             break;
         case key_chars<typename Parser::char_type>::CR:
             parser.new_physical_row();
-            parser.change_state(state::after_cr);
             break;
         case key_chars<typename Parser::char_type>::LF:
             parser.change_state(state::after_lf);
@@ -300,7 +297,6 @@ struct handler<state::after_lf>
             break;
         case key_chars<typename Parser::char_type>::LF:
             parser.new_physical_row();
-            parser.change_state(state::after_lf);
             break;
         default:
             parser.new_physical_row();
@@ -330,7 +326,6 @@ class primitive_parser
     state s_;
     const Ch* field_start_;
     const Ch* field_end_;
-    bool continues_;
 
     std::size_t physical_row_;
     const Ch* physical_row_begin_;
@@ -340,13 +335,16 @@ private:
     template <state>
     friend struct handler;
 
+    // To make control flows clearer, we adopt exceptions. Sigh...
+    struct parse_aborted
+    {};
+
 public:
     using char_type = Ch;
 
     explicit primitive_parser(Sink f) :
         f_(std::move(f)),
         record_started_(false), s_(state::after_lf),
-        continues_(true),
         physical_row_(parse_error::npos), physical_row_chars_passed_away_(0)
     {}
 
@@ -361,16 +359,14 @@ public:
             set_first_last();
             f_.start_buffer(begin);
             while (p_ < end) {
-                with_handler(std::bind(call_normal(), std::placeholders::_1, this, *p_));
-                if (!continues_) {
-                    return false;
-                }
+                with_handler(
+                    std::bind(
+                        call_normal(), std::placeholders::_1, this, *p_));
                 ++p_;
             }
-            with_handler(std::bind(call_underflow(), std::placeholders::_1, this));
-            if (!continues_) {
-                return false;
-            }
+            with_handler(
+                std::bind(
+                    call_underflow(), std::placeholders::_1, this));
             f_.end_buffer(end);
             physical_row_chars_passed_away_ += p_ - physical_row_begin_;
             return true;
@@ -379,23 +375,28 @@ public:
                 physical_row_,
                 (p_ - physical_row_begin_) + physical_row_chars_passed_away_);
             throw;
+        } catch (const parse_aborted&) {
+            return false;
         }
     }
 
     bool eof()
     {
-        p_ = nullptr;
-        set_first_last();
-        f_.start_buffer(nullptr);
-        with_handler(std::bind(call_eof(), std::placeholders::_1, this));
-        if (!continues_) {
+        try {
+            p_ = nullptr;
+            set_first_last();
+            f_.start_buffer(nullptr);
+            with_handler(
+                std::bind(
+                    call_eof(), std::placeholders::_1, this));
+            if (record_started_) {
+                end_record();
+            }
+            f_.end_buffer(nullptr);
+            return true;
+        } catch (const parse_aborted&) {
             return false;
         }
-        if (record_started_) {
-            end_record();
-        }
-        f_.end_buffer(nullptr);
-        return continues_;
     }
 
 private:
@@ -429,14 +430,12 @@ private:
     void update()
     {
         if (!record_started_) {
-            if (continues_) {
-                f_.start_record(field_start_);
-            }
+            f_.start_record(field_start_);
             record_started_ = true;
         }
         if (field_start_ < field_end_) {
-            if (continues_) {
-                continues_ = f_.update(field_start_, field_end_);
+            if (!f_.update(field_start_, field_end_)) {
+                throw parse_aborted();
             }
         }
     }
@@ -444,27 +443,26 @@ private:
     void finalize()
     {
         if (!record_started_) {
-            if (continues_) {
-                f_.start_record(field_start_);
-            }
+            f_.start_record(field_start_);
             record_started_ = true;
         }
-        if (continues_) {
-            continues_ = f_.finalize(field_start_, field_end_);
+        if (!f_.finalize(field_start_, field_end_)) {
+            throw parse_aborted();
         }
     }
 
     void end_record()
     {
-        if (continues_) {
-            continues_ = f_.end_record(p_);
+        if (!f_.end_record(p_)) {
+            throw parse_aborted();
         }
         record_started_ = false;
     }
 
 private:
     template <class F>
-    void with_handler(F f) {
+    void with_handler(F f)
+    {
         switch (s_) {
         case state::left_of_value:
             f(handler<state::left_of_value>());
@@ -496,7 +494,8 @@ private:
     struct call_normal
     {
         template <class Handler>
-        void operator()(const Handler& handler, primitive_parser* me, Ch c) const
+        void operator()(const Handler& handler, primitive_parser* me, Ch c)
+            const
         {
             handler.normal(*me, c);
         }
@@ -524,7 +523,8 @@ private:
 } // end namespace detail
 
 template <class Ch, class Tr, class Sink>
-bool parse(std::basic_streambuf<Ch, Tr>& in, std::streamsize buffer_size, Sink sink)
+bool parse(std::basic_streambuf<Ch, Tr>& in, std::streamsize buffer_size,
+      Sink sink)
 {
     std::unique_ptr<Ch[]> buffer(new Ch[buffer_size]);
     detail::primitive_parser<Ch, Sink> p(std::move(sink));
