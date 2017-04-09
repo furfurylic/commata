@@ -8,8 +8,11 @@
 
 #include <ios>
 #include <cstddef>
+#include <cstdint>
 #include <streambuf>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "csv_error.hpp"
@@ -31,7 +34,7 @@ template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr = std::char_traits<Ch>>
 class record_extractor
 {
-    enum class record_mode
+    enum class record_mode : std::int_fast8_t
     {
         unknown,
         include,
@@ -40,32 +43,32 @@ class record_extractor
 
     static const std::size_t npos = static_cast<std::size_t>(-1);
 
-    std::basic_streambuf<Ch, Tr>* out_;
     FieldNamePred field_name_pred_;
     FieldValuePred field_value_pred_;
-    bool includes_header_;
 
-    std::size_t record_num_to_include_;
-    bool header_yet_;
-    std::size_t field_index_;
-    std::size_t target_field_index_;
+    record_mode header_mode_;
     record_mode record_mode_;
 
+    std::size_t record_num_to_include_;
+    std::size_t target_field_index_;
+
+    std::size_t field_index_;
     const Ch* record_begin_;
-    std::basic_string<Ch, Tr> field_buffer_;
+    std::basic_streambuf<Ch, Tr>* out_;
+    std::vector<Ch> field_buffer_;
     std::vector<Ch> record_buffer_;
 
 public:
     record_extractor(
         std::basic_streambuf<Ch, Tr>& out,
         FieldNamePred field_name_pred, FieldValuePred field_value_pred,
-        bool includes_header,
-        std::size_t max_record_num) :
-        out_(&out),
+        bool includes_header, std::size_t max_record_num) :
         field_name_pred_(std::move(field_name_pred)),
         field_value_pred_(std::move(field_value_pred)),
-        includes_header_(includes_header), record_num_to_include_(max_record_num),
-        header_yet_(true), field_index_(0), target_field_index_(npos)
+        header_mode_(includes_header ?
+            record_mode::include : record_mode::exclude),
+        record_num_to_include_(max_record_num), target_field_index_(npos),
+        field_index_(0), out_(&out)
     {}
 
     record_extractor(record_extractor&&) = default;
@@ -83,34 +86,26 @@ public:
         }
     }
 
-    void start_record(const Ch* row_begin)
+    void start_record(const Ch* record_begin)
     {
-        record_begin_ = row_begin;
-        if (header_yet_) {
-            record_mode_ = includes_header_ ?
-                record_mode::include : record_mode::exclude;
-        } else {
-            record_mode_ = record_mode::unknown;
-        }
+        record_begin_ = record_begin;
+        record_mode_ = header_yet() ? header_mode_ : record_mode::unknown;
         field_index_ = 0;
         record_buffer_.clear();
     }
 
     bool update(const Ch* first, const Ch* last)
     {
-        if (header_yet_) {
-            if (target_field_index_ == npos) {
-                field_buffer_.append(first, last);
-            }
-        } else if (field_index_ == target_field_index_) {
-            field_buffer_.append(first, last);
+        if ((header_yet() && (target_field_index_ == npos))
+         || (field_index_ == target_field_index_)) {
+            field_buffer_.insert(field_buffer_.cend(), first, last);
         }
         return true;
     }
 
     bool finalize(const Ch* first, const Ch* last)
     {
-        if (header_yet_) {
+        if (header_yet()) {
             if ((target_field_index_ == npos)
              && with_field_buffer_appended(first, last, field_name_pred_)) {
                 target_field_index_ = field_index_;
@@ -127,29 +122,37 @@ public:
         return true;
     }
 
-    bool end_record(const Ch* end)
+    bool end_record(const Ch* record_end)
     {
-        if (header_yet_ && (target_field_index_ == npos)) {
+        if (header_yet() && (target_field_index_ == npos)) {
             throw record_extraction_error("No matching field found");
         }
         if (record_mode_ == record_mode::include) {
-            (*out_).sputn(record_buffer_.data(), record_buffer_.size());
-            (*out_).sputn(record_begin_, end - record_begin_);
-            (*out_).sputc(detail::key_chars<Ch>::LF);
-            if ((record_num_to_include_ < std::numeric_limits<std::size_t>::max())
-             && !header_yet_) {
+            if (!record_buffer_.empty()) {
+                out_->sputn(record_buffer_.data(), record_buffer_.size());
+            }
+            out_->sputn(record_begin_, record_end - record_begin_);
+            out_->sputc(detail::key_chars<Ch>::LF);
+            if (!header_yet()
+             && (record_num_to_include_ < static_cast<std::size_t>(-1))) {
                 if (record_num_to_include_ == 1) {
                     return false;
                 }
                 --record_num_to_include_;
             }
-            record_mode_ = record_mode::exclude;
+            record_mode_ = record_mode::exclude; // to prevent end_buffer
+                                                 // from doing anything
         }
-        header_yet_ = false;
+        header_mode_ = record_mode::unknown;
         return true;
     }
 
 private:
+    bool header_yet() const
+    {
+        return header_mode_ != record_mode::unknown;
+    }
+
     template <class F>
     auto with_field_buffer_appended(const Ch* first, const Ch* last, F& f)
       -> decltype(f(nullptr, nullptr))
@@ -157,9 +160,10 @@ private:
         if (field_buffer_.empty()) {
             return f(first, last);
         } else {
-            field_buffer_.append(first, last);
+            field_buffer_.insert(field_buffer_.cend(), first, last);
             const auto r = f(
-                field_buffer_.data(), field_buffer_.data() + field_buffer_.size());
+                field_buffer_.data(),
+                field_buffer_.data() + field_buffer_.size());
             field_buffer_.clear();
             return r;
         }
@@ -181,7 +185,8 @@ public:
     bool operator()(const Ch* begin, const Ch* end) const
     {
         const auto rlen = static_cast<decltype(s_.size())>(end - begin);
-        return (s_.size() == rlen) && (Tr::compare(s_.data(), begin, rlen) == 0);
+        return (s_.size() == rlen)
+            && (Tr::compare(s_.data(), begin, rlen) == 0);
     }
 };
 
@@ -228,7 +233,8 @@ make_record_extractor(
     bool includes_header = true,
     std::size_t max_record_num = static_cast<std::size_t>(-1))
 {
-    return detail::record_extractor_from<FieldNamePredF, FieldValuePredF, Ch, Tr>(
+    return detail::record_extractor_from<
+            FieldNamePredF, FieldValuePredF, Ch, Tr>(
         out,
         detail::forward_as_string_pred<Ch, Tr>(
             std::forward<FieldNamePredF>(field_name_pred)),
