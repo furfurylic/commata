@@ -82,8 +82,16 @@ public:
 
     void end_buffer(const Ch* buffer_end)
     {
-        if (record_mode_ != record_mode::exclude) {
-            record_buffer_.insert(record_buffer_.cend(), record_begin_, buffer_end);
+        switch (record_mode_) {
+        case record_mode::include:
+            out_->sputn(record_begin_, buffer_end - record_begin_);
+            break;
+        case record_mode::unknown:
+            record_buffer_.insert(
+                record_buffer_.cend(), record_begin_, buffer_end);
+            break;
+        default:
+            break;
         }
     }
 
@@ -114,9 +122,12 @@ public:
         } else if (field_index_ == target_field_index_) {
             if (with_field_buffer_appended(first, last, field_value_pred_)) {
                 record_mode_ = record_mode::include;
+                if (!record_buffer_.empty()) {
+                    out_->sputn(record_buffer_.data(), record_buffer_.size());
+                    record_buffer_.clear();
+                }
             } else {
                 record_mode_ = record_mode::exclude;
-                record_buffer_.clear();
             }
         }
         ++field_index_;
