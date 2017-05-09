@@ -9,7 +9,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <exception>
 #include <functional>
 #include <ios>
 #include <memory>
@@ -17,52 +16,11 @@
 #include <streambuf>
 #include <utility>
 
+#include "csv_error.hpp"
 #include "key_chars.hpp"
 
 namespace furfurylic {
 namespace commata {
-
-namespace detail {
-
-template <class T>
-struct npos_impl
-{
-    static const T npos;
-};
-
-template <class T>
-const T npos_impl<T>::npos = static_cast<T>(-1);
-
-} // end namespace detail
-
-class csv_error :
-    public std::exception, public detail::npos_impl<std::size_t>
-{
-    std::shared_ptr<std::string> what_;
-    std::pair<std::size_t, std::size_t> physical_position_;
-
-public:
-    explicit csv_error(std::string what_arg) :
-        what_(std::make_shared<std::string>(std::move(what_arg))),
-        physical_position_(npos, npos)
-    {}
-
-    const char* what() const noexcept override
-    {
-        return what_->c_str();
-    }
-
-    void set_physical_position(std::size_t row, std::size_t col) noexcept
-    {
-        physical_position_ = std::make_pair(row, col);
-    }
-
-    const std::pair<std::size_t, std::size_t>* get_physical_position() const noexcept
-    {
-        return (physical_position_ != std::make_pair(npos, npos)) ?
-            &physical_position_ : nullptr;
-    }
-};
 
 class parse_error :
     public csv_error

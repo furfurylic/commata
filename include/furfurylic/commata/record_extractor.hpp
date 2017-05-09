@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "csv_error.hpp"
 #include "key_chars.hpp"
 
 namespace furfurylic {
