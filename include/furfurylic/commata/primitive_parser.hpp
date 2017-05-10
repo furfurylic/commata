@@ -248,6 +248,7 @@ struct handler<state::after_cr>
             break;
         case key_chars<typename Parser::char_type>::DQUOTE:
             parser.new_physical_row();
+            parser.force_start_record();
             parser.change_state(state::right_of_open_quote);
             break;
         case key_chars<typename Parser::char_type>::CR:
@@ -289,6 +290,7 @@ struct handler<state::after_lf>
             break;
         case key_chars<typename Parser::char_type>::DQUOTE:
             parser.new_physical_row();
+            parser.force_start_record();
             parser.change_state(state::right_of_open_quote);
             break;
         case key_chars<typename Parser::char_type>::CR:
@@ -450,6 +452,12 @@ private:
         if (!f_.finalize(field_start_, field_end_)) {
             throw parse_aborted();
         }
+    }
+
+    void force_start_record()
+    {
+        f_.start_record(p_);
+        record_started_ = true;
     }
 
     void end_record()

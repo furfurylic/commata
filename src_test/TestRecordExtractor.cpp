@@ -22,15 +22,15 @@ struct TestRecordExtractor :
 TEST_P(TestRecordExtractor, LeftmostKey)
 {
     const char* s = "key_a,key_b,value_a,value_b\n"
-                    "ka1,kb1,va1,vb1\r\n"
+                    "\"ka1\",kb1,va1,vb1\r\n"
                     "ka2,kb2,va2,vb2\n"
-                    "ka1,kb3,vb3,vb3\r";
+                    "ka1,kb3,vb3,\"vb3\"\r";
     std::stringbuf in(s);
     std::stringbuf out;
     parse(in, GetParam(), make_record_extractor(out, "key_a", "ka1"));
     ASSERT_EQ("key_a,key_b,value_a,value_b\n"
-              "ka1,kb1,va1,vb1\n"
-              "ka1,kb3,vb3,vb3\n",
+              "\"ka1\",kb1,va1,vb1\n"
+              "ka1,kb3,vb3,\"vb3\"\n",
               out.str());
 }
 
