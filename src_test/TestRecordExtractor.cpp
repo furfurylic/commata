@@ -21,16 +21,16 @@ struct TestRecordExtractor :
 
 TEST_P(TestRecordExtractor, LeftmostKey)
 {
-    const char* s = "key_a,key_b,value_a,value_b\n"
-                    "\"ka1\",kb1,va1,vb1\r\n"
-                    "ka2,kb2,va2,vb2\n"
-                    "ka1,kb3,vb3,\"vb3\"\r";
-    std::stringbuf in(s);
-    std::stringbuf out;
-    parse(in, GetParam(), make_record_extractor(out, "key_a", "ka1"));
-    ASSERT_EQ("key_a,key_b,value_a,value_b\n"
-              "\"ka1\",kb1,va1,vb1\n"
-              "ka1,kb3,vb3,\"vb3\"\n",
+    const wchar_t* s = L"key_a,key_b,value_a,value_b\n"
+                       L"\"ka1\",kb1,va1,vb1\r\n"
+                       L"ka2,kb2,va2,vb2\n"
+                       L"ka1,kb3,vb3,\"vb3\"\r";
+    std::wstringbuf in(s);
+    std::wstringbuf out;
+    parse(in, GetParam(), make_record_extractor(out, L"key_a", L"ka1"));
+    ASSERT_EQ(L"key_a,key_b,value_a,value_b\n"
+              L"\"ka1\",kb1,va1,vb1\n"
+              L"ka1,kb3,vb3,\"vb3\"\n",
               out.str());
 }
 
@@ -55,17 +55,19 @@ TEST_P(TestRecordExtractor, InnerKey)
 
 TEST_P(TestRecordExtractor, NoSuchKey)
 {
-    const wchar_t* s = L"key_a,key_b,value_a,value_b\n"
-                       L"ka1,kb01,va1,vb1\n"
-                       L"ka2,kb12,va2,vb2\n";
-    std::wstringbuf in(s);
-    std::wstringbuf out;
+    const char* s = "key_a,key_b,value_a,value_b\n"
+                    "ka1,kb01,va1,vb1\n"
+                    "ka2,kb12,va2,vb2\n";
+    std::stringbuf in(s);
+    std::stringbuf out;
     try {
-        parse(in, GetParam(), make_record_extractor(out, L"key_c", L"kc1"));
+        parse(in, GetParam(), make_record_extractor(out, "key_c", "kc1"));
         FAIL();
     } catch (const record_extraction_error& e) {
         ASSERT_NE(e.get_physical_position(), nullptr);
         ASSERT_EQ(0U, e.get_physical_position()->first);
+        std::string message(e.what());
+        ASSERT_TRUE(message.find("key_c") != std::string::npos);
     }
 }
 

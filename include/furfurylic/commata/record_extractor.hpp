@@ -9,7 +9,9 @@
 #include <ios>
 #include <cstddef>
 #include <cstdint>
+#include <ostream>
 #include <streambuf>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -20,6 +22,24 @@
 
 namespace furfurylic {
 namespace commata {
+
+namespace detail {
+
+inline const char* no_matching_field(...)
+{
+    return "No matching field";
+}
+
+template <class T>
+auto no_matching_field(const T& o)
+  -> decltype(std::declval<std::ostream&>() << o, std::string())
+{
+    std::ostringstream message;
+    message << no_matching_field() << " for " << o;
+    return message.str();
+}
+
+}
 
 class record_extraction_error :
     public csv_error
@@ -138,7 +158,8 @@ public:
     {
         if (header_yet()) {
             if (target_field_index_ == npos) {
-                throw record_extraction_error("No matching field found");
+                throw record_extraction_error(
+                    detail::no_matching_field(field_name_pred_));
             }
             flush_record_if_include(record_end);
             if (record_num_to_include_ == 0) {
@@ -216,6 +237,12 @@ public:
         const auto rlen = static_cast<decltype(s_.size())>(end - begin);
         return (s_.size() == rlen)
             && (Tr::compare(s_.data(), begin, rlen) == 0);
+    }
+
+    friend std::basic_ostream<Ch, Tr>& operator<<(
+        std::basic_ostream<Ch, Tr>& os, const string_eq& o)
+    {
+        return os << o.s_;
     }
 };
 
