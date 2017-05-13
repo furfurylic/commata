@@ -1,5 +1,5 @@
 /**
- * These codes are licensed under the Unlisence.
+ * These codes are licensed under the Unlicense.
  * http://unlicense.org
  */
 

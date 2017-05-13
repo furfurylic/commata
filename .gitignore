@@ -28,9 +28,13 @@
 *.out
 *.app
 
+# Backups
+*.bak
+*.orig
+
 # CMake
 build/
 
-# Externals
-external/
+# MSVC
+.vs/
 

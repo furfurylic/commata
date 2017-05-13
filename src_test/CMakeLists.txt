@@ -1,18 +1,32 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0.2)
+option(commata_disable_pthreads "Disable uses of pthreads." OFF)
 set(EXECUTABLE_OUTPUT_PATH ..)
-add_definitions("-Wall -std=c++11")
+if(MSVC)
+    add_definitions("/W4")
+else(MSVC)
+    add_definitions("-Wall -std=c++11")
+endif(MSVC)
+find_package(GTest REQUIRED)
 include_directories(
-    ../external/googletest/include
+    ${GTEST_INCLUDE_DIRS}
     ../include
-    )
+)
 add_executable(test_commata
     TestPrimitiveParser.cpp
     TestRecordExtractor.cpp
+)
+if(commata_disable_pthreads)
+    target_link_libraries(test_commata
+        ${GTEST_BOTH_LIBRARIES}
     )
-find_library(gtest NAMES libgtest.a PATHS ../external/googletest/build)
-find_library(gtest_main NAMES libgtest_main.a PATHS ../external/googletest/build)
-target_link_libraries(test_commata
-    pthread
-    ${gtest}
-    ${gtest_main}
+else(commata_disable_pthreads)
+    target_link_libraries(test_commata
+        pthread
+        ${GTEST_BOTH_LIBRARIES}
     )
+endif(commata_disable_pthreads)
+add_test(
+    NAME test_commata
+    COMMAND $<TARGET_FILE:test_commata>
+)
+
