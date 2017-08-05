@@ -132,3 +132,22 @@ TEST(TestRecordExtractorLimit0, ExcludeHeaderNoSuchKey)
         ASSERT_EQ(0U, e.get_physical_position()->first);
     }
 }
+
+TEST(TestRecordExtractorIndexed, Basics)
+{
+    const char* s = "\r\n\n"
+                    "key_a,key_b,value_a,value_b\n"
+                    "ka1,kb01,va1,vb1\n"
+                    "ka2,kb12,va2,vb2\n"
+                    "ka1,kb13,\"vb\n3\",vb3";
+    std::stringbuf in(s);
+    std::stringbuf out;
+    parse(in, 1024, make_record_extractor(out, 1,
+        [](const char* first ,const char* last) {
+            return std::string(first, last).substr(0, 3) == "kb1";
+        }));
+    ASSERT_EQ("key_a,key_b,value_a,value_b\n"
+              "ka2,kb12,va2,vb2\n"
+              "ka1,kb13,\"vb\n3\",vb3\n",
+              out.str());
+}

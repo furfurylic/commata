@@ -12,6 +12,7 @@
 #include <ostream>
 #include <streambuf>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -49,6 +50,19 @@ public:
         csv_error(std::move(what_arg))
     {}
 };
+
+namespace detail {
+
+template <class Ch>
+struct hollow_field_name_pred
+{
+    bool operator()(const Ch*, const Ch*) const
+    {
+        return true;
+    }
+};
+
+}
 
 template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr = std::char_traits<Ch>>
@@ -91,6 +105,23 @@ public:
         record_num_to_include_(max_record_num), target_field_index_(npos),
         field_index_(0), out_(&out)
     {}
+
+    record_extractor(
+        std::basic_streambuf<Ch, Tr>& out,
+        std::size_t target_field_index, FieldValuePred field_value_pred,
+        bool includes_header, std::size_t max_record_num) :
+        record_extractor(out, detail::hollow_field_name_pred<Ch>(),
+            std::move(field_value_pred),
+            includes_header, max_record_num)
+    {
+        if (target_field_index >= npos) {
+            std::ostringstream what;
+            what << "Target field index "
+                 << target_field_index << " is too large";
+            throw std::out_of_range(what.str());
+        }
+        target_field_index_ = target_field_index;
+    }
 
     record_extractor(record_extractor&&) = default;
     record_extractor& operator=(record_extractor&&) = default;
@@ -182,8 +213,8 @@ private:
     }
 
     template <class F>
-    auto with_field_buffer_appended(const Ch* first, const Ch* last, F& f)
-      -> decltype(f(nullptr, nullptr))
+    auto with_field_buffer_appended(const Ch* first, const Ch* last, F f)
+     -> decltype(f(nullptr, nullptr))
     {
         if (field_buffer_.empty()) {
             return f(first, last);
@@ -281,19 +312,40 @@ using record_extractor_from =
 } // end namespace detail
 
 template <class FieldNamePredF, class FieldValuePredF, class Ch, class Tr>
-detail::record_extractor_from<FieldNamePredF, FieldValuePredF, Ch, Tr>
-make_record_extractor(
+auto make_record_extractor(
     std::basic_streambuf<Ch, Tr>& out,
     FieldNamePredF&& field_name_pred,
     FieldValuePredF&& field_value_pred,
     bool includes_header = true,
     std::size_t max_record_num = static_cast<std::size_t>(-1))
+  -> typename std::enable_if<
+        !std::is_integral<FieldNamePredF>::value,
+        detail::record_extractor_from<FieldNamePredF, FieldValuePredF, Ch, Tr>>::type
 {
     return detail::record_extractor_from<
             FieldNamePredF, FieldValuePredF, Ch, Tr>(
         out,
         detail::forward_as_string_pred<Ch, Tr>(
             std::forward<FieldNamePredF>(field_name_pred)),
+        detail::forward_as_string_pred<Ch, Tr>(
+            std::forward<FieldValuePredF>(field_value_pred)),
+        includes_header, max_record_num);
+}
+
+template <class FieldValuePredF, class Ch, class Tr>
+detail::record_extractor_from<
+    detail::hollow_field_name_pred<Ch>, FieldValuePredF, Ch, Tr>
+make_record_extractor(
+    std::basic_streambuf<Ch, Tr>& out,
+    std::size_t target_field_index,
+    FieldValuePredF&& field_value_pred,
+    bool includes_header = true,
+    std::size_t max_record_num = static_cast<std::size_t>(-1))
+{
+    return detail::record_extractor_from<
+            detail::hollow_field_name_pred<Ch>, FieldValuePredF, Ch, Tr>(
+        out,
+        target_field_index,
         detail::forward_as_string_pred<Ch, Tr>(
             std::forward<FieldValuePredF>(field_value_pred)),
         includes_header, max_record_num);
