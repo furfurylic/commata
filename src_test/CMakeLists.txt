@@ -4,7 +4,7 @@ set(EXECUTABLE_OUTPUT_PATH ..)
 if(MSVC)
     add_definitions("/W4")
 else(MSVC)
-    add_definitions("-Wall -std=c++11")
+    add_definitions("-Wall -std=c++14")
 endif(MSVC)
 find_package(GTest REQUIRED)
 include_directories(

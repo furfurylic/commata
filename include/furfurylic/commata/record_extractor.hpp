@@ -40,6 +40,59 @@ auto no_matching_field(const T& o)
     return message.str();
 }
 
+template <class F, class = void>
+class member_like_base
+{
+    F f_;
+
+public:
+    template <class G>
+    member_like_base(G&& f) :
+        f_(std::forward<G>(f))
+    {}
+
+    F& get()
+    {
+        return f_;
+    }
+};
+
+template <class F>
+class member_like_base<F, std::enable_if_t<!std::is_final<F>::value>> :
+    F
+{
+public:
+    template <class G>
+    member_like_base(G&& f) :
+        F(std::forward<G>(f))
+    {}
+
+    F& get()
+    {
+        return *this;
+    }
+};
+
+template <class FieldNamePred>
+struct field_name_pred_base :
+    member_like_base<FieldNamePred>
+{
+    template <class G>
+    field_name_pred_base(G&& f) :
+        member_like_base<FieldNamePred>(std::forward<G>(f))
+    {}
+};
+
+template <class FieldValuePred>
+struct field_value_pred_base :
+    member_like_base<FieldValuePred>
+{
+    template <class G>
+    field_value_pred_base(G&& f) :
+        member_like_base<FieldValuePred>(std::forward<G>(f))
+    {}
+};
+
 }
 
 class record_extraction_error :
@@ -66,7 +119,9 @@ struct hollow_field_name_pred
 
 template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr = std::char_traits<Ch>>
-class record_extractor
+class record_extractor :
+    detail::field_name_pred_base<FieldNamePred>,
+    detail::field_value_pred_base<FieldValuePred>
 {
     enum class record_mode : std::int_fast8_t
     {
@@ -76,9 +131,6 @@ class record_extractor
     };
 
     static const std::size_t npos = static_cast<std::size_t>(-1);
-
-    FieldNamePred field_name_pred_;
-    FieldValuePred field_value_pred_;
 
     record_mode header_mode_;
     record_mode record_mode_;
@@ -92,13 +144,16 @@ class record_extractor
     std::vector<Ch> field_buffer_;
     std::vector<Ch> record_buffer_;
 
+    using field_name_pred_t = detail::field_name_pred_base<FieldNamePred>;
+    using field_value_pred_t = detail::field_value_pred_base<FieldValuePred>;
+
 public:
     record_extractor(
         std::basic_streambuf<Ch, Tr>& out,
         FieldNamePred field_name_pred, FieldValuePred field_value_pred,
         bool includes_header, std::size_t max_record_num) :
-        field_name_pred_(std::move(field_name_pred)),
-        field_value_pred_(std::move(field_value_pred)),
+        field_name_pred_t(std::move(field_name_pred)),
+        field_value_pred_t(std::move(field_value_pred)),
         header_mode_(includes_header ?
             record_mode::include : record_mode::exclude),
         record_mode_(record_mode::exclude),
@@ -167,11 +222,17 @@ public:
     {
         if (header_yet()) {
             if ((target_field_index_ == npos)
-             && with_field_buffer_appended(first, last, field_name_pred_)) {
+             && with_field_buffer_appended(first, last,
+                    [this](const Ch* first, const Ch* last) {
+                        return field_name_pred_t::get()(first, last);
+                    })) {
                 target_field_index_ = field_index_;
             }
         } else if (field_index_ == target_field_index_) {
-            if (with_field_buffer_appended(first, last, field_value_pred_)) {
+            if (with_field_buffer_appended(first, last,
+                    [this](const Ch* first, const Ch* last) {
+                        return field_value_pred_t::get()(first, last);
+                    })) {
                 record_mode_ = record_mode::include;
                 if (!record_buffer_.empty()) {
                     out_->sputn(record_buffer_.data(), record_buffer_.size());
@@ -190,7 +251,7 @@ public:
         if (header_yet()) {
             if (target_field_index_ == npos) {
                 throw record_extraction_error(
-                    detail::no_matching_field(field_name_pred_));
+                    no_matching_field(field_name_pred_t::get()));
             }
             flush_record_if_include(record_end);
             if (record_num_to_include_ == 0) {

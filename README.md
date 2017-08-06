@@ -1,2 +1,2 @@
 # commata
-Just another C++11 CSV parser
+Just another C++14 CSV parser
