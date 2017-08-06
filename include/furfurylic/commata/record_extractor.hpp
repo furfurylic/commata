@@ -33,7 +33,7 @@ inline const char* no_matching_field(...)
 
 template <class T>
 auto no_matching_field(const T& o)
-  -> decltype(std::declval<std::ostream&>() << o, std::string())
+ -> decltype(std::declval<std::ostream&>() << o, std::string())
 {
     std::ostringstream message;
     message << no_matching_field() << " for " << o;
@@ -275,7 +275,6 @@ private:
 
     template <class F>
     auto with_field_buffer_appended(const Ch* first, const Ch* last, F f)
-     -> decltype(f(nullptr, nullptr))
     {
         if (field_buffer_.empty()) {
             return f(first, last);
@@ -340,18 +339,18 @@ public:
 
 template <class Ch, class Tr, class T>
 auto forward_as_string_pred(T&& t)
-  -> typename std::enable_if<
+ -> std::enable_if_t<
         std::is_constructible<std::basic_string<Ch, Tr>, T&&>::value,
-        string_eq<Ch, Tr>>::type
+        string_eq<Ch, Tr>>
 {
     return string_eq<Ch, Tr>(std::forward<T>(t));
 }
 
 template <class Ch, class Tr, class T>
 auto forward_as_string_pred(T&& t)
-  -> typename std::enable_if<
+ -> std::enable_if_t<
         !std::is_constructible<std::basic_string<Ch, Tr>, T&&>::value,
-        T&&>::type
+        T&&>
 {
     return std::forward<T>(t);
 }
@@ -379,9 +378,9 @@ auto make_record_extractor(
     FieldValuePredF&& field_value_pred,
     bool includes_header = true,
     std::size_t max_record_num = static_cast<std::size_t>(-1))
-  -> typename std::enable_if<
+ -> std::enable_if_t<
         !std::is_integral<FieldNamePredF>::value,
-        detail::record_extractor_from<FieldNamePredF, FieldValuePredF, Ch, Tr>>::type
+        detail::record_extractor_from<FieldNamePredF, FieldValuePredF, Ch, Tr>>
 {
     return detail::record_extractor_from<
             FieldNamePredF, FieldValuePredF, Ch, Tr>(
@@ -394,9 +393,7 @@ auto make_record_extractor(
 }
 
 template <class FieldValuePredF, class Ch, class Tr>
-detail::record_extractor_from<
-    detail::hollow_field_name_pred<Ch>, FieldValuePredF, Ch, Tr>
-make_record_extractor(
+auto make_record_extractor(
     std::basic_streambuf<Ch, Tr>& out,
     std::size_t target_field_index,
     FieldValuePredF&& field_value_pred,

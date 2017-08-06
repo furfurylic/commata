@@ -9,7 +9,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <ios>
 #include <memory>
 #include <string>
@@ -362,12 +361,10 @@ public:
             set_first_last();
             f_.start_buffer(begin);
             while (p_ < end) {
-                with_handler(std::bind(
-                    call_normal(), std::placeholders::_1, this, *p_));
+                with_handler([this](const auto& h) { h.normal(*this, *p_); });
                 ++p_;
             }
-            with_handler(std::bind(
-                call_underflow(), std::placeholders::_1, this));
+            with_handler([this](const auto& h) { h.underflow(*this); });
             f_.end_buffer(end);
             physical_row_chars_passed_away_ +=
                 p_ - physical_row_or_buffer_begin_;
@@ -389,9 +386,7 @@ public:
             p_ = nullptr;
             set_first_last();
             f_.start_buffer(nullptr);
-            with_handler(
-                std::bind(
-                    call_eof(), std::placeholders::_1, this));
+            with_handler([this](const auto& h) { h.eof(*this); });
             if (record_started_) {
                 end_record();
             }
@@ -499,34 +494,6 @@ private:
             break;
         }
     }
-
-    struct call_normal
-    {
-        template <class Handler>
-        void operator()(const Handler& handler, primitive_parser* me, Ch c)
-            const
-        {
-            handler.normal(*me, c);
-        }
-    };
-
-    struct call_underflow
-    {
-        template <class Handler>
-        void operator()(const Handler& handler, primitive_parser* me) const
-        {
-            handler.underflow(*me);
-        }
-    };
-
-    struct call_eof
-    {
-        template <class Handler>
-        void operator()(const Handler& handler, primitive_parser* me) const
-        {
-            handler.eof(*me);
-        }
-    };
 };
 
 } // end namespace detail
