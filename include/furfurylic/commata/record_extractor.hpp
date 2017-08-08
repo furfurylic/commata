@@ -8,7 +8,6 @@
 
 #include <ios>
 #include <cstddef>
-#include <limits>
 #include <streambuf>
 #include <string>
 #include <vector>
@@ -59,8 +58,8 @@ public:
     record_extractor(
         std::basic_streambuf<Ch, Tr>& out,
         FieldNamePred field_name_pred, FieldValuePred field_value_pred,
-        bool includes_header = true,
-        std::size_t max_record_num = std::numeric_limits<std::size_t>::max()) :
+        bool includes_header,
+        std::size_t max_record_num) :
         out_(&out),
         field_name_pred_(std::move(field_name_pred)),
         field_value_pred_(std::move(field_value_pred)),
@@ -226,7 +225,7 @@ make_record_extractor(
     FieldNamePredF&& field_name_pred,
     FieldValuePredF&& field_value_pred,
     bool includes_header = true,
-    std::size_t max_record_num = std::numeric_limits<std::size_t>::max())
+    std::size_t max_record_num = static_cast<std::size_t>(-1))
 {
     return detail::record_extractor_from<FieldNamePredF, FieldValuePredF, Ch, Tr>(
         out,
