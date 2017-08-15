@@ -39,6 +39,37 @@ public:
         physical_position_(npos, npos)
     {}
 
+    // Copy/move ctors and copy/move assignment ops are explicitly defined
+    // so that they are noexcept
+
+    csv_error(const csv_error& other) noexcept :
+        std::exception(other),
+        what_(other.what_),
+        physical_position_(other.physical_position_)
+    {}
+
+    csv_error(csv_error&& other) noexcept :
+        std::exception(std::move(other)),
+        what_(std::move(other.what_)),
+        physical_position_(other.physical_position_)
+    {}
+
+    csv_error& operator=(const csv_error& other) noexcept
+    {
+        std::exception::operator=(other);
+        what_ = other.what_;
+        physical_position_ = other.physical_position_;
+        return *this;
+    }
+
+    csv_error& operator=(csv_error&& other) noexcept
+    {
+        std::exception::operator=(std::move(other));
+        what_ = std::move(other.what_);
+        physical_position_ = other.physical_position_;
+        return *this;
+    }
+
     const char* what() const noexcept override
     {
         return what_->c_str(); // std::string::c_str is noexcept
