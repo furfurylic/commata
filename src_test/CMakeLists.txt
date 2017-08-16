@@ -12,6 +12,7 @@ include_directories(
     ../include
 )
 add_executable(test_commata
+    TestCsvError.cpp
     TestPrimitiveParser.cpp
     TestRecordExtractor.cpp
 )
@@ -29,4 +30,3 @@ add_test(
     NAME test_commata
     COMMAND $<TARGET_FILE:test_commata>
 )
-
