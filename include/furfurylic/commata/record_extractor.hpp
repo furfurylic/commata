@@ -67,6 +67,7 @@ public:
         field_value_pred_(std::move(field_value_pred)),
         header_mode_(includes_header ?
             record_mode::include : record_mode::exclude),
+        record_mode_(record_mode::exclude),
         record_num_to_include_(max_record_num), target_field_index_(npos),
         field_index_(0), out_(&out)
     {}
