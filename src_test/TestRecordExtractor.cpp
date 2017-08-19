@@ -71,6 +71,19 @@ TEST_P(TestRecordExtractor, NoSuchKey)
     }
 }
 
+TEST_P(TestRecordExtractor, NoSuchField)
+{
+    const char* s = "key_a,key_b\r"
+                    "k1\r"
+                    "k0,k1,k2\r";
+    std::stringbuf in(s);
+    std::stringbuf out;
+    ASSERT_TRUE(parse(in, GetParam(), make_record_extractor(out, "key_b", "k1")));
+    ASSERT_EQ("key_a,key_b\n"
+              "k0,k1,k2\n",
+              out.str());
+}
+
 INSTANTIATE_TEST_CASE_P(, TestRecordExtractor, testing::Values(1, 10, 1024));
 
 struct TestRecordExtractorLimit :

@@ -26,18 +26,35 @@ namespace commata {
 
 namespace detail {
 
-inline const char* no_matching_field(...)
+template <class T>
+class field_name_of_impl
 {
-    return "No matching field";
+    const char* prefix_;
+    const T* t_;
+
+public:
+    field_name_of_impl(const char* prefix, const T& t) :
+        prefix_(prefix), t_(&t)
+    {}
+
+    friend std::ostream& operator<<(
+        std::ostream& o, const field_name_of_impl& t)
+    {
+        return o << t.prefix_ << *t.t_;
+    }
+};
+
+auto field_name_of(...)
+{
+    return "";
 }
 
 template <class T>
-auto no_matching_field(const T& o)
- -> decltype(std::declval<std::ostream&>() << o, std::string())
+auto field_name_of(const char* prefix, const T& t)
+  -> decltype(std::declval<std::ostream&>() << t,
+              field_name_of_impl<T>(prefix, t))
 {
-    std::ostringstream message;
-    message << no_matching_field() << " for " << o;
-    return message.str();
+    return field_name_of_impl<T>(prefix, t);
 }
 
 template <class F, class = void>
@@ -250,8 +267,10 @@ public:
     {
         if (header_yet()) {
             if (target_field_index_ == npos) {
-                throw record_extraction_error(
-                    no_matching_field(field_name_pred_t::get()));
+                std::ostringstream what;
+                what << "No matching field"
+                     << field_name_of(" for ", field_name_pred_t::get());
+                throw record_extraction_error(what.str());
             }
             flush_record_if_include(record_end);
             if (record_num_to_include_ == 0) {
@@ -303,6 +322,8 @@ private:
         case record_mode::exclude:
             return false;
         case record_mode::unknown:
+            assert(!header_yet());
+            record_mode_ = record_mode::exclude;    // no such a far field
             return false;
         default:
             assert(false);
