@@ -103,3 +103,30 @@ INSTANTIATE_TEST_CASE_P(, TestRecordExtractorLimit,
     testing::Combine(
         testing::Bool(),
         testing::Values(1, std::numeric_limits<std::size_t>::max())));
+
+TEST(TestRecordExtractorLimit0, IncludeHeader)
+{
+    const char* s = "key_a,key_b,value_a,value_b\r"
+                    "ka1,kb1,va1,\"vb1\r";  // Ill-formed row, but not parsed
+    std::stringbuf in(s);
+    std::stringbuf out;
+    const auto result = parse(in, 64, make_record_extractor(out, "key_a", "ka1", true, 0));
+    ASSERT_FALSE(result);
+    std::string expected;
+    ASSERT_EQ("key_a,key_b,value_a,value_b\n", out.str());
+}
+
+TEST(TestRecordExtractorLimit0, ExcludeHeaderNoSuchKey)
+{
+    const char* s = "key_a,key_b,value_a,value_b\r"
+                    "ka1,kb1,va1,vb1\r";
+    std::stringbuf in(s);
+    std::stringbuf out;
+    try {
+        parse(in, 64, make_record_extractor(out, "key_A", "ka1", false, 0));
+        FAIL();
+    } catch (const record_extraction_error& e) {
+        ASSERT_NE(e.get_physical_position(), nullptr);
+        ASSERT_EQ(0U, e.get_physical_position()->first);
+    }
+}

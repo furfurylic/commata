@@ -125,26 +125,21 @@ public:
 
     bool end_record(const Ch* record_end)
     {
-        if (header_yet() && (target_field_index_ == npos)) {
-            throw record_extraction_error("No matching field found");
-        }
-        if (record_mode_ == record_mode::include) {
-            if (!record_buffer_.empty()) {
-                out_->sputn(record_buffer_.data(), record_buffer_.size());
+        if (header_yet()) {
+            if (target_field_index_ == npos) {
+                throw record_extraction_error("No matching field found");
             }
-            out_->sputn(record_begin_, record_end - record_begin_);
-            out_->sputc(detail::key_chars<Ch>::LF);
-            if (!header_yet()
-             && (record_num_to_include_ < static_cast<std::size_t>(-1))) {
-                if (record_num_to_include_ == 1) {
-                    return false;
-                }
-                --record_num_to_include_;
+            flush_record_if_include(record_end);
+            if (record_num_to_include_ == 0) {
+                return false;
             }
-            record_mode_ = record_mode::exclude; // to prevent end_buffer
-                                                 // from doing anything
+            header_mode_ = record_mode::unknown;
+        } else if (flush_record_if_include(record_end)) {
+            if (record_num_to_include_ == 1) {
+                return false;
+            }
+            --record_num_to_include_;
         }
-        header_mode_ = record_mode::unknown;
         return true;
     }
 
@@ -167,6 +162,28 @@ private:
                 field_buffer_.data() + field_buffer_.size());
             field_buffer_.clear();
             return r;
+        }
+    }
+
+    bool flush_record_if_include(const Ch* record_end)
+    {
+        switch (record_mode_) {
+        case record_mode::include:
+            if (!record_buffer_.empty()) {
+                out_->sputn(record_buffer_.data(), record_buffer_.size());
+            }
+            out_->sputn(record_begin_, record_end - record_begin_);
+            out_->sputc(detail::key_chars<Ch>::LF);
+            record_mode_ = record_mode::exclude;    // to prevent end_buffer
+                                                    // from doing anything
+            return true;
+        case record_mode::exclude:
+            return false;
+        case record_mode::unknown:
+            return false;
+        default:
+            assert(false);
+            return false;
         }
     }
 };
