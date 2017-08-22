@@ -29,16 +29,10 @@ class test_collector
 public:
     explicit test_collector(std::vector<std::vector<std::basic_string<Ch>>>& field_values) :
         all_field_values_(&field_values)
-    {
-        std::basic_stringstream<Ch> s;
-        s << "dummy";
-        current_field_values_.push_back(s.str());
-    }
+    {}
 
     void start_record(const Ch* /*row_begin*/)
-    {
-        current_field_values_ = std::vector<std::basic_string<Ch>>();
-    }
+    {}
 
     bool update(const Ch* first, const Ch* last)
     {
@@ -49,7 +43,9 @@ public:
     bool finalize(const Ch* first, const Ch* last)
     {
         field_value_.append(first, last);
-        current_field_values_.push_back(std::move(field_value_));
+        std::basic_string<Ch> current;
+        current.swap(field_value_); // field_value_ is cleared here
+        current_field_values_.push_back(std::move(current));
         return true;
     }
 
@@ -62,6 +58,7 @@ public:
     bool end_record(const Ch* /*end*/)
     {
         all_field_values_->push_back(std::move(current_field_values_));
+        current_field_values_.clear();
         return true;
     }
 };
