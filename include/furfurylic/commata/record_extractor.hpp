@@ -72,6 +72,11 @@ public:
     {
         return f_;
     }
+
+    const F& get() const
+    {
+        return f_;
+    }
 };
 
 template <class F>
@@ -85,6 +90,11 @@ public:
     {}
 
     F& get()
+    {
+        return *this;
+    }
+
+    const F& get() const
     {
         return *this;
     }
@@ -245,21 +255,31 @@ public:
                     })) {
                 target_field_index_ = field_index_;
             }
-        } else if (field_index_ == target_field_index_) {
-            if (with_field_buffer_appended(first, last,
-                    [this](const Ch* first, const Ch* last) {
-                        return field_value_pred_t::get()(first, last);
-                    })) {
-                record_mode_ = record_mode::include;
-                if (!record_buffer_.empty()) {
-                    out_->sputn(record_buffer_.data(), record_buffer_.size());
-                    record_buffer_.clear();
+            ++field_index_;
+            if (field_index_ >= npos) {
+                throw no_matching_field();
+            }
+        } else {
+            if ((record_mode_ == record_mode::unknown)
+             && (field_index_ == target_field_index_)) {
+                if (with_field_buffer_appended(first, last,
+                        [this](const Ch* first, const Ch* last) {
+                            return field_value_pred_t::get()(first, last);
+                        })) {
+                    record_mode_ = record_mode::include;
+                    if (!record_buffer_.empty()) {
+                        out_->sputn(record_buffer_.data(), record_buffer_.size());
+                        record_buffer_.clear();
+                    }
+                } else {
+                    record_mode_ = record_mode::exclude;
                 }
-            } else {
+            }
+            ++field_index_;
+            if (field_index_ >= npos) {
                 record_mode_ = record_mode::exclude;
             }
         }
-        ++field_index_;
         return true;
     }
 
@@ -267,10 +287,7 @@ public:
     {
         if (header_yet()) {
             if (target_field_index_ == npos) {
-                std::ostringstream what;
-                what << "No matching field"
-                     << field_name_of(" for ", field_name_pred_t::get());
-                throw record_extraction_error(what.str());
+                throw no_matching_field();
             }
             flush_record_if_include(record_end);
             if (record_num_to_include_ == 0) {
@@ -305,6 +322,14 @@ private:
             field_buffer_.clear();
             return r;
         }
+    }
+
+    record_extraction_error no_matching_field() const
+    {
+        std::ostringstream what;
+        what << "No matching field"
+             << field_name_of(" for ", field_name_pred_t::get());
+        return record_extraction_error(what.str());
     }
 
     bool flush_record_if_include(const Ch* record_end)
