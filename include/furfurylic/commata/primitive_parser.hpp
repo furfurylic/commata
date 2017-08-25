@@ -353,6 +353,32 @@ public:
     primitive_parser(primitive_parser&&) = default;
     primitive_parser& operator=(primitive_parser&&) = default;
 
+    template <class Tr>
+    bool parse_all(std::basic_streambuf<Ch, Tr>& in, std::streamsize buffer_size)
+    {
+        std::unique_ptr<Ch[]> buffer(new Ch[buffer_size]);
+        for (;;) {
+            bool eof_reached = false;
+            std::streamsize loaded_size = 0;
+            std::size_t offset = 0;
+            do {
+                std::streamsize length = in.sgetn(buffer.get() + offset, buffer_size - offset);
+                if (length == 0) {
+                    eof_reached = true;
+                    break;
+                }
+                loaded_size += length;
+            } while (loaded_size < buffer_size);
+            if (!parse(buffer.get(), buffer.get() + loaded_size)) {
+                return false;
+            }
+            if (eof_reached) {
+                return eof();
+            }
+        }
+    }
+
+private:
     bool parse(const Ch* begin, const Ch* end)
     {
         try {
@@ -502,18 +528,8 @@ template <class Ch, class Tr, class Sink>
 bool parse(std::basic_streambuf<Ch, Tr>& in, std::streamsize buffer_size,
       Sink sink)
 {
-    std::unique_ptr<Ch[]> buffer(new Ch[buffer_size]);
     detail::primitive_parser<Ch, Sink> p(std::move(sink));
-    for (;;) {
-        std::streamsize loaded_size = in.sgetn(buffer.get(), buffer_size);
-        if (loaded_size == 0) {
-            break;
-        }
-        if (!p.parse(buffer.get(), buffer.get() + loaded_size)) {
-            return false;
-        }
-    }
-    return p.eof();
+    return p.parse_all(in, buffer_size);
 }
 
 }}
