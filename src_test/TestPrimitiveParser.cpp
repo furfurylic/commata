@@ -7,6 +7,7 @@
 #include <iterator>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -22,15 +23,24 @@ namespace {
 template <class Ch>
 class test_collector
 {
+    std::size_t buffer_size_;
+    Ch* buffer_;
     std::vector<std::vector<std::basic_string<Ch>>>* all_field_values_;
     std::vector<std::basic_string<Ch>> current_field_values_;
     std::basic_string<Ch> field_value_;
 
 public:
-    explicit test_collector(
+    test_collector(
+        std::size_t buffer_size,
         std::vector<std::vector<std::basic_string<Ch>>>& field_values) :
-        all_field_values_(&field_values)
+        buffer_size_(buffer_size),
+        buffer_(nullptr), all_field_values_(&field_values)
     {}
+
+    ~test_collector()
+    {
+        delete [] buffer_;
+    }
 
     void start_record(const Ch* /*row_begin*/)
     {}
@@ -62,6 +72,17 @@ public:
         current_field_values_.clear();
         return true;
     }
+
+    std::pair<Ch*, std::size_t> get_buffer()
+    {
+        if (!buffer_) {
+            buffer_ = new Ch[buffer_size_]; // throw
+        }
+        return std::make_pair(buffer_, buffer_size_);
+    }
+
+    void release_buffer(const Ch* /*buffer*/) noexcept
+    {}
 };
 
 }
@@ -76,8 +97,8 @@ TEST_P(TestPrimitiveParserBasics, Narrow)
                     " cell10 ,,\"cell\r\n12\",\"cell\"\"13\"\"\",\"\"\n";
     std::stringbuf buf(s);
     std::vector<std::vector<std::string>> field_values;
-    test_collector<char> collector(field_values);
-    ASSERT_TRUE(parse(buf, GetParam(), collector));
+    test_collector<char> collector(GetParam(), field_values);
+    ASSERT_TRUE(parse(buf, collector));
     ASSERT_EQ(2U, field_values.size());
     std::vector<std::string> expected_row0 =
         { "", "col1", " col2 ", "col3", "" };
@@ -93,8 +114,8 @@ TEST_P(TestPrimitiveParserBasics, Wide)
                      L"value1,value2\n";
     std::wstringbuf buf(s);
     std::vector<std::vector<std::wstring>> field_values;
-    test_collector<wchar_t> collector(field_values);
-    ASSERT_TRUE(parse(buf, GetParam(), collector));
+    test_collector<wchar_t> collector(GetParam(), field_values);
+    ASSERT_TRUE(parse(buf, collector));
     ASSERT_EQ(2U, field_values.size());
     std::vector<std::wstring> expected_row0 = { L"header1", L"header2" };
     ASSERT_EQ(expected_row0, field_values[0]);
@@ -113,8 +134,8 @@ TEST_P(TestPrimitiveParserEndsWithoutLF, All)
 {
     std::stringbuf buf(GetParam().first);
     std::vector<std::vector<std::string>> field_values;
-    test_collector<char> collector(field_values);
-    ASSERT_TRUE(parse(buf, 1024, collector));
+    test_collector<char> collector(1024, field_values);
+    ASSERT_TRUE(parse(buf, collector));
     ASSERT_EQ(1U, field_values.size());
     std::stringstream s;
     std::copy(field_values[0].cbegin(), field_values[0].cend(),
@@ -138,9 +159,12 @@ TEST_P(TestPrimitiveParserErrors, Errors)
     std::string s = GetParam().first;
     std::stringbuf buf(s);
     std::vector<std::vector<std::string>> field_values;
-    test_collector<char> collector(field_values);
+
+    // the buffer is shorter than one line
+    test_collector<char> collector(4, field_values);
+
     try {
-        parse(buf, 4, collector);   // shorter than one line
+        parse(buf, collector);
         FAIL();
     } catch (const parse_error& e) {
         if (GetParam().second.first == parse_error::npos) {

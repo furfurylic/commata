@@ -159,6 +159,9 @@ class record_extractor :
 
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
+    std::size_t buffer_size_;
+    Ch* buffer_;
+
     record_mode header_mode_;
     record_mode record_mode_;
 
@@ -176,11 +179,13 @@ class record_extractor :
 
 public:
     record_extractor(
+        std::size_t buffer_size,
         std::basic_streambuf<Ch, Tr>& out,
         FieldNamePred field_name_pred, FieldValuePred field_value_pred,
         bool includes_header, std::size_t max_record_num) :
         field_name_pred_t(std::move(field_name_pred)),
         field_value_pred_t(std::move(field_value_pred)),
+        buffer_size_(buffer_size), buffer_(nullptr),
         header_mode_(includes_header ?
             record_mode::include : record_mode::exclude),
         record_mode_(record_mode::exclude),
@@ -188,11 +193,14 @@ public:
         field_index_(0), out_(&out)
     {}
 
+
     record_extractor(
+        std::size_t buffer_size,
         std::basic_streambuf<Ch, Tr>& out,
         std::size_t target_field_index, FieldValuePred field_value_pred,
         bool includes_header, std::size_t max_record_num) :
-        record_extractor(out, detail::hollow_field_name_pred<Ch>(),
+        record_extractor(buffer_size, out,
+            detail::hollow_field_name_pred<Ch>(),
             std::move(field_value_pred),
             includes_header, max_record_num)
     {
@@ -207,6 +215,11 @@ public:
 
     record_extractor(record_extractor&&) = default;
     record_extractor& operator=(record_extractor&&) = default;
+
+    ~record_extractor()
+    {
+        delete [] buffer_;
+    }
 
     void start_buffer(const Ch* buffer_begin)
     {
@@ -303,6 +316,17 @@ public:
         }
         return true;
     }
+
+    std::pair<Ch*, std::size_t> get_buffer()
+    {
+        if (!buffer_) {
+            buffer_ = new Ch[buffer_size_]; // throw
+        }
+        return std::make_pair(buffer_, buffer_size_);
+    }
+
+    void release_buffer(const Ch* /*buffer*/) noexcept
+    {}
 
 private:
     bool header_yet() const
@@ -420,6 +444,7 @@ using record_extractor_from =
 
 template <class FieldNamePredF, class FieldValuePredF, class Ch, class Tr>
 auto make_record_extractor(
+    std::size_t buffer_size,
     std::basic_streambuf<Ch, Tr>& out,
     FieldNamePredF&& field_name_pred,
     FieldValuePredF&& field_value_pred,
@@ -431,6 +456,7 @@ auto make_record_extractor(
 {
     return detail::record_extractor_from<
             FieldNamePredF, FieldValuePredF, Ch, Tr>(
+        buffer_size,
         out,
         detail::forward_as_string_pred<Ch, Tr>(
             std::forward<FieldNamePredF>(field_name_pred)),
@@ -441,6 +467,7 @@ auto make_record_extractor(
 
 template <class FieldValuePredF, class Ch, class Tr>
 auto make_record_extractor(
+    std::size_t buffer_size,
     std::basic_streambuf<Ch, Tr>& out,
     std::size_t target_field_index,
     FieldValuePredF&& field_value_pred,
@@ -449,6 +476,7 @@ auto make_record_extractor(
 {
     return detail::record_extractor_from<
             detail::hollow_field_name_pred<Ch>, FieldValuePredF, Ch, Tr>(
+        buffer_size,
         out,
         target_field_index,
         detail::forward_as_string_pred<Ch, Tr>(

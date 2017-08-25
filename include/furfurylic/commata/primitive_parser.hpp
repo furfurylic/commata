@@ -354,21 +354,31 @@ public:
     primitive_parser& operator=(primitive_parser&&) = default;
 
     template <class Tr>
-    bool parse_all(std::basic_streambuf<Ch, Tr>& in, std::streamsize buffer_size)
+    bool parse_all(std::basic_streambuf<Ch, Tr>& in)
     {
-        std::unique_ptr<Ch[]> buffer(new Ch[buffer_size]);
+        auto release = [this](const Ch* buffer) {
+            f_.release_buffer(buffer);
+        };
         for (;;) {
+            std::unique_ptr<Ch, decltype(release)> buffer(nullptr, release);
+            auto allocated = f_.get_buffer();   // throw
+            buffer.reset(allocated.first);
+            if (allocated.second < 1) {
+                throw std::out_of_range(
+                    "Specified buffer length is shorter than one");
+            }
+
             bool eof_reached = false;
             std::streamsize loaded_size = 0;
             std::size_t offset = 0;
             do {
-                std::streamsize length = in.sgetn(buffer.get() + offset, buffer_size - offset);
+                std::streamsize length = in.sgetn(buffer.get() + offset, allocated.second - offset);
                 if (length == 0) {
                     eof_reached = true;
                     break;
                 }
                 loaded_size += length;
-            } while (loaded_size < buffer_size);
+            } while (allocated.second - loaded_size > 0);
             if (!parse(buffer.get(), buffer.get() + loaded_size)) {
                 return false;
             }
@@ -525,11 +535,10 @@ private:
 } // end namespace detail
 
 template <class Ch, class Tr, class Sink>
-bool parse(std::basic_streambuf<Ch, Tr>& in, std::streamsize buffer_size,
-      Sink sink)
+bool parse(std::basic_streambuf<Ch, Tr>& in, Sink sink)
 {
     detail::primitive_parser<Ch, Sink> p(std::move(sink));
-    return p.parse_all(in, buffer_size);
+    return p.parse_all(in);
 }
 
 }}
