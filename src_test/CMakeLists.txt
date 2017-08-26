@@ -15,6 +15,7 @@ add_executable(test_commata
     TestCsvError.cpp
     TestPrimitiveParser.cpp
     TestRecordExtractor.cpp
+    TestCsvTable.cpp
 )
 if(commata_disable_pthreads)
     target_link_libraries(test_commata
