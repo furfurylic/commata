@@ -213,11 +213,11 @@ using string_pred =
 template <class FieldNamePredF, class FieldValuePredF, class Ch, class Tr>
 using record_extractor_from =
     record_extractor<
-        detail::string_pred<Ch, Tr, FieldNamePredF>,
-        detail::string_pred<Ch, Tr, FieldValuePredF>,
+        string_pred<Ch, Tr, FieldNamePredF>,
+        string_pred<Ch, Tr, FieldValuePredF>,
         Ch, Tr>;
 
-}
+} // end namespace detail
 
 template <class FieldNamePredF, class FieldValuePredF, class Ch, class Tr>
 detail::record_extractor_from<FieldNamePredF, FieldValuePredF, Ch, Tr>

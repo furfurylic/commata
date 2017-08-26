@@ -33,7 +33,7 @@ struct npos_impl
 template <class T>
 const T npos_impl<T>::npos = static_cast<T>(-1);
 
-}
+} // end namespace detail
 
 class csv_error :
     public std::exception, public detail::npos_impl<std::size_t>
@@ -362,8 +362,6 @@ struct handler<state::after_lf>
     {}
 };
 
-}
-
 template <class Ch, class Sink>
 class primitive_parser
 {
@@ -371,7 +369,7 @@ class primitive_parser
     Sink f_;
 
     bool record_started_;
-    detail::state s_;
+    state s_;
     const Ch* field_start_;
     const Ch* field_end_;
     bool continues_;
@@ -381,15 +379,15 @@ class primitive_parser
     std::size_t physical_row_chars_passed_away_;
 
 private:
-    template <detail::state>
-    friend struct detail::handler;
+    template <state>
+    friend struct handler;
 
 public:
     using char_type = Ch;
 
     explicit primitive_parser(Sink f) :
         f_(std::move(f)),
-        record_started_(false), s_(detail::state::after_lf),
+        record_started_(false), s_(state::after_lf),
         continues_(true),
         physical_row_(parse_error::npos), physical_row_chars_passed_away_(0)
     {}
@@ -454,7 +452,7 @@ private:
         physical_row_chars_passed_away_ = 0;
     }
 
-    void change_state(detail::state s)
+    void change_state(state s)
     {
         s_ = s;
     }
@@ -510,26 +508,26 @@ private:
     template <class F>
     void with_handler(F f) {
         switch (s_) {
-        case detail::state::left_of_value:
-            f(detail::handler<detail::state::left_of_value>());
+        case state::left_of_value:
+            f(handler<state::left_of_value>());
             break;
-        case detail::state::in_value:
-            f(detail::handler<detail::state::in_value>());
+        case state::in_value:
+            f(handler<state::in_value>());
             break;
-        case detail::state::right_of_open_quote:
-            f(detail::handler<detail::state::right_of_open_quote>());
+        case state::right_of_open_quote:
+            f(handler<state::right_of_open_quote>());
             break;
-        case detail::state::in_quoted_value:
-            f(detail::handler<detail::state::in_quoted_value>());
+        case state::in_quoted_value:
+            f(handler<state::in_quoted_value>());
             break;
-        case detail::state::in_quoted_value_after_quote:
-            f(detail::handler<detail::state::in_quoted_value_after_quote>());
+        case state::in_quoted_value_after_quote:
+            f(handler<state::in_quoted_value_after_quote>());
             break;
-        case detail::state::after_cr:
-            f(detail::handler<detail::state::after_cr>());
+        case state::after_cr:
+            f(handler<state::after_cr>());
             break;
-        case detail::state::after_lf:
-            f(detail::handler<detail::state::after_lf>());
+        case state::after_lf:
+            f(handler<state::after_lf>());
             break;
         default:
             assert(false);
@@ -565,11 +563,13 @@ private:
     };
 };
 
+} // end namespace detail
+
 template <class Ch, class Tr, class Sink>
 bool parse(std::basic_streambuf<Ch, Tr>& in, std::streamsize buffer_size, Sink sink)
 {
     std::unique_ptr<Ch[]> buffer(new Ch[buffer_size]);
-    primitive_parser<Ch, Sink> p(std::move(sink));
+    detail::primitive_parser<Ch, Sink> p(std::move(sink));
     for (;;) {
         std::streamsize loaded_size = in.sgetn(buffer.get(), buffer_size);
         if (loaded_size == 0) {
