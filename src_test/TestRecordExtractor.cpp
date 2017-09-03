@@ -11,10 +11,12 @@
 #include <furfurylic/commata/primitive_parser.hpp>
 #include <furfurylic/commata/record_extractor.hpp>
 
+#include "BaseTest.hpp"
+
 using namespace furfurylic::commata;
 
 struct TestRecordExtractor :
-    testing::TestWithParam<std::size_t>
+    furfurylic::test::BaseTestWithParam<std::size_t>
 {};
 
 TEST_P(TestRecordExtractor, LeftmostKey)

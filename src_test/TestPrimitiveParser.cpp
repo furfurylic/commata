@@ -13,6 +13,8 @@
 
 #include <furfurylic/commata/primitive_parser.hpp>
 
+#include "BaseTest.hpp"
+
 using namespace furfurylic::commata;
 
 namespace {
@@ -67,7 +69,7 @@ public:
 }
 
 struct TestPrimitiveParserBasics :
-    testing::TestWithParam<std::size_t>
+    furfurylic::test::BaseTestWithParam<std::size_t>
 {};
 
 TEST_P(TestPrimitiveParserBasics, Narrow)
