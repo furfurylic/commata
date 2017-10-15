@@ -140,7 +140,7 @@ TEST_P(TestPrimitiveParserEndsWithoutLF, All)
     std::stringstream s;
     std::copy(field_values[0].cbegin(), field_values[0].cend(),
         std::ostream_iterator<std::string>(s, "/"));
-    ASSERT_EQ(s.str(), GetParam().second);
+    ASSERT_EQ(GetParam().second, s.str());
 }
 
 INSTANTIATE_TEST_CASE_P(, TestPrimitiveParserEndsWithoutLF,
@@ -167,24 +167,16 @@ TEST_P(TestPrimitiveParserErrors, Errors)
         parse(buf, collector);
         FAIL();
     } catch (const parse_error& e) {
-        if (GetParam().second.first == parse_error::npos) {
-            ASSERT_TRUE(e.get_physical_position() == nullptr);
-        } else {
-            const auto pos = e.get_physical_position();
-            ASSERT_TRUE(pos != nullptr);
-            ASSERT_EQ(GetParam().second.first, pos->first);
-            ASSERT_EQ(GetParam().second.second, pos->second);
-        }
+        const auto pos = e.get_physical_position();
+        ASSERT_TRUE(pos != nullptr);
+        ASSERT_EQ(GetParam().second.first, pos->first);
+        ASSERT_EQ(GetParam().second.second, pos->second);
     }
 }
 
 INSTANTIATE_TEST_CASE_P(, TestPrimitiveParserErrors,
     testing::Values(
-        std::make_pair("col\"1\"",
-            std::make_pair(0, 3)),
-        std::make_pair("\"col1",
-            std::make_pair(parse_error::npos, parse_error::npos)),
-        std::make_pair("\"col1\",\"",
-            std::make_pair(parse_error::npos, parse_error::npos)),
-        std::make_pair("col1\r\n\n\"col2\"a",
-            std::make_pair(2, 6))));
+        std::make_pair("col\"1\"", std::make_pair(0, 3)),
+        std::make_pair("\"col1", std::make_pair(0, 5)),
+        std::make_pair("\"col1\",\"", std::make_pair(0, 8)),
+        std::make_pair("col1\r\n\n\"col2\"a", std::make_pair(2, 6))));

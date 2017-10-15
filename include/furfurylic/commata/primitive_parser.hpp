@@ -354,54 +354,67 @@ public:
     primitive_parser& operator=(primitive_parser&&) = default;
 
     template <class Tr>
-    bool parse_all(std::basic_streambuf<Ch, Tr>& in)
+    bool parse(std::basic_streambuf<Ch, Tr>& in)
     {
         auto release = [this](const Ch* buffer) {
             f_.release_buffer(buffer);
         };
-        for (;;) {
+
+        bool eof_reached = false;
+        do {
             std::unique_ptr<Ch, decltype(release)> buffer(nullptr, release);
-            auto allocated = f_.get_buffer();   // throw
-            buffer.reset(allocated.first);
-            if (allocated.second < 1) {
-                throw std::out_of_range(
-                    "Specified buffer length is shorter than one");
+            std::size_t buffer_size;
+            {
+                auto allocated = f_.get_buffer();   // throw
+                buffer.reset(allocated.first);
+                buffer_size = allocated.second;
+                if (buffer_size < 1) {
+                    throw std::out_of_range(
+                        "Specified buffer length is shorter than one");
+                }
             }
 
-            bool eof_reached = false;
             std::streamsize loaded_size = 0;
-            std::size_t offset = 0;
             do {
-                std::streamsize length = in.sgetn(buffer.get() + offset, allocated.second - offset);
+                const auto length = in.sgetn(buffer.get() + loaded_size,
+                    buffer_size - loaded_size);
                 if (length == 0) {
                     eof_reached = true;
                     break;
                 }
                 loaded_size += length;
-            } while (allocated.second - loaded_size > 0);
-            if (!parse(buffer.get(), buffer.get() + loaded_size)) {
+            } while (buffer_size - loaded_size > 0);
+
+            f_.start_buffer(buffer.get());
+            if (!parse_partial(buffer.get(),
+                    buffer.get() + loaded_size, eof_reached)) {
                 return false;
             }
-            if (eof_reached) {
-                return eof();
-            }
-        }
+            f_.end_buffer(buffer.get() + loaded_size);
+        } while (!eof_reached);
+
+        return true;
     }
 
 private:
-    bool parse(const Ch* begin, const Ch* end)
+    bool parse_partial(const Ch* begin, const Ch* end, bool eof_reached)
     {
         try {
             p_ = begin;
             physical_row_or_buffer_begin_ = begin;
             set_first_last();
-            f_.start_buffer(begin);
             while (p_ < end) {
                 with_handler([this](const auto& h) { h.normal(*this, *p_); });
                 ++p_;
             }
             with_handler([this](const auto& h) { h.underflow(*this); });
-            f_.end_buffer(end);
+            if (eof_reached) {
+                set_first_last();
+                with_handler([this](const auto& h) { h.eof(*this); });
+                if (record_started_) {
+                    end_record();
+                }
+            }
             physical_row_chars_passed_away_ +=
                 p_ - physical_row_or_buffer_begin_;
             return true;
@@ -411,23 +424,6 @@ private:
                 (p_ - physical_row_or_buffer_begin_)
                     + physical_row_chars_passed_away_);
             throw;
-        } catch (const parse_aborted&) {
-            return false;
-        }
-    }
-
-    bool eof()
-    {
-        try {
-            p_ = nullptr;
-            set_first_last();
-            f_.start_buffer(nullptr);
-            with_handler([this](const auto& h) { h.eof(*this); });
-            if (record_started_) {
-                end_record();
-            }
-            f_.end_buffer(nullptr);
-            return true;
         } catch (const parse_aborted&) {
             return false;
         }
@@ -538,7 +534,7 @@ template <class Ch, class Tr, class Sink>
 bool parse(std::basic_streambuf<Ch, Tr>& in, Sink sink)
 {
     detail::primitive_parser<Ch, Sink> p(std::move(sink));
-    return p.parse_all(in);
+    return p.parse(in);
 }
 
 }}
