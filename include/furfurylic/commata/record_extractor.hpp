@@ -268,7 +268,8 @@ public:
                         })) {
                     record_mode_ = record_mode::include;
                     if (!record_buffer_.empty()) {
-                        out_->sputn(record_buffer_.data(), record_buffer_.size());
+                        out_->sputn(
+                            record_buffer_.data(), record_buffer_.size());
                         record_buffer_.clear();
                     }
                 } else {
