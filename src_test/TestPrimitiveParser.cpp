@@ -27,7 +27,8 @@ class test_collector
     std::basic_string<Ch> field_value_;
 
 public:
-    explicit test_collector(std::vector<std::vector<std::basic_string<Ch>>>& field_values) :
+    explicit test_collector(
+        std::vector<std::vector<std::basic_string<Ch>>>& field_values) :
         all_field_values_(&field_values)
     {}
 
@@ -78,9 +79,11 @@ TEST_P(TestPrimitiveParserBasics, Narrow)
     test_collector<char> collector(field_values);
     ASSERT_TRUE(parse(buf, GetParam(), collector));
     ASSERT_EQ(2U, field_values.size());
-    std::vector<std::string> expected_row0 = { "", "col1", " col2 ", "col3", "" };
+    std::vector<std::string> expected_row0 =
+        { "", "col1", " col2 ", "col3", "" };
     ASSERT_EQ(expected_row0, field_values[0]);
-    std::vector<std::string> expected_row1 = { " cell10 ", "", "cell\r\n12", "cell\"13\"", "" };
+    std::vector<std::string> expected_row1 =
+        { " cell10 ", "", "cell\r\n12", "cell\"13\"", "" };
     ASSERT_EQ(expected_row1, field_values[1]);
 }
 
@@ -99,7 +102,8 @@ TEST_P(TestPrimitiveParserBasics, Wide)
     ASSERT_EQ(expected_row1, field_values[1]);
 }
 
-INSTANTIATE_TEST_CASE_P(, TestPrimitiveParserBasics, testing::Values(1, 10, 1024));
+INSTANTIATE_TEST_CASE_P(,
+    TestPrimitiveParserBasics, testing::Values(1, 10, 1024));
 
 struct TestPrimitiveParserEndsWithoutLF :
     testing::TestWithParam<std::pair<const char*, const char*>>
@@ -125,7 +129,8 @@ INSTANTIATE_TEST_CASE_P(, TestPrimitiveParserEndsWithoutLF,
         std::make_pair("ColA,ColB,", "ColA/ColB//")));
 
 struct TestPrimitiveParserErrors :
-    testing::TestWithParam<std::pair<const char*, std::pair<std::size_t, std::size_t>>>
+    testing::TestWithParam<
+        std::pair<const char*, std::pair<std::size_t, std::size_t>>>
 {};
 
 TEST_P(TestPrimitiveParserErrors, Errors)
@@ -151,7 +156,11 @@ TEST_P(TestPrimitiveParserErrors, Errors)
 
 INSTANTIATE_TEST_CASE_P(, TestPrimitiveParserErrors,
     testing::Values(
-        std::make_pair("col\"1\"", std::make_pair(0, 3)),
-        std::make_pair("\"col1", std::make_pair(parse_error::npos, parse_error::npos)),
-        std::make_pair("\"col1\",\"", std::make_pair(parse_error::npos, parse_error::npos)),
-        std::make_pair("col1\r\n\n\"col2\"a", std::make_pair(2, 6))));
+        std::make_pair("col\"1\"",
+            std::make_pair(0, 3)),
+        std::make_pair("\"col1",
+            std::make_pair(parse_error::npos, parse_error::npos)),
+        std::make_pair("\"col1\",\"",
+            std::make_pair(parse_error::npos, parse_error::npos)),
+        std::make_pair("col1\r\n\n\"col2\"a",
+            std::make_pair(2, 6))));

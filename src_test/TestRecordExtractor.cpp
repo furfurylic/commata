@@ -85,7 +85,8 @@ TEST_P(TestRecordExtractorLimit, Basics)
                     "ka1,kb3,vb3,vb3\n";
     std::stringbuf in(s);
     std::stringbuf out;
-    const auto result = parse(in, 2, make_record_extractor(out, "key_a", "ka1", includes_header, max_record_num));
+    const auto result = parse(in, 2, make_record_extractor(
+        out, "key_a", "ka1", includes_header, max_record_num));
     ASSERT_EQ(max_record_num > 1, result);
     std::string expected;
     if (includes_header) {
