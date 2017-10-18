@@ -157,7 +157,7 @@ class record_extractor :
         exclude
     };
 
-    static const std::size_t npos = static_cast<std::size_t>(-1);
+    static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
     record_mode header_mode_;
     record_mode record_mode_;
