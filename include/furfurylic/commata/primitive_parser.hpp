@@ -338,14 +338,14 @@ struct has_get_release_buffer :
     decltype(has_get_release_buffer_impl::check<Ch, T>(nullptr))
 {};
 
-template <class Ch, class Sink, bool X>
+template <class Sink, bool X>
 class buffer_control;
 
-template <class Ch, class Sink>
-class buffer_control<Ch, Sink, false>
+template <class Sink>
+class buffer_control<Sink, false>
 {
     std::size_t buffer_size_;
-    Ch* buffer_;
+    typename Sink::char_type* buffer_;
 
 protected:
     explicit buffer_control(std::size_t buffer_size) :
@@ -358,31 +358,32 @@ protected:
         delete [] buffer_;
     }
 
-    std::pair<Ch*, std::size_t> do_get_buffer(Sink&)
+    std::pair<typename Sink::char_type*, std::size_t> do_get_buffer(Sink&)
     {
         if (!buffer_) {
-            buffer_ = new Ch[buffer_size_]; // throw
+            buffer_ = new typename Sink::char_type[buffer_size_];   // throw
         }
         return std::make_pair(buffer_, buffer_size_);
     }
 
-    void do_release_buffer(Sink&, const Ch*) noexcept
+    void do_release_buffer(Sink&, const typename Sink::char_type*) noexcept
     {}
 };
 
-template <class Ch, class Sink>
-class buffer_control<Ch, Sink, true>
+template <class Sink>
+class buffer_control<Sink, true>
 {
 protected:
     explicit buffer_control(std::size_t)
     {}
 
-    std::pair<Ch*, std::size_t> do_get_buffer(Sink& f)
+    std::pair<typename Sink::char_type*, std::size_t> do_get_buffer(Sink& f)
     {
         return f.get_buffer();  // throw
     }
 
-    void do_release_buffer(Sink& f, const Ch* buffer) noexcept
+    void do_release_buffer(
+        Sink& f, const typename Sink::char_type* buffer) noexcept
     {
         return f.release_buffer(buffer);
     }
@@ -424,125 +425,139 @@ struct has_empty_record :
     decltype(has_empty_record_impl::check<Ch, T>(nullptr))
 {};
 
-template <class Ch, class Sink>
+template <class Sink>
+struct is_full_fledged_sink :
+    std::integral_constant<bool,
+        has_get_release_buffer<typename Sink::char_type, Sink>::value
+     && has_start_end_buffer<typename Sink::char_type, Sink>::value
+     && has_empty_record<typename Sink::char_type, Sink>::value>
+{};
+
+template <class Sink>
 class full_fledged_sink :
-    public buffer_control<Ch, Sink, has_get_release_buffer<Ch, Sink>::value>
+    public buffer_control<Sink,
+        has_get_release_buffer<typename Sink::char_type, Sink>::value>
 {
+    static_assert(!is_full_fledged_sink<Sink>::value,
+        "Sink is already full-fledged");
+
     Sink sink_;
 
 public:
+    using char_type = typename Sink::char_type;
+
     explicit full_fledged_sink(Sink&& sink, std::size_t buffer_size_hint) :
-        buffer_control<Ch, Sink,
-            has_get_release_buffer<Ch, Sink>::value>(buffer_size_hint),
+        buffer_control<Sink,
+            has_get_release_buffer<typename Sink::char_type, Sink>::value>(
+                buffer_size_hint),
         sink_(std::move(sink))
     {}
 
-    std::pair<Ch*, std::size_t> get_buffer()
+    std::pair<char_type*, std::size_t> get_buffer()
     {
         return this->do_get_buffer(sink_);
     }
 
-    void release_buffer(const Ch* buffer) noexcept
+    void release_buffer(const char_type* buffer) noexcept
     {
         this->do_release_buffer(sink_, buffer);
     }
 
-    void start_buffer(const Ch* buffer_begin)
+    void start_buffer(const char_type* buffer_begin)
     {
-        start_buffer(buffer_begin, has_start_end_buffer<Ch, Sink>());
+        start_buffer(has_start_end_buffer<char_type, Sink>(), buffer_begin);
     }
 
-    void end_buffer(const Ch* buffer_end)
+    void end_buffer(const char_type* buffer_end)
     {
-        end_buffer(buffer_end, has_start_end_buffer<Ch, Sink>());
+        end_buffer(has_start_end_buffer<char_type, Sink>(), buffer_end);
     }
 
-    void start_record(const Ch* record_begin)
+    void start_record(const char_type* record_begin)
     {
         sink_.start_record(record_begin);
     }
 
-    bool update(const Ch* first, const Ch* last)
+    bool update(const char_type* first, const char_type* last)
     {
         return sink_.update(first, last);
     }
 
-    bool finalize(const Ch* first, const Ch* last)
+    bool finalize(const char_type* first, const char_type* last)
     {
         return sink_.finalize(first, last);
     }
 
-    bool end_record(const Ch* end)
+    bool end_record(const char_type* end)
     {
         return sink_.end_record(end);
     }
 
-    bool empty_physical_row(const Ch* where)
+    bool empty_physical_row(const char_type* where)
     {
-        return empty_physical_row(where, has_empty_record<Ch, Sink>());
+        return empty_physical_row(has_empty_record<char_type, Sink>(), where);
     }
 
 private:
-    void start_buffer(const Ch* buffer_begin, std::true_type)
+    void start_buffer(std::true_type, const char_type* buffer_begin)
     {
         sink_.start_buffer(buffer_begin);
     }
 
-    void start_buffer(const Ch*, std::false_type)
+    void start_buffer(std::false_type, ...)
     {}
 
-    void end_buffer(const Ch* buffer_end, std::true_type)
+    void end_buffer(std::true_type, const char_type* buffer_end)
     {
         sink_.end_buffer(buffer_end);
     }
 
-    void end_buffer(const Ch*, std::false_type)
+    void end_buffer(std::false_type, ...)
     {}
 
-    bool empty_physical_row(const Ch* where, std::true_type)
+    bool empty_physical_row(std::true_type, const char_type* where)
     {
         return sink_.empty_physical_row(where);
     }
 
-    bool empty_physical_row(const Ch*, std::false_type)
+    bool empty_physical_row(std::false_type, ...)
     {
         return true;
     }
 };
 
-template <class Ch, class Sink>
+template <class Sink>
 auto make_full_fledged(Sink&& sink, std::size_t buffer_size_hint)
- -> std::enable_if_t<!has_get_release_buffer<Ch, Sink>::value
-                  || !has_start_end_buffer<Ch, Sink>::value
-                  || !has_empty_record<Ch, Sink>::value,
-    full_fledged_sink<Ch, Sink>>
+ -> std::enable_if_t<
+        !is_full_fledged_sink<Sink>::value, full_fledged_sink<Sink>>
 {
-    return full_fledged_sink<Ch, Sink>(std::move(sink), buffer_size_hint);
+    return full_fledged_sink<Sink>(
+        std::forward<Sink>(sink), buffer_size_hint);
 }
 
-template <class Ch, class Sink>
+template <class Sink>
 auto make_full_fledged(Sink&& sink, std::size_t)
- -> std::enable_if_t<has_get_release_buffer<Ch, Sink>::value
-                  && has_start_end_buffer<Ch, Sink>::value
-                  && has_empty_record<Ch, Sink>::value,
-    Sink&&>
+ -> std::enable_if_t<is_full_fledged_sink<Sink>::value, Sink&&>
 {
     return std::forward<Sink>(sink);
 }
 
-template <class Ch, class Sink>
+template <class Sink>
 class primitive_parser
 {
-    const Ch* p_;
+    using char_type = typename Sink::char_type;
+
+private:
+    const char_type* p_;
     Sink f_;
 
     bool record_started_;
     state s_;
-    const Ch* field_start_;
-    const Ch* field_end_;
+    const char_type* field_start_;
+    const char_type* field_end_;
 
     std::size_t physical_row_index_;
-    const Ch* physical_row_or_buffer_begin_;
+    const char_type* physical_row_or_buffer_begin_;
     std::size_t physical_row_chars_passed_away_;
 
 private:
@@ -554,8 +569,6 @@ private:
     {};
 
 public:
-    using char_type = Ch;
-
     explicit primitive_parser(Sink f) :
         f_(std::move(f)),
         record_started_(false), s_(state::after_lf),
@@ -567,15 +580,16 @@ public:
     primitive_parser& operator=(primitive_parser&&) = default;
 
     template <class Tr>
-    bool parse(std::basic_streambuf<Ch, Tr>& in)
+    bool parse(std::basic_streambuf<char_type, Tr>& in)
     {
-        auto release = [this](const Ch* buffer) {
+        auto release = [this](const char_type* buffer) {
             f_.release_buffer(buffer);
         };
 
         bool eof_reached = false;
         do {
-            std::unique_ptr<Ch, decltype(release)> buffer(nullptr, release);
+            std::unique_ptr<char_type, decltype(release)> buffer(
+                nullptr, release);
             std::size_t buffer_size;
             {
                 auto allocated = f_.get_buffer();   // throw
@@ -610,7 +624,8 @@ public:
     }
 
 private:
-    bool parse_partial(const Ch* begin, const Ch* end, bool eof_reached)
+    bool parse_partial(const char_type* begin, const char_type* end,
+        bool eof_reached)
     {
         try {
             p_ = begin;
@@ -749,41 +764,41 @@ private:
     }
 };
 
-template <class Ch, class Sink>
-primitive_parser<Ch, Sink> make_primitive_parser(Sink&& sink)
+template <class Sink>
+primitive_parser<Sink> make_primitive_parser(Sink&& sink)
 {
-    return primitive_parser<Ch, Sink>(std::move(sink));
+    return primitive_parser<Sink>(std::move(sink));
 }
 
 } // end namespace detail
 
-template <class Ch, class Tr, class Sink>
-bool parse(std::basic_streambuf<Ch, Tr>& in, Sink sink,
+template <class Tr, class Sink>
+bool parse(std::basic_streambuf<typename Sink::char_type, Tr>& in, Sink sink,
     std::size_t buffer_size = 0)
 {
-    return detail::make_primitive_parser<Ch>(
-        detail::make_full_fledged<Ch>(
+    return detail::make_primitive_parser(
+        detail::make_full_fledged(
             std::move(sink), buffer_size)).parse(in);
 }
 
-template <class Ch, class Sink>
+template <class Sink>
 struct empty_physical_row_aware_sink : Sink
 {
     explicit empty_physical_row_aware_sink(Sink&& sink) :
         Sink(std::move(sink))
     {}
 
-    bool empty_physical_row(const Ch* where)
+    bool empty_physical_row(const typename Sink::char_type* where)
     {
         this->start_record(where);
         return this->end_record(where);
     }
 };
 
-template <class Ch, class Sink>
+template <class Sink>
 auto make_empty_physical_row_aware(Sink&& sink)
 {
-    return empty_physical_row_aware_sink<Ch,
+    return empty_physical_row_aware_sink<
         std::remove_reference_t<Sink>>(std::forward<Sink>(sink));
 }
 

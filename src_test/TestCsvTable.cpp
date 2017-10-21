@@ -824,7 +824,7 @@ TEST_P(TestCsvTableBuilder, EmptyRowAware)
     std::stringbuf in(s);
     csv_table table;
     try {
-        parse(in, make_empty_physical_row_aware<char>(
+        parse(in, make_empty_physical_row_aware(
             make_csv_table_builder(GetParam(), table)));
     } catch (const csv_error& e) {
         FAIL() << e.what();

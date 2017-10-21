@@ -27,6 +27,8 @@ class test_collector
     std::basic_string<Ch> field_value_;
 
 public:
+    using char_type = Ch;
+
     explicit test_collector(
         std::vector<std::vector<std::basic_string<Ch>>>& field_values) :
         field_values_(&field_values)
@@ -106,7 +108,7 @@ TEST_P(TestPrimitiveParserBasics, EmptyRowAware)
                      L"y1,y2\n";
     std::wstringbuf buf(s);
     std::vector<std::vector<std::wstring>> field_values;
-    ASSERT_TRUE(parse(buf, make_empty_physical_row_aware<wchar_t>(
+    ASSERT_TRUE(parse(buf, make_empty_physical_row_aware(
         test_collector<wchar_t>(field_values)), GetParam()));
     ASSERT_EQ(6U, field_values.size());
     ASSERT_TRUE(field_values[0].empty());

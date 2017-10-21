@@ -175,6 +175,8 @@ class record_extractor :
     using field_value_pred_t = detail::field_value_pred_base<FieldValuePred>;
 
 public:
+    using char_type = Ch;
+
     record_extractor(
         std::basic_streambuf<Ch, Tr>& out,
         FieldNamePred field_name_pred, FieldValuePred field_value_pred,
