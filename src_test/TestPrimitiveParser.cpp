@@ -96,6 +96,30 @@ TEST_P(TestPrimitiveParserBasics, Wide)
     ASSERT_EQ(expected_row1, field_values[1]);
 }
 
+TEST_P(TestPrimitiveParserBasics, EmptyRowAware)
+{
+    std::wstring s = L"\n"
+                     L"\r"
+                     L"\r"
+                     L"x1,x2\r"
+                     L"\"\"\r\n"    // not an empty row
+                     L"y1,y2\n";
+    std::wstringbuf buf(s);
+    std::vector<std::vector<std::wstring>> field_values;
+    ASSERT_TRUE(parse(buf, make_empty_physical_row_aware<wchar_t>(
+        test_collector<wchar_t>(field_values)), GetParam()));
+    ASSERT_EQ(6U, field_values.size());
+    ASSERT_TRUE(field_values[0].empty());
+    ASSERT_TRUE(field_values[1].empty());
+    ASSERT_TRUE(field_values[2].empty());
+    std::vector<std::wstring> expected_row3 = { L"x1", L"x2" };
+    ASSERT_EQ(expected_row3, field_values[3]);
+    std::vector<std::wstring> expected_row4 = { L"" };
+    ASSERT_EQ(expected_row4, field_values[4]);
+    std::vector<std::wstring> expected_row5 = { L"y1", L"y2" };
+    ASSERT_EQ(expected_row5, field_values[5]);
+}
+
 INSTANTIATE_TEST_CASE_P(,
     TestPrimitiveParserBasics, testing::Values(1, 10, 1024));
 

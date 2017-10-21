@@ -252,6 +252,7 @@ struct handler<state::after_cr>
             break;
         case key_chars<typename Parser::char_type>::CR:
             parser.new_physical_row();
+            parser.empty_physical_row();
             break;
         case key_chars<typename Parser::char_type>::LF:
             parser.change_state(state::after_lf);
@@ -294,10 +295,12 @@ struct handler<state::after_lf>
             break;
         case key_chars<typename Parser::char_type>::CR:
             parser.new_physical_row();
+            parser.empty_physical_row();
             parser.change_state(state::after_cr);
             break;
         case key_chars<typename Parser::char_type>::LF:
             parser.new_physical_row();
+            parser.empty_physical_row();
             break;
         default:
             parser.new_physical_row();
@@ -474,6 +477,11 @@ public:
         return sink_.end_record(end);
     }
 
+    bool empty_physical_row(const Ch* where)
+    {
+        return empty_physical_row(where, has_empty_record<Ch, Sink>());
+    }
+
 private:
     void start_buffer(const Ch* buffer_begin, std::true_type)
     {
@@ -490,6 +498,16 @@ private:
 
     void end_buffer(const Ch*, std::false_type)
     {}
+
+    bool empty_physical_row(const Ch* where, std::true_type)
+    {
+        return sink_.empty_physical_row(where);
+    }
+
+    bool empty_physical_row(const Ch*, std::false_type)
+    {
+        return true;
+    }
 };
 
 template <class Ch, class Sink>
@@ -690,6 +708,14 @@ private:
         record_started_ = false;
     }
 
+    void empty_physical_row()
+    {
+        assert(!record_started_);
+        if (!f_.empty_physical_row(p_)) {
+            throw parse_aborted();
+        }
+    }
+
 private:
     template <class F>
     void with_handler(F f)
@@ -738,6 +764,27 @@ bool parse(std::basic_streambuf<Ch, Tr>& in, Sink sink,
     return detail::make_primitive_parser<Ch>(
         detail::make_full_fledged<Ch>(
             std::move(sink), buffer_size)).parse(in);
+}
+
+template <class Ch, class Sink>
+struct empty_physical_row_aware_sink : Sink
+{
+    explicit empty_physical_row_aware_sink(Sink&& sink) :
+        Sink(std::move(sink))
+    {}
+
+    bool empty_physical_row(const Ch* where)
+    {
+        this->start_record(where);
+        return this->end_record(where);
+    }
+};
+
+template <class Ch, class Sink>
+auto make_empty_physical_row_aware(Sink&& sink)
+{
+    return empty_physical_row_aware_sink<Ch,
+        std::remove_reference_t<Sink>>(std::forward<Sink>(sink));
 }
 
 }}

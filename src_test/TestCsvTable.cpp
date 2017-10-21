@@ -818,4 +818,35 @@ TEST_P(TestCsvTableBuilder, Basics)
     ASSERT_EQ("vb\n3",    table[3][2]);
 }
 
+TEST_P(TestCsvTableBuilder, EmptyRowAware)
+{
+    const char* s = "\r1,2,3,4\na,b\r\n\nx,y,z\r\n\"\"";
+    std::stringbuf in(s);
+    csv_table table;
+    try {
+        parse(in, make_empty_physical_row_aware<char>(
+            make_csv_table_builder(GetParam(), table)));
+    } catch (const csv_error& e) {
+        FAIL() << e.what();
+    }
+
+    ASSERT_EQ(6U, table.size());
+    ASSERT_EQ(0U, table[0].size());
+    ASSERT_EQ(4U, table[1].size());
+    ASSERT_EQ("1", table[1][0]);
+    ASSERT_EQ("2", table[1][1]);
+    ASSERT_EQ("3", table[1][2]);
+    ASSERT_EQ("4", table[1][3]);
+    ASSERT_EQ(2U, table[2].size());
+    ASSERT_EQ("a", table[2][0]);
+    ASSERT_EQ("b", table[2][1]);
+    ASSERT_EQ(0U, table[3].size());
+    ASSERT_EQ(3U, table[4].size());
+    ASSERT_EQ("x", table[4][0]);
+    ASSERT_EQ("y", table[4][1]);
+    ASSERT_EQ("z", table[4][2]);
+    ASSERT_EQ(1U, table[5].size());
+    ASSERT_EQ("", table[5][0]);
+}
+
 INSTANTIATE_TEST_CASE_P(, TestCsvTableBuilder, testing::Values(2, 11, 1024));
