@@ -317,6 +317,201 @@ struct handler<state::after_lf>
     {}
 };
 
+struct has_get_release_buffer_impl
+{
+    template <class Ch, class T>
+    static auto check(T*)
+     -> decltype(std::declval<T&>().release_buffer(
+        std::pair<Ch*, std::size_t>(std::declval<T&>().get_buffer()).first),
+        std::true_type());
+
+    template <class Ch, class T>
+    static auto check(...)
+     -> std::false_type;
+};
+
+template <class Ch, class T>
+struct has_get_release_buffer :
+    decltype(has_get_release_buffer_impl::check<Ch, T>(nullptr))
+{};
+
+template <class Ch, class Sink, bool X>
+class buffer_control;
+
+template <class Ch, class Sink>
+class buffer_control<Ch, Sink, false>
+{
+    std::size_t buffer_size_;
+    Ch* buffer_;
+
+protected:
+    explicit buffer_control(std::size_t buffer_size) :
+        buffer_size_((buffer_size < 1) ? 8192 : buffer_size),
+        buffer_(nullptr)
+    {}
+
+    ~buffer_control()
+    {
+        delete [] buffer_;
+    }
+
+    std::pair<Ch*, std::size_t> do_get_buffer(Sink&)
+    {
+        if (!buffer_) {
+            buffer_ = new Ch[buffer_size_]; // throw
+        }
+        return std::make_pair(buffer_, buffer_size_);
+    }
+
+    void do_release_buffer(Sink&, const Ch*) noexcept
+    {}
+};
+
+template <class Ch, class Sink>
+class buffer_control<Ch, Sink, true>
+{
+protected:
+    explicit buffer_control(std::size_t)
+    {}
+
+    std::pair<Ch*, std::size_t> do_get_buffer(Sink& f)
+    {
+        return f.get_buffer();  // throw
+    }
+
+    void do_release_buffer(Sink& f, const Ch* buffer) noexcept
+    {
+        return f.release_buffer(buffer);
+    }
+};
+
+struct has_start_end_buffer_impl
+{
+    template <class Ch, class T>
+    static auto check(T*)
+        -> decltype((std::declval<T&>().start_buffer(std::declval<Ch*>()),
+            std::declval<T&>().end_buffer(std::declval<Ch*>())),
+            std::true_type());
+
+    template <class Ch, class T>
+    static auto check(...)
+        ->std::false_type;
+};
+
+template <class Ch, class T>
+struct has_start_end_buffer :
+    decltype(has_start_end_buffer_impl::check<Ch, T>(nullptr))
+{};
+
+struct has_empty_record_impl
+{
+    template <class Ch, class T>
+    static auto check(T*) -> decltype(
+        std::declval<bool&>() =
+            std::declval<T&>().empty_physical_row(std::declval<const Ch*>()),
+        std::true_type());
+
+    template <class Ch, class T>
+    static auto check(...)
+     -> std::false_type;
+};
+
+template <class Ch, class T>
+struct has_empty_record :
+    decltype(has_empty_record_impl::check<Ch, T>(nullptr))
+{};
+
+template <class Ch, class Sink>
+class full_fledged_sink :
+    public buffer_control<Ch, Sink, has_get_release_buffer<Ch, Sink>::value>
+{
+    Sink sink_;
+
+public:
+    explicit full_fledged_sink(Sink&& sink, std::size_t buffer_size_hint) :
+        buffer_control<Ch, Sink,
+            has_get_release_buffer<Ch, Sink>::value>(buffer_size_hint),
+        sink_(std::move(sink))
+    {}
+
+    std::pair<Ch*, std::size_t> get_buffer()
+    {
+        return this->do_get_buffer(sink_);
+    }
+
+    void release_buffer(const Ch* buffer) noexcept
+    {
+        this->do_release_buffer(sink_, buffer);
+    }
+
+    void start_buffer(const Ch* buffer_begin)
+    {
+        start_buffer(buffer_begin, has_start_end_buffer<Ch, Sink>());
+    }
+
+    void end_buffer(const Ch* buffer_end)
+    {
+        end_buffer(buffer_end, has_start_end_buffer<Ch, Sink>());
+    }
+
+    void start_record(const Ch* record_begin)
+    {
+        sink_.start_record(record_begin);
+    }
+
+    bool update(const Ch* first, const Ch* last)
+    {
+        return sink_.update(first, last);
+    }
+
+    bool finalize(const Ch* first, const Ch* last)
+    {
+        return sink_.finalize(first, last);
+    }
+
+    bool end_record(const Ch* end)
+    {
+        return sink_.end_record(end);
+    }
+
+private:
+    void start_buffer(const Ch* buffer_begin, std::true_type)
+    {
+        sink_.start_buffer(buffer_begin);
+    }
+
+    void start_buffer(const Ch*, std::false_type)
+    {}
+
+    void end_buffer(const Ch* buffer_end, std::true_type)
+    {
+        sink_.end_buffer(buffer_end);
+    }
+
+    void end_buffer(const Ch*, std::false_type)
+    {}
+};
+
+template <class Ch, class Sink>
+auto make_full_fledged(Sink&& sink, std::size_t buffer_size_hint)
+ -> std::enable_if_t<!has_get_release_buffer<Ch, Sink>::value
+                  || !has_start_end_buffer<Ch, Sink>::value
+                  || !has_empty_record<Ch, Sink>::value,
+    full_fledged_sink<Ch, Sink>>
+{
+    return full_fledged_sink<Ch, Sink>(std::move(sink), buffer_size_hint);
+}
+
+template <class Ch, class Sink>
+auto make_full_fledged(Sink&& sink, std::size_t)
+ -> std::enable_if_t<has_get_release_buffer<Ch, Sink>::value
+                  && has_start_end_buffer<Ch, Sink>::value
+                  && has_empty_record<Ch, Sink>::value,
+    Sink&&>
+{
+    return std::forward<Sink>(sink);
+}
+
 template <class Ch, class Sink>
 class primitive_parser
 {
@@ -528,13 +723,21 @@ private:
     }
 };
 
+template <class Ch, class Sink>
+primitive_parser<Ch, Sink> make_primitive_parser(Sink&& sink)
+{
+    return primitive_parser<Ch, Sink>(std::move(sink));
+}
+
 } // end namespace detail
 
 template <class Ch, class Tr, class Sink>
-bool parse(std::basic_streambuf<Ch, Tr>& in, Sink sink)
+bool parse(std::basic_streambuf<Ch, Tr>& in, Sink sink,
+    std::size_t buffer_size = 0)
 {
-    detail::primitive_parser<Ch, Sink> p(std::move(sink));
-    return p.parse(in);
+    return detail::make_primitive_parser<Ch>(
+        detail::make_full_fledged<Ch>(
+            std::move(sink), buffer_size)).parse(in);
 }
 
 }}

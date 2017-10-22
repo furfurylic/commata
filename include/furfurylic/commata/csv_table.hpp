@@ -1319,14 +1319,6 @@ public:
 
     csv_table_builder(csv_table_builder&&) = default;
 
-    void start_buffer(const char_type* /*buffer_begin*/)
-    {}
-
-    void end_buffer(const char_type* /*buffer_end*/)
-    {
-        current_buffer_ = nullptr;
-    }
-
     void start_record(const char_type* /*record_begin*/)
     {
         table_->content().emplace_back();   // throw
@@ -1417,7 +1409,9 @@ public:
     }
 
     void release_buffer(const char_type* /*buffer*/) noexcept
-    {}
+    {
+        current_buffer_ = nullptr;
+    }
 };
 
 template <class Content>

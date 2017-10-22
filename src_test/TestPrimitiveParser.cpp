@@ -23,27 +23,19 @@ namespace {
 template <class Ch>
 class test_collector
 {
-    std::size_t buffer_size_;
-    Ch* buffer_;
-    std::vector<std::vector<std::basic_string<Ch>>>* all_field_values_;
-    std::vector<std::basic_string<Ch>> current_field_values_;
+    std::vector<std::vector<std::basic_string<Ch>>>* field_values_;
     std::basic_string<Ch> field_value_;
 
 public:
-    test_collector(
-        std::size_t buffer_size,
+    explicit test_collector(
         std::vector<std::vector<std::basic_string<Ch>>>& field_values) :
-        buffer_size_(buffer_size),
-        buffer_(nullptr), all_field_values_(&field_values)
+        field_values_(&field_values)
     {}
 
-    ~test_collector()
+    void start_record(const Ch* /*record_begin*/)
     {
-        delete [] buffer_;
+        field_values_->emplace_back();
     }
-
-    void start_record(const Ch* /*row_begin*/)
-    {}
 
     bool update(const Ch* first, const Ch* last)
     {
@@ -54,35 +46,16 @@ public:
     bool finalize(const Ch* first, const Ch* last)
     {
         field_value_.append(first, last);
-        std::basic_string<Ch> current;
-        current.swap(field_value_); // field_value_ is cleared here
-        current_field_values_.push_back(std::move(current));
+        field_values_->back().emplace_back();
+        field_values_->back().back().swap(field_value_);
+            // field_value_ is cleared here
         return true;
     }
 
-    void end_buffer(const Ch* /*buffer_end*/)
-    {}
-
-    void start_buffer(const Ch* /*buffer_begin*/)
-    {}
-
-    bool end_record(const Ch* /*end*/)
+    bool end_record(const Ch* /*record_end*/)
     {
-        all_field_values_->push_back(std::move(current_field_values_));
-        current_field_values_.clear();
         return true;
     }
-
-    std::pair<Ch*, std::size_t> get_buffer()
-    {
-        if (!buffer_) {
-            buffer_ = new Ch[buffer_size_]; // throw
-        }
-        return std::make_pair(buffer_, buffer_size_);
-    }
-
-    void release_buffer(const Ch* /*buffer*/) noexcept
-    {}
 };
 
 }
@@ -97,8 +70,8 @@ TEST_P(TestPrimitiveParserBasics, Narrow)
                     " cell10 ,,\"cell\r\n12\",\"cell\"\"13\"\"\",\"\"\n";
     std::stringbuf buf(s);
     std::vector<std::vector<std::string>> field_values;
-    test_collector<char> collector(GetParam(), field_values);
-    ASSERT_TRUE(parse(buf, collector));
+    test_collector<char> collector(field_values);
+    ASSERT_TRUE(parse(buf, collector, GetParam()));
     ASSERT_EQ(2U, field_values.size());
     std::vector<std::string> expected_row0 =
         { "", "col1", " col2 ", "col3", "" };
@@ -114,8 +87,8 @@ TEST_P(TestPrimitiveParserBasics, Wide)
                      L"value1,value2\n";
     std::wstringbuf buf(s);
     std::vector<std::vector<std::wstring>> field_values;
-    test_collector<wchar_t> collector(GetParam(), field_values);
-    ASSERT_TRUE(parse(buf, collector));
+    test_collector<wchar_t> collector(field_values);
+    ASSERT_TRUE(parse(buf, collector, GetParam()));
     ASSERT_EQ(2U, field_values.size());
     std::vector<std::wstring> expected_row0 = { L"header1", L"header2" };
     ASSERT_EQ(expected_row0, field_values[0]);
@@ -134,8 +107,8 @@ TEST_P(TestPrimitiveParserEndsWithoutLF, All)
 {
     std::stringbuf buf(GetParam().first);
     std::vector<std::vector<std::string>> field_values;
-    test_collector<char> collector(1024, field_values);
-    ASSERT_TRUE(parse(buf, collector));
+    test_collector<char> collector(field_values);
+    ASSERT_TRUE(parse(buf, collector, 1024));
     ASSERT_EQ(1U, field_values.size());
     std::stringstream s;
     std::copy(field_values[0].cbegin(), field_values[0].cend(),
@@ -160,11 +133,11 @@ TEST_P(TestPrimitiveParserErrors, Errors)
     std::stringbuf buf(s);
     std::vector<std::vector<std::string>> field_values;
 
-    // the buffer is shorter than one line
-    test_collector<char> collector(4, field_values);
+    test_collector<char> collector(field_values);
 
     try {
-        parse(buf, collector);
+        // the buffer is shorter than one line
+        parse(buf, collector, 4);
         FAIL();
     } catch (const parse_error& e) {
         const auto pos = e.get_physical_position();
