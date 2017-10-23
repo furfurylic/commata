@@ -28,6 +28,7 @@
 #include "BaseTest.hpp"
 
 using namespace furfurylic::commata;
+using namespace furfurylic::test;
 
 static_assert(noexcept(csv_value(nullptr, nullptr)), "");
 static_assert(std::is_nothrow_copy_constructible<csv_value>::value, "");
@@ -58,37 +59,8 @@ static_assert(noexcept(
     swap(std::declval<csv_value&>(), std::declval<csv_value&>())), "");
 
 template <class Ch>
-class TestCsvValue : public furfurylic::test::BaseTest
-{
-    static const std::ctype<Ch>& facet_;
-
-protected:
-    static Ch ch(char c)
-    {
-        return facet_.widen(c);
-    }
-
-    static std::basic_string<Ch> str(const char* s)
-    {
-        std::basic_string<Ch> r;
-        while (*s != '\0') {
-            r.push_back(ch(*s));
-            ++s;
-        }
-        return r;
-    }
-
-    static std::basic_string<Ch> str0(const char* s)
-    {
-        auto r = str(s);
-        r.push_back(ch('\0'));
-        return r;
-    }
-};
-
-template <class Ch>
-const std::ctype<Ch>& TestCsvValue<Ch>::facet_ =
-    std::use_facet<std::ctype<Ch>>(std::locale::classic());
+struct TestCsvValue : BaseTest
+{};
 
 typedef testing::Types<char, wchar_t> Chs;
 
@@ -100,9 +72,9 @@ TYPED_TEST(TestCsvValue, Iterators)
     using string_t = std::basic_string<char_t>;
     using value_t = basic_csv_value<char_t>;
 
-    const auto ch = [this](auto c) { return this->ch(c); };
-    const auto str = [this](auto s) { return this->str(s); };
-    const auto str0 = [this](auto s) { return this->str0(s); };
+    const auto ch = char_helper<char_t>::ch;
+    const auto str = char_helper<char_t>::str;
+    const auto str0 = char_helper<char_t>::str0;
 
     auto s = str0("strings");   // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
@@ -139,7 +111,9 @@ TYPED_TEST(TestCsvValue, Empty)
     using char_t = TypeParam;
     using value_t = basic_csv_value<char_t>;
 
-    auto s1 = this->str0("");   // s1.front()|s1.back() == '\0'
+    const auto str0 = char_helper<char_t>::str0;
+
+    auto s1 = str0("");     // s1.front()|s1.back() == '\0'
     value_t v(&s1[0], &s1[0]);
     const auto& cv = v;
 
@@ -160,7 +134,7 @@ TYPED_TEST(TestCsvValue, Relations)
     using string_t = std::basic_string<char_t>;
     using value_t = basic_csv_value<char_t>;
 
-    const auto str = [this](auto s) { return this->str(s); };
+    const auto str = char_helper<char_t>::str;
 
     std::vector<std::pair<const char*, const char*>> pairs = {
         { "plastic", "elastic" },       // same length, differ at front
@@ -240,7 +214,9 @@ TYPED_TEST(TestCsvValue, Sizes)
     using char_t = TypeParam;
     using value_t = basic_csv_value<char_t>;
 
-    auto s = this->str0("obscura");     // s.back() == '\0'
+    const auto str0 = char_helper<char_t>::str0;
+
+    auto s = str0("obscura");   // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
     const auto& cv = v;
 
@@ -255,7 +231,7 @@ TYPED_TEST(TestCsvValue, RelationsSpecial)
     using string_t = std::basic_string<char_t>;
     using value_t = basic_csv_value<char_t>;
 
-    const auto ch = [this](auto c) { return this->ch(c); };
+    const auto ch = char_helper<char_t>::ch;
 
     string_t s0 = { ch('a'), ch('b'), ch('c'), ch('\0'),
                     ch('d'), ch('e'), ch('f') };
@@ -274,10 +250,11 @@ TYPED_TEST(TestCsvValue, FrontBack)
     using char_t = TypeParam;
     using value_t = basic_csv_value<char_t>;
 
-    const auto ch = [this](auto c) { return this->ch(c); };
-    const auto str = [this](auto s) { return this->str(s); };
+    const auto ch = char_helper<char_t>::ch;
+    const auto str = char_helper<char_t>::str;
+    const auto str0 = char_helper<char_t>::str0;
 
-    auto s = this->str0("mars");    // s.back() == '\0'
+    auto s = str0("mars");  // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
     const auto& cv = v;
 
@@ -301,9 +278,10 @@ TYPED_TEST(TestCsvValue, Pop)
     using char_t = TypeParam;
     using value_t = basic_csv_value<char_t>;
 
-    const auto str = [this](auto s) { return this->str(s); };
+    const auto str = char_helper<char_t>::str;
+    const auto str0 = char_helper<char_t>::str0;
 
-    auto s = this->str0("hamburger");   // s.back() == '\0'
+    auto s = str0("hamburger");     // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
 
     v.pop_front();  // "amburger"
@@ -319,10 +297,11 @@ TYPED_TEST(TestCsvValue, Erase)
     using char_t = TypeParam;
     using value_t = basic_csv_value<char_t>;
 
-    const auto ch = [this](auto c) { return this->ch(c); };
-    const auto str = [this](auto s) { return this->str(s); };
+    const auto ch = char_helper<char_t>::ch;
+    const auto str = char_helper<char_t>::str;
+    const auto str0 = char_helper<char_t>::str0;
 
-    auto s = this->str0("hamburger");   // s.back() == '\0'
+    auto s = str0("hamburger");     // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
 
     ASSERT_EQ(
@@ -354,10 +333,11 @@ TYPED_TEST(TestCsvValue, IndexAccess)
     using char_t = TypeParam;
     using value_t = basic_csv_value<char_t>;
 
-    const auto ch = [this](auto c) { return this->ch(c); };
-    const auto str = [this](auto s) { return this->str(s); };
+    const auto ch = char_helper<char_t>::ch;
+    const auto str = char_helper<char_t>::str;
+    const auto str0 = char_helper<char_t>::str0;
 
-    auto s = this->str0("string");  // s.back() == '\0'
+    auto s = str0("string");    // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
     const auto& cv = v;
 
@@ -374,10 +354,11 @@ TYPED_TEST(TestCsvValue, At)
     using char_t = TypeParam;
     using value_t = basic_csv_value<char_t>;
 
-    const auto ch = [this](auto c) { return this->ch(c); };
-    const auto str = [this](auto s) { return this->str(s); };
+    const auto ch = char_helper<char_t>::ch;
+    const auto str = char_helper<char_t>::str;
+    const auto str0 = char_helper<char_t>::str0;
 
-    auto s = this->str0("strings"); // s.back() == '\0'
+    auto s = str0("strings");   // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
     const auto& cv = v;
 
@@ -399,9 +380,10 @@ TYPED_TEST(TestCsvValue, Data)
     using char_t = TypeParam;
     using value_t = basic_csv_value<char_t>;
 
-    const auto str = [this](auto s) { return this->str(s); };
+    const auto str = char_helper<char_t>::str;
+    const auto str0 = char_helper<char_t>::str0;
 
-    auto s = this->str0("string");  // s.back() == '\0'
+    auto s = str0("string");    // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
     const auto& cv = v;
 
@@ -420,8 +402,10 @@ TYPED_TEST(TestCsvValue, Swap)
     using char_t = TypeParam;
     using value_t = basic_csv_value<char_t>;
 
-    auto s1 = this->str0("swap");
-    auto s2 = this->str0("wasp");
+    const auto str0 = char_helper<char_t>::str0;
+
+    auto s1 = str0("swap");
+    auto s2 = str0("wasp");
     value_t v1(&s1[0], &s1[s1.size() - 1]);
     value_t v2(&s2[0], &s2[s2.size() - 1]);
 
@@ -445,9 +429,10 @@ TYPED_TEST(TestCsvValue, Write)
     using string_t = basic_string<char_t>;
     using stream_t = basic_stringstream<char_t>;
 
-    const auto ch = [this](auto c) { return this->ch(c); };
+    const auto ch = char_helper<char_t>::ch;
+    const auto str = char_helper<char_t>::str;
 
-    string_t s = this->str("write");
+    string_t s = str("write");
     string_t s0 = s + char_t();
     const value_t v(&s0[0], &s0[s0.size() - 1]);
 

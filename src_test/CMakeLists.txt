@@ -4,7 +4,7 @@ set(EXECUTABLE_OUTPUT_PATH ..)
 if(MSVC)
     add_definitions("/W4")
 else(MSVC)
-    add_definitions("-Wall -std=c++14")
+    add_definitions("-Wall -std=c++14 -g3")
 endif(MSVC)
 find_package(GTest REQUIRED)
 include_directories(
@@ -16,6 +16,7 @@ add_executable(test_commata
     TestPrimitiveParser.cpp
     TestRecordExtractor.cpp
     TestCsvTable.cpp
+    TestCsvScanner.cpp
 )
 if(commata_disable_pthreads)
     target_link_libraries(test_commata
