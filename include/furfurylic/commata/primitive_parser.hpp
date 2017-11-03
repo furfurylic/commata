@@ -320,22 +320,38 @@ struct handler<state::after_lf>
     {}
 };
 
-struct has_get_release_buffer_impl
+struct has_get_buffer_impl
 {
-    template <class Ch, class T>
-    static auto check(T*)
-     -> decltype(std::declval<T&>().release_buffer(
-        std::pair<Ch*, std::size_t>(std::declval<T&>().get_buffer()).first),
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<std::pair<typename T::char_type*, std::size_t>&>() =
+            std::declval<T&>().get_buffer(),
         std::true_type());
 
-    template <class Ch, class T>
-    static auto check(...)
-     -> std::false_type;
+    template <class T>
+    static auto check(...) -> std::false_type;
 };
 
-template <class Ch, class T>
-struct has_get_release_buffer :
-    decltype(has_get_release_buffer_impl::check<Ch, T>(nullptr))
+template <class T>
+struct has_get_buffer :
+    decltype(has_get_buffer_impl::check<T>(nullptr))
+{};
+
+struct has_release_buffer_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().release_buffer(
+            std::declval<const typename T::char_type*>()),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+struct has_release_buffer :
+    decltype(has_release_buffer_impl::check<T>(nullptr))
 {};
 
 template <class Sink, bool X>
@@ -389,55 +405,74 @@ protected:
     }
 };
 
-struct has_start_end_buffer_impl
+struct has_start_buffer_impl
 {
-    template <class Ch, class T>
-    static auto check(T*)
-        -> decltype((std::declval<T&>().start_buffer(std::declval<Ch*>()),
-            std::declval<T&>().end_buffer(std::declval<Ch*>())),
-            std::true_type());
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().start_buffer(
+            std::declval<const typename T::char_type*>()),
+        std::true_type());
 
-    template <class Ch, class T>
-    static auto check(...)
-        ->std::false_type;
+    template <class T>
+    static auto check(...) -> std::false_type;
 };
 
-template <class Ch, class T>
-struct has_start_end_buffer :
-    decltype(has_start_end_buffer_impl::check<Ch, T>(nullptr))
+template <class T>
+struct has_start_buffer :
+    decltype(has_start_buffer_impl::check<T>(nullptr))
+{};
+
+struct has_end_buffer_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().end_buffer(
+            std::declval<const typename T::char_type*>()),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+struct has_end_buffer :
+    decltype(has_end_buffer_impl::check<T>(nullptr))
 {};
 
 struct has_empty_record_impl
 {
-    template <class Ch, class T>
+    template <class T>
     static auto check(T*) -> decltype(
-        std::declval<bool&>() =
-            std::declval<T&>().empty_physical_row(std::declval<const Ch*>()),
+        std::declval<bool&>() = std::declval<T&>().empty_physical_row(
+            std::declval<const typename T::char_type*>()),
         std::true_type());
 
-    template <class Ch, class T>
-    static auto check(...)
-     -> std::false_type;
+    template <class T>
+    static auto check(...) -> std::false_type;
 };
 
-template <class Ch, class T>
+template <class T>
 struct has_empty_record :
-    decltype(has_empty_record_impl::check<Ch, T>(nullptr))
+    decltype(has_empty_record_impl::check<T>(nullptr))
 {};
 
 template <class Sink>
 struct is_full_fledged_sink :
     std::integral_constant<bool,
-        has_get_release_buffer<typename Sink::char_type, Sink>::value
-     && has_start_end_buffer<typename Sink::char_type, Sink>::value
-     && has_empty_record<typename Sink::char_type, Sink>::value>
+        has_get_buffer<Sink>::value && has_release_buffer<Sink>::value
+     && has_start_buffer<Sink>::value && has_end_buffer<Sink>::value
+     && has_empty_record<Sink>::value>
 {};
 
 template <class Sink>
 class full_fledged_sink :
     public buffer_control<Sink,
-        has_get_release_buffer<typename Sink::char_type, Sink>::value>
+        has_get_buffer<Sink>::value && has_release_buffer<Sink>::value>
 {
+    static_assert(has_get_buffer<Sink>::value ==
+                  has_release_buffer<Sink>::value,
+        "Sink has only one of get_buffer and release_buffer");
+
     static_assert(!is_full_fledged_sink<Sink>::value,
         "Sink is already full-fledged");
 
@@ -448,7 +483,7 @@ public:
 
     explicit full_fledged_sink(Sink&& sink, std::size_t buffer_size_hint) :
         buffer_control<Sink,
-            has_get_release_buffer<typename Sink::char_type, Sink>::value>(
+            has_get_buffer<Sink>::value && has_release_buffer<Sink>::value>(
                 buffer_size_hint),
         sink_(std::move(sink))
     {}
@@ -465,12 +500,12 @@ public:
 
     void start_buffer(const char_type* buffer_begin)
     {
-        start_buffer(has_start_end_buffer<char_type, Sink>(), buffer_begin);
+        start_buffer(has_start_buffer<Sink>(), buffer_begin);
     }
 
     void end_buffer(const char_type* buffer_end)
     {
-        end_buffer(has_start_end_buffer<char_type, Sink>(), buffer_end);
+        end_buffer(has_end_buffer<Sink>(), buffer_end);
     }
 
     void start_record(const char_type* record_begin)
@@ -495,7 +530,7 @@ public:
 
     bool empty_physical_row(const char_type* where)
     {
-        return empty_physical_row(has_empty_record<char_type, Sink>(), where);
+        return empty_physical_row(has_empty_record<Sink>(), where);
     }
 
 private:
