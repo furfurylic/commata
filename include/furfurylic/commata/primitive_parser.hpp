@@ -891,7 +891,17 @@ public:
 
     explicit empty_physical_row_aware_sink(Sink&& sink) :
         sink_(std::move(sink))
-    {}
+    {
+        using sink_t = std::remove_pointer_t<decltype(this)>;
+        static_assert(detail::has_get_buffer<sink_t>::value
+            == detail::has_get_buffer<Sink>::value, "");
+        static_assert(detail::has_release_buffer<sink_t>::value
+            == detail::has_release_buffer<Sink>::value, "");
+        static_assert(detail::has_start_buffer<sink_t>::value
+            == detail::has_start_buffer<Sink>::value, "");
+        static_assert(detail::has_end_buffer<sink_t>::value
+            == detail::has_end_buffer<Sink>::value, "");
+    }
 
     void start_record(const char_type* record_begin)
     {
