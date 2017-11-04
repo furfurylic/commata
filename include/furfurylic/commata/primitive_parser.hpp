@@ -816,17 +816,112 @@ bool parse(std::basic_streambuf<typename Sink::char_type, Tr>& in, Sink sink,
             std::move(sink), buffer_size)).parse(in);
 }
 
-template <class Sink>
-struct empty_physical_row_aware_sink : Sink
+namespace detail {
+
+template <class Sink, class D, class = void>
+struct get_buffer_t
+{};
+
+template <class Sink, class D>
+struct get_buffer_t<Sink, D,
+    std::enable_if_t<has_get_buffer<Sink>::value>>
 {
+    std::pair<typename Sink::char_type*, std::size_t> get_buffer()
+    {
+        return static_cast<D*>(this)->base().get_buffer();
+    }
+};
+
+template <class Sink, class D, class = void>
+struct release_buffer_t
+{};
+
+template <class Sink, class D>
+struct release_buffer_t<Sink, D,
+    std::enable_if_t<has_release_buffer<Sink>::value>>
+{
+    void release_buffer(const typename Sink::char_type* buffer)
+    {
+        static_cast<D*>(this)->base().release_buffer(buffer);
+    }
+};
+
+template <class Sink, class D, class = void>
+struct start_buffer_t
+{};
+
+template <class Sink, class D>
+struct start_buffer_t<Sink, D,
+    std::enable_if_t<has_start_buffer<Sink>::value>>
+{
+    void start_buffer(const typename Sink::char_type* buffer_begin)
+    {
+        static_cast<D*>(this)->base().start_buffer(buffer_begin);
+    }
+};
+
+template <class Sink, class D, class = void>
+struct end_buffer_t
+{};
+
+template <class Sink, class D>
+struct end_buffer_t<Sink, D,
+    std::enable_if_t<has_end_buffer<Sink>::value>>
+{
+    void end_buffer(const typename Sink::char_type* buffer_end)
+    {
+        static_cast<D*>(this)->base().end_buffer(buffer_end);
+    }
+};
+
+}
+
+template <class Sink>
+class empty_physical_row_aware_sink :
+    public detail::get_buffer_t<Sink, empty_physical_row_aware_sink<Sink>>,
+    public detail::release_buffer_t<Sink, empty_physical_row_aware_sink<Sink>>,
+    public detail::start_buffer_t<Sink, empty_physical_row_aware_sink<Sink>>,
+    public detail::end_buffer_t<Sink, empty_physical_row_aware_sink<Sink>>
+{
+    Sink sink_;
+
+public:
+    using base_type = Sink;
+    using char_type = typename Sink::char_type;
+
     explicit empty_physical_row_aware_sink(Sink&& sink) :
-        Sink(std::move(sink))
+        sink_(std::move(sink))
     {}
 
-    bool empty_physical_row(const typename Sink::char_type* where)
+    void start_record(const char_type* record_begin)
     {
-        this->start_record(where);
-        return this->end_record(where);
+        sink_.start_record(record_begin);
+    }
+
+    bool update(const char_type* first, const char_type* last)
+    {
+        return sink_.update(first, last);
+    }
+
+    bool finalize(const char_type* first, const char_type* last)
+    {
+        return sink_.finalize(first, last);
+    }
+
+    bool end_record(const char_type* end)
+    {
+        return sink_.end_record(end);
+    }
+
+    bool empty_physical_row(const char_type* where)
+    {
+        start_record(where);
+        return end_record(where);
+    }
+
+    base_type& base()
+    {
+        return sink_;
     }
 };
 
