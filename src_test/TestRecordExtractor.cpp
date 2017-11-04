@@ -121,7 +121,10 @@ INSTANTIATE_TEST_CASE_P(, TestRecordExtractorLimit,
         testing::Bool(),
         testing::Values(1, std::numeric_limits<std::size_t>::max())));
 
-TEST(TestRecordExtractorLimit0, IncludeHeader)
+struct TestRecordExtractorLimit0 : furfurylic::test::BaseTest
+{};
+
+TEST_F(TestRecordExtractorLimit0, IncludeHeader)
 {
     const char* s = "key_a,key_b,value_a,value_b\r"
                     "ka1,kb1,va1,\"vb1\r";  // Ill-formed row, but not parsed
@@ -134,7 +137,7 @@ TEST(TestRecordExtractorLimit0, IncludeHeader)
     ASSERT_EQ("key_a,key_b,value_a,value_b\n", out.str());
 }
 
-TEST(TestRecordExtractorLimit0, ExcludeHeaderNoSuchKey)
+TEST_F(TestRecordExtractorLimit0, ExcludeHeaderNoSuchKey)
 {
     const char* s = "key_a,key_b,value_a,value_b\r"
                     "ka1,kb1,va1,vb1\r";
@@ -149,7 +152,10 @@ TEST(TestRecordExtractorLimit0, ExcludeHeaderNoSuchKey)
     }
 }
 
-TEST(TestRecordExtractorIndexed, Basics)
+struct TestRecordExtractorIndexed : furfurylic::test::BaseTest
+{};
+
+TEST_F(TestRecordExtractorIndexed, Basics)
 {
     const char* s = "\r\n\n"
                     "key_a,key_b,value_a,value_b\n"
@@ -176,7 +182,10 @@ struct FinalPredicateForValue final
     }
 };
 
-TEST(TestRecordExtractorFinalPredicateForValue, Basics)
+struct TestRecordExtractorFinalPredicateForValue : furfurylic::test::BaseTest
+{};
+
+TEST_F(TestRecordExtractorFinalPredicateForValue, Basics)
 {
     const char* s = "\r\n\n"
                     "key_a,key_b,value_a,value_b\n"
