@@ -327,8 +327,8 @@ class primitive_parser
     const Ch* field_start_;
     const Ch* field_end_;
 
-    std::size_t physical_row_;
-    const Ch* physical_row_begin_;
+    std::size_t physical_row_index_;
+    const Ch* physical_row_or_buffer_begin_;
     std::size_t physical_row_chars_passed_away_;
 
 private:
@@ -345,7 +345,8 @@ public:
     explicit primitive_parser(Sink f) :
         f_(std::move(f)),
         record_started_(false), s_(state::after_lf),
-        physical_row_(parse_error::npos), physical_row_chars_passed_away_(0)
+        physical_row_index_(parse_error::npos),
+        physical_row_chars_passed_away_(0)
     {}
 
     primitive_parser(primitive_parser&&) = default;
@@ -355,25 +356,25 @@ public:
     {
         try {
             p_ = begin;
-            physical_row_begin_ = begin;
+            physical_row_or_buffer_begin_ = begin;
             set_first_last();
             f_.start_buffer(begin);
             while (p_ < end) {
-                with_handler(
-                    std::bind(
-                        call_normal(), std::placeholders::_1, this, *p_));
+                with_handler(std::bind(
+                    call_normal(), std::placeholders::_1, this, *p_));
                 ++p_;
             }
-            with_handler(
-                std::bind(
-                    call_underflow(), std::placeholders::_1, this));
+            with_handler(std::bind(
+                call_underflow(), std::placeholders::_1, this));
             f_.end_buffer(end);
-            physical_row_chars_passed_away_ += p_ - physical_row_begin_;
+            physical_row_chars_passed_away_ +=
+                p_ - physical_row_or_buffer_begin_;
             return true;
         } catch (csv_error& e) {
             e.set_physical_position(
-                physical_row_,
-                (p_ - physical_row_begin_) + physical_row_chars_passed_away_);
+                physical_row_index_,
+                (p_ - physical_row_or_buffer_begin_)
+                    + physical_row_chars_passed_away_);
             throw;
         } catch (const parse_aborted&) {
             return false;
@@ -402,12 +403,12 @@ public:
 private:
     void new_physical_row()
     {
-        if (physical_row_ == parse_error::npos) {
-            physical_row_ = 0;
+        if (physical_row_index_ == parse_error::npos) {
+            physical_row_index_ = 0;
         } else {
-            ++physical_row_;
+            ++physical_row_index_;
         }
-        physical_row_begin_ = p_;
+        physical_row_or_buffer_begin_ = p_;
         physical_row_chars_passed_away_ = 0;
     }
 
