@@ -380,6 +380,21 @@ TYPED_TEST(TestCsvScanner, Basics)
     h.set_field_scanner(4, make_field_translator_c(values4));
     h.set_field_scanner(3, make_field_translator_c(values3));
 
+    ASSERT_EQ(
+        typeid(make_field_translator_c(values21)),
+        h.get_field_scanner_type(2));
+    ASSERT_EQ(typeid(void), h.get_field_scanner_type(1));
+    ASSERT_EQ(typeid(void), h.get_field_scanner_type(100));
+
+    ASSERT_NE(nullptr,
+        h.template get_field_scanner<
+            decltype(make_field_translator_c(values3))>(3));
+    ASSERT_EQ(nullptr,
+        h.template get_field_scanner<
+        decltype(make_field_translator_c(values4))>(3));
+    ASSERT_EQ(nullptr, h.template get_field_scanner<void>(1));
+    ASSERT_EQ(nullptr, h.template get_field_scanner<void>(100));
+
     std::basic_string<TypeParam> s =
         str("50,__, 101.2 ,XYZ,  200\n"
             "-3,__,3.00e9,\"\"\"ab\"\"\rc\",200\n");
@@ -412,6 +427,13 @@ TYPED_TEST(TestCsvScanner, SkippedWithNoErrors)
     h.set_field_scanner(1, make_field_translator_c(
         values1, default_if_skipped<int>(50)));
 
+    const auto scanner1 = h.template
+        get_field_scanner<decltype(make_field_translator_c(
+            values1, default_if_skipped<int>()))>(1U);
+    ASSERT_NE(scanner1, nullptr);
+    ASSERT_EQ(50, scanner1->get_skipping_handler().skipped());
+    *scanner1 = make_field_translator_c(values1, default_if_skipped<int>(-15));
+
     std::basic_stringstream<TypeParam> s;
     s << "XYZ,20\n"
          "\n"
@@ -420,7 +442,7 @@ TYPED_TEST(TestCsvScanner, SkippedWithNoErrors)
 
     const std::deque<string_t> expected0 =
         { str("XYZ"), string_t(), str("A") };
-    const std::deque<int> expected1 = { 20, 50, 50 };
+    const std::deque<int> expected1 = { 20, -15, -15 };
     ASSERT_EQ(expected0, values0);
     ASSERT_EQ(expected1, values1);
 }

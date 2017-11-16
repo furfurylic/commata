@@ -20,6 +20,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <typeinfo>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -40,6 +41,25 @@ class csv_scanner
         virtual void field_value(const Ch* begin, const Ch* end) = 0;
         virtual void field_value(std::basic_string<Ch, Tr, Alloc>&& value) = 0;
         virtual void field_skipped() = 0;
+        virtual const std::type_info& get_type() const = 0;
+
+        template <class T>
+        const T* get_target() const
+        {
+            return (get_type() == typeid(T)) ?
+                static_cast<const T*>(get_target_v()) : nullptr;
+        }
+
+        template <class T>
+        T* get_target()
+        {
+            return (get_type() == typeid(T)) ?
+                static_cast<T*>(get_target_v()) : nullptr;
+        }
+
+    private:
+        virtual const void* get_target_v() const = 0;
+        virtual void* get_target_v() = 0;
     };
 
     template <class FieldScanner>
@@ -65,6 +85,24 @@ class csv_scanner
         void field_skipped() override
         {
             scanner_.field_skipped();
+        }
+
+        const std::type_info& get_type() const override
+        {
+            // Should return the static type in which this instance was
+            // created (not the dynamic type).
+            return typeid(FieldScanner);
+        }
+
+    private:
+        const void* get_target_v() const override
+        {
+            return &scanner_;
+        }
+
+        void* get_target_v() override
+        {
+            return &scanner_;
         }
     };
 
@@ -92,6 +130,32 @@ public:
         do_set_field_scanner(j, std::move(s));
     }
 
+    const std::type_info& get_field_scanner_type(std::size_t j) const
+    {
+        if ((j < scanners_.size()) && scanners_[j]) {
+            return scanners_[j]->get_type();
+        } else {
+            return typeid(void);
+        }
+    }
+
+    bool has_field_scanner(std::size_t j) const
+    {
+        return (j < scanners_.size()) && scanners_[j];
+    }
+
+    template <class FieldScanner>
+    const FieldScanner* get_field_scanner(std::size_t j) const
+    {
+        return get_field_scanner_g<FieldScanner>(*this, j);
+    }
+
+    template <class FieldScanner>
+    FieldScanner* get_field_scanner(std::size_t j)
+    {
+        return get_field_scanner_g<FieldScanner>(*this, j);
+    }
+
 private:
     template <class FieldScanner>
     void do_set_field_scanner(std::size_t j, FieldScanner s)
@@ -109,6 +173,14 @@ private:
         if (j < scanners_.size()) {
             scanners_[j].reset();
         }
+    }
+
+    template <class FieldScanner, class ThisType>
+    static auto get_field_scanner_g(ThisType& me, std::size_t j)
+    {
+        return me.has_field_scanner(j) ?
+            me.scanners_[j]->template get_target<FieldScanner>() :
+            nullptr;
     }
 
 public:
