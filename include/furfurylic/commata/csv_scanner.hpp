@@ -449,72 +449,18 @@ struct numeric_type_traits<long double>
     static constexpr const char* name = "long double";
 };
 
-template <class T>
-struct handle_conversion_error
+template <class D, class H>
+class raw_convert_base
 {
-    using range_type = T;
+    H error_handler_;
+
+public:
+    explicit raw_convert_base(H error_handler) :
+        error_handler_(std::move(error_handler))
+    {}
 
     template <class Ch>
-    [[noreturn]]
-    T invalid_format(const Ch* begin, const Ch* end) const
-    {
-        // TODO: OK? (are there any other zeros?)
-        assert(*end == Ch());
-        std::ostringstream s;
-        narrow(s, begin, end);
-        s << ": cannot convert to an instance of " << name;
-        throw field_invalid_format(s.str());
-    }
-
-    template <class Ch>
-    [[noreturn]]
-    T out_of_range(const Ch* begin, const Ch* end, T /*proposed*/) const
-    {
-        assert(*end == Ch());
-        std::ostringstream s;
-        narrow(s, begin, end);
-        s << ": out of range of " << name;
-        throw field_out_of_range(s.str());
-    }
-
-    [[noreturn]]
-    T empty() const
-    {
-        std::ostringstream s;
-        s << "Cannot convert an empty string to an instance of " << name;
-        throw field_empty(s.str());
-    }
-
-private:
-    static constexpr const char* name = numeric_type_traits<T>::name;
-
-    template <class Ch>
-    static void narrow(std::ostream& os, const Ch* begin, const Ch* end)
-    {
-        const auto& facet =
-            std::use_facet<std::ctype<Ch>>(std::locale::classic());
-        std::transform(begin, end, std::ostreambuf_iterator<char>(os),
-            [&facet](Ch c) {
-                return facet.narrow(c, '?');
-            });
-    }
-
-    static void narrow(std::ostream& os, const char* begin, const char*
-#ifndef NDEBUG
-        end
-#endif
-        )
-    {
-        assert(*end == '\0');
-        os << begin;
-    }
-};
-
-template <class D>
-struct raw_convert_base
-{
-    template <class Ch>
-    auto convert_raw(const Ch* begin, const Ch* end) const
+    auto convert_raw(const Ch* begin, const Ch* end)
     {
         Ch* middle;
         errno = 0;
@@ -528,30 +474,25 @@ struct raw_convert_base
         if (begin == middle) {
             // no conversion could be performed
             if (has_postfix) {
-                return static_cast<result_t>(
-                    static_cast<const D*>(this)->invalid_format(begin, end));
+                return static_cast<result_t>(eh().invalid_format(begin, end));
             } else {
                 // whitespace only
-                return static_cast<result_t>(
-                    static_cast<const D*>(this)->empty());
+                return static_cast<result_t>(eh().empty());
             }
         } else if (has_postfix) {
             // if an not-whitespace-extra-character found, it is NG
-            return static_cast<result_t>(
-                static_cast<const D*>(this)->invalid_format(begin, end));
+            return static_cast<result_t>(eh().invalid_format(begin, end));
         } else if (errno == ERANGE) {
-            using range_t = typename D::range_type;
-            using limits_t = std::numeric_limits<range_t>;
-            auto saturated_result = (limits_t::min() > r) ?
-                limits_t::min() : r;
-            saturated_result = (limits_t::max() < r) ?
-                limits_t::max() : r;
-            return static_cast<result_t>(
-                static_cast<const D*>(this)->out_of_range(
-                    begin, end, static_cast<range_t>(saturated_result)));
+            return static_cast<result_t>(eh().out_of_range(begin, end, r));
         } else {
             return r;
         }
+    }
+
+protected:
+    H& eh()
+    {
+        return error_handler_;
     }
 
 private:
@@ -569,14 +510,16 @@ private:
     }
 };
 
-template <class T, class U = T>
+template <class T, class H>
 struct raw_convert;
 
-template <class U>
-struct raw_convert<long, U> :
-    raw_convert_base<raw_convert<long, U>>,
-    handle_conversion_error<U>
+template <class H>
+struct raw_convert<long, H> :
+    raw_convert_base<raw_convert<long, H>, H>
 {
+    using raw_convert_base<raw_convert<long, H>, H>
+        ::raw_convert_base;
+
     auto engine(const char* s, char** e) const
     {
         return std::strtol(s, e, 10);
@@ -588,11 +531,13 @@ struct raw_convert<long, U> :
     }
 };
 
-template <class U>
-struct raw_convert<unsigned long, U> :
-    raw_convert_base<raw_convert<unsigned long, U>>,
-    handle_conversion_error<U>
+template <class H>
+struct raw_convert<unsigned long, H> :
+    raw_convert_base<raw_convert<unsigned long, H>, H>
 {
+    using raw_convert_base<raw_convert<unsigned long, H>, H>
+        ::raw_convert_base;
+
     auto engine(const char* s, char** e) const
     {
         return std::strtoul(s, e, 10);
@@ -604,11 +549,13 @@ struct raw_convert<unsigned long, U> :
     }
 };
 
-template <class U>
-struct raw_convert<long long, U> :
-    raw_convert_base<raw_convert<long long, U>>,
-    handle_conversion_error<U>
+template <class H>
+struct raw_convert<long long, H> :
+    raw_convert_base<raw_convert<long long, H>, H>
 {
+    using raw_convert_base<raw_convert<long long, H>, H>
+        ::raw_convert_base;
+
     auto engine(const char* s, char** e) const
     {
         return std::strtoll(s, e, 10);
@@ -620,11 +567,13 @@ struct raw_convert<long long, U> :
     }
 };
 
-template <class U>
-struct raw_convert<unsigned long long, U> :
-    raw_convert_base<raw_convert<unsigned long long, U>>,
-    handle_conversion_error<U>
+template <class H>
+struct raw_convert<unsigned long long, H> :
+    raw_convert_base<raw_convert<unsigned long long, H>, H>
 {
+    using raw_convert_base<raw_convert<unsigned long long, H>, H>
+        ::raw_convert_base;
+
     auto engine(const char* s, char** e) const
     {
         return std::strtoull(s, e, 10);
@@ -636,11 +585,13 @@ struct raw_convert<unsigned long long, U> :
     }
 };
 
-template <class U>
-struct raw_convert<float, U> :
-    raw_convert_base<raw_convert<float, U>>,
-    handle_conversion_error<U>
+template <class H>
+struct raw_convert<float, H> :
+    raw_convert_base<raw_convert<float, H>, H>
 {
+    using raw_convert_base<raw_convert<float, H>, H>
+        ::raw_convert_base;
+
     auto engine(const char* s, char** e) const
     {
         return std::strtof(s, e);
@@ -652,11 +603,13 @@ struct raw_convert<float, U> :
     }
 };
 
-template <class U>
-struct raw_convert<double, U> :
-    raw_convert_base<raw_convert<double, U>>,
-    handle_conversion_error<U>
+template <class H>
+struct raw_convert<double, H> :
+    raw_convert_base<raw_convert<double, H>, H>
 {
+    using raw_convert_base<raw_convert<double, H>, H>
+        ::raw_convert_base;
+
     auto engine(const char* s, char** e) const
     {
         return std::strtod(s, e);
@@ -668,11 +621,13 @@ struct raw_convert<double, U> :
     }
 };
 
-template <class U>
-struct raw_convert<long double, U> :
-    raw_convert_base<raw_convert<long double, U>>,
-    handle_conversion_error<U>
+template <class H>
+struct raw_convert<long double, H> :
+    raw_convert_base<raw_convert<long double, H>, H>
 {
+    using raw_convert_base<raw_convert<long double, H>, H>
+        ::raw_convert_base;
+
     auto engine(const char* s, char** e) const
     {
         return std::strtold(s, e);
@@ -684,30 +639,34 @@ struct raw_convert<long double, U> :
     }
 };
 
-template <class T, class = void>
+template <class T, class H, class = void>
 struct convert :
-    private raw_convert<T>
+    private raw_convert<T, H>
 {
+    using raw_convert<T, H>::raw_convert;
+
     template <class Ch>
-    auto operator()(const Ch* begin, const Ch* end) const
+    auto operator()(const Ch* begin, const Ch* end)
     {
         return this->convert_raw(begin, end);
     }
 };
 
-template <class T, class U, class = void>
+template <class T, class H, class U, class = void>
 struct restrained_convert :
-    private raw_convert<U, T>
+    private raw_convert<U, H>
 {
+    using raw_convert<U, H>::raw_convert;
+
     template <class Ch>
-    T operator()(const Ch* begin, const Ch* end) const
+    T operator()(const Ch* begin, const Ch* end)
     {
         const auto result = this->convert_raw(begin, end);
         if (result < std::numeric_limits<T>::lowest()) {
-            return this->
+            return this->eh().
                 out_of_range(begin, end, std::numeric_limits<T>::lowest());
         } else if (std::numeric_limits<T>::max() < result) {
-            return this->
+            return this->eh().
                 out_of_range(begin, end, std::numeric_limits<T>::max());
         } else {
             return static_cast<T>(result);
@@ -715,12 +674,15 @@ struct restrained_convert :
     }
 };
 
-template <class T, class U>
-struct restrained_convert<T, U, std::enable_if_t<std::is_unsigned<T>::value>> :
-    private raw_convert<U, T>
+template <class T, class H, class U>
+struct restrained_convert<T, H, U,
+        std::enable_if_t<std::is_unsigned<T>::value>> :
+    private raw_convert<U, H>
 {
+    using raw_convert<U, H>::raw_convert;
+
     template <class Ch>
-    T operator()(const Ch* begin, const Ch* end) const
+    T operator()(const Ch* begin, const Ch* end)
     {
         const auto result = this->convert_raw(begin, end);
         if (result <= std::numeric_limits<T>::max()) {
@@ -732,17 +694,22 @@ struct restrained_convert<T, U, std::enable_if_t<std::is_unsigned<T>::value>> :
                 return static_cast<T>(s);
             }
         }
-        return this->out_of_range(begin, end, std::numeric_limits<T>::max());
+        return this->eh().out_of_range(
+            begin, end, std::numeric_limits<T>::max());
     }
 };
 
 template <class>
 using void_t = void;
 
-template <class T>
-struct convert<T, void_t<typename numeric_type_traits<T>::raw_type>> :
-    restrained_convert<T, typename numeric_type_traits<T>::raw_type>
-{};
+template <class T, class H>
+struct convert<T, H,
+    void_t<typename numeric_type_traits<T>::raw_type>> :
+    restrained_convert<T, H, typename numeric_type_traits<T>::raw_type>
+{
+    using restrained_convert<T, H, typename numeric_type_traits<T>::raw_type>
+        ::restrained_convert;
+};
 
 struct is_back_insertable_impl
 {
@@ -805,10 +772,74 @@ public:
     }
 };
 
+template <class T>
+struct fail_if_conversion_failed
+{
+    template <class Ch>
+    [[noreturn]]
+    T invalid_format(const Ch* begin, const Ch* end) const
+    {
+        // TODO: OK? (are there any other zeros?)
+        assert(*end == Ch());
+        std::ostringstream s;
+        narrow(s, begin, end);
+        s << ": cannot convert to an instance of " << name;
+        throw field_invalid_format(s.str());
+    }
+
+    template <class Ch, class U>
+    [[noreturn]]
+    T out_of_range(const Ch* begin, const Ch* end, U /*proposed*/) const
+    {
+        assert(*end == Ch());
+        std::ostringstream s;
+        narrow(s, begin, end);
+        s << ": out of range of " << name;
+        throw field_out_of_range(s.str());
+    }
+
+    [[noreturn]]
+    T empty() const
+    {
+        std::ostringstream s;
+        s << "Cannot convert an empty string to an instance of " << name;
+        throw field_empty(s.str());
+    }
+
+private:
+    static constexpr const char* name = detail::numeric_type_traits<T>::name;
+
+    template <class Ch>
+    static void narrow(std::ostream& os, const Ch* begin, const Ch* end)
+    {
+        const auto& facet =
+            std::use_facet<std::ctype<Ch>>(std::locale::classic());
+        std::transform(begin, end, std::ostreambuf_iterator<char>(os),
+            [&facet](Ch c) {
+                return facet.narrow(c, '?');
+            });
+    }
+
+    static void narrow(std::ostream& os, const char* begin, const char*
+#ifndef NDEBUG
+        end
+#endif
+    )
+    {
+        assert(*end == '\0');
+        os << begin;
+    }
+};
+
+template <class Ch, class Tr>
+struct fail_if_conversion_failed<std::basic_string<Ch, Tr>>
+{};
+
 template <class T, class OutputIterator,
-    class SkippingHandler = fail_if_skipped<T>>
+    class SkippingHandler = fail_if_skipped<T>,
+    class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class field_translator :
-    detail::convert<T>,
+    detail::convert<T, ConversionErrorHandler>,
     public detail::skipping_handler_holder<SkippingHandler>
 {
     OutputIterator out_;
@@ -816,7 +847,11 @@ class field_translator :
 public:
     explicit field_translator(
         OutputIterator out,
-        SkippingHandler handle_skipping = SkippingHandler()) :
+        SkippingHandler handle_skipping = SkippingHandler(),
+        ConversionErrorHandler handle_conversion_error
+            = ConversionErrorHandler()) :
+        detail::convert<T, ConversionErrorHandler>(
+            std::move(handle_conversion_error)),
         detail::skipping_handler_holder<SkippingHandler>(
             std::move(handle_skipping)),
         out_(std::move(out))
@@ -831,7 +866,7 @@ public:
     }
 
     template <class Ch, class Tr, class Alloc>
-    void field_value(const std::basic_string<Ch, Tr, Alloc>& value)
+    void field_value(std::basic_string<Ch, Tr, Alloc>&& value)
     {
         field_value(value.c_str(), value.c_str() + value.size());
     }
@@ -850,10 +885,10 @@ public:
     }
 };
 
-template <class Ch, class Tr, class Alloc,
-          class OutputIterator, class SkippingHandler>
-class field_translator<
-    std::basic_string<Ch, Tr, Alloc>, OutputIterator, SkippingHandler> :
+template <class Ch, class Tr, class Alloc, class OutputIterator,
+          class SkippingHandler, class ConversionErrorHandler>
+class field_translator<std::basic_string<Ch, Tr, Alloc>,
+    OutputIterator, SkippingHandler, ConversionErrorHandler> :
     public detail::skipping_handler_holder<SkippingHandler>
 {
     OutputIterator out_;
@@ -861,7 +896,8 @@ class field_translator<
 public:
     explicit field_translator(
         OutputIterator out,
-        SkippingHandler handle_skipping = SkippingHandler()) :
+        SkippingHandler handle_skipping = SkippingHandler(),
+        ConversionErrorHandler = ConversionErrorHandler()) :
         detail::skipping_handler_holder<SkippingHandler>(
             std::move(handle_skipping)),
         out_(std::move(out))
@@ -894,13 +930,17 @@ public:
 
 template <
     class T, class OutputIterator,
-    class SkippingHandler = fail_if_skipped<T>>
+    class SkippingHandler = fail_if_skipped<T>,
+    class ConversionErrorHandler = fail_if_conversion_failed<T>>
 auto make_field_translator(
     OutputIterator out,
-    SkippingHandler handle_skipping = SkippingHandler())
+    SkippingHandler handle_skipping = SkippingHandler(),
+    ConversionErrorHandler handle_conversion_error = ConversionErrorHandler())
 {
-    return field_translator<T, OutputIterator, SkippingHandler>(
-        std::move(out), std::move(handle_skipping));
+    return field_translator<T, OutputIterator,
+            SkippingHandler, ConversionErrorHandler>(
+        std::move(out),
+        std::move(handle_skipping), std::move(handle_conversion_error));
 }
 
 namespace detail {
@@ -908,27 +948,35 @@ namespace detail {
 template <
     class Container,
     class SkippingHandler,
+    class ConversionErrorHandler,
     std::enable_if_t<
         !is_back_insertable<Container>::value>* = nullptr>
 auto make_field_translator_c_impl(
-    Container& values, SkippingHandler&& handle_skipping)
+    Container& values,
+    SkippingHandler&& handle_skipping,
+    ConversionErrorHandler&& handle_conversion_error)
 {
     return make_field_translator<typename Container::value_type>(
         std::inserter(values, values.end()),
-        std::forward<SkippingHandler>(handle_skipping));
+        std::forward<SkippingHandler>(handle_skipping),
+        std::forward<ConversionErrorHandler>(handle_conversion_error));
 }
 
 template <
     class Container,
     class SkippingHandler,
+    class ConversionErrorHandler,
     std::enable_if_t<
         is_back_insertable<Container>::value>* = nullptr>
 auto make_field_translator_c_impl(
-    Container& values, SkippingHandler&& handle_skipping)
+    Container& values,
+    SkippingHandler&& handle_skipping,
+    ConversionErrorHandler&& handle_conversion_error)
 {
     return make_field_translator<typename Container::value_type>(
         std::back_inserter(values),
-        std::forward<SkippingHandler>(handle_skipping));
+        std::forward<SkippingHandler>(handle_skipping),
+        std::forward<ConversionErrorHandler>(handle_conversion_error));
 }
 
 }
@@ -936,13 +984,17 @@ auto make_field_translator_c_impl(
 template <
     class Container,
     class SkippingHandler =
-        fail_if_skipped<typename Container::value_type>>
+        fail_if_skipped<typename Container::value_type>,
+    class ConversionErrorHandler =
+        fail_if_conversion_failed<typename Container::value_type>>
 auto make_field_translator_c(
     Container& values,
-    SkippingHandler handle_skipping = SkippingHandler())
+    SkippingHandler handle_skipping = SkippingHandler(),
+    ConversionErrorHandler handle_conversion_error = ConversionErrorHandler())
 {
     return detail::make_field_translator_c_impl(
-        values, std::move(handle_skipping));
+        values,
+        std::move(handle_skipping), std::move(handle_conversion_error));
 }
 
 }}
