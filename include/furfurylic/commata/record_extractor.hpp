@@ -126,9 +126,7 @@ class record_extraction_error :
     public csv_error
 {
 public:
-    explicit record_extraction_error(std::string what_arg) :
-        csv_error(std::move(what_arg))
-    {}
+    using csv_error::csv_error;
 };
 
 namespace detail {
