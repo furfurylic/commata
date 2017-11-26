@@ -570,8 +570,7 @@ struct is_back_insertable_impl
 {
     template <class T>
     static auto check(T*) -> decltype(
-        std::declval<T&>().insert(std::declval<T&>().end(),
-            std::declval<typename T::value_type>()),
+        std::declval<T&>().push_back(std::declval<typename T::value_type>()),
         std::true_type());
 
     template <class T>
@@ -638,11 +637,32 @@ auto make_field_translator(OutputIterator out)
     return field_translator<T, OutputIterator>(std::move(out));
 }
 
-template <class Container>
-auto make_field_translator_c(Container& values)
+namespace detail {
+
+template <class Container,
+    std::enable_if_t<
+        !is_back_insertable<Container>::value>* = nullptr>
+auto make_field_translator_c_impl(Container& values)
 {
     return make_field_translator<typename Container::value_type>(
         std::inserter(values, values.end()));
+}
+
+template <class Container,
+    std::enable_if_t<
+        is_back_insertable<Container>::value>* = nullptr>
+    auto make_field_translator_c_impl(Container& values)
+{
+    return make_field_translator<typename Container::value_type>(
+        std::back_inserter(values));
+}
+
+}
+
+template <class Container>
+auto make_field_translator_c(Container& values)
+{
+    return detail::make_field_translator_c_impl(values);
 }
 
 }}
