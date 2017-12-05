@@ -71,6 +71,9 @@ std::basic_string<Ch> plus1(std::basic_string<Ch> s, std::size_t i
 typedef testing::Types<char, wchar_t> Chs;
 
 typedef testing::Types<
+    std::pair<char, char>,
+    std::pair<char, signed char>,
+    std::pair<char, unsigned char>,
     std::pair<char, short>,
     std::pair<char, unsigned short>,
     std::pair<char, int>,
@@ -79,6 +82,9 @@ typedef testing::Types<
     std::pair<char, unsigned long>,
     std::pair<char, long long>,
     std::pair<char, unsigned long long>,
+    std::pair<wchar_t, char>,
+    std::pair<wchar_t, signed char>,
+    std::pair<wchar_t, unsigned char>,
     std::pair<wchar_t, short>,
     std::pair<wchar_t, unsigned short>,
     std::pair<wchar_t, int>,
@@ -116,11 +122,11 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Correct)
     csv_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator_c(values));
 
-    std::basic_stringbuf<char_t> buf(str(" 200\r\n123\t\n-10"));
+    std::basic_stringbuf<char_t> buf(str(" 40\r\n63\t\n-10"));
     ASSERT_NO_THROW(parse(&buf, std::move(h)));
     ASSERT_EQ(3U, values.size());
-    ASSERT_EQ(static_cast<value_t>(200), values[0]);
-    ASSERT_EQ(static_cast<value_t>(123), values[1]);
+    ASSERT_EQ(static_cast<value_t>(40), values[0]);
+    ASSERT_EQ(static_cast<value_t>(63), values[1]);
     ASSERT_EQ(static_cast<value_t>(-10), values[2]);
 }
 
@@ -136,7 +142,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, UpperLimit)
     const auto widen = char_helper<char_t>::template widen<const char*>;
 
     const auto maxx = std::numeric_limits<value_t>::max();
-    const auto maxxPlus1 = plus1(to_string(maxx));
+    const auto maxxPlus1 = plus1(to_string(maxx + 0));
 
     std::vector<value_t> values;
 
@@ -144,7 +150,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, UpperLimit)
     h.set_field_scanner(0, make_field_translator_c(values));
 
     stringstream_t s;
-    s << maxx << "\r\n"
+    s << (maxx + 0) << "\r\n"
       << maxxPlus1;
 
     try {
@@ -174,14 +180,14 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
     string_t minn;
     string_t minnMinus1;
     if (std::is_signed<value_t>::value) {
-        minn = to_string(std::numeric_limits<value_t>::min());
+        minn = to_string(std::numeric_limits<value_t>::min() + 0);
         minnMinus1 = ch('-') + plus1(minn.substr(1));
     } else {
-        minn = ch('-') + to_string(std::numeric_limits<value_t>::max());
+        minn = ch('-') + to_string(std::numeric_limits<value_t>::max() + 0);
         minnMinus1 = ch('-') + plus1(plus1(minn.substr(1)));
     }
     const auto maxx = std::numeric_limits<value_t>::max();
-    const auto maxxPlus1 = plus1(to_string(maxx));
+    const auto maxxPlus1 = plus1(to_string(maxx + 0));
 
     std::vector<value_t> values;
 
@@ -202,6 +208,31 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
         ASSERT_TRUE(message.find(minnMinus1) != string_t::npos)
             << message;
     }
+}
+
+struct TestFieldTranslatorForChar :
+    furfurylic::test::BaseTest
+{};
+
+TEST_F(TestFieldTranslatorForChar, Correct)
+{
+    std::vector<int_least8_t> values0;      // maybe signed char
+    std::vector<uint_least8_t> values1;     // maybe unsigned char
+    std::deque<char> values2;
+
+    csv_scanner<char> h;
+    h.set_field_scanner(0, make_field_translator_c(values0));
+    h.set_field_scanner(1, make_field_translator_c(values1));
+    h.set_field_scanner(2, make_field_translator_c(values2));
+
+    std::basic_stringbuf<char> buf("-120,250,-5");
+    ASSERT_NO_THROW(parse(&buf, std::move(h)));
+    ASSERT_EQ(1U, values0.size());
+    ASSERT_EQ(1U, values1.size());
+    ASSERT_EQ(1U, values2.size());
+    ASSERT_EQ(-120, values0.front());
+    ASSERT_EQ(250U, values1.front());
+    ASSERT_EQ(static_cast<char>(-5), values2.front());
 }
 
 template <class ChNum>

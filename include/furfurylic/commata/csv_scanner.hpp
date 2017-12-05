@@ -380,6 +380,28 @@ template <class T>
 struct numeric_type_traits;
 
 template <>
+struct numeric_type_traits<char>
+{
+    static constexpr const char* name = "char";
+    using raw_type =
+        std::conditional_t<std::is_signed<char>::value, long, unsigned long>;
+};
+
+template <>
+struct numeric_type_traits<signed char>
+{
+    static constexpr const char* name = "signed char";
+    using raw_type = long;
+};
+
+template <>
+struct numeric_type_traits<unsigned char>
+{
+    static constexpr const char* name = "unsigned char";
+    using raw_type = unsigned long;
+};
+
+template <>
 struct numeric_type_traits<short>
 {
     static constexpr const char* name = "short int";
