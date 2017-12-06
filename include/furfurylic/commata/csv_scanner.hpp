@@ -857,6 +857,104 @@ template <class Ch, class Tr>
 struct fail_if_conversion_failed<std::basic_string<Ch, Tr>>
 {};
 
+
+template <class T>
+class replace_if_conversion_failed
+{
+    enum replacement : std::int_fast8_t
+    {
+        replacement_empty = 0,
+        replacement_invalid_format = 1,
+        replacement_above_upper_limit = 2,
+        replacement_below_lower_limit = 3
+    };
+
+    std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[4];
+    std::int_fast8_t has_;
+
+public:
+    template <
+        class Empty = std::nullptr_t,
+        class InvalidFormat = std::nullptr_t,
+        class AboveUpperLimit = std::nullptr_t,
+        class BelowLowerLimit = std::nullptr_t>
+    explicit replace_if_conversion_failed(
+        Empty on_empty = Empty(),
+        InvalidFormat on_invalid_format = InvalidFormat(),
+        AboveUpperLimit on_above_upper_limit = AboveUpperLimit(),
+        BelowLowerLimit on_below_lower_limit = BelowLowerLimit()) :
+        has_(0)
+    {
+        // This class template is designed for arithmetic types
+        static_assert(
+            std::is_trivially_copy_constructible<T>::value
+         && std::is_trivially_destructible<T>::value, "");
+
+        set(replacement_empty, on_empty);
+        set(replacement_invalid_format, on_invalid_format);
+        set(replacement_above_upper_limit, on_above_upper_limit);
+        set(replacement_below_lower_limit, on_below_lower_limit);
+    }
+
+    template <class Ch>
+    T invalid_format(const Ch* begin, const Ch* end) const
+    {
+        if (const auto p = get(replacement_invalid_format)) {
+            return *p;
+        } else {
+            return fail_if_conversion_failed<T>().invalid_format(begin, end);
+        }
+    }
+
+    template <class Ch, class U>
+    T out_of_range(const Ch* begin, const Ch* end, U proposed) const
+    {
+        using limits_t = std::numeric_limits<T>;
+        if (proposed >= limits_t::max()) {
+            if (const auto p = get(replacement_above_upper_limit)) {
+                return *p;
+            }
+        } else if (const auto p = get(replacement_below_lower_limit)) {
+            return *p;
+        }
+        return fail_if_conversion_failed<T>()
+            .out_of_range(begin, end, proposed);
+    }
+
+    T empty() const
+    {
+        if (const auto p = get(replacement_empty)) {
+            return *p;
+        } else {
+            return fail_if_conversion_failed<T>().empty();
+        }
+    }
+
+private:
+    void set(replacement r, const T& value)
+    {
+        new (static_cast<void*>(&replacements_[r])) T(value);
+        has_ |= 1 << r;
+    }
+
+    void set(replacement, std::nullptr_t)
+    {}
+
+    const T* get(replacement r) const
+    {
+        if (has_ & (1 << r)) {
+            return static_cast<const T*>(
+                static_cast<const void*>(&replacements_[r]));
+        } else {
+            return nullptr;
+        }
+    }
+};
+
+template <class Ch, class Tr>
+struct replace_if_conversion_failed<std::basic_string<Ch, Tr>>
+{};
+
 template <class T, class OutputIterator,
     class SkippingHandler = fail_if_skipped<T>,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>

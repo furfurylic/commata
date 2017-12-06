@@ -210,6 +210,67 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
     }
 }
 
+TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
+{
+    using char_t = typename TypeParam::first_type;
+    using value_t = typename TypeParam::second_type;
+    using string_t = std::basic_string<char_t>;
+    using stringstream_t = std::basic_stringstream<char_t>;
+
+    const auto ch = char_helper<char_t>::ch;
+    const auto to_string =
+        [](auto t) { return char_helper<char_t>::template to_string(t); };
+
+    string_t minn;
+    string_t minnMinus1;
+    if (std::is_signed<value_t>::value) {
+        minn = to_string(std::numeric_limits<value_t>::min() + 0);
+        minnMinus1 = ch('-') + plus1(minn.substr(1));
+    } else {
+        minn = ch('-') + to_string(std::numeric_limits<value_t>::max() + 0);
+        minnMinus1 = ch('-') + plus1(plus1(minn.substr(1)));
+    }
+    const auto maxx = std::numeric_limits<value_t>::max();
+    const auto maxxPlus1 = plus1(to_string(maxx + 0));
+
+    std::vector<value_t> values0;
+    std::vector<value_t> values1;
+    std::vector<value_t> values2;
+    
+    csv_scanner<char_t> h;
+    h.set_field_scanner(0, make_field_translator_c(values0,
+        fail_if_skipped<value_t>(),
+        replace_if_conversion_failed<value_t>(
+            static_cast<value_t>(34))));
+    h.set_field_scanner(1, make_field_translator_c(values1,
+        fail_if_skipped<value_t>(),
+        replace_if_conversion_failed<value_t>(
+            nullptr, static_cast<value_t>(42))));
+    h.set_field_scanner(2, make_field_translator_c(values2,
+        fail_if_skipped<value_t>(),
+        replace_if_conversion_failed<value_t>(
+            nullptr, nullptr, static_cast<value_t>(1), static_cast<value_t>(0))));
+
+    stringstream_t s;
+    s << "-5,x," << maxxPlus1 << '\n'
+      << ",3," << minnMinus1;
+
+    ASSERT_NO_THROW(parse(s, std::move(h)));
+    ASSERT_EQ(2U, values0.size());
+    ASSERT_EQ(2U, values1.size());
+    ASSERT_EQ(2U, values2.size());
+    ASSERT_EQ(static_cast<value_t>(-5), values0[0]);
+    ASSERT_EQ(static_cast<value_t>(34), values0[1]);
+    ASSERT_EQ(static_cast<value_t>(42), values1[0]);
+    ASSERT_EQ(static_cast<value_t>(3), values1[1]);
+    ASSERT_EQ(static_cast<value_t>(1), values2[0]);
+    if (std::is_signed<value_t>::value) {
+        ASSERT_EQ(static_cast<value_t>(0), values2[1]);
+    } else {
+        ASSERT_EQ(static_cast<value_t>(1), values2[1]);
+    }
+}
+
 struct TestFieldTranslatorForChar :
     furfurylic::test::BaseTest
 {};
