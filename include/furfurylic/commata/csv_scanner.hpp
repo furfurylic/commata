@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cctype>
 #include <cerrno>
+#include <clocale>
 #include <cstddef>
 #include <cstdlib>
 #include <cwchar>
@@ -920,6 +921,94 @@ public:
     }
 };
 
+template <class Ch, class T, class OutputIterator,
+    class SkippingHandler = fail_if_skipped<T>,
+    class ConversionErrorHandler = fail_if_conversion_failed<T>>
+class locale_based_numeric_field_translator :
+    detail::convert<T, ConversionErrorHandler>,
+    public detail::skipping_handler_holder<SkippingHandler>
+{
+    Ch thousands_sep_;
+    Ch decimal_point_;
+    Ch decimal_point_c_;
+    OutputIterator out_;
+
+public:
+    locale_based_numeric_field_translator(
+        OutputIterator out, const std::locale& loc,
+        SkippingHandler handle_skipping = SkippingHandler(),
+        ConversionErrorHandler handle_conversion_error
+            = ConversionErrorHandler()) :
+        detail::convert<T, ConversionErrorHandler>(
+            std::move(handle_conversion_error)),
+        detail::skipping_handler_holder<SkippingHandler>(
+            std::move(handle_skipping)),
+        decimal_point_c_(Ch()), out_(std::move(out))
+    {
+        const auto& facet = std::use_facet<std::numpunct<Ch>>(loc);
+        thousands_sep_ = facet.grouping().empty() ?
+            Ch() : facet.thousands_sep();
+        decimal_point_ = facet.decimal_point();
+    }
+
+    void field_value(Ch* begin, Ch* end)
+    {
+        if (decimal_point_c_ == Ch()) {
+            decimal_point_c_ = widen(*std::localeconv()->decimal_point, Ch());
+        }
+        assert(*end == Ch());   // shall be null-terminated
+        bool decimal_point_appeared = false;
+        Ch* head = begin;
+        for (Ch* b = begin; b != end; ++b) {
+            Ch c = *b;
+            assert(c != Ch());
+            if (c == decimal_point_) {
+                if (!decimal_point_appeared) {
+                    c = decimal_point_c_;
+                    decimal_point_appeared = true;
+                }
+            } else if (c == thousands_sep_) {
+                continue;
+            }
+            *head = c;
+            ++head;
+        }
+        *head = Ch();
+        *out_ = (*this)(begin, head);
+        ++out_;
+    }
+
+    template <class Tr, class Alloc>
+    void field_value(std::basic_string<Ch, Tr, Alloc>&& value)
+    {
+        field_value(&value[0], &value[0] + value.size());
+    }
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4702)
+#endif
+    void field_skipped()
+    {
+        *out_ = this->get_skipping_handler().skipped();
+        ++out_;
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+    }
+
+private:
+    static char widen(char c, char)
+    {
+        return c;
+    }
+
+    static wchar_t widen(char c, wchar_t)
+    {
+        return std::btowc(static_cast<unsigned char>(c));
+    }
+};
+
 template <
     class Ch, class Tr, class Alloc, class OutputIterator,
     class SkippingHandler = fail_if_skipped<std::basic_string<Ch, Tr, Alloc>>>
@@ -974,22 +1063,48 @@ struct is_std_string<std::basic_string<Args...>> :
     std::true_type
 {};
 
+template <class... Ts>
+struct first;
+
+template <>
+struct first<>
+{
+    using type = void;
+};
+
+template <class Head, class... Tail>
+struct first<Head, Tail...>
+{
+    using type = Head;
+};
+
+template <class... Ts>
+using first_t = typename first<Ts...>::type;
+
 }
 
-template <class T, class OutputIterator,
-    class SkippingHandler = fail_if_skipped<T>,
-    class ConversionErrorHandler = fail_if_conversion_failed<T>>
-auto make_field_translator(OutputIterator out,
-    SkippingHandler handle_skipping = SkippingHandler(),
-    ConversionErrorHandler handle_conversion_error = ConversionErrorHandler())
- -> std::enable_if_t<!detail::is_std_string<T>::value,
-        numeric_field_translator<T, OutputIterator,
-            SkippingHandler, ConversionErrorHandler>>
+template <class T, class OutputIterator, class... Appendices>
+auto make_field_translator(OutputIterator out, Appendices&&... appendices)
+ -> std::enable_if_t<
+        !detail::is_std_string<T>::value
+     && !std::is_same<std::decay_t<detail::first_t<Appendices...>>,
+                      std::locale>::value,
+        numeric_field_translator<T, OutputIterator, Appendices...>>
 {
-    return numeric_field_translator<
-            T, OutputIterator, SkippingHandler, ConversionErrorHandler>(
-        std::move(out),
-        std::move(handle_skipping), std::move(handle_conversion_error));
+    return numeric_field_translator<T, OutputIterator, Appendices...>(
+        std::move(out), std::forward<Appendices>(appendices)...);
+}
+
+template <class T, class Ch, class OutputIterator, class... Appendices>
+auto make_field_translator(
+    OutputIterator out, const std::locale& loc, Ch, Appendices&&... appendices)
+ -> std::enable_if_t<!detail::is_std_string<T>::value,
+        locale_based_numeric_field_translator<
+            Ch, T, OutputIterator, Appendices...>>
+{
+    return locale_based_numeric_field_translator<
+                Ch, T, OutputIterator, Appendices...>(
+            std::move(out), loc, std::forward<Appendices>(appendices)...);
 }
 
 template <class T, class OutputIterator, class... Appendices>
@@ -1033,8 +1148,7 @@ auto make_field_translator_c_impl(
 } // end detail
 
 template <class Container, class... Appendices>
-auto make_field_translator_c(
-    Container& values, Appendices&&... appendices)
+auto make_field_translator_c(Container& values, Appendices&&... appendices)
 {
     return detail::make_field_translator_c_impl<
             Container, nullptr, Appendices...>(

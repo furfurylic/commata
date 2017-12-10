@@ -626,3 +626,56 @@ TYPED_TEST(TestCsvScanner, HeaderScanToTheEnd)
     std::basic_stringbuf<TypeParam> buf(s);
     parse(&buf, std::move(h));
 }
+
+namespace {
+
+template <class Ch>
+struct french_style_numpunct : std::numpunct<Ch>
+{
+    explicit french_style_numpunct(std::size_t r = 0) :
+        std::numpunct<Ch>(r)
+    {}
+
+protected:
+    Ch do_decimal_point() const override
+    {
+        return char_helper<Ch>::ch(',');
+    }
+
+    Ch do_thousands_sep() const override
+    {
+        return char_helper<Ch>::ch(' ');
+    }
+
+    std::string do_grouping() const override
+    {
+        return "\003";
+    }
+};
+
+}
+
+TYPED_TEST(TestCsvScanner, LocaleBased)
+{
+    const auto str = char_helper<TypeParam>::str;
+
+    std::vector<int> values0;
+    std::deque<double> values1;
+
+    csv_scanner<TypeParam> h;
+    std::locale loc(std::locale::classic(),
+        new french_style_numpunct<TypeParam>);
+    h.set_field_scanner(0, make_field_translator_c(values0, loc, TypeParam()));
+    h.set_field_scanner(1, make_field_translator<double>(
+        std::front_inserter(values1), loc, TypeParam()));
+
+    std::basic_stringbuf<TypeParam> buf(str("100 000,\"12 345 678,5\""));
+
+    try {
+        parse(&buf, std::move(h));
+    } catch (const csv_error& e) {
+        FAIL() << e.what();
+    }
+    ASSERT_EQ(100000, values0[0]);
+    ASSERT_EQ(12345678.5, values1[0]);
+}
