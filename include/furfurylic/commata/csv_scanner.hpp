@@ -39,8 +39,7 @@ class csv_scanner
     struct field_scanner
     {
         virtual ~field_scanner() {}
-        virtual void field_value(
-            const Ch* begin, const Ch* end, csv_scanner& me) = 0;
+        virtual void field_value(Ch* begin, Ch* end, csv_scanner& me) = 0;
         virtual void field_value(
             std::basic_string<Ch, Tr, Alloc>&& value, csv_scanner& me) = 0;
     };
@@ -62,8 +61,7 @@ class csv_scanner
             scanner_(std::move(scanner))
         {}
 
-        void field_value(
-            const Ch* begin, const Ch* end, csv_scanner& me) override
+        void field_value(Ch* begin, Ch* end, csv_scanner& me) override
         {
             const range_t range(begin, end);
             if (!scanner_(me.j_, &range, me)) {
@@ -74,7 +72,7 @@ class csv_scanner
         void field_value(
             std::basic_string<Ch, Tr, Alloc>&& value, csv_scanner& me) override
         {
-            field_value(value.c_str(), value.c_str() + value.size(), me);
+            field_value(&value[0], &value[0] + value.size(), me);
         }
 
         void so_much_for_header(csv_scanner& me) override
@@ -117,8 +115,7 @@ class csv_scanner
             scanner_(std::move(scanner))
         {}
 
-        void field_value(
-            const Ch* begin, const Ch* end, csv_scanner&) override
+        void field_value(Ch* begin, Ch* end, csv_scanner&) override
         {
             scanner_.field_value(begin, end);
         }
@@ -295,16 +292,17 @@ public:
                     scanner->field_value(std::move(fragmented_value_), *this);
                     fragmented_value_.clear();
                 } else {
-                    buffer_[end_ - buffer_.get()] = Ch();
-                    scanner->field_value(begin_, end_, *this);
+                    *unconst(end_) = Ch();
+                    scanner->field_value(
+                        unconst(begin_), unconst(end_), *this);
                 }
             } else if (!fragmented_value_.empty()) {
                 fragmented_value_.append(first, last);          // throw
                 scanner->field_value(std::move(fragmented_value_), *this);
                 fragmented_value_.clear();
             } else {
-                buffer_[last - buffer_.get()] = Ch();
-                scanner->field_value(first, last, *this);
+                *unconst(last) = Ch();
+                scanner->field_value(unconst(first), unconst(last), *this);
             }
             begin_ = nullptr;
         }
@@ -341,6 +339,11 @@ private:
         } else {
             return nullptr;
         }
+    }
+
+    Ch* unconst(const Ch* s) const
+    {
+        return buffer_.get() + (s - buffer_.get());
     }
 };
 
