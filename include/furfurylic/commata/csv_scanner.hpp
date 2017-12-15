@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <cwchar>
 #include <cwctype>
+#include <functional>
 #include <iterator>
 #include <limits>
 #include <locale>
@@ -38,8 +39,52 @@ class csv_scanner
     struct field_scanner
     {
         virtual ~field_scanner() {}
-        virtual void field_value(const Ch* begin, const Ch* end) = 0;
-        virtual void field_value(std::basic_string<Ch, Tr, Alloc>&& value) = 0;
+        virtual void field_value(
+            const Ch* begin, const Ch* end, csv_scanner& me) = 0;
+        virtual void field_value(
+            std::basic_string<Ch, Tr, Alloc>&& value, csv_scanner& me) = 0;
+    };
+
+    struct header_field_scanner : field_scanner
+    {
+        virtual void so_much_for_header(csv_scanner& me) = 0;
+    };
+
+    template <class HeaderScanner>
+    class typed_header_field_scanner : public header_field_scanner
+    {
+        HeaderScanner scanner_;
+
+        using range_t = std::pair<const Ch*, const Ch*>;
+
+    public:
+        explicit typed_header_field_scanner(HeaderScanner scanner) :
+            scanner_(std::move(scanner))
+        {}
+
+        void field_value(
+            const Ch* begin, const Ch* end, csv_scanner& me) override
+        {
+            const range_t range(begin, end);
+            if (!scanner_(me.j_, &range, me)) {
+                me.header_field_scanner_.reset();
+            }
+        }
+
+        void field_value(
+            std::basic_string<Ch, Tr, Alloc>&& value, csv_scanner& me) override
+        {
+            field_value(value.c_str(), value.c_str() + value.size(), me);
+        }
+
+        void so_much_for_header(csv_scanner& me) override
+        {
+            scanner_(me.j_, static_cast<const range_t*>(nullptr), me);
+        }
+    };
+
+    struct body_field_scanner : field_scanner
+    {
         virtual void field_skipped() = 0;
         virtual const std::type_info& get_type() const = 0;
 
@@ -63,21 +108,23 @@ class csv_scanner
     };
 
     template <class FieldScanner>
-    class typed_field_scanner : public field_scanner
+    class typed_body_field_scanner : public body_field_scanner
     {
         FieldScanner scanner_;
 
     public:
-        explicit typed_field_scanner(FieldScanner scanner) :
+        explicit typed_body_field_scanner(FieldScanner scanner) :
             scanner_(std::move(scanner))
         {}
 
-        void field_value(const Ch* begin, const Ch* end) override
+        void field_value(
+            const Ch* begin, const Ch* end, csv_scanner&) override
         {
             scanner_.field_value(begin, end);
         }
 
-        void field_value(std::basic_string<Ch, Tr, Alloc>&& value) override
+        void field_value(
+            std::basic_string<Ch, Tr, Alloc>&& value, csv_scanner&) override
         {
             scanner_.field_value(std::move(value));
         }
@@ -106,23 +153,41 @@ class csv_scanner
         }
     };
 
-    std::size_t i_;
+    bool in_header_;
     std::size_t j_;
     std::size_t buffer_size_;
     std::unique_ptr<Ch[]> buffer_;
     const Ch* begin_;
     const Ch* end_;
-    std::vector<std::unique_ptr<field_scanner>> scanners_;
+    std::unique_ptr<header_field_scanner> header_field_scanner_;
+    std::vector<std::unique_ptr<body_field_scanner>> scanners_;
     std::basic_string<Ch, Tr, Alloc> fragmented_value_;
 
 public:
     using char_type = Ch;
 
-    explicit csv_scanner(std::size_t buffer_size = 8192) :
-        i_(0), j_(0),
+    explicit csv_scanner(
+            bool has_header = false,
+            std::size_t buffer_size = 8192) :
+        in_header_(has_header), j_(0),
         buffer_size_(std::max(buffer_size, static_cast<std::size_t>(2U))),
         begin_(nullptr)
     {}
+
+    template <
+        class HeaderFieldScanner,
+        class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
+    explicit csv_scanner(
+            HeaderFieldScanner s,
+            std::size_t buffer_size = 8192) :
+        in_header_(true), j_(0),
+        buffer_size_(std::max(buffer_size, static_cast<std::size_t>(2U))),
+        begin_(nullptr),
+        header_field_scanner_(
+            new typed_header_field_scanner<HeaderFieldScanner>(std::move(s)))
+    {}
+
+    csv_scanner(csv_scanner&&) = default;
 
     template <class FieldScanner = std::nullptr_t>
     void set_field_scanner(std::size_t j, FieldScanner s = FieldScanner())
@@ -160,7 +225,7 @@ private:
     template <class FieldScanner>
     void do_set_field_scanner(std::size_t j, FieldScanner s)
     {
-        using scanner_t = typed_field_scanner<FieldScanner>;
+        using scanner_t = typed_body_field_scanner<FieldScanner>;
         auto p = std::make_unique<scanner_t>(std::move(s)); // throw
         if (j >= scanners_.size()) {
             scanners_.resize(j + 1);                        // throw
@@ -205,7 +270,7 @@ public:
 
     bool update(const Ch* first, const Ch* last)
     {
-        if ((j_ < scanners_.size()) && scanners_[j_] && (first != last)) {
+        if (get_scanner() && (first != last)) {
             if (begin_) {
                 fragmented_value_.assign(begin_, end_);     // throw
                 fragmented_value_.append(first, last);      // throw
@@ -222,28 +287,26 @@ public:
 
     bool finalize(const Ch* first, const Ch* last)
     {
-        if ((j_ < scanners_.size())) {
-            if (const auto scanner = scanners_[j_].get()) {
-                if (begin_) {
-                    if (first != last) {
-                        fragmented_value_.assign(begin_, end_);     // throw
-                        fragmented_value_.append(first, last);      // throw
-                        scanner->field_value(std::move(fragmented_value_));
-                        fragmented_value_.clear();
-                    } else {
-                        buffer_[end_ - buffer_.get()] = Ch();
-                        scanner->field_value(begin_, end_);
-                    }
-                } else if (!fragmented_value_.empty()) {
-                    fragmented_value_.append(first, last);          // throw
-                    scanner->field_value(std::move(fragmented_value_));
+        if (const auto scanner = get_scanner()) {
+            if (begin_) {
+                if (first != last) {
+                    fragmented_value_.assign(begin_, end_);     // throw
+                    fragmented_value_.append(first, last);      // throw
+                    scanner->field_value(std::move(fragmented_value_), *this);
                     fragmented_value_.clear();
                 } else {
-                    buffer_[last - buffer_.get()] = Ch();
-                    scanner->field_value(first, last);
+                    buffer_[end_ - buffer_.get()] = Ch();
+                    scanner->field_value(begin_, end_, *this);
                 }
-                begin_ = nullptr;
+            } else if (!fragmented_value_.empty()) {
+                fragmented_value_.append(first, last);          // throw
+                scanner->field_value(std::move(fragmented_value_), *this);
+                fragmented_value_.clear();
+            } else {
+                buffer_[last - buffer_.get()] = Ch();
+                scanner->field_value(first, last, *this);
             }
+            begin_ = nullptr;
         }
         ++j_;
         return true;
@@ -251,14 +314,33 @@ public:
 
     bool end_record(const Ch* /*record_end*/)
     {
-        for (auto j = j_; j < scanners_.size(); ++j) {
-            if (auto scanner = scanners_[j].get()) {
-                scanner->field_skipped();
+        if (in_header_) {
+            if (header_field_scanner_) {
+                header_field_scanner_->so_much_for_header(*this);
+                header_field_scanner_.reset();
+            }
+            in_header_ = false;
+        } else {
+            for (auto j = j_; j < scanners_.size(); ++j) {
+                if (auto scanner = scanners_[j].get()) {
+                    scanner->field_skipped();
+                }
             }
         }
-        ++i_;
         j_ = 0;
         return true;
+    }
+
+private:
+    field_scanner* get_scanner()
+    {
+        if (in_header_) {
+            return header_field_scanner_.get();
+        } else if (j_ < scanners_.size()) {
+            return scanners_[j_].get();
+        } else {
+            return nullptr;
+        }
     }
 };
 

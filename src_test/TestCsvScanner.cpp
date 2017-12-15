@@ -56,13 +56,13 @@ std::basic_string<Ch> plus1(std::basic_string<Ch> s, std::size_t i
         s[j] = all[0];
         if (j == 0) {
             s.insert(s.begin(), all[1]);  // gcc 6.3.1 refuses s.cbegin()
-            return std::move(s);
+            return s;
         } else {
             return plus1(std::move(s), j - 1);
         }
     } else {
         s[j] = k[1];
-        return std::move(s);
+        return s;
     }
 }
 
@@ -74,7 +74,7 @@ typedef testing::Types<
     std::pair<char, short>,
     std::pair<char, unsigned short>,
     std::pair<char, int>,
-    std::pair<char, unsigned int>,
+    std::pair<char, unsigned>,
     std::pair<char, long>,
     std::pair<char, unsigned long>,
     std::pair<char, long long>,
@@ -82,7 +82,7 @@ typedef testing::Types<
     std::pair<wchar_t, short>,
     std::pair<wchar_t, unsigned short>,
     std::pair<wchar_t, int>,
-    std::pair<wchar_t, unsigned int>,
+    std::pair<wchar_t, unsigned>,
     std::pair<wchar_t, long>,
     std::pair<wchar_t, unsigned long>,
     std::pair<wchar_t, long long>,
@@ -288,6 +288,8 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, LowerLimit)
     using string_t = std::basic_string<char_t>;
     using stringstream_t = std::basic_stringstream<char_t>;
 
+    const auto widen = char_helper<char_t>::template widen<const char*>;
+
     const auto minn = std::numeric_limits<value_t>::lowest();
     string_t minnBy10;
     {
@@ -311,12 +313,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, LowerLimit)
     } catch (const csv_error& e) {
         ASSERT_NE(e.get_physical_position(), nullptr);
         ASSERT_EQ(1U, e.get_physical_position()->first);
-        string_t message;
-        {
-            stringstream_t ss;
-            ss << e.what();
-            message = ss.str();
-        }
+        const string_t message = widen(e.what());
         ASSERT_TRUE(message.find(minnBy10) != string_t::npos)
             << message;
     }
@@ -358,7 +355,7 @@ struct TestCsvScanner : BaseTest
 
 TYPED_TEST_CASE(TestCsvScanner, Chs);
 
-TYPED_TEST(TestCsvScanner, Basics)
+TYPED_TEST(TestCsvScanner, Indexed)
 {
     using string_t = std::basic_string<TypeParam>;
 
@@ -370,7 +367,7 @@ TYPED_TEST(TestCsvScanner, Basics)
     std::list<string_t> values3;
     std::set<unsigned short> values4;
 
-    csv_scanner<TypeParam> h;
+    csv_scanner<TypeParam> h(true);
     h.set_field_scanner(0,
         make_field_translator<long>(std::front_inserter(values0)));
     h.set_field_scanner(2, make_field_translator_c(values22));
@@ -395,11 +392,11 @@ TYPED_TEST(TestCsvScanner, Basics)
     ASSERT_EQ(nullptr, h.template get_field_scanner<void>(1));
     ASSERT_EQ(nullptr, h.template get_field_scanner<void>(100));
 
-    std::basic_string<TypeParam> s =
-        str("50,__, 101.2 ,XYZ,  200\n"
-            "-3,__,3.00e9,\"\"\"ab\"\"\rc\",200\n");
-    std::basic_stringbuf<TypeParam> buf(s);
-    ASSERT_NO_THROW(parse(&buf, std::move(h)));
+    std::basic_stringstream<TypeParam> s;
+    s << "F0,F1,F2,F3,F4\r"
+         "50,__, 101.2 ,XYZ,  200\n"
+         "-3,__,3.00e9,\"\"\"ab\"\"\rc\",200\n";
+    ASSERT_NO_THROW(parse(s, std::move(h)));
 
     const std::deque<long> expected0 = { -3, 50 };
     const std::vector<double> expected21 = { 101.2, 3.00e9 };
@@ -472,4 +469,68 @@ TYPED_TEST(TestCsvScanner, SkippedWithErrors)
     const std::deque<int> expected1 = { 20 };
     ASSERT_EQ(expected0, values0);
     ASSERT_EQ(expected1, values1);
+}
+
+TYPED_TEST(TestCsvScanner, HeaderScan)
+{
+    const auto str = char_helper<TypeParam>::str;
+
+    std::vector<unsigned> ids;
+    std::vector<short> values1;
+
+    csv_scanner<TypeParam> h(
+        [&ids, &values1, str, this]
+        (std::size_t j, const auto* range, auto& f) {
+            const std::basic_string<TypeParam>
+                field_name(range->first, range->second);
+            if (field_name == str("ID")) {
+                f.set_field_scanner(j, make_field_translator_c(ids));
+                return true;
+            } else if (field_name == str("Value1")) {
+                f.set_field_scanner(j, make_field_translator_c(values1));
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+    auto s = str("ID,Value0,Value1,Value1\n"
+                 "1,ABC,123,xyz\n");
+    std::basic_stringbuf<TypeParam> buf(s);
+    try {
+        parse(&buf, std::move(h));
+    } catch (const csv_error& e) {
+        FAIL() << e.what();
+    }
+
+    ASSERT_EQ(1U, ids.size());
+    ASSERT_EQ(1U, values1.size());
+
+    ASSERT_EQ(1U, ids[0]);
+    ASSERT_EQ(123, values1[0]);
+}
+
+TYPED_TEST(TestCsvScanner, HeaderScanToTheEnd)
+{
+    const auto str = char_helper<TypeParam>::str;
+
+    bool header_end_visited = false;
+
+    csv_scanner<TypeParam> h(
+        [&header_end_visited]
+        (std::size_t j, const auto* range, auto&) {
+            if (j == 1) {
+                header_end_visited = true;
+                if (range) {
+                    throw std::runtime_error("Header's end with a range");
+                }
+            } else if (!range) {
+                throw std::runtime_error("Not a header's end without a range");
+            }
+            return true;
+    });
+
+    auto s = str("A\n1\n");
+    std::basic_stringbuf<TypeParam> buf(s);
+    parse(&buf, std::move(h));
 }
