@@ -475,14 +475,11 @@ struct numeric_type_traits<long double>
 };
 
 template <class D, class H>
-class raw_convert_base
+class raw_convert_base :
+    member_like_base<H>
 {
-    H error_handler_;
-
 public:
-    explicit raw_convert_base(H error_handler) :
-        error_handler_(std::move(error_handler))
-    {}
+    using member_like_base<H>::member_like_base;
 
     template <class Ch>
     auto convert_raw(const Ch* begin, const Ch* end)
@@ -517,7 +514,7 @@ public:
 protected:
     H& eh()
     {
-        return error_handler_;
+        return this->get();
     }
 
 private:
