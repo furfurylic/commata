@@ -358,7 +358,7 @@ struct TestCsvScanner : BaseTest
 
 TYPED_TEST_CASE(TestCsvScanner, Chs);
 
-TYPED_TEST(TestCsvScanner, All)
+TYPED_TEST(TestCsvScanner, Basics)
 {
     using string_t = std::basic_string<TypeParam>;
 
@@ -376,9 +376,9 @@ TYPED_TEST(TestCsvScanner, All)
     h.set_field_scanner(2, make_field_translator_c(values22));
     h.set_field_scanner(2);
     h.set_field_scanner(2, make_field_translator_c(values21));
-    h.set_field_scanner(3, make_field_translator_c(values3));
-    h.set_field_scanner(4, make_field_translator_c(values4));
     h.set_field_scanner(5, nullptr);
+    h.set_field_scanner(4, make_field_translator_c(values4));
+    h.set_field_scanner(3, make_field_translator_c(values3));
 
     std::basic_string<TypeParam> s =
         str("50,__, 101.2 ,XYZ,  200\n"
@@ -395,4 +395,59 @@ TYPED_TEST(TestCsvScanner, All)
     ASSERT_TRUE(values22.empty());
     ASSERT_EQ(expected3, values3);
     ASSERT_EQ(expected4, values4);
+}
+
+TYPED_TEST(TestCsvScanner, SkippedWithNoErrors)
+{
+    using string_t = std::basic_string<TypeParam>;
+
+    const auto str = char_helper<TypeParam>::str;
+
+    std::deque<string_t> values0;
+    std::deque<int> values1;
+
+    csv_scanner<TypeParam> h;
+    h.set_field_scanner(0, make_field_translator_c(
+        values0, default_if_skipped<string_t>()));
+    h.set_field_scanner(1, make_field_translator_c(
+        values1, default_if_skipped<int>(50)));
+
+    std::basic_stringstream<TypeParam> s;
+    s << "XYZ,20\n"
+         "\n"
+         "A";
+    ASSERT_NO_THROW(parse(s, make_empty_physical_row_aware(std::move(h))));
+
+    const std::deque<string_t> expected0 =
+        { str("XYZ"), string_t(), str("A") };
+    const std::deque<int> expected1 = { 20, 50, 50 };
+    ASSERT_EQ(expected0, values0);
+    ASSERT_EQ(expected1, values1);
+}
+
+TYPED_TEST(TestCsvScanner, SkippedWithErrors)
+{
+    std::deque<int> values0;
+    std::deque<int> values1;
+
+    csv_scanner<TypeParam> h;
+    h.set_field_scanner(0, make_field_translator_c(
+        values0, default_if_skipped<int>(10)));
+    h.set_field_scanner(1, make_field_translator_c(values1));
+
+    std::basic_stringstream<TypeParam> s;
+    s << "10,20\n"
+        "-5";
+    try {
+        parse(s, std::move(h));
+        FAIL();
+    } catch (const field_not_found& e) {
+        ASSERT_NE(e.get_physical_position(), nullptr);
+        ASSERT_EQ(1U, e.get_physical_position()->first);
+    }
+
+    const std::deque<int> expected0 = { 10, -5 };
+    const std::deque<int> expected1 = { 20 };
+    ASSERT_EQ(expected0, values0);
+    ASSERT_EQ(expected1, values1);
 }

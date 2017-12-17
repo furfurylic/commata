@@ -38,6 +38,7 @@ class csv_scanner
         virtual ~field_scanner() {}
         virtual void field_value(const Ch* begin, const Ch* end) = 0;
         virtual void field_value(std::basic_string<Ch, Tr, Alloc>&& value) = 0;
+        virtual void field_skipped() = 0;
     };
 
     template <class FieldScanner>
@@ -58,6 +59,11 @@ class csv_scanner
         void field_value(std::basic_string<Ch, Tr, Alloc>&& value) override
         {
             scanner_.field_value(std::move(value));
+        }
+
+        void field_skipped() override
+        {
+            scanner_.field_skipped();
         }
     };
 
@@ -172,6 +178,11 @@ public:
 
     bool end_record(const Ch* /*record_end*/)
     {
+        for (auto j = j_; j < scanners_.size(); ++j) {
+            if (auto scanner = scanners_[j].get()) {
+                scanner->field_skipped();
+            }
+        }
         ++i_;
         j_ = 0;
         return true;
@@ -184,10 +195,22 @@ public:
     using csv_error::csv_error;
 };
 
+class field_not_found : public field_conversion_error
+{
+public:
+    using field_conversion_error::field_conversion_error;
+};
+
 class field_invalid_format : public field_conversion_error
 {
 public:
     using field_conversion_error::field_conversion_error;
+};
+
+class field_empty : public field_invalid_format
+{
+public:
+    using field_invalid_format::field_invalid_format;
 };
 
 class field_out_of_range : public field_conversion_error
@@ -304,7 +327,7 @@ struct handle_conversion_error
     {
         std::ostringstream s;
         s << "Cannot convert an empty string to an instance of " << name;
-        throw field_invalid_format(s.str());
+        throw field_empty(s.str());
     }
 
 private:
@@ -584,14 +607,44 @@ struct is_back_insertable :
 
 }
 
-template <class T, class OutputIterator>
+template <class T>
+struct fail_if_skipped
+{
+    [[noreturn]]
+    const T& skipped() const
+    {
+        throw field_not_found("This field did not appear in this record");
+    }
+};
+
+template <class T>
+class default_if_skipped
+{
+    T default_value_;
+
+public:
+    explicit default_if_skipped(T default_value = T()) :
+        default_value_(std::move(default_value))
+    {}
+
+    const T& skipped() const
+    {
+        return default_value_;
+    }
+};
+
+template <class T, class OutputIterator,
+    class SkippingHandler = fail_if_skipped<T>>
 class field_translator : detail::convert<T>
 {
     OutputIterator out_;
+    SkippingHandler handle_skipping_;    // TODO: EBO
 
 public:
-    explicit field_translator(OutputIterator out) :
-        out_(std::move(out))
+    explicit field_translator(
+        OutputIterator out,
+        SkippingHandler handle_skipping = SkippingHandler()) :
+        out_(std::move(out)), handle_skipping_(std::move(handle_skipping))
     {}
 
     template <class Ch>
@@ -607,16 +660,44 @@ public:
     {
         field_value(value.c_str(), value.c_str() + value.size());
     }
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4702)
+#endif
+    void field_skipped()
+    {
+        *out_ = handle_skipping_.skipped();
+        ++out_;
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+    }
+
+    const SkippingHandler& get_skipping_handler() const
+    {
+        return handle_skipping_;
+    }
+
+    SkippingHandler& get_skipping_handler()
+    {
+        return handle_skipping_;
+    }
 };
 
-template <class Ch, class Tr, class Alloc, class OutputIterator>
-class field_translator<std::basic_string<Ch, Tr, Alloc>, OutputIterator>
+template <class Ch, class Tr, class Alloc,
+          class OutputIterator, class SkippingHandler>
+class field_translator<
+    std::basic_string<Ch, Tr, Alloc>, OutputIterator, SkippingHandler>
 {
     OutputIterator out_;
+    SkippingHandler handle_skipping_;    // TODO: EBO
 
 public:
-    explicit field_translator(OutputIterator out) :
-        out_(std::move(out))
+    explicit field_translator(
+        OutputIterator out,
+        SkippingHandler handle_skipping = SkippingHandler()) :
+        out_(std::move(out)), handle_skipping_(std::move(handle_skipping))
     {}
 
     void field_value(const Ch* begin, const Ch* end)
@@ -629,40 +710,82 @@ public:
         *out_ = std::move(value);
         ++out_;
     }
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4702)
+#endif
+    void field_skipped()
+    {
+        *out_ = handle_skipping_.skipped();
+        ++out_;
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+    }
+
+    const SkippingHandler& get_skipping_handler() const
+    {
+        return handle_skipping_;
+    }
+
+    SkippingHandler& get_skipping_handler()
+    {
+        return handle_skipping_;
+    }
 };
 
-template <class T, class OutputIterator>
-auto make_field_translator(OutputIterator out)
+template <
+    class T, class OutputIterator,
+    class SkippingHandler = fail_if_skipped<T>>
+auto make_field_translator(
+    OutputIterator out,
+    SkippingHandler handle_skipping = SkippingHandler())
 {
-    return field_translator<T, OutputIterator>(std::move(out));
+    return field_translator<T, OutputIterator, SkippingHandler>(
+        std::move(out), std::move(handle_skipping));
 }
 
 namespace detail {
 
-template <class Container,
+template <
+    class Container,
+    class SkippingHandler,
     std::enable_if_t<
         !is_back_insertable<Container>::value>* = nullptr>
-auto make_field_translator_c_impl(Container& values)
+auto make_field_translator_c_impl(
+    Container& values, SkippingHandler&& handle_skipping)
 {
     return make_field_translator<typename Container::value_type>(
-        std::inserter(values, values.end()));
+        std::inserter(values, values.end()),
+        std::forward<SkippingHandler>(handle_skipping));
 }
 
-template <class Container,
+template <
+    class Container,
+    class SkippingHandler,
     std::enable_if_t<
         is_back_insertable<Container>::value>* = nullptr>
-    auto make_field_translator_c_impl(Container& values)
+auto make_field_translator_c_impl(
+    Container& values, SkippingHandler&& handle_skipping)
 {
     return make_field_translator<typename Container::value_type>(
-        std::back_inserter(values));
+        std::back_inserter(values),
+        std::forward<SkippingHandler>(handle_skipping));
 }
 
 }
 
-template <class Container>
-auto make_field_translator_c(Container& values)
+template <
+    class Container,
+    class SkippingHandler =
+        fail_if_skipped<typename Container::value_type>>
+auto make_field_translator_c(
+    Container& values,
+    SkippingHandler handle_skipping = SkippingHandler())
 {
-    return detail::make_field_translator_c_impl(values);
+    return detail::make_field_translator_c_impl(
+        values, std::move(handle_skipping));
 }
 
 }}
