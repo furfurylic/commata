@@ -853,11 +853,6 @@ private:
     }
 };
 
-template <class Ch, class Tr>
-struct fail_if_conversion_failed<std::basic_string<Ch, Tr>>
-{};
-
-
 template <class T>
 class replace_if_conversion_failed
 {
@@ -951,21 +946,17 @@ private:
     }
 };
 
-template <class Ch, class Tr>
-struct replace_if_conversion_failed<std::basic_string<Ch, Tr>>
-{};
-
 template <class T, class OutputIterator,
     class SkippingHandler = fail_if_skipped<T>,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
-class field_translator :
+class numeric_field_translator :
     detail::convert<T, ConversionErrorHandler>,
     public detail::skipping_handler_holder<SkippingHandler>
 {
     OutputIterator out_;
 
 public:
-    explicit field_translator(
+    explicit numeric_field_translator(
         OutputIterator out,
         SkippingHandler handle_skipping = SkippingHandler(),
         ConversionErrorHandler handle_conversion_error
@@ -1005,19 +996,18 @@ public:
     }
 };
 
-template <class Ch, class Tr, class Alloc, class OutputIterator,
-          class SkippingHandler, class ConversionErrorHandler>
-class field_translator<std::basic_string<Ch, Tr, Alloc>,
-    OutputIterator, SkippingHandler, ConversionErrorHandler> :
+template <
+    class Ch, class Tr, class Alloc, class OutputIterator,
+    class SkippingHandler = fail_if_skipped<std::basic_string<Ch, Tr, Alloc>>>
+class string_field_translator :
     public detail::skipping_handler_holder<SkippingHandler>
 {
     OutputIterator out_;
 
 public:
-    explicit field_translator(
+    explicit string_field_translator(
         OutputIterator out,
-        SkippingHandler handle_skipping = SkippingHandler(),
-        ConversionErrorHandler = ConversionErrorHandler()) :
+        SkippingHandler handle_skipping = SkippingHandler()) :
         detail::skipping_handler_holder<SkippingHandler>(
             std::move(handle_skipping)),
         out_(std::move(out))
@@ -1048,73 +1038,83 @@ public:
     }
 };
 
-template <
-    class T, class OutputIterator,
+namespace detail {
+
+template <class T>
+struct is_std_string :
+    std::false_type
+{};
+
+template <class... Args>
+struct is_std_string<std::basic_string<Args...>> :
+    std::true_type
+{};
+
+}
+
+template <class T, class OutputIterator,
     class SkippingHandler = fail_if_skipped<T>,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
-auto make_field_translator(
-    OutputIterator out,
+auto make_field_translator(OutputIterator out,
     SkippingHandler handle_skipping = SkippingHandler(),
     ConversionErrorHandler handle_conversion_error = ConversionErrorHandler())
+ -> std::enable_if_t<!detail::is_std_string<T>::value,
+        numeric_field_translator<T, OutputIterator,
+            SkippingHandler, ConversionErrorHandler>>
 {
-    return field_translator<T, OutputIterator,
-            SkippingHandler, ConversionErrorHandler>(
+    return numeric_field_translator<
+            T, OutputIterator, SkippingHandler, ConversionErrorHandler>(
         std::move(out),
         std::move(handle_skipping), std::move(handle_conversion_error));
+}
+
+template <class T, class OutputIterator, class... Appendices>
+auto make_field_translator(OutputIterator out, Appendices&&... appendices)
+ -> std::enable_if_t<detail::is_std_string<T>::value,
+        string_field_translator<
+            typename T::value_type, typename T::traits_type,
+            typename T::allocator_type, OutputIterator, Appendices...>>
+{
+    return string_field_translator<
+            typename T::value_type, typename T::traits_type,
+            typename T::allocator_type, OutputIterator, Appendices...>(
+        std::move(out), std::forward<Appendices>(appendices)...);
 }
 
 namespace detail {
 
 template <
     class Container,
-    class SkippingHandler,
-    class ConversionErrorHandler,
-    std::enable_if_t<
-        !is_back_insertable<Container>::value>* = nullptr>
+    std::enable_if_t<!is_back_insertable<Container>::value>*,
+    class... Appendices>
 auto make_field_translator_c_impl(
-    Container& values,
-    SkippingHandler&& handle_skipping,
-    ConversionErrorHandler&& handle_conversion_error)
+    Container& values, Appendices&&... appendices)
 {
     return make_field_translator<typename Container::value_type>(
         std::inserter(values, values.end()),
-        std::forward<SkippingHandler>(handle_skipping),
-        std::forward<ConversionErrorHandler>(handle_conversion_error));
+        std::forward<Appendices>(appendices)...);
 }
 
 template <
     class Container,
-    class SkippingHandler,
-    class ConversionErrorHandler,
-    std::enable_if_t<
-        is_back_insertable<Container>::value>* = nullptr>
+    std::enable_if_t<is_back_insertable<Container>::value>*,
+    class... Appendices>
 auto make_field_translator_c_impl(
-    Container& values,
-    SkippingHandler&& handle_skipping,
-    ConversionErrorHandler&& handle_conversion_error)
+    Container& values, Appendices&&... appendices)
 {
     return make_field_translator<typename Container::value_type>(
-        std::back_inserter(values),
-        std::forward<SkippingHandler>(handle_skipping),
-        std::forward<ConversionErrorHandler>(handle_conversion_error));
+        std::back_inserter(values), std::forward<Appendices>(appendices)...);
 }
 
-}
+} // end detail
 
-template <
-    class Container,
-    class SkippingHandler =
-        fail_if_skipped<typename Container::value_type>,
-    class ConversionErrorHandler =
-        fail_if_conversion_failed<typename Container::value_type>>
+template <class Container, class... Appendices>
 auto make_field_translator_c(
-    Container& values,
-    SkippingHandler handle_skipping = SkippingHandler(),
-    ConversionErrorHandler handle_conversion_error = ConversionErrorHandler())
+    Container& values, Appendices&&... appendices)
 {
-    return detail::make_field_translator_c_impl(
-        values,
-        std::move(handle_skipping), std::move(handle_conversion_error));
+    return detail::make_field_translator_c_impl<
+            Container, nullptr, Appendices...>(
+        values, std::forward<Appendices>(appendices)...);
 }
 
 }}
