@@ -36,12 +36,13 @@ template <class Ch, class Tr = std::char_traits<Ch>,
           class Alloc = std::allocator<Ch>>
 class csv_scanner
 {
+    using string_t = std::basic_string<Ch, Tr, Alloc>;
+
     struct field_scanner
     {
         virtual ~field_scanner() {}
         virtual void field_value(Ch* begin, Ch* end, csv_scanner& me) = 0;
-        virtual void field_value(
-            std::basic_string<Ch, Tr, Alloc>&& value, csv_scanner& me) = 0;
+        virtual void field_value(string_t&& value, csv_scanner& me) = 0;
     };
 
     struct header_field_scanner : field_scanner
@@ -69,8 +70,7 @@ class csv_scanner
             }
         }
 
-        void field_value(
-            std::basic_string<Ch, Tr, Alloc>&& value, csv_scanner& me) override
+        void field_value(string_t&& value, csv_scanner& me) override
         {
             field_value(&value[0], &value[0] + value.size(), me);
         }
@@ -120,8 +120,7 @@ class csv_scanner
             scanner_.field_value(begin, end);
         }
 
-        void field_value(
-            std::basic_string<Ch, Tr, Alloc>&& value, csv_scanner&) override
+        void field_value(string_t&& value, csv_scanner&) override
         {
             scanner_.field_value(std::move(value));
         }
@@ -158,7 +157,7 @@ class csv_scanner
     const Ch* end_;
     std::unique_ptr<header_field_scanner> header_field_scanner_;
     std::vector<std::unique_ptr<body_field_scanner>> scanners_;
-    std::basic_string<Ch, Tr, Alloc> fragmented_value_;
+    string_t fragmented_value_;
 
 public:
     using char_type = Ch;
