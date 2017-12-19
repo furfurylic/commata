@@ -436,42 +436,56 @@ template <>
 struct numeric_type_traits<long>
 {
     static constexpr const char* name = "long int";
+    static constexpr const auto strto = std::strtol;
+    static constexpr const auto wcsto = std::wcstol;
 };
 
 template <>
 struct numeric_type_traits<unsigned long>
 {
     static constexpr const char* name = "unsigned long int";
+    static constexpr const auto strto = std::strtoul;
+    static constexpr const auto wcsto = std::wcstoul;
 };
 
 template <>
 struct numeric_type_traits<long long>
 {
     static constexpr const char* name = "long long int";
+    static constexpr const auto strto = std::strtoll;
+    static constexpr const auto wcsto = std::wcstoll;
 };
 
 template <>
 struct numeric_type_traits<unsigned long long>
 {
     static constexpr const char* name = "unsigned long long int";
+    static constexpr const auto strto = std::strtoull;
+    static constexpr const auto wcsto = std::wcstoull;
 };
 
 template <>
 struct numeric_type_traits<float>
 {
     static constexpr const char* name = "float";
+    static constexpr const auto strto = std::strtof;
+    static constexpr const auto wcsto = std::wcstof;
 };
 
 template <>
 struct numeric_type_traits<double>
 {
     static constexpr const char* name = "double";
+    static constexpr const auto strto = std::strtod;
+    static constexpr const auto wcsto = std::wcstod;
 };
 
 template <>
 struct numeric_type_traits<long double>
 {
     static constexpr const char* name = "long double";
+    static constexpr const auto strto = std::strtold;
+    static constexpr const auto wcsto = std::wcstold;
 };
 
 template <class D, class H>
@@ -532,132 +546,47 @@ private:
     }
 };
 
-template <class T, class H>
+template <class>
+using void_t = void;
+
+template <class T, class H, class = void>
 struct raw_convert;
 
-template <class H>
-struct raw_convert<long, H> :
-    raw_convert_base<raw_convert<long, H>, H>
+template <class T, class H>
+struct raw_convert<T, H, std::enable_if_t<std::is_integral<T>::value,
+        void_t<decltype(numeric_type_traits<T>::strto)>>> :
+    raw_convert_base<raw_convert<T, H>, H>
 {
-    using raw_convert_base<raw_convert<long, H>, H>
+    using raw_convert_base<raw_convert<T, H>, H>
         ::raw_convert_base;
 
     auto engine(const char* s, char** e) const
     {
-        return std::strtol(s, e, 10);
+        return numeric_type_traits<T>::strto(s, e, 10);
     }
 
     auto engine(const wchar_t* s, wchar_t** e) const
     {
-        return std::wcstol(s, e, 10);
+        return numeric_type_traits<T>::wcsto(s, e, 10);
     }
 };
 
-template <class H>
-struct raw_convert<unsigned long, H> :
-    raw_convert_base<raw_convert<unsigned long, H>, H>
+template <class T, class H>
+struct raw_convert<T, H, std::enable_if_t<std::is_floating_point<T>::value,
+        void_t<decltype(numeric_type_traits<T>::strto)>>> :
+    raw_convert_base<raw_convert<T, H>, H>
 {
-    using raw_convert_base<raw_convert<unsigned long, H>, H>
+    using raw_convert_base<raw_convert<T, H>, H>
         ::raw_convert_base;
 
     auto engine(const char* s, char** e) const
     {
-        return std::strtoul(s, e, 10);
+        return numeric_type_traits<T>::strto(s, e);
     }
 
     auto engine(const wchar_t* s, wchar_t** e) const
     {
-        return std::wcstoul(s, e, 10);
-    }
-};
-
-template <class H>
-struct raw_convert<long long, H> :
-    raw_convert_base<raw_convert<long long, H>, H>
-{
-    using raw_convert_base<raw_convert<long long, H>, H>
-        ::raw_convert_base;
-
-    auto engine(const char* s, char** e) const
-    {
-        return std::strtoll(s, e, 10);
-    }
-
-    auto engine(const wchar_t* s, wchar_t** e) const
-    {
-        return std::wcstoll(s, e, 10);
-    }
-};
-
-template <class H>
-struct raw_convert<unsigned long long, H> :
-    raw_convert_base<raw_convert<unsigned long long, H>, H>
-{
-    using raw_convert_base<raw_convert<unsigned long long, H>, H>
-        ::raw_convert_base;
-
-    auto engine(const char* s, char** e) const
-    {
-        return std::strtoull(s, e, 10);
-    }
-
-    auto engine(const wchar_t* s, wchar_t** e) const
-    {
-        return std::wcstoull(s, e, 10);
-    }
-};
-
-template <class H>
-struct raw_convert<float, H> :
-    raw_convert_base<raw_convert<float, H>, H>
-{
-    using raw_convert_base<raw_convert<float, H>, H>
-        ::raw_convert_base;
-
-    auto engine(const char* s, char** e) const
-    {
-        return std::strtof(s, e);
-    }
-
-    auto engine(const wchar_t* s, wchar_t** e) const
-    {
-        return std::wcstof(s, e);
-    }
-};
-
-template <class H>
-struct raw_convert<double, H> :
-    raw_convert_base<raw_convert<double, H>, H>
-{
-    using raw_convert_base<raw_convert<double, H>, H>
-        ::raw_convert_base;
-
-    auto engine(const char* s, char** e) const
-    {
-        return std::strtod(s, e);
-    }
-
-    auto engine(const wchar_t* s, wchar_t** e) const
-    {
-        return std::wcstod(s, e);
-    }
-};
-
-template <class H>
-struct raw_convert<long double, H> :
-    raw_convert_base<raw_convert<long double, H>, H>
-{
-    using raw_convert_base<raw_convert<long double, H>, H>
-        ::raw_convert_base;
-
-    auto engine(const char* s, char** e) const
-    {
-        return std::strtold(s, e);
-    }
-
-    auto engine(const wchar_t* s, wchar_t** e) const
-    {
-        return std::wcstold(s, e);
+        return numeric_type_traits<T>::wcsto(s, e);
     }
 };
 
@@ -721,12 +650,8 @@ struct restrained_convert<T, H, U,
     }
 };
 
-template <class>
-using void_t = void;
-
 template <class T, class H>
-struct convert<T, H,
-    void_t<typename numeric_type_traits<T>::raw_type>> :
+struct convert<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
     restrained_convert<T, H, typename numeric_type_traits<T>::raw_type>
 {
     using restrained_convert<T, H, typename numeric_type_traits<T>::raw_type>
