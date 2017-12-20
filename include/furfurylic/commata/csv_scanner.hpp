@@ -921,7 +921,7 @@ public:
     }
 };
 
-template <class Ch, class T, class OutputIterator,
+template <class T, class OutputIterator, class Ch,
     class SkippingHandler = fail_if_skipped<T>,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class locale_based_numeric_field_translator :
@@ -1009,8 +1009,8 @@ private:
     }
 };
 
-template <
-    class Ch, class Tr, class Alloc, class OutputIterator,
+template <class OutputIterator, class Ch,
+    class Tr = std::char_traits<Ch>, class Alloc = std::allocator<Ch>,
     class SkippingHandler = fail_if_skipped<std::basic_string<Ch, Tr, Alloc>>>
 class string_field_translator :
     public detail::skipping_handler_holder<SkippingHandler>
@@ -1100,23 +1100,23 @@ auto make_field_translator(
     OutputIterator out, const std::locale& loc, Ch, Appendices&&... appendices)
  -> std::enable_if_t<!detail::is_std_string<T>::value,
         locale_based_numeric_field_translator<
-            Ch, T, OutputIterator, Appendices...>>
+            T, OutputIterator, Ch, Appendices...>>
 {
     return locale_based_numeric_field_translator<
-                Ch, T, OutputIterator, Appendices...>(
+                T, OutputIterator, Ch, Appendices...>(
             std::move(out), loc, std::forward<Appendices>(appendices)...);
 }
 
 template <class T, class OutputIterator, class... Appendices>
 auto make_field_translator(OutputIterator out, Appendices&&... appendices)
  -> std::enable_if_t<detail::is_std_string<T>::value,
-        string_field_translator<
+        string_field_translator<OutputIterator,
             typename T::value_type, typename T::traits_type,
-            typename T::allocator_type, OutputIterator, Appendices...>>
+            typename T::allocator_type, Appendices...>>
 {
-    return string_field_translator<
+    return string_field_translator<OutputIterator,
             typename T::value_type, typename T::traits_type,
-            typename T::allocator_type, OutputIterator, Appendices...>(
+            typename T::allocator_type, Appendices...>(
         std::move(out), std::forward<Appendices>(appendices)...);
 }
 
