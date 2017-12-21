@@ -20,6 +20,7 @@
 
 #include "csv_error.hpp"
 #include "key_chars.hpp"
+#include "member_like_base.hpp"
 
 namespace furfurylic {
 namespace commata {
@@ -57,67 +58,18 @@ auto field_name_of(const char* prefix, const T& t)
     return field_name_of_impl<T>(prefix, t);
 }
 
-template <class F, class = void>
-class member_like_base
-{
-    F f_;
-
-public:
-    template <class G>
-    member_like_base(G&& f) :
-        f_(std::forward<G>(f))
-    {}
-
-    F& get()
-    {
-        return f_;
-    }
-
-    const F& get() const
-    {
-        return f_;
-    }
-};
-
-template <class F>
-class member_like_base<F, std::enable_if_t<!std::is_final<F>::value>> :
-    F
-{
-public:
-    template <class G>
-    member_like_base(G&& f) :
-        F(std::forward<G>(f))
-    {}
-
-    F& get()
-    {
-        return *this;
-    }
-
-    const F& get() const
-    {
-        return *this;
-    }
-};
-
 template <class FieldNamePred>
 struct field_name_pred_base :
     member_like_base<FieldNamePred>
 {
-    template <class G>
-    field_name_pred_base(G&& f) :
-        member_like_base<FieldNamePred>(std::forward<G>(f))
-    {}
+    using member_like_base<FieldNamePred>::member_like_base;
 };
 
 template <class FieldValuePred>
 struct field_value_pred_base :
     member_like_base<FieldValuePred>
 {
-    template <class G>
-    field_value_pred_base(G&& f) :
-        member_like_base<FieldValuePred>(std::forward<G>(f))
-    {}
+    using member_like_base<FieldValuePred>::member_like_base;
 };
 
 }

@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "csv_error.hpp"
+#include "member_like_base.hpp"
 
 namespace furfurylic {
 namespace commata {
@@ -605,6 +606,23 @@ struct is_back_insertable :
     decltype(is_back_insertable_impl::check<T>(nullptr))
 {};
 
+template <class SkippingHandler>
+struct skipping_handler_holder :
+    private member_like_base<SkippingHandler>
+{
+    using member_like_base<SkippingHandler>::member_like_base;
+
+    const SkippingHandler& get_skipping_handler() const
+    {
+        return this->get();
+    }
+
+    SkippingHandler& get_skipping_handler()
+    {
+        return this->get();
+    }
+};
+
 }
 
 template <class T>
@@ -635,16 +653,19 @@ public:
 
 template <class T, class OutputIterator,
     class SkippingHandler = fail_if_skipped<T>>
-class field_translator : detail::convert<T>
+class field_translator :
+    detail::convert<T>,
+    public detail::skipping_handler_holder<SkippingHandler>
 {
     OutputIterator out_;
-    SkippingHandler handle_skipping_;    // TODO: EBO
 
 public:
     explicit field_translator(
         OutputIterator out,
         SkippingHandler handle_skipping = SkippingHandler()) :
-        out_(std::move(out)), handle_skipping_(std::move(handle_skipping))
+        detail::skipping_handler_holder<SkippingHandler>(
+            std::move(handle_skipping)),
+        out_(std::move(out))
     {}
 
     template <class Ch>
@@ -667,37 +688,29 @@ public:
 #endif
     void field_skipped()
     {
-        *out_ = handle_skipping_.skipped();
+        *out_ = this->get_skipping_handler().skipped();
         ++out_;
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-    }
-
-    const SkippingHandler& get_skipping_handler() const
-    {
-        return handle_skipping_;
-    }
-
-    SkippingHandler& get_skipping_handler()
-    {
-        return handle_skipping_;
     }
 };
 
 template <class Ch, class Tr, class Alloc,
           class OutputIterator, class SkippingHandler>
 class field_translator<
-    std::basic_string<Ch, Tr, Alloc>, OutputIterator, SkippingHandler>
+    std::basic_string<Ch, Tr, Alloc>, OutputIterator, SkippingHandler> :
+    public detail::skipping_handler_holder<SkippingHandler>
 {
     OutputIterator out_;
-    SkippingHandler handle_skipping_;    // TODO: EBO
 
 public:
     explicit field_translator(
         OutputIterator out,
         SkippingHandler handle_skipping = SkippingHandler()) :
-        out_(std::move(out)), handle_skipping_(std::move(handle_skipping))
+        detail::skipping_handler_holder<SkippingHandler>(
+            std::move(handle_skipping)),
+        out_(std::move(out))
     {}
 
     void field_value(const Ch* begin, const Ch* end)
@@ -717,21 +730,11 @@ public:
 #endif
     void field_skipped()
     {
-        *out_ = handle_skipping_.skipped();
+        *out_ = this->get_skipping_handler().skipped();
         ++out_;
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-    }
-
-    const SkippingHandler& get_skipping_handler() const
-    {
-        return handle_skipping_;
-    }
-
-    SkippingHandler& get_skipping_handler()
-    {
-        return handle_skipping_;
     }
 };
 
