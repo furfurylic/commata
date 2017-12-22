@@ -255,7 +255,11 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     s << "-5,x," << maxxPlus1 << '\n'
       << ",3," << minnMinus1;
 
-    ASSERT_NO_THROW(parse(s, std::move(h)));
+    try {
+        parse(s, std::move(h));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
     ASSERT_EQ(2U, values0.size());
     ASSERT_EQ(2U, values1.size());
     ASSERT_EQ(2U, values2.size());
@@ -287,7 +291,11 @@ TEST_F(TestFieldTranslatorForChar, Correct)
     h.set_field_scanner(2, make_field_translator_c(values2));
 
     std::basic_stringbuf<char> buf("-120,250,-5");
-    ASSERT_NO_THROW(parse(&buf, std::move(h)));
+    try {
+        parse(&buf, std::move(h));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
     ASSERT_EQ(1U, values0.size());
     ASSERT_EQ(1U, values1.size());
     ASSERT_EQ(1U, values2.size());
@@ -319,7 +327,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, Correct)
     try {
         parse(&buf, std::move(h));
     } catch (const csv_error& e) {
-        FAIL() << e.what();
+        FAIL() << e.info();
     }
 
     ASSERT_EQ(2U, values.size());
@@ -432,7 +440,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
     try {
         parse(&buf, std::move(h));
     } catch (const csv_error& e) {
-        FAIL() << e.what();
+        FAIL() << e.info();
     }
 
     ASSERT_EQ(3U, values.size());
@@ -488,7 +496,11 @@ TYPED_TEST(TestCsvScanner, Indexed)
     s << "F0,F1,F2,F3,F4\r"
          "50,__, 101.2 ,XYZ,  200\n"
          "-3,__,3.00e9,\"\"\"ab\"\"\rc\",200\n";
-    ASSERT_NO_THROW(parse(s, std::move(h)));
+    try {
+        parse(s, std::move(h));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
 
     const std::deque<long> expected0 = { -3, 50 };
     const std::vector<double> expected21 = { 101.2, 3.00e9 };
@@ -527,7 +539,11 @@ TYPED_TEST(TestCsvScanner, SkippedWithNoErrors)
     s << "XYZ,20\n"
          "\n"
          "A";
-    ASSERT_NO_THROW(parse(s, make_empty_physical_row_aware(std::move(h))));
+    try {
+        parse(s, make_empty_physical_row_aware(std::move(h)));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
 
     const std::deque<string_t> expected0 =
         { str("XYZ"), string_t(), str("A") };
@@ -592,7 +608,7 @@ TYPED_TEST(TestCsvScanner, HeaderScan)
     try {
         parse(&buf, std::move(h));
     } catch (const csv_error& e) {
-        FAIL() << e.what();
+        FAIL() << e.info();
     }
 
     ASSERT_EQ(1U, ids.size());
@@ -624,7 +640,7 @@ TYPED_TEST(TestCsvScanner, HeaderScanToTheEnd)
 
     auto s = str("A\n1\n");
     std::basic_stringbuf<TypeParam> buf(s);
-    parse(&buf, std::move(h));
+    ASSERT_NO_THROW(parse(&buf, std::move(h)));
 }
 
 namespace {
@@ -674,7 +690,7 @@ TYPED_TEST(TestCsvScanner, LocaleBased)
     try {
         parse(&buf, std::move(h));
     } catch (const csv_error& e) {
-        FAIL() << e.what();
+        FAIL() << e.info();
     }
     ASSERT_EQ(100000, values0[0]);
     ASSERT_EQ(12345678.5, values1[0]);
@@ -703,7 +719,7 @@ TYPED_TEST(TestCsvScanner, BufferSize)
         try {
             parse(&buf, std::move(h));
         } catch (const csv_error& e) {
-            FAIL() << e.what() << "buffer_size=" << buffer_size;
+            FAIL() << e.info() << "\nbuffer_size=" << buffer_size;
         }
 
         ASSERT_EQ(50U, values0.size());

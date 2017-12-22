@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "formatted_output.hpp"
 #include "key_chars.hpp"
 
 namespace furfurylic {
@@ -574,49 +575,12 @@ std::basic_ostream<Ch, Tr>& operator<<(
 {
     // In C++17, this function will be able to be implemented in terms of
     // string_view's operator<<
-
-    const typename std::basic_ostream<Ch, Tr>::sentry s(os);
-
-    const auto pad = [&os, n = o.size()] {
-        const auto w = os.width();
-        if ((w > 0) && (static_cast<std::ios_base::streampos>(n) < w)) {
-            const auto pad_one = [buf = os.rdbuf(), f = os.fill()] {
-                return buf->sputc(f) != Tr::eof();
-            };
-            const auto pad = w - n;
-            for (decltype(pad + 1) i = 0; i < pad; ++i) {
-                if (!pad_one()) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    };
-
-    const auto put = [&os, &o, n = static_cast<std::streamsize>(o.size())] {
-        return os.rdbuf()->sputn(o.cbegin(), n) == n;
-    };
-
-    if (!s) {
-        os.setstate(std::ios_base::failbit);    // throw
-    } else {
-        try {
-            if ((os.flags() & std::ios_base::adjustfield)
-                    != std::ios_base::left) {
-                if (!(pad() && put())) {
-                    os.setstate(std::ios_base::failbit);    // throw
-                }
-            } else {
-                if (!(put() && pad())) {
-                    os.setstate(std::ios_base::failbit);    // throw
-                }
-            }
-            os.width(0);
-        } catch (...) {
-            os.setstate(std::ios_base::badbit); // throw
-        }
-    }
-    return os;
+    const auto n = static_cast<std::streamsize>(o.size());
+    return detail::formatted_output(
+        os, n,
+        [b = o.cbegin(), n](auto* sb) {
+            return sb->sputn(b, n) == n;
+        });
 }
 
 using csv_value = basic_csv_value<char, std::char_traits<char>>;

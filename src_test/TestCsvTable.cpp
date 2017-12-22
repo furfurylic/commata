@@ -777,7 +777,7 @@ TEST_P(TestCsvTableBuilder, Basics)
     try {
         parse(&in, make_csv_table_builder(GetParam(), table));
     } catch (const csv_error& e) {
-        FAIL() << e.what();
+        FAIL() << e.info();
     }
 
     ASSERT_EQ(4U, table.size());
@@ -812,7 +812,7 @@ TEST_P(TestCsvTableBuilder, EmptyRowAware)
         parse(&in, make_empty_physical_row_aware(
             make_csv_table_builder(GetParam(), table)));
     } catch (const csv_error& e) {
-        FAIL() << e.what();
+        FAIL() << e.info();
     }
 
     ASSERT_EQ(6U, table.size());
