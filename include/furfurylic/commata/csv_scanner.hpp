@@ -674,24 +674,7 @@ struct is_back_insertable :
     decltype(is_back_insertable_impl::check<T>(nullptr))
 {};
 
-template <class SkippingHandler>
-struct skipping_handler_holder :
-    private member_like_base<SkippingHandler>
-{
-    using member_like_base<SkippingHandler>::member_like_base;
-
-    const SkippingHandler& get_skipping_handler() const
-    {
-        return this->get();
-    }
-
-    SkippingHandler& get_skipping_handler()
-    {
-        return this->get();
-    }
-};
-
-}
+} // end detail
 
 template <class T>
 struct fail_if_skipped
@@ -872,40 +855,28 @@ private:
     }
 };
 
-template <class T, class OutputIterator,
-    class SkippingHandler = fail_if_skipped<T>,
-    class ConversionErrorHandler = fail_if_conversion_failed<T>>
-class numeric_field_translator :
-    detail::convert<T, ConversionErrorHandler>,
-    public detail::skipping_handler_holder<SkippingHandler>
+namespace detail {
+
+template <class OutputIterator, class SkippingHandler>
+class translator :
+    private member_like_base<SkippingHandler>
 {
     OutputIterator out_;
 
 public:
-    explicit numeric_field_translator(
-        OutputIterator out,
-        SkippingHandler handle_skipping = SkippingHandler(),
-        ConversionErrorHandler handle_conversion_error
-            = ConversionErrorHandler()) :
-        detail::convert<T, ConversionErrorHandler>(
-            std::move(handle_conversion_error)),
-        detail::skipping_handler_holder<SkippingHandler>(
-            std::move(handle_skipping)),
+    translator(OutputIterator out, SkippingHandler handle_skipping) :
+        member_like_base<SkippingHandler>(std::move(handle_skipping)),
         out_(std::move(out))
     {}
 
-    template <class Ch>
-    void field_value(const Ch* begin, const Ch* end)
+    const SkippingHandler& get_skipping_handler() const
     {
-        assert(*end == Ch());   // shall be null-teminated
-        *out_ = (*this)(begin, end);
-        ++out_;
+        return this->get();
     }
 
-    template <class Ch, class Tr, class Alloc>
-    void field_value(std::basic_string<Ch, Tr, Alloc>&& value)
+    SkippingHandler& get_skipping_handler()
     {
-        field_value(value.c_str(), value.c_str() + value.size());
+        return this->get();
     }
 
 #ifdef _MSC_VER
@@ -914,12 +885,57 @@ public:
 #endif
     void field_skipped()
     {
-        *out_ = this->get_skipping_handler().skipped();
-        ++out_;
+        put(get_skipping_handler().skipped());
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
     }
+
+    template <class T>
+    void put(T&& value)
+    {
+        *out_ = std::forward<T>(value);
+        ++out_;
+    }
+};
+    
+}
+
+template <class T, class OutputIterator,
+    class SkippingHandler = fail_if_skipped<T>,
+    class ConversionErrorHandler = fail_if_conversion_failed<T>>
+class numeric_field_translator :
+    detail::convert<T, ConversionErrorHandler>,
+    detail::translator<OutputIterator, SkippingHandler>
+{
+public:
+    explicit numeric_field_translator(
+        OutputIterator out,
+        SkippingHandler handle_skipping = SkippingHandler(),
+        ConversionErrorHandler handle_conversion_error
+            = ConversionErrorHandler()) :
+        detail::convert<T, ConversionErrorHandler>(
+            std::move(handle_conversion_error)),
+        detail::translator<OutputIterator, SkippingHandler>(
+            std::move(out), std::move(handle_skipping))
+    {}
+
+    template <class Ch>
+    void field_value(const Ch* begin, const Ch* end)
+    {
+        assert(*end == Ch());   // shall be null-teminated
+        this->put((*this)(begin, end));
+    }
+
+    template <class Ch, class Tr, class Alloc>
+    void field_value(std::basic_string<Ch, Tr, Alloc>&& value)
+    {
+        field_value(value.c_str(), value.c_str() + value.size());
+    }
+
+    using detail::translator<OutputIterator, SkippingHandler>::
+        get_skipping_handler;
+    using detail::translator<OutputIterator, SkippingHandler>::field_skipped;
 };
 
 template <class T, class OutputIterator, class Ch,
@@ -927,14 +943,13 @@ template <class T, class OutputIterator, class Ch,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class locale_based_numeric_field_translator :
     detail::convert<T, ConversionErrorHandler>,
-    public detail::skipping_handler_holder<SkippingHandler>
+    detail::translator<OutputIterator, SkippingHandler>
 {
     Ch thousands_sep_;      // of specified loc in the ctor
     Ch decimal_point_;      // of specified loc in the ctor
     Ch decimal_point_c_;    // of C's global
                             // to mimic std::strtol and its siblings;
                             // initialized after parsing has started
-    OutputIterator out_;
 
 public:
     locale_based_numeric_field_translator(
@@ -944,9 +959,9 @@ public:
             = ConversionErrorHandler()) :
         detail::convert<T, ConversionErrorHandler>(
             std::move(handle_conversion_error)),
-        detail::skipping_handler_holder<SkippingHandler>(
-            std::move(handle_skipping)),
-        decimal_point_c_(Ch()), out_(std::move(out))
+        detail::translator<OutputIterator, SkippingHandler>(
+            std::move(out), std::move(handle_skipping)),
+        decimal_point_c_(Ch())
     {
         const auto& facet = std::use_facet<std::numpunct<Ch>>(loc);
         thousands_sep_ = facet.grouping().empty() ?
@@ -977,8 +992,7 @@ public:
             ++head;
         }
         *head = Ch();
-        *out_ = (*this)(begin, head);
-        ++out_;
+        this->put((*this)(begin, head));
     }
 
     template <class Tr, class Alloc>
@@ -987,18 +1001,9 @@ public:
         field_value(&value[0], &value[0] + value.size());
     }
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4702)
-#endif
-    void field_skipped()
-    {
-        *out_ = this->get_skipping_handler().skipped();
-        ++out_;
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-    }
+    using detail::translator<OutputIterator, SkippingHandler>::
+        get_skipping_handler;
+    using detail::translator<OutputIterator, SkippingHandler>::field_skipped;
 
 private:
     static char widen(char c, char)
@@ -1016,17 +1021,14 @@ template <class OutputIterator, class Ch,
     class Tr = std::char_traits<Ch>, class Alloc = std::allocator<Ch>,
     class SkippingHandler = fail_if_skipped<std::basic_string<Ch, Tr, Alloc>>>
 class string_field_translator :
-    public detail::skipping_handler_holder<SkippingHandler>
+    detail::translator<OutputIterator, SkippingHandler>
 {
-    OutputIterator out_;
-
 public:
     explicit string_field_translator(
         OutputIterator out,
         SkippingHandler handle_skipping = SkippingHandler()) :
-        detail::skipping_handler_holder<SkippingHandler>(
-            std::move(handle_skipping)),
-        out_(std::move(out))
+        detail::translator<OutputIterator, SkippingHandler>(
+            std::move(out), std::move(handle_skipping))
     {}
 
     void field_value(const Ch* begin, const Ch* end)
@@ -1036,22 +1038,12 @@ public:
 
     void field_value(std::basic_string<Ch, Tr, Alloc>&& value)
     {
-        *out_ = std::move(value);
-        ++out_;
+        this->put(std::move(value));
     }
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4702)
-#endif
-    void field_skipped()
-    {
-        *out_ = this->get_skipping_handler().skipped();
-        ++out_;
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-    }
+    using detail::translator<OutputIterator, SkippingHandler>::
+        get_skipping_handler;
+    using detail::translator<OutputIterator, SkippingHandler>::field_skipped;
 };
 
 namespace detail {
