@@ -726,7 +726,6 @@ struct fail_if_conversion_failed
     [[noreturn]]
     T invalid_format(const Ch* begin, const Ch* end) const
     {
-        // TODO: OK? (are there any other zeros?)
         assert(*end == Ch());
         std::ostringstream s;
         narrow(s, begin, end);
@@ -760,21 +759,23 @@ private:
     static void narrow(std::ostream& os, const Ch* begin, const Ch* end)
     {
         const auto& facet =
-            std::use_facet<std::ctype<Ch>>(std::locale::classic());
+            std::use_facet<std::ctype<Ch>>(std::locale());  // current global
         std::transform(begin, end, std::ostreambuf_iterator<char>(os),
             [&facet](Ch c) {
-                return facet.narrow(c, '?');
+                // map NUL to '?' to prevent exception::what()
+                // from ending at that NUL
+                return (c == Ch()) ? '?' : facet.narrow(c, '?');
             });
     }
 
-    static void narrow(std::ostream& os, const char* begin, const char*
-#ifndef NDEBUG
-        end
-#endif
-    )
+    static void narrow(std::ostream& os, const char* begin, const char* end)
     {
-        assert(*end == '\0');
-        os << begin;
+        std::transform(begin, end, std::ostreambuf_iterator<char>(os),
+            [](char c) {
+                // map NUL to '?' to prevent exception::what()
+                // from ending at that NUL
+                return (c == char()) ? '?' : c;
+            });
     }
 };
 
@@ -928,9 +929,11 @@ class locale_based_numeric_field_translator :
     detail::convert<T, ConversionErrorHandler>,
     public detail::skipping_handler_holder<SkippingHandler>
 {
-    Ch thousands_sep_;
-    Ch decimal_point_;
-    Ch decimal_point_c_;
+    Ch thousands_sep_;      // of specified loc in the ctor
+    Ch decimal_point_;      // of specified loc in the ctor
+    Ch decimal_point_c_;    // of C's global
+                            // to mimic std::strtol and its siblings;
+                            // initialized after parsing has started
     OutputIterator out_;
 
 public:
