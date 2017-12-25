@@ -438,7 +438,7 @@ struct has_end_buffer :
     decltype(has_end_buffer_impl::check<T>(nullptr))
 {};
 
-struct has_empty_record_impl
+struct has_empty_physical_row_impl
 {
     template <class T>
     static auto check(T*) -> decltype(
@@ -451,8 +451,8 @@ struct has_empty_record_impl
 };
 
 template <class T>
-struct has_empty_record :
-    decltype(has_empty_record_impl::check<T>(nullptr))
+struct has_empty_physical_row :
+    decltype(has_empty_physical_row_impl::check<T>(nullptr))
 {};
 
 template <class Sink>
@@ -460,7 +460,7 @@ struct is_full_fledged_sink :
     std::integral_constant<bool,
         has_get_buffer<Sink>::value && has_release_buffer<Sink>::value
      && has_start_buffer<Sink>::value && has_end_buffer<Sink>::value
-     && has_empty_record<Sink>::value>
+     && has_empty_physical_row<Sink>::value>
 {};
 
 template <class Sink>
@@ -529,7 +529,7 @@ public:
 
     bool empty_physical_row(const char_type* where)
     {
-        return empty_physical_row(has_empty_record<Sink>(), where);
+        return empty_physical_row(has_empty_physical_row<Sink>(), where);
     }
 
 private:
@@ -582,16 +582,19 @@ class primitive_parser
     using char_type = typename Sink::char_type;
 
 private:
+    // Reading position
     const char_type* p_;
     Sink f_;
 
     bool record_started_;
     state s_;
-    const char_type* field_start_;
-    const char_type* field_end_;
+    // [first, last) is the current field value
+    const char_type* first_;
+    const char_type* last_;
 
     std::size_t physical_row_index_;
     const char_type* physical_row_or_buffer_begin_;
+    // Number of chars of this row before physical_row_or_buffer_begin_
     std::size_t physical_row_chars_passed_away_;
 
 private:
@@ -603,7 +606,7 @@ private:
     {};
 
 public:
-    explicit primitive_parser(Sink f) :
+    explicit primitive_parser(Sink&& f) :
         f_(std::move(f)),
         record_started_(false), s_(state::after_lf),
         physical_row_index_(parse_error::npos),
@@ -616,8 +619,8 @@ public:
     template <class Tr>
     bool parse(std::basic_streambuf<char_type, Tr>* in)
     {
-        auto release = [this](const char_type* buffer) {
-            f_.release_buffer(buffer);
+        auto release = [f = &f_](const char_type* buffer) {
+            f->release_buffer(buffer);
         };
 
         bool eof_reached = false;
@@ -710,23 +713,23 @@ private:
 
     void set_first_last()
     {
-        field_start_ = p_;
-        field_end_ = p_;
+        first_ = p_;
+        last_ = p_;
     }
 
     void update_last()
     {
-        field_end_ = p_ + 1;
+        last_ = p_ + 1;
     }
 
     void update()
     {
         if (!record_started_) {
-            f_.start_record(field_start_);
+            f_.start_record(first_);
             record_started_ = true;
         }
-        if (field_start_ < field_end_) {
-            if (!f_.update(field_start_, field_end_)) {
+        if (first_ < last_) {
+            if (!f_.update(first_, last_)) {
                 throw parse_aborted();
             }
         }
@@ -735,10 +738,10 @@ private:
     void finalize()
     {
         if (!record_started_) {
-            f_.start_record(field_start_);
+            f_.start_record(first_);
             record_started_ = true;
         }
-        if (!f_.finalize(field_start_, field_end_)) {
+        if (!f_.finalize(first_, last_)) {
             throw parse_aborted();
         }
     }
@@ -880,7 +883,7 @@ struct end_buffer_t<Sink, D,
     }
 };
 
-}
+} // end namespace detail
 
 template <class Sink>
 class empty_physical_row_aware_sink :
@@ -894,17 +897,17 @@ class empty_physical_row_aware_sink :
 public:
     using char_type = typename Sink::char_type;
 
-    explicit empty_physical_row_aware_sink(Sink&& sink) :
+    explicit empty_physical_row_aware_sink(Sink sink) :
         sink_(std::move(sink))
     {
-        using sink_t = std::remove_pointer_t<decltype(this)>;
-        static_assert(detail::has_get_buffer<sink_t>::value
+        using this_t = std::remove_pointer_t<decltype(this)>;
+        static_assert(detail::has_get_buffer<this_t>::value
             == detail::has_get_buffer<Sink>::value, "");
-        static_assert(detail::has_release_buffer<sink_t>::value
+        static_assert(detail::has_release_buffer<this_t>::value
             == detail::has_release_buffer<Sink>::value, "");
-        static_assert(detail::has_start_buffer<sink_t>::value
+        static_assert(detail::has_start_buffer<this_t>::value
             == detail::has_start_buffer<Sink>::value, "");
-        static_assert(detail::has_end_buffer<sink_t>::value
+        static_assert(detail::has_end_buffer<this_t>::value
             == detail::has_end_buffer<Sink>::value, "");
     }
 
@@ -938,13 +941,21 @@ public:
     {
         return sink_;
     }
+
+    const Sink& base() const
+    {
+        return sink_;
+    }
 };
 
 template <class Sink>
 auto make_empty_physical_row_aware(Sink&& sink)
 {
     return empty_physical_row_aware_sink<
-        std::remove_reference_t<Sink>>(std::forward<Sink>(sink));
+        std::decay_t<Sink>>(std::forward<Sink>(sink));
+    // No one would want to instantiate empty_physical_row_aware_sink with
+    // const|volatile types (almost none of their members can be invoked),
+    // so we use decay_t instead of remove_reference_t.
 }
 
 }}
