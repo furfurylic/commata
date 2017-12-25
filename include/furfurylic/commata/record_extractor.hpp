@@ -9,6 +9,7 @@
 #include <ios>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <ostream>
 #include <streambuf>
 #include <sstream>
@@ -21,6 +22,7 @@
 #include "csv_error.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
+#include "typing_aid.hpp"
 
 namespace furfurylic {
 namespace commata {
@@ -45,15 +47,15 @@ public:
     }
 };
 
-auto field_name_of(...)
+template <class... Args>
+auto field_name_of(Args...)
 {
     return "";
 }
 
 template <class T>
-auto field_name_of(const char* prefix, const T& t)
-  -> decltype(std::declval<std::ostream&>() << t,
-              field_name_of_impl<T>(prefix, t))
+auto field_name_of(const char* prefix, const T& t,
+    decltype(&(std::declval<std::ostream&>() << t)) = nullptr)
 {
     return field_name_of_impl<T>(prefix, t);
 }
@@ -72,7 +74,7 @@ struct field_value_pred_base :
     using member_like_base<FieldValuePred>::member_like_base;
 };
 
-}
+} // end namespace detail
 
 class record_extraction_error :
     public csv_error
@@ -80,8 +82,6 @@ class record_extraction_error :
 public:
     using csv_error::csv_error;
 };
-
-namespace detail {
 
 template <class Ch>
 struct hollow_field_name_pred
@@ -91,8 +91,6 @@ struct hollow_field_name_pred
         return true;
     }
 };
-
-}
 
 template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr = std::char_traits<Ch>>
@@ -116,10 +114,14 @@ class record_extractor :
     std::size_t target_field_index_;
 
     std::size_t field_index_;
-    const Ch* record_begin_;
+    const Ch* current_begin_;   // current records's begin if not the buffer
+                                // switched, current buffer's begin otherwise
     std::basic_streambuf<Ch, Tr>* out_;
     std::vector<Ch> field_buffer_;
-    std::vector<Ch> record_buffer_;
+    std::vector<Ch> record_buffer_; // pupulated only after the buffer switched
+                                    // in a unknown (included or not ) record
+                                    // and shall not overlap with interval
+                                    // [current_begin_, +inf)
 
     using field_name_pred_t = detail::field_name_pred_base<FieldNamePred>;
     using field_value_pred_t = detail::field_value_pred_base<FieldValuePred>;
@@ -130,7 +132,7 @@ public:
     record_extractor(
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePred field_name_pred, FieldValuePred field_value_pred,
-        bool includes_header, std::size_t max_record_num) :
+        bool includes_header = true, std::size_t max_record_num = npos) :
         field_name_pred_t(std::move(field_name_pred)),
         field_value_pred_t(std::move(field_value_pred)),
         header_mode_(includes_header ?
@@ -143,9 +145,9 @@ public:
     record_extractor(
         std::basic_streambuf<Ch, Tr>* out,
         std::size_t target_field_index, FieldValuePred field_value_pred,
-        bool includes_header, std::size_t max_record_num) :
+        bool includes_header = true, std::size_t max_record_num = npos) :
         record_extractor(out,
-            detail::hollow_field_name_pred<Ch>(),
+            hollow_field_name_pred<Ch>(),
             std::move(field_value_pred),
             includes_header, max_record_num)
     {
@@ -163,18 +165,18 @@ public:
 
     void start_buffer(const Ch* buffer_begin)
     {
-        record_begin_ = buffer_begin;
+        current_begin_ = buffer_begin;
     }
 
     void end_buffer(const Ch* buffer_end)
     {
         switch (record_mode_) {
         case record_mode::include:
-            out_->sputn(record_begin_, buffer_end - record_begin_);
+            flush_current(buffer_end);
             break;
         case record_mode::unknown:
             record_buffer_.insert(
-                record_buffer_.cend(), record_begin_, buffer_end);
+                record_buffer_.cend(), current_begin_, buffer_end);
             break;
         default:
             break;
@@ -183,10 +185,10 @@ public:
 
     void start_record(const Ch* record_begin)
     {
-        record_begin_ = record_begin;
+        current_begin_ = record_begin;
         record_mode_ = header_yet() ? header_mode_ : record_mode::unknown;
         field_index_ = 0;
-        record_buffer_.clear();
+        assert(record_buffer_.empty());
     }
 
     bool update(const Ch* first, const Ch* last)
@@ -200,12 +202,11 @@ public:
 
     bool finalize(const Ch* first, const Ch* last)
     {
+        using namespace std::placeholders;
         if (header_yet()) {
             if ((target_field_index_ == npos)
-             && with_field_buffer_appended(first, last,
-                    [this](const Ch* first, const Ch* last) {
-                        return field_name_pred_t::get()(first, last);
-                    })) {
+             && with_field_buffer_appended(first, last, std::bind(
+                    std::ref(field_name_pred_t::get()), _1, _2))) {
                 target_field_index_ = field_index_;
             }
             ++field_index_;
@@ -215,23 +216,16 @@ public:
         } else {
             if ((record_mode_ == record_mode::unknown)
              && (field_index_ == target_field_index_)) {
-                if (with_field_buffer_appended(first, last,
-                        [this](const Ch* first, const Ch* last) {
-                            return field_value_pred_t::get()(first, last);
-                        })) {
-                    record_mode_ = record_mode::include;
-                    if (!record_buffer_.empty()) {
-                        out_->sputn(
-                            record_buffer_.data(), record_buffer_.size());
-                        record_buffer_.clear();
-                    }
+                if (with_field_buffer_appended(first, last, std::bind(
+                        std::ref(field_value_pred_t::get()), _1, _2))) {
+                    include();
                 } else {
-                    record_mode_ = record_mode::exclude;
+                    exclude();
                 }
             }
             ++field_index_;
             if (field_index_ >= npos) {
-                record_mode_ = record_mode::exclude;
+                exclude();
             }
         }
         return true;
@@ -243,12 +237,12 @@ public:
             if (target_field_index_ == npos) {
                 throw no_matching_field();
             }
-            flush_record_if_include(record_end);
+            flush_record(record_end);
             if (record_num_to_include_ == 0) {
                 return false;
             }
             header_mode_ = record_mode::unknown;
-        } else if (flush_record_if_include(record_end)) {
+        } else if (flush_record(record_end)) {
             if (record_num_to_include_ == 1) {
                 return false;
             }
@@ -271,8 +265,7 @@ private:
         } else {
             field_buffer_.insert(field_buffer_.cend(), first, last);
             const auto r = f(
-                field_buffer_.data(),
-                field_buffer_.data() + field_buffer_.size());
+                &field_buffer_[0], &field_buffer_[0] + field_buffer_.size());
             field_buffer_.clear();
             return r;
         }
@@ -282,44 +275,75 @@ private:
     {
         std::ostringstream what;
         what << "No matching field"
-             << field_name_of(" for ", field_name_pred_t::get());
+             << detail::field_name_of(" for ", field_name_pred_t::get());
         return record_extraction_error(what.str());
     }
 
-    bool flush_record_if_include(const Ch* record_end)
+    void include()
+    {
+        flush_record_buffer();
+        record_mode_ = record_mode::include;
+    }
+
+    void exclude()
+    {
+        record_mode_ = record_mode::exclude;
+        record_buffer_.clear();
+    }
+
+    bool flush_record(const Ch* record_end)
     {
         switch (record_mode_) {
         case record_mode::include:
-            if (!record_buffer_.empty()) {
-                out_->sputn(record_buffer_.data(), record_buffer_.size());
-            }
-            out_->sputn(record_begin_, record_end - record_begin_);
-            out_->sputc(detail::key_chars<Ch>::LF);
+            flush_record_buffer();
+            flush_current(record_end);
+            flush_lf();
             record_mode_ = record_mode::exclude;    // to prevent end_buffer
                                                     // from doing anything
             return true;
         case record_mode::exclude:
+            assert(record_buffer_.empty());
             return false;
         case record_mode::unknown:
             assert(!header_yet());
             record_mode_ = record_mode::exclude;    // no such a far field
+            record_buffer_.clear();
             return false;
         default:
             assert(false);
             return false;
         }
     }
+
+    void flush_record_buffer()
+    {
+        if (!record_buffer_.empty()) {
+            out_->sputn(record_buffer_.data(), record_buffer_.size());
+            record_buffer_.clear();
+        }
+    }
+
+    void flush_current(const Ch* end)
+    {
+        assert(record_buffer_.empty());
+        out_->sputn(current_begin_, end - current_begin_);
+    }
+
+    void flush_lf()
+    {
+        out_->sputc(detail::key_chars<Ch>::LF);
+    }
 };
 
 namespace detail {
 
-template <class Ch, class Tr>
+template <class Ch, class Tr, class Alloc>
 class string_eq
 {
-    std::basic_string<Ch, Tr> s_;
+    std::basic_string<Ch, Tr, Alloc> s_;
 
 public:
-    explicit string_eq(std::basic_string<Ch, Tr>&& s) :
+    explicit string_eq(std::basic_string<Ch, Tr, Alloc>&& s) :
         s_(std::move(s))
     {}
 
@@ -337,106 +361,116 @@ public:
     }
 };
 
-template <class Ch, class Tr, class T>
-auto forward_as_string_pred(T&& t)
- -> std::enable_if_t<
-        std::is_constructible<std::basic_string<Ch, Tr>, T&&>::value,
-        string_eq<Ch, Tr>>
+template <class Ch, class T, class = void>
+struct string_pred;
+
+template <class Ch, class T>
+struct string_pred<Ch, T,
+    std::enable_if_t<
+        is_std_string<std::decay_t<T>>::value
+     && std::is_same<Ch, typename std::decay_t<T>::value_type>::value>>
+// We'd like to copy the string into the extractor, but don't like any slicing
+// to take place, so is_std_string is sufficient and preferrable to use of
+// std::is_base_of.
 {
-    return string_eq<Ch, Tr>(std::forward<T>(t));
-}
+    using type = string_eq<
+        Ch,
+        typename std::decay_t<T>::traits_type,
+        typename std::decay_t<T>::allocator_type>;
+};
 
-template <class Ch, class Tr, class T>
-auto forward_as_string_pred(T&& t)
- -> std::enable_if_t<
-        !std::is_constructible<std::basic_string<Ch, Tr>, T&&>::value,
-        T&&>
+template <class Ch, class T>
+struct string_pred<Ch, T,
+    std::enable_if_t<
+        !is_std_string<std::decay_t<T>>::value
+     && std::is_constructible<std::basic_string<Ch>, T&&>::value>>
+// Be careful with reference collapsing when you read codes above
+// (T can be an lvalue refecence type).
 {
-    return std::forward<T>(t);
-}
+    using type = string_eq<Ch, std::char_traits<Ch>, std::allocator<Ch>>;
+};
 
-template <class Ch, class Tr, class T>
-using string_pred =
-    typename std::conditional<
-        std::is_constructible<std::basic_string<Ch, Tr>, T&&>::value,
-        string_eq<Ch, Tr>,
-        typename std::remove_reference<T>::type>::type;
+template <class Ch, class T>
+struct string_pred<Ch, T,
+    std::enable_if_t<
+        !is_std_string<std::decay_t<T>>::value
+     && !std::is_constructible<std::basic_string<Ch>, T&&>::value>>
+// ditto
+{
+    using type = std::decay_t<T>;
+};
 
-template <class FieldNamePredF, class FieldValuePredF, class Ch, class Tr>
-using record_extractor_from =
+template <class Ch, class T>
+using string_pred_t = typename string_pred<Ch, T>::type;
+
+template <class FieldNamePred, class FieldValuePred, class Ch, class Tr>
+using record_extractor_for =
     record_extractor<
-        string_pred<Ch, Tr, FieldNamePredF>,
-        string_pred<Ch, Tr, FieldValuePredF>,
+        string_pred_t<Ch, FieldNamePred>, string_pred_t<Ch, FieldValuePred>,
         Ch, Tr>;
 
 } // end namespace detail
 
-template <class FieldNamePredF, class FieldValuePredF, class Ch, class Tr>
+template <class FieldNamePred, class FieldValuePred,
+    class Ch, class Tr, class... Appendices>
 auto make_record_extractor(
     std::basic_streambuf<Ch, Tr>* out,
-    FieldNamePredF&& field_name_pred,
-    FieldValuePredF&& field_value_pred,
-    bool includes_header = true,
-    std::size_t max_record_num = static_cast<std::size_t>(-1))
+    FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
+    Appendices&&... appendices)
  -> std::enable_if_t<
-        !std::is_integral<FieldNamePredF>::value,
-        detail::record_extractor_from<FieldNamePredF, FieldValuePredF, Ch, Tr>>
+        !std::is_integral<FieldNamePred>::value,
+        detail::record_extractor_for<FieldNamePred, FieldValuePred, Ch, Tr>>
 {
-    return detail::record_extractor_from<
-            FieldNamePredF, FieldValuePredF, Ch, Tr>(
+    return detail::record_extractor_for<
+            FieldNamePred, FieldValuePred, Ch, Tr>(
         out,
-        detail::forward_as_string_pred<Ch, Tr>(
-            std::forward<FieldNamePredF>(field_name_pred)),
-        detail::forward_as_string_pred<Ch, Tr>(
-            std::forward<FieldValuePredF>(field_value_pred)),
-        includes_header, max_record_num);
+        detail::string_pred_t<Ch, FieldNamePred>(
+            std::forward<FieldNamePred>(field_name_pred)),
+        detail::string_pred_t<Ch, FieldValuePred>(
+            std::forward<FieldValuePred>(field_value_pred)),
+        std::forward<Appendices>(appendices)...);
 }
 
-template <class FieldNamePredF, class FieldValuePredF, class Ch, class Tr>
+template <class FieldNamePred, class FieldValuePred,
+    class Ch, class Tr, class... Appendices>
 auto make_record_extractor(
     std::basic_ostream<Ch, Tr>& out,
-    FieldNamePredF&& field_name_pred,
-    FieldValuePredF&& field_value_pred,
-    bool includes_header = true,
-    std::size_t max_record_num = static_cast<std::size_t>(-1))
-    ->std::enable_if_t<
-    !std::is_integral<FieldNamePredF>::value,
-    detail::record_extractor_from<FieldNamePredF, FieldValuePredF, Ch, Tr>>
+    FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
+    Appendices&&... appendices)
+ -> std::enable_if_t<
+        !std::is_integral<FieldNamePred>::value,
+        detail::record_extractor_for<FieldNamePred, FieldValuePred, Ch, Tr>>
 {
     return make_record_extractor(out.rdbuf(),
-        std::forward<FieldNamePredF>(field_name_pred),
-        std::forward<FieldValuePredF>(field_value_pred),
-        includes_header, max_record_num);
+        std::forward<FieldNamePred>(field_name_pred),
+        std::forward<FieldValuePred>(field_value_pred),
+        std::forward<Appendices>(appendices)...);
 }
 
-template <class FieldValuePredF, class Ch, class Tr>
+template <class FieldValuePred, class Ch, class Tr, class... Appendices>
 auto make_record_extractor(
     std::basic_streambuf<Ch, Tr>* out,
-    std::size_t target_field_index,
-    FieldValuePredF&& field_value_pred,
-    bool includes_header = true,
-    std::size_t max_record_num = static_cast<std::size_t>(-1))
+    std::size_t target_field_index, FieldValuePred&& field_value_pred,
+    Appendices&&... appendices)
 {
-    return detail::record_extractor_from<
-            detail::hollow_field_name_pred<Ch>, FieldValuePredF, Ch, Tr>(
+    return detail::record_extractor_for<
+            hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr>(
         out,
         target_field_index,
-        detail::forward_as_string_pred<Ch, Tr>(
-            std::forward<FieldValuePredF>(field_value_pred)),
-        includes_header, max_record_num);
+        detail::string_pred_t<Ch, FieldValuePred>(
+            std::forward<FieldValuePred>(field_value_pred)),
+        std::forward<Appendices>(appendices)...);
 }
 
-template <class FieldValuePredF, class Ch, class Tr>
+template <class FieldValuePred, class Ch, class Tr, class... Appendices>
 auto make_record_extractor(
     std::basic_ostream<Ch, Tr>& out,
-    std::size_t target_field_index,
-    FieldValuePredF&& field_value_pred,
-    bool includes_header = true,
-    std::size_t max_record_num = static_cast<std::size_t>(-1))
+    std::size_t target_field_index, FieldValuePred&& field_value_pred,
+    Appendices&&... appendices)
 {
     return make_record_extractor(out.rdbuf(), target_field_index,
-        std::forward<FieldValuePredF>(field_value_pred),
-        includes_header, max_record_num);
+        std::forward<FieldValuePred>(field_value_pred),
+        std::forward<Appendices>(appendices)...);
 }
 
 }}

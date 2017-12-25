@@ -29,6 +29,7 @@
 
 #include "csv_error.hpp"
 #include "member_like_base.hpp"
+#include "typing_aid.hpp"
 
 namespace furfurylic {
 namespace commata {
@@ -1047,16 +1048,6 @@ public:
 };
 
 namespace detail {
-
-template <class T>
-struct is_std_string :
-    std::false_type
-{};
-
-template <class... Args>
-struct is_std_string<std::basic_string<Args...>> :
-    std::true_type
-{};
 
 template <class... Ts>
 struct first;
