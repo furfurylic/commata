@@ -74,15 +74,6 @@ struct field_value_pred_base :
     using member_like_base<FieldValuePred>::member_like_base;
 };
 
-} // end namespace detail
-
-class record_extraction_error :
-    public csv_error
-{
-public:
-    using csv_error::csv_error;
-};
-
 template <class Ch>
 struct hollow_field_name_pred
 {
@@ -92,11 +83,28 @@ struct hollow_field_name_pred
     }
 };
 
+} // end namespace detail
+
+class record_extraction_error :
+    public csv_error
+{
+public:
+    using csv_error::csv_error;
+};
+
+template <class FieldNamePred, class FieldValuePred, class Ch, class Tr>
+class record_extractor;
+
+template <class FieldValuePred, class Ch, class Tr>
+class record_extractor_with_indexed_key;
+
+namespace detail {
+
 template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr = std::char_traits<Ch>>
-class record_extractor :
-    detail::field_name_pred_base<FieldNamePred>,
-    detail::field_value_pred_base<FieldValuePred>
+class record_extractor_impl :
+    field_name_pred_base<FieldNamePred>,
+    field_value_pred_base<FieldValuePred>
 {
     enum class record_mode : std::int_fast8_t
     {
@@ -123,16 +131,19 @@ class record_extractor :
                                     // and shall not overlap with interval
                                     // [current_begin_, +inf)
 
-    using field_name_pred_t = detail::field_name_pred_base<FieldNamePred>;
-    using field_value_pred_t = detail::field_value_pred_base<FieldValuePred>;
+    using field_name_pred_t = field_name_pred_base<FieldNamePred>;
+    using field_value_pred_t = field_value_pred_base<FieldValuePred>;
+
+    friend class record_extractor<FieldNamePred, FieldValuePred, Ch, Tr>;
+    friend class record_extractor_with_indexed_key<FieldValuePred, Ch, Tr>;
 
 public:
     using char_type = Ch;
 
-    record_extractor(
+    record_extractor_impl(
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePred field_name_pred, FieldValuePred field_value_pred,
-        bool includes_header = true, std::size_t max_record_num = npos) :
+        bool includes_header, std::size_t max_record_num) :
         field_name_pred_t(std::move(field_name_pred)),
         field_value_pred_t(std::move(field_value_pred)),
         header_mode_(includes_header ?
@@ -142,26 +153,8 @@ public:
         field_index_(0), out_(out)
     {}
 
-    record_extractor(
-        std::basic_streambuf<Ch, Tr>* out,
-        std::size_t target_field_index, FieldValuePred field_value_pred,
-        bool includes_header = true, std::size_t max_record_num = npos) :
-        record_extractor(out,
-            hollow_field_name_pred<Ch>(),
-            std::move(field_value_pred),
-            includes_header, max_record_num)
-    {
-        if (target_field_index >= npos) {
-            std::ostringstream what;
-            what << "Target field index "
-                 << target_field_index << " is too large";
-            throw std::out_of_range(what.str());
-        }
-        target_field_index_ = target_field_index;
-    }
-
-    record_extractor(record_extractor&&) = default;
-    record_extractor& operator=(record_extractor&&) = default;
+    record_extractor_impl(record_extractor_impl&&) = default;
+    record_extractor_impl& operator=(record_extractor_impl&&) = default;
 
     void start_buffer(const Ch* buffer_begin)
     {
@@ -275,7 +268,7 @@ private:
     {
         std::ostringstream what;
         what << "No matching field"
-             << detail::field_name_of(" for ", field_name_pred_t::get());
+             << field_name_of(" for ", field_name_pred_t::get());
         return record_extraction_error(what.str());
     }
 
@@ -331,8 +324,56 @@ private:
 
     void flush_lf()
     {
-        out_->sputc(detail::key_chars<Ch>::LF);
+        out_->sputc(key_chars<Ch>::LF);
     }
+};
+
+} // end namespace detail
+
+template <class FieldNamePred, class FieldValuePred,
+    class Ch, class Tr = std::char_traits<Ch>>
+class record_extractor :
+    public detail::record_extractor_impl<FieldNamePred, FieldValuePred, Ch, Tr>
+{
+    using base = detail::record_extractor_impl<
+        FieldNamePred, FieldValuePred, Ch, Tr>;
+
+public:
+    record_extractor(
+        std::basic_streambuf<Ch, Tr>* out,
+        FieldNamePred field_name_pred, FieldValuePred field_value_pred,
+        bool includes_header = true, std::size_t max_record_num = base::npos) :
+        base(out, std::move(field_name_pred),
+            std::move(field_value_pred), includes_header, max_record_num)
+    {}
+
+    record_extractor(record_extractor&&) = default;
+    record_extractor& operator=(record_extractor&&) = default;
+};
+
+template <class FieldValuePred, class Ch, class Tr = std::char_traits<Ch>>
+class record_extractor_with_indexed_key :
+    public detail::record_extractor_impl<
+        detail::hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr>
+{
+    using base = detail::record_extractor_impl<
+        detail::hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr>;
+
+public:
+    record_extractor_with_indexed_key(
+        std::basic_streambuf<Ch, Tr>* out,
+        std::size_t target_field_index, FieldValuePred field_value_pred,
+        bool includes_header = true, std::size_t max_record_num = base::npos) :
+        base(out, detail::hollow_field_name_pred<Ch>(),
+            std::move(field_value_pred), includes_header, max_record_num)
+    {
+        this->target_field_index_ = target_field_index;
+    }
+
+    record_extractor_with_indexed_key(
+        record_extractor_with_indexed_key&&) = default;
+    record_extractor_with_indexed_key& operator=(
+        record_extractor_with_indexed_key&&) = default;
 };
 
 namespace detail {
@@ -403,12 +444,6 @@ struct string_pred<Ch, T,
 template <class Ch, class T>
 using string_pred_t = typename string_pred<Ch, T>::type;
 
-template <class FieldNamePred, class FieldValuePred, class Ch, class Tr>
-using record_extractor_for =
-    record_extractor<
-        string_pred_t<Ch, FieldNamePred>, string_pred_t<Ch, FieldValuePred>,
-        Ch, Tr>;
-
 } // end namespace detail
 
 template <class FieldNamePred, class FieldValuePred,
@@ -419,10 +454,13 @@ auto make_record_extractor(
     Appendices&&... appendices)
  -> std::enable_if_t<
         !std::is_integral<FieldNamePred>::value,
-        detail::record_extractor_for<FieldNamePred, FieldValuePred, Ch, Tr>>
+        record_extractor<
+            detail::string_pred_t<Ch, FieldNamePred>,
+            detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr>>
 {
-    return detail::record_extractor_for<
-            FieldNamePred, FieldValuePred, Ch, Tr>(
+    return record_extractor<
+            detail::string_pred_t<Ch, FieldNamePred>,
+            detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr>(
         out,
         detail::string_pred_t<Ch, FieldNamePred>(
             std::forward<FieldNamePred>(field_name_pred)),
@@ -439,7 +477,9 @@ auto make_record_extractor(
     Appendices&&... appendices)
  -> std::enable_if_t<
         !std::is_integral<FieldNamePred>::value,
-        detail::record_extractor_for<FieldNamePred, FieldValuePred, Ch, Tr>>
+        record_extractor<
+            detail::string_pred_t<Ch, FieldNamePred>,
+            detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr>>
 {
     return make_record_extractor(out.rdbuf(),
         std::forward<FieldNamePred>(field_name_pred),
@@ -453,13 +493,13 @@ auto make_record_extractor(
     std::size_t target_field_index, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
 {
-    return detail::record_extractor_for<
-            hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr>(
-        out,
-        target_field_index,
-        detail::string_pred_t<Ch, FieldValuePred>(
-            std::forward<FieldValuePred>(field_value_pred)),
-        std::forward<Appendices>(appendices)...);
+    return record_extractor_with_indexed_key<
+        detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr>(
+            out,
+            target_field_index,
+            detail::string_pred_t<Ch, FieldValuePred>(
+                std::forward<FieldValuePred>(field_value_pred)),
+            std::forward<Appendices>(appendices)...);
 }
 
 template <class FieldValuePred, class Ch, class Tr, class... Appendices>
