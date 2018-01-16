@@ -26,7 +26,6 @@
 
 namespace furfurylic {
 namespace commata {
-
 namespace detail {
 
 template <class T>
@@ -411,8 +410,8 @@ struct string_pred<Ch, T,
         is_std_string<std::decay_t<T>>::value
      && std::is_same<Ch, typename std::decay_t<T>::value_type>::value>>
 // We'd like to copy the string into the extractor, but don't like any slicing
-// to take place, so is_std_string is sufficient and preferrable to use of
-// std::is_base_of.
+// to take place, so use of is_std_string is sufficient and preferrable to use
+// of std::is_base_of.
 {
     using type = string_eq<
         Ch,

@@ -193,6 +193,26 @@ public:
         do_set_field_scanner(j, std::move(s));
     }
 
+private:
+    template <class FieldScanner>
+    void do_set_field_scanner(std::size_t j, FieldScanner s)
+    {
+        using scanner_t = typed_body_field_scanner<FieldScanner>;
+        auto p = std::make_unique<scanner_t>(std::move(s)); // throw
+        if (j >= scanners_.size()) {
+            scanners_.resize(j + 1);                        // throw
+        }
+        scanners_[j] = std::move(p);
+    }
+
+    void do_set_field_scanner(std::size_t j, std::nullptr_t)
+    {
+        if (j < scanners_.size()) {
+            scanners_[j].reset();
+        }
+    }
+
+public:
     const std::type_info& get_field_scanner_type(std::size_t j) const
     {
         if ((j < scanners_.size()) && scanners_[j]) {
@@ -220,24 +240,6 @@ public:
     }
 
 private:
-    template <class FieldScanner>
-    void do_set_field_scanner(std::size_t j, FieldScanner s)
-    {
-        using scanner_t = typed_body_field_scanner<FieldScanner>;
-        auto p = std::make_unique<scanner_t>(std::move(s)); // throw
-        if (j >= scanners_.size()) {
-            scanners_.resize(j + 1);                        // throw
-        }
-        scanners_[j] = std::move(p);
-    }
-
-    void do_set_field_scanner(std::size_t j, std::nullptr_t)
-    {
-        if (j < scanners_.size()) {
-            scanners_[j].reset();
-        }
-    }
-
     template <class FieldScanner, class ThisType>
     static auto get_field_scanner_g(ThisType& me, std::size_t j)
     {
@@ -256,8 +258,8 @@ public:
             begin_ = nullptr;
         }
         return { buffer_.get(), buffer_size_ - 1 }; // throw
-        // We'd like to push buffer_[buffer_size_] with '\0'
-        // so we tell the driver the buffer size is smaller by one
+        // We'd like to push buffer_[buffer_size_] with '\0' on EOF
+        // so we tell the driver that the buffer size is smaller by one
     }
 
     void release_buffer(const Ch*)
@@ -502,10 +504,10 @@ public:
         Ch* middle;
         errno = 0;
         const auto r = static_cast<const D*>(this)->engine(begin, &middle);
-        using result_t = std::decay_t<decltype(r)>;
+        using result_t = std::remove_const_t<decltype(r)>;
 
         const auto has_postfix =
-            std::find_if(static_cast<const Ch*>(middle), end, [](Ch c) {
+            std::find_if<const Ch*>(middle, end, [](Ch c) {
                 return !is_space(c);
             }) != end;
         if (begin == middle) {
@@ -517,7 +519,7 @@ public:
                 return static_cast<result_t>(eh().empty());
             }
         } else if (has_postfix) {
-            // if an not-whitespace-extra-character found, it is NG
+            // if a not-whitespace-extra-character found, it is NG
             return static_cast<result_t>(eh().invalid_format(begin, end));
         } else if (errno == ERANGE) {
             return static_cast<result_t>(eh().out_of_range(begin, end, r));
@@ -675,7 +677,7 @@ struct is_back_insertable :
     decltype(is_back_insertable_impl::check<T>(nullptr))
 {};
 
-} // end detail
+} // end namespace detail
 
 template <class T>
 struct fail_if_skipped
@@ -752,12 +754,12 @@ private:
             });
     }
 
+    // Overloaded to avoid unneeded access to the global locale
     static void narrow(std::ostream& os, const char* begin, const char* end)
     {
         std::transform(begin, end, std::ostreambuf_iterator<char>(os),
             [](char c) {
-                // map NUL to '?' to prevent exception::what()
-                // from ending at that NUL
+                // ditto
                 return (c == char()) ? '?' : c;
             });
     }
@@ -860,7 +862,7 @@ namespace detail {
 
 template <class OutputIterator, class SkippingHandler>
 class translator :
-    private member_like_base<SkippingHandler>
+    member_like_base<SkippingHandler>
 {
     OutputIterator out_;
 
@@ -899,8 +901,8 @@ public:
         ++out_;
     }
 };
-    
-}
+
+} // end namespace detail
 
 template <class T, class OutputIterator,
     class SkippingHandler = fail_if_skipped<T>,
@@ -949,7 +951,7 @@ class locale_based_numeric_field_translator :
     Ch thousands_sep_;      // of specified loc in the ctor
     Ch decimal_point_;      // of specified loc in the ctor
     Ch decimal_point_c_;    // of C's global
-                            // to mimic std::strtol and its siblings;
+                            // to mimic std::strtol and its comrades;
                             // initialized after parsing has started
 
 public:
@@ -1067,7 +1069,7 @@ struct first<Head, Tail...>
 template <class... Ts>
 using first_t = typename first<Ts...>::type;
 
-}
+} // end namespace detail
 
 template <class T, class OutputIterator, class... Appendices>
 auto make_field_translator(OutputIterator out, Appendices&&... appendices)
@@ -1131,7 +1133,7 @@ auto make_field_translator_c_impl(
         std::back_inserter(values), std::forward<Appendices>(appendices)...);
 }
 
-} // end detail
+} // end namespace detail
 
 template <class Container, class... Appendices>
 auto make_field_translator_c(Container& values, Appendices&&... appendices)
