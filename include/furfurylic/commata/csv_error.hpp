@@ -32,10 +32,11 @@ struct npos_impl
     constexpr static T npos = static_cast<T>(-1);
 };
 
+// to define this in a header, npos_impl is a template
 template <class T>
 constexpr T npos_impl<T>::npos;
 
-} // end detail
+} // end namespace detail
 
 class csv_error_info;
 
@@ -53,7 +54,7 @@ public:
         physical_position_(npos, npos)
     {}
 
-    // Copy/move ctors and copy/move assignment ops are explicitly defined
+    // copy/move ctors and copy/move assignment ops are explicitly defined
     // so that they are noexcept
 
     csv_error(const csv_error& other) noexcept :
@@ -111,7 +112,7 @@ public:
 
 namespace detail {
 
-// The number of letters of a non-negative integer in the decimal system
+// the number of letters of a non-negative integer in the decimal system
 template <class T, T N, class = void>
 struct Width;
 
@@ -125,7 +126,7 @@ struct Width<T, N, std::enable_if_t<(0 <= N) && (N < 10)>> :
     std::integral_constant<std::size_t, 1>
 {};
 
-// Prints a non-negative integer value in the decimal system
+// prints a non-negative integer value in the decimal system
 // into a sufficient-length buffer
 template <std::size_t N>
 std::streamsize print_pos(char (&s)[N], std::size_t pos)
@@ -170,7 +171,7 @@ bool sputn(const std::locale& loc,
     return true;
 }
 
-} // end detail
+} // end namespace detail
 
 class csv_error_info
 {
@@ -188,7 +189,7 @@ private:
 };
 
 template <class Ch, class Tr>
-inline std::basic_ostream<Ch, Tr>& operator<<(
+std::basic_ostream<Ch, Tr>& operator<<(
     std::basic_ostream<Ch, Tr>& os, const csv_error_info& i)
 {
     const auto w = i.ex_->what();
