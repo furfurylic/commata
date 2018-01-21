@@ -449,6 +449,9 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
     ASSERT_TRUE(values[2].empty()) << values[2];
 }
 
+static_assert(
+    std::is_nothrow_move_constructible<csv_scanner<char>>::value, "");
+
 template <class Ch>
 struct TestCsvScanner : BaseTest
 {};

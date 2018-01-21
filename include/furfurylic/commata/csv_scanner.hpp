@@ -134,8 +134,8 @@ class csv_scanner
 
         const std::type_info& get_type() const override
         {
-            // Should return the static type in which this instance was
-            // created (not the dynamic type).
+            // should return the static type in which this instance was
+            // created (not the dynamic type)
             return typeid(FieldScanner);
         }
 
@@ -272,6 +272,7 @@ public:
     {
         if (get_scanner() && (first != last)) {
             if (begin_) {
+                assert(fragmented_value_.empty());
                 fragmented_value_.assign(begin_, end_);     // throw
                 fragmented_value_.append(first, last);      // throw
                 begin_ = nullptr;
