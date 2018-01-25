@@ -328,6 +328,30 @@ TYPED_TEST(TestCsvValue, Erase)
     ASSERT_TRUE(v.empty());
 }
 
+TYPED_TEST(TestCsvValue, EraseByIndex)
+{
+    using char_t = TypeParam;
+    using value_t = basic_csv_value<char_t>;
+
+    const auto str = char_helper<char_t>::str;
+    const auto str0 = char_helper<char_t>::str0;
+
+    auto s = str0("latter");        // s.back() == '\0'
+    value_t v(&s[0], &s[s.size() - 1]);
+
+    ASSERT_THROW(v.erase(6), std::out_of_range);
+
+    ASSERT_EQ(
+        &v,
+        &v.erase(2, 1));            // "later"
+    ASSERT_EQ(str("later"), v);
+
+    ASSERT_EQ(
+        &v,
+        &v.erase(4));               // "late"
+    ASSERT_EQ(str("late"), v);
+}
+
 TYPED_TEST(TestCsvValue, IndexAccess)
 {
     using char_t = TypeParam;
@@ -761,6 +785,11 @@ TYPED_TEST(TestCsvTableMerge, Merge)
     ASSERT_EQ("amet,"      , (*std::next(table1.content().cbegin()))[1]);
     ASSERT_EQ("consectetur", (*table1.content().crbegin())          [0]);
 }
+
+static_assert(std::is_nothrow_move_constructible<
+    csv_table_builder<wcsv_table::content_type>>::value, "");
+static_assert(std::is_nothrow_move_constructible<
+    csv_table_builder<csv_table::content_type, true>>::value, "");
 
 struct TestCsvTableBuilder : furfurylic::test::BaseTestWithParam<std::size_t>
 {};

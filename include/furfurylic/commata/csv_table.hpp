@@ -48,6 +48,8 @@ public:
     using reverse_iterator       = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+    static constexpr size_type npos = static_cast<size_type>(-1);
+
     basic_csv_value() noexcept :
         begin_(empty_value), end_(empty_value)
     {
@@ -133,38 +135,32 @@ public:
 
     reference operator[](size_type pos)
     {
+        // pos == size() is OK, IAW std::basic_string
         assert(pos <= size());
         return begin()[pos];
     }
 
     const_reference operator[](size_type pos) const
     {
+        // ditto
         assert(pos <= size());
         return begin()[pos];
     }
 
     reference at(size_type pos)
     {
-        return at_impl(this, pos);
+        // pos == size() is NG, IAW std::basic_string
+        check_pos(pos); // throw
+        return (*this)[pos];
     }
 
     const_reference at(size_type pos) const
     {
-        return at_impl(this, pos);
+        // ditto
+        check_pos(pos); // throw
+        return (*this)[pos];
     }
 
-private:
-    template <class ThisType>
-    static decltype(auto) at_impl(ThisType me, size_type pos)
-    {
-        if (pos >= me->size()) {
-            throw std::out_of_range(
-                std::to_string(pos) + " is too large for this value");
-        }
-        return (*me)[pos];
-    }
-
-public:
     Ch* c_str() noexcept
     {
         return begin_;
@@ -236,6 +232,15 @@ public:
         erase(cend() - 1);
     }
 
+    basic_csv_value& erase(size_type pos = 0, size_type n = npos)
+    {
+        check_pos(pos); // throw
+        const auto xlen = std::min(n, size() - pos);    // length of removal
+        const auto first = cbegin() + pos;
+        erase(first, first + xlen);
+        return *this;
+    }
+
     iterator erase(const_iterator position)
     {
         return erase(position, position + 1);
@@ -260,6 +265,7 @@ public:
             } else {
                 Tr::move(begin_ + prefix_len, last, postfix_len + 1);
                 end_ -= erase_len;
+                assert(*end_ == Ch());
             }
             return begin_ + prefix_len;
         }
@@ -267,8 +273,7 @@ public:
 
     void clear() noexcept
     {
-        *begin_ = Ch();
-        end_ = begin_;
+        begin_ = end_;
     }
 
     void swap(basic_csv_value& other) noexcept
@@ -276,7 +281,20 @@ public:
         std::swap(begin_, other.begin_);
         std::swap(end_,   other.end_);
     }
+
+private:
+    void check_pos(size_type pos) const
+    {
+        if (pos >= size()) {
+            throw std::out_of_range(
+                std::to_string(pos) + " is too large for this value");
+        }
+    }
 };
+
+template <class Ch, class Tr>
+constexpr typename basic_csv_value<Ch, Tr>::size_type
+    basic_csv_value<Ch, Tr>::npos;
 
 template <class Ch, class Tr>
 Ch basic_csv_value<Ch, Tr>::empty_value[] = { Ch() };
@@ -306,7 +324,7 @@ bool csv_string_lt(const Left& left, const Right& right) noexcept
             [](auto l, auto r) { return Left::traits_type::lt(l, r); });
 }
 
-}
+} // end namespace detail
 
 template <class Ch, class Tr>
 bool operator==(
@@ -359,33 +377,17 @@ bool operator!=(
     return !(left == right);
 }
 
-template <class Ch, class Tr>
+template <class Ch, class Tr, class Right>
 bool operator!=(
     const basic_csv_value<Ch, Tr>& left,
-    const Ch* right) noexcept
+    const Right& right) noexcept
 {
     return !(left == right);
 }
 
-template <class Ch, class Tr>
+template <class Left, class Ch, class Tr>
 bool operator!=(
-    const Ch* left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
-{
-    return !(left == right);
-}
-
-template <class Ch, class Tr, class Alloc>
-bool operator!=(
-    const basic_csv_value<Ch, Tr>& left,
-    const std::basic_string<Ch, Tr, Alloc>& right) noexcept
-{
-    return !(left == right);
-}
-
-template <class Ch, class Tr, class Alloc>
-bool operator!=(
-    const std::basic_string<Ch, Tr, Alloc>& left,
+    const Left& left,
     const basic_csv_value<Ch, Tr>& right) noexcept
 {
     return !(left == right);
@@ -459,33 +461,17 @@ bool operator>(
     return right < left;
 }
 
-template <class Ch, class Tr>
+template <class Ch, class Tr, class Right>
 bool operator>(
     const basic_csv_value<Ch, Tr>& left,
-    const Ch* right) noexcept
+    const Right& right) noexcept
 {
     return right < left;
 }
 
-template <class Ch, class Tr>
+template <class Left, class Ch, class Tr>
 bool operator>(
-    const Ch* left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
-{
-    return right < left;
-}
-
-template <class Ch, class Tr, class Alloc>
-bool operator>(
-    const basic_csv_value<Ch, Tr>& left,
-    const std::basic_string<Ch, Tr, Alloc>& right) noexcept
-{
-    return right < left;
-}
-
-template <class Ch, class Tr, class Alloc>
-bool operator>(
-    const std::basic_string<Ch, Tr, Alloc>& left,
+    const Left& left,
     const basic_csv_value<Ch, Tr>& right) noexcept
 {
     return right < left;
@@ -499,33 +485,17 @@ bool operator<=(
     return !(right < left);
 }
 
-template <class Ch, class Tr>
+template <class Ch, class Tr, class Right>
 bool operator<=(
     const basic_csv_value<Ch, Tr>& left,
-    const Ch* right) noexcept
+    const Right& right) noexcept
 {
     return !(right < left);
 }
 
-template <class Ch, class Tr>
+template <class Left, class Ch, class Tr>
 bool operator<=(
-    const Ch* left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
-{
-    return !(right < left);
-}
-
-template <class Ch, class Tr, class Alloc>
-bool operator<=(
-    const basic_csv_value<Ch, Tr>& left,
-    const std::basic_string<Ch, Tr, Alloc>& right) noexcept
-{
-    return !(right < left);
-}
-
-template <class Ch, class Tr, class Alloc>
-bool operator<=(
-    const std::basic_string<Ch, Tr, Alloc>& left,
+    const Left& left,
     const basic_csv_value<Ch, Tr>& right) noexcept
 {
     return !(right < left);
@@ -539,33 +509,17 @@ bool operator>=(
     return !(left < right);
 }
 
-template <class Ch, class Tr>
+template <class Ch, class Tr, class Right>
 bool operator>=(
     const basic_csv_value<Ch, Tr>& left,
-    const Ch* right) noexcept
+    const Right& right) noexcept
 {
     return !(left < right);
 }
 
-template <class Ch, class Tr>
+template <class Left, class Ch, class Tr>
 bool operator>=(
-    const Ch* left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
-{
-    return !(left < right);
-}
-
-template <class Ch, class Tr, class Alloc>
-bool operator>=(
-    const basic_csv_value<Ch, Tr>& left,
-    const std::basic_string<Ch, Tr, Alloc>& right) noexcept
-{
-    return !(left < right);
-}
-
-template <class Ch, class Tr, class Alloc>
-bool operator>=(
-    const std::basic_string<Ch, Tr, Alloc>& left,
+    const Left& left,
     const basic_csv_value<Ch, Tr>& right) noexcept
 {
     return !(left < right);
@@ -598,10 +552,11 @@ struct hash<furfurylic::commata::basic_csv_value<Ch, Tr>>
     std::size_t operator()(
         const furfurylic::commata::basic_csv_value<Ch, Tr>& x) const noexcept
     {
-        // This function should return the same hash value as
+        // We'd like this function to return the same hash value as
         // std::basic_string, but it is impossible, so we borrow
-        // Java-String's hash algorithm at this time. In C++17, this function
-        // should be implemented in terms of string_view's hash.
+        // Java-String's hash algorithm at this time
+        // In C++17, this function should be implemented in terms of
+        // string_view's hash
         std::size_t h = 0;
         for (const auto c : x) {
             h *= 31;
@@ -611,7 +566,7 @@ struct hash<furfurylic::commata::basic_csv_value<Ch, Tr>>
     }
 };
 
-}
+} // end namespace std
 
 namespace furfurylic { namespace commata {
 
@@ -668,15 +623,21 @@ class basic_csv_store
     class buffer_type
     {
         std::unique_ptr<Ch[]> buffer_;
-        Ch* hwl_;
-        Ch* end_;
+        Ch* hwl_;   // high water level: last-past-one of the used elements
+        Ch* end_;   // last-past-one of the buffer_
 
     public:
-        buffer_type(
-            std::unique_ptr<Ch[]>&& buffer, std::size_t size) noexcept :
-            buffer_(std::move(buffer)),
-            hwl_(buffer_.get()), end_(buffer_.get() + size)
+        buffer_type() noexcept :
+            hwl_(nullptr), end_(nullptr)
         {}
+
+        void attach(
+            std::unique_ptr<Ch[]>&& buffer, std::size_t size) noexcept
+        {
+            buffer_ = std::move(buffer);
+            hwl_ = buffer_.get();
+            end_ = buffer_.get() + size;
+        }
 
         Ch* secured() const noexcept
         {
@@ -710,16 +671,16 @@ class basic_csv_store
     {
         node_type* next;
 
-        node_type(node_type* n, buffer_type&& b) :
-            buffer_type(std::move(b)), next(n)
+        explicit node_type(node_type* n) :
+            next(n)
         {}
     };
 
     // At this time we adopt a homemade forward list
     // taking advantage of its constant-time and nofail "splice" ability
-    // and its nofail move construction and move assignment.
-    node_type* buffers_;
-    node_type* buffers_back_;
+    // and its nofail move construction and move assignment
+    node_type* buffers_;        // "front" of buffers
+    node_type* buffers_back_;   // "back" of buffers
 
 public:
     using security = std::vector<Ch*>;
@@ -753,9 +714,9 @@ public:
 
     void add_buffer(std::unique_ptr<Ch[]>&& buffer, std::size_t size)
     {
-        buffers_ = new node_type(
-            buffers_,
-            buffer_type(std::move(buffer), size));  // throw
+        // "push_front"-like behaviour
+        buffers_ = new node_type(buffers_); // throw
+        buffers_->attach(std::move(buffer), size);
         if (!buffers_back_) {
             buffers_back_ = buffers_;
         }
@@ -814,10 +775,12 @@ public:
 
     void set_security(const security& s)
     {
+        auto i = buffers_;
         auto j = s.cbegin();
-        for (auto i = buffers_; i; i = i->next, ++j) {
+        for (; i; i = i->next, ++j) {
             i->secure_upto(*j);
         }
+        assert(i == nullptr);
     }
 };
 
@@ -910,11 +873,12 @@ public:
 template <class T, class V>
 void swap(
     nothrow_move_and_swap<T, V>& left, nothrow_move_and_swap<T, V>& right)
+    noexcept
 {
     left.swap(right);
 }
 
-}
+} // end namespace detail
 
 template <class Content, bool Transposes>
 class csv_table_builder;
@@ -1126,7 +1090,7 @@ struct has_rollbackable_move_insert :
         is_nothrow_pop_backable<ContentL>::value
      && std::is_same<
             typename ContentL::value_type,
-            typename ContentR::value_type>::value
+            typename ContentR::value_type>::value   // same record types
      && is_nothrow_swappable<typename ContentL::value_type>::value>
 {};
 
@@ -1140,6 +1104,8 @@ auto append_csv_table(
         typename ContentR::value_type::value_type::value_type>&& right_store)
  -> std::enable_if_t<!has_rollbackable_move_insert<ContentL, ContentR>::value>
 {
+    // make a copy of *left_content
+    // and then copy records in *right_content into it
     auto left = left_content;                                       // throw
     for (const auto& right_rec : *right_content) {
         left->emplace_back(right_rec.cbegin(), right_rec.cend());   // throw
@@ -1158,6 +1124,8 @@ auto append_csv_table(
         typename ContentR::value_type::value_type::value_type>&& right_store)
  -> std::enable_if_t<has_rollbackable_move_insert<ContentL, ContentR>::value>
 {
+    // expand *left_content in place
+    // and then immigrate records in *right_content into it
     const auto left_original_size = left_content->size();   // ?
     try {
         left_content->resize(
@@ -1186,12 +1154,12 @@ auto append_csv_table(
         std::list<RecordL, AllocatorL>, ContentR>::value>
 {
     // make a copy of *right_content into a new list
-    std::list<RecordL, AllocatorL> dupe;                            // throw
+    // and then splice it into *left_content
+    std::list<RecordL, AllocatorL> right;                           // throw
     for (const auto& right_rec : *right_content) {
-        dupe.emplace_back(right_rec.cbegin(), right_rec.cend());    // throw
+        right.emplace_back(right_rec.cbegin(), right_rec.cend());   // throw
     }
-
-    left_content->splice(left_content->cend(), dupe);
+    left_content->splice(left_content->cend(), right);
     left_store.merge(std::move(right_store));
 }
 
@@ -1206,19 +1174,11 @@ auto append_csv_table(
  -> std::enable_if_t<has_rollbackable_move_insert<
         std::list<Record, AllocatorL>, ContentR>::value>
 {
-    // make a copy of *right_content into a new list
-    std::list<Record, AllocatorL> dupe;             // throw
-    try {
-        for (auto& right_rec : *right_content) {
-            dupe.emplace_back();                    // throw
-            dupe.back().swap(right_rec);
-        }
-    } catch (...) {
-        std::swap_ranges(dupe.begin(), dupe.end(), right_content->begin());
-        throw;
-    }
-
-    left_content->splice(left_content->cend(), dupe);
+    // immigrate records in *right_content into a new list
+    // and then splice it into *left_content
+    std::list<Record, AllocatorL> right(right_content->size()); // throw
+    std::swap_ranges(right.begin(), right.end(), right_content->begin());
+    left_content->splice(left_content->cend(), right);
     left_store.merge(std::move(right_store));
 }
 
@@ -1233,7 +1193,7 @@ void append_csv_table(
     left_store.merge(std::move(right_store));
 }
 
-}
+} // end namespace detail
 
 template <class ContentL, class ContentR>
 basic_csv_table<ContentL>& operator+=(
@@ -1314,8 +1274,10 @@ public:
     {
         assert(i_ > 0);
         if (content.size() == j_) {
-            record_t rec(i_);  // throw
-            content.emplace_back(std::move(rec));   // throw
+            // the second argument is supplied to comply with the sequence
+            // container requirements
+            content.emplace_back(
+                i_, typename record_t::value_type());   // throw
         }
         auto j = content.begin();
         std::advance(j, j_);
@@ -1335,7 +1297,7 @@ class csv_table_builder :
     detail::arrange<Content, Transposes>
 {
 public:
-    using char_type = typename Content::value_type::value_type::value_type;
+    using char_type = typename basic_csv_table<Content>::char_type;
 
 private:
     std::unique_ptr<char_type[]> current_buffer_holder_;
@@ -1403,18 +1365,20 @@ public:
         if (field_begin_) {
             // in an active value, whose length is "length" so far
             length = static_cast<std::size_t>(field_end_ - field_begin_);
+            // we'd like to move the active value to the beginning of the
+            // returned buffer
             std::size_t next_buffer_size;
             for (next_buffer_size = buffer_size_;
                  length >= next_buffer_size / 2; next_buffer_size *= 2);
             if (current_buffer_holder_
              && (current_buffer_size_ >= next_buffer_size)) {
-                // The current buffer contains no other values
-                // and it suffices in terms of length.
+                // the current buffer contains no other values
+                // and it suffices in terms of length
                 std::memmove(
                     current_buffer_holder_.get(), field_begin_, length);
             } else {
-                // The current buffer has been committed to the store,
-                // so we need a new one.
+                // the current buffer has been committed to the store,
+                // so we need a new one
                 std::unique_ptr<char_type[]> next_buffer_holder(
                     new char_type[next_buffer_size]);    // throw
                 std::memcpy(next_buffer_holder.get(), field_begin_, length);
@@ -1423,35 +1387,32 @@ public:
             }
             field_begin_ = current_buffer_holder_.get();
             field_end_   = current_buffer_holder_.get() + length;
-            current_buffer_ = field_end_;
         } else {
             // out of any active values
             if (current_buffer_holder_) {
-                // The current buffer contains no values,
-                // so we would like to reuse it.
-                current_buffer_ = current_buffer_holder_.get();
+                // the current buffer contains no values,
+                // so we would like to reuse it
             } else {
-                // The current buffer has been committed to the store,
-                // so we need a new one.
+                // the current buffer has been committed to the store,
+                // so we need a new one
                 current_buffer_holder_.reset(
                     new char_type[buffer_size_]); // throw
-                current_buffer_ = current_buffer_holder_.get();
                 current_buffer_size_ = buffer_size_;
             }
             length = 0;
         }
+        assert(current_buffer_holder_);
+        current_buffer_ = current_buffer_holder_.get();
         // *p = Ch() may be performed where p is the "last" parameter of
         // "update" and "finalize" functions, so the length of buffers must
         // be shorter than the actual length by 1
         const auto effective_size = current_buffer_size_ - length;
         assert(effective_size > 1);
-        return std::make_pair(current_buffer_, effective_size - 1);
+        return std::make_pair(current_buffer_ + length, effective_size - 1);
     }
 
     void release_buffer(const char_type* /*buffer*/) noexcept
-    {
-        current_buffer_ = nullptr;
-    }
+    {}
 };
 
 template <class Content>
