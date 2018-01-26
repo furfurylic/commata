@@ -14,7 +14,9 @@
 #include <iterator>
 #include <list>
 #include <memory>
+#include <numeric>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -914,7 +916,7 @@ void swap(
 
 }
 
-template <class Content>
+template <class Content, bool Transposes>
 class csv_table_builder;
 
 template <class Content>
@@ -940,7 +942,8 @@ private:
     using store_type =
         detail::basic_csv_store<typename value_type::value_type>;
 
-    friend class csv_table_builder<Content>;
+    friend class csv_table_builder<Content, true>;
+    friend class csv_table_builder<Content, false>;
 
     template <class ContentL, class ContentR>
     friend basic_csv_table<ContentL>& operator+=(
@@ -1255,8 +1258,81 @@ basic_csv_table<ContentL> operator+(
 using csv_table  = basic_csv_table<std::deque<std::vector<csv_value>>>;
 using wcsv_table = basic_csv_table<std::deque<std::vector<wcsv_value>>>;
 
+namespace detail {
+
 template <class Content>
-class csv_table_builder
+struct arrange_as_is
+{
+    using char_type = typename Content::value_type::value_type::value_type;
+
+    explicit arrange_as_is(const Content&)
+    {}
+
+    void new_record(Content& content) const
+    {
+        content.emplace_back(); // throw
+    }
+
+    void new_value(Content& content,
+        char_type* first, const char_type* last) const
+    {
+        content.back().emplace_back(first, last);  // throw
+    }
+};
+
+template <class Content>
+class arrange_transposing
+{
+    using record_t = typename Content::value_type;
+
+    typename record_t::size_type i_;
+    typename record_t::value_type::size_type j_;
+
+public:
+    using char_type = typename Content::value_type::value_type::value_type;
+
+    explicit arrange_transposing(const Content& content) :
+        i_(std::accumulate(
+            content.cbegin(), content.cend(),
+            static_cast<decltype(i_)>(0),
+            [](const auto& a, const auto& rec) {
+                return std::max(a, rec.size());
+            })),
+        j_(0)
+    {}
+
+    void new_record(Content& content)
+    {
+        for (auto& vertical : content) {
+            vertical.emplace_back();    // throw
+        }
+        ++i_;
+        j_ = 0;
+    }
+
+    void new_value(Content& content, char_type* first, const char_type* last)
+    {
+        assert(i_ > 0);
+        if (content.size() == j_) {
+            record_t rec(i_);  // throw
+            content.emplace_back(std::move(rec));   // throw
+        }
+        auto j = content.begin();
+        std::advance(j, j_);
+        j->back() = typename record_t::value_type(first, last);
+        ++j_;
+    }
+};
+
+template <class Content, bool Transposes>
+using arrange = std::conditional_t<Transposes,
+    arrange_transposing<Content>, arrange_as_is<Content>>;
+
+} // end namespace detail
+
+template <class Content, bool Transposes = false>
+class csv_table_builder :
+    detail::arrange<Content, Transposes>
 {
 public:
     using char_type = typename Content::value_type::value_type::value_type;
@@ -1276,6 +1352,7 @@ private:
 public:
     csv_table_builder(
         std::size_t buffer_size, basic_csv_table<Content>& table) :
+        detail::arrange<Content, Transposes>(table.content()),
         current_buffer_(nullptr),
         buffer_size_(std::max(buffer_size, static_cast<std::size_t>(2U))),
         field_begin_(nullptr), table_(&table)
@@ -1285,7 +1362,7 @@ public:
 
     void start_record(const char_type* /*record_begin*/)
     {
-        table_->content().emplace_back();   // throw
+        this->new_record(table_->content());    // throw
     }
 
     bool update(const char_type* first, const char_type* last)
@@ -1309,8 +1386,7 @@ public:
                 std::move(current_buffer_holder_),
                 current_buffer_size_);  // throw
         }
-        table_->content().back()
-                         .emplace_back(field_begin_, field_end_);   // throw
+        this->new_value(table_->content(), field_begin_, field_end_); // throw
         table_->store().secure_current_upto(field_end_ + 1);
         field_begin_ = nullptr;
         return true;
@@ -1379,10 +1455,17 @@ public:
 };
 
 template <class Content>
-csv_table_builder<Content> make_csv_table_builder(
+auto make_csv_table_builder(
     std::size_t buffer_size, basic_csv_table<Content>& table)
 {
     return csv_table_builder<Content>(buffer_size, table);
+}
+
+template <class Content>
+auto make_transposed_csv_table_builder(
+    std::size_t buffer_size, basic_csv_table<Content>& table)
+{
+    return csv_table_builder<Content, true>(buffer_size, table);
 }
 
 }}

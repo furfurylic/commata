@@ -834,4 +834,48 @@ TEST_P(TestCsvTableBuilder, EmptyRowAware)
     ASSERT_EQ("", table[5][0]);
 }
 
+TEST_P(TestCsvTableBuilder, Transpose)
+{
+    const char* s = "Col1,Col2\n"
+                    "aaa,bbb,ccc\n"
+                    "AAA,BBB,CCC\n";
+    std::stringbuf in(s);
+    csv_table table;
+    try {
+        parse(&in, make_transposed_csv_table_builder(GetParam(), table));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(3U, table.size());
+    ASSERT_EQ(3U, table[0].size());
+    ASSERT_EQ("Col1", table[0][0]);
+    ASSERT_EQ("aaa", table[0][1]);
+    ASSERT_EQ("AAA", table[0][2]);
+    ASSERT_EQ(3U, table[1].size());
+    ASSERT_EQ("Col2", table[1][0]);
+    ASSERT_EQ("bbb", table[1][1]);
+    ASSERT_EQ("BBB", table[1][2]);
+    ASSERT_EQ(3U, table[2].size());
+    ASSERT_EQ("", table[2][0]);
+    ASSERT_EQ("ccc", table[2][1]);
+    ASSERT_EQ("CCC", table[2][2]);
+
+    const char* t = "AAa,BBb";
+    std::stringbuf in2(t);
+    try {
+        parse(&in2, make_transposed_csv_table_builder(GetParam(), table));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(3U, table.size());
+    ASSERT_EQ(4U, table[0].size());
+    ASSERT_EQ("AAa", table[0][3]);
+    ASSERT_EQ(4U, table[1].size());
+    ASSERT_EQ("BBb", table[1][3]);
+    ASSERT_EQ(4U, table[2].size());
+    ASSERT_EQ("", table[2][3]);
+}
+
 INSTANTIATE_TEST_CASE_P(, TestCsvTableBuilder, testing::Values(2, 11, 1024));
