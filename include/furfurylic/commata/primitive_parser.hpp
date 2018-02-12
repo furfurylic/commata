@@ -18,6 +18,7 @@
 
 #include "csv_error.hpp"
 #include "key_chars.hpp"
+#include "member_like_base.hpp"
 
 namespace furfurylic {
 namespace commata {
@@ -353,54 +354,76 @@ struct has_release_buffer :
     decltype(has_release_buffer_impl::check<T>(nullptr))
 {};
 
-template <class Sink, bool X>
-class buffer_control;
+template <class T>
+struct with_buffer_control :
+    std::integral_constant<bool,
+        has_get_buffer<T>::value && has_release_buffer<T>::value>
+{};
 
-template <class Sink>
-class buffer_control<Sink, false>
+template <class T>
+struct without_buffer_control :
+    std::integral_constant<bool,
+        (!has_get_buffer<T>::value) && (!has_release_buffer<T>::value)>
+{};
+
+template <class Alloc>
+class default_buffer_control :
+    detail::member_like_base<Alloc>
 {
-    std::size_t buffer_size_;
-    typename Sink::char_type* buffer_;
+    using alloc_traits_t = std::allocator_traits<Alloc>;
 
-protected:
-    explicit buffer_control(std::size_t buffer_size) :
+    std::size_t buffer_size_;
+    typename alloc_traits_t::pointer buffer_;
+
+public:
+    default_buffer_control(std::size_t buffer_size, const Alloc& alloc) :
+        detail::member_like_base<Alloc>(alloc),
         buffer_size_((buffer_size < 1) ? 8192 : buffer_size),
-        buffer_(nullptr)
+        buffer_()
     {}
 
-    ~buffer_control()
+    default_buffer_control(default_buffer_control&& other) :
+        detail::member_like_base<Alloc>(other.get()),
+        buffer_size_(other.buffer_size_),
+        buffer_(other.buffer_)
     {
-        delete [] buffer_;
+        other.buffer_ = nullptr;
     }
 
-    std::pair<typename Sink::char_type*, std::size_t> do_get_buffer(Sink&)
+    ~default_buffer_control()
+    {
+        if (buffer_) {
+            alloc_traits_t::deallocate(this->get(), buffer_, buffer_size_);
+        }
+    }
+
+    std::pair<typename alloc_traits_t::value_type*, std::size_t>
+        do_get_buffer(...)
     {
         if (!buffer_) {
-            buffer_ = new typename Sink::char_type[buffer_size_];   // throw
+            buffer_ = alloc_traits_t::allocate(
+                this->get(), buffer_size_);     // throw
         }
-        return std::make_pair(buffer_, buffer_size_);
+        return std::make_pair(std::addressof(*buffer_), buffer_size_);
     }
 
-    void do_release_buffer(Sink&, const typename Sink::char_type*) noexcept
+    void do_release_buffer(...) noexcept
     {}
 };
 
-template <class Sink>
-class buffer_control<Sink, true>
+struct thru_buffer_control
 {
-protected:
-    explicit buffer_control(std::size_t)
-    {}
-
-    std::pair<typename Sink::char_type*, std::size_t> do_get_buffer(Sink& f)
+    template <class Sink>
+    std::pair<typename Sink::char_type*, std::size_t> do_get_buffer(Sink* f)
     {
-        return f.get_buffer();  // throw
+        return f->get_buffer(); // throw
     }
 
+    template <class Sink>
     void do_release_buffer(
-        Sink& f, const typename Sink::char_type* buffer) noexcept
+        const typename Sink::char_type* buffer, Sink* f) noexcept
     {
-        return f.release_buffer(buffer);
+        return f->release_buffer(buffer);
     }
 };
 
@@ -456,45 +479,37 @@ struct has_empty_physical_row :
 {};
 
 template <class Sink>
-struct is_full_fledged_sink :
+struct is_full_fledged :
     std::integral_constant<bool,
-        has_get_buffer<Sink>::value && has_release_buffer<Sink>::value
+        with_buffer_control<Sink>::value
      && has_start_buffer<Sink>::value && has_end_buffer<Sink>::value
      && has_empty_physical_row<Sink>::value>
 {};
 
-template <class Sink>
+template <class Sink, class BufferControl>
 class full_fledged_sink :
-    public buffer_control<Sink,
-        has_get_buffer<Sink>::value && has_release_buffer<Sink>::value>
+    BufferControl
 {
-    static_assert(has_get_buffer<Sink>::value ==
-                  has_release_buffer<Sink>::value,
-        "Sink has only one of get_buffer and release_buffer");
-
-    static_assert(!is_full_fledged_sink<Sink>::value,
-        "Sink is already full-fledged");
+    static_assert(!is_full_fledged<Sink>::value, "");
 
     Sink sink_;
 
 public:
     using char_type = typename Sink::char_type;
 
-    explicit full_fledged_sink(Sink&& sink, std::size_t buffer_size_hint) :
-        buffer_control<Sink,
-            has_get_buffer<Sink>::value && has_release_buffer<Sink>::value>(
-                buffer_size_hint),
+    full_fledged_sink(Sink&& sink, BufferControl&& buffer_engine) :
+        BufferControl(std::move(buffer_engine)),
         sink_(std::move(sink))
     {}
 
     std::pair<char_type*, std::size_t> get_buffer()
     {
-        return this->do_get_buffer(sink_);
+        return this->do_get_buffer(&sink_);
     }
 
     void release_buffer(const char_type* buffer) noexcept
     {
-        this->do_release_buffer(sink_, buffer);
+        this->do_release_buffer(buffer, &sink_);
     }
 
     void start_buffer(const char_type* buffer_begin)
@@ -560,20 +575,35 @@ private:
     }
 };
 
-template <class Sink>
-auto make_full_fledged(Sink&& sink, std::size_t buffer_size_hint)
- -> std::enable_if_t<
-        !is_full_fledged_sink<Sink>::value, full_fledged_sink<Sink>>
+template <class Sink,
+    std::enable_if_t<!is_full_fledged<Sink>::value, std::nullptr_t>
+        = nullptr>
+auto make_full_fledged(Sink&& sink)
 {
-    return full_fledged_sink<Sink>(
-        std::forward<Sink>(sink), buffer_size_hint);
+    static_assert(with_buffer_control<Sink>::value, "");
+    return full_fledged_sink<Sink, thru_buffer_control>(
+        std::forward<Sink>(sink), thru_buffer_control());
 }
 
-template <class Sink>
-auto make_full_fledged(Sink&& sink, std::size_t)
- -> std::enable_if_t<is_full_fledged_sink<Sink>::value, Sink&&>
+template <class Sink,
+    std::enable_if_t<is_full_fledged<Sink>::value, std::nullptr_t>
+        = nullptr>
+decltype(auto) make_full_fledged(Sink&& sink)
 {
     return std::forward<Sink>(sink);
+}
+
+template <class Sink, class Alloc>
+auto make_full_fledged(Sink&& sink,
+    std::size_t buffer_size, const Alloc& alloc)
+{
+    static_assert(without_buffer_control<Sink>::value, "");
+    static_assert(std::is_same<
+        typename Sink::char_type,
+        typename std::allocator_traits<Alloc>::value_type>::value, "");
+    return full_fledged_sink<Sink, default_buffer_control<Alloc>>(
+        std::forward<Sink>(sink),
+        default_buffer_control<Alloc>(buffer_size, alloc));
 }
 
 template <class Sink>
@@ -810,19 +840,38 @@ primitive_parser<Sink> make_primitive_parser(Sink&& sink)
 } // end namespace detail
 
 template <class Tr, class Sink>
-bool parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink,
-    std::size_t buffer_size = 0)
+auto parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink)
+ -> std::enable_if_t<detail::with_buffer_control<Sink>::value, bool>
 {
     return detail::make_primitive_parser(
-        detail::make_full_fledged(
-            std::move(sink), buffer_size)).parse(in);
+        detail::make_full_fledged(std::move(sink))).parse(in);
 }
 
 template <class Tr, class Sink>
-bool parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink,
-    std::size_t buffer_size = 0)
+auto parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink)
+ -> std::enable_if_t<detail::with_buffer_control<Sink>::value, bool>
 {
-    return parse(in.rdbuf(), std::move(sink), buffer_size);
+    return parse(in.rdbuf(), std::move(sink));
+}
+
+template <class Tr, class Sink,
+    class Alloc = std::allocator<typename Sink::char_type>>
+auto parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink,
+    std::size_t buffer_size = 0, const Alloc& alloc = Alloc())
+ -> std::enable_if_t<detail::without_buffer_control<Sink>::value, bool>
+{
+    return detail::make_primitive_parser(
+        detail::make_full_fledged(
+            std::move(sink), buffer_size, alloc)).parse(in);
+}
+
+template <class Tr, class Sink,
+    class Alloc = std::allocator<typename Sink::char_type>>
+auto parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink,
+    std::size_t buffer_size = 0, const Alloc& alloc = Alloc())
+ -> std::enable_if_t<detail::without_buffer_control<Sink>::value, bool>
+{
+    return parse(in.rdbuf(), std::move(sink), buffer_size, alloc);
 }
 
 namespace detail {
