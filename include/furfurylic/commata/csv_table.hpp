@@ -1088,13 +1088,9 @@ struct has_rollbackable_move_insert :
 {};
 
 template <class ContentL, class ContentR>
-auto append_csv_table(
+auto append_csv_table_content(
     nothrow_move_and_swap<ContentL>& left_content,
-    basic_csv_store<
-        typename ContentL::value_type::value_type::value_type>& left_store,
-    nothrow_move_and_swap<ContentR>&& right_content,
-    basic_csv_store<
-        typename ContentR::value_type::value_type::value_type>&& right_store)
+    nothrow_move_and_swap<ContentR>&& right_content)
  -> std::enable_if_t<!has_rollbackable_move_insert<ContentL, ContentR>::value>
 {
     // make a copy of *left_content
@@ -1104,17 +1100,12 @@ auto append_csv_table(
         left->emplace_back(right_rec.cbegin(), right_rec.cend());   // throw
     }
     left_content = std::move(left);
-    left_store.merge(std::move(right_store));
 }
 
 template <class ContentL, class ContentR>
-auto append_csv_table(
+auto append_csv_table_content(
     nothrow_move_and_swap<ContentL>& left_content,
-    basic_csv_store<
-        typename ContentL::value_type::value_type::value_type>& left_store,
-    nothrow_move_and_swap<ContentR>&& right_content,
-    basic_csv_store<
-        typename ContentR::value_type::value_type::value_type>&& right_store)
+    nothrow_move_and_swap<ContentR>&& right_content)
  -> std::enable_if_t<has_rollbackable_move_insert<ContentL, ContentR>::value>
 {
     // expand *left_content in place
@@ -1132,17 +1123,12 @@ auto append_csv_table(
     auto i = left_content->begin();
     std::advance(i, left_original_size);
     std::swap_ranges(i, left_content->end(), right_content->begin());
-    left_store.merge(std::move(right_store));
 }
 
 template <class RecordL, class AllocatorL, class ContentR>
-auto append_csv_table(
+auto append_csv_table_content(
     nothrow_move_and_swap<std::list<RecordL, AllocatorL>>& left_content,
-    basic_csv_store<
-        typename RecordL::value_type::value_type>& left_store,
-    nothrow_move_and_swap<ContentR>&& right_content,
-    basic_csv_store<
-        typename ContentR::value_type::value_type::value_type>&& right_store)
+    nothrow_move_and_swap<ContentR>&& right_content)
  -> std::enable_if_t<!has_rollbackable_move_insert<
         std::list<RecordL, AllocatorL>, ContentR>::value>
 {
@@ -1153,17 +1139,12 @@ auto append_csv_table(
         right.emplace_back(right_rec.cbegin(), right_rec.cend());   // throw
     }
     left_content->splice(left_content->cend(), right);
-    left_store.merge(std::move(right_store));
 }
 
 template <class Record, class AllocatorL, class ContentR>
-auto append_csv_table(
+auto append_csv_table_content(
     nothrow_move_and_swap<std::list<Record, AllocatorL>>& left_content,
-    basic_csv_store<
-        typename Record::value_type::value_type>& left_store,
-    nothrow_move_and_swap<ContentR>&& right_content,
-    basic_csv_store<
-        typename ContentR::value_type::value_type::value_type>&& right_store)
+    nothrow_move_and_swap<ContentR>&& right_content)
  -> std::enable_if_t<has_rollbackable_move_insert<
         std::list<Record, AllocatorL>, ContentR>::value>
 {
@@ -1172,18 +1153,14 @@ auto append_csv_table(
     std::list<Record, AllocatorL> right(right_content->size()); // throw
     std::swap_ranges(right.begin(), right.end(), right_content->begin());
     left_content->splice(left_content->cend(), right);
-    left_store.merge(std::move(right_store));
 }
 
 template <class Record, class Alloc>
-void append_csv_table(
+void append_csv_table_content(
     nothrow_move_and_swap<std::list<Record, Alloc>>& left_content,
-    basic_csv_store<typename Record::value_type::value_type>& left_store,
-    nothrow_move_and_swap<std::list<Record, Alloc>>&& right_content,
-    basic_csv_store<typename Record::value_type::value_type>&& right_store)
+    nothrow_move_and_swap<std::list<Record, Alloc>>&& right_content)
 {
     left_content->splice(left_content->cend(), *right_content);
-    left_store.merge(std::move(right_store));
 }
 
 } // end namespace detail
@@ -1193,9 +1170,9 @@ basic_csv_table<ContentL>& operator+=(
     basic_csv_table<ContentL>& left,
     basic_csv_table<ContentR>&& right)
 {
-    detail::append_csv_table(
-        left.records_, left.store_,
-        std::move(right.records_), std::move(right.store_));    // throw
+    detail::append_csv_table_content(
+        left.records_, std::move(right.records_));      // throw
+    left.store_.merge(std::move(right.store_));
     return left;
 }
 
