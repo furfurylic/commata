@@ -1078,7 +1078,7 @@ struct is_nothrow_pop_backable :
 {};
 
 template <class ContentL, class ContentR>
-struct has_rollbackable_move_insert :
+struct have_rollbackable_move_insert :
     std::integral_constant<bool,
         is_nothrow_pop_backable<ContentL>::value
      && std::is_same<
@@ -1087,13 +1087,24 @@ struct has_rollbackable_move_insert :
      && is_nothrow_swappable<typename ContentL::value_type>::value>
 {};
 
+template <class T, class = void>
+struct has_non_pocs_allocator_type :
+    std::false_type
+{};
+
+template <class T>
+struct has_non_pocs_allocator_type<T,
+        std::enable_if_t<
+            !T::allocator_type::propagate_on_container_swap::value>> :
+    std::true_type
+{};
+
 template <class ContentL, class ContentR>
-auto append_csv_table_content(
+void append_csv_table_content_primitive(
     nothrow_move_and_swap<ContentL>& left_content,
     nothrow_move_and_swap<ContentR>&& right_content)
- -> std::enable_if_t<!has_rollbackable_move_insert<ContentL, ContentR>::value>
 {
-    // make a copy of *left_content
+    // Make a copy of *left_content
     // and then copy records in *right_content into it
     auto left = left_content;                                       // throw
     for (const auto& right_rec : *right_content) {
@@ -1102,13 +1113,32 @@ auto append_csv_table_content(
     left_content = std::move(left);
 }
 
+template <class RecordL, class AllocatorL, class ContentR>
+void append_csv_table_content_primitive(
+    nothrow_move_and_swap<std::list<RecordL, AllocatorL>>& left_content,
+    nothrow_move_and_swap<ContentR>&& right_content)
+{
+    // Make a copy of *right_content into a new list
+    // and then splice it into *left_content
+    std::list<RecordL, AllocatorL> right(
+        left_content->get_allocator());                             // throw
+    for (const auto& right_rec : *right_content) {
+        right.emplace_back(right_rec.cbegin(), right_rec.cend());   // throw
+    }
+    left_content->splice(left_content->cend(), right);
+}
+
 template <class ContentL, class ContentR>
-auto append_csv_table_content(
+auto append_csv_table_content_adaptive(
     nothrow_move_and_swap<ContentL>& left_content,
     nothrow_move_and_swap<ContentR>&& right_content)
- -> std::enable_if_t<has_rollbackable_move_insert<ContentL, ContentR>::value>
+ -> std::enable_if_t<
+        !has_non_pocs_allocator_type<typename ContentL::value_type>::value>
 {
-    // expand *left_content in place
+    static_assert(std::is_same<typename ContentL::value_type,
+                               typename ContentR::value_type>::value, "");
+
+    // Expand *left_content in place
     // and then immigrate records in *right_content into it
     const auto left_original_size = left_content->size();   // ?
     try {
@@ -1125,34 +1155,52 @@ auto append_csv_table_content(
     std::swap_ranges(i, left_content->end(), right_content->begin());
 }
 
-template <class RecordL, class AllocatorL, class ContentR>
-auto append_csv_table_content(
-    nothrow_move_and_swap<std::list<RecordL, AllocatorL>>& left_content,
+template <class Record, class AllocatorL, class ContentR>
+auto append_csv_table_content_adaptive(
+    nothrow_move_and_swap<std::list<Record, AllocatorL>>& left_content,
     nothrow_move_and_swap<ContentR>&& right_content)
- -> std::enable_if_t<!has_rollbackable_move_insert<
-        std::list<RecordL, AllocatorL>, ContentR>::value>
+ -> std::enable_if_t<!has_non_pocs_allocator_type<Record>::value>
 {
-    // make a copy of *right_content into a new list
+    static_assert(
+        std::is_same<Record, typename ContentR::value_type>::value, "");
+
+    // Immigrate records in *right_content into a new list
     // and then splice it into *left_content
-    std::list<RecordL, AllocatorL> right;                           // throw
-    for (const auto& right_rec : *right_content) {
-        right.emplace_back(right_rec.cbegin(), right_rec.cend());   // throw
-    }
+    std::list<Record, AllocatorL> right(
+        left_content->get_allocator());     // throw
+    right.resize(right_content->size());    // throw
+    std::swap_ranges(right.begin(), right.end(), right_content->begin());
     left_content->splice(left_content->cend(), right);
 }
 
-template <class Record, class AllocatorL, class ContentR>
-auto append_csv_table_content(
-    nothrow_move_and_swap<std::list<Record, AllocatorL>>& left_content,
+template <class ContentL, class ContentR>
+auto append_csv_table_content_adaptive(
+    nothrow_move_and_swap<ContentL>& left_content,
     nothrow_move_and_swap<ContentR>&& right_content)
- -> std::enable_if_t<has_rollbackable_move_insert<
-        std::list<Record, AllocatorL>, ContentR>::value>
+ -> std::enable_if_t<
+        has_non_pocs_allocator_type<typename ContentL::value_type>::value>
 {
-    // immigrate records in *right_content into a new list
-    // and then splice it into *left_content
-    std::list<Record, AllocatorL> right(right_content->size()); // throw
-    std::swap_ranges(right.begin(), right.end(), right_content->begin());
-    left_content->splice(left_content->cend(), right);
+    // In fact, even if POCS == false, swapping is OK if allocators are equal;
+    // we've decided, however, not to rescue such rare cases
+    append_csv_table_content_primitive(left_content, std::move(right_content));
+}
+
+template <class ContentL, class ContentR>
+auto append_csv_table_content(
+    nothrow_move_and_swap<ContentL>& left_content,
+    nothrow_move_and_swap<ContentR>&& right_content)
+ -> std::enable_if_t<!have_rollbackable_move_insert<ContentL, ContentR>::value>
+{
+    append_csv_table_content_primitive(left_content, std::move(right_content));
+}
+
+template <class ContentL, class ContentR>
+auto append_csv_table_content(
+    nothrow_move_and_swap<ContentL>& left_content,
+    nothrow_move_and_swap<ContentR>&& right_content)
+ -> std::enable_if_t<have_rollbackable_move_insert<ContentL, ContentR>::value>
+{
+    append_csv_table_content_adaptive(left_content, std::move(right_content));
 }
 
 template <class Record, class Alloc>
@@ -1160,7 +1208,12 @@ void append_csv_table_content(
     nothrow_move_and_swap<std::list<Record, Alloc>>& left_content,
     nothrow_move_and_swap<std::list<Record, Alloc>>&& right_content)
 {
-    left_content->splice(left_content->cend(), *right_content);
+    if (left_content->get_allocator() == right_content->get_allocator()) {
+        left_content->splice(left_content->cend(), *right_content);
+    } else {
+        append_csv_table_content_adaptive(
+            left_content, std::move(right_content));    // throw
+    }
 }
 
 } // end namespace detail
