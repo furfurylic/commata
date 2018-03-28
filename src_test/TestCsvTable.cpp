@@ -674,9 +674,6 @@ TEST_F(TestCsvTable, RewriteValue)
 
 TEST_F(TestCsvTable, ImportRecord)
 {
-    csv_table table1;
-    table1.add_buffer(std::unique_ptr<char[]>(new char[10]), 10);
-
     basic_csv_table<std::deque<std::deque<csv_value>>> table2;
     table2.add_buffer(std::unique_ptr<char[]>(new char[20]), 20);
     table2.content().emplace_back();
@@ -685,26 +682,40 @@ TEST_F(TestCsvTable, ImportRecord)
     table2.rewrite_value(table2[0][1], "ipsum");    // ditto
     table2.rewrite_value(table2[0][2], "dolor");    // ditto
 
-    // requires 18 chars and should be rejected
-    ASSERT_TRUE(table1.content().cend() ==
-        table1.import_record(table1.content().cend(), table2[0]));
+    csv_table table1;
+    table1.add_buffer(std::unique_ptr<char[]>(new char[10]), 10);
+
+    // Requires 18 chars and should be rejected
+    try {
+        table1.import_record(table2[0]);
+        FAIL();
+    } catch (const std::bad_alloc&) {
+    } catch (...) {
+        FAIL();
+    }
+
     ASSERT_TRUE(table1.empty());
 
-    // and the rejection should not leave any traces,
+    // And the rejection should not leave any traces,
     // so 10 chars should be able to contained
     table1.content().emplace_back();
     table1[0].emplace_back();
     ASSERT_TRUE(table1.rewrite_value(table1[0][0], "Excepteur"));
 
-    // clear contents and reuse buffer
+    // Clear contents and reuse buffer
     table1.clear();
 
-    // add another buffer and retry to make it
+    // Add another buffer and retry to make it
     table1.add_buffer(std::unique_ptr<char[]>(new char[15]), 15);
-    ASSERT_TRUE(table1.content().cbegin() ==
-        table1.import_record(table1.content().cend(), table2[0]));
-    ASSERT_EQ(1U, table1.size());
-    ASSERT_EQ(3U, table1[0].size());
+    auto r = table1.import_record(table2[0]);
+    ASSERT_TRUE(table1.empty());
+    ASSERT_EQ(3U, r.size());
+    ASSERT_EQ("Lorem", r[0]);
+    ASSERT_EQ("ipsum", r[1]);
+    ASSERT_EQ("dolor", r[2]);
+
+    // Move-insertion is OK
+    table1.content().push_back(std::move(r));
 }
 
 TEST_F(TestCsvTable, MergeLists)

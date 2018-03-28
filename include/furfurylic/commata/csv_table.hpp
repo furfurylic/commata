@@ -1004,9 +1004,7 @@ public:
     }
 
     template <class OtherRecord>
-    typename content_type::iterator import_record(
-        typename content_type::const_iterator position,
-        const OtherRecord& record)
+    record_type import_record(const OtherRecord& record)
     {
         const auto security = store_.get_security();    // throw
         record_type imported;           // throw
@@ -1015,15 +1013,10 @@ public:
             if (!rewrite_value(
                     imported.back(), value.cbegin(), value.cend())) {
                 store_.set_security(security);
-                return content().end();
+                throw std::bad_alloc();
             }
         }
-        try {
-            return content().insert(position, std::move(imported)); // throw
-        } catch (...) {
-            store_.set_security(security);
-            throw;
-        }
+        return imported;
     }
 
     size_type size() const
