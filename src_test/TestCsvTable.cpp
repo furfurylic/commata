@@ -605,18 +605,6 @@ static_assert(std::is_nothrow_move_assignable<csv_table>::value, "");
 static_assert(noexcept(std::declval<csv_table&>().content()), "");
 static_assert(noexcept(std::declval<const csv_table&>().content()), "");
 static_assert(noexcept(
-    std::declval<csv_table&>().rewrite_value(
-        std::declval<csv_value&>(), nullptr, nullptr)), "");
-static_assert(noexcept(
-    std::declval<csv_table&>().rewrite_value(
-        std::declval<csv_value&>(), nullptr)), "");
-static_assert(noexcept(
-    std::declval<csv_table&>().rewrite_value(
-        std::declval<csv_value&>(), std::declval<const std::string&>())), "");
-static_assert(noexcept(
-    std::declval<csv_table&>().rewrite_value(
-        std::declval<csv_value&>(), std::declval<const csv_value&>())), "");
-static_assert(noexcept(
     std::declval<csv_table&>().swap(std::declval<csv_table&>())), "");
 static_assert(noexcept(
     swap(std::declval<csv_table&>(), std::declval<csv_table&>())), "");
@@ -626,100 +614,78 @@ struct TestCsvTable : furfurylic::test::BaseTest
 
 TEST_F(TestCsvTable, RewriteValue)
 {
-    wcsv_table table;
+    wcsv_table table(10U);
 
-    wchar_t* const buffer1 = table.get_allocator().allocate(10);
-    table.add_buffer(buffer1, 10);
-
-    // first record
+    // First record
     table.content().emplace_back();
     table[0].resize(2);
 
-    // consumes 5 chars
-    ASSERT_TRUE(table.rewrite_value(table[0][0], L"star"));
+    // Consumes 5 chars
+    table.rewrite_value(table[0][0], L"star");
     ASSERT_EQ(L"star", table[0][0]);
-    ASSERT_EQ(buffer1, table[0][0].c_str());
+    const auto v = table[0][0];
 
-    // another 6 chars are rejected
-    ASSERT_FALSE(table.rewrite_value(table[0][1], std::wstring(L"earth")));
-
-    // in-place contraction is OK
-    ASSERT_TRUE(table.rewrite_value(table[0][0], L"sun"));
+    // In-place contraction is OK
+    table.rewrite_value(table[0][0], L"sun");
     ASSERT_EQ(L"sun", table[0][0]);
-    ASSERT_EQ(buffer1, table[0][0].c_str());
+    ASSERT_TRUE(
+        (v.cbegin() <= table[0][0].cbegin())
+     && (table[0][0].cend() <= v.cend()));
 
-    // expansion to 5 chars is fulfilled by comsuming next spaces
+    // Expansion to 5 chars is fulfilled by comsuming next spaces
     std::wstring moon(L"moon");
-    ASSERT_TRUE(table.rewrite_value(table[0][0],
-        moon.c_str(), moon.c_str() + 4));
+    table[0][0] = table.import_value(moon.c_str(), moon.c_str() + 4);
     ASSERT_EQ(L"moon", table[0][0]);
-    ASSERT_EQ(buffer1 + 5, table[0][0].c_str());
+    ASSERT_EQ(v.cbegin() + 5, table[0][0].c_str());
 
-    wchar_t* const  buffer2 = table.get_allocator().allocate(10);
-    table.add_buffer(buffer2, 10);
-
-    // consume another buffer by 5 chars
-    ASSERT_TRUE(table.rewrite_value(table[0][1], table[0][0]));
+    // Consume another buffer by 5 chars
+    table.rewrite_value(table[0][1], table[0][0]);
     ASSERT_EQ(L"moon", table[0][1]);
-    ASSERT_EQ(buffer2, table[0][1].c_str());
+    ASSERT_TRUE(
+        (table[0][0].cend() < v.cbegin())
+     || (v.cend() <= table[0][0].cbegin()));
 }
 
 TEST_F(TestCsvTable, ImportRecord)
 {
-    basic_csv_table<std::deque<std::deque<csv_value>>> table2;
-    table2.add_buffer(table2.get_allocator().allocate(20), 20);
-    table2.content().emplace_back();
-    table2[0].resize(3);
-    table2.rewrite_value(table2[0][0], "Lorem");    // consumes 6 chars
-    table2.rewrite_value(table2[0][1], "ipsum");    // ditto
-    table2.rewrite_value(table2[0][2], "dolor");    // ditto
+    csv_table table1(20U);
+    csv_table::record_type r;
 
-    csv_table table1;
-    table1.add_buffer(table1.get_allocator().allocate(10), 10);
+    {
+        basic_csv_table<std::deque<std::deque<csv_value>>> table2;
+        table2.content().emplace_back();
+        table2[0].resize(3);
+        table2.rewrite_value(table2[0][0], "Lorem");
+        table2.rewrite_value(table2[0][1], "ipsum");
+        table2.rewrite_value(table2[0][2], "dolor");
 
-    // Requires 18 chars and should be rejected
-    try {
-        table1.import_record(table2[0]);
-        FAIL();
-    } catch (const std::bad_alloc&) {
-    } catch (...) {
-        FAIL();
-    }
+        r = table1.import_record(table2[0]);
 
-    ASSERT_TRUE(table1.empty());
-
-    // And the rejection should not leave any traces,
-    // so 10 chars should be able to contained
-    table1.content().emplace_back();
-    table1[0].emplace_back();
-    ASSERT_TRUE(table1.rewrite_value(table1[0][0], "Excepteur"));
-
-    // Clear contents and reuse buffer
-    table1.clear();
-
-    // Add another buffer and retry to make it
-    table1.add_buffer(table1.get_allocator().allocate(15), 15);
-    auto r = table1.import_record(table2[0]);
-    ASSERT_TRUE(table1.empty());
-    ASSERT_EQ(3U, r.size());
-    ASSERT_EQ("Lorem", r[0]);
-    ASSERT_EQ("ipsum", r[1]);
-    ASSERT_EQ("dolor", r[2]);
+        ASSERT_TRUE(table1.empty());
+        ASSERT_EQ(3U, r.size());
+        ASSERT_EQ("Lorem", r[0]);
+        ASSERT_EQ("ipsum", r[1]);
+        ASSERT_EQ("dolor", r[2]);
+    } // Here table2 dies
 
     // Move-insertion is OK
     table1.content().push_back(std::move(r));
+
+    ASSERT_EQ(1U, table1.size());
+    ASSERT_EQ(3U, table1[0].size());
+    ASSERT_EQ("Lorem", table1[0][0]);
+    ASSERT_EQ("ipsum", table1[0][1]);
+    ASSERT_EQ("dolor", table1[0][2]);
 }
 
 TEST_F(TestCsvTable, MergeLists)
 {
-    basic_csv_table<std::list<std::vector<csv_value>>> table1;
-    table1.add_buffer(table1.get_allocator().allocate(10), 10);
+    basic_csv_table<std::list<std::vector<csv_value>>> table1(10U);
     table1.content().emplace_back();
     table1.content().back().emplace_back();
     table1.rewrite_value(table1.content().back().back(), "apples");
 
-    basic_csv_table<std::list<std::vector<csv_value>>> table2;
-    table2.add_buffer(table2.get_allocator().allocate(10), 10);
+    basic_csv_table<std::list<std::vector<csv_value>>> table2(10U);
     table2.content().emplace_back();
     table2.content().back().emplace_back();
     table2.rewrite_value(table2.content().back().back(), "oranges");
@@ -762,16 +728,14 @@ TYPED_TEST_CASE(TestCsvTableMerge, ContentLRs);
 
 TYPED_TEST(TestCsvTableMerge, Merge)
 {
-    basic_csv_table<typename TypeParam::first_type> table1;
-    table1.add_buffer(table1.get_allocator().allocate(20), 20);
+    basic_csv_table<typename TypeParam::first_type> table1(20U);
     table1.content().emplace_back();
     table1.content().begin()->resize(3);
     table1.rewrite_value((*table1.content().begin())[0], "Lorem");
     table1.rewrite_value((*table1.content().begin())[1], "ipsum");
     table1.rewrite_value((*table1.content().begin())[2], "dolor");
 
-    basic_csv_table<typename TypeParam::second_type> table2;
-    table2.add_buffer(table2.get_allocator().allocate(25), 25);
+    basic_csv_table<typename TypeParam::second_type> table2(25U);
     table2.content().resize(2);
     table2.content().begin() ->resize(2);
     table2.content().rbegin()->resize(1);
@@ -806,7 +770,7 @@ TEST_F(TestCsvTableAllocator, Basics)
 
     std::vector<std::pair<char*, char*>> allocated1;
     AA a(allocated1);
-    basic_csv_table<Content, A> table(std::allocator_arg, A(a));
+    basic_csv_table<Content, A> table(std::allocator_arg, a, 1024);
 
     const char* s = "Col1,Col2\n"
                     "aaa,bbb,ccc\n"
@@ -814,7 +778,7 @@ TEST_F(TestCsvTableAllocator, Basics)
     std::stringbuf in(s);
 
     try {
-        parse(&in, make_csv_table_builder(1024, table));
+        parse(&in, make_csv_table_builder(table));
     } catch (const csv_error& e) {
         FAIL() << e.info();
     }
@@ -845,9 +809,9 @@ TEST_P(TestCsvTableBuilder, Basics)
                     "ka2,\"\",\"\"\"va2\"\"\",vb2\n"
                     "\"k\"\"a\"\"1\",\"kb\"\"13\"\"\",\"vb\n3\"";
     std::stringbuf in(s);
-    csv_table table;
+    csv_table table(GetParam());
     try {
-        parse(&in, make_csv_table_builder(GetParam(), table));
+        parse(&in, make_csv_table_builder(table));
     } catch (const csv_error& e) {
         FAIL() << e.info();
     }
@@ -879,10 +843,10 @@ TEST_P(TestCsvTableBuilder, EmptyRowAware)
 {
     const char* s = "\r1,2,3,4\na,b\r\n\nx,y,z\r\n\"\"";
     std::stringbuf in(s);
-    csv_table table;
+    csv_table table(GetParam());
     try {
         parse(&in, make_empty_physical_row_aware(
-            make_csv_table_builder(GetParam(), table)));
+            make_csv_table_builder(table)));
     } catch (const csv_error& e) {
         FAIL() << e.info();
     }
@@ -912,9 +876,9 @@ TEST_P(TestCsvTableBuilder, Transpose)
                     "aaa,bbb,ccc\n"
                     "AAA,BBB,CCC\n";
     std::stringbuf in(s);
-    csv_table table;
+    csv_table table(GetParam());
     try {
-        parse(&in, make_transposed_csv_table_builder(GetParam(), table));
+        parse(&in, make_transposed_csv_table_builder(table));
     } catch (const csv_error& e) {
         FAIL() << e.info();
     }
@@ -936,7 +900,7 @@ TEST_P(TestCsvTableBuilder, Transpose)
     const char* t = "AAa,BBb";
     std::stringbuf in2(t);
     try {
-        parse(&in2, make_transposed_csv_table_builder(GetParam(), table));
+        parse(&in2, make_transposed_csv_table_builder(table));
     } catch (const csv_error& e) {
         FAIL() << e.info();
     }

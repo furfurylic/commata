@@ -12,6 +12,7 @@
 #include <deque>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <list>
 #include <memory>
 #include <numeric>
@@ -691,6 +692,7 @@ class basic_csv_store :
     // and its nofail move construction and move assignment
     node_type* buffers_;        // "front" of buffers
     node_type* buffers_back_;   // "back" of buffers
+    std::size_t buffers_size_;  // "size" of buffers
 
 private:
     using at_t = std::allocator_traits<Allocator>;
@@ -709,28 +711,24 @@ public:
     basic_csv_store(
         std::allocator_arg_t, const Allocator& alloc = Allocator()) :
         member_like_base<Allocator>(alloc),
-        buffers_(nullptr), buffers_back_(nullptr)
+        buffers_(nullptr), buffers_back_(nullptr),
+        buffers_size_(0)
     {}
 
     basic_csv_store(basic_csv_store&& other) noexcept :
         member_like_base<Allocator>(std::move(other.get())),
-        buffers_(other.buffers_), buffers_back_(other.buffers_back_)
+        buffers_(other.buffers_), buffers_back_(other.buffers_back_),
+        buffers_size_(other.buffers_size_)
     {
         other.buffers_ = nullptr;
         other.buffers_back_ = nullptr;
+        other.buffers_size_ = 0;
     }
 
     ~basic_csv_store()
     {
-        typename nat_t::allocator_type na(this->get());
-        for (auto i = buffers_; i;) {
-            auto j = i->next;
-            const auto p = i->detach();
-            at_t::deallocate(this->get(),
-                pt_t::pointer_to(*p.first), p.second);
-            i->~node_type();
-            nat_t::deallocate(na, npt_t::pointer_to(*i), 1);
-            i = j;
+        while (buffers_) {
+            reduce_buffer();
         }
     }
 
@@ -746,6 +744,8 @@ public:
         return this->get();
     }
 
+    // Takes the ownership of "buffer" over when called (that is, callers
+    // must not deallocate "buffer" even if an exception is thrown)
     void add_buffer(Ch* buffer, std::size_t size)
     {
         typename nat_t::allocator_type na(this->get());
@@ -763,6 +763,7 @@ public:
         if (!buffers_back_) {
             buffers_back_ = buffers_;
         }
+        ++buffers_size_;
     }
 
     void secure_current_upto(Ch* secured_last)
@@ -795,6 +796,7 @@ public:
         swap(this->get(), other.get());
         swap(buffers_, other.buffers_);
         swap(buffers_back_, other.buffers_back_);
+        swap(buffers_size_, other.buffers_size_);
     }
 
     basic_csv_store& merge(basic_csv_store&& other) noexcept
@@ -805,8 +807,10 @@ public:
             buffers_ = other.buffers_;
             buffers_back_ = buffers_;
         }
+        buffers_size_ += other.buffers_size_;
         other.buffers_ = nullptr;
         other.buffers_back_ = nullptr;
+        other.buffers_size_ = 0;
         return *this;
     }
 
@@ -821,12 +825,31 @@ public:
 
     void set_security(const security& s)
     {
+        // s = get_security() -> add_buffer() -> set_security(s) is OK
+        assert(s.size() <= buffers_size_);
+        for (auto k = s.size(); k < buffers_size_; ++k) {
+            reduce_buffer();
+        }
+
         auto i = buffers_;
         auto j = s.cbegin();
         for (; i; i = i->next, ++j) {
             i->secure_upto(*j);
         }
         assert(i == nullptr);
+    }
+
+private:
+    void reduce_buffer()
+    {
+        typename nat_t::allocator_type na(this->get());
+
+        auto next = buffers_->next;
+        const auto p = buffers_->detach();
+        at_t::deallocate(this->get(), pt_t::pointer_to(*p.first), p.second);
+        buffers_->~node_type();
+        nat_t::deallocate(na, npt_t::pointer_to(*buffers_), 1);
+        buffers_ = next;
     }
 };
 
@@ -1043,22 +1066,40 @@ private:
     store_type store_;
     detail::nothrow_move_and_swap<content_type, ca_t> records_;
 
+    std::size_t buffer_size_;
+
 public:
-    basic_csv_table() :
-        basic_csv_table(std::allocator_arg)
+    basic_csv_table(std::size_t buffer_size = default_buffer_size) :
+        basic_csv_table(std::allocator_arg, Allocator(), buffer_size)
     {}
 
     basic_csv_table(std::allocator_arg_t,
-        const Allocator& alloc = Allocator()) :
+        const Allocator& alloc = Allocator(),
+        std::size_t buffer_size = default_buffer_size) :
         store_(std::allocator_arg, alloc),
         records_(
             std::allocator_arg, ca_t(alloc),
-            make_content(std::uses_allocator<Content, ra_t>(), &alloc))
+            make_content(std::uses_allocator<Content, ra_t>(), &alloc)),
+        buffer_size_(sanitize_buffer_size(buffer_size, alloc))
     {}
 
+private:
+    static constexpr std::size_t default_buffer_size =
+        std::min<std::size_t>(std::numeric_limits<std::size_t>::max(), 8192U);
+
+    std::size_t sanitize_buffer_size(
+        std::size_t buffer_size, const Allocator& alloc)
+    {
+        return std::min(
+            std::max(buffer_size, static_cast<std::size_t>(2U)),
+            at_t::max_size(alloc));
+    }
+
+public:
     basic_csv_table(basic_csv_table&& other) noexcept :
         store_(std::move(other.store_)),
-        records_(std::move(other.records_))
+        records_(std::move(other.records_)),
+        buffer_size_(other.buffer_size_)
     {}
 
     basic_csv_table& operator=(basic_csv_table&& other) noexcept
@@ -1072,9 +1113,9 @@ public:
         return store_.get_allocator();
     }
 
-    void add_buffer(char_type* buffer, std::size_t size)
+    std::size_t get_buffer_size() const noexcept
     {
-        store_.add_buffer(buffer, size);
+        return buffer_size_;
     }
 
     content_type& content() noexcept
@@ -1097,9 +1138,9 @@ public:
         return content()[record_index];
     }
 
-    bool rewrite_value(value_type& value,
+    value_type& rewrite_value(value_type& value,
         const char_type* new_value_begin,
-        const char_type* new_value_end) noexcept
+        const char_type* new_value_end)
     {
         using traits = typename value_type::traits_type;
         const auto length =
@@ -1108,38 +1149,47 @@ public:
             traits::move(&*value.begin(), new_value_begin, length);
             value.erase(value.cbegin() + length, value.cend());
         } else {
-            const auto secured = store().secure_any(length + 1);
+            auto secured = store_.secure_any(length + 1);
             if (!secured) {
-                return false;
+                auto a = store_.get_allocator();
+                const auto alloc_size = std::max(length + 1, buffer_size_);
+                secured = std::addressof(
+                    *at_t::allocate(a, alloc_size));            // throw
+                store_.add_buffer(secured, alloc_size);         // throw
+                store_.secure_current_upto(secured + length + 1);
             }
             traits::copy(secured, new_value_begin, length);
             secured[length] = typename value_type::value_type();
             value = value_type(secured, secured + length);
         }
-        return true;
+        return value;
     }
 
-    bool rewrite_value(value_type& value,
-        const char_type* new_value) noexcept
+    value_type& rewrite_value(value_type& value, const char_type* new_value)
     {
         return rewrite_value(value, new_value,
             new_value + value_type::traits_type::length(new_value));
     }
 
     template <class OtherAllocator>
-    bool rewrite_value(value_type& value,
+    value_type& rewrite_value(value_type& value,
         const std::basic_string<char_type, traits_type, OtherAllocator>&
-            new_value) noexcept
+        new_value)
     {
         return rewrite_value(value,
             new_value.c_str(), new_value.c_str() + new_value.size());
     }
 
-    bool rewrite_value(value_type& value,
-        const value_type& new_value) noexcept
+    value_type& rewrite_value(value_type& value, const value_type& new_value)
     {
-        return rewrite_value(value,
-            new_value.cbegin(), new_value.cend());
+        return rewrite_value(value, new_value.cbegin(), new_value.cend());
+    }
+
+    template <class... Args>
+    value_type import_value(Args&&... args)
+    {
+        value_type value;
+        return rewrite_value(value, std::forward<Args>(args)...);   // throw
     }
 
     template <class OtherRecord>
@@ -1153,13 +1203,15 @@ public:
             reinterpret_cast<record_type*>(&imported_storage),
             std::uses_allocator<record_type, ra_t>());  // throw
 
-        for (const auto& value : record) {
-            imported->emplace(imported->cend());        // throw
-            if (!rewrite_value(
-                    *imported->rbegin(), value.cbegin(), value.cend())) {
-                store_.set_security(security);
-                throw std::bad_alloc();
+        try {
+            for (const auto& value : record) {
+                imported->emplace(imported->cend());    // throw             // throw
+                rewrite_value(*imported->rbegin(),
+                    value.cbegin(), value.cend());      // throw
             }
+        } catch (...) {
+            store_.set_security(security);
+            throw;
         }
         return std::move(*imported);
     }
@@ -1186,19 +1238,20 @@ public:
     void swap(basic_csv_table& other) noexcept
     {
         using std::swap;
-        swap(records_, other.records_);
-        swap(store_  , other.store_);
+        swap(records_    , other.records_);
+        swap(store_      , other.store_);
+        swap(buffer_size_, other.buffer_size_);
     }
 
 private:
-    store_type& store() noexcept
+    void add_buffer(char_type* buffer, std::size_t size)
     {
-        return store_;
+        store_.add_buffer(buffer, size);
     }
 
-    const store_type& store() const noexcept
+    void secure_current_upto(char_type* secured_last)
     {
-        return store_;
+        store_.secure_current_upto(secured_last);
     }
 
     static Content make_content(std::true_type, const Allocator* alloc)
@@ -1225,7 +1278,7 @@ private:
 
     auto create_record(record_type* p, std::false_type)
     {
-        ::new(static_cast<void*>(p)) record_type;    // throw
+        ::new(p) record_type;               // throw
         auto destroy = [](record_type* p) {
             p->~record_type();
         };
@@ -1514,8 +1567,6 @@ private:
     char_type* current_buffer_;
     std::size_t current_buffer_size_;
 
-    std::size_t buffer_size_;
-
     char_type* field_begin_;
     char_type* field_end_;
 
@@ -1525,11 +1576,9 @@ private:
     using at_t = std::allocator_traits<Allocator>;
 
 public:
-    csv_table_builder(
-        std::size_t buffer_size, basic_csv_table<Content, Allocator>& table) :
+    csv_table_builder(basic_csv_table<Content, Allocator>& table) :
         detail::arrange<Content, Transposes>(table.content()),
         current_buffer_holder_(nullptr), current_buffer_(nullptr),
-        buffer_size_(std::max(buffer_size, static_cast<std::size_t>(2U))),
         field_begin_(nullptr), table_(&table)
     {}
 
@@ -1567,10 +1616,11 @@ public:
         if (current_buffer_holder_) {
             auto cbh = current_buffer_holder_;
             current_buffer_holder_ = nullptr;
-            table_->store().add_buffer(cbh, current_buffer_size_);    // throw
+            table_->add_buffer(cbh, current_buffer_size_);  // throw
         }
-        this->new_value(table_->content(), field_begin_, field_end_); // throw
-        table_->store().secure_current_upto(field_end_ + 1);
+        this->new_value(
+            table_->content(), field_begin_, field_end_);   // throw
+        table_->secure_current_upto(field_end_ + 1);
         field_begin_ = nullptr;
         return true;
     }
@@ -1589,7 +1639,7 @@ public:
             // we'd like to move the active value to the beginning of the
             // returned buffer
             std::size_t next_buffer_size;
-            for (next_buffer_size = buffer_size_;
+            for (next_buffer_size = table_->get_buffer_size();
                  length >= next_buffer_size / 2; next_buffer_size *= 2);
             if (current_buffer_holder_
              && (current_buffer_size_ >= next_buffer_size)) {
@@ -1623,8 +1673,8 @@ public:
                 // so we need a new one
                 auto a = table_->get_allocator();
                 current_buffer_holder_ = std::addressof(
-                    *at_t::allocate(a, buffer_size_));      // throw
-                current_buffer_size_ = buffer_size_;
+                    *at_t::allocate(a, table_->get_buffer_size())); // throw
+                current_buffer_size_ = table_->get_buffer_size();
             }
             length = 0;
         }
@@ -1643,17 +1693,16 @@ public:
 };
 
 template <class Content, class Allocator>
-auto make_csv_table_builder(
-    std::size_t buffer_size, basic_csv_table<Content, Allocator>& table)
+auto make_csv_table_builder(basic_csv_table<Content, Allocator>& table)
 {
-    return csv_table_builder<Content, Allocator>(buffer_size, table);
+    return csv_table_builder<Content, Allocator>(table);
 }
 
 template <class Content, class Allocator>
 auto make_transposed_csv_table_builder(
-    std::size_t buffer_size, basic_csv_table<Content, Allocator>& table)
+    basic_csv_table<Content, Allocator>& table)
 {
-    return csv_table_builder<Content, Allocator, true>(buffer_size, table);
+    return csv_table_builder<Content, Allocator, true>(table);
 }
 
 }}
