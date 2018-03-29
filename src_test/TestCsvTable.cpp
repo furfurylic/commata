@@ -646,36 +646,49 @@ TEST_F(TestCsvTable, RewriteValue)
      || (v.cend() <= table[0][0].cbegin()));
 }
 
-TEST_F(TestCsvTable, ImportRecord)
+TEST_F(TestCsvTable, Copy)
 {
-    csv_table table1(20U);
-    csv_table::record_type r;
+    csv_table table1(10U);
+    table1.content().emplace_back(2U);
+    table1.content().emplace_back(1U);
+    table1.rewrite_value(table1[0][0], "sky");              // 4 chars
+    table1.rewrite_value(table1[0][1], "anaesthesia");      // 11 chars
+    table1.rewrite_value(table1[1][0], "catalogue");        // 9 chars
+    table1[1][0].erase(
+        table1[1][0].cbegin() + 3, table1[1][0].cend());    // "cat"
 
-    {
-        basic_csv_table<std::deque<std::deque<csv_value>>> table2;
-        table2.content().emplace_back();
-        table2[0].resize(3);
-        table2.rewrite_value(table2[0][0], "Lorem");
-        table2.rewrite_value(table2[0][1], "ipsum");
-        table2.rewrite_value(table2[0][2], "dolor");
+    // Copy ctor
 
-        r = table1.import_record(table2[0]);
+    csv_table table2(table1);
 
-        ASSERT_TRUE(table1.empty());
-        ASSERT_EQ(3U, r.size());
-        ASSERT_EQ("Lorem", r[0]);
-        ASSERT_EQ("ipsum", r[1]);
-        ASSERT_EQ("dolor", r[2]);
-    } // Here table2 dies
+    ASSERT_EQ(2U, table2.size());
+    ASSERT_EQ(2U, table2[0].size());
+    ASSERT_EQ(1U, table2[1].size());
+    ASSERT_EQ("sky", table2[0][0]);
+    ASSERT_EQ("anaesthesia", table2[0][1]);
+    ASSERT_EQ("cat", table2[1][0]);
 
-    // Move-insertion is OK
-    table1.content().push_back(std::move(r));
+    // In table2, "cat" is placed in the first buffer,
+    // just after "sky"
+    ASSERT_EQ(table2[0][0].cend() + 1, table2[1][0].cbegin());
+
+    // Shrink to fit
+
+    table1.shrink_to_fit();
+
+    // Compacted just like table2
+    ASSERT_EQ(table1[0][0].cend() + 1, table1[1][0].cbegin());
+
+    // Copy assignment
+
+    table2.content().pop_front();
+
+    table1 = table2;
+    table2.clear();
 
     ASSERT_EQ(1U, table1.size());
-    ASSERT_EQ(3U, table1[0].size());
-    ASSERT_EQ("Lorem", table1[0][0]);
-    ASSERT_EQ("ipsum", table1[0][1]);
-    ASSERT_EQ("dolor", table1[0][2]);
+    ASSERT_EQ(1U, table1[0].size());
+    ASSERT_EQ("cat", table1[0][0]);
 }
 
 TEST_F(TestCsvTable, MergeLists)
@@ -771,16 +784,16 @@ TEST_F(TestCsvTableAllocator, Basics)
     std::vector<std::pair<char*, char*>> allocated1;
     AA a(allocated1);
     basic_csv_table<Content, A> table(std::allocator_arg, a, 1024);
-
-    const char* s = "Col1,Col2\n"
-                    "aaa,bbb,ccc\n"
-                    "AAA,BBB,CCC\n";
-    std::stringbuf in(s);
-
-    try {
-        parse(&in, make_csv_table_builder(table));
-    } catch (const csv_error& e) {
-        FAIL() << e.info();
+    {
+        const char* s = "Col1,Col2\n"
+                        "aaa,bbb,ccc\n"
+                        "AAA,BBB,CCC\n";
+        std::stringbuf in(s);
+        try {
+            parse(&in, make_csv_table_builder(table));
+        } catch (const csv_error& e) {
+            FAIL() << e.info();
+        }
     }
 
     ASSERT_TRUE(a == table.content().get_allocator());
@@ -789,6 +802,35 @@ TEST_F(TestCsvTableAllocator, Basics)
     ASSERT_TRUE(a.tracks(&table.content().front()));
     ASSERT_TRUE(a.tracks(&table.content().front().front()));
     ASSERT_TRUE(a.tracks(&table.content().front().front().front()));
+
+    std::vector<std::pair<char*, char*>> allocated2;
+    AA b(allocated2);
+    basic_csv_table<Content, A> table2(std::allocator_arg, b);
+    {
+        const char* s = "Col1,Col2\n"
+                        "xxx,yyy\n";
+        std::stringbuf in(s);
+        try {
+            parse(&in, make_csv_table_builder(table2));
+        } catch (const csv_error& e) {
+            FAIL() << e.info();
+        }
+        table2.content().pop_front();
+    }
+
+    table += std::move(table2); // Not move but copy because of allocators
+
+    ASSERT_EQ(1U, table2.size());
+    ASSERT_TRUE(b.tracks(&table2[0]));
+    ASSERT_TRUE(b.tracks(&table2[0].front()));
+    ASSERT_TRUE(b.tracks(&table2[0].front().front()));
+
+    table2.clear();
+
+    ASSERT_EQ(4U, table.size());
+    ASSERT_TRUE(a.tracks(&table[3]));
+    ASSERT_TRUE(a.tracks(&table[3].front()));
+    ASSERT_TRUE(a.tracks(&table[3].front().front()));
 }
 
 static_assert(std::is_nothrow_move_constructible<
