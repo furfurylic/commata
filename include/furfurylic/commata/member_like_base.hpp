@@ -19,6 +19,9 @@ class member_like_base
     F f_;
 
 public:
+    member_like_base()
+    {}
+
     template <class G>
     member_like_base(G&& f) :
         f_(std::forward<G>(f))
@@ -40,6 +43,9 @@ class member_like_base<F, std::enable_if_t<!std::is_final<F>::value>> :
     F
 {
 public:
+    member_like_base()
+    {}
+
     template <class G>
     member_like_base(G&& f) :
         F(std::forward<G>(f))

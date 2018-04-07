@@ -23,6 +23,7 @@
 
 #include "formatted_output.hpp"
 #include "key_chars.hpp"
+#include "member_like_base.hpp"
 
 namespace furfurylic {
 namespace commata {
@@ -353,10 +354,10 @@ bool operator==(
     return i == left.cend();
 }
 
-template <class Ch, class Tr, class Alloc>
+template <class Ch, class Tr, class Allocator>
 bool operator==(
     const basic_csv_value<Ch, Tr>& left,
-    const std::basic_string<Ch, Tr, Alloc>& right) noexcept
+    const std::basic_string<Ch, Tr, Allocator>& right) noexcept
 {
     return detail::csv_value_eq(left, right);
 }
@@ -617,26 +618,35 @@ struct is_nothrow_swappable :
         // function swap)
 {};
 
-template <class Ch>
-class basic_csv_store
+template <class Ch, class Allocator>
+class basic_csv_store :
+    member_like_base<Allocator>
 {
     class buffer_type
     {
-        std::unique_ptr<Ch[]> buffer_;
+        Ch* buffer_;
         Ch* hwl_;   // high water level: last-past-one of the used elements
         Ch* end_;   // last-past-one of the buffer_
 
     public:
         buffer_type() noexcept :
-            hwl_(nullptr), end_(nullptr)
+            buffer_(nullptr)
         {}
 
-        void attach(
-            std::unique_ptr<Ch[]>&& buffer, std::size_t size) noexcept
+        void attach(Ch* buffer, std::size_t size) noexcept
         {
-            buffer_ = std::move(buffer);
-            hwl_ = buffer_.get();
-            end_ = buffer_.get() + size;
+            assert(!buffer_);
+            buffer_ = buffer;
+            hwl_ = buffer_;
+            end_ = buffer_ + size;
+        }
+
+        std::pair<Ch*, std::size_t> detach() noexcept
+        {
+            assert(buffer_);
+            std::pair<Ch*, std::size_t> p(buffer_, end_ - buffer_);
+            buffer_ = nullptr;
+            return p;
         }
 
         Ch* secured() const noexcept
@@ -663,7 +673,7 @@ class basic_csv_store
 
         void clear() noexcept
         {
-            hwl_ = buffer_.get();
+            hwl_ = buffer_;
         }
     };
 
@@ -682,16 +692,29 @@ class basic_csv_store
     node_type* buffers_;        // "front" of buffers
     node_type* buffers_back_;   // "back" of buffers
 
+private:
+    using at_t = std::allocator_traits<Allocator>;
+    using pt_t = std::pointer_traits<typename at_t::pointer>;
+    using nat_t = typename at_t::template rebind_traits<node_type>;
+    using npt_t = std::pointer_traits<typename nat_t::pointer>;
+
 public:
+    using allocator_type = Allocator;
     using security = std::vector<Ch*>;
 
     basic_csv_store() :
+        basic_csv_store(std::allocator_arg)
+    {}
+
+    basic_csv_store(
+        std::allocator_arg_t, const Allocator& alloc = Allocator()) :
+        member_like_base<Allocator>(alloc),
         buffers_(nullptr), buffers_back_(nullptr)
     {}
 
     basic_csv_store(basic_csv_store&& other) noexcept :
-        buffers_     (other.buffers_),
-        buffers_back_(other.buffers_back_)
+        member_like_base<Allocator>(std::move(other.get())),
+        buffers_(other.buffers_), buffers_back_(other.buffers_back_)
     {
         other.buffers_ = nullptr;
         other.buffers_back_ = nullptr;
@@ -699,24 +722,44 @@ public:
 
     ~basic_csv_store()
     {
+        typename nat_t::allocator_type na(this->get());
         for (auto i = buffers_; i;) {
             auto j = i->next;
-            delete i;
+            const auto p = i->detach();
+            at_t::deallocate(this->get(),
+                pt_t::pointer_to(*p.first), p.second);
+            i->~node_type();
+            nat_t::deallocate(na, npt_t::pointer_to(*i), 1);
             i = j;
         }
     }
 
     basic_csv_store& operator=(basic_csv_store&& other) noexcept
     {
+        // No matter if POCMA is true or not, we move also the allocator
         basic_csv_store(std::move(other)).swap(*this);
         return *this;
     }
 
-    void add_buffer(std::unique_ptr<Ch[]>&& buffer, std::size_t size)
+    allocator_type get_allocator() const noexcept
     {
+        return this->get();
+    }
+
+    void add_buffer(Ch* buffer, std::size_t size)
+    {
+        typename nat_t::allocator_type na(this->get());
+
         // "push_front"-like behaviour
-        buffers_ = new node_type(buffers_); // throw
-        buffers_->attach(std::move(buffer), size);
+        const auto buffers0 = buffers_;
+        try {
+            buffers_ = std::addressof(*nat_t::allocate(na, 1)); // throw
+        } catch (...) {
+            at_t::deallocate(this->get(), pt_t::pointer_to(*buffer), size);
+            throw;
+        }
+        ::new(buffers_) node_type(buffers0);
+        buffers_->attach(buffer, size);
         if (!buffers_back_) {
             buffers_back_ = buffers_;
         }
@@ -747,8 +790,11 @@ public:
 
     void swap(basic_csv_store& other) noexcept
     {
-        std::swap(buffers_, other.buffers_);
-        std::swap(buffers_back_, other.buffers_back_);
+        // No matter if POCS is true or not, we swap also the allocator
+        using std::swap;
+        swap(this->get(), other.get());
+        swap(buffers_, other.buffers_);
+        swap(buffers_back_, other.buffers_back_);
     }
 
     basic_csv_store& merge(basic_csv_store&& other) noexcept
@@ -784,28 +830,73 @@ public:
     }
 };
 
-template <class Ch>
-void swap(basic_csv_store<Ch>& left, basic_csv_store<Ch>& right) noexcept
+template <class Ch, class Allocator>
+void swap(
+    basic_csv_store<Ch, Allocator>& left,
+    basic_csv_store<Ch, Allocator>& right) noexcept
 {
     left.swap(right);
 }
 
-template <class T, class = void>
-class nothrow_move_and_swap
+template <class T, class Allocator, class = void>
+class nothrow_move_and_swap :
+    member_like_base<Allocator>
 {
-    std::unique_ptr<T> t_;
+    typename std::allocator_traits<Allocator>::pointer t_;
 
 public:
-    nothrow_move_and_swap() :
-        t_(new T)
-    {}
+    using allocator_type = Allocator;
+
+    nothrow_move_and_swap(
+        std::allocator_arg_t, const Allocator& alloc, T&& t) :
+        member_like_base<Allocator>(alloc),
+        t_(std::allocator_traits<Allocator>::allocate(this->get(), 1))
+    {
+        try {
+            ::new(std::addressof(*t_)) T(std::move(t));
+        } catch (...) {
+            std::allocator_traits<Allocator>::deallocate(this->get(), t_, 1);
+            throw;
+        }
+    }
 
     nothrow_move_and_swap(const nothrow_move_and_swap& other) :
-        t_(new T(*other.t_))
-    {}
+        member_like_base<Allocator>(other.get()),
+        t_(std::allocator_traits<Allocator>::allocate(this->get(), 1))
+    {
+        try {
+            ::new(std::addressof(*t_)) T(*other);
+        } catch (...) {
+            std::allocator_traits<Allocator>::deallocate(this->get(), t_, 1);
+            throw;
+        }
+    }
 
-    nothrow_move_and_swap(nothrow_move_and_swap&&) = default;
-    nothrow_move_and_swap& operator=(nothrow_move_and_swap&&) = default;
+    nothrow_move_and_swap(nothrow_move_and_swap&& other) noexcept :
+        member_like_base<Allocator>(std::move(other.get())),
+        t_(other.t_)
+    {
+        other.t_ = nullptr;
+    }
+
+    ~nothrow_move_and_swap()
+    {
+        if (t_) {
+            t_->~T();
+            std::allocator_traits<Allocator>::deallocate(this->get(), t_, 1);
+        }
+    }
+
+    nothrow_move_and_swap& operator=(nothrow_move_and_swap&& other) noexcept
+    {
+        nothrow_move_and_swap(std::move(other)).swap(*this);
+        return *this;
+    }
+
+    Allocator get_allocator() const noexcept
+    {
+        return this->get();
+    }
 
     T& operator*() noexcept
     {
@@ -819,54 +910,82 @@ public:
 
     T* operator->() noexcept
     {
-        return t_.get();
+        return std::addressof(**this);
     }
 
     const T* operator->() const noexcept
     {
-        return t_.get();
+        return std::addressof(**this);
     }
 
     void swap(nothrow_move_and_swap& other) noexcept
+    {
+        using std::swap;
+        swap(this->get(), other.get());
+        swap(t_, other.t_);
+    }
+};
+
+template <class T>
+class nothrow_move_and_swap_direct
+{
+    T t_;
+
+public:
+    nothrow_move_and_swap_direct(T&& t) :
+        t_(std::move(t))
+    {}
+
+    nothrow_move_and_swap_direct(
+        const nothrow_move_and_swap_direct& other) = default;
+    nothrow_move_and_swap_direct(
+        nothrow_move_and_swap_direct&&) noexcept = default;
+    nothrow_move_and_swap_direct& operator=(
+        nothrow_move_and_swap_direct&&) noexcept = default;
+
+    T& operator*() noexcept
+    {
+        return t_;
+    }
+
+    const T& operator*() const noexcept
+    {
+        return t_;
+    }
+
+    T* operator->() noexcept
+    {
+        return &t_;
+    }
+
+    const T* operator->() const noexcept
+    {
+        return &t_;
+    }
+
+    void swap(nothrow_move_and_swap_direct& other) noexcept
     {
         t_.swap(other.t_);
     }
 };
 
-template <class T>
+template <class T, class Allocator>
 class nothrow_move_and_swap<
-    T,
+    T, Allocator,
     std::enable_if_t<
         std::is_nothrow_move_constructible<T>::value
      && std::is_nothrow_move_assignable<T>::value
-     && is_nothrow_swappable<T>::value>>
+     && is_nothrow_swappable<T>::value>> :
+    public nothrow_move_and_swap_direct<T>
 {
-    T t_;
-
 public:
-    T& operator*() noexcept
-    {
-        return t_;
-    }
-
-    const T& operator*() const noexcept
-    {
-        return t_;
-    }
-
-    T* operator->() noexcept
-    {
-        return &t_;
-    }
-
-    const T* operator->() const noexcept
-    {
-        return &t_;
-    }
+    nothrow_move_and_swap(std::allocator_arg_t, const Allocator&, T&& t) :
+        nothrow_move_and_swap_direct<T>(std::move(t))
+    {}
 
     void swap(nothrow_move_and_swap& other) noexcept
     {
-        t_.swap(other.t_);
+        this->nothrow_move_and_swap_direct<T>::swap(other);
     }
 };
 
@@ -880,13 +999,15 @@ void swap(
 
 } // end namespace detail
 
-template <class Content, bool Transposes>
+template <class Content, class Allocator, bool Transposes>
 class csv_table_builder;
 
-template <class Content>
+template <class Content, class Allocator =
+    std::allocator<typename Content::value_type::value_type::value_type>>
 class basic_csv_table
 {
 public:
+    using allocator_type  = Allocator;
     using content_type    = Content;
     using record_type     = typename content_type::value_type;
     using value_type      = typename record_type::value_type;
@@ -904,22 +1025,35 @@ public:
 
 private:
     using store_type =
-        detail::basic_csv_store<typename value_type::value_type>;
+        detail::basic_csv_store<char_type, allocator_type>;
+    using at_t = typename std::allocator_traits<Allocator>;
+    using ca_t = typename at_t::template rebind_alloc<Content>;
+    using ra_t = typename at_t::template
+        rebind_alloc<typename Content::value_type>;
 
-    friend class csv_table_builder<Content, true>;
-    friend class csv_table_builder<Content, false>;
+    friend class csv_table_builder<Content, Allocator, true>;
+    friend class csv_table_builder<Content, Allocator, false>;
 
-    template <class ContentL, class ContentR>
-    friend basic_csv_table<ContentL>& operator+=(
-        basic_csv_table<ContentL>& left,
-        basic_csv_table<ContentR>&& right);
+    template <class ContentL, class ContentR, class AllocatorXY>
+    friend basic_csv_table<ContentL, AllocatorXY>& operator+=(
+        basic_csv_table<ContentL, AllocatorXY>& left,
+        basic_csv_table<ContentR, AllocatorXY>&& right);
 
 private:
     store_type store_;
-    detail::nothrow_move_and_swap<content_type> records_;
+    detail::nothrow_move_and_swap<content_type, ca_t> records_;
 
 public:
-    basic_csv_table()
+    basic_csv_table() :
+        basic_csv_table(std::allocator_arg)
+    {}
+
+    basic_csv_table(std::allocator_arg_t,
+        const Allocator& alloc = Allocator()) :
+        store_(std::allocator_arg, alloc),
+        records_(
+            std::allocator_arg, ca_t(alloc),
+            make_content(std::uses_allocator<Content, ra_t>(), &alloc))
     {}
 
     basic_csv_table(basic_csv_table&& other) noexcept :
@@ -933,9 +1067,14 @@ public:
         return *this;
     }
 
-    void add_buffer(std::unique_ptr<char_type[]>&& buffer, std::size_t size)
+    allocator_type get_allocator() const noexcept
     {
-        store_.add_buffer(std::move(buffer), size);
+        return store_.get_allocator();
+    }
+
+    void add_buffer(char_type* buffer, std::size_t size)
+    {
+        store_.add_buffer(buffer, size);
     }
 
     content_type& content() noexcept
@@ -987,9 +1126,9 @@ public:
             new_value + value_type::traits_type::length(new_value));
     }
 
-    template <class Alloc>
+    template <class OtherAllocator>
     bool rewrite_value(value_type& value,
-        const std::basic_string<char_type, traits_type, Alloc>&
+        const std::basic_string<char_type, traits_type, OtherAllocator>&
             new_value) noexcept
     {
         return rewrite_value(value,
@@ -1007,16 +1146,22 @@ public:
     record_type import_record(const OtherRecord& record)
     {
         const auto security = store_.get_security();    // throw
-        record_type imported;                           // throw
+
+        std::aligned_storage_t<sizeof(record_type), alignof(record_type)>
+            imported_storage;
+        auto imported = create_record(
+            reinterpret_cast<record_type*>(&imported_storage),
+            std::uses_allocator<record_type, ra_t>());  // throw
+
         for (const auto& value : record) {
-            imported.emplace(imported.cend());          // throw
+            imported->emplace(imported->cend());        // throw
             if (!rewrite_value(
-                    *imported.rbegin(), value.cbegin(), value.cend())) {
+                    *imported->rbegin(), value.cbegin(), value.cend())) {
                 store_.set_security(security);
                 throw std::bad_alloc();
             }
         }
-        return imported;
+        return std::move(*imported);
     }
 
     size_type size() const
@@ -1055,11 +1200,43 @@ private:
     {
         return store_;
     }
+
+    static Content make_content(std::true_type, const Allocator* alloc)
+    {
+        return Content(ra_t(*alloc));
+    }
+
+    static Content make_content(std::false_type, ...)
+    {
+        return Content();
+    }
+
+    auto create_record(record_type* p, std::true_type)
+    {
+        using cat_t =
+            std::allocator_traits<typename content_type::allocator_type>;
+        auto a = content().get_allocator();
+        cat_t::construct(a, p);             // throw
+        auto destroy = [&a](record_type* p) {
+            cat_t::destroy(a, p);
+        };
+        return std::unique_ptr<record_type, decltype(destroy)>(p, destroy);
+    }
+
+    auto create_record(record_type* p, std::false_type)
+    {
+        ::new(static_cast<void*>(p)) record_type;    // throw
+        auto destroy = [](record_type* p) {
+            p->~record_type();
+        };
+        return std::unique_ptr<record_type, decltype(destroy)>(p, destroy);
+    }
 };
 
-template <class Content>
+template <class Content, class Allocator>
 void swap(
-    basic_csv_table<Content>& left, basic_csv_table<Content>& right) noexcept
+    basic_csv_table<Content, Allocator>& left,
+    basic_csv_table<Content, Allocator>& right) noexcept
 {
     left.swap(right);
 }
@@ -1078,10 +1255,10 @@ struct has_non_pocs_allocator_type<T,
     std::true_type
 {};
 
-template <class ContentL, class ContentR>
+template <class ContentL, class ContentR, class AllocatorX, class AllocatorY>
 void append_csv_table_content_primitive(
-    nothrow_move_and_swap<ContentL>& left_content,
-    const nothrow_move_and_swap<ContentR>& right_content)
+    nothrow_move_and_swap<ContentL, AllocatorX>& left_content,
+    const nothrow_move_and_swap<ContentR, AllocatorY>& right_content)
 {
     // We require:
     // - if an exception is thrown by ContentL's emplace() at the end,
@@ -1102,10 +1279,13 @@ void append_csv_table_content_primitive(
     }
 }
 
-template <class RecordL, class AllocatorL, class ContentR>
+template <
+    class RecordL, class AllocatorL, class ContentR,
+    class AllocatorX, class AllocatorY>
 void append_csv_table_content_primitive(
-    nothrow_move_and_swap<std::list<RecordL, AllocatorL>>& left_content,
-    const nothrow_move_and_swap<ContentR>& right_content)
+    nothrow_move_and_swap<std::list<RecordL, AllocatorL>, AllocatorX>&
+        left_content,
+    const nothrow_move_and_swap<ContentR, AllocatorY>& right_content)
 {
     std::list<RecordL, AllocatorL> right(
         left_content->get_allocator());                         // throw
@@ -1115,16 +1295,16 @@ void append_csv_table_content_primitive(
     left_content->splice(left_content->cend(), right);
 }
 
-template <class ContentL, class ContentR>
+template <class ContentL, class ContentR, class AllocatorX, class AllocatorY>
 auto append_csv_table_content_adaptive(
-    nothrow_move_and_swap<ContentL>& left_content,
-    nothrow_move_and_swap<ContentR>&& right_content)
+    nothrow_move_and_swap<ContentL, AllocatorX>& left_content,
+    nothrow_move_and_swap<ContentR, AllocatorY>&& right_content)
  -> std::enable_if_t<
         !has_non_pocs_allocator_type<typename ContentL::value_type>::value
      && is_nothrow_swappable<typename ContentL::value_type>::value>
 {
     static_assert(std::is_same<typename ContentL::value_type,
-                               typename ContentR::value_type>::value, "");
+        typename ContentR::value_type>::value, "");
 
     // We require:
     // - if an exception is thrown by ContentL's emplace() at the end,
@@ -1146,10 +1326,13 @@ auto append_csv_table_content_adaptive(
     }
 }
 
-template <class Record, class AllocatorL, class ContentR>
+template <
+    class Record, class AllocatorL, class ContentR,
+    class AllocatorX, class AllocatorY>
 auto append_csv_table_content_adaptive(
-    nothrow_move_and_swap<std::list<Record, AllocatorL>>& left_content,
-    nothrow_move_and_swap<ContentR>&& right_content)
+    nothrow_move_and_swap<std::list<Record, AllocatorL>, AllocatorX>&
+        left_content,
+    nothrow_move_and_swap<ContentR, AllocatorY>&& right_content)
  -> std::enable_if_t<
         !has_non_pocs_allocator_type<Record>::value
      && is_nothrow_swappable<Record>::value>
@@ -1170,10 +1353,10 @@ auto append_csv_table_content_adaptive(
     left_content->splice(left_content->cend(), right);
 }
 
-template <class ContentL, class ContentR>
+template <class ContentL, class ContentR, class AllocatorX, class AllocatorY>
 auto append_csv_table_content_adaptive(
-    nothrow_move_and_swap<ContentL>& left_content,
-    nothrow_move_and_swap<ContentR>&& right_content)
+    nothrow_move_and_swap<ContentL, AllocatorX>& left_content,
+    nothrow_move_and_swap<ContentR, AllocatorY>&& right_content)
  -> std::enable_if_t<
         has_non_pocs_allocator_type<typename ContentL::value_type>::value
      || !is_nothrow_swappable<typename ContentL::value_type>::value>
@@ -1183,30 +1366,32 @@ auto append_csv_table_content_adaptive(
     append_csv_table_content_primitive(left_content, right_content);
 }
 
-template <class ContentL, class ContentR>
+template <class ContentL, class ContentR, class AllocatorX, class AllocatorY>
 auto append_csv_table_content(
-    nothrow_move_and_swap<ContentL>& left_content,
-    nothrow_move_and_swap<ContentR>&& right_content)
+    nothrow_move_and_swap<ContentL, AllocatorX>& left_content,
+    nothrow_move_and_swap<ContentR, AllocatorY>&& right_content)
  -> std::enable_if_t<!std::is_same<
         typename ContentL::value_type, typename ContentR::value_type>::value>
 {
     append_csv_table_content_primitive(left_content, right_content);
 }
 
-template <class ContentL, class ContentR>
+template <class ContentL, class ContentR, class AllocatorX, class AllocatorY>
 auto append_csv_table_content(
-    nothrow_move_and_swap<ContentL>& left_content,
-    nothrow_move_and_swap<ContentR>&& right_content)
+    nothrow_move_and_swap<ContentL, AllocatorX>& left_content,
+    nothrow_move_and_swap<ContentR, AllocatorY>&& right_content)
  -> std::enable_if_t<std::is_same<
         typename ContentL::value_type, typename ContentR::value_type>::value>
 {
     append_csv_table_content_adaptive(left_content, std::move(right_content));
 }
 
-template <class Record, class Alloc>
+template <class Record, class Allocator, class AllocatorXY>
 void append_csv_table_content(
-    nothrow_move_and_swap<std::list<Record, Alloc>>& left_content,
-    nothrow_move_and_swap<std::list<Record, Alloc>>&& right_content)
+    nothrow_move_and_swap<std::list<Record, Allocator>, AllocatorXY>&
+        left_content,
+    nothrow_move_and_swap<std::list<Record, Allocator>, AllocatorXY>&&
+        right_content)
 {
     if (left_content->get_allocator() == right_content->get_allocator()) {
         left_content->splice(left_content->cend(), *right_content);
@@ -1218,21 +1403,22 @@ void append_csv_table_content(
 
 } // end namespace detail
 
-template <class ContentL, class ContentR>
-basic_csv_table<ContentL>& operator+=(
-    basic_csv_table<ContentL>& left,
-    basic_csv_table<ContentR>&& right)
+template <class ContentL, class ContentR, class Allocator>
+basic_csv_table<ContentL, Allocator>& operator+=(
+    basic_csv_table<ContentL, Allocator>& left,
+    basic_csv_table<ContentR, Allocator>&& right)
 {
+    assert(left.store_.get_allocator() == right.store_.get_allocator());
     detail::append_csv_table_content(
         left.records_, std::move(right.records_));      // throw
     left.store_.merge(std::move(right.store_));
     return left;
 }
 
-template <class ContentL, class ContentR>
-basic_csv_table<ContentL> operator+(
-    basic_csv_table<ContentL>&& left,
-    basic_csv_table<ContentR>&& right)
+template <class ContentL, class ContentR, class Allocator>
+basic_csv_table<ContentL, Allocator> operator+(
+    basic_csv_table<ContentL, Allocator>&& left,
+    basic_csv_table<ContentR, Allocator>&& right)
 {
     left += std::move(right);   // throw
     return std::move(left);
@@ -1316,15 +1502,15 @@ using arrange = std::conditional_t<Transposes,
 
 } // end namespace detail
 
-template <class Content, bool Transposes = false>
+template <class Content, class Allocator, bool Transposes = false>
 class csv_table_builder :
     detail::arrange<Content, Transposes>
 {
 public:
-    using char_type = typename basic_csv_table<Content>::char_type;
+    using char_type = typename basic_csv_table<Content, Allocator>::char_type;
 
 private:
-    std::unique_ptr<char_type[]> current_buffer_holder_;
+    char_type* current_buffer_holder_;
     char_type* current_buffer_;
     std::size_t current_buffer_size_;
 
@@ -1333,18 +1519,29 @@ private:
     char_type* field_begin_;
     char_type* field_end_;
 
-    basic_csv_table<Content>* table_;
+    basic_csv_table<Content, Allocator>* table_;
+
+private:
+    using at_t = std::allocator_traits<Allocator>;
 
 public:
     csv_table_builder(
-        std::size_t buffer_size, basic_csv_table<Content>& table) :
+        std::size_t buffer_size, basic_csv_table<Content, Allocator>& table) :
         detail::arrange<Content, Transposes>(table.content()),
-        current_buffer_(nullptr),
+        current_buffer_holder_(nullptr), current_buffer_(nullptr),
         buffer_size_(std::max(buffer_size, static_cast<std::size_t>(2U))),
         field_begin_(nullptr), table_(&table)
     {}
 
     csv_table_builder(csv_table_builder&&) = default;
+
+    ~csv_table_builder()
+    {
+        if (current_buffer_holder_) {
+            auto a = table_->get_allocator();
+            at_t::deallocate(a, current_buffer_holder_, current_buffer_size_);
+        }
+    }
 
     void start_record(const char_type* /*record_begin*/)
     {
@@ -1368,9 +1565,9 @@ public:
         update(first, last);
         *field_end_ = char_type();
         if (current_buffer_holder_) {
-            table_->store().add_buffer(
-                std::move(current_buffer_holder_),
-                current_buffer_size_);  // throw
+            auto cbh = current_buffer_holder_;
+            current_buffer_holder_ = nullptr;
+            table_->store().add_buffer(cbh, current_buffer_size_);    // throw
         }
         this->new_value(table_->content(), field_begin_, field_end_); // throw
         table_->store().secure_current_upto(field_end_ + 1);
@@ -1399,18 +1596,23 @@ public:
                 // the current buffer contains no other values
                 // and it suffices in terms of length
                 std::memmove(
-                    current_buffer_holder_.get(), field_begin_, length);
+                    current_buffer_holder_, field_begin_, length);
             } else {
                 // the current buffer has been committed to the store,
                 // so we need a new one
-                std::unique_ptr<char_type[]> next_buffer_holder(
-                    new char_type[next_buffer_size]);    // throw
-                std::memcpy(next_buffer_holder.get(), field_begin_, length);
-                current_buffer_holder_ = std::move(next_buffer_holder);
+                auto a = table_->get_allocator();
+                const auto next_buffer = std::addressof(
+                    *at_t::allocate(a, next_buffer_size));  // throw
+                std::memcpy(next_buffer, field_begin_, length);
+                if (current_buffer_holder_) {
+                    at_t::deallocate(
+                        a, current_buffer_holder_, current_buffer_size_);
+                }
+                current_buffer_holder_ = next_buffer;
                 current_buffer_size_ = next_buffer_size;
             }
-            field_begin_ = current_buffer_holder_.get();
-            field_end_   = current_buffer_holder_.get() + length;
+            field_begin_ = current_buffer_holder_;
+            field_end_   = current_buffer_holder_ + length;
         } else {
             // out of any active values
             if (current_buffer_holder_) {
@@ -1419,14 +1621,15 @@ public:
             } else {
                 // the current buffer has been committed to the store,
                 // so we need a new one
-                current_buffer_holder_.reset(
-                    new char_type[buffer_size_]); // throw
+                auto a = table_->get_allocator();
+                current_buffer_holder_ = std::addressof(
+                    *at_t::allocate(a, buffer_size_));      // throw
                 current_buffer_size_ = buffer_size_;
             }
             length = 0;
         }
         assert(current_buffer_holder_);
-        current_buffer_ = current_buffer_holder_.get();
+        current_buffer_ = current_buffer_holder_;
         // *p = Ch() may be performed where p is the "last" parameter of
         // "update" and "finalize" functions, so the length of buffers must
         // be shorter than the actual length by 1
@@ -1439,18 +1642,18 @@ public:
     {}
 };
 
-template <class Content>
+template <class Content, class Allocator>
 auto make_csv_table_builder(
-    std::size_t buffer_size, basic_csv_table<Content>& table)
+    std::size_t buffer_size, basic_csv_table<Content, Allocator>& table)
 {
-    return csv_table_builder<Content>(buffer_size, table);
+    return csv_table_builder<Content, Allocator>(buffer_size, table);
 }
 
-template <class Content>
+template <class Content, class Allocator>
 auto make_transposed_csv_table_builder(
-    std::size_t buffer_size, basic_csv_table<Content>& table)
+    std::size_t buffer_size, basic_csv_table<Content, Allocator>& table)
 {
-    return csv_table_builder<Content, true>(buffer_size, table);
+    return csv_table_builder<Content, Allocator, true>(buffer_size, table);
 }
 
 }}

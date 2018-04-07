@@ -13,7 +13,8 @@
 #include <list>
 #include <iomanip>
 #include <locale>
-#include <cstring>
+#include <deque>
+#include <scoped_allocator>
 #include <string>
 #include <sstream>
 #include <type_traits>
@@ -26,6 +27,7 @@
 #include <furfurylic/commata/primitive_parser.hpp>
 
 #include "BaseTest.hpp"
+#include "tracking_allocator.hpp"
 
 using namespace furfurylic::commata;
 using namespace furfurylic::test;
@@ -475,7 +477,7 @@ TYPED_TEST(TestCsvValue, Write)
 
 namespace privy {
 
-using store_t = detail::basic_csv_store<char>;
+using store_t = detail::basic_csv_store<char, std::allocator<char>>;
 
 static_assert(std::is_default_constructible<store_t>::value, "");
 static_assert(std::is_nothrow_move_constructible<store_t>::value, "");
@@ -496,27 +498,25 @@ class TestCsvStore : public furfurylic::test::BaseTest
 
 TEST_F(TestCsvStore, Basics)
 {
-    using store_t = detail::basic_csv_store<char>;
+    using store_t = detail::basic_csv_store<char, std::allocator<char>>;
 
     store_t store;
 
-    // add one buffer
-    std::unique_ptr<char[]> b1(new char[10]);
-    const auto buffer1 = b1.get();
-    store.add_buffer(std::move(b1), 10);
+    // Add one buffer
+    char* const buffer1 = store.get_allocator().allocate(10);
+    store.add_buffer(buffer1, 10);
     ASSERT_EQ(store_t::security{ buffer1 }, store.get_security());
 
-    // secure on the first buffer
+    // Secure on the first buffer
     ASSERT_EQ(buffer1, store.secure_any(4));
     ASSERT_EQ(store_t::security{ buffer1 + 4 }, store.get_security());
     ASSERT_EQ(buffer1 + 4, store.secure_any(6));
     store.secure_current_upto(buffer1 + 4);
     ASSERT_EQ(nullptr, store.secure_any(7));
 
-    // add another buffer and secure on it
-    std::unique_ptr<char[]> b2(new char[15]);
-    const auto buffer2 = b2.get();
-    store.add_buffer(std::move(b2), 15);
+    // Add another buffer and secure on it
+    char* const buffer2 = store.get_allocator().allocate(15);
+    store.add_buffer(buffer2, 15);
     ASSERT_EQ(buffer2, store.secure_any(7));
 
     store.clear();
@@ -528,20 +528,18 @@ TEST_F(TestCsvStore, Basics)
 
 TEST_F(TestCsvStore, Merge)
 {
-    using store_t = detail::basic_csv_store<wchar_t>;
+    using store_t = detail::basic_csv_store<wchar_t, std::allocator<wchar_t>>;
 
     store_t store1;
-    std::unique_ptr<wchar_t[]> b1(new wchar_t[10]);
-    const auto buffer1 = b1.get();
-    store1.add_buffer(std::move(b1), 10);
+    wchar_t* const buffer1 = store1.get_allocator().allocate(10);
+    store1.add_buffer(buffer1, 10);
     store1.secure_any(6);
     ASSERT_EQ(nullptr, store1.secure_any(10));
     ASSERT_EQ(store_t::security{ buffer1 + 6 }, store1.get_security());
 
     store_t store2;
-    std::unique_ptr<wchar_t[]> b2(new wchar_t[15]);
-    const auto buffer2 = b2.get();
-    store2.add_buffer(std::move(b2), 15);
+    wchar_t* const buffer2 = store2.get_allocator().allocate(15);
+    store2.add_buffer(buffer2, 15);
     store2.secure_any(4);
 
     store1.merge(std::move(store2));
@@ -564,27 +562,23 @@ TEST_F(TestCsvStore, Merge)
 
 TEST_F(TestCsvStore, Swap)
 {
-    using store_t = detail::basic_csv_store<char>;
+    using store_t = detail::basic_csv_store<char, std::allocator<char>>;
 
     store_t store1;
-    std::unique_ptr<char[]> b11(new char[3]);
-    std::unique_ptr<char[]> b12(new char[3]);
-    const auto buffer11 = b11.get();
-    const auto buffer12 = b12.get();
+    char* const buffer11 = store1.get_allocator().allocate(3);
+    char* const buffer12 = store1.get_allocator().allocate(3);
     std::strcpy(buffer11, "AB");
     std::strcpy(buffer12, "ab");
-    store1.add_buffer(std::move(b11), 3);
-    store1.add_buffer(std::move(b12), 3);
+    store1.add_buffer(buffer11, 3);
+    store1.add_buffer(buffer12, 3);
 
     store_t store2;
-    std::unique_ptr<char[]> b21(new char[3]);
-    std::unique_ptr<char[]> b22(new char[3]);
-    const auto buffer21 = b21.get();
-    const auto buffer22 = b22.get();
+    char* const buffer21 = store2.get_allocator().allocate(3);
+    char* const buffer22 = store2.get_allocator().allocate(3);
     std::strcpy(buffer21, "XY");
     std::strcpy(buffer22, "xy");
-    store2.add_buffer(std::move(b21), 3);
-    store2.add_buffer(std::move(b22), 3);
+    store2.add_buffer(buffer21, 3);
+    store2.add_buffer(buffer22, 3);
 
     store_t::security expected1 = { buffer12, buffer11 };
     store_t::security expected2 = { buffer22, buffer21 };
@@ -634,9 +628,8 @@ TEST_F(TestCsvTable, RewriteValue)
 {
     wcsv_table table;
 
-    std::unique_ptr<wchar_t[]> b1(new wchar_t[10]);
-    const auto buffer1 = b1.get();
-    table.add_buffer(std::move(b1), 10);
+    wchar_t* const buffer1 = table.get_allocator().allocate(10);
+    table.add_buffer(buffer1, 10);
 
     // first record
     table.content().emplace_back();
@@ -662,9 +655,8 @@ TEST_F(TestCsvTable, RewriteValue)
     ASSERT_EQ(L"moon", table[0][0]);
     ASSERT_EQ(buffer1 + 5, table[0][0].c_str());
 
-    std::unique_ptr<wchar_t[]> b2(new wchar_t[10]);
-    const auto buffer2 = b2.get();
-    table.add_buffer(std::move(b2), 10);
+    wchar_t* const  buffer2 = table.get_allocator().allocate(10);
+    table.add_buffer(buffer2, 10);
 
     // consume another buffer by 5 chars
     ASSERT_TRUE(table.rewrite_value(table[0][1], table[0][0]));
@@ -675,7 +667,7 @@ TEST_F(TestCsvTable, RewriteValue)
 TEST_F(TestCsvTable, ImportRecord)
 {
     basic_csv_table<std::deque<std::deque<csv_value>>> table2;
-    table2.add_buffer(std::unique_ptr<char[]>(new char[20]), 20);
+    table2.add_buffer(table2.get_allocator().allocate(20), 20);
     table2.content().emplace_back();
     table2[0].resize(3);
     table2.rewrite_value(table2[0][0], "Lorem");    // consumes 6 chars
@@ -683,7 +675,7 @@ TEST_F(TestCsvTable, ImportRecord)
     table2.rewrite_value(table2[0][2], "dolor");    // ditto
 
     csv_table table1;
-    table1.add_buffer(std::unique_ptr<char[]>(new char[10]), 10);
+    table1.add_buffer(table1.get_allocator().allocate(10), 10);
 
     // Requires 18 chars and should be rejected
     try {
@@ -706,7 +698,7 @@ TEST_F(TestCsvTable, ImportRecord)
     table1.clear();
 
     // Add another buffer and retry to make it
-    table1.add_buffer(std::unique_ptr<char[]>(new char[15]), 15);
+    table1.add_buffer(table1.get_allocator().allocate(15), 15);
     auto r = table1.import_record(table2[0]);
     ASSERT_TRUE(table1.empty());
     ASSERT_EQ(3U, r.size());
@@ -721,13 +713,13 @@ TEST_F(TestCsvTable, ImportRecord)
 TEST_F(TestCsvTable, MergeLists)
 {
     basic_csv_table<std::list<std::vector<csv_value>>> table1;
-    table1.add_buffer(std::unique_ptr<char[]>(new char[10]), 10);
+    table1.add_buffer(table1.get_allocator().allocate(10), 10);
     table1.content().emplace_back();
     table1.content().back().emplace_back();
     table1.rewrite_value(table1.content().back().back(), "apples");
 
     basic_csv_table<std::list<std::vector<csv_value>>> table2;
-    table2.add_buffer(std::unique_ptr<char[]>(new char[10]), 10);
+    table2.add_buffer(table2.get_allocator().allocate(10), 10);
     table2.content().emplace_back();
     table2.content().back().emplace_back();
     table2.rewrite_value(table2.content().back().back(), "oranges");
@@ -771,7 +763,7 @@ TYPED_TEST_CASE(TestCsvTableMerge, ContentLRs);
 TYPED_TEST(TestCsvTableMerge, Merge)
 {
     basic_csv_table<typename TypeParam::first_type> table1;
-    table1.add_buffer(std::unique_ptr<char[]>(new char[20]), 20);
+    table1.add_buffer(table1.get_allocator().allocate(20), 20);
     table1.content().emplace_back();
     table1.content().begin()->resize(3);
     table1.rewrite_value((*table1.content().begin())[0], "Lorem");
@@ -779,7 +771,7 @@ TYPED_TEST(TestCsvTableMerge, Merge)
     table1.rewrite_value((*table1.content().begin())[2], "dolor");
 
     basic_csv_table<typename TypeParam::second_type> table2;
-    table2.add_buffer(std::unique_ptr<char[]>(new char[25]), 25);
+    table2.add_buffer(table2.get_allocator().allocate(25), 25);
     table2.content().resize(2);
     table2.content().begin() ->resize(2);
     table2.content().rbegin()->resize(1);
@@ -797,10 +789,50 @@ TYPED_TEST(TestCsvTableMerge, Merge)
     ASSERT_EQ("consectetur", (*table1.content().crbegin())          [0]);
 }
 
+struct TestCsvTableAllocator : BaseTest
+{};
+
+TEST_F(TestCsvTableAllocator, Basics)
+{
+    using AA = tracking_allocator<std::allocator<char>>;
+    using A = std::scoped_allocator_adaptor<AA>;
+
+    using Record = std::vector<
+        csv_value,
+        typename std::allocator_traits<A>::template rebind_alloc<csv_value>>;
+    using Content = std::deque<
+        Record,
+        typename std::allocator_traits<A>::template rebind_alloc<Record>>;
+
+    std::vector<std::pair<char*, char*>> allocated1;
+    AA a(allocated1);
+    basic_csv_table<Content, A> table(std::allocator_arg, A(a));
+
+    const char* s = "Col1,Col2\n"
+                    "aaa,bbb,ccc\n"
+                    "AAA,BBB,CCC\n";
+    std::stringbuf in(s);
+
+    try {
+        parse(&in, make_csv_table_builder(1024, table));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_TRUE(a == table.content().get_allocator());
+    ASSERT_TRUE(a.tracks(&table.content()));
+    ASSERT_TRUE(a == table.content().front().get_allocator());
+    ASSERT_TRUE(a.tracks(&table.content().front()));
+    ASSERT_TRUE(a.tracks(&table.content().front().front()));
+    ASSERT_TRUE(a.tracks(&table.content().front().front().front()));
+}
+
 static_assert(std::is_nothrow_move_constructible<
-    csv_table_builder<wcsv_table::content_type>>::value, "");
+    csv_table_builder<wcsv_table::content_type,
+        std::allocator<wchar_t>>>::value, "");
 static_assert(std::is_nothrow_move_constructible<
-    csv_table_builder<csv_table::content_type, true>>::value, "");
+    csv_table_builder<csv_table::content_type,
+        std::allocator<char>, true>>::value, "");
 
 struct TestCsvTableBuilder : furfurylic::test::BaseTestWithParam<std::size_t>
 {};
