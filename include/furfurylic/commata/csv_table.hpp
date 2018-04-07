@@ -1007,11 +1007,11 @@ public:
     record_type import_record(const OtherRecord& record)
     {
         const auto security = store_.get_security();    // throw
-        record_type imported;           // throw
+        record_type imported;                           // throw
         for (const auto& value : record) {
-            imported.emplace_back();    // throw
+            imported.emplace(imported.cend());          // throw
             if (!rewrite_value(
-                    imported.back(), value.cbegin(), value.cend())) {
+                    *imported.rbegin(), value.cbegin(), value.cend())) {
                 store_.set_security(security);
                 throw std::bad_alloc();
             }
@@ -1066,27 +1066,6 @@ void swap(
 
 namespace detail {
 
-template <class T>
-struct is_nothrow_pop_backable :
-    std::integral_constant<bool,
-        // According to C++14 23.2.1 (11), STL containers throw no exceptions
-        // with their pop_back()
-        is_std_vector<T>::value
-     || is_std_deque<T>::value
-     || is_std_list<T>::value
-     || noexcept(std::declval<T&>().pop_back())>
-{};
-
-template <class ContentL, class ContentR>
-struct have_rollbackable_move_insert :
-    std::integral_constant<bool,
-        is_nothrow_pop_backable<ContentL>::value
-     && std::is_same<
-            typename ContentL::value_type,
-            typename ContentR::value_type>::value   // same record types
-     && is_nothrow_swappable<typename ContentL::value_type>::value>
-{};
-
 template <class T, class = void>
 struct has_non_pocs_allocator_type :
     std::false_type
@@ -1102,28 +1081,36 @@ struct has_non_pocs_allocator_type<T,
 template <class ContentL, class ContentR>
 void append_csv_table_content_primitive(
     nothrow_move_and_swap<ContentL>& left_content,
-    nothrow_move_and_swap<ContentR>&& right_content)
+    const nothrow_move_and_swap<ContentR>& right_content)
 {
-    // Make a copy of *left_content
-    // and then copy records in *right_content into it
-    auto left = left_content;                                       // throw
-    for (const auto& right_rec : *right_content) {
-        left->emplace_back(right_rec.cbegin(), right_rec.cend());   // throw
+    // We require:
+    // - if an exception is thrown by ContentL's emplace() at the end,
+    //   there are no effects on the before-end elements.
+    // - ContentL's erase() at the end does not throw an exception.
+
+    const auto left_original_size = left_content->size();       // ?
+    try {
+        for (auto& r : *right_content) {
+            left_content->emplace(
+                left_content->cend(), r.cbegin(), r.cend());    // throw
+        }
+    } catch (...) {
+        auto le = left_content->begin();
+        std::advance(le, left_original_size);
+        left_content->erase(le, left_content->cend());
+        throw;
     }
-    left_content = std::move(left);
 }
 
 template <class RecordL, class AllocatorL, class ContentR>
 void append_csv_table_content_primitive(
     nothrow_move_and_swap<std::list<RecordL, AllocatorL>>& left_content,
-    nothrow_move_and_swap<ContentR>&& right_content)
+    const nothrow_move_and_swap<ContentR>& right_content)
 {
-    // Make a copy of *right_content into a new list
-    // and then splice it into *left_content
     std::list<RecordL, AllocatorL> right(
-        left_content->get_allocator());                             // throw
-    for (const auto& right_rec : *right_content) {
-        right.emplace_back(right_rec.cbegin(), right_rec.cend());   // throw
+        left_content->get_allocator());                         // throw
+    for (auto& r : *right_content) {
+        right.emplace_back(r.cbegin(), r.cend());               // throw
     }
     left_content->splice(left_content->cend(), right);
 }
@@ -1133,43 +1120,53 @@ auto append_csv_table_content_adaptive(
     nothrow_move_and_swap<ContentL>& left_content,
     nothrow_move_and_swap<ContentR>&& right_content)
  -> std::enable_if_t<
-        !has_non_pocs_allocator_type<typename ContentL::value_type>::value>
+        !has_non_pocs_allocator_type<typename ContentL::value_type>::value
+     && is_nothrow_swappable<typename ContentL::value_type>::value>
 {
     static_assert(std::is_same<typename ContentL::value_type,
                                typename ContentR::value_type>::value, "");
 
-    // Expand *left_content in place
-    // and then immigrate records in *right_content into it
+    // We require:
+    // - if an exception is thrown by ContentL's emplace() at the end,
+    //   there are no effects on the before-end elements.
+    // - ContentL's erase() at the end does not throw an exception.
+
     const auto left_original_size = left_content->size();   // ?
     try {
-        left_content->resize(
-            left_original_size + right_content->size());    // throw
-    } catch (...) {
-        while (left_content->size() > left_original_size) {
-            left_content->pop_back();
+        for (auto& r : *right_content) {
+            left_content->emplace(
+                left_content->cend(), std::move(r));        // throw
         }
+    } catch (...) {
+        auto le = left_content->begin();
+        std::advance(le, left_original_size);
+        std::swap_ranges(le, left_content->end(), right_content->begin());
+        left_content->erase(le, left_content->cend());
         throw;
     }
-    auto i = left_content->begin();
-    std::advance(i, left_original_size);
-    std::swap_ranges(i, left_content->end(), right_content->begin());
 }
 
 template <class Record, class AllocatorL, class ContentR>
 auto append_csv_table_content_adaptive(
     nothrow_move_and_swap<std::list<Record, AllocatorL>>& left_content,
     nothrow_move_and_swap<ContentR>&& right_content)
- -> std::enable_if_t<!has_non_pocs_allocator_type<Record>::value>
+ -> std::enable_if_t<
+        !has_non_pocs_allocator_type<Record>::value
+     && is_nothrow_swappable<Record>::value>
 {
     static_assert(
         std::is_same<Record, typename ContentR::value_type>::value, "");
 
-    // Immigrate records in *right_content into a new list
-    // and then splice it into *left_content
     std::list<Record, AllocatorL> right(
         left_content->get_allocator());     // throw
-    right.resize(right_content->size());    // throw
-    std::swap_ranges(right.begin(), right.end(), right_content->begin());
+    try {
+        for (auto& r : *right_content) {
+            right.push_back(std::move(r));  // throw
+        }
+    } catch (...) {
+        std::swap_ranges(right.begin(), right.end(), right_content->begin());
+        throw;
+    }
     left_content->splice(left_content->cend(), right);
 }
 
@@ -1178,27 +1175,30 @@ auto append_csv_table_content_adaptive(
     nothrow_move_and_swap<ContentL>& left_content,
     nothrow_move_and_swap<ContentR>&& right_content)
  -> std::enable_if_t<
-        has_non_pocs_allocator_type<typename ContentL::value_type>::value>
+        has_non_pocs_allocator_type<typename ContentL::value_type>::value
+     || !is_nothrow_swappable<typename ContentL::value_type>::value>
 {
     // In fact, even if POCS == false, swapping is OK if allocators are equal;
     // we've decided, however, not to rescue such rare cases
-    append_csv_table_content_primitive(left_content, std::move(right_content));
+    append_csv_table_content_primitive(left_content, right_content);
 }
 
 template <class ContentL, class ContentR>
 auto append_csv_table_content(
     nothrow_move_and_swap<ContentL>& left_content,
     nothrow_move_and_swap<ContentR>&& right_content)
- -> std::enable_if_t<!have_rollbackable_move_insert<ContentL, ContentR>::value>
+ -> std::enable_if_t<!std::is_same<
+        typename ContentL::value_type, typename ContentR::value_type>::value>
 {
-    append_csv_table_content_primitive(left_content, std::move(right_content));
+    append_csv_table_content_primitive(left_content, right_content);
 }
 
 template <class ContentL, class ContentR>
 auto append_csv_table_content(
     nothrow_move_and_swap<ContentL>& left_content,
     nothrow_move_and_swap<ContentR>&& right_content)
- -> std::enable_if_t<have_rollbackable_move_insert<ContentL, ContentR>::value>
+ -> std::enable_if_t<std::is_same<
+        typename ContentL::value_type, typename ContentR::value_type>::value>
 {
     append_csv_table_content_adaptive(left_content, std::move(right_content));
 }
@@ -1253,13 +1253,14 @@ struct arrange_as_is
 
     void new_record(Content& content) const
     {
-        content.emplace_back(); // throw
+        content.emplace(content.cend());            // throw
     }
 
     void new_value(Content& content,
         char_type* first, const char_type* last) const
     {
-        content.back().emplace_back(first, last);  // throw
+        auto& back = *content.rbegin();
+        back.emplace(back.cend(), first, last);     // throw
     }
 };
 
@@ -1287,7 +1288,7 @@ public:
     void new_record(Content& content)
     {
         for (auto& vertical : content) {
-            vertical.emplace_back();    // throw
+            vertical.emplace(vertical.cend());  // throw
         }
         ++i_;
         j_ = 0;
@@ -1299,7 +1300,7 @@ public:
         if (content.size() == j_) {
             // the second argument is supplied to comply with the sequence
             // container requirements
-            content.emplace_back(
+            content.emplace(content.cend(),
                 i_, typename record_t::value_type());   // throw
         }
         auto j = content.begin();
