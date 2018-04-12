@@ -600,14 +600,8 @@ static_assert(detail::is_std_list<std::list<double>>::value, "");
 static_assert(!detail::is_std_list<std::vector<std::deque<int>>>::value, "");
 
 static_assert(std::is_default_constructible<csv_table>::value, "");
-static_assert(std::is_nothrow_move_constructible<csv_table>::value, "");
-static_assert(std::is_nothrow_move_assignable<csv_table>::value, "");
 static_assert(noexcept(std::declval<csv_table&>().content()), "");
 static_assert(noexcept(std::declval<const csv_table&>().content()), "");
-static_assert(noexcept(
-    std::declval<csv_table&>().swap(std::declval<csv_table&>())), "");
-static_assert(noexcept(
-    swap(std::declval<csv_table&>(), std::declval<csv_table&>())), "");
 
 struct TestCsvTable : furfurylic::test::BaseTest
 {};
@@ -797,7 +791,6 @@ TEST_F(TestCsvTableAllocator, Basics)
     }
 
     ASSERT_TRUE(a == table.content().get_allocator());
-    ASSERT_TRUE(a.tracks(&table.content()));
     ASSERT_TRUE(a == table.content().front().get_allocator());
     ASSERT_TRUE(a.tracks(&table.content().front()));
     ASSERT_TRUE(a.tracks(&table.content().front().front()));
