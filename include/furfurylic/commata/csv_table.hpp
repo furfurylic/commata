@@ -1185,6 +1185,28 @@ struct has_non_pocs_allocator_type<T,
     std::true_type
 {};
 
+template <class T>
+struct is_nothrow_propagating_swappable :
+    std::integral_constant<bool,
+        is_nothrow_swappable<T>::value
+     && !has_non_pocs_allocator_type<T>::value>
+{};
+
+template <class T>
+auto nothrow_emigrate(T& from, T& to)
+ -> std::enable_if_t<!std::is_nothrow_move_assignable<T>::value>
+{
+    static_assert(is_nothrow_propagating_swappable<T>::value, "");
+    from.swap(to);
+}
+
+template <class T>
+auto nothrow_emigrate(T& from, T& to)
+ -> std::enable_if_t<std::is_nothrow_move_assignable<T>::value>
+{
+    to = std::move(from);
+}
+
 template <class ContentL, class ContentR>
 void append_csv_table_content_primitive(
     ContentL& left_content, ContentR&& right_content)
@@ -1229,8 +1251,10 @@ template <class ContentL, class ContentR>
 auto append_csv_table_content_adaptive(
     ContentL& left_content, ContentR&& right_content)
  -> std::enable_if_t<
-        !has_non_pocs_allocator_type<typename ContentL::value_type>::value
-     && is_nothrow_swappable<typename ContentL::value_type>::value>
+        std::is_nothrow_move_assignable<
+            typename ContentL::value_type>::value
+     || is_nothrow_propagating_swappable<
+            typename ContentL::value_type>::value>
 {
     static_assert(std::is_same<typename ContentL::value_type,
         typename ContentR::value_type>::value, "");
@@ -1243,6 +1267,9 @@ auto append_csv_table_content_adaptive(
 
     const auto left_original_size = left_content.size();    // ?
     try {
+        // We do move-emplace instead of emplace-and-swap because it seems
+        // unlikely that default-construct-then-swap is less exception-prone
+        // than move-construct
         for (auto& r : right_content) {
             left_content.emplace(
                 left_content.cend(), std::move(r));         // throw
@@ -1250,7 +1277,10 @@ auto append_csv_table_content_adaptive(
     } catch (...) {
         auto le = left_content.begin();
         std::advance(le, left_original_size);
-        std::swap_ranges(le, left_content.end(), right_content.begin());
+        auto j = right_content.begin();
+        for (auto i = le, ie = left_content.end(); i != ie; ++i, ++j) {
+            nothrow_emigrate(*i, *j);
+        }
         left_content.erase(le, left_content.cend());
         throw;
     }
@@ -1264,8 +1294,8 @@ template <class Record, class AllocatorL, class ContentR>
 auto append_csv_table_content_adaptive(
     std::list<Record, AllocatorL>& left_content, ContentR&& right_content)
  -> std::enable_if_t<
-        !has_non_pocs_allocator_type<Record>::value
-     && is_nothrow_swappable<Record>::value>
+        std::is_nothrow_move_assignable<Record>::value
+     || is_nothrow_propagating_swappable<Record>::value>
 {
     static_assert(
         std::is_same<Record, typename ContentR::value_type>::value, "");
@@ -1273,11 +1303,17 @@ auto append_csv_table_content_adaptive(
     std::list<Record, AllocatorL> right(
         left_content.get_allocator());                  // throw
     try {
+        // We do move-emplace instead of emplace-and-swap because it seems
+        // unlikely that default-construct-then-swap is less exception-prone
+        // than move-construct
         for (auto& r : right_content) {
             right.push_back(std::move(r));              // throw
         }
     } catch (...) {
-        std::swap_ranges(right.begin(), right.end(), right_content.begin());
+        auto j = right_content.begin();
+        for (auto i = right.begin(), ie = right.end(); i != ie; ++i, ++j) {
+            nothrow_emigrate(*i, *j);
+        }
         throw;
     }
     left_content.splice(left_content.cend(), right);
@@ -1287,8 +1323,10 @@ template <class ContentL, class ContentR>
 auto append_csv_table_content_adaptive(
     ContentL& left_content, ContentR&& right_content)
  -> std::enable_if_t<
-        has_non_pocs_allocator_type<typename ContentL::value_type>::value
-     || !is_nothrow_swappable<typename ContentL::value_type>::value>
+        !std::is_nothrow_move_assignable<
+            typename ContentL::value_type>::value
+     && !is_nothrow_propagating_swappable<
+            typename ContentL::value_type>::value>
 {
     // In fact, even if POCS == false, swapping is OK if allocators are equal;
     // we've decided, however, not to rescue such rare cases
