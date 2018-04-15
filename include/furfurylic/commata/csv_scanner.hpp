@@ -34,6 +34,43 @@
 namespace furfurylic {
 namespace commata {
 
+namespace detail {
+
+struct accepts_range_impl
+{
+    template <class T, class Ch>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().field_value(
+            static_cast<Ch*>(nullptr), static_cast<Ch*>(nullptr)),
+        std::true_type());
+
+    template <class T, class Ch>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T, class Ch>
+struct accepts_range :
+    decltype(accepts_range_impl::check<T, Ch>(nullptr))
+{};
+
+struct accepts_x_impl
+{
+    template <class T, class X>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().field_value(std::declval<X>()),
+        std::true_type());
+
+    template <class T, class Ch>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T, class X>
+struct accepts_x :
+    decltype(accepts_x_impl::check<T, X>(nullptr))
+{};
+
+}
+
 template <class Ch, class Tr = std::char_traits<Ch>,
           class Alloc = std::allocator<Ch>>
 class csv_scanner
@@ -117,14 +154,18 @@ class csv_scanner
             scanner_(std::move(scanner))
         {}
 
-        void field_value(Ch* begin, Ch* end, csv_scanner&) override
+        void field_value(Ch* begin, Ch* end, csv_scanner& me) override
         {
-            scanner_.field_value(begin, end);
+            field_value_r(
+                typename detail::accepts_range<FieldScanner, Ch>(),
+                begin, end, me);
         }
 
-        void field_value(string_t&& value, csv_scanner&) override
+        void field_value(string_t&& value, csv_scanner& me) override
         {
-            scanner_.field_value(std::move(value));
+            field_value_s(
+                typename detail::accepts_x<FieldScanner, string_t>(),
+                std::move(value), me);
         }
 
         void field_skipped() override
@@ -140,6 +181,27 @@ class csv_scanner
         }
 
     private:
+        void field_value_r(std::true_type, Ch* begin, Ch* end, csv_scanner&)
+        {
+            scanner_.field_value(begin, end);
+        }
+
+        void field_value_r(std::false_type, Ch* begin, Ch* end, csv_scanner&)
+        {
+            scanner_.field_value(string_t(begin, end));
+        }
+
+        void field_value_s(std::true_type, string_t&& value, csv_scanner&)
+        {
+            scanner_.field_value(std::move(value));
+        }
+
+        void field_value_s(std::false_type, string_t&& value, csv_scanner&)
+        {
+            scanner_.field_value(
+                &*value.begin(), &*value.begin() + value.size());
+        }
+
         const void* get_target_v() const override
         {
             return &scanner_;
@@ -931,12 +993,6 @@ public:
         this->put((*this)(begin, end));
     }
 
-    template <class Ch, class Tr, class Alloc>
-    void field_value(std::basic_string<Ch, Tr, Alloc>&& value)
-    {
-        field_value(value.c_str(), value.c_str() + value.size());
-    }
-
     using detail::translator<OutputIterator, SkippingHandler>::
         get_skipping_handler;
     using detail::translator<OutputIterator, SkippingHandler>::field_skipped;
@@ -999,12 +1055,6 @@ public:
         this->put((*this)(begin, head));
     }
 
-    template <class Tr, class Alloc>
-    void field_value(std::basic_string<Ch, Tr, Alloc>&& value)
-    {
-        field_value(&value[0], &value[0] + value.size());
-    }
-
     using detail::translator<OutputIterator, SkippingHandler>::
         get_skipping_handler;
     using detail::translator<OutputIterator, SkippingHandler>::field_skipped;
@@ -1034,11 +1084,6 @@ public:
         detail::translator<OutputIterator, SkippingHandler>(
             std::move(out), std::move(handle_skipping))
     {}
-
-    void field_value(const Ch* begin, const Ch* end)
-    {
-        field_value(std::basic_string<Ch, Tr, Alloc>(begin, end));
-    }
 
     void field_value(std::basic_string<Ch, Tr, Alloc>&& value)
     {
