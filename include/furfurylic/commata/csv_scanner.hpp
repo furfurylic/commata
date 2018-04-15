@@ -12,10 +12,10 @@
 #include <cerrno>
 #include <clocale>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <cwchar>
 #include <cwctype>
-#include <functional>
 #include <iterator>
 #include <limits>
 #include <locale>
@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "allocation_only_allocator.hpp"
 #include "csv_error.hpp"
 #include "member_like_base.hpp"
 #include "typing_aid.hpp"
@@ -73,7 +74,8 @@ struct accepts_x :
 
 template <class Ch, class Tr = std::char_traits<Ch>,
           class Alloc = std::allocator<Ch>>
-class csv_scanner
+class csv_scanner :
+    detail::member_like_base<Alloc>
 {
     using string_t = std::basic_string<Ch, Tr, Alloc>;
 
@@ -105,7 +107,8 @@ class csv_scanner
         {
             const range_t range(begin, end);
             if (!scanner_(me.j_, &range, me)) {
-                me.header_field_scanner_.reset();
+                me.destroy_deallocate(me.header_field_scanner_);
+                me.header_field_scanner_ = nullptr;
             }
         }
 
@@ -186,9 +189,10 @@ class csv_scanner
             scanner_.field_value(begin, end);
         }
 
-        void field_value_r(std::false_type, Ch* begin, Ch* end, csv_scanner&)
+        void field_value_r(std::false_type,
+            Ch* begin, Ch* end, csv_scanner& me)
         {
-            scanner_.field_value(string_t(begin, end));
+            scanner_.field_value(string_t(begin, end, me.get_allocator()));
         }
 
         void field_value_s(std::true_type, string_t&& value, csv_scanner&)
@@ -213,41 +217,111 @@ class csv_scanner
         }
     };
 
+    using at_t = std::allocator_traits<Alloc>;
+    using hfs_at_t =
+        typename at_t::template rebind_traits<header_field_scanner>;
+    using bfs_at_t =
+        typename at_t::template rebind_traits<body_field_scanner>;
+    using bfs_ptr_a_t =
+        typename at_t::template rebind_alloc<typename bfs_at_t::pointer>;
+
     bool in_header_;
     std::size_t j_;
     std::size_t buffer_size_;
-    std::unique_ptr<Ch[]> buffer_;
+    typename at_t::pointer buffer_;
     const Ch* begin_;
     const Ch* end_;
-    std::unique_ptr<header_field_scanner> header_field_scanner_;
-    std::vector<std::unique_ptr<body_field_scanner>> scanners_;
+    typename hfs_at_t::pointer header_field_scanner_;
+    std::vector<typename bfs_at_t::pointer,
+        detail::allocation_only_allocator<bfs_ptr_a_t>> scanners_;
     string_t fragmented_value_;
 
 public:
     using char_type = Ch;
+    using allocator_type = Alloc;
+    using size_type = typename std::allocator_traits<Alloc>::size_type;
 
     explicit csv_scanner(
-            bool has_header = false,
-            std::size_t buffer_size = 8192) :
-        in_header_(has_header), j_(0),
-        buffer_size_(std::max(buffer_size, static_cast<std::size_t>(2U))),
-        begin_(nullptr)
+        bool has_header = false,
+        size_type buffer_size = default_buffer_size) :
+        csv_scanner(std::allocator_arg, Alloc(), has_header, buffer_size)
     {}
 
     template <
         class HeaderFieldScanner,
         class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
     explicit csv_scanner(
-            HeaderFieldScanner s,
-            std::size_t buffer_size = 8192) :
-        in_header_(true), j_(0),
-        buffer_size_(std::max(buffer_size, static_cast<std::size_t>(2U))),
-        begin_(nullptr),
-        header_field_scanner_(
-            new typed_header_field_scanner<HeaderFieldScanner>(std::move(s)))
+        HeaderFieldScanner s,
+        size_type buffer_size = default_buffer_size) :
+        csv_scanner(std::allocator_arg, Alloc(), std::move(s), buffer_size)
     {}
 
-    csv_scanner(csv_scanner&&) = default;
+    csv_scanner(
+        std::allocator_arg_t, const Alloc& alloc,
+        bool has_header = false,
+        size_type buffer_size = default_buffer_size) :
+        detail::member_like_base<Alloc>(alloc),
+        in_header_(has_header), j_(0),
+        buffer_size_(sanitize_buffer_size(buffer_size)),
+        buffer_(), begin_(nullptr),
+        header_field_scanner_(),
+        scanners_(detail::allocation_only_allocator<bfs_ptr_a_t>(
+            bfs_ptr_a_t(this->get()))),
+        fragmented_value_(alloc)
+    {}
+
+    template <
+        class HeaderFieldScanner,
+        class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
+    csv_scanner(
+        std::allocator_arg_t, const Alloc& alloc,
+        HeaderFieldScanner s,
+        size_type buffer_size = default_buffer_size) :
+        detail::member_like_base<Alloc>(alloc),
+        in_header_(true), j_(0),
+        buffer_size_(sanitize_buffer_size(buffer_size)),
+        buffer_(), begin_(nullptr),
+        header_field_scanner_(allocate_construct<
+            typed_header_field_scanner<HeaderFieldScanner>>(std::move(s))),
+        scanners_(detail::allocation_only_allocator<bfs_ptr_a_t>(
+            bfs_ptr_a_t(this->get()))),
+        fragmented_value_(alloc)
+    {}
+
+    csv_scanner(csv_scanner&& other) noexcept(noexcept(
+        std::is_nothrow_move_constructible<decltype(scanners_)>::value
+     && std::is_nothrow_move_constructible<string_t>::value)) :
+        detail::member_like_base<Alloc>(std::move(other)),
+        in_header_(other.in_header_), j_(other.j_),
+        buffer_size_(other.buffer_size_),
+        buffer_(other.buffer_), begin_(other.begin_), end_(other.end_),
+        header_field_scanner_(other.header_field_scanner_),
+        scanners_(std::move(other.scanners_)),
+        fragmented_value_(std::move(other.fragmented_value_))
+    {
+        other.buffer_ = nullptr;
+        other.header_field_scanner_ = nullptr;
+    }
+
+    ~csv_scanner()
+    {
+        if (buffer_) {
+            at_t::deallocate(this->get(), buffer_, buffer_size_);
+        }
+        if (header_field_scanner_) {
+            destroy_deallocate(header_field_scanner_);
+        }
+        for (const auto p : scanners_) {
+            if (p) {
+                destroy_deallocate(p);
+            }
+        }
+    }
+
+    allocator_type get_allocator() const noexcept
+    {
+        return this->get();
+    }
 
     template <class FieldScanner = std::nullptr_t>
     void set_field_scanner(std::size_t j, FieldScanner s = FieldScanner())
@@ -260,17 +334,21 @@ private:
     void do_set_field_scanner(std::size_t j, FieldScanner s)
     {
         using scanner_t = typed_body_field_scanner<FieldScanner>;
-        auto p = std::make_unique<scanner_t>(std::move(s)); // throw
         if (j >= scanners_.size()) {
-            scanners_.resize(j + 1);                        // throw
+            scanners_.resize(j + 1);                            // throw
+        } else if (const auto scanner = scanners_[j]) {
+            destroy_deallocate(scanner);
         }
-        scanners_[j] = std::move(p);
+        scanners_[j] =
+            allocate_construct<scanner_t>(std::move(s));        // throw
     }
 
     void do_set_field_scanner(std::size_t j, std::nullptr_t)
     {
         if (j < scanners_.size()) {
-            scanners_[j].reset();
+            auto& scanner = scanners_[j];
+            destroy_deallocate(scanner);
+            scanner = nullptr;
         }
     }
 
@@ -314,12 +392,13 @@ public:
     std::pair<Ch*, std::size_t> get_buffer()
     {
         if (!buffer_) {
-            buffer_.reset(new Ch[buffer_size_]);    // throw
+            buffer_ = at_t::allocate(
+                this->get(), buffer_size_);         // throw
         } else if (begin_) {
             fragmented_value_.assign(begin_, end_); // throw
             begin_ = nullptr;
         }
-        return { buffer_.get(), buffer_size_ - 1 }; // throw
+        return { true_buffer(), static_cast<std::size_t>(buffer_size_ - 1) };
         // We'd like to push buffer_[buffer_size_] with '\0' on EOF
         // so we tell the driver that the buffer size is smaller by one
     }
@@ -381,12 +460,13 @@ public:
         if (in_header_) {
             if (header_field_scanner_) {
                 header_field_scanner_->so_much_for_header(*this);
-                header_field_scanner_.reset();
+                destroy_deallocate(header_field_scanner_);
+                header_field_scanner_ = nullptr;
             }
             in_header_ = false;
         } else {
             for (auto j = j_; j < scanners_.size(); ++j) {
-                if (auto scanner = scanners_[j].get()) {
+                if (auto scanner = scanners_[j]) {
                     scanner->field_skipped();
                 }
             }
@@ -396,12 +476,59 @@ public:
     }
 
 private:
+    static constexpr size_type default_buffer_size =
+        std::min(std::numeric_limits<size_type>::max(),
+            static_cast<size_type>(8192U));
+
+    size_type sanitize_buffer_size(size_type buffer_size)
+    {
+        return std::min(
+            std::max(buffer_size, static_cast<size_type>(2U)),
+            at_t::max_size(this->get()));
+    }
+
+    template <class T, class... Args>
+    auto allocate_construct(Args&&... args)
+    {
+        using t_alloc_traits_t =
+            typename at_t::template rebind_traits<T>;
+        typename t_alloc_traits_t::allocator_type a(this->get());
+        const auto p = t_alloc_traits_t::allocate(a, 1);    // throw
+        try {
+            ::new(std::addressof(*p))
+                T(std::forward<Args>(args)...);             // throw
+        } catch (...) {
+            a.deallocate(p, 1);
+            throw;
+        }
+        return p;
+    }
+
+    template <class T>
+    void destroy_deallocate(T* p)
+    {
+        assert(p);
+        using t_at_t = typename at_t::template rebind_traits<T>;
+        typename t_at_t::allocator_type a(this->get());
+        std::addressof(*p)->~T();
+        t_at_t::deallocate(a, p, 1);
+    }
+
+    Ch* true_buffer() const noexcept
+    {
+        assert(buffer_);
+        return std::addressof(*buffer_);
+    }
+
     field_scanner* get_scanner()
     {
+        const auto true_addressof = [](auto p) {
+            return p ? std::addressof(*p) : nullptr;
+        };
         if (in_header_) {
-            return header_field_scanner_.get();
+            return true_addressof(header_field_scanner_);
         } else if (j_ < scanners_.size()) {
-            return scanners_[j_].get();
+            return true_addressof(scanners_[j_]);
         } else {
             return nullptr;
         }
@@ -409,7 +536,8 @@ private:
 
     Ch* unconst(const Ch* s) const
     {
-        return buffer_.get() + (s - buffer_.get());
+        const auto tb = true_buffer();
+        return tb + (s - tb);
     }
 };
 

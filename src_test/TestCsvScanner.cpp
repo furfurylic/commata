@@ -12,6 +12,7 @@
 #include <iterator>
 #include <limits>
 #include <list>
+#include <memory>
 #include <set>
 #include <sstream>
 #include <string>
@@ -25,6 +26,7 @@
 #include <furfurylic/commata/csv_scanner.hpp>
 
 #include "BaseTest.hpp"
+#include "tracking_allocator.hpp"
 
 using namespace furfurylic::commata;
 using namespace furfurylic::test;
@@ -450,7 +452,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
 }
 
 static_assert(
-    std::is_nothrow_move_constructible<csv_scanner<char>>::value, "");
+    std::uses_allocator<csv_scanner<char>, std::allocator<char>>::value, "");
 
 template <class Ch>
 struct TestCsvScanner : BaseTest
@@ -475,6 +477,7 @@ TYPED_TEST(TestCsvScanner, Indexed)
         make_field_translator<long>(std::front_inserter(values0)));
     h.set_field_scanner(2, make_field_translator_c(values22));
     h.set_field_scanner(2);
+    h.set_field_scanner(2, make_field_translator_c(values22));  // overridden
     h.set_field_scanner(2, make_field_translator_c(values21));
     h.set_field_scanner(5, nullptr);
     h.set_field_scanner(4, make_field_translator_c(values4));
@@ -736,4 +739,42 @@ TYPED_TEST(TestCsvScanner, BufferSize)
         values0.clear();
         values1.clear();
     }
+}
+
+TYPED_TEST(TestCsvScanner, Allocators)
+{
+    using Alloc = tracking_allocator<std::allocator<TypeParam>>;
+    using Tr = std::char_traits<TypeParam>;
+    using String = std::basic_string<TypeParam, Tr, Alloc>;
+
+    const auto str = char_helper<TypeParam>::str;
+
+    std::vector<std::pair<char*, char*>> allocated;
+    std::size_t total = 0U;
+    Alloc a(allocated, total);
+
+    csv_scanner<TypeParam, Tr, Alloc> scanner(
+        std::allocator_arg, a, false, 8192U);
+    
+    std::vector<String> v;
+    auto f0 = make_field_translator_c(v);
+    scanner.set_field_scanner(0, std::move(f0));
+
+    // Field scanners are stored into the memories allocated by a
+    ASSERT_TRUE(a.tracks(scanner.template get_field_scanner<decltype(f0)>(0)));
+
+    // A lengthy field is required to make sure String uses an allocator
+    std::basic_stringbuf<TypeParam>
+        buf(str("ABCDEFGHIJKLMNOPQRSTUVWXYZ"));
+
+    try {
+        parse(&buf, std::move(scanner));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_GT(a.total(), 8192U);
+
+    ASSERT_EQ(a, v[0].get_allocator());
+    ASSERT_TRUE(a.tracks(&v[0][0]));
 }

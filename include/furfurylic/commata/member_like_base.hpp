@@ -22,7 +22,10 @@ public:
     member_like_base()
     {}
 
-    template <class G>
+    template <class G,
+        std::enable_if_t<
+            !std::is_base_of<member_like_base, std::decay_t<G>>::value,
+            std::nullptr_t> = nullptr>
     member_like_base(G&& f) :
         f_(std::forward<G>(f))
     {}
@@ -46,7 +49,10 @@ public:
     member_like_base()
     {}
 
-    template <class G>
+    template <class G,
+        std::enable_if_t<
+            !std::is_base_of<member_like_base, std::decay_t<G>>::value,
+            std::nullptr_t> = nullptr>
     member_like_base(G&& f) :
         F(std::forward<G>(f))
     {}
