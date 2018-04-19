@@ -852,22 +852,6 @@ struct convert<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
         ::restrained_convert;
 };
 
-struct is_back_insertable_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<T&>().push_back(std::declval<typename T::value_type>()),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
-template <class T>
-struct is_back_insertable :
-    decltype(is_back_insertable_impl::check<T>(nullptr))
-{};
-
 } // end namespace detail
 
 template <class T>
@@ -1203,19 +1187,45 @@ template <class OutputIterator, class Ch,
     class Tr = std::char_traits<Ch>, class Alloc = std::allocator<Ch>,
     class SkippingHandler = fail_if_skipped<std::basic_string<Ch, Tr, Alloc>>>
 class string_field_translator :
+    detail::member_like_base<Alloc>,
     detail::translator<OutputIterator, SkippingHandler>
 {
 public:
+    using allocator_type = Alloc;
+
     explicit string_field_translator(
         OutputIterator out,
         SkippingHandler handle_skipping = SkippingHandler()) :
+        string_field_translator(
+            std::allocator_arg, Alloc(), out, std::move(handle_skipping))
+    {}
+
+    string_field_translator(
+        std::allocator_arg_t, const Alloc& alloc, OutputIterator out,
+        SkippingHandler handle_skipping = SkippingHandler()) :
+        detail::member_like_base<Alloc>(alloc),
         detail::translator<OutputIterator, SkippingHandler>(
             std::move(out), std::move(handle_skipping))
     {}
 
+    allocator_type get_allocator() const
+    {
+        return detail::member_like_base<Alloc>::get();
+    }
+
+    void field_value(Ch* begin, Ch* end)
+    {
+        this->put(std::basic_string<Ch, Tr, Alloc>(
+            begin, end, get_allocator()));
+    }
+
     void field_value(std::basic_string<Ch, Tr, Alloc>&& value)
     {
-        this->put(std::move(value));
+        if (value.get_allocator() == get_allocator()) {
+            this->put(std::move(value));
+        } else {
+            this->field_value(&value[0], &value[0] + value.size());
+        }
     }
 
     using detail::translator<OutputIterator, SkippingHandler>::
@@ -1245,36 +1255,34 @@ using first_t = typename first<Ts...>::type;
 
 } // end namespace detail
 
-template <class T, class OutputIterator, class... Appendices>
-auto make_field_translator(OutputIterator out, Appendices&&... appendices)
- -> std::enable_if_t<
+template <class T, class OutputIterator, class... Appendices,
+    std::enable_if_t<
         !detail::is_std_string<T>::value
-     && !std::is_same<std::decay_t<detail::first_t<Appendices...>>,
-                      std::locale>::value,
-        numeric_field_translator<T, OutputIterator, Appendices...>>
+     && !std::is_same<
+            std::decay_t<detail::first_t<Appendices...>>,
+            std::locale>::value,
+        std::nullptr_t> = nullptr>
+auto make_field_translator(OutputIterator out, Appendices&&... appendices)
 {
     return numeric_field_translator<T, OutputIterator, Appendices...>(
         std::move(out), std::forward<Appendices>(appendices)...);
 }
 
-template <class T, class Ch, class OutputIterator, class... Appendices>
+template <class T, class Ch, class OutputIterator, class... Appendices,
+    std::enable_if_t<!detail::is_std_string<T>::value, std::nullptr_t>
+        = nullptr>
 auto make_field_translator(
     OutputIterator out, const std::locale& loc, Ch, Appendices&&... appendices)
- -> std::enable_if_t<!detail::is_std_string<T>::value,
-        locale_based_numeric_field_translator<
-            T, OutputIterator, Ch, Appendices...>>
 {
     return locale_based_numeric_field_translator<
                 T, OutputIterator, Ch, Appendices...>(
             std::move(out), loc, std::forward<Appendices>(appendices)...);
 }
 
-template <class T, class OutputIterator, class... Appendices>
+template <class T, class OutputIterator, class... Appendices,
+    std::enable_if_t<detail::is_std_string<T>::value, std::nullptr_t>
+        = nullptr>
 auto make_field_translator(OutputIterator out, Appendices&&... appendices)
- -> std::enable_if_t<detail::is_std_string<T>::value,
-        string_field_translator<OutputIterator,
-            typename T::value_type, typename T::traits_type,
-            typename T::allocator_type, Appendices...>>
 {
     return string_field_translator<OutputIterator,
             typename T::value_type, typename T::traits_type,
@@ -1282,39 +1290,72 @@ auto make_field_translator(OutputIterator out, Appendices&&... appendices)
         std::move(out), std::forward<Appendices>(appendices)...);
 }
 
-namespace detail {
-
-template <
-    class Container,
-    std::enable_if_t<!is_back_insertable<Container>::value>*,
-    class... Appendices>
-auto make_field_translator_c_impl(
-    Container& values, Appendices&&... appendices)
+template <class T, class Allocator, class OutputIterator, class... Appendices,
+    std::enable_if_t<detail::is_std_string<T>::value, std::nullptr_t>
+        = nullptr>
+auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
+        OutputIterator out, Appendices&&... appendices)
 {
-    return make_field_translator<typename Container::value_type>(
-        std::inserter(values, values.end()),
-        std::forward<Appendices>(appendices)...);
+    return string_field_translator<OutputIterator,
+            typename T::value_type, typename T::traits_type,
+            Allocator, Appendices...>(
+        std::allocator_arg, alloc,
+        std::move(out), std::forward<Appendices>(appendices)...);
 }
 
-template <
-    class Container,
-    std::enable_if_t<is_back_insertable<Container>::value>*,
-    class... Appendices>
-auto make_field_translator_c_impl(
-    Container& values, Appendices&&... appendices)
+namespace detail {
+
+struct is_back_insertable_impl
 {
-    return make_field_translator<typename Container::value_type>(
-        std::back_inserter(values), std::forward<Appendices>(appendices)...);
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().push_back(std::declval<typename T::value_type>()),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+struct is_back_insertable :
+    decltype(is_back_insertable_impl::check<T>(nullptr))
+{};
+
+template <class Container>
+auto make_back_insert_iterator(Container& c, std::true_type)
+{
+    return std::back_inserter(c);
+}
+
+template <class Container>
+auto make_back_insert_iterator(Container& c, std::false_type)
+{
+    return std::inserter(c, c.end());
 }
 
 } // end namespace detail
 
-template <class Container, class... Appendices>
+template <class Container, class... Appendices,
+    std::enable_if_t<
+        !std::is_same<std::allocator_arg_t, std::decay_t<Container>>::value,
+        std::nullptr_t> = nullptr>
 auto make_field_translator_c(Container& values, Appendices&&... appendices)
 {
-    return detail::make_field_translator_c_impl<
-            Container, nullptr, Appendices...>(
-        values, std::forward<Appendices>(appendices)...);
+    return make_field_translator<typename Container::value_type>(
+        detail::make_back_insert_iterator(
+            values, detail::is_back_insertable<Container>()),
+        std::forward<Appendices>(appendices)...);
+}
+
+template <class Allocator, class Container, class... Appendices>
+auto make_field_translator_c(std::allocator_arg_t, const Allocator& alloc,
+    Container& values, Appendices&&... appendices)
+{
+    return make_field_translator<typename Container::value_type>(
+        std::allocator_arg, alloc,
+        detail::make_back_insert_iterator(
+            values, detail::is_back_insertable<Container>()),
+        std::forward<Appendices>(appendices)...);
 }
 
 }}

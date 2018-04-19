@@ -757,17 +757,18 @@ TYPED_TEST(TestCsvScanner, Allocators)
         std::allocator_arg, a, false, 8192U);
     
     std::vector<String> v;
-    auto f0 = make_field_translator_c(v);
+    auto f0 = make_field_translator_c(std::allocator_arg, a, v);
     scanner.set_field_scanner(0, std::move(f0));
 
     // Field scanners are stored into the memories allocated by a
     ASSERT_TRUE(a.tracks(scanner.template get_field_scanner<decltype(f0)>(0)));
 
     // A lengthy field is required to make sure String uses an allocator
-    std::basic_stringbuf<TypeParam>
-        buf(str("ABCDEFGHIJKLMNOPQRSTUVWXYZ"));
-
     try {
+        std::basic_stringbuf<TypeParam>
+            buf(str("ABCDEFGHIJKLMNOPQRSTUVWXYZ,"
+                    "abcdefghijklmnopqrstuvwxyz,"
+                    "12345678901234567890123456"));
         parse(&buf, std::move(scanner));
     } catch (const csv_error& e) {
         FAIL() << e.info();
