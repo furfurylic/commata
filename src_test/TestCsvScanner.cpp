@@ -122,7 +122,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Correct)
     std::vector<value_t> values;
 
     csv_scanner<char_t> h;
-    h.set_field_scanner(0, make_field_translator_c(values));
+    h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_stringbuf<char_t> buf(str(" 40\r\n63\t\n-10"));
     ASSERT_NO_THROW(parse(&buf, std::move(h)));
@@ -149,7 +149,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, UpperLimit)
     std::vector<value_t> values;
 
     csv_scanner<char_t> h;
-    h.set_field_scanner(0, make_field_translator_c(values));
+    h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
     s << (maxx + 0) << "\r\n"
@@ -194,7 +194,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
     std::vector<value_t> values;
 
     csv_scanner<char_t> h;
-    h.set_field_scanner(0, make_field_translator_c(values));
+    h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
     s << minn << "\r\n"
@@ -240,15 +240,15 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     std::vector<value_t> values2;
     
     csv_scanner<char_t> h;
-    h.set_field_scanner(0, make_field_translator_c(values0,
+    h.set_field_scanner(0, make_field_translator(values0,
         fail_if_skipped<value_t>(),
         replace_if_conversion_failed<value_t>(
             static_cast<value_t>(34))));
-    h.set_field_scanner(1, make_field_translator_c(values1,
+    h.set_field_scanner(1, make_field_translator(values1,
         fail_if_skipped<value_t>(),
         replace_if_conversion_failed<value_t>(
             nullptr, static_cast<value_t>(42))));
-    h.set_field_scanner(2, make_field_translator_c(values2,
+    h.set_field_scanner(2, make_field_translator(values2,
         fail_if_skipped<value_t>(),
         replace_if_conversion_failed<value_t>(
             nullptr, nullptr, static_cast<value_t>(1), static_cast<value_t>(0))));
@@ -288,9 +288,9 @@ TEST_F(TestFieldTranslatorForChar, Correct)
     std::deque<char> values2;
 
     csv_scanner<char> h;
-    h.set_field_scanner(0, make_field_translator_c(values0));
-    h.set_field_scanner(1, make_field_translator_c(values1));
-    h.set_field_scanner(2, make_field_translator_c(values2));
+    h.set_field_scanner(0, make_field_translator(values0));
+    h.set_field_scanner(1, make_field_translator(values1));
+    h.set_field_scanner(2, make_field_translator(values2));
 
     std::basic_stringbuf<char> buf("-120,250,-5");
     try {
@@ -322,7 +322,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, Correct)
     std::vector<value_t> values;
 
     csv_scanner<char_t> h;
-    h.set_field_scanner(0, make_field_translator_c(values));
+    h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_string<char_t> s = str("6.02e23\t\r -5\n");
     std::basic_stringbuf<char_t> buf(s);
@@ -365,7 +365,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, UpperLimit)
     std::vector<value_t> values;
 
     csv_scanner<char_t> h;
-    h.set_field_scanner(0, make_field_translator_c(values));
+    h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
     s << std::scientific << std::setprecision(50) << maxx << "\n"
@@ -403,7 +403,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, LowerLimit)
     std::vector<value_t> values;
 
     csv_scanner<char_t> h;
-    h.set_field_scanner(0, make_field_translator_c(values));
+    h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
     s << std::scientific << std::setprecision(50) << minn << "\n"
@@ -434,7 +434,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
     std::deque<std::basic_string<TypeParam>> values;
 
     csv_scanner<TypeParam> h;
-    h.set_field_scanner(0, make_field_translator_c(values));
+    h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_string<TypeParam> s = str("ABC  \n\"xy\rz\"\n\"\"");
     std::basic_stringbuf<TypeParam> buf(s);
@@ -471,37 +471,39 @@ TYPED_TEST(TestCsvScanner, Indexed)
     std::deque<double> values22;
     std::list<string_t> values3;
     std::set<unsigned short> values4;
+    int values5[2];
 
     csv_scanner<TypeParam> h(true);
     h.set_field_scanner(0,
         make_field_translator<long>(std::front_inserter(values0)));
-    h.set_field_scanner(2, make_field_translator_c(values22));
+    h.set_field_scanner(2, make_field_translator(values22));
     h.set_field_scanner(2);
-    h.set_field_scanner(2, make_field_translator_c(values22));  // overridden
-    h.set_field_scanner(2, make_field_translator_c(values21));
+    h.set_field_scanner(2, make_field_translator(values22));  // overridden
+    h.set_field_scanner(2, make_field_translator(values21));
     h.set_field_scanner(5, nullptr);
-    h.set_field_scanner(4, make_field_translator_c(values4));
-    h.set_field_scanner(3, make_field_translator_c(values3));
+    h.set_field_scanner(4, make_field_translator(values4));
+    h.set_field_scanner(3, make_field_translator(values3));
+    h.set_field_scanner(5, make_field_translator<int>(values5));
 
     ASSERT_EQ(
-        typeid(make_field_translator_c(values21)),
+        typeid(make_field_translator(values21)),
         h.get_field_scanner_type(2));
     ASSERT_EQ(typeid(void), h.get_field_scanner_type(1));
     ASSERT_EQ(typeid(void), h.get_field_scanner_type(100));
 
     ASSERT_NE(nullptr,
         h.template get_field_scanner<
-            decltype(make_field_translator_c(values3))>(3));
+            decltype(make_field_translator(values3))>(3));
     ASSERT_EQ(nullptr,
         h.template get_field_scanner<
-        decltype(make_field_translator_c(values4))>(3));
+        decltype(make_field_translator(values4))>(3));
     ASSERT_EQ(nullptr, h.template get_field_scanner<void>(1));
     ASSERT_EQ(nullptr, h.template get_field_scanner<void>(100));
 
     std::basic_stringstream<TypeParam> s;
-    s << "F0,F1,F2,F3,F4\r"
-         "50,__, 101.2 ,XYZ,  200\n"
-         "-3,__,3.00e9,\"\"\"ab\"\"\rc\",200\n";
+    s << "F0,F1,F2,F3,F4,F5\r"
+         "50,__, 101.2 ,XYZ,  200,1\n"
+         "-3,__,3.00e9,\"\"\"ab\"\"\rc\",200,2\n";
     try {
         parse(s, std::move(h));
     } catch (const csv_error& e) {
@@ -517,6 +519,8 @@ TYPED_TEST(TestCsvScanner, Indexed)
     ASSERT_TRUE(values22.empty());
     ASSERT_EQ(expected3, values3);
     ASSERT_EQ(expected4, values4);
+    ASSERT_EQ(1, values5[0]);
+    ASSERT_EQ(2, values5[1]);
 }
 
 TYPED_TEST(TestCsvScanner, SkippedWithNoErrors)
@@ -529,17 +533,17 @@ TYPED_TEST(TestCsvScanner, SkippedWithNoErrors)
     std::deque<int> values1;
 
     csv_scanner<TypeParam> h;
-    h.set_field_scanner(0, make_field_translator_c(
+    h.set_field_scanner(0, make_field_translator(
         values0, default_if_skipped<string_t>()));
-    h.set_field_scanner(1, make_field_translator_c(
+    h.set_field_scanner(1, make_field_translator(
         values1, default_if_skipped<int>(50)));
 
     const auto scanner1 = h.template
-        get_field_scanner<decltype(make_field_translator_c(
+        get_field_scanner<decltype(make_field_translator(
             values1, default_if_skipped<int>()))>(1U);
     ASSERT_NE(scanner1, nullptr);
     ASSERT_EQ(50, scanner1->get_skipping_handler().skipped());
-    *scanner1 = make_field_translator_c(values1, default_if_skipped<int>(-15));
+    *scanner1 = make_field_translator(values1, default_if_skipped<int>(-15));
 
     std::basic_stringstream<TypeParam> s;
     s << "XYZ,20\n"
@@ -564,9 +568,9 @@ TYPED_TEST(TestCsvScanner, SkippedWithErrors)
     std::deque<int> values1;
 
     csv_scanner<TypeParam> h;
-    h.set_field_scanner(0, make_field_translator_c(
+    h.set_field_scanner(0, make_field_translator(
         values0, default_if_skipped<int>(10)));
-    h.set_field_scanner(1, make_field_translator_c(values1));
+    h.set_field_scanner(1, make_field_translator(values1));
 
     std::basic_stringstream<TypeParam> s;
     s << "10,20\n"
@@ -598,10 +602,10 @@ TYPED_TEST(TestCsvScanner, HeaderScan)
             const std::basic_string<TypeParam>
                 field_name(range->first, range->second);
             if (field_name == str("ID")) {
-                f.set_field_scanner(j, make_field_translator_c(ids));
+                f.set_field_scanner(j, make_field_translator(ids));
                 return true;
             } else if (field_name == str("Value1")) {
-                f.set_field_scanner(j, make_field_translator_c(values1));
+                f.set_field_scanner(j, make_field_translator(values1));
                 return false;
             } else {
                 return true;
@@ -687,7 +691,7 @@ TYPED_TEST(TestCsvScanner, LocaleBased)
     csv_scanner<TypeParam> h;
     std::locale loc(std::locale::classic(),
         new french_style_numpunct<TypeParam>);
-    h.set_field_scanner(0, make_field_translator_c(values0, loc));
+    h.set_field_scanner(0, make_field_translator(values0, loc));
     h.set_field_scanner(1, make_field_translator<double>(
         std::front_inserter(values1), loc));
 
@@ -713,8 +717,8 @@ TYPED_TEST(TestCsvScanner, BufferSize)
 
     for (std::size_t buffer_size : { 2U, 3U, 4U, 7U  }) {
         csv_scanner<TypeParam> h(false, buffer_size);
-        h.set_field_scanner(0, make_field_translator_c(values0));
-        h.set_field_scanner(1, make_field_translator_c(values1));
+        h.set_field_scanner(0, make_field_translator(values0));
+        h.set_field_scanner(1, make_field_translator(values1));
 
         std::basic_stringbuf<TypeParam> buf;
         const auto row = str("ABC,123\n");
@@ -749,19 +753,36 @@ TYPED_TEST(TestCsvScanner, Allocators)
 
     const auto str = char_helper<TypeParam>::str;
 
-    std::vector<std::pair<char*, char*>> allocated;
-    std::size_t total = 0U;
-    Alloc a(allocated, total);
+    std::vector<std::pair<char*, char*>> allocated0;
+    std::size_t total0 = 0U;
+    Alloc a0(allocated0, total0);
+
+    std::vector<std::pair<char*, char*>> allocated2;
+    std::size_t total2 = 0U;
+    Alloc a2(allocated2, total2);
 
     csv_scanner<TypeParam, Tr, Alloc> scanner(
-        std::allocator_arg, a, false, 8192U);
-    
-    std::vector<String> v;
-    auto f0 = make_field_translator_c(std::allocator_arg, a, v);
+        std::allocator_arg, a0, false, 20U);    // make underflow happen
+
+    // The same allocator as the scanner
+    std::vector<String> v0;
+    auto f0 = make_field_translator(
+        std::allocator_arg, scanner.get_allocator(), v0);
     scanner.set_field_scanner(0, std::move(f0));
 
-    // Field scanners are stored into the memories allocated by a
-    ASSERT_TRUE(a.tracks(scanner.template get_field_scanner<decltype(f0)>(0)));
+    // A different allocator from the scanner
+    std::vector<std::basic_string<TypeParam>> v1;
+    auto f1 = make_field_translator(v1);
+    scanner.set_field_scanner(1, std::move(f1));
+
+    // A different allocator from the scanner, but types are same
+    std::vector<String> v2;
+    auto f2 = make_field_translator(std::allocator_arg, a2, v2);
+    scanner.set_field_scanner(2, std::move(f2));
+
+    // Field scanners are stored into the memories allocated by a0
+    ASSERT_TRUE(a0.tracks(
+        scanner.template get_field_scanner<decltype(f0)>(0)));
 
     // A lengthy field is required to make sure String uses an allocator
     try {
@@ -774,8 +795,15 @@ TYPED_TEST(TestCsvScanner, Allocators)
         FAIL() << e.info();
     }
 
-    ASSERT_GT(a.total(), 8192U);
+    ASSERT_GT(a0.total(), (80U + 26U) * sizeof(TypeParam));
+        // at least allocated all buffers and v0[0]
 
-    ASSERT_EQ(a, v[0].get_allocator());
-    ASSERT_TRUE(a.tracks(&v[0][0]));
+    ASSERT_EQ(a0, v0[0].get_allocator());
+    ASSERT_TRUE(a0.tracks(&v0[0][0]));
+
+    ASSERT_FALSE(a0.tracks(&v1[0][0]));
+    ASSERT_FALSE(a0.tracks(&v2[0][0]));
+
+    ASSERT_EQ(a2, v2[0].get_allocator());
+    ASSERT_TRUE(a2.tracks(&v2[0][0]));
 }
