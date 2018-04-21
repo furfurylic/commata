@@ -107,8 +107,7 @@ class csv_scanner :
         {
             const range_t range(begin, end);
             if (!scanner_(me.j_, &range, me)) {
-                me.destroy_deallocate(me.header_field_scanner_);
-                me.header_field_scanner_ = nullptr;
+                me.remove_header_field_scanner();
             }
         }
 
@@ -119,7 +118,9 @@ class csv_scanner :
 
         void so_much_for_header(csv_scanner& me) override
         {
-            scanner_(me.j_, static_cast<const range_t*>(nullptr), me);
+            if (!scanner_(me.j_, static_cast<const range_t*>(nullptr), me)) {
+                me.remove_header_field_scanner();
+            }
         }
     };
 
@@ -225,7 +226,7 @@ class csv_scanner :
     using bfs_ptr_a_t =
         typename at_t::template rebind_alloc<typename bfs_at_t::pointer>;
 
-    bool in_header_;
+    std::size_t remaining_header_records_;
     std::size_t j_;
     std::size_t buffer_size_;
     typename at_t::pointer buffer_;
@@ -242,9 +243,10 @@ public:
     using size_type = typename std::allocator_traits<Alloc>::size_type;
 
     explicit csv_scanner(
-        bool has_header = false,
+        std::size_t header_record_count = 0U,
         size_type buffer_size = default_buffer_size) :
-        csv_scanner(std::allocator_arg, Alloc(), has_header, buffer_size)
+        csv_scanner(std::allocator_arg, Alloc(),
+            header_record_count, buffer_size)
     {}
 
     template <
@@ -258,10 +260,10 @@ public:
 
     csv_scanner(
         std::allocator_arg_t, const Alloc& alloc,
-        bool has_header = false,
+        std::size_t header_record_count = 0U,
         size_type buffer_size = default_buffer_size) :
         detail::member_like_base<Alloc>(alloc),
-        in_header_(has_header), j_(0),
+        remaining_header_records_(header_record_count), j_(0),
         buffer_size_(sanitize_buffer_size(buffer_size)),
         buffer_(), begin_(nullptr),
         header_field_scanner_(),
@@ -278,7 +280,7 @@ public:
         HeaderFieldScanner s,
         size_type buffer_size = default_buffer_size) :
         detail::member_like_base<Alloc>(alloc),
-        in_header_(true), j_(0),
+        remaining_header_records_(0U), j_(0),
         buffer_size_(sanitize_buffer_size(buffer_size)),
         buffer_(), begin_(nullptr),
         header_field_scanner_(allocate_construct<
@@ -292,8 +294,8 @@ public:
         std::is_nothrow_move_constructible<decltype(scanners_)>::value
      && std::is_nothrow_move_constructible<string_t>::value)) :
         detail::member_like_base<Alloc>(std::move(other)),
-        in_header_(other.in_header_), j_(other.j_),
-        buffer_size_(other.buffer_size_),
+        remaining_header_records_(other.remaining_header_records_),
+        j_(other.j_), buffer_size_(other.buffer_size_),
         buffer_(other.buffer_), begin_(other.begin_), end_(other.end_),
         header_field_scanner_(other.header_field_scanner_),
         scanners_(std::move(other.scanners_)),
@@ -457,13 +459,10 @@ public:
 
     bool end_record(const Ch* /*record_end*/)
     {
-        if (in_header_) {
-            if (header_field_scanner_) {
-                header_field_scanner_->so_much_for_header(*this);
-                destroy_deallocate(header_field_scanner_);
-                header_field_scanner_ = nullptr;
-            }
-            in_header_ = false;
+        if (header_field_scanner_) {
+            header_field_scanner_->so_much_for_header(*this);
+        } else if (remaining_header_records_ > 0) {
+            --remaining_header_records_;
         } else {
             for (auto j = j_; j < scanners_.size(); ++j) {
                 if (auto scanner = scanners_[j]) {
@@ -522,22 +521,27 @@ private:
 
     field_scanner* get_scanner()
     {
-        const auto true_addressof = [](auto p) {
-            return p ? std::addressof(*p) : nullptr;
-        };
-        if (in_header_) {
-            return true_addressof(header_field_scanner_);
-        } else if (j_ < scanners_.size()) {
-            return true_addressof(scanners_[j_]);
-        } else {
-            return nullptr;
+        if (header_field_scanner_) {
+            return std::addressof(*header_field_scanner_);
+        } else if ((remaining_header_records_ == 0U)
+                && (j_ < scanners_.size())) {
+            if (const auto p = scanners_[j_]) {
+                return std::addressof(*p);
+            }
         }
+        return nullptr;
     }
 
     Ch* unconst(const Ch* s) const
     {
         const auto tb = true_buffer();
         return tb + (s - tb);
+    }
+
+    void remove_header_field_scanner()
+    {
+        destroy_deallocate(header_field_scanner_);
+        header_field_scanner_ = nullptr;
     }
 };
 

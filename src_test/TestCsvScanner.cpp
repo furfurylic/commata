@@ -12,6 +12,7 @@
 #include <iterator>
 #include <limits>
 #include <list>
+#include <map>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -473,7 +474,7 @@ TYPED_TEST(TestCsvScanner, Indexed)
     std::set<unsigned short> values4;
     int values5[2];
 
-    csv_scanner<TypeParam> h(true);
+    csv_scanner<TypeParam> h(1U);
     h.set_field_scanner(0,
         make_field_translator<long>(std::front_inserter(values0)));
     h.set_field_scanner(2, make_field_translator(values22));
@@ -521,6 +522,28 @@ TYPED_TEST(TestCsvScanner, Indexed)
     ASSERT_EQ(expected4, values4);
     ASSERT_EQ(1, values5[0]);
     ASSERT_EQ(2, values5[1]);
+}
+
+TYPED_TEST(TestCsvScanner, MultilinedHeader)
+{
+    std::deque<long> values;
+
+    csv_scanner<TypeParam> h(3U);
+    h.set_field_scanner(0, make_field_translator(values));
+
+    std::basic_stringstream<TypeParam> s;
+    s << "H1\r"
+         "H2\n"
+         "H3\n"
+         "12345";
+    try {
+        parse(s, std::move(h));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
+
+    const std::deque<long> expected = { 12345 };
+    ASSERT_EQ(expected, values);
 }
 
 TYPED_TEST(TestCsvScanner, SkippedWithNoErrors)
@@ -632,25 +655,88 @@ TYPED_TEST(TestCsvScanner, HeaderScanToTheEnd)
 {
     const auto str = char_helper<TypeParam>::str;
 
-    bool header_end_visited = false;
-
     csv_scanner<TypeParam> h(
-        [&header_end_visited]
-        (std::size_t j, const auto* range, auto&) {
+        [](std::size_t j, const auto* range, auto&) {
             if (j == 1) {
-                header_end_visited = true;
                 if (range) {
                     throw std::runtime_error("Header's end with a range");
                 }
+                return false;   // cease scanning
             } else if (!range) {
                 throw std::runtime_error("Not a header's end without a range");
+            } else {
+                return true;    // scan more
             }
-            return true;
     });
 
     auto s = str("A\n1\n");
     std::basic_stringbuf<TypeParam> buf(s);
     ASSERT_NO_THROW(parse(&buf, std::move(h)));
+}
+
+namespace {
+
+template <class Ch>
+class two_lined_fx_header_scanner
+{
+    std::map<std::basic_string<Ch>, std::vector<double>>* fx_;
+
+    std::size_t i_ = 0;
+    std::map<std::size_t, std::basic_string<Ch>> first_ccys_;
+
+public:
+    explicit two_lined_fx_header_scanner(
+        std::map<std::basic_string<Ch>, std::vector<double>>& fx) :
+        fx_(&fx)
+    {}
+
+    bool operator()(std::size_t j,
+        const std::pair<const Ch*, const Ch*>* range, csv_scanner<Ch>& s)
+    {
+        if (i_ == 0) {
+            if (range) {
+                first_ccys_[j].assign(range->first, range->second);
+            } else {
+                ++i_;
+            }
+        } else {
+            if (range) {
+                std::basic_string<Ch> name(std::move(first_ccys_[j]));
+                name.append(range->first, range->second);
+                s.set_field_scanner(j,
+                    make_field_translator((*fx_)[std::move(name)]));
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+};
+
+}
+
+TYPED_TEST(TestCsvScanner, MultilinedHeaderScan)
+{
+    const auto str = char_helper<TypeParam>::str;
+
+    std::map<std::basic_string<TypeParam>, std::vector<double>> fx;
+    two_lined_fx_header_scanner<TypeParam> h(fx);
+    csv_scanner<TypeParam> scanner(std::move(h));
+    auto s = str("AUD,AUD,EUR\r"
+                 "JPY,USD,USD\r"
+                 "80.0,0.9,1.3\r"
+                 "82.1,0.91,1.35");
+    std::basic_stringbuf<TypeParam> buf(s);
+    parse(&buf, std::move(scanner));
+
+    std::vector<double> aud_jpy = { 80.0, 82.1 };
+    ASSERT_EQ(aud_jpy, fx[str("AUDJPY")]);
+
+    std::vector<double> aud_usd = { 0.9, 0.91 };
+    ASSERT_EQ(aud_usd, fx[str("AUDUSD")]);
+
+    std::vector<double> eur_usd = { 1.3, 1.35 };
+    ASSERT_EQ(eur_usd, fx[str("EURUSD")]);
 }
 
 namespace {
@@ -716,7 +802,7 @@ TYPED_TEST(TestCsvScanner, BufferSize)
     std::vector<int> values1;
 
     for (std::size_t buffer_size : { 2U, 3U, 4U, 7U  }) {
-        csv_scanner<TypeParam> h(false, buffer_size);
+        csv_scanner<TypeParam> h(0U, buffer_size);
         h.set_field_scanner(0, make_field_translator(values0));
         h.set_field_scanner(1, make_field_translator(values1));
 
@@ -762,7 +848,7 @@ TYPED_TEST(TestCsvScanner, Allocators)
     Alloc a2(allocated2, total2);
 
     csv_scanner<TypeParam, Tr, Alloc> scanner(
-        std::allocator_arg, a0, false, 20U);    // make underflow happen
+        std::allocator_arg, a0, 0U, 20U);   // make underflow happen
 
     // The same allocator as the scanner
     std::vector<String> v0;
