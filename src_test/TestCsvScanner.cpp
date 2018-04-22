@@ -691,7 +691,7 @@ public:
     {}
 
     bool operator()(std::size_t j,
-        const std::pair<const Ch*, const Ch*>* range, csv_scanner<Ch>& s)
+        const std::pair<Ch*, Ch*>* range, csv_scanner<Ch>& s)
     {
         if (i_ == 0) {
             if (range) {

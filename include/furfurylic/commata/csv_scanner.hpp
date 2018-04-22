@@ -96,7 +96,7 @@ class csv_scanner :
     {
         HeaderScanner scanner_;
 
-        using range_t = std::pair<const Ch*, const Ch*>;
+        using range_t = std::pair<Ch*, Ch*>;
 
     public:
         explicit typed_header_field_scanner(HeaderScanner scanner) :
