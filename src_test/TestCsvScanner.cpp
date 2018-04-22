@@ -533,6 +533,41 @@ TYPED_TEST(TestCsvScanner, Indexed)
     ASSERT_EQ(str("[fixa][tive]"), values6);
 }
 
+TYPED_TEST(TestCsvScanner, RecordEndScanner)
+{
+    const auto str = char_helper<TypeParam>::str;
+
+    std::vector<std::basic_string<TypeParam>> v;
+
+    csv_scanner<TypeParam> h(1U);
+    h.set_field_scanner(0, make_field_translator(v));
+
+    ASSERT_FALSE(h.has_record_end_scanner());
+    auto f = [&v, str] { v.push_back(str("*")); };
+    h.set_record_end_scanner(f);
+    ASSERT_TRUE(h.has_record_end_scanner());
+    ASSERT_EQ(typeid(f), h.get_record_end_scanner_type());
+    ASSERT_NE(nullptr, h.template get_record_end_scanner<decltype(f)>());
+    ASSERT_EQ(nullptr, h.template get_record_end_scanner<int>());
+
+    try {
+        std::basic_stringstream<TypeParam> s;
+        s << "Word\r"
+             "\"aban\ndon\"\n"
+             "Abbott";  // elaborately does not end with CR/LF
+        parse(s, std::move(h));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
+
+    std::vector<std::basic_string<TypeParam>> expected;
+    expected.push_back(str("aban\ndon"));
+    expected.push_back(str("*"));
+    expected.push_back(str("Abbott"));
+    expected.push_back(str("*"));
+    ASSERT_EQ(expected, v);
+}
+
 TYPED_TEST(TestCsvScanner, MultilinedHeader)
 {
     std::deque<long> values;

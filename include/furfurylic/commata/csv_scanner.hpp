@@ -79,6 +79,30 @@ class csv_scanner :
 {
     using string_t = std::basic_string<Ch, Tr, Alloc>;
 
+    struct typable
+    {
+        virtual ~typable() {}
+        virtual const std::type_info& get_type() const = 0;
+
+        template <class T>
+        const T* get_target() const
+        {
+            return (get_type() == typeid(T)) ?
+                static_cast<const T*>(get_target_v()) : nullptr;
+        }
+
+        template <class T>
+        T* get_target()
+        {
+            return (get_type() == typeid(T)) ?
+                static_cast<T*>(get_target_v()) : nullptr;
+        }
+
+    private:
+        virtual const void* get_target_v() const = 0;
+        virtual void* get_target_v() = 0;
+    };
+
     struct field_scanner
     {
         virtual ~field_scanner() {}
@@ -124,28 +148,9 @@ class csv_scanner :
         }
     };
 
-    struct body_field_scanner : field_scanner
+    struct body_field_scanner : field_scanner, typable
     {
         virtual void field_skipped() = 0;
-        virtual const std::type_info& get_type() const = 0;
-
-        template <class T>
-        const T* get_target() const
-        {
-            return (get_type() == typeid(T)) ?
-                static_cast<const T*>(get_target_v()) : nullptr;
-        }
-
-        template <class T>
-        T* get_target()
-        {
-            return (get_type() == typeid(T)) ?
-                static_cast<T*>(get_target_v()) : nullptr;
-        }
-
-    private:
-        virtual const void* get_target_v() const = 0;
-        virtual void* get_target_v() = 0;
     };
 
     template <class FieldScanner>
@@ -179,8 +184,7 @@ class csv_scanner :
 
         const std::type_info& get_type() const override
         {
-            // should return the static type in which this instance was
-            // created (not the dynamic type)
+            // Static types suffice for we do slicing on construction
             return typeid(FieldScanner);
         }
 
@@ -218,6 +222,43 @@ class csv_scanner :
         }
     };
 
+    struct record_end_scanner : typable
+    {
+        virtual void end_record() = 0;
+    };
+
+    template <class T>
+    class typed_record_end_scanner : public record_end_scanner
+    {
+        T scanner_;
+
+    public:
+        explicit typed_record_end_scanner(T scanner) :
+            scanner_(std::move(scanner))
+        {}
+
+        void end_record() override
+        {
+            return scanner_();
+        }
+
+        const std::type_info& get_type() const override
+        {
+            return typeid(T);
+        }
+
+    private:
+        const void* get_target_v() const override
+        {
+            return &scanner_;
+        }
+
+        void* get_target_v() override
+        {
+            return &scanner_;
+        }
+    };
+
     using at_t = std::allocator_traits<Alloc>;
     using hfs_at_t =
         typename at_t::template rebind_traits<header_field_scanner>;
@@ -225,6 +266,8 @@ class csv_scanner :
         typename at_t::template rebind_traits<body_field_scanner>;
     using bfs_ptr_a_t =
         typename at_t::template rebind_alloc<typename bfs_at_t::pointer>;
+    using res_at_t =
+        typename at_t::template rebind_traits<record_end_scanner>;
 
     std::size_t remaining_header_records_;
     std::size_t j_;
@@ -235,6 +278,7 @@ class csv_scanner :
     typename hfs_at_t::pointer header_field_scanner_;
     std::vector<typename bfs_at_t::pointer,
         detail::allocation_only_allocator<bfs_ptr_a_t>> scanners_;
+    typename res_at_t::pointer end_scanner_;
     string_t fragmented_value_;
 
 public:
@@ -269,7 +313,7 @@ public:
         header_field_scanner_(),
         scanners_(detail::allocation_only_allocator<bfs_ptr_a_t>(
             bfs_ptr_a_t(this->get()))),
-        fragmented_value_(alloc)
+        end_scanner_(nullptr), fragmented_value_(alloc)
     {}
 
     template <
@@ -287,7 +331,7 @@ public:
             typed_header_field_scanner<HeaderFieldScanner>>(std::move(s))),
         scanners_(detail::allocation_only_allocator<bfs_ptr_a_t>(
             bfs_ptr_a_t(this->get()))),
-        fragmented_value_(alloc)
+        end_scanner_(nullptr), fragmented_value_(alloc)
     {}
 
     csv_scanner(csv_scanner&& other) noexcept(noexcept(
@@ -299,10 +343,12 @@ public:
         buffer_(other.buffer_), begin_(other.begin_), end_(other.end_),
         header_field_scanner_(other.header_field_scanner_),
         scanners_(std::move(other.scanners_)),
+        end_scanner_(other.end_scanner_),
         fragmented_value_(std::move(other.fragmented_value_))
     {
         other.buffer_ = nullptr;
         other.header_field_scanner_ = nullptr;
+        other.end_scanner_ = nullptr;
     }
 
     ~csv_scanner()
@@ -317,6 +363,9 @@ public:
             if (p) {
                 destroy_deallocate(p);
             }
+        }
+        if (end_scanner_) {
+            destroy_deallocate(end_scanner_);
         }
     }
 
@@ -387,6 +436,62 @@ private:
     {
         return me.has_field_scanner(j) ?
             me.scanners_[j]->template get_target<FieldScanner>() :
+            nullptr;
+    }
+
+public:
+    template <class RecordEndScanner = std::nullptr_t>
+    void set_record_end_scanner(RecordEndScanner s = RecordEndScanner())
+    {
+        do_set_record_end_scanner(std::move(s));
+    }
+
+private:
+    template <class RecordEndScanner>
+    void do_set_record_end_scanner(RecordEndScanner s)
+    {
+        using scanner_t = typed_record_end_scanner<RecordEndScanner>;
+        end_scanner_ = allocate_construct<scanner_t>(std::move(s)); // throw
+    }
+
+    void do_set_record_end_scanner(std::nullptr_t)
+    {
+        destroy_deallocate(end_scanner_);
+    }
+
+public:
+    const std::type_info& get_record_end_scanner_type() const
+    {
+        if (end_scanner_) {
+            return end_scanner_->get_type();
+        } else {
+            return typeid(void);
+        }
+    }
+
+    bool has_record_end_scanner() const
+    {
+        return end_scanner_ != nullptr;
+    }
+
+    template <class RecordEndScanner>
+    const RecordEndScanner* get_record_end_scanner() const
+    {
+        return get_record_end_scanner_g<RecordEndScanner>(*this);
+    }
+
+    template <class RecordEndScanner>
+    RecordEndScanner* get_record_end_scanner()
+    {
+        return get_record_end_scanner_g<RecordEndScanner>(*this);
+    }
+
+private:
+    template <class RecordEndScanner, class ThisType>
+    static auto get_record_end_scanner_g(ThisType& me)
+    {
+        return me.has_record_end_scanner() ?
+            me.end_scanner_->template get_target<RecordEndScanner>() :
             nullptr;
     }
 
@@ -468,6 +573,9 @@ public:
                 if (auto scanner = scanners_[j]) {
                     scanner->field_skipped();
                 }
+            }
+            if (end_scanner_) {
+                end_scanner_->end_record();
             }
         }
         j_ = 0;
