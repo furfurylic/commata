@@ -687,9 +687,9 @@ TYPED_TEST(TestCsvScanner, LocaleBased)
     csv_scanner<TypeParam> h;
     std::locale loc(std::locale::classic(),
         new french_style_numpunct<TypeParam>);
-    h.set_field_scanner(0, make_field_translator_c(values0, loc, TypeParam()));
+    h.set_field_scanner(0, make_field_translator_c(values0, loc));
     h.set_field_scanner(1, make_field_translator<double>(
-        std::front_inserter(values1), loc, TypeParam()));
+        std::front_inserter(values1), loc));
 
     std::basic_stringbuf<TypeParam> buf(str("100 000,\"12 345 678,5\""));
 

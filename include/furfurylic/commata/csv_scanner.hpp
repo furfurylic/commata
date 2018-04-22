@@ -1110,18 +1110,20 @@ public:
     using detail::translator<OutputIterator, SkippingHandler>::field_skipped;
 };
 
-template <class T, class OutputIterator, class Ch,
+template <class T, class OutputIterator,
     class SkippingHandler = fail_if_skipped<T>,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class locale_based_numeric_field_translator :
     detail::convert<T, ConversionErrorHandler>,
     detail::translator<OutputIterator, SkippingHandler>
 {
-    Ch thousands_sep_;      // of specified loc in the ctor
-    Ch decimal_point_;      // of specified loc in the ctor
-    Ch decimal_point_c_;    // of C's global
-                            // to mimic std::strtol and its comrades;
-                            // initialized after parsing has started
+    std::locale loc_;
+
+    // These are initialized after parsing has started
+    wchar_t thousands_sep_;     // of specified loc in the ctor
+    wchar_t decimal_point_;     // of specified loc in the ctor
+    wchar_t decimal_point_c_;   // of C's global
+                                // to mimic std::strtol and its comrades
 
 public:
     locale_based_numeric_field_translator(
@@ -1133,18 +1135,19 @@ public:
             std::move(handle_conversion_error)),
         detail::translator<OutputIterator, SkippingHandler>(
             std::move(out), std::move(handle_skipping)),
-        decimal_point_c_(Ch())
-    {
-        const auto& facet = std::use_facet<std::numpunct<Ch>>(loc);
-        thousands_sep_ = facet.grouping().empty() ?
-            Ch() : facet.thousands_sep();
-        decimal_point_ = facet.decimal_point();
-    }
+        loc_(loc), decimal_point_c_()
+    {}
 
+    template <class Ch>
     void field_value(Ch* begin, Ch* end)
     {
-        if (decimal_point_c_ == Ch()) {
+        if (decimal_point_c_ == wchar_t()) {
             decimal_point_c_ = widen(*std::localeconv()->decimal_point, Ch());
+
+            const auto& facet = std::use_facet<std::numpunct<Ch>>(loc_);
+            thousands_sep_ = facet.grouping().empty() ?
+                Ch() : facet.thousands_sep();
+            decimal_point_ = facet.decimal_point();
         }
         assert(*end == Ch());   // shall be null-terminated
         bool decimal_point_appeared = false;
@@ -1152,12 +1155,12 @@ public:
         for (Ch* b = begin; b != end; ++b) {
             Ch c = *b;
             assert(c != Ch());
-            if (c == decimal_point_) {
+            if (c == static_cast<Ch>(decimal_point_)) {
                 if (!decimal_point_appeared) {
-                    c = decimal_point_c_;
+                    c = static_cast<Ch>(decimal_point_c_);
                     decimal_point_appeared = true;
                 }
-            } else if (c == thousands_sep_) {
+            } else if (c == static_cast<Ch>(thousands_sep_)) {
                 continue;
             }
             *head = c;
@@ -1268,14 +1271,14 @@ auto make_field_translator(OutputIterator out, Appendices&&... appendices)
         std::move(out), std::forward<Appendices>(appendices)...);
 }
 
-template <class T, class Ch, class OutputIterator, class... Appendices,
+template <class T, class OutputIterator, class... Appendices,
     std::enable_if_t<!detail::is_std_string<T>::value, std::nullptr_t>
         = nullptr>
 auto make_field_translator(
-    OutputIterator out, const std::locale& loc, Ch, Appendices&&... appendices)
+    OutputIterator out, const std::locale& loc, Appendices&&... appendices)
 {
     return locale_based_numeric_field_translator<
-                T, OutputIterator, Ch, Appendices...>(
+                T, OutputIterator, Appendices...>(
             std::move(out), loc, std::forward<Appendices>(appendices)...);
 }
 
