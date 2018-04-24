@@ -862,7 +862,7 @@ template <class T>
 struct fail_if_skipped
 {
     [[noreturn]]
-    const T& skipped() const
+    T skipped() const
     {
         throw field_not_found("This field did not appear in this record");
     }
@@ -878,7 +878,7 @@ public:
         default_value_(std::move(default_value))
     {}
 
-    const T& skipped() const
+    T skipped() const
     {
         return default_value_;
     }
@@ -1039,16 +1039,32 @@ private:
 
 namespace detail {
 
-template <class OutputIterator, class SkippingHandler>
+template <class T, class = void>
+struct is_output_iterator : std::false_type
+{};
+
+template <class T>
+struct is_output_iterator<T,
+    std::enable_if_t<
+        std::is_same<
+            std::output_iterator_tag,
+            typename std::iterator_traits<T>::iterator_category>::value
+     || std::is_base_of<
+            std::forward_iterator_tag,
+            typename std::iterator_traits<T>::iterator_category>::value>> :
+    std::true_type
+{};
+
+template <class Sink, class SkippingHandler>
 class translator :
     member_like_base<SkippingHandler>
 {
-    OutputIterator out_;
+    Sink sink_;
 
 public:
-    translator(OutputIterator out, SkippingHandler handle_skipping) :
+    translator(Sink sink, SkippingHandler handle_skipping) :
         member_like_base<SkippingHandler>(std::move(handle_skipping)),
-        out_(std::move(out))
+        sink_(std::move(sink))
     {}
 
     const SkippingHandler& get_skipping_handler() const
@@ -1073,33 +1089,47 @@ public:
 #endif
     }
 
+protected:
     template <class T>
     void put(T&& value)
     {
-        *out_ = std::forward<T>(value);
-        ++out_;
+        do_put(std::forward<T>(value), is_output_iterator<Sink>());
+    }
+
+private:
+    template <class T>
+    void do_put(T&& value, std::true_type)
+    {
+        *sink_ = std::forward<T>(value);
+        ++sink_;
+    }
+
+    template <class T>
+    void do_put(T&& value, std::false_type)
+    {
+        sink_(std::forward<T>(value));
     }
 };
 
 } // end namespace detail
 
-template <class T, class OutputIterator,
+template <class T, class Sink,
     class SkippingHandler = fail_if_skipped<T>,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class numeric_field_translator :
     detail::convert<T, ConversionErrorHandler>,
-    detail::translator<OutputIterator, SkippingHandler>
+    detail::translator<Sink, SkippingHandler>
 {
 public:
     explicit numeric_field_translator(
-        OutputIterator out,
+        Sink sink,
         SkippingHandler handle_skipping = SkippingHandler(),
         ConversionErrorHandler handle_conversion_error
             = ConversionErrorHandler()) :
         detail::convert<T, ConversionErrorHandler>(
             std::move(handle_conversion_error)),
-        detail::translator<OutputIterator, SkippingHandler>(
-            std::move(out), std::move(handle_skipping))
+        detail::translator<Sink, SkippingHandler>(
+            std::move(sink), std::move(handle_skipping))
     {}
 
     template <class Ch>
@@ -1109,17 +1139,17 @@ public:
         this->put((*this)(begin, end));
     }
 
-    using detail::translator<OutputIterator, SkippingHandler>::
+    using detail::translator<Sink, SkippingHandler>::
         get_skipping_handler;
-    using detail::translator<OutputIterator, SkippingHandler>::field_skipped;
+    using detail::translator<Sink, SkippingHandler>::field_skipped;
 };
 
-template <class T, class OutputIterator,
+template <class T, class Sink,
     class SkippingHandler = fail_if_skipped<T>,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class locale_based_numeric_field_translator :
     detail::convert<T, ConversionErrorHandler>,
-    detail::translator<OutputIterator, SkippingHandler>
+    detail::translator<Sink, SkippingHandler>
 {
     std::locale loc_;
 
@@ -1131,14 +1161,14 @@ class locale_based_numeric_field_translator :
 
 public:
     locale_based_numeric_field_translator(
-        OutputIterator out, const std::locale& loc,
+        Sink sink, const std::locale& loc,
         SkippingHandler handle_skipping = SkippingHandler(),
         ConversionErrorHandler handle_conversion_error
             = ConversionErrorHandler()) :
         detail::convert<T, ConversionErrorHandler>(
             std::move(handle_conversion_error)),
-        detail::translator<OutputIterator, SkippingHandler>(
-            std::move(out), std::move(handle_skipping)),
+        detail::translator<Sink, SkippingHandler>(
+            std::move(sink), std::move(handle_skipping)),
         loc_(loc), decimal_point_c_()
     {}
 
@@ -1174,9 +1204,9 @@ public:
         this->put((*this)(begin, head));
     }
 
-    using detail::translator<OutputIterator, SkippingHandler>::
+    using detail::translator<Sink, SkippingHandler>::
         get_skipping_handler;
-    using detail::translator<OutputIterator, SkippingHandler>::field_skipped;
+    using detail::translator<Sink, SkippingHandler>::field_skipped;
 
 private:
     static char widen(char c, char)
@@ -1190,29 +1220,29 @@ private:
     }
 };
 
-template <class OutputIterator, class Ch,
+template <class Sink, class Ch,
     class Tr = std::char_traits<Ch>, class Alloc = std::allocator<Ch>,
     class SkippingHandler = fail_if_skipped<std::basic_string<Ch, Tr, Alloc>>>
 class string_field_translator :
     detail::member_like_base<Alloc>,
-    detail::translator<OutputIterator, SkippingHandler>
+    detail::translator<Sink, SkippingHandler>
 {
 public:
     using allocator_type = Alloc;
 
     explicit string_field_translator(
-        OutputIterator out,
+        Sink sink,
         SkippingHandler handle_skipping = SkippingHandler()) :
         string_field_translator(
-            std::allocator_arg, Alloc(), out, std::move(handle_skipping))
+            std::allocator_arg, Alloc(), sink, std::move(handle_skipping))
     {}
 
     string_field_translator(
-        std::allocator_arg_t, const Alloc& alloc, OutputIterator out,
+        std::allocator_arg_t, const Alloc& alloc, Sink sink,
         SkippingHandler handle_skipping = SkippingHandler()) :
         detail::member_like_base<Alloc>(alloc),
-        detail::translator<OutputIterator, SkippingHandler>(
-            std::move(out), std::move(handle_skipping))
+        detail::translator<Sink, SkippingHandler>(
+            std::move(sink), std::move(handle_skipping))
     {}
 
     allocator_type get_allocator() const
@@ -1235,9 +1265,9 @@ public:
         }
     }
 
-    using detail::translator<OutputIterator, SkippingHandler>::
+    using detail::translator<Sink, SkippingHandler>::
         get_skipping_handler;
-    using detail::translator<OutputIterator, SkippingHandler>::field_skipped;
+    using detail::translator<Sink, SkippingHandler>::field_skipped;
 };
 
 namespace detail {
@@ -1260,79 +1290,84 @@ struct first<Head, Tail...>
 template <class... Ts>
 using first_t = typename first<Ts...>::type;
 
-template <class T, class OutputIterator, class... Appendices,
+template <class T, class Sink, class... Appendices,
     std::enable_if_t<
         !detail::is_std_string<T>::value
      && !std::is_same<
             std::decay_t<detail::first_t<Appendices...>>,
             std::locale>::value,
         std::nullptr_t> = nullptr>
-auto make_field_translator_na(OutputIterator out, Appendices&&... appendices)
+auto make_field_translator_na(Sink sink, Appendices&&... appendices)
 {
-    return numeric_field_translator<T, OutputIterator, Appendices...>(
-        std::move(out), std::forward<Appendices>(appendices)...);
+    return numeric_field_translator<T, Sink, Appendices...>(
+        std::move(sink), std::forward<Appendices>(appendices)...);
 }
 
-template <class T, class OutputIterator, class... Appendices,
+template <class T, class Sink, class... Appendices,
     std::enable_if_t<!detail::is_std_string<T>::value, std::nullptr_t>
         = nullptr>
 auto make_field_translator_na(
-    OutputIterator out, const std::locale& loc, Appendices&&... appendices)
+    Sink sink, const std::locale& loc, Appendices&&... appendices)
 {
     return locale_based_numeric_field_translator<
-                T, OutputIterator, Appendices...>(
-            std::move(out), loc, std::forward<Appendices>(appendices)...);
+                T, Sink, Appendices...>(
+            std::move(sink), loc, std::forward<Appendices>(appendices)...);
 }
 
-template <class T, class OutputIterator, class... Appendices,
+template <class T, class Sink, class... Appendices,
     std::enable_if_t<detail::is_std_string<T>::value, std::nullptr_t>
         = nullptr>
-auto make_field_translator_na(OutputIterator out, Appendices&&... appendices)
+auto make_field_translator_na(Sink sink, Appendices&&... appendices)
 {
-    return string_field_translator<OutputIterator,
+    return string_field_translator<Sink,
         typename T::value_type, typename T::traits_type,
         typename T::allocator_type, Appendices...>(
-            std::move(out), std::forward<Appendices>(appendices)...);
+            std::move(sink), std::forward<Appendices>(appendices)...);
 }
 
-template <class T, class = void>
-struct is_output_iterator : std::false_type
-{};
+template <class A>
+struct is_callable_impl
+{
+    template <class F>
+    static auto check(F*) -> decltype(
+        std::declval<F>()(std::declval<A>()),
+        std::true_type());
 
-template <class T>
-struct is_output_iterator<T,
-    std::enable_if_t<
-        std::is_same<
-            std::output_iterator_tag,
-            typename std::iterator_traits<T>::iterator_category>::value
-     || std::is_base_of<
-            std::forward_iterator_tag,
-            typename std::iterator_traits<T>::iterator_category>::value>> :
-    std::true_type
+    template <class F>
+    static auto check(...) -> std::false_type;
+};
+
+template <class F, class A>
+struct is_callable :
+    decltype(is_callable_impl<A>::template check<F>(nullptr))
 {};
 
 } // end namespace detail
 
-template <class T, class OutputIterator, class... Appendices,
-    std::enable_if_t<detail::is_output_iterator<OutputIterator>::value,
+template <class T, class Sink, class... Appendices,
+    std::enable_if_t<
+        detail::is_output_iterator<Sink>::value
+     || detail::is_callable<Sink, T>::value,
         std::nullptr_t> = nullptr>
-auto make_field_translator(OutputIterator out, Appendices&&... appendices)
+auto make_field_translator(Sink sink, Appendices&&... appendices)
 {
     return detail::make_field_translator_na<T>(
-        std::move(out), std::forward<Appendices>(appendices)...);
+        std::move(sink), std::forward<Appendices>(appendices)...);
 }
 
-template <class T, class Allocator, class OutputIterator, class... Appendices,
-    std::enable_if_t<detail::is_output_iterator<OutputIterator>::value,
+template <class T, class Allocator, class Sink, class... Appendices,
+    std::enable_if_t<
+        detail::is_output_iterator<Sink>::value
+     || detail::is_callable<Sink, T>::value,
         std::nullptr_t> = nullptr>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
-    OutputIterator out, Appendices&&... appendices)
+    Sink sink, Appendices&&... appendices)
 {
-    return string_field_translator<OutputIterator,
+    return string_field_translator<Sink,
             typename T::value_type, typename T::traits_type,
             Allocator, Appendices...>(
         std::allocator_arg, alloc,
-        std::move(out), std::forward<Appendices>(appendices)...);
+        std::move(sink), std::forward<Appendices>(appendices)...);
 }
 
 namespace detail {

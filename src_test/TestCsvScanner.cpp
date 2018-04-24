@@ -465,6 +465,7 @@ TYPED_TEST(TestCsvScanner, Indexed)
 {
     using string_t = std::basic_string<TypeParam>;
 
+    const auto ch = char_helper<TypeParam>::ch;
     const auto str = char_helper<TypeParam>::str;
 
     std::deque<long> values0;
@@ -473,6 +474,7 @@ TYPED_TEST(TestCsvScanner, Indexed)
     std::list<string_t> values3;
     std::set<unsigned short> values4;
     int values5[2];
+    string_t values6;
 
     csv_scanner<TypeParam> h(1U);
     h.set_field_scanner(0,
@@ -485,6 +487,12 @@ TYPED_TEST(TestCsvScanner, Indexed)
     h.set_field_scanner(4, make_field_translator(values4));
     h.set_field_scanner(3, make_field_translator(values3));
     h.set_field_scanner(5, make_field_translator<int>(values5));
+    h.set_field_scanner(6, make_field_translator<string_t>(
+        [&values6, ch](string_t&& s){
+            values6 += ch('[');
+            values6 += std::move(s);
+            values6 += ch(']');
+        }));
 
     ASSERT_EQ(
         typeid(make_field_translator(values21)),
@@ -502,9 +510,9 @@ TYPED_TEST(TestCsvScanner, Indexed)
     ASSERT_EQ(nullptr, h.template get_field_scanner<void>(100));
 
     std::basic_stringstream<TypeParam> s;
-    s << "F0,F1,F2,F3,F4,F5\r"
-         "50,__, 101.2 ,XYZ,  200,1\n"
-         "-3,__,3.00e9,\"\"\"ab\"\"\rc\",200,2\n";
+    s << "F0,F1,F2,F3,F4,F5,F6\r"
+         "50,__, 101.2 ,XYZ,  200,1,fixa\n"
+         "-3,__,3.00e9,\"\"\"ab\"\"\rc\",200,2,tive\n";
     try {
         parse(s, std::move(h));
     } catch (const csv_error& e) {
@@ -522,6 +530,7 @@ TYPED_TEST(TestCsvScanner, Indexed)
     ASSERT_EQ(expected4, values4);
     ASSERT_EQ(1, values5[0]);
     ASSERT_EQ(2, values5[1]);
+    ASSERT_EQ(str("[fixa][tive]"), values6);
 }
 
 TYPED_TEST(TestCsvScanner, MultilinedHeader)
