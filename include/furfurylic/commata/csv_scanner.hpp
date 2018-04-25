@@ -795,7 +795,7 @@ struct numeric_type_traits<long double>
 };
 
 template <class D, class H>
-class raw_convert_base :
+class raw_converter_base :
     member_like_base<H>
 {
 public:
@@ -856,15 +856,15 @@ template <class>
 using void_t = void;
 
 template <class T, class H, class = void>
-struct raw_convert;
+struct raw_converter;
 
 template <class T, class H>
-struct raw_convert<T, H, std::enable_if_t<std::is_integral<T>::value,
+struct raw_converter<T, H, std::enable_if_t<std::is_integral<T>::value,
         void_t<decltype(numeric_type_traits<T>::strto)>>> :
-    raw_convert_base<raw_convert<T, H>, H>
+    raw_converter_base<raw_converter<T, H>, H>
 {
-    using raw_convert_base<raw_convert<T, H>, H>
-        ::raw_convert_base;
+    using raw_converter_base<raw_converter<T, H>, H>
+        ::raw_converter_base;
 
     auto engine(const char* s, char** e) const
     {
@@ -878,12 +878,12 @@ struct raw_convert<T, H, std::enable_if_t<std::is_integral<T>::value,
 };
 
 template <class T, class H>
-struct raw_convert<T, H, std::enable_if_t<std::is_floating_point<T>::value,
+struct raw_converter<T, H, std::enable_if_t<std::is_floating_point<T>::value,
         void_t<decltype(numeric_type_traits<T>::strto)>>> :
-    raw_convert_base<raw_convert<T, H>, H>
+    raw_converter_base<raw_converter<T, H>, H>
 {
-    using raw_convert_base<raw_convert<T, H>, H>
-        ::raw_convert_base;
+    using raw_converter_base<raw_converter<T, H>, H>
+        ::raw_converter_base;
 
     auto engine(const char* s, char** e) const
     {
@@ -897,10 +897,10 @@ struct raw_convert<T, H, std::enable_if_t<std::is_floating_point<T>::value,
 };
 
 template <class T, class H, class = void>
-struct convert :
-    private raw_convert<T, H>
+struct converter :
+    private raw_converter<T, H>
 {
-    using raw_convert<T, H>::raw_convert;
+    using raw_converter<T, H>::raw_converter;
 
     template <class Ch>
     auto operator()(const Ch* begin, const Ch* end)
@@ -910,10 +910,10 @@ struct convert :
 };
 
 template <class T, class H, class U, class = void>
-struct restrained_convert :
-    private raw_convert<U, H>
+struct restrained_converter :
+    private raw_converter<U, H>
 {
-    using raw_convert<U, H>::raw_convert;
+    using raw_converter<U, H>::raw_converter;
 
     template <class Ch>
     T operator()(const Ch* begin, const Ch* end)
@@ -932,11 +932,11 @@ struct restrained_convert :
 };
 
 template <class T, class H, class U>
-struct restrained_convert<T, H, U,
+struct restrained_converter<T, H, U,
         std::enable_if_t<std::is_unsigned<T>::value>> :
-    private raw_convert<U, H>
+    private raw_converter<U, H>
 {
-    using raw_convert<U, H>::raw_convert;
+    using raw_converter<U, H>::raw_converter;
 
     template <class Ch>
     T operator()(const Ch* begin, const Ch* end)
@@ -957,11 +957,11 @@ struct restrained_convert<T, H, U,
 };
 
 template <class T, class H>
-struct convert<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
-    restrained_convert<T, H, typename numeric_type_traits<T>::raw_type>
+struct converter<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
+    restrained_converter<T, H, typename numeric_type_traits<T>::raw_type>
 {
-    using restrained_convert<T, H, typename numeric_type_traits<T>::raw_type>
-        ::restrained_convert;
+    using restrained_converter<T, H, typename numeric_type_traits<T>::raw_type>
+        ::restrained_converter;
 };
 
 } // end namespace detail
@@ -1225,7 +1225,7 @@ template <class T, class Sink,
     class SkippingHandler = fail_if_skipped<T>,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class numeric_field_translator :
-    detail::convert<T, ConversionErrorHandler>,
+    detail::converter<T, ConversionErrorHandler>,
     detail::translator<Sink, SkippingHandler>
 {
 public:
@@ -1234,7 +1234,7 @@ public:
         SkippingHandler handle_skipping = SkippingHandler(),
         ConversionErrorHandler handle_conversion_error
             = ConversionErrorHandler()) :
-        detail::convert<T, ConversionErrorHandler>(
+        detail::converter<T, ConversionErrorHandler>(
             std::move(handle_conversion_error)),
         detail::translator<Sink, SkippingHandler>(
             std::move(sink), std::move(handle_skipping))
@@ -1256,7 +1256,7 @@ template <class T, class Sink,
     class SkippingHandler = fail_if_skipped<T>,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class locale_based_numeric_field_translator :
-    detail::convert<T, ConversionErrorHandler>,
+    detail::converter<T, ConversionErrorHandler>,
     detail::translator<Sink, SkippingHandler>
 {
     std::locale loc_;
@@ -1273,7 +1273,7 @@ public:
         SkippingHandler handle_skipping = SkippingHandler(),
         ConversionErrorHandler handle_conversion_error
             = ConversionErrorHandler()) :
-        detail::convert<T, ConversionErrorHandler>(
+        detail::converter<T, ConversionErrorHandler>(
             std::move(handle_conversion_error)),
         detail::translator<Sink, SkippingHandler>(
             std::move(sink), std::move(handle_skipping)),
