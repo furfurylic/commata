@@ -903,7 +903,7 @@ struct converter :
     using raw_converter<T, H>::raw_converter;
 
     template <class Ch>
-    auto operator()(const Ch* begin, const Ch* end)
+    auto convert(const Ch* begin, const Ch* end)
     {
         return this->convert_raw(begin, end);
     }
@@ -916,7 +916,7 @@ struct restrained_converter :
     using raw_converter<U, H>::raw_converter;
 
     template <class Ch>
-    T operator()(const Ch* begin, const Ch* end)
+    T convert(const Ch* begin, const Ch* end)
     {
         const auto result = this->convert_raw(begin, end);
         if (result < std::numeric_limits<T>::lowest()) {
@@ -939,7 +939,7 @@ struct restrained_converter<T, H, U,
     using raw_converter<U, H>::raw_converter;
 
     template <class Ch>
-    T operator()(const Ch* begin, const Ch* end)
+    T convert(const Ch* begin, const Ch* end)
     {
         const auto result = this->convert_raw(begin, end);
         if (result <= std::numeric_limits<T>::max()) {
@@ -1244,7 +1244,7 @@ public:
     void field_value(const Ch* begin, const Ch* end)
     {
         assert(*end == Ch());   // shall be null-teminated
-        this->put((*this)(begin, end));
+        this->put(this->convert(begin, end));
     }
 
     using detail::translator<Sink, SkippingHandler>::
@@ -1309,7 +1309,7 @@ public:
             ++head;
         }
         *head = Ch();
-        this->put((*this)(begin, head));
+        this->put(this->convert(begin, head));
     }
 
     using detail::translator<Sink, SkippingHandler>::
