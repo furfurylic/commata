@@ -609,7 +609,7 @@ TYPED_TEST(TestCsvScanner, SkippedWithNoErrors)
         get_field_scanner<decltype(make_field_translator(
             values1, default_if_skipped<int>()))>(1U);
     ASSERT_NE(scanner1, nullptr);
-    ASSERT_EQ(50, scanner1->get_skipping_handler().skipped());
+    ASSERT_EQ(50, scanner1->get_skipping_handler()());
     *scanner1 = make_field_translator(values1, default_if_skipped<int>(-15));
 
     std::basic_stringstream<TypeParam> s;

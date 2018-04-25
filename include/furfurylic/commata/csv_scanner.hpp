@@ -970,7 +970,7 @@ template <class T>
 struct fail_if_skipped
 {
     [[noreturn]]
-    T skipped() const
+    T operator()() const
     {
         throw field_not_found("This field did not appear in this record");
     }
@@ -986,7 +986,7 @@ public:
         default_value_(std::move(default_value))
     {}
 
-    T skipped() const
+    T operator()() const
     {
         return default_value_;
     }
@@ -1191,7 +1191,7 @@ public:
 #endif
     void field_skipped()
     {
-        put(get_skipping_handler().skipped());
+        put(get_skipping_handler()());
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
