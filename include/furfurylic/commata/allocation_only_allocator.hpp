@@ -18,9 +18,13 @@ namespace detail {
 
 template <class Allocator>
 class allocation_only_allocator :
-    public member_like_base<Allocator>
+    member_like_base<Allocator>
 {
     using base_traits = typename std::allocator_traits<Allocator>;
+
+    // To rebind
+    template <class Allocator2>
+    friend class allocation_only_allocator;
 
 public:
     using pointer = typename base_traits::pointer;
@@ -48,7 +52,7 @@ public:
         member_like_base<Allocator>(std::move(other))
     {}
 
-    // to make rebound copies
+    // To make rebound copies
     template <class Allocator2>
     explicit allocation_only_allocator(
         const allocation_only_allocator<Allocator2>& other) noexcept :
@@ -96,30 +100,17 @@ public:
     using propagate_on_container_swap =
         typename base_traits::propagate_on_container_swap;
 
-    template <class Allocator2>
-    friend
-    bool operator==(
-        const allocation_only_allocator& left,
-        const allocation_only_allocator<Allocator2>& right) noexcept
-    {
-        return left.base() == right.base();
-    }
-
-    template <class Allocator2>
-    friend
-    bool operator!=(
-        const allocation_only_allocator& left,
-        const allocation_only_allocator<Allocator2>& right) noexcept
-    {
-        return !(left == right);
-    }
-
-private:
     decltype(auto) base() noexcept
     {
         return this->get();
     }
 
+    decltype(auto) base() const noexcept
+    {
+        return this->get();
+    }
+
+private:
     template <class T>
     void destroy(T*, std::true_type)
     {}
@@ -130,6 +121,22 @@ private:
         p->~T();
     }
 };
+
+template <class Allocator1, class Allocator2>
+inline bool operator==(
+    const allocation_only_allocator<Allocator1>& left,
+    const allocation_only_allocator<Allocator2>& right) noexcept
+{
+    return left.base() == right.base();
+}
+
+template <class Allocator1, class Allocator2>
+inline bool operator!=(
+    const allocation_only_allocator<Allocator1>& left,
+    const allocation_only_allocator<Allocator2>& right) noexcept
+{
+    return !(left == right);
+}
 
 }}}
 

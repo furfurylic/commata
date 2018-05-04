@@ -366,24 +366,24 @@ struct without_buffer_control :
         (!has_get_buffer<T>::value) && (!has_release_buffer<T>::value)>
 {};
 
-template <class Alloc>
+template <class Allocator>
 class default_buffer_control :
-    detail::member_like_base<Alloc>
+    detail::member_like_base<Allocator>
 {
-    using alloc_traits_t = std::allocator_traits<Alloc>;
+    using alloc_traits_t = std::allocator_traits<Allocator>;
 
     std::size_t buffer_size_;
     typename alloc_traits_t::pointer buffer_;
 
 public:
-    default_buffer_control(std::size_t buffer_size, const Alloc& alloc) :
-        detail::member_like_base<Alloc>(alloc),
+    default_buffer_control(std::size_t buffer_size, const Allocator& alloc) :
+        detail::member_like_base<Allocator>(alloc),
         buffer_size_((buffer_size < 1) ? 8192 : buffer_size),
         buffer_()
     {}
 
     default_buffer_control(default_buffer_control&& other) :
-        detail::member_like_base<Alloc>(other.get()),
+        detail::member_like_base<Allocator>(other.get()),
         buffer_size_(other.buffer_size_),
         buffer_(other.buffer_)
     {
@@ -596,17 +596,17 @@ decltype(auto) make_full_fledged(Sink&& sink)
     return std::forward<Sink>(sink);
 }
 
-template <class Sink, class Alloc>
+template <class Sink, class Allocator>
 auto make_full_fledged(Sink&& sink,
-    std::size_t buffer_size, const Alloc& alloc)
+    std::size_t buffer_size, const Allocator& alloc)
 {
     static_assert(without_buffer_control<Sink>::value, "");
     static_assert(std::is_same<
         typename Sink::char_type,
-        typename std::allocator_traits<Alloc>::value_type>::value, "");
-    return full_fledged_sink<Sink, default_buffer_control<Alloc>>(
+        typename std::allocator_traits<Allocator>::value_type>::value, "");
+    return full_fledged_sink<Sink, default_buffer_control<Allocator>>(
         std::forward<Sink>(sink),
-        default_buffer_control<Alloc>(buffer_size, alloc));
+        default_buffer_control<Allocator>(buffer_size, alloc));
 }
 
 template <class Sink>
@@ -858,9 +858,9 @@ auto parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink)
 }
 
 template <class Tr, class Sink,
-    class Alloc = std::allocator<typename Sink::char_type>>
+    class Allocator = std::allocator<typename Sink::char_type>>
 auto parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink,
-    std::size_t buffer_size = 0, const Alloc& alloc = Alloc())
+    std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
  -> std::enable_if_t<detail::without_buffer_control<Sink>::value, bool>
 {
     return detail::make_primitive_parser(
@@ -869,9 +869,9 @@ auto parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink,
 }
 
 template <class Tr, class Sink,
-    class Alloc = std::allocator<typename Sink::char_type>>
+    class Allocator = std::allocator<typename Sink::char_type>>
 auto parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink,
-    std::size_t buffer_size = 0, const Alloc& alloc = Alloc())
+    std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
  -> std::enable_if_t<detail::without_buffer_control<Sink>::value, bool>
 {
     return parse(in.rdbuf(), std::move(sink), buffer_size, alloc);

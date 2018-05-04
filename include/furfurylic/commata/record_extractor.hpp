@@ -377,13 +377,13 @@ public:
 
 namespace detail {
 
-template <class Ch, class Tr, class Alloc>
+template <class Ch, class Tr, class Allocator>
 class string_eq
 {
-    std::basic_string<Ch, Tr, Alloc> s_;
+    std::basic_string<Ch, Tr, Allocator> s_;
 
 public:
-    explicit string_eq(std::basic_string<Ch, Tr, Alloc>&& s) :
+    explicit string_eq(std::basic_string<Ch, Tr, Allocator>&& s) :
         s_(std::move(s))
     {}
 

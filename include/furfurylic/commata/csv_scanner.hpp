@@ -73,11 +73,11 @@ struct accepts_x :
 }
 
 template <class Ch, class Tr = std::char_traits<Ch>,
-          class Alloc = std::allocator<Ch>>
+          class Allocator = std::allocator<Ch>>
 class csv_scanner :
-    detail::member_like_base<Alloc>
+    detail::member_like_base<Allocator>
 {
-    using string_t = std::basic_string<Ch, Tr, Alloc>;
+    using string_t = std::basic_string<Ch, Tr, Allocator>;
 
     struct typable
     {
@@ -259,7 +259,7 @@ class csv_scanner :
         }
     };
 
-    using at_t = std::allocator_traits<Alloc>;
+    using at_t = std::allocator_traits<Allocator>;
     using hfs_at_t =
         typename at_t::template rebind_traits<header_field_scanner>;
     using bfs_at_t =
@@ -283,13 +283,13 @@ class csv_scanner :
 
 public:
     using char_type = Ch;
-    using allocator_type = Alloc;
-    using size_type = typename std::allocator_traits<Alloc>::size_type;
+    using allocator_type = Allocator;
+    using size_type = typename std::allocator_traits<Allocator>::size_type;
 
     explicit csv_scanner(
         std::size_t header_record_count = 0U,
         size_type buffer_size = default_buffer_size) :
-        csv_scanner(std::allocator_arg, Alloc(),
+        csv_scanner(std::allocator_arg, Allocator(),
             header_record_count, buffer_size)
     {}
 
@@ -299,14 +299,14 @@ public:
     explicit csv_scanner(
         HeaderFieldScanner s,
         size_type buffer_size = default_buffer_size) :
-        csv_scanner(std::allocator_arg, Alloc(), std::move(s), buffer_size)
+        csv_scanner(std::allocator_arg, Allocator(), std::move(s), buffer_size)
     {}
 
     csv_scanner(
-        std::allocator_arg_t, const Alloc& alloc,
+        std::allocator_arg_t, const Allocator& alloc,
         std::size_t header_record_count = 0U,
         size_type buffer_size = default_buffer_size) :
-        detail::member_like_base<Alloc>(alloc),
+        detail::member_like_base<Allocator>(alloc),
         remaining_header_records_(header_record_count), j_(0),
         buffer_size_(sanitize_buffer_size(buffer_size)),
         buffer_(), begin_(nullptr),
@@ -320,10 +320,10 @@ public:
         class HeaderFieldScanner,
         class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
     csv_scanner(
-        std::allocator_arg_t, const Alloc& alloc,
+        std::allocator_arg_t, const Allocator& alloc,
         HeaderFieldScanner s,
         size_type buffer_size = default_buffer_size) :
-        detail::member_like_base<Alloc>(alloc),
+        detail::member_like_base<Allocator>(alloc),
         remaining_header_records_(0U), j_(0),
         buffer_size_(sanitize_buffer_size(buffer_size)),
         buffer_(), begin_(nullptr),
@@ -337,7 +337,7 @@ public:
     csv_scanner(csv_scanner&& other) noexcept(noexcept(
         std::is_nothrow_move_constructible<decltype(scanners_)>::value
      && std::is_nothrow_move_constructible<string_t>::value)) :
-        detail::member_like_base<Alloc>(std::move(other)),
+        detail::member_like_base<Allocator>(std::move(other)),
         remaining_header_records_(other.remaining_header_records_),
         j_(other.j_), buffer_size_(other.buffer_size_),
         buffer_(other.buffer_), begin_(other.begin_), end_(other.end_),
@@ -1170,7 +1170,7 @@ class translator :
     Sink sink_;
 
 public:
-    translator(Sink sink, SkippingHandler handle_skipping) :
+    translator(Sink&& sink, SkippingHandler&& handle_skipping) :
         member_like_base<SkippingHandler>(std::move(handle_skipping)),
         sink_(std::move(sink))
     {}
@@ -1226,7 +1226,7 @@ template <class T, class Sink,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class numeric_field_translator :
     detail::converter<T, ConversionErrorHandler>,
-    detail::translator<Sink, SkippingHandler>
+    public detail::translator<Sink, SkippingHandler>
 {
 public:
     explicit numeric_field_translator(
@@ -1246,10 +1246,6 @@ public:
         assert(*end == Ch());   // shall be null-teminated
         this->put(this->convert(begin, end));
     }
-
-    using detail::translator<Sink, SkippingHandler>::
-        get_skipping_handler;
-    using detail::translator<Sink, SkippingHandler>::field_skipped;
 };
 
 template <class T, class Sink,
@@ -1257,7 +1253,7 @@ template <class T, class Sink,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class locale_based_numeric_field_translator :
     detail::converter<T, ConversionErrorHandler>,
-    detail::translator<Sink, SkippingHandler>
+    public detail::translator<Sink, SkippingHandler>
 {
     std::locale loc_;
 
@@ -1312,10 +1308,6 @@ public:
         this->put(this->convert(begin, head));
     }
 
-    using detail::translator<Sink, SkippingHandler>::
-        get_skipping_handler;
-    using detail::translator<Sink, SkippingHandler>::field_skipped;
-
 private:
     static char widen(char c, char)
     {
@@ -1329,42 +1321,43 @@ private:
 };
 
 template <class Sink, class Ch,
-    class Tr = std::char_traits<Ch>, class Alloc = std::allocator<Ch>,
-    class SkippingHandler = fail_if_skipped<std::basic_string<Ch, Tr, Alloc>>>
+    class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>,
+    class SkippingHandler =
+        fail_if_skipped<std::basic_string<Ch, Tr, Allocator>>>
 class string_field_translator :
-    detail::member_like_base<Alloc>,
-    detail::translator<Sink, SkippingHandler>
+    detail::member_like_base<Allocator>,
+    public detail::translator<Sink, SkippingHandler>
 {
 public:
-    using allocator_type = Alloc;
+    using allocator_type = Allocator;
 
     explicit string_field_translator(
         Sink sink,
         SkippingHandler handle_skipping = SkippingHandler()) :
         string_field_translator(
-            std::allocator_arg, Alloc(), sink, std::move(handle_skipping))
+            std::allocator_arg, Allocator(), sink, std::move(handle_skipping))
     {}
 
     string_field_translator(
-        std::allocator_arg_t, const Alloc& alloc, Sink sink,
+        std::allocator_arg_t, const Allocator& alloc, Sink sink,
         SkippingHandler handle_skipping = SkippingHandler()) :
-        detail::member_like_base<Alloc>(alloc),
+        detail::member_like_base<Allocator>(alloc),
         detail::translator<Sink, SkippingHandler>(
             std::move(sink), std::move(handle_skipping))
     {}
 
     allocator_type get_allocator() const
     {
-        return detail::member_like_base<Alloc>::get();
+        return detail::member_like_base<Allocator>::get();
     }
 
     void field_value(Ch* begin, Ch* end)
     {
-        this->put(std::basic_string<Ch, Tr, Alloc>(
+        this->put(std::basic_string<Ch, Tr, Allocator>(
             begin, end, get_allocator()));
     }
 
-    void field_value(std::basic_string<Ch, Tr, Alloc>&& value)
+    void field_value(std::basic_string<Ch, Tr, Allocator>&& value)
     {
         if (value.get_allocator() == get_allocator()) {
             this->put(std::move(value));
@@ -1372,10 +1365,6 @@ public:
             this->field_value(&value[0], &value[0] + value.size());
         }
     }
-
-    using detail::translator<Sink, SkippingHandler>::
-        get_skipping_handler;
-    using detail::translator<Sink, SkippingHandler>::field_skipped;
 };
 
 namespace detail {
