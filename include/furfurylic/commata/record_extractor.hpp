@@ -155,7 +155,7 @@ public:
     record_extractor_impl(record_extractor_impl&&) = default;
     record_extractor_impl& operator=(record_extractor_impl&&) = default;
 
-    void start_buffer(const Ch* buffer_begin)
+    void start_buffer(const Ch* buffer_begin, const Ch* /*buffer_end*/)
     {
         current_begin_ = buffer_begin;
     }

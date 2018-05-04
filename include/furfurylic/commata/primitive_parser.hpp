@@ -432,6 +432,7 @@ struct has_start_buffer_impl
     template <class T>
     static auto check(T*) -> decltype(
         std::declval<T&>().start_buffer(
+            std::declval<const typename T::char_type*>(),
             std::declval<const typename T::char_type*>()),
         std::true_type());
 
@@ -512,9 +513,10 @@ public:
         this->do_release_buffer(buffer, &sink_);
     }
 
-    void start_buffer(const char_type* buffer_begin)
+    void start_buffer(
+        const char_type* buffer_begin, const char_type* buffer_end)
     {
-        start_buffer(has_start_buffer<Sink>(), buffer_begin);
+        start_buffer(has_start_buffer<Sink>(), buffer_begin, buffer_end);
     }
 
     void end_buffer(const char_type* buffer_end)
@@ -548,9 +550,10 @@ public:
     }
 
 private:
-    void start_buffer(std::true_type, const char_type* buffer_begin)
+    void start_buffer(std::true_type,
+        const char_type* buffer_begin, const char_type* buffer_end)
     {
-        sink_.start_buffer(buffer_begin);
+        sink_.start_buffer(buffer_begin, buffer_end);
     }
 
     void start_buffer(std::false_type, ...)
@@ -679,7 +682,7 @@ public:
                 loaded_size += length;
             } while (buffer_size - loaded_size > 0);
 
-            f_.start_buffer(buffer.get());
+            f_.start_buffer(buffer.get(), buffer.get() + buffer_size);
             if (!parse_partial(buffer.get(),
                     buffer.get() + loaded_size, eof_reached)) {
                 return false;
@@ -912,9 +915,11 @@ template <class Sink, class D>
 struct start_buffer_t<Sink, D,
     std::enable_if_t<has_start_buffer<Sink>::value>>
 {
-    void start_buffer(const typename Sink::char_type* buffer_begin)
+    void start_buffer(
+        const typename Sink::char_type* buffer_begin,
+        const typename Sink::char_type* buffer_end)
     {
-        static_cast<D*>(this)->base().start_buffer(buffer_begin);
+        static_cast<D*>(this)->base().start_buffer(buffer_begin, buffer_end);
     }
 };
 
