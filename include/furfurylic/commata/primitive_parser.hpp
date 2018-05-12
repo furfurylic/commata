@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <ios>
 #include <istream>
 #include <memory>
@@ -840,45 +841,6 @@ primitive_parser<Sink> make_primitive_parser(Sink&& sink)
     return primitive_parser<Sink>(std::move(sink));
 }
 
-} // end namespace detail
-
-template <class Tr, class Sink>
-auto parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink)
- -> std::enable_if_t<detail::with_buffer_control<Sink>::value, bool>
-{
-    return detail::make_primitive_parser(
-        detail::make_full_fledged(std::move(sink))).parse(in);
-}
-
-template <class Tr, class Sink>
-auto parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink)
- -> std::enable_if_t<detail::with_buffer_control<Sink>::value, bool>
-{
-    return parse(in.rdbuf(), std::move(sink));
-}
-
-template <class Tr, class Sink,
-    class Allocator = std::allocator<typename Sink::char_type>>
-auto parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink,
-    std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
- -> std::enable_if_t<detail::without_buffer_control<Sink>::value, bool>
-{
-    return detail::make_primitive_parser(
-        detail::make_full_fledged(
-            std::move(sink), buffer_size, alloc)).parse(in);
-}
-
-template <class Tr, class Sink,
-    class Allocator = std::allocator<typename Sink::char_type>>
-auto parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink,
-    std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
- -> std::enable_if_t<detail::without_buffer_control<Sink>::value, bool>
-{
-    return parse(in.rdbuf(), std::move(sink), buffer_size, alloc);
-}
-
-namespace detail {
-
 template <class Sink, class D, class = void>
 struct get_buffer_t
 {};
@@ -937,20 +899,123 @@ struct end_buffer_t<Sink, D,
     }
 };
 
+template <class Sink, class D, class = void>
+struct empty_physical_row_t
+{};
+
+template <class Sink, class D>
+struct empty_physical_row_t<Sink, D,
+    std::enable_if_t<has_empty_physical_row<Sink>::value>>
+{
+    bool empty_physical_row(const typename Sink::char_type* where)
+    {
+        return static_cast<D*>(this)->base().empty_physical_row(where);
+    }
+};
+
+template <class Sink, class D>
+struct sink_decorator :
+    get_buffer_t<Sink, D>, release_buffer_t<Sink, D>,
+    start_buffer_t<Sink, D>, end_buffer_t<Sink, D>,
+    empty_physical_row_t<Sink, D>
+{
+    using char_type = typename Sink::char_type;
+
+protected:
+    sink_decorator()
+    {}
+
+public:
+    void start_record(const char_type* record_begin)
+    {
+        static_cast<D*>(this)->base().start_record(record_begin);
+    }
+
+    bool update(const char_type* first, const char_type* last)
+    {
+        return static_cast<D*>(this)->base().update(first, last);
+    }
+
+    bool finalize(const char_type* first, const char_type* last)
+    {
+        return static_cast<D*>(this)->base().finalize(first, last);
+    }
+
+    bool end_record(const char_type* end)
+    {
+        return static_cast<D*>(this)->base().end_record(end);
+    }
+};
+
+template <class Sink>
+class wrapper_sink :
+    public detail::sink_decorator<Sink, wrapper_sink<Sink>>
+{
+    Sink* sink_;
+
+public:
+    explicit wrapper_sink(Sink& sink) :
+        sink_(&sink)
+    {}
+
+    Sink& base()
+    {
+        return *sink_;
+    }
+};
+
 } // end namespace detail
+
+template <class Tr, class Sink>
+auto parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink)
+ -> std::enable_if_t<detail::with_buffer_control<Sink>::value, bool>
+{
+    return detail::make_primitive_parser(
+        detail::make_full_fledged(std::move(sink))).parse(in);
+}
+
+template <class Tr, class Sink>
+auto parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink)
+ -> std::enable_if_t<detail::with_buffer_control<Sink>::value, bool>
+{
+    return parse(in.rdbuf(), std::move(sink));
+}
+
+template <class Tr, class Sink,
+    class Allocator = std::allocator<typename Sink::char_type>>
+auto parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink,
+    std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
+ -> std::enable_if_t<detail::without_buffer_control<Sink>::value, bool>
+{
+    return detail::make_primitive_parser(
+        detail::make_full_fledged(
+            std::move(sink), buffer_size, alloc)).parse(in);
+}
+
+template <class Tr, class Sink,
+    class Allocator = std::allocator<typename Sink::char_type>>
+auto parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink,
+    std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
+ -> std::enable_if_t<detail::without_buffer_control<Sink>::value, bool>
+{
+    return parse(in.rdbuf(), std::move(sink), buffer_size, alloc);
+}
+
+template <class Input, class Sink, class... Args>
+auto parse(Input&& in,
+    const std::reference_wrapper<Sink>& sink, Args&&... args)
+{
+    return parse(std::forward<Input>(in),
+        detail::wrapper_sink<Sink>(sink.get()), std::forward<Args>(args)...);
+}
 
 template <class Sink>
 class empty_physical_row_aware_sink :
-    public detail::get_buffer_t<Sink, empty_physical_row_aware_sink<Sink>>,
-    public detail::release_buffer_t<Sink, empty_physical_row_aware_sink<Sink>>,
-    public detail::start_buffer_t<Sink, empty_physical_row_aware_sink<Sink>>,
-    public detail::end_buffer_t<Sink, empty_physical_row_aware_sink<Sink>>
+    public detail::sink_decorator<Sink, empty_physical_row_aware_sink<Sink>>
 {
     Sink sink_;
 
 public:
-    using char_type = typename Sink::char_type;
-
     explicit empty_physical_row_aware_sink(Sink sink) :
         sink_(std::move(sink))
     {
@@ -965,30 +1030,10 @@ public:
             == detail::has_end_buffer<Sink>::value, "");
     }
 
-    void start_record(const char_type* record_begin)
+    bool empty_physical_row(const typename Sink::char_type* where)
     {
-        sink_.start_record(record_begin);
-    }
-
-    bool update(const char_type* first, const char_type* last)
-    {
-        return sink_.update(first, last);
-    }
-
-    bool finalize(const char_type* first, const char_type* last)
-    {
-        return sink_.finalize(first, last);
-    }
-
-    bool end_record(const char_type* end)
-    {
-        return sink_.end_record(end);
-    }
-
-    bool empty_physical_row(const char_type* where)
-    {
-        start_record(where);
-        return end_record(where);
+        this->start_record(where);
+        return this->end_record(where);
     }
 
     Sink& base()

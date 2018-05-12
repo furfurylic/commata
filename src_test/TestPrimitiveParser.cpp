@@ -60,6 +60,48 @@ public:
     }
 };
 
+template <class Ch>
+class test_collector2
+{
+    std::vector<std::vector<std::basic_string<Ch>>> field_values_;
+    test_collector<Ch> base_;
+
+public:
+    using char_type = Ch;
+
+    explicit test_collector2() :
+        base_(field_values_)
+    {}
+
+    test_collector2(const test_collector2&) = delete;
+    test_collector2(test_collector2&&) = delete;
+
+    void start_record(const Ch* record_begin)
+    {
+        base_.start_record(record_begin);
+    }
+
+    bool update(const Ch* first, const Ch* last)
+    {
+        return base_.update(first, last);
+    }
+
+    bool finalize(const Ch* first, const Ch* last)
+    {
+        return base_.finalize(first, last);
+    }
+
+    bool end_record(const Ch* record_end)
+    {
+        return base_.end_record(record_end);
+    }
+
+    const std::vector<std::vector<std::basic_string<Ch>>>& field_values() const
+    {
+        return field_values_;
+    }
+};
+
 }
 
 struct TestPrimitiveParserBasics :
@@ -124,6 +166,21 @@ TEST_P(TestPrimitiveParserBasics, EmptyRowAware)
 
 INSTANTIATE_TEST_CASE_P(,
     TestPrimitiveParserBasics, testing::Values(1, 10, 1024));
+
+struct TestPrimitiveParser : furfurylic::test::BaseTest
+{};
+
+TEST_F(TestPrimitiveParser, Reference)
+{
+    std::string s = "A,B\n\n";
+    std::stringbuf buf(s);
+    test_collector2<char> collector;
+    ASSERT_TRUE(parse(&buf, std::ref(collector)));
+    ASSERT_EQ(1U, collector.field_values().size());
+    ASSERT_EQ(2U, collector.field_values()[0].size());
+    ASSERT_EQ("A", collector.field_values()[0][0]);
+    ASSERT_EQ("B", collector.field_values()[0][1]);
+}
 
 struct TestPrimitiveParserEndsWithoutLF :
     testing::TestWithParam<std::pair<const char*, const char*>>
