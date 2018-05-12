@@ -964,6 +964,14 @@ public:
     }
 };
 
+template <class W>
+struct is_std_reference_wrapper : std::false_type
+{};
+
+template <class T>
+struct is_std_reference_wrapper<std::reference_wrapper<T>> : std::true_type
+{};
+
 } // end namespace detail
 
 template <class Tr, class Sink>
@@ -1011,26 +1019,50 @@ auto parse(Input&& in,
 
 template <class Sink>
 class empty_physical_row_aware_sink :
-    public detail::sink_decorator<Sink, empty_physical_row_aware_sink<Sink>>
+    public detail::sink_decorator<
+        std::remove_reference_t<Sink>, empty_physical_row_aware_sink<Sink>>
 {
     Sink sink_;
 
 public:
     explicit empty_physical_row_aware_sink(Sink sink) :
-        sink_(std::move(sink))
+        sink_(std::forward<Sink>(sink)) // do not move because Sink may
+                                        // be an lvalue reference type
     {
         using this_t = std::remove_pointer_t<decltype(this)>;
+        using sink_t = std::remove_reference_t<Sink>;
         static_assert(detail::has_get_buffer<this_t>::value
-            == detail::has_get_buffer<Sink>::value, "");
+            == detail::has_get_buffer<sink_t>::value, "");
         static_assert(detail::has_release_buffer<this_t>::value
-            == detail::has_release_buffer<Sink>::value, "");
+            == detail::has_release_buffer<sink_t>::value, "");
         static_assert(detail::has_start_buffer<this_t>::value
-            == detail::has_start_buffer<Sink>::value, "");
+            == detail::has_start_buffer<sink_t>::value, "");
         static_assert(detail::has_end_buffer<this_t>::value
-            == detail::has_end_buffer<Sink>::value, "");
+            == detail::has_end_buffer<sink_t>::value, "");
     }
 
-    bool empty_physical_row(const typename Sink::char_type* where)
+    empty_physical_row_aware_sink(const empty_physical_row_aware_sink&)
+        = default;
+    empty_physical_row_aware_sink(empty_physical_row_aware_sink&&)
+        = default;
+
+    // Assignment ops are explicitly defined on the chance that
+    // Sink is an lvalue reference type
+
+    empty_physical_row_aware_sink& operator=(
+        const empty_physical_row_aware_sink& other)
+    {
+        sink_ = other.sink_;
+    }
+
+    empty_physical_row_aware_sink& operator=(
+        empty_physical_row_aware_sink&& other)
+    {
+        sink_ = std::move(other.sink_);
+    }
+
+    bool empty_physical_row(
+        const typename empty_physical_row_aware_sink::char_type* where)
     {
         this->start_record(where);
         return this->end_record(where);
@@ -1047,7 +1079,10 @@ public:
     }
 };
 
-template <class Sink>
+template <class Sink,
+    std::enable_if_t<
+        !detail::is_std_reference_wrapper<Sink>::value,
+        std::nullptr_t> = nullptr>
 auto make_empty_physical_row_aware(Sink&& sink)
 {
     return empty_physical_row_aware_sink<
@@ -1055,6 +1090,12 @@ auto make_empty_physical_row_aware(Sink&& sink)
     // No one would want to instantiate empty_physical_row_aware_sink with
     // const|volatile types (almost none of their members can be invoked),
     // so we use decay_t instead of remove_reference_t.
+}
+
+template <class Sink>
+auto make_empty_physical_row_aware(const std::reference_wrapper<Sink>& sink)
+{
+    return empty_physical_row_aware_sink<Sink&>(sink.get());
 }
 
 }}

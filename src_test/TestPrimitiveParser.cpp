@@ -167,10 +167,10 @@ TEST_P(TestPrimitiveParserBasics, EmptyRowAware)
 INSTANTIATE_TEST_CASE_P(,
     TestPrimitiveParserBasics, testing::Values(1, 10, 1024));
 
-struct TestPrimitiveParser : furfurylic::test::BaseTest
+struct TestPrimitiveParserReference : furfurylic::test::BaseTest
 {};
 
-TEST_F(TestPrimitiveParser, Reference)
+TEST_F(TestPrimitiveParserReference, Reference)
 {
     std::string s = "A,B\n\n";
     std::stringbuf buf(s);
@@ -180,6 +180,23 @@ TEST_F(TestPrimitiveParser, Reference)
     ASSERT_EQ(2U, collector.field_values()[0].size());
     ASSERT_EQ("A", collector.field_values()[0][0]);
     ASSERT_EQ("B", collector.field_values()[0][1]);
+}
+
+TEST_F(TestPrimitiveParserReference, EmptyRowAware)
+{
+    std::string s = "A,B\r\rC,D";
+    std::stringbuf buf(s);
+    test_collector2<char> collector;
+    auto sink = make_empty_physical_row_aware(std::ref(collector));
+    ASSERT_TRUE(parse(&buf, std::move(sink)));
+    ASSERT_EQ(3U, collector.field_values().size());
+    ASSERT_EQ(2U, collector.field_values()[0].size());
+    ASSERT_EQ("A", collector.field_values()[0][0]);
+    ASSERT_EQ("B", collector.field_values()[0][1]);
+    ASSERT_TRUE(collector.field_values()[1].empty());
+    ASSERT_EQ(2U, collector.field_values()[2].size());
+    ASSERT_EQ("C", collector.field_values()[2][0]);
+    ASSERT_EQ("D", collector.field_values()[2][1]);
 }
 
 struct TestPrimitiveParserEndsWithoutLF :
