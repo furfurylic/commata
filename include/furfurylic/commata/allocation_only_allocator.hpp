@@ -42,21 +42,21 @@ public:
             typename base_traits::template rebind_alloc<U>>;
     };
 
-    // to make wrappers
-    explicit allocation_only_allocator(const Allocator& other) noexcept :
+    // To make wrappers
+    explicit allocation_only_allocator(const Allocator& other) :
         member_like_base<Allocator>(other)
     {}
 
     // ditto
-    explicit allocation_only_allocator(Allocator&& other) noexcept :
+    explicit allocation_only_allocator(Allocator&& other) :
         member_like_base<Allocator>(std::move(other))
     {}
 
     // To make rebound copies
     template <class Allocator2>
     explicit allocation_only_allocator(
-        const allocation_only_allocator<Allocator2>& other) noexcept :
-        member_like_base<Allocator>(other.get())
+        const allocation_only_allocator<Allocator2>& other) :
+        member_like_base<Allocator>(Allocator(other.get()))
     {}
 
     template <class... Args>
@@ -100,12 +100,12 @@ public:
     using propagate_on_container_swap =
         typename base_traits::propagate_on_container_swap;
 
-    decltype(auto) base() noexcept
+    decltype(auto) base()
     {
         return this->get();
     }
 
-    decltype(auto) base() const noexcept
+    decltype(auto) base() const
     {
         return this->get();
     }
@@ -125,7 +125,7 @@ private:
 template <class Allocator1, class Allocator2>
 inline bool operator==(
     const allocation_only_allocator<Allocator1>& left,
-    const allocation_only_allocator<Allocator2>& right) noexcept
+    const allocation_only_allocator<Allocator2>& right)
 {
     return left.base() == right.base();
 }
@@ -133,7 +133,7 @@ inline bool operator==(
 template <class Allocator1, class Allocator2>
 inline bool operator!=(
     const allocation_only_allocator<Allocator1>& left,
-    const allocation_only_allocator<Allocator2>& right) noexcept
+    const allocation_only_allocator<Allocator2>& right)
 {
     return !(left == right);
 }
