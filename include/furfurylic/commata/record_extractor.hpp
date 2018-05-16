@@ -375,7 +375,12 @@ public:
         record_extractor_with_indexed_key&&) = default;
 };
 
-namespace detail {
+template <class Ch, class Tr, class Allocator>
+class string_eq;
+
+template <class Ch, class Tr, class Allocator>
+std::basic_ostream<Ch, Tr>& operator<<(
+    std::basic_ostream<Ch, Tr>& os, const string_eq<Ch, Tr, Allocator>& o);
 
 template <class Ch, class Tr, class Allocator>
 class string_eq
@@ -394,12 +399,18 @@ public:
             && (Tr::compare(s_.data(), begin, rlen) == 0);
     }
 
-    friend std::basic_ostream<Ch, Tr>& operator<<(
-        std::basic_ostream<Ch, Tr>& os, const string_eq& o)
-    {
-        return os << o.s_;
-    }
+    friend std::basic_ostream<Ch, Tr>& operator<< <Ch, Tr, Allocator>(
+        std::basic_ostream<Ch, Tr>&, const string_eq<Ch, Tr, Allocator>&);
 };
+
+template <class Ch, class Tr, class Allocator>
+std::basic_ostream<Ch, Tr>& operator<<(
+    std::basic_ostream<Ch, Tr>& os, const string_eq<Ch, Tr, Allocator>& o)
+{
+    return os << o.s_;
+}
+
+namespace detail {
 
 template <class Ch, class T, class = void>
 struct string_pred;
