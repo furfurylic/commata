@@ -199,3 +199,36 @@ TEST_F(TestRecordExtractorFinalPredicateForValue, Basics)
               "ka1,kb13,\"vb\n3\",vb3\n",
               out.str());
 }
+
+struct TestRecordExtractorReference : furfurylic::test::BaseTest
+{};
+
+TEST_F(TestRecordExtractorReference, Basics)
+{
+    const char* s = "instrument,type\n"
+                    "viola,string\n"
+                    "tuba,brass\n"
+                    "clarinet,woodwind\n"
+                    "koto,string";
+    std::stringbuf in(s);
+    std::stringbuf out;
+
+    const auto key_pred = [](auto begin, auto end) {
+        return ((end - begin) >= 3) && (std::strncmp(begin, "typ", 3) == 0);
+    };
+    const auto value_pred = [](auto begin, auto end) {
+        const std::string value(begin, end);
+        return (value == "brass") || (value == "woodwind");
+    };
+
+    // Freaking VS2015 picks up parse's overload for reference_wrappers
+    // and complain about ambiguity, so we squelch it by force with explicit
+    // template arguments
+    auto ex = make_record_extractor(
+        &out, std::ref(key_pred), std::ref(value_pred));
+    parse<std::char_traits<char>, decltype(ex)>(&in, std::move(ex));
+    ASSERT_EQ("instrument,type\n"
+              "tuba,brass\n"
+              "clarinet,woodwind\n",
+              out.str());
+}
