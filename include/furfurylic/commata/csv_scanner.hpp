@@ -123,8 +123,8 @@ class csv_scanner :
         using range_t = std::pair<Ch*, Ch*>;
 
     public:
-        explicit typed_header_field_scanner(HeaderScanner scanner) :
-            scanner_(std::move(scanner))
+        explicit typed_header_field_scanner(HeaderScanner s) :
+            scanner_(std::move(s))
         {}
 
         void field_value(Ch* begin, Ch* end, csv_scanner& me) override
@@ -159,27 +159,29 @@ class csv_scanner :
         FieldScanner scanner_;
 
     public:
-        explicit typed_body_field_scanner(FieldScanner scanner) :
-            scanner_(std::move(scanner))
+        explicit typed_body_field_scanner(FieldScanner s) :
+            scanner_(std::move(s))
         {}
 
         void field_value(Ch* begin, Ch* end, csv_scanner& me) override
         {
             field_value_r(
-                typename detail::accepts_range<FieldScanner, Ch>(),
+                typename detail::accepts_range<
+                    std::remove_reference_t<decltype(scanner())>, Ch>(),
                 begin, end, me);
         }
 
         void field_value(string_t&& value, csv_scanner& me) override
         {
             field_value_s(
-                typename detail::accepts_x<FieldScanner, string_t>(),
+                typename detail::accepts_x<
+                    std::remove_reference_t<decltype(scanner())>, string_t>(),
                 std::move(value), me);
         }
 
         void field_skipped() override
         {
-            scanner_.field_skipped();
+            scanner().field_skipped();
         }
 
         const std::type_info& get_type() const override
@@ -191,23 +193,23 @@ class csv_scanner :
     private:
         void field_value_r(std::true_type, Ch* begin, Ch* end, csv_scanner&)
         {
-            scanner_.field_value(begin, end);
+            scanner().field_value(begin, end);
         }
 
         void field_value_r(std::false_type,
             Ch* begin, Ch* end, csv_scanner& me)
         {
-            scanner_.field_value(string_t(begin, end, me.get_allocator()));
+            scanner().field_value(string_t(begin, end, me.get_allocator()));
         }
 
         void field_value_s(std::true_type, string_t&& value, csv_scanner&)
         {
-            scanner_.field_value(std::move(value));
+            scanner().field_value(std::move(value));
         }
 
         void field_value_s(std::false_type, string_t&& value, csv_scanner&)
         {
-            scanner_.field_value(
+            scanner().field_value(
                 &*value.begin(), &*value.begin() + value.size());
         }
 
@@ -219,6 +221,22 @@ class csv_scanner :
         void* get_target_v() override
         {
             return &scanner_;
+        }
+
+        decltype(auto) scanner()
+        {
+            return scanner_impl(
+                detail::is_std_reference_wrapper<FieldScanner>());
+        }
+
+        decltype(auto) scanner_impl(std::false_type)
+        {
+            return static_cast<FieldScanner&>(scanner_);
+        }
+
+        decltype(auto) scanner_impl(std::true_type)
+        {
+            return static_cast<typename FieldScanner::type&>(scanner_.get());
         }
     };
 
@@ -239,7 +257,7 @@ class csv_scanner :
 
         void end_record() override
         {
-            return scanner_();
+            scanner_();
         }
 
         const std::type_info& get_type() const override

@@ -937,3 +937,103 @@ TYPED_TEST(TestCsvScanner, Allocators)
     ASSERT_EQ(a2, v2[0].get_allocator());
     ASSERT_TRUE(a2.tracks(&v2[0][0]));
 }
+
+namespace {
+
+struct stateful_header_scanner
+{
+    std::size_t index = 0;
+    std::vector<int>* values = nullptr;
+
+    template <class Ch, class T>
+    bool operator()(std::size_t j, const std::pair<Ch*, Ch*>*, T& t) const
+    {
+        if (j == index) {
+            t.set_field_scanner(j, make_field_translator(*values));
+            return false;
+        } else {
+            return true;
+        }
+    }
+};
+
+}
+
+struct TestCsvScannerReference : BaseTest
+{};
+
+TEST_F(TestCsvScannerReference, HeaderScanner)
+{
+    std::vector<int> values;
+    stateful_header_scanner header_scanner;
+    header_scanner.values = &values;
+    csv_scanner<char> scanner(std::ref(header_scanner));
+
+    header_scanner.index = 1;
+
+    try {
+        std::stringbuf buf("A,B\n100,200");
+        parse(&buf, std::move(scanner));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(1U, values.size());
+    ASSERT_EQ(200, values[0]);
+}
+
+TEST_F(TestCsvScannerReference, FieldScanner)
+{
+    std::vector<int> values0;
+    std::vector<int> values1;
+    auto field_scanner = make_field_translator(values0);
+    csv_scanner<char> scanner;
+    scanner.set_field_scanner(0, std::ref(field_scanner));
+
+    field_scanner = make_field_translator(values1);
+
+    ASSERT_EQ(typeid(std::reference_wrapper<decltype(field_scanner)>),
+        scanner.get_field_scanner_type(0));
+
+    try {
+        std::stringbuf buf("100");
+        parse(&buf, std::move(scanner));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_TRUE(values0.empty());
+    ASSERT_EQ(1U, values1.size());
+    ASSERT_EQ(100, values1[0]);
+}
+
+TEST_F(TestCsvScannerReference, RecordEndScanner)
+{
+    std::vector<int> v;
+
+    csv_scanner<char> scanner;
+    scanner.set_field_scanner(0, make_field_translator(v));
+
+    std::function<void()> record_end_scanner = [] {};
+    scanner.set_record_end_scanner(std::ref(record_end_scanner));
+
+    record_end_scanner = [&v]() {
+        v.push_back(-12345);
+    };
+
+    ASSERT_EQ(typeid(std::reference_wrapper<decltype(record_end_scanner)>),
+        scanner.get_record_end_scanner_type());
+
+    try {
+        std::stringbuf buf("100\n200");
+        parse(&buf, std::move(scanner));
+    } catch (const csv_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(4U, v.size());
+    ASSERT_EQ(   100, v[0]);
+    ASSERT_EQ(-12345, v[1]);
+    ASSERT_EQ(   200, v[2]);
+    ASSERT_EQ(-12345, v[3]);
+}

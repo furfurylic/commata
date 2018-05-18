@@ -20,6 +20,7 @@
 #include "csv_error.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
+#include "typing_aid.hpp"
 
 namespace furfurylic {
 namespace commata {
@@ -963,14 +964,6 @@ public:
         return *sink_;
     }
 };
-
-template <class W>
-struct is_std_reference_wrapper : std::false_type
-{};
-
-template <class T>
-struct is_std_reference_wrapper<std::reference_wrapper<T>> : std::true_type
-{};
 
 } // end namespace detail
 
