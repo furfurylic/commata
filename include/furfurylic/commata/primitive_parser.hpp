@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <ios>
+#include <istream>
 #include <memory>
 #include <string>
 #include <streambuf>
@@ -814,6 +815,13 @@ bool parse(std::basic_streambuf<typename Sink::char_type, Tr>& in, Sink sink,
     return detail::make_primitive_parser(
         detail::make_full_fledged(
             std::move(sink), buffer_size)).parse(in);
+}
+
+template <class Tr, class Sink>
+bool parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink,
+    std::size_t buffer_size = 0)
+{
+    return parse(in.rdbuf(), std::move(sink), buffer_size);
 }
 
 namespace detail {
