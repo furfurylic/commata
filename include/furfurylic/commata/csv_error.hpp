@@ -132,8 +132,8 @@ template <std::size_t N>
 std::streamsize print_pos(char (&s)[N], std::size_t pos)
 {
     const auto len = (pos != csv_error::npos) ?
-        std::snprintf(s, N, "%zu", pos) :
-        std::snprintf(s, N, "-1");
+        std::snprintf(s, N, "%zu", pos + 1) :
+        std::snprintf(s, N, "n/a");
     assert((len > 0 ) && (static_cast<std::size_t>(len) < N));
     return static_cast<std::streamsize>(len);
 }
@@ -194,7 +194,7 @@ std::basic_ostream<Ch, Tr>& operator<<(
 {
     const auto w = i.ex_->what();
     if (const auto p = i.ex_->get_physical_position()) {
-        char l[detail::Width<std::size_t, csv_error::npos - 1>::value + 1];
+        char l[detail::Width<std::size_t, csv_error::npos>::value + 1];
         char c[sizeof(l)];
         const auto w_len = static_cast<std::streamsize>(std::strlen(w));
         const auto l_len = detail::print_pos(l, p->first);

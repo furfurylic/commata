@@ -78,8 +78,8 @@ TEST(TestCsvError, Info)
         std::string i = s.str();
         ASSERT_NE(s.str(), e.what());
         const auto lpos = i.find(
-            std::to_string(e.get_physical_position()->first));
-        const auto cpos = i.find("-1");
+            std::to_string(e.get_physical_position()->first + 1));
+        const auto cpos = i.find("n/a");
         ASSERT_NE(lpos, std::string::npos);
         ASSERT_NE(cpos, std::string::npos);
         ASSERT_GT(cpos, lpos);
@@ -96,9 +96,9 @@ TEST(TestCsvError, Info)
     ASSERT_NE(is, e.what());
     {
         const auto lpos = is.find(
-            std::to_string(e.get_physical_position()->first));
+            std::to_string(e.get_physical_position()->first + 1));
         const auto cpos = is.find(
-            std::to_string(e.get_physical_position()->second));
+            std::to_string(e.get_physical_position()->second + 1));
         ASSERT_NE(lpos, std::string::npos);
         ASSERT_NE(cpos, std::string::npos);
         ASSERT_GT(cpos, lpos);
