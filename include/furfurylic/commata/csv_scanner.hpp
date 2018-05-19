@@ -1145,7 +1145,7 @@ public:
 private:
     void set(replacement r, const T& value)
     {
-        new (static_cast<void*>(&replacements_[r])) T(value);
+        *reinterpret_cast<T*>(&replacements_[r]) = value;
         has_ |= 1 << r;
     }
 
@@ -1155,8 +1155,7 @@ private:
     const T* get(replacement r) const
     {
         if (has_ & (1 << r)) {
-            return static_cast<const T*>(
-                static_cast<const void*>(&replacements_[r]));
+            return reinterpret_cast<const T*>(&replacements_[r]);
         } else {
             return nullptr;
         }
