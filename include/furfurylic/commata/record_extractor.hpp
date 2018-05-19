@@ -442,6 +442,23 @@ auto make_record_extractor(
         includes_header, max_record_num);
 }
 
+template <class FieldNamePredF, class FieldValuePredF, class Ch, class Tr>
+auto make_record_extractor(
+    std::basic_ostream<Ch, Tr>& out,
+    FieldNamePredF&& field_name_pred,
+    FieldValuePredF&& field_value_pred,
+    bool includes_header = true,
+    std::size_t max_record_num = static_cast<std::size_t>(-1))
+    ->std::enable_if_t<
+    !std::is_integral<FieldNamePredF>::value,
+    detail::record_extractor_from<FieldNamePredF, FieldValuePredF, Ch, Tr>>
+{
+    return make_record_extractor(out.rdbuf(),
+        std::forward<FieldNamePredF>(field_name_pred),
+        std::forward<FieldValuePredF>(field_value_pred),
+        includes_header, max_record_num);
+}
+
 template <class FieldValuePredF, class Ch, class Tr>
 auto make_record_extractor(
     std::basic_streambuf<Ch, Tr>& out,
@@ -456,6 +473,19 @@ auto make_record_extractor(
         target_field_index,
         detail::forward_as_string_pred<Ch, Tr>(
             std::forward<FieldValuePredF>(field_value_pred)),
+        includes_header, max_record_num);
+}
+
+template <class FieldValuePredF, class Ch, class Tr>
+auto make_record_extractor(
+    std::basic_ostream<Ch, Tr>& out,
+    std::size_t target_field_index,
+    FieldValuePredF&& field_value_pred,
+    bool includes_header = true,
+    std::size_t max_record_num = static_cast<std::size_t>(-1))
+{
+    return make_record_extractor(out.rdbuf(), target_field_index,
+        std::forward<FieldValuePredF>(field_value_pred),
         includes_header, max_record_num);
 }
 
