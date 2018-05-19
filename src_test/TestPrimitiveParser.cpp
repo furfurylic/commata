@@ -73,7 +73,7 @@ TEST_P(TestPrimitiveParserBasics, Narrow)
     std::stringbuf buf(s);
     std::vector<std::vector<std::string>> field_values;
     test_collector<char> collector(field_values);
-    ASSERT_TRUE(parse(buf, collector, GetParam()));
+    ASSERT_TRUE(parse(&buf, collector, GetParam()));
     ASSERT_EQ(2U, field_values.size());
     std::vector<std::string> expected_row0 =
         { "", "col1", " col2 ", "col3", "" };
@@ -90,7 +90,7 @@ TEST_P(TestPrimitiveParserBasics, Wide)
     std::wstringbuf buf(s);
     std::vector<std::vector<std::wstring>> field_values;
     test_collector<wchar_t> collector(field_values);
-    ASSERT_TRUE(parse(buf, collector, GetParam()));
+    ASSERT_TRUE(parse(&buf, collector, GetParam()));
     ASSERT_EQ(2U, field_values.size());
     std::vector<std::wstring> expected_row0 = { L"header1", L"header2" };
     ASSERT_EQ(expected_row0, field_values[0]);
@@ -108,7 +108,7 @@ TEST_P(TestPrimitiveParserBasics, EmptyRowAware)
                      L"y1,y2\n";
     std::wstringbuf buf(s);
     std::vector<std::vector<std::wstring>> field_values;
-    ASSERT_TRUE(parse(buf, make_empty_physical_row_aware(
+    ASSERT_TRUE(parse(&buf, make_empty_physical_row_aware(
         test_collector<wchar_t>(field_values)), GetParam()));
     ASSERT_EQ(6U, field_values.size());
     ASSERT_TRUE(field_values[0].empty());
@@ -134,7 +134,7 @@ TEST_P(TestPrimitiveParserEndsWithoutLF, All)
     std::stringbuf buf(GetParam().first);
     std::vector<std::vector<std::string>> field_values;
     test_collector<char> collector(field_values);
-    ASSERT_TRUE(parse(buf, collector, 1024));
+    ASSERT_TRUE(parse(&buf, collector, 1024));
     ASSERT_EQ(1U, field_values.size());
     std::stringstream s;
     std::copy(field_values[0].cbegin(), field_values[0].cend(),
@@ -163,7 +163,7 @@ TEST_P(TestPrimitiveParserErrors, Errors)
 
     try {
         // the buffer is shorter than one line
-        parse(buf, collector, 4);
+        parse(&buf, collector, 4);
         FAIL();
     } catch (const parse_error& e) {
         const auto pos = e.get_physical_position();

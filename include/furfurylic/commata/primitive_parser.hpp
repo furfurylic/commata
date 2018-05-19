@@ -616,7 +616,7 @@ public:
     primitive_parser& operator=(primitive_parser&&) = default;
 
     template <class Tr>
-    bool parse(std::basic_streambuf<char_type, Tr>& in)
+    bool parse(std::basic_streambuf<char_type, Tr>* in)
     {
         auto release = [this](const char_type* buffer) {
             f_.release_buffer(buffer);
@@ -639,7 +639,7 @@ public:
 
             std::streamsize loaded_size = 0;
             do {
-                const auto length = in.sgetn(buffer.get() + loaded_size,
+                const auto length = in->sgetn(buffer.get() + loaded_size,
                     buffer_size - loaded_size);
                 if (length == 0) {
                     eof_reached = true;
@@ -809,7 +809,7 @@ primitive_parser<Sink> make_primitive_parser(Sink&& sink)
 } // end namespace detail
 
 template <class Tr, class Sink>
-bool parse(std::basic_streambuf<typename Sink::char_type, Tr>& in, Sink sink,
+bool parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink,
     std::size_t buffer_size = 0)
 {
     return detail::make_primitive_parser(
@@ -894,7 +894,6 @@ class empty_physical_row_aware_sink :
     Sink sink_;
 
 public:
-    using base_type = Sink;
     using char_type = typename Sink::char_type;
 
     explicit empty_physical_row_aware_sink(Sink&& sink) :
@@ -937,7 +936,7 @@ public:
         return end_record(where);
     }
 
-    base_type& base()
+    Sink& base()
     {
         return sink_;
     }

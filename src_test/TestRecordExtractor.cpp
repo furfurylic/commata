@@ -27,7 +27,7 @@ TEST_P(TestRecordExtractor, LeftmostKey)
                        L"ka1,kb3,vb3,\"vb3\"\r";
     std::wstringbuf in(s);
     std::wstringbuf out;
-    parse(in, make_record_extractor(out, L"key_a", L"ka1"), GetParam());
+    parse(&in, make_record_extractor(out, L"key_a", L"ka1"), GetParam());
     ASSERT_EQ(L"key_a,key_b,value_a,value_b\n"
               L"\"ka1\",kb1,va1,vb1\n"
               L"ka1,kb3,vb3,\"vb3\"\n",
@@ -43,7 +43,7 @@ TEST_P(TestRecordExtractor, InnerKey)
                     "ka1,kb13,\"vb\n3\",vb3";
     std::stringbuf in(s);
     std::stringbuf out;
-    parse(in, make_record_extractor(out, "key_b",
+    parse(&in, make_record_extractor(out, "key_b",
         [](const char* first ,const char* last) {
             return std::string(first, last).substr(0, 3) == "kb1";
         }), GetParam());
@@ -61,7 +61,7 @@ TEST_P(TestRecordExtractor, NoSuchKey)
     std::stringbuf in(s);
     std::stringbuf out;
     try {
-        parse(in, make_record_extractor(out, "key_c", "kc1"), GetParam());
+        parse(&in, make_record_extractor(out, "key_c", "kc1"), GetParam());
         FAIL();
     } catch (const record_extraction_error& e) {
         ASSERT_NE(e.get_physical_position(), nullptr);
@@ -78,7 +78,7 @@ TEST_P(TestRecordExtractor, NoSuchField)
                     "k0,k1,k2\r";
     std::stringbuf in(s);
     std::stringbuf out;
-    ASSERT_TRUE(parse(in,
+    ASSERT_TRUE(parse(&in,
         make_record_extractor(out, "key_b", "k1"), GetParam()));
     ASSERT_EQ("key_a,key_b\n"
               "k0,k1,k2\n",
@@ -101,9 +101,8 @@ TEST_P(TestRecordExtractorLimit, Basics)
                     "ka1,kb3,vb3,vb3\n";
     std::stringbuf in(s);
     std::stringbuf out;
-    const auto result = parse(in,
-        make_record_extractor(
-            out, "key_a", "ka1", includes_header, max_record_num), 2);
+    const auto result = parse(&in, make_record_extractor(
+        out, "key_a", "ka1", includes_header, max_record_num), 2);
     ASSERT_EQ(max_record_num > 1, result);
     std::string expected;
     if (includes_header) {
@@ -130,7 +129,7 @@ TEST_F(TestRecordExtractorLimit0, IncludeHeader)
                     "ka1,kb1,va1,\"vb1\r";  // Ill-formed row, but not parsed
     std::stringbuf in(s);
     std::stringbuf out;
-    const auto result = parse(in,
+    const auto result = parse(&in,
         make_record_extractor(out, "key_a", "ka1", true, 0), 64);
     ASSERT_FALSE(result);
     std::string expected;
@@ -144,7 +143,7 @@ TEST_F(TestRecordExtractorLimit0, ExcludeHeaderNoSuchKey)
     std::stringbuf in(s);
     std::stringbuf out;
     try {
-        parse(in, make_record_extractor(out, "key_A", "ka1", false, 0), 64);
+        parse(&in, make_record_extractor(out, "key_A", "ka1", false, 0), 64);
         FAIL();
     } catch (const record_extraction_error& e) {
         ASSERT_NE(e.get_physical_position(), nullptr);
@@ -164,7 +163,7 @@ TEST_F(TestRecordExtractorIndexed, Basics)
                     "ka1,kb13,\"vb\n3\",vb3";
     std::stringbuf in(s);
     std::stringbuf out;
-    parse(in, make_record_extractor(out, 1,
+    parse(&in, make_record_extractor(out, 1,
         [](const char* first ,const char* last) {
             return std::string(first, last).substr(0, 3) == "kb1";
         }), 1024);
@@ -194,7 +193,7 @@ TEST_F(TestRecordExtractorFinalPredicateForValue, Basics)
                     "ka1,kb13,\"vb\n3\",vb3";
     std::stringbuf in(s);
     std::stringbuf out;
-    parse(in, make_record_extractor(out, 1, FinalPredicateForValue()), 1024);
+    parse(&in, make_record_extractor(out, 1, FinalPredicateForValue()), 1024);
     ASSERT_EQ("key_a,key_b,value_a,value_b\n"
               "ka2,kb12,va2,vb2\n"
               "ka1,kb13,\"vb\n3\",vb3\n",
