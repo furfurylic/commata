@@ -178,7 +178,7 @@ public:
     using char_type = Ch;
 
     record_extractor(
-        std::basic_streambuf<Ch, Tr>& out,
+        std::basic_streambuf<Ch, Tr>* out,
         FieldNamePred field_name_pred, FieldValuePred field_value_pred,
         bool includes_header, std::size_t max_record_num) :
         field_name_pred_t(std::move(field_name_pred)),
@@ -187,11 +187,11 @@ public:
             record_mode::include : record_mode::exclude),
         record_mode_(record_mode::exclude),
         record_num_to_include_(max_record_num), target_field_index_(npos),
-        field_index_(0), out_(&out)
+        field_index_(0), out_(out)
     {}
 
     record_extractor(
-        std::basic_streambuf<Ch, Tr>& out,
+        std::basic_streambuf<Ch, Tr>* out,
         std::size_t target_field_index, FieldValuePred field_value_pred,
         bool includes_header, std::size_t max_record_num) :
         record_extractor(out,
@@ -423,7 +423,7 @@ using record_extractor_from =
 
 template <class FieldNamePredF, class FieldValuePredF, class Ch, class Tr>
 auto make_record_extractor(
-    std::basic_streambuf<Ch, Tr>& out,
+    std::basic_streambuf<Ch, Tr>* out,
     FieldNamePredF&& field_name_pred,
     FieldValuePredF&& field_value_pred,
     bool includes_header = true,
@@ -461,7 +461,7 @@ auto make_record_extractor(
 
 template <class FieldValuePredF, class Ch, class Tr>
 auto make_record_extractor(
-    std::basic_streambuf<Ch, Tr>& out,
+    std::basic_streambuf<Ch, Tr>* out,
     std::size_t target_field_index,
     FieldValuePredF&& field_value_pred,
     bool includes_header = true,
