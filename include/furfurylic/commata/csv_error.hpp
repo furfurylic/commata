@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstring>
 #include <exception>
+#include <limits>
 #include <locale>
 #include <memory>
 #include <ostream>
@@ -112,20 +113,6 @@ public:
 
 namespace detail {
 
-// the number of letters of a non-negative integer in the decimal system
-template <class T, T N, class = void>
-struct Width;
-
-template <class T, T N>
-struct Width<T, N, std::enable_if_t<10 <= N>> :
-    std::integral_constant<std::size_t, 1 + Width<T, N / 10>::value>
-{};
-
-template <class T, T N>
-struct Width<T, N, std::enable_if_t<(0 <= N) && (N < 10)>> :
-    std::integral_constant<std::size_t, 1>
-{};
-
 // prints a non-negative integer value in the decimal system
 // into a sufficient-length buffer
 template <std::size_t N>
@@ -194,7 +181,7 @@ std::basic_ostream<Ch, Tr>& operator<<(
 {
     const auto w = i.ex_->what();
     if (const auto p = i.ex_->get_physical_position()) {
-        char l[detail::Width<std::size_t, csv_error::npos>::value + 1];
+        char l[std::numeric_limits<std::size_t>::digits10 + 2];
         char c[sizeof(l)];
         const auto w_len = static_cast<std::streamsize>(std::strlen(w));
         const auto l_len = detail::print_pos(l, p->first);
