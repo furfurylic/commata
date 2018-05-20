@@ -1224,9 +1224,9 @@ void append_csv_table_content_primitive(
                 left_content.cend(), r.cbegin(), r.cend());     // throw
         }
     } catch (...) {
-        auto le = left_content.begin();
-        std::advance(le, left_original_size);
-        left_content.erase(le, left_content.cend());
+        left_content.erase(
+            std::next(left_content.begin(), left_original_size),
+            left_content.cend());
         throw;
     }
 
@@ -1275,8 +1275,7 @@ auto append_csv_table_content_adaptive(
                 left_content.cend(), std::move(r));         // throw
         }
     } catch (...) {
-        auto le = left_content.begin();
-        std::advance(le, left_original_size);
+        const auto le = std::next(left_content.begin(), left_original_size);
         auto j = right_content.begin();
         for (auto i = le, ie = left_content.end(); i != ie; ++i, ++j) {
             nothrow_emigrate(*i, *j);
@@ -1385,9 +1384,7 @@ basic_csv_table<ContentL, AllocatorX>& import_whole_csv_table(
                 }
             }
         } catch (...) {
-            auto j = tc.cbegin();
-            std::advance(j, original_size);
-            tc.erase(j, tc.cend());
+            tc.erase(std::next(tc.cbegin(), original_size), tc.cend());
             throw;
         }
     });
@@ -1527,9 +1524,8 @@ public:
             content.emplace(content.cend(),
                 i_, typename record_t::value_type());   // throw
         }
-        auto j = content.begin();
-        std::advance(j, j_);
-        j->back() = typename record_t::value_type(first, last);
+        std::next(content.begin(), j_)->back() =
+            typename record_t::value_type(first, last);
         ++j_;
     }
 };
