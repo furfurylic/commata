@@ -36,24 +36,32 @@ std::basic_ostream<Ch, Tr>& formatted_output(
         return put_obj(os.rdbuf());
     };
 
-    const typename std::basic_ostream<Ch, Tr>::sentry s(os);
+    const typename std::basic_ostream<Ch, Tr>::sentry s(os);        // throw
     if (!s) {
-        os.setstate(std::ios_base::failbit);    // throw
+        os.setstate(std::ios_base::failbit);                        // throw
     } else {
         try {
-            if ((os.flags() & std::ios_base::adjustfield)
-                    != std::ios_base::left) {
-                if (!(pad() && put())) {
-                    os.setstate(std::ios_base::failbit);    // throw
-                }
-            } else {
-                if (!(put() && pad())) {
-                    os.setstate(std::ios_base::failbit);    // throw
-                }
+            const auto right = (os.flags() & std::ios_base::adjustfield)
+                != std::ios_base::left;
+            if (!(right ? (pad() && put()) : (put() && pad()))) {   // throw
+                // Chars might be written partially, so the integrity of the
+                // stream should be regarded as compromised
+                os.setstate(std::ios_base::badbit);                 // throw
             }
             os.width(0);
         } catch (...) {
-            os.setstate(std::ios_base::badbit); // throw
+            if (os.bad()) {
+                throw;                                              // throw
+            } else {
+                // Set badbit, possibly rethrowing the original exception
+                try {
+                    os.setstate(std::ios_base::badbit);             // throw
+                } catch (...) {
+                }
+                if ((os.exceptions() & std::ios_base::badbit) != 0) {
+                    throw;                                          // throw
+                }
+            }
         }
     }
     return os;
