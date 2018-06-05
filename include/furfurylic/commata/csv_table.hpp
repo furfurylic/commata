@@ -620,7 +620,7 @@ struct is_nothrow_swappable :
 {};
 
 template <class Ch, class Allocator>
-class basic_csv_store :
+class csv_store :
     member_like_base<Allocator>
 {
     class buffer_type
@@ -704,18 +704,18 @@ public:
     using allocator_type = Allocator;
     using security = std::vector<Ch*>;
 
-    basic_csv_store() :
-        basic_csv_store(std::allocator_arg)
+    csv_store() :
+        csv_store(std::allocator_arg)
     {}
 
-    basic_csv_store(
+    csv_store(
         std::allocator_arg_t, const Allocator& alloc = Allocator()) :
         member_like_base<Allocator>(alloc),
         buffers_(nullptr), buffers_back_(nullptr),
         buffers_size_(0)
     {}
 
-    basic_csv_store(basic_csv_store&& other) noexcept :
+    csv_store(csv_store&& other) noexcept :
         member_like_base<Allocator>(std::move(other.get())),
         buffers_(other.buffers_), buffers_back_(other.buffers_back_),
         buffers_size_(other.buffers_size_)
@@ -725,16 +725,16 @@ public:
         other.buffers_size_ = 0;
     }
 
-    ~basic_csv_store()
+    ~csv_store()
     {
         while (buffers_) {
             reduce_buffer();
         }
     }
 
-    basic_csv_store& operator=(basic_csv_store&& other) noexcept
+    csv_store& operator=(csv_store&& other) noexcept
     {
-        basic_csv_store(std::move(other)).swap(*this);
+        csv_store(std::move(other)).swap(*this);
         return *this;
     }
 
@@ -788,7 +788,7 @@ public:
         }
     }
 
-    void swap(basic_csv_store& other) noexcept
+    void swap(csv_store& other) noexcept
     {
         using std::swap;
         if (at_t::propagate_on_container_swap::value) {
@@ -801,7 +801,7 @@ public:
         swap(buffers_size_, other.buffers_size_);
     }
 
-    basic_csv_store& merge(basic_csv_store&& other) noexcept
+    csv_store& merge(csv_store&& other) noexcept
     {
         if (buffers_back_) {
             buffers_back_->next = other.buffers_;
@@ -857,8 +857,8 @@ private:
 
 template <class Ch, class Allocator>
 void swap(
-    basic_csv_store<Ch, Allocator>& left,
-    basic_csv_store<Ch, Allocator>& right) noexcept
+    csv_store<Ch, Allocator>& left,
+    csv_store<Ch, Allocator>& right) noexcept
 {
     left.swap(right);
 }
@@ -890,8 +890,7 @@ public:
         "Content shall be a container-of-container type of basic_csv_value");
 
 private:
-    using store_type =
-        detail::basic_csv_store<char_type, allocator_type>;
+    using store_type = detail::csv_store<char_type, allocator_type>;
     using at_t = typename std::allocator_traits<allocator_type>;
     using ra_t = typename at_t::template rebind_alloc<record_type>;
 

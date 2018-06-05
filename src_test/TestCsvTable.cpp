@@ -477,7 +477,7 @@ TYPED_TEST(TestCsvValue, Write)
 
 namespace privy {
 
-using store_t = detail::basic_csv_store<char, std::allocator<char>>;
+using store_t = detail::csv_store<char, std::allocator<char>>;
 
 static_assert(std::is_default_constructible<store_t>::value, "");
 static_assert(std::is_nothrow_move_constructible<store_t>::value, "");
@@ -498,7 +498,7 @@ class TestCsvStore : public furfurylic::test::BaseTest
 
 TEST_F(TestCsvStore, Basics)
 {
-    using store_t = detail::basic_csv_store<char, std::allocator<char>>;
+    using store_t = detail::csv_store<char, std::allocator<char>>;
 
     store_t store;
 
@@ -528,7 +528,7 @@ TEST_F(TestCsvStore, Basics)
 
 TEST_F(TestCsvStore, Merge)
 {
-    using store_t = detail::basic_csv_store<wchar_t, std::allocator<wchar_t>>;
+    using store_t = detail::csv_store<wchar_t, std::allocator<wchar_t>>;
 
     store_t store1;
     wchar_t* const buffer1 = store1.get_allocator().allocate(10);
@@ -562,7 +562,7 @@ TEST_F(TestCsvStore, Merge)
 
 TEST_F(TestCsvStore, Swap)
 {
-    using store_t = detail::basic_csv_store<char, std::allocator<char>>;
+    using store_t = detail::csv_store<char, std::allocator<char>>;
 
     store_t store1;
     char* const buffer11 = store1.get_allocator().allocate(3);
