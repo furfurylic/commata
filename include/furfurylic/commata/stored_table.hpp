@@ -30,7 +30,7 @@ namespace furfurylic {
 namespace commata {
 
 template <class Ch, class Tr = std::char_traits<Ch>>
-class basic_csv_value
+class basic_stored_value
 {
     Ch* begin_;
     Ch* end_;   // must point the terminating zero
@@ -52,23 +52,23 @@ public:
 
     static constexpr size_type npos = static_cast<size_type>(-1);
 
-    basic_csv_value() noexcept :
+    basic_stored_value() noexcept :
         begin_(empty_value), end_(empty_value)
     {
         assert(*end_ == Ch());
     }
 
-    basic_csv_value(Ch* begin, const Ch* end) noexcept :
+    basic_stored_value(Ch* begin, const Ch* end) noexcept :
         begin_(begin), end_(begin + (end - begin))
     {
         assert(*end_ == Ch());
     }
 
-    basic_csv_value(const basic_csv_value& other) noexcept :
+    basic_stored_value(const basic_stored_value& other) noexcept :
         begin_(other.begin_), end_(other.end_)
     {}
 
-    basic_csv_value& operator=(const basic_csv_value& other) noexcept
+    basic_stored_value& operator=(const basic_stored_value& other) noexcept
     {
         begin_ = other.begin_;
         end_ = other.end_;
@@ -234,7 +234,7 @@ public:
         erase(cend() - 1);
     }
 
-    basic_csv_value& erase(size_type pos = 0, size_type n = npos)
+    basic_stored_value& erase(size_type pos = 0, size_type n = npos)
     {
         check_pos(pos); // throw
         const auto xlen = std::min(n, size() - pos);    // length of removal
@@ -278,7 +278,7 @@ public:
         begin_ = end_;
     }
 
-    void swap(basic_csv_value& other) noexcept
+    void swap(basic_stored_value& other) noexcept
     {
         std::swap(begin_, other.begin_);
         std::swap(end_,   other.end_);
@@ -295,15 +295,15 @@ private:
 };
 
 template <class Ch, class Tr>
-constexpr typename basic_csv_value<Ch, Tr>::size_type
-    basic_csv_value<Ch, Tr>::npos;
+constexpr typename basic_stored_value<Ch, Tr>::size_type
+    basic_stored_value<Ch, Tr>::npos;
 
 template <class Ch, class Tr>
-Ch basic_csv_value<Ch, Tr>::empty_value[] = { Ch() };
+Ch basic_stored_value<Ch, Tr>::empty_value[] = { Ch() };
 
 template <class Ch, class Tr>
 void swap(
-    basic_csv_value<Ch, Tr>& left, basic_csv_value<Ch, Tr>& right) noexcept
+    basic_stored_value<Ch, Tr>& left, basic_stored_value<Ch, Tr>& right) noexcept
 {
     return left.swap(right);
 }
@@ -311,7 +311,7 @@ void swap(
 namespace detail {
 
 template <class Left, class Right>
-bool csv_value_eq(const Left& left, const Right& right) noexcept
+bool stored_value_eq(const Left& left, const Right& right) noexcept
 {
     return std::equal(
         left.cbegin(), left.cend(), right.cbegin(), right.cend(),
@@ -319,7 +319,7 @@ bool csv_value_eq(const Left& left, const Right& right) noexcept
 }
 
 template <class Left, class Right>
-bool csv_string_lt(const Left& left, const Right& right) noexcept
+bool stored_value_lt(const Left& left, const Right& right) noexcept
 {
     return std::lexicographical_compare(
         left.cbegin(), left.cend(), right.cbegin(), right.cend(),
@@ -330,15 +330,15 @@ bool csv_string_lt(const Left& left, const Right& right) noexcept
 
 template <class Ch, class Tr>
 bool operator==(
-    const basic_csv_value<Ch, Tr>& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
-    return detail::csv_value_eq(left, right);
+    return detail::stored_value_eq(left, right);
 }
 
 template <class Ch, class Tr>
 bool operator==(
-    const basic_csv_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& left,
     const Ch* right) noexcept
 {
     // If left is "abc\0def" and right is "abc" followed by '\0'
@@ -357,31 +357,31 @@ bool operator==(
 
 template <class Ch, class Tr, class Allocator>
 bool operator==(
-    const basic_csv_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& left,
     const std::basic_string<Ch, Tr, Allocator>& right) noexcept
 {
-    return detail::csv_value_eq(left, right);
+    return detail::stored_value_eq(left, right);
 }
 
 template <class Left, class Ch, class Tr>
 bool operator==(
     const Left& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return right == left;
 }
 
 template <class Ch, class Tr>
 bool operator!=(
-    const basic_csv_value<Ch, Tr>& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return !(left == right);
 }
 
 template <class Ch, class Tr, class Right>
 bool operator!=(
-    const basic_csv_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& left,
     const Right& right) noexcept
 {
     return !(left == right);
@@ -390,22 +390,22 @@ bool operator!=(
 template <class Left, class Ch, class Tr>
 bool operator!=(
     const Left& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return !(left == right);
 }
 
 template <class Ch, class Tr>
 bool operator<(
-    const basic_csv_value<Ch, Tr>& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
-    return detail::csv_string_lt(left, right);
+    return detail::stored_value_lt(left, right);
 }
 
 template <class Ch, class Tr>
 bool operator<(
-    const basic_csv_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& left,
     const Ch* right) noexcept
 {
     for (auto l : left) {
@@ -424,7 +424,7 @@ bool operator<(
 template <class Ch, class Tr>
 bool operator<(
     const Ch* left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
     for (auto r : right) {
         if (Tr::eq(*left, Ch())) {
@@ -441,31 +441,31 @@ bool operator<(
 
 template <class Ch, class Tr>
 bool operator<(
-    const basic_csv_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& left,
     const std::basic_string<Ch, Tr>& right) noexcept
 {
-    return detail::csv_string_lt(left, right);
+    return detail::stored_value_lt(left, right);
 }
 
 template <class Ch, class Tr>
 bool operator<(
     const std::basic_string<Ch, Tr>& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
-    return detail::csv_string_lt(left, right);
+    return detail::stored_value_lt(left, right);
 }
 
 template <class Ch, class Tr>
 bool operator>(
-    const basic_csv_value<Ch, Tr>& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return right < left;
 }
 
 template <class Ch, class Tr, class Right>
 bool operator>(
-    const basic_csv_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& left,
     const Right& right) noexcept
 {
     return right < left;
@@ -474,22 +474,22 @@ bool operator>(
 template <class Left, class Ch, class Tr>
 bool operator>(
     const Left& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return right < left;
 }
 
 template <class Ch, class Tr>
 bool operator<=(
-    const basic_csv_value<Ch, Tr>& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return !(right < left);
 }
 
 template <class Ch, class Tr, class Right>
 bool operator<=(
-    const basic_csv_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& left,
     const Right& right) noexcept
 {
     return !(right < left);
@@ -498,22 +498,22 @@ bool operator<=(
 template <class Left, class Ch, class Tr>
 bool operator<=(
     const Left& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return !(right < left);
 }
 
 template <class Ch, class Tr>
 bool operator>=(
-    const basic_csv_value<Ch, Tr>& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return !(left < right);
 }
 
 template <class Ch, class Tr, class Right>
 bool operator>=(
-    const basic_csv_value<Ch, Tr>& left,
+    const basic_stored_value<Ch, Tr>& left,
     const Right& right) noexcept
 {
     return !(left < right);
@@ -522,14 +522,14 @@ bool operator>=(
 template <class Left, class Ch, class Tr>
 bool operator>=(
     const Left& left,
-    const basic_csv_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return !(left < right);
 }
 
 template <class Ch, class Tr>
 std::basic_ostream<Ch, Tr>& operator<<(
-    std::basic_ostream<Ch, Tr>& os, const basic_csv_value<Ch, Tr>& o)
+    std::basic_ostream<Ch, Tr>& os, const basic_stored_value<Ch, Tr>& o)
 {
     // In C++17, this function will be able to be implemented in terms of
     // string_view's operator<<
@@ -541,18 +541,19 @@ std::basic_ostream<Ch, Tr>& operator<<(
         });
 }
 
-using csv_value = basic_csv_value<char, std::char_traits<char>>;
-using wcsv_value = basic_csv_value<wchar_t, std::char_traits<wchar_t>>;
+using stored_value = basic_stored_value<char, std::char_traits<char>>;
+using wstored_value = basic_stored_value<wchar_t, std::char_traits<wchar_t>>;
 
 }}
 
 namespace std {
 
 template <class Ch, class Tr>
-struct hash<furfurylic::commata::basic_csv_value<Ch, Tr>>
+struct hash<furfurylic::commata::basic_stored_value<Ch, Tr>>
 {
     std::size_t operator()(
-        const furfurylic::commata::basic_csv_value<Ch, Tr>& x) const noexcept
+        const furfurylic::commata::basic_stored_value<Ch, Tr>& x)
+            const noexcept
     {
         // We'd like this function to return the same hash value as
         // std::basic_string, but it is impossible, so we borrow
@@ -620,7 +621,7 @@ struct is_nothrow_swappable :
 {};
 
 template <class Ch, class Allocator>
-class csv_store :
+class table_store :
     member_like_base<Allocator>
 {
     class buffer_type
@@ -704,18 +705,18 @@ public:
     using allocator_type = Allocator;
     using security = std::vector<Ch*>;
 
-    csv_store() :
-        csv_store(std::allocator_arg)
+    table_store() :
+        table_store(std::allocator_arg)
     {}
 
-    csv_store(
+    table_store(
         std::allocator_arg_t, const Allocator& alloc = Allocator()) :
         member_like_base<Allocator>(alloc),
         buffers_(nullptr), buffers_back_(nullptr),
         buffers_size_(0)
     {}
 
-    csv_store(csv_store&& other) noexcept :
+    table_store(table_store&& other) noexcept :
         member_like_base<Allocator>(std::move(other.get())),
         buffers_(other.buffers_), buffers_back_(other.buffers_back_),
         buffers_size_(other.buffers_size_)
@@ -725,16 +726,16 @@ public:
         other.buffers_size_ = 0;
     }
 
-    ~csv_store()
+    ~table_store()
     {
         while (buffers_) {
             reduce_buffer();
         }
     }
 
-    csv_store& operator=(csv_store&& other) noexcept
+    table_store& operator=(table_store&& other) noexcept
     {
-        csv_store(std::move(other)).swap(*this);
+        table_store(std::move(other)).swap(*this);
         return *this;
     }
 
@@ -788,7 +789,7 @@ public:
         }
     }
 
-    void swap(csv_store& other) noexcept
+    void swap(table_store& other) noexcept
     {
         using std::swap;
         if (at_t::propagate_on_container_swap::value) {
@@ -801,7 +802,7 @@ public:
         swap(buffers_size_, other.buffers_size_);
     }
 
-    csv_store& merge(csv_store&& other) noexcept
+    table_store& merge(table_store&& other) noexcept
     {
         if (buffers_back_) {
             buffers_back_->next = other.buffers_;
@@ -857,8 +858,8 @@ private:
 
 template <class Ch, class Allocator>
 void swap(
-    csv_store<Ch, Allocator>& left,
-    csv_store<Ch, Allocator>& right) noexcept
+    table_store<Ch, Allocator>& left,
+    table_store<Ch, Allocator>& right) noexcept
 {
     left.swap(right);
 }
@@ -866,11 +867,11 @@ void swap(
 } // end namespace detail
 
 template <class Content, class Allocator, bool Transposes>
-class csv_table_builder;
+class stored_table_builder;
 
 template <class Content, class Allocator =
     std::allocator<typename Content::value_type::value_type::value_type>>
-class basic_csv_table
+class basic_stored_table
 {
 public:
     using allocator_type  = Allocator;
@@ -886,21 +887,22 @@ public:
     static_assert(
         std::is_same<
             value_type,
-            basic_csv_value<char_type, traits_type>>::value,
-        "Content shall be a container-of-container type of basic_csv_value");
+            basic_stored_value<char_type, traits_type>>::value,
+        "Content shall be a container-of-container type of "
+        "basic_stored_value");
 
 private:
-    using store_type = detail::csv_store<char_type, allocator_type>;
+    using store_type = detail::table_store<char_type, allocator_type>;
     using at_t = typename std::allocator_traits<allocator_type>;
     using ra_t = typename at_t::template rebind_alloc<record_type>;
 
-    friend class csv_table_builder<Content, Allocator, true>;
-    friend class csv_table_builder<Content, Allocator, false>;
+    friend class stored_table_builder<Content, Allocator, true>;
+    friend class stored_table_builder<Content, Allocator, false>;
 
     template <class ContentL, class ContentR, class AllocatorXY>
-    friend basic_csv_table<ContentL, AllocatorXY>& operator+=(
-        basic_csv_table<ContentL, AllocatorXY>& left,
-        basic_csv_table<ContentR, AllocatorXY>&& right);
+    friend basic_stored_table<ContentL, AllocatorXY>& operator+=(
+        basic_stored_table<ContentL, AllocatorXY>& left,
+        basic_stored_table<ContentR, AllocatorXY>&& right);
 
 private:
     store_type store_;
@@ -908,36 +910,35 @@ private:
 
     std::size_t buffer_size_;
 
-private:
-    static constexpr std::size_t default_buffer_size =
-        std::min<std::size_t>(std::numeric_limits<std::size_t>::max(), 8192U);
-
 public:
-    basic_csv_table(std::size_t buffer_size = default_buffer_size) :
-        basic_csv_table(std::allocator_arg, Allocator(), buffer_size)
+    basic_stored_table(std::size_t buffer_size = default_buffer_size) :
+        basic_stored_table(std::allocator_arg, Allocator(), buffer_size)
     {}
 
-    basic_csv_table(std::allocator_arg_t,
+    basic_stored_table(std::allocator_arg_t,
         const Allocator& alloc = Allocator(),
         std::size_t buffer_size = default_buffer_size) :
-        basic_csv_table(std::uses_allocator<content_type, ra_t>(),
+        basic_stored_table(std::uses_allocator<content_type, ra_t>(),
             alloc, buffer_size)
     {}
 
 private:
     // For allocator-aware containers
-    basic_csv_table(std::true_type,
+    basic_stored_table(std::true_type,
         const Allocator& alloc, std::size_t buffer_size) :
         store_(std::allocator_arg, alloc), records_(ra_t(alloc)),
         buffer_size_(sanitize_buffer_size(buffer_size, alloc))
     {}
 
     // For not-allocator-aware containers
-    basic_csv_table(std::false_type,
+    basic_stored_table(std::false_type,
         const Allocator& alloc, std::size_t buffer_size) :
         store_(std::allocator_arg, alloc), records_(),
         buffer_size_(sanitize_buffer_size(buffer_size, alloc))
     {}
+
+    static constexpr std::size_t default_buffer_size =
+        std::min<std::size_t>(std::numeric_limits<std::size_t>::max(), 8192U);
 
     std::size_t sanitize_buffer_size(
         std::size_t buffer_size, const Allocator& alloc)
@@ -948,16 +949,16 @@ private:
     }
 
 public:
-    basic_csv_table(const basic_csv_table& other) :
-        basic_csv_table(std::allocator_arg,
+    basic_stored_table(const basic_stored_table& other) :
+        basic_stored_table(std::allocator_arg,
             at_t::select_on_container_copy_construction(other.get_allocator()),
             other)
     {}
 
 private:
-    basic_csv_table(std::allocator_arg_t,
-        const Allocator& alloc, const basic_csv_table& other) :
-        basic_csv_table(std::allocator_arg, alloc, other.get_buffer_size())
+    basic_stored_table(std::allocator_arg_t,
+        const Allocator& alloc, const basic_stored_table& other) :
+        basic_stored_table(std::allocator_arg, alloc, other.get_buffer_size())
     {
         for (const auto& r : other.content()) {
             const auto e = content().emplace(content().cend()); // throw
@@ -968,20 +969,20 @@ private:
     }
 
 public:
-    basic_csv_table(basic_csv_table&& other)
+    basic_stored_table(basic_stored_table&& other)
         noexcept(std::is_nothrow_move_constructible<content_type>::value) :
         store_(std::move(other.store_)),
         records_(std::move(other.records_)),
         buffer_size_(other.buffer_size_)
     {}
 
-    basic_csv_table& operator=(const basic_csv_table& other)
+    basic_stored_table& operator=(const basic_stored_table& other)
     {
         return assign(typename at_t::propagate_on_container_copy_assignment(),
             other);                 // throw
     }
 
-    basic_csv_table& operator=(basic_csv_table&& other)
+    basic_stored_table& operator=(basic_stored_table&& other)
         noexcept(
             std::is_nothrow_move_assignable<content_type>::value
          && std::allocator_traits<allocator_type>::
@@ -992,22 +993,24 @@ public:
     }
 
 private:
-    basic_csv_table& assign(std::true_type, const basic_csv_table& other)
+    basic_stored_table& assign(std::true_type, const basic_stored_table& other)
     {
-        basic_csv_table(other).swap(*this);                 // throw
+        basic_stored_table(other).swap(*this);                 // throw
         return *this;
     }
 
-    basic_csv_table& assign(std::false_type, const basic_csv_table& other)
+    basic_stored_table& assign(
+        std::false_type, const basic_stored_table& other)
     {
-        basic_csv_table(std::allocator_arg, get_allocator(), other)
+        basic_stored_table(std::allocator_arg, get_allocator(), other)
             .swap(*this);                                   // throw
         return *this;
     }
 
-    basic_csv_table& assign(std::true_type, basic_csv_table&& other) noexcept
+    basic_stored_table& assign(
+        std::true_type, basic_stored_table&& other) noexcept
     {
-        basic_csv_table(std::move(other)).swap(*this);
+        basic_stored_table(std::move(other)).swap(*this);
         return *this;
     }
 
@@ -1133,17 +1136,17 @@ public:
 
     void shrink_to_fit()
     {
-        basic_csv_table(*this).swap(*this);     // throw
+        basic_stored_table(*this).swap(*this);     // throw
     }
 
-    void swap(basic_csv_table& other)
+    void swap(basic_stored_table& other)
         noexcept(noexcept(std::declval<content_type&>().
                             swap(std::declval<content_type&>())))
     {
         using std::swap;
         assert((at_t::propagate_on_container_swap::value
              || (get_allocator() == other.get_allocator())) &&
-                "Swapping two basic_csv_tables with allocators of which "
+                "Swapping two basic_stored_tables with allocators of which "
                 "POCS is false and which do not equal each other delivers "
                 "an undefined behaviour; this is it");
         swap(content()   , other.content());        // ?
@@ -1165,8 +1168,8 @@ private:
 
 template <class Content, class Allocator>
 void swap(
-    basic_csv_table<Content, Allocator>& left,
-    basic_csv_table<Content, Allocator>& right)
+    basic_stored_table<Content, Allocator>& left,
+    basic_stored_table<Content, Allocator>& right)
     noexcept(noexcept(left.swap(right)))
 {
     left.swap(right);
@@ -1209,7 +1212,7 @@ auto nothrow_emigrate(T& from, T& to)
 }
 
 template <class ContentL, class ContentR>
-void append_csv_table_content_primitive(
+void append_stored_table_content_primitive(
     ContentL& left_content, ContentR&& right_content)
 {
     // We require:
@@ -1237,7 +1240,7 @@ void append_csv_table_content_primitive(
 }
 
 template <class RecordL, class AllocatorL, class ContentR>
-void append_csv_table_content_primitive(
+void append_stored_table_content_primitive(
     std::list<RecordL, AllocatorL>& left_content, ContentR&& right_content)
 {
     std::list<RecordL, AllocatorL> right(
@@ -1249,7 +1252,7 @@ void append_csv_table_content_primitive(
 }
 
 template <class ContentL, class ContentR>
-auto append_csv_table_content_adaptive(
+auto append_stored_table_content_adaptive(
     ContentL& left_content, ContentR&& right_content)
  -> std::enable_if_t<
         std::is_nothrow_move_assignable<
@@ -1291,7 +1294,7 @@ auto append_csv_table_content_adaptive(
 }
 
 template <class Record, class AllocatorL, class ContentR>
-auto append_csv_table_content_adaptive(
+auto append_stored_table_content_adaptive(
     std::list<Record, AllocatorL>& left_content, ContentR&& right_content)
  -> std::enable_if_t<
         std::is_nothrow_move_assignable<Record>::value
@@ -1320,7 +1323,7 @@ auto append_csv_table_content_adaptive(
 }
 
 template <class ContentL, class ContentR>
-auto append_csv_table_content_adaptive(
+auto append_stored_table_content_adaptive(
     ContentL& left_content, ContentR&& right_content)
  -> std::enable_if_t<
         !std::is_nothrow_move_assignable<
@@ -1330,44 +1333,45 @@ auto append_csv_table_content_adaptive(
 {
     // In fact, even if POCS == false, swapping is OK if allocators are equal;
     // we've decided, however, not to rescue such rare cases
-    append_csv_table_content_primitive(left_content, right_content);
+    append_stored_table_content_primitive(left_content, right_content);
 }
 
 template <class ContentL, class ContentR>
-auto append_csv_table_content(
+auto append_stored_table_content(
     ContentL& left_content, ContentR&& right_content)
  -> std::enable_if_t<!std::is_same<
         typename ContentL::value_type, typename ContentR::value_type>::value>
 {
-    append_csv_table_content_primitive(left_content, right_content);
+    append_stored_table_content_primitive(left_content, right_content);
 }
 
 template <class ContentL, class ContentR>
-auto append_csv_table_content(
+auto append_stored_table_content(
     ContentL& left_content, ContentR&& right_content)
  -> std::enable_if_t<std::is_same<
         typename ContentL::value_type, typename ContentR::value_type>::value>
 {
-    append_csv_table_content_adaptive(left_content, std::move(right_content));
+    append_stored_table_content_adaptive(
+        left_content, std::move(right_content));
 }
 
 template <class Record, class Allocator>
-void append_csv_table_content(
+void append_stored_table_content(
     std::list<Record, Allocator>& left_content,
     std::list<Record, Allocator>&& right_content)
 {
     if (left_content.get_allocator() == right_content.get_allocator()) {
         left_content.splice(left_content.cend(), right_content);
     } else {
-        append_csv_table_content_adaptive(
+        append_stored_table_content_adaptive(
             left_content, std::move(right_content));    // throw
     }
 }
 
 template <class ContentL, class AllocatorX, class ContentR, class AllocatorY>
-basic_csv_table<ContentL, AllocatorX>& import_whole_csv_table(
-    basic_csv_table<ContentL, AllocatorX>& left,
-    const basic_csv_table<ContentR, AllocatorY>& right)
+basic_stored_table<ContentL, AllocatorX>& import_whole_stored_table(
+    basic_stored_table<ContentL, AllocatorX>& left,
+    const basic_stored_table<ContentR, AllocatorY>& right)
 {
     // We require:
     // - if an exception is thrown by ContentL's emplace() at the end,
@@ -1395,10 +1399,10 @@ basic_csv_table<ContentL, AllocatorX>& import_whole_csv_table(
 template <
     class RecordL, class AllocatorL, class AllocatorX,
     class ContentR, class AllocatorY>
-basic_csv_table<std::list<RecordL, AllocatorL>, AllocatorX>&
-import_whole_csv_table(
-    basic_csv_table<std::list<RecordL, AllocatorL>, AllocatorX>& left,
-    const basic_csv_table<ContentR, AllocatorY>& right)
+basic_stored_table<std::list<RecordL, AllocatorL>, AllocatorX>&
+import_whole_stored_table(
+    basic_stored_table<std::list<RecordL, AllocatorL>, AllocatorX>& left,
+    const basic_stored_table<ContentR, AllocatorY>& right)
 {
     std::list<RecordL, AllocatorL> l(
         left.content().get_allocator());            // throw
@@ -1416,30 +1420,31 @@ import_whole_csv_table(
 }
 
 template <class T>
-struct is_basic_csv_table : std::false_type
+struct is_basic_stored_table : std::false_type
 {};
 
 template <class Content, class Allocator>
-struct is_basic_csv_table<basic_csv_table<Content, Allocator>> : std::true_type
+struct is_basic_stored_table<basic_stored_table<Content, Allocator>> :
+    std::true_type
 {};
 
 } // end namespace detail
 
 template <class ContentL, class ContentR, class AllocatorL, class AllocatorR>
-basic_csv_table<ContentL, AllocatorL>& operator+=(
-    basic_csv_table<ContentL, AllocatorL>& left,
-    const basic_csv_table<ContentR, AllocatorR>& right)
+basic_stored_table<ContentL, AllocatorL>& operator+=(
+    basic_stored_table<ContentL, AllocatorL>& left,
+    const basic_stored_table<ContentR, AllocatorR>& right)
 {
-    return detail::import_whole_csv_table(left, right);
+    return detail::import_whole_stored_table(left, right);
 }
 
 template <class ContentL, class ContentR, class Allocator>
-basic_csv_table<ContentL, Allocator>& operator+=(
-    basic_csv_table<ContentL, Allocator>& left,
-    basic_csv_table<ContentR, Allocator>&& right)
+basic_stored_table<ContentL, Allocator>& operator+=(
+    basic_stored_table<ContentL, Allocator>& left,
+    basic_stored_table<ContentR, Allocator>&& right)
 {
     if (left.store_.get_allocator() == right.store_.get_allocator()) {
-        detail::append_csv_table_content(
+        detail::append_stored_table_content(
             left.content(), std::move(right.content()));    // throw
         left.store_.merge(std::move(right.store_));
         return left;
@@ -1451,8 +1456,8 @@ basic_csv_table<ContentL, Allocator>& operator+=(
 template <class TableL, class TableR>
 auto operator+(TableL&& left, TableR&& right)
  -> std::enable_if_t<
-        detail::is_basic_csv_table<std::decay_t<TableL>>::value
-     && detail::is_basic_csv_table<std::decay_t<TableR>>::value,
+        detail::is_basic_stored_table<std::decay_t<TableL>>::value
+     && detail::is_basic_stored_table<std::decay_t<TableR>>::value,
         std::decay_t<TableL>>
 {
     std::decay_t<TableL> l(std::forward<TableL>(left));     // throw
@@ -1460,8 +1465,10 @@ auto operator+(TableL&& left, TableR&& right)
     return l;
 }
 
-using csv_table  = basic_csv_table<std::deque<std::vector<csv_value>>>;
-using wcsv_table = basic_csv_table<std::deque<std::vector<wcsv_value>>>;
+using stored_table  =
+    basic_stored_table<std::deque<std::vector<stored_value>>>;
+using wstored_table =
+    basic_stored_table<std::deque<std::vector<wstored_value>>>;
 
 namespace detail {
 
@@ -1538,11 +1545,12 @@ using arrange = std::conditional_t<Transposes,
 } // end namespace detail
 
 template <class Content, class Allocator, bool Transposes = false>
-class csv_table_builder :
+class stored_table_builder :
     detail::arrange<Content, Transposes>
 {
 public:
-    using char_type = typename basic_csv_table<Content, Allocator>::char_type;
+    using char_type =
+        typename basic_stored_table<Content, Allocator>::char_type;
 
 private:
     char_type* current_buffer_holder_;
@@ -1552,19 +1560,19 @@ private:
     char_type* field_begin_;
     char_type* field_end_;
 
-    basic_csv_table<Content, Allocator>* table_;
+    basic_stored_table<Content, Allocator>* table_;
 
 private:
     using at_t = std::allocator_traits<Allocator>;
 
 public:
-    csv_table_builder(basic_csv_table<Content, Allocator>& table) :
+    stored_table_builder(basic_stored_table<Content, Allocator>& table) :
         detail::arrange<Content, Transposes>(table.content()),
         current_buffer_holder_(nullptr), current_buffer_(nullptr),
         field_begin_(nullptr), table_(&table)
     {}
 
-    csv_table_builder(csv_table_builder&& other) noexcept :
+    stored_table_builder(stored_table_builder&& other) noexcept :
         detail::arrange<Content, Transposes>(other),
         current_buffer_holder_(other.current_buffer_holder_),
         current_buffer_(other.current_buffer_),
@@ -1575,7 +1583,7 @@ public:
         other.current_buffer_holder_ = nullptr;
     }
 
-    ~csv_table_builder()
+    ~stored_table_builder()
     {
         if (current_buffer_holder_) {
             auto a = table_->get_allocator();
@@ -1683,16 +1691,16 @@ public:
 };
 
 template <class Content, class Allocator>
-auto make_csv_table_builder(basic_csv_table<Content, Allocator>& table)
+auto make_stored_table_builder(basic_stored_table<Content, Allocator>& table)
 {
-    return csv_table_builder<Content, Allocator>(table);
+    return stored_table_builder<Content, Allocator>(table);
 }
 
 template <class Content, class Allocator>
-auto make_transposed_csv_table_builder(
-    basic_csv_table<Content, Allocator>& table)
+auto make_transposed_stored_table_builder(
+    basic_stored_table<Content, Allocator>& table)
 {
-    return csv_table_builder<Content, Allocator, true>(table);
+    return stored_table_builder<Content, Allocator, true>(table);
 }
 
 }}

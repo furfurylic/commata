@@ -23,7 +23,7 @@
 
 #include <gtest/gtest.h>
 
-#include <furfurylic/commata/csv_table.hpp>
+#include <furfurylic/commata/stored_table.hpp>
 #include <furfurylic/commata/primitive_parser.hpp>
 
 #include "BaseTest.hpp"
@@ -32,47 +32,47 @@
 using namespace furfurylic::commata;
 using namespace furfurylic::test;
 
-static_assert(noexcept(csv_value(nullptr, nullptr)), "");
-static_assert(std::is_nothrow_copy_constructible<csv_value>::value, "");
-static_assert(std::is_nothrow_copy_assignable<csv_value>::value, "");
-static_assert(noexcept(std::declval<csv_value&>().begin()), "");
-static_assert(noexcept(std::declval<csv_value&>().end()), "");
-static_assert(noexcept(std::declval<csv_value&>().rbegin()), "");
-static_assert(noexcept(std::declval<csv_value&>().rend()), "");
-static_assert(noexcept(std::declval<csv_value&>().cbegin()), "");
-static_assert(noexcept(std::declval<csv_value&>().cend()), "");
-static_assert(noexcept(std::declval<csv_value&>().crbegin()), "");
-static_assert(noexcept(std::declval<csv_value&>().crend()), "");
-static_assert(noexcept(std::declval<const csv_value&>().begin()), "");
-static_assert(noexcept(std::declval<const csv_value&>().end()), "");
-static_assert(noexcept(std::declval<const csv_value&>().rbegin()), "");
-static_assert(noexcept(std::declval<const csv_value&>().rend()), "");
-static_assert(noexcept(std::declval<csv_value&>().c_str()), "");
-static_assert(noexcept(std::declval<const csv_value&>().c_str()), "");
-static_assert(noexcept(std::declval<csv_value&>().data()), "");
-static_assert(noexcept(std::declval<const csv_value&>().data()), "");
-static_assert(noexcept(std::declval<csv_value&>().size()), "");
-static_assert(noexcept(std::declval<csv_value&>().length()), "");
-static_assert(noexcept(std::declval<csv_value&>().empty()), "");
-static_assert(noexcept(std::declval<csv_value&>().clear()), "");
+static_assert(noexcept(stored_value(nullptr, nullptr)), "");
+static_assert(std::is_nothrow_copy_constructible<stored_value>::value, "");
+static_assert(std::is_nothrow_copy_assignable<stored_value>::value, "");
+static_assert(noexcept(std::declval<stored_value&>().begin()), "");
+static_assert(noexcept(std::declval<stored_value&>().end()), "");
+static_assert(noexcept(std::declval<stored_value&>().rbegin()), "");
+static_assert(noexcept(std::declval<stored_value&>().rend()), "");
+static_assert(noexcept(std::declval<stored_value&>().cbegin()), "");
+static_assert(noexcept(std::declval<stored_value&>().cend()), "");
+static_assert(noexcept(std::declval<stored_value&>().crbegin()), "");
+static_assert(noexcept(std::declval<stored_value&>().crend()), "");
+static_assert(noexcept(std::declval<const stored_value&>().begin()), "");
+static_assert(noexcept(std::declval<const stored_value&>().end()), "");
+static_assert(noexcept(std::declval<const stored_value&>().rbegin()), "");
+static_assert(noexcept(std::declval<const stored_value&>().rend()), "");
+static_assert(noexcept(std::declval<stored_value&>().c_str()), "");
+static_assert(noexcept(std::declval<const stored_value&>().c_str()), "");
+static_assert(noexcept(std::declval<stored_value&>().data()), "");
+static_assert(noexcept(std::declval<const stored_value&>().data()), "");
+static_assert(noexcept(std::declval<stored_value&>().size()), "");
+static_assert(noexcept(std::declval<stored_value&>().length()), "");
+static_assert(noexcept(std::declval<stored_value&>().empty()), "");
+static_assert(noexcept(std::declval<stored_value&>().clear()), "");
 static_assert(noexcept(
-    std::declval<csv_value&>().swap(std::declval<csv_value&>())), "");
+    std::declval<stored_value&>().swap(std::declval<stored_value&>())), "");
 static_assert(noexcept(
-    swap(std::declval<csv_value&>(), std::declval<csv_value&>())), "");
+    swap(std::declval<stored_value&>(), std::declval<stored_value&>())), "");
 
 template <class Ch>
-struct TestCsvValue : BaseTest
+struct TestStoredValue : BaseTest
 {};
 
 typedef testing::Types<char, wchar_t> Chs;
 
-TYPED_TEST_CASE(TestCsvValue, Chs);
+TYPED_TEST_CASE(TestStoredValue, Chs);
 
-TYPED_TEST(TestCsvValue, Iterators)
+TYPED_TEST(TestStoredValue, Iterators)
 {
     using char_t = TypeParam;
     using string_t = std::basic_string<char_t>;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto ch = char_helper<char_t>::ch;
     const auto str = char_helper<char_t>::str;
@@ -108,10 +108,10 @@ TYPED_TEST(TestCsvValue, Iterators)
     }
 }
 
-TYPED_TEST(TestCsvValue, Empty)
+TYPED_TEST(TestStoredValue, Empty)
 {
     using char_t = TypeParam;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto str0 = char_helper<char_t>::str0;
 
@@ -130,11 +130,11 @@ TYPED_TEST(TestCsvValue, Empty)
     ASSERT_TRUE(cv.rbegin() == cv.rend());
 }
 
-TYPED_TEST(TestCsvValue, Relations)
+TYPED_TEST(TestStoredValue, Relations)
 {
     using char_t = TypeParam;
     using string_t = std::basic_string<char_t>;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto str = char_helper<char_t>::str;
 
@@ -212,10 +212,10 @@ TYPED_TEST(TestCsvValue, Relations)
     }
 }
 
-TYPED_TEST(TestCsvValue, Sizes)
+TYPED_TEST(TestStoredValue, Sizes)
 {
     using char_t = TypeParam;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto str0 = char_helper<char_t>::str0;
 
@@ -228,11 +228,11 @@ TYPED_TEST(TestCsvValue, Sizes)
     ASSERT_FALSE(cv.empty());
 }
 
-TYPED_TEST(TestCsvValue, RelationsSpecial)
+TYPED_TEST(TestStoredValue, RelationsSpecial)
 {
     using char_t = TypeParam;
     using string_t = std::basic_string<char_t>;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto ch = char_helper<char_t>::ch;
 
@@ -248,10 +248,10 @@ TYPED_TEST(TestCsvValue, RelationsSpecial)
     ASSERT_TRUE(v > s0.c_str());    // ditto
 }
 
-TYPED_TEST(TestCsvValue, FrontBack)
+TYPED_TEST(TestStoredValue, FrontBack)
 {
     using char_t = TypeParam;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto ch = char_helper<char_t>::ch;
     const auto str = char_helper<char_t>::str;
@@ -276,10 +276,10 @@ TYPED_TEST(TestCsvValue, FrontBack)
     ASSERT_EQ(str("care"), cv);
 }
 
-TYPED_TEST(TestCsvValue, Pop)
+TYPED_TEST(TestStoredValue, Pop)
 {
     using char_t = TypeParam;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto str = char_helper<char_t>::str;
     const auto str0 = char_helper<char_t>::str0;
@@ -295,10 +295,10 @@ TYPED_TEST(TestCsvValue, Pop)
     ASSERT_EQ(str("urge"), v);
 }
 
-TYPED_TEST(TestCsvValue, Erase)
+TYPED_TEST(TestStoredValue, Erase)
 {
     using char_t = TypeParam;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto ch = char_helper<char_t>::ch;
     const auto str = char_helper<char_t>::str;
@@ -331,10 +331,10 @@ TYPED_TEST(TestCsvValue, Erase)
     ASSERT_TRUE(v.empty());
 }
 
-TYPED_TEST(TestCsvValue, EraseByIndex)
+TYPED_TEST(TestStoredValue, EraseByIndex)
 {
     using char_t = TypeParam;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto str = char_helper<char_t>::str;
     const auto str0 = char_helper<char_t>::str0;
@@ -355,10 +355,10 @@ TYPED_TEST(TestCsvValue, EraseByIndex)
     ASSERT_EQ(str("late"), v);
 }
 
-TYPED_TEST(TestCsvValue, IndexAccess)
+TYPED_TEST(TestStoredValue, IndexAccess)
 {
     using char_t = TypeParam;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto ch = char_helper<char_t>::ch;
     const auto str = char_helper<char_t>::str;
@@ -376,10 +376,10 @@ TYPED_TEST(TestCsvValue, IndexAccess)
     ASSERT_EQ(str("strong"), cv);
 }
 
-TYPED_TEST(TestCsvValue, At)
+TYPED_TEST(TestStoredValue, At)
 {
     using char_t = TypeParam;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto ch = char_helper<char_t>::ch;
     const auto str = char_helper<char_t>::str;
@@ -402,10 +402,10 @@ TYPED_TEST(TestCsvValue, At)
     ASSERT_EQ(str("strange"), cv);
 }
 
-TYPED_TEST(TestCsvValue, Data)
+TYPED_TEST(TestStoredValue, Data)
 {
     using char_t = TypeParam;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto str = char_helper<char_t>::str;
     const auto str0 = char_helper<char_t>::str0;
@@ -424,10 +424,10 @@ TYPED_TEST(TestCsvValue, Data)
     ASSERT_EQ(str("wrong"), cv);
 }
 
-TYPED_TEST(TestCsvValue, Swap)
+TYPED_TEST(TestStoredValue, Swap)
 {
     using char_t = TypeParam;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto str0 = char_helper<char_t>::str0;
 
@@ -448,11 +448,11 @@ TYPED_TEST(TestCsvValue, Swap)
     ASSERT_EQ(b2, v2.cbegin());
 }
 
-TYPED_TEST(TestCsvValue, Write)
+TYPED_TEST(TestStoredValue, Write)
 {
     using namespace std;
     using char_t = TypeParam;
-    using value_t = basic_csv_value<char_t>;
+    using value_t = basic_stored_value<char_t>;
     using string_t = basic_string<char_t>;
     using stream_t = basic_stringstream<char_t>;
 
@@ -478,7 +478,7 @@ TYPED_TEST(TestCsvValue, Write)
 
 namespace privy {
 
-using store_t = detail::csv_store<char, std::allocator<char>>;
+using store_t = detail::table_store<char, std::allocator<char>>;
 
 static_assert(std::is_default_constructible<store_t>::value, "");
 static_assert(std::is_nothrow_move_constructible<store_t>::value, "");
@@ -494,12 +494,12 @@ static_assert(noexcept(
 
 }
 
-class TestCsvStore : public furfurylic::test::BaseTest
+class TestTableStore : public furfurylic::test::BaseTest
 {};
 
-TEST_F(TestCsvStore, Basics)
+TEST_F(TestTableStore, Basics)
 {
-    using store_t = detail::csv_store<char, std::allocator<char>>;
+    using store_t = detail::table_store<char, std::allocator<char>>;
 
     store_t store;
 
@@ -527,9 +527,9 @@ TEST_F(TestCsvStore, Basics)
     }
 }
 
-TEST_F(TestCsvStore, Merge)
+TEST_F(TestTableStore, Merge)
 {
-    using store_t = detail::csv_store<wchar_t, std::allocator<wchar_t>>;
+    using store_t = detail::table_store<wchar_t, std::allocator<wchar_t>>;
 
     store_t store1;
     wchar_t* const buffer1 = store1.get_allocator().allocate(10);
@@ -561,9 +561,9 @@ TEST_F(TestCsvStore, Merge)
     }
 }
 
-TEST_F(TestCsvStore, Swap)
+TEST_F(TestTableStore, Swap)
 {
-    using store_t = detail::csv_store<char, std::allocator<char>>;
+    using store_t = detail::table_store<char, std::allocator<char>>;
 
     store_t store1;
     char* const buffer11 = store1.get_allocator().allocate(3);
@@ -600,16 +600,16 @@ static_assert(!detail::is_std_deque<std::list<std::vector<int>>>::value, "");
 static_assert(detail::is_std_list<std::list<double>>::value, "");
 static_assert(!detail::is_std_list<std::vector<std::deque<int>>>::value, "");
 
-static_assert(std::is_default_constructible<csv_table>::value, "");
-static_assert(noexcept(std::declval<csv_table&>().content()), "");
-static_assert(noexcept(std::declval<const csv_table&>().content()), "");
+static_assert(std::is_default_constructible<stored_table>::value, "");
+static_assert(noexcept(std::declval<stored_table&>().content()), "");
+static_assert(noexcept(std::declval<const stored_table&>().content()), "");
 
-struct TestCsvTable : furfurylic::test::BaseTest
+struct TestStoredTable : furfurylic::test::BaseTest
 {};
 
-TEST_F(TestCsvTable, RewriteValue)
+TEST_F(TestStoredTable, RewriteValue)
 {
-    wcsv_table table(10U);
+    wstored_table table(10U);
 
     // First record
     table.content().emplace_back();
@@ -641,9 +641,9 @@ TEST_F(TestCsvTable, RewriteValue)
      || (v.cend() <= table[0][0].cbegin()));
 }
 
-TEST_F(TestCsvTable, Copy)
+TEST_F(TestStoredTable, Copy)
 {
-    csv_table table1(10U);
+    stored_table table1(10U);
     table1.content().emplace_back(2U);
     table1.content().emplace_back(1U);
     table1.rewrite_value(table1[0][0], "sky");              // 4 chars
@@ -654,7 +654,7 @@ TEST_F(TestCsvTable, Copy)
 
     // Copy ctor
 
-    csv_table table2(table1);
+    stored_table table2(table1);
 
     ASSERT_EQ(2U, table2.size());
     ASSERT_EQ(2U, table2[0].size());
@@ -686,14 +686,14 @@ TEST_F(TestCsvTable, Copy)
     ASSERT_EQ("cat", table1[0][0]);
 }
 
-TEST_F(TestCsvTable, MergeLists)
+TEST_F(TestStoredTable, MergeLists)
 {
-    basic_csv_table<std::list<std::vector<csv_value>>> table1(10U);
+    basic_stored_table<std::list<std::vector<stored_value>>> table1(10U);
     table1.content().emplace_back();
     table1.content().back().emplace_back();
     table1.rewrite_value(table1.content().back().back(), "apples");
 
-    basic_csv_table<std::list<std::vector<csv_value>>> table2(10U);
+    basic_stored_table<std::list<std::vector<stored_value>>> table2(10U);
     table2.content().emplace_back();
     table2.content().back().emplace_back();
     table2.rewrite_value(table2.content().back().back(), "oranges");
@@ -715,35 +715,35 @@ TEST_F(TestCsvTable, MergeLists)
 }
 
 template <class ContentLR>
-struct TestCsvTableMerge : furfurylic::test::BaseTest
+struct TestStoredTableMerge : furfurylic::test::BaseTest
 {};
 
 typedef testing::Types<
     std::pair<
-        std::vector<std::vector<csv_value>>,
-        std::deque<std::vector<csv_value>>>,
+        std::vector<std::vector<stored_value>>,
+        std::deque<std::vector<stored_value>>>,
     std::pair<
-        std::deque<std::deque<csv_value>>,
-        std::deque<std::vector<csv_value>>>,
+        std::deque<std::deque<stored_value>>,
+        std::deque<std::vector<stored_value>>>,
     std::pair<
-        std::list<std::deque<csv_value>>,
-        std::deque<std::vector<csv_value>>>,
+        std::list<std::deque<stored_value>>,
+        std::deque<std::vector<stored_value>>>,
     std::pair<
-        std::list<std::vector<csv_value>>,
-        std::deque<std::vector<csv_value>>>> ContentLRs;
+        std::list<std::vector<stored_value>>,
+        std::deque<std::vector<stored_value>>>> ContentLRs;
 
-TYPED_TEST_CASE(TestCsvTableMerge, ContentLRs);
+TYPED_TEST_CASE(TestStoredTableMerge, ContentLRs);
 
-TYPED_TEST(TestCsvTableMerge, Merge)
+TYPED_TEST(TestStoredTableMerge, Merge)
 {
-    basic_csv_table<typename TypeParam::first_type> table1(20U);
+    basic_stored_table<typename TypeParam::first_type> table1(20U);
     table1.content().emplace_back();
     table1.content().begin()->resize(3);
     table1.rewrite_value((*table1.content().begin())[0], "Lorem");
     table1.rewrite_value((*table1.content().begin())[1], "ipsum");
     table1.rewrite_value((*table1.content().begin())[2], "dolor");
 
-    basic_csv_table<typename TypeParam::second_type> table2(25U);
+    basic_stored_table<typename TypeParam::second_type> table2(25U);
     table2.content().resize(2);
     table2.content().begin() ->resize(2);
     table2.content().rbegin()->resize(1);
@@ -761,31 +761,32 @@ TYPED_TEST(TestCsvTableMerge, Merge)
     ASSERT_EQ("consectetur", (*table1.content().crbegin())          [0]);
 }
 
-struct TestCsvTableAllocator : BaseTest
+struct TestStoredTableAllocator : BaseTest
 {};
 
-TEST_F(TestCsvTableAllocator, Basics)
+TEST_F(TestStoredTableAllocator, Basics)
 {
     using AA = tracking_allocator<std::allocator<char>>;
     using A = std::scoped_allocator_adaptor<AA>;
 
     using Record = std::vector<
-        csv_value,
-        typename std::allocator_traits<A>::template rebind_alloc<csv_value>>;
+        stored_value,
+        typename std::allocator_traits<A>::
+            template rebind_alloc<stored_value>>;
     using Content = std::deque<
         Record,
         typename std::allocator_traits<A>::template rebind_alloc<Record>>;
 
     std::vector<std::pair<char*, char*>> allocated1;
     AA a(allocated1);
-    basic_csv_table<Content, A> table(std::allocator_arg, a, 1024);
+    basic_stored_table<Content, A> table(std::allocator_arg, a, 1024);
     {
         const char* s = "Col1,Col2\n"
                         "aaa,bbb,ccc\n"
                         "AAA,BBB,CCC\n";
         std::stringbuf in(s);
         try {
-            parse(&in, make_csv_table_builder(table));
+            parse(&in, make_stored_table_builder(table));
         } catch (const csv_error& e) {
             FAIL() << e.info();
         }
@@ -799,13 +800,13 @@ TEST_F(TestCsvTableAllocator, Basics)
 
     std::vector<std::pair<char*, char*>> allocated2;
     AA b(allocated2);
-    basic_csv_table<Content, A> table2(std::allocator_arg, b);
+    basic_stored_table<Content, A> table2(std::allocator_arg, b);
     {
         const char* s = "Col1,Col2\n"
                         "xxx,yyy\n";
         std::stringbuf in(s);
         try {
-            parse(&in, make_csv_table_builder(table2));
+            parse(&in, make_stored_table_builder(table2));
         } catch (const csv_error& e) {
             FAIL() << e.info();
         }
@@ -828,16 +829,17 @@ TEST_F(TestCsvTableAllocator, Basics)
 }
 
 static_assert(std::is_nothrow_move_constructible<
-    csv_table_builder<wcsv_table::content_type,
+    stored_table_builder<wstored_table::content_type,
         std::allocator<wchar_t>>>::value, "");
 static_assert(std::is_nothrow_move_constructible<
-    csv_table_builder<csv_table::content_type,
+    stored_table_builder<stored_table::content_type,
         std::allocator<char>, true>>::value, "");
 
-struct TestCsvTableBuilder : furfurylic::test::BaseTestWithParam<std::size_t>
+struct TestStoredTableBuilder :
+    furfurylic::test::BaseTestWithParam<std::size_t>
 {};
 
-TEST_P(TestCsvTableBuilder, Basics)
+TEST_P(TestStoredTableBuilder, Basics)
 {
     const char* s = "\r\n\n"
                     "\"key_a\",key_b,value_a,value_b\n"
@@ -845,9 +847,9 @@ TEST_P(TestCsvTableBuilder, Basics)
                     "ka2,\"\",\"\"\"va2\"\"\",vb2\n"
                     "\"k\"\"a\"\"1\",\"kb\"\"13\"\"\",\"vb\n3\"";
     std::stringbuf in(s);
-    csv_table table(GetParam());
+    stored_table table(GetParam());
     try {
-        parse(&in, make_csv_table_builder(table));
+        parse(&in, make_stored_table_builder(table));
     } catch (const csv_error& e) {
         FAIL() << e.info();
     }
@@ -875,14 +877,14 @@ TEST_P(TestCsvTableBuilder, Basics)
     ASSERT_EQ("vb\n3",    table[3][2]);
 }
 
-TEST_P(TestCsvTableBuilder, EmptyRowAware)
+TEST_P(TestStoredTableBuilder, EmptyRowAware)
 {
     const char* s = "\r1,2,3,4\na,b\r\n\nx,y,z\r\n\"\"";
     std::stringbuf in(s);
-    csv_table table(GetParam());
+    stored_table table(GetParam());
     try {
         parse(&in, make_empty_physical_row_aware(
-            make_csv_table_builder(table)));
+            make_stored_table_builder(table)));
     } catch (const csv_error& e) {
         FAIL() << e.info();
     }
@@ -906,15 +908,15 @@ TEST_P(TestCsvTableBuilder, EmptyRowAware)
     ASSERT_EQ("", table[5][0]);
 }
 
-TEST_P(TestCsvTableBuilder, Transpose)
+TEST_P(TestStoredTableBuilder, Transpose)
 {
     const char* s = "Col1,Col2\n"
                     "aaa,bbb,ccc\n"
                     "AAA,BBB,CCC\n";
     std::stringbuf in(s);
-    csv_table table(GetParam());
+    stored_table table(GetParam());
     try {
-        parse(&in, make_transposed_csv_table_builder(table));
+        parse(&in, make_transposed_stored_table_builder(table));
     } catch (const csv_error& e) {
         FAIL() << e.info();
     }
@@ -936,7 +938,7 @@ TEST_P(TestCsvTableBuilder, Transpose)
     const char* t = "AAa,BBb";
     std::stringbuf in2(t);
     try {
-        parse(&in2, make_transposed_csv_table_builder(table));
+        parse(&in2, make_transposed_stored_table_builder(table));
     } catch (const csv_error& e) {
         FAIL() << e.info();
     }
@@ -950,4 +952,6 @@ TEST_P(TestCsvTableBuilder, Transpose)
     ASSERT_EQ("", table[2][3]);
 }
 
-INSTANTIATE_TEST_CASE_P(, TestCsvTableBuilder, testing::Values(2, 11, 1024));
+INSTANTIATE_TEST_CASE_P(,
+    TestStoredTableBuilder, testing::Values(2, 11, 1024));
+
