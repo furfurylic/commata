@@ -76,7 +76,7 @@ struct accepts_x :
 
 template <class Ch, class Tr = std::char_traits<Ch>,
           class Allocator = std::allocator<Ch>>
-class csv_scanner :
+class table_scanner :
     detail::member_like_base<Allocator>
 {
     using string_t = std::basic_string<Ch, Tr, Allocator>;
@@ -108,13 +108,13 @@ class csv_scanner :
     struct field_scanner
     {
         virtual ~field_scanner() {}
-        virtual void field_value(Ch* begin, Ch* end, csv_scanner& me) = 0;
-        virtual void field_value(string_t&& value, csv_scanner& me) = 0;
+        virtual void field_value(Ch* begin, Ch* end, table_scanner& me) = 0;
+        virtual void field_value(string_t&& value, table_scanner& me) = 0;
     };
 
     struct header_field_scanner : field_scanner
     {
-        virtual void so_much_for_header(csv_scanner& me) = 0;
+        virtual void so_much_for_header(table_scanner& me) = 0;
     };
 
     template <class HeaderScanner>
@@ -129,7 +129,7 @@ class csv_scanner :
             scanner_(std::move(s))
         {}
 
-        void field_value(Ch* begin, Ch* end, csv_scanner& me) override
+        void field_value(Ch* begin, Ch* end, table_scanner& me) override
         {
             const range_t range(begin, end);
             if (!scanner_(me.j_, &range, me)) {
@@ -137,12 +137,12 @@ class csv_scanner :
             }
         }
 
-        void field_value(string_t&& value, csv_scanner& me) override
+        void field_value(string_t&& value, table_scanner& me) override
         {
             field_value(&value[0], &value[0] + value.size(), me);
         }
 
-        void so_much_for_header(csv_scanner& me) override
+        void so_much_for_header(table_scanner& me) override
         {
             if (!scanner_(me.j_, static_cast<const range_t*>(nullptr), me)) {
                 me.remove_header_field_scanner();
@@ -165,7 +165,7 @@ class csv_scanner :
             scanner_(std::move(s))
         {}
 
-        void field_value(Ch* begin, Ch* end, csv_scanner& me) override
+        void field_value(Ch* begin, Ch* end, table_scanner& me) override
         {
             field_value_r(
                 typename detail::accepts_range<
@@ -173,7 +173,7 @@ class csv_scanner :
                 begin, end, me);
         }
 
-        void field_value(string_t&& value, csv_scanner& me) override
+        void field_value(string_t&& value, table_scanner& me) override
         {
             field_value_s(
                 typename detail::accepts_x<
@@ -193,23 +193,23 @@ class csv_scanner :
         }
 
     private:
-        void field_value_r(std::true_type, Ch* begin, Ch* end, csv_scanner&)
+        void field_value_r(std::true_type, Ch* begin, Ch* end, table_scanner&)
         {
             scanner().field_value(begin, end);
         }
 
         void field_value_r(std::false_type,
-            Ch* begin, Ch* end, csv_scanner& me)
+            Ch* begin, Ch* end, table_scanner& me)
         {
             scanner().field_value(string_t(begin, end, me.get_allocator()));
         }
 
-        void field_value_s(std::true_type, string_t&& value, csv_scanner&)
+        void field_value_s(std::true_type, string_t&& value, table_scanner&)
         {
             scanner().field_value(std::move(value));
         }
 
-        void field_value_s(std::false_type, string_t&& value, csv_scanner&)
+        void field_value_s(std::false_type, string_t&& value, table_scanner&)
         {
             scanner().field_value(
                 &*value.begin(), &*value.begin() + value.size());
@@ -306,23 +306,24 @@ public:
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits<Allocator>::size_type;
 
-    explicit csv_scanner(
+    explicit table_scanner(
         std::size_t header_record_count = 0U,
         size_type buffer_size = default_buffer_size) :
-        csv_scanner(std::allocator_arg, Allocator(),
+        table_scanner(std::allocator_arg, Allocator(),
             header_record_count, buffer_size)
     {}
 
     template <
         class HeaderFieldScanner,
         class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
-    explicit csv_scanner(
+    explicit table_scanner(
         HeaderFieldScanner s,
         size_type buffer_size = default_buffer_size) :
-        csv_scanner(std::allocator_arg, Allocator(), std::move(s), buffer_size)
+        table_scanner(
+            std::allocator_arg, Allocator(), std::move(s), buffer_size)
     {}
 
-    csv_scanner(
+    table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
         std::size_t header_record_count = 0U,
         size_type buffer_size = default_buffer_size) :
@@ -339,7 +340,7 @@ public:
     template <
         class HeaderFieldScanner,
         class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
-    csv_scanner(
+    table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
         HeaderFieldScanner s,
         size_type buffer_size = default_buffer_size) :
@@ -354,7 +355,7 @@ public:
         end_scanner_(nullptr), fragmented_value_(alloc)
     {}
 
-    csv_scanner(csv_scanner&& other) noexcept(noexcept(
+    table_scanner(table_scanner&& other) noexcept(noexcept(
         std::is_nothrow_move_constructible<decltype(scanners_)>::value
      && std::is_nothrow_move_constructible<string_t>::value)) :
         detail::member_like_base<Allocator>(std::move(other)),
@@ -371,7 +372,7 @@ public:
         other.end_scanner_ = nullptr;
     }
 
-    ~csv_scanner()
+    ~table_scanner()
     {
         if (buffer_) {
             at_t::deallocate(this->get(), buffer_, buffer_size_);

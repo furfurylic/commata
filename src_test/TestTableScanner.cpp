@@ -24,7 +24,7 @@
 
 #include <furfurylic/commata/primitive_parser.hpp>
 #include <furfurylic/commata/csv_error.hpp>
-#include <furfurylic/commata/csv_scanner.hpp>
+#include <furfurylic/commata/table_scanner.hpp>
 
 #include "BaseTest.hpp"
 #include "tracking_allocator.hpp"
@@ -122,7 +122,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Correct)
 
     std::vector<value_t> values;
 
-    csv_scanner<char_t> h;
+    table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_stringbuf<char_t> buf(str(" 40\r\n63\t\n-10"));
@@ -149,7 +149,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, UpperLimit)
 
     std::vector<value_t> values;
 
-    csv_scanner<char_t> h;
+    table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
@@ -194,7 +194,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
 
     std::vector<value_t> values;
 
-    csv_scanner<char_t> h;
+    table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
@@ -240,7 +240,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     std::vector<value_t> values1;
     std::vector<value_t> values2;
     
-    csv_scanner<char_t> h;
+    table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values0,
         fail_if_skipped<value_t>(),
         replace_if_conversion_failed<value_t>(
@@ -288,7 +288,7 @@ TEST_F(TestFieldTranslatorForChar, Correct)
     std::vector<uint_least8_t> values1;     // maybe unsigned char
     std::deque<char> values2;
 
-    csv_scanner<char> h;
+    table_scanner<char> h;
     h.set_field_scanner(0, make_field_translator(values0));
     h.set_field_scanner(1, make_field_translator(values1));
     h.set_field_scanner(2, make_field_translator(values2));
@@ -322,7 +322,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, Correct)
 
     std::vector<value_t> values;
 
-    csv_scanner<char_t> h;
+    table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_string<char_t> s = str("6.02e23\t\r -5\n");
@@ -365,7 +365,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, UpperLimit)
 
     std::vector<value_t> values;
 
-    csv_scanner<char_t> h;
+    table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
@@ -403,7 +403,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, LowerLimit)
 
     std::vector<value_t> values;
 
-    csv_scanner<char_t> h;
+    table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
@@ -434,7 +434,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
 
     std::deque<std::basic_string<TypeParam>> values;
 
-    csv_scanner<TypeParam> h;
+    table_scanner<TypeParam> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_string<TypeParam> s = str("ABC  \n\"xy\rz\"\n\"\"");
@@ -453,15 +453,15 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
 }
 
 static_assert(
-    std::uses_allocator<csv_scanner<char>, std::allocator<char>>::value, "");
+    std::uses_allocator<table_scanner<char>, std::allocator<char>>::value, "");
 
 template <class Ch>
-struct TestCsvScanner : BaseTest
+struct TestTableScanner : BaseTest
 {};
 
-TYPED_TEST_CASE(TestCsvScanner, Chs);
+TYPED_TEST_CASE(TestTableScanner, Chs);
 
-TYPED_TEST(TestCsvScanner, Indexed)
+TYPED_TEST(TestTableScanner, Indexed)
 {
     using string_t = std::basic_string<TypeParam>;
 
@@ -476,7 +476,7 @@ TYPED_TEST(TestCsvScanner, Indexed)
     int values5[2];
     string_t values6;
 
-    csv_scanner<TypeParam> h(1U);
+    table_scanner<TypeParam> h(1U);
     h.set_field_scanner(0,
         make_field_translator<long>(std::front_inserter(values0)));
     h.set_field_scanner(2, make_field_translator(values22));
@@ -533,13 +533,13 @@ TYPED_TEST(TestCsvScanner, Indexed)
     ASSERT_EQ(str("[fixa][tive]"), values6);
 }
 
-TYPED_TEST(TestCsvScanner, RecordEndScanner)
+TYPED_TEST(TestTableScanner, RecordEndScanner)
 {
     const auto str = char_helper<TypeParam>::str;
 
     std::vector<std::basic_string<TypeParam>> v;
 
-    csv_scanner<TypeParam> h(1U);
+    table_scanner<TypeParam> h(1U);
     h.set_field_scanner(0, make_field_translator(v));
 
     ASSERT_FALSE(h.has_record_end_scanner());
@@ -568,11 +568,11 @@ TYPED_TEST(TestCsvScanner, RecordEndScanner)
     ASSERT_EQ(expected, v);
 }
 
-TYPED_TEST(TestCsvScanner, MultilinedHeader)
+TYPED_TEST(TestTableScanner, MultilinedHeader)
 {
     std::deque<long> values;
 
-    csv_scanner<TypeParam> h(3U);
+    table_scanner<TypeParam> h(3U);
     h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_stringstream<TypeParam> s;
@@ -590,7 +590,7 @@ TYPED_TEST(TestCsvScanner, MultilinedHeader)
     ASSERT_EQ(expected, values);
 }
 
-TYPED_TEST(TestCsvScanner, SkippedWithNoErrors)
+TYPED_TEST(TestTableScanner, SkippedWithNoErrors)
 {
     using string_t = std::basic_string<TypeParam>;
 
@@ -599,7 +599,7 @@ TYPED_TEST(TestCsvScanner, SkippedWithNoErrors)
     std::deque<string_t> values0;
     std::deque<int> values1;
 
-    csv_scanner<TypeParam> h;
+    table_scanner<TypeParam> h;
     h.set_field_scanner(0, make_field_translator(
         values0, default_if_skipped<string_t>()));
     h.set_field_scanner(1, make_field_translator(
@@ -629,12 +629,12 @@ TYPED_TEST(TestCsvScanner, SkippedWithNoErrors)
     ASSERT_EQ(expected1, values1);
 }
 
-TYPED_TEST(TestCsvScanner, SkippedWithErrors)
+TYPED_TEST(TestTableScanner, SkippedWithErrors)
 {
     std::deque<int> values0;
     std::deque<int> values1;
 
-    csv_scanner<TypeParam> h;
+    table_scanner<TypeParam> h;
     h.set_field_scanner(0, make_field_translator(
         values0, default_if_skipped<int>(10)));
     h.set_field_scanner(1, make_field_translator(values1));
@@ -656,14 +656,14 @@ TYPED_TEST(TestCsvScanner, SkippedWithErrors)
     ASSERT_EQ(expected1, values1);
 }
 
-TYPED_TEST(TestCsvScanner, HeaderScan)
+TYPED_TEST(TestTableScanner, HeaderScan)
 {
     const auto str = char_helper<TypeParam>::str;
 
     std::vector<unsigned> ids;
     std::vector<short> values1;
 
-    csv_scanner<TypeParam> h(
+    table_scanner<TypeParam> h(
         [&ids, &values1, str, this]
         (std::size_t j, const auto* range, auto& f) {
             const std::basic_string<TypeParam>
@@ -695,11 +695,11 @@ TYPED_TEST(TestCsvScanner, HeaderScan)
     ASSERT_EQ(123, values1[0]);
 }
 
-TYPED_TEST(TestCsvScanner, HeaderScanToTheEnd)
+TYPED_TEST(TestTableScanner, HeaderScanToTheEnd)
 {
     const auto str = char_helper<TypeParam>::str;
 
-    csv_scanner<TypeParam> h(
+    table_scanner<TypeParam> h(
         [](std::size_t j, const auto* range, auto&) {
             if (j == 1) {
                 if (range) {
@@ -735,7 +735,7 @@ public:
     {}
 
     bool operator()(std::size_t j,
-        const std::pair<Ch*, Ch*>* range, csv_scanner<Ch>& s)
+        const std::pair<Ch*, Ch*>* range, table_scanner<Ch>& s)
     {
         if (i_ == 0) {
             if (range) {
@@ -759,13 +759,13 @@ public:
 
 }
 
-TYPED_TEST(TestCsvScanner, MultilinedHeaderScan)
+TYPED_TEST(TestTableScanner, MultilinedHeaderScan)
 {
     const auto str = char_helper<TypeParam>::str;
 
     std::map<std::basic_string<TypeParam>, std::vector<double>> fx;
     two_lined_fx_header_scanner<TypeParam> h(fx);
-    csv_scanner<TypeParam> scanner(std::move(h));
+    table_scanner<TypeParam> scanner(std::move(h));
     auto s = str("AUD,AUD,EUR\r"
                  "JPY,USD,USD\r"
                  "80.0,0.9,1.3\r"
@@ -811,14 +811,14 @@ protected:
 
 }
 
-TYPED_TEST(TestCsvScanner, LocaleBased)
+TYPED_TEST(TestTableScanner, LocaleBased)
 {
     const auto str = char_helper<TypeParam>::str;
 
     std::vector<int> values0;
     std::deque<double> values1;
 
-    csv_scanner<TypeParam> h;
+    table_scanner<TypeParam> h;
     std::locale loc(std::locale::classic(),
         new french_style_numpunct<TypeParam>);
     h.set_field_scanner(0, make_field_translator(values0, loc));
@@ -836,7 +836,7 @@ TYPED_TEST(TestCsvScanner, LocaleBased)
     ASSERT_EQ(12345678.5, values1[0]);
 }
 
-TYPED_TEST(TestCsvScanner, BufferSize)
+TYPED_TEST(TestTableScanner, BufferSize)
 {
     using string_t = std::basic_string<TypeParam>;
 
@@ -846,7 +846,7 @@ TYPED_TEST(TestCsvScanner, BufferSize)
     std::vector<int> values1;
 
     for (std::size_t buffer_size : { 2U, 3U, 4U, 7U  }) {
-        csv_scanner<TypeParam> h(0U, buffer_size);
+        table_scanner<TypeParam> h(0U, buffer_size);
         h.set_field_scanner(0, make_field_translator(values0));
         h.set_field_scanner(1, make_field_translator(values1));
 
@@ -875,7 +875,7 @@ TYPED_TEST(TestCsvScanner, BufferSize)
     }
 }
 
-TYPED_TEST(TestCsvScanner, Allocators)
+TYPED_TEST(TestTableScanner, Allocators)
 {
     using Alloc = tracking_allocator<std::allocator<TypeParam>>;
     using Tr = std::char_traits<TypeParam>;
@@ -891,7 +891,7 @@ TYPED_TEST(TestCsvScanner, Allocators)
     std::size_t total2 = 0U;
     Alloc a2(allocated2, total2);
 
-    csv_scanner<TypeParam, Tr, Alloc> scanner(
+    table_scanner<TypeParam, Tr, Alloc> scanner(
         std::allocator_arg, a0, 0U, 20U);   // make underflow happen
 
     // The same allocator as the scanner
@@ -959,15 +959,15 @@ struct stateful_header_scanner
 
 }
 
-struct TestCsvScannerReference : BaseTest
+struct TestTableScannerReference : BaseTest
 {};
 
-TEST_F(TestCsvScannerReference, HeaderScanner)
+TEST_F(TestTableScannerReference, HeaderScanner)
 {
     std::vector<int> values;
     stateful_header_scanner header_scanner;
     header_scanner.values = &values;
-    csv_scanner<char> scanner(std::ref(header_scanner));
+    table_scanner<char> scanner(std::ref(header_scanner));
 
     header_scanner.index = 1;
 
@@ -982,12 +982,12 @@ TEST_F(TestCsvScannerReference, HeaderScanner)
     ASSERT_EQ(200, values[0]);
 }
 
-TEST_F(TestCsvScannerReference, FieldScanner)
+TEST_F(TestTableScannerReference, FieldScanner)
 {
     std::vector<int> values0;
     std::vector<int> values1;
     auto field_scanner = make_field_translator(values0);
-    csv_scanner<char> scanner;
+    table_scanner<char> scanner;
     scanner.set_field_scanner(0, std::ref(field_scanner));
 
     field_scanner = make_field_translator(values1);
@@ -1007,11 +1007,11 @@ TEST_F(TestCsvScannerReference, FieldScanner)
     ASSERT_EQ(100, values1[0]);
 }
 
-TEST_F(TestCsvScannerReference, RecordEndScanner)
+TEST_F(TestTableScannerReference, RecordEndScanner)
 {
     std::vector<int> v;
 
-    csv_scanner<char> scanner;
+    table_scanner<char> scanner;
     scanner.set_field_scanner(0, make_field_translator(v));
 
     std::function<void()> record_end_scanner = [] {};
