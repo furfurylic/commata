@@ -908,6 +908,10 @@ private:
 
     std::size_t buffer_size_;
 
+private:
+    static constexpr std::size_t default_buffer_size =
+        std::min<std::size_t>(std::numeric_limits<std::size_t>::max(), 8192U);
+
 public:
     basic_csv_table(std::size_t buffer_size = default_buffer_size) :
         basic_csv_table(std::allocator_arg, Allocator(), buffer_size)
@@ -935,9 +939,6 @@ private:
         buffer_size_(sanitize_buffer_size(buffer_size, alloc))
     {}
 
-    static constexpr std::size_t default_buffer_size =
-        std::min<std::size_t>(std::numeric_limits<std::size_t>::max(), 8192U);
-
     std::size_t sanitize_buffer_size(
         std::size_t buffer_size, const Allocator& alloc)
     {
@@ -953,6 +954,20 @@ public:
             other)
     {}
 
+private:
+    basic_csv_table(std::allocator_arg_t,
+        const Allocator& alloc, const basic_csv_table& other) :
+        basic_csv_table(std::allocator_arg, alloc, other.get_buffer_size())
+    {
+        for (const auto& r : other.content()) {
+            const auto e = content().emplace(content().cend()); // throw
+            for (const auto& v : r) {
+                e->insert(e->cend(), import_value(v));          // throw
+            }
+        }
+    }
+
+public:
     basic_csv_table(basic_csv_table&& other)
         noexcept(std::is_nothrow_move_constructible<content_type>::value) :
         store_(std::move(other.store_)),
@@ -977,19 +992,6 @@ public:
     }
 
 private:
-    basic_csv_table(std::allocator_arg_t,
-        const Allocator& alloc, const basic_csv_table& other) :
-        basic_csv_table(std::allocator_arg, alloc, other.get_buffer_size())
-    {
-        for (const auto& r : other.content()) {
-            content().emplace(content().cend());        // throw
-            auto& rr = *content().rbegin();
-            for (const auto& v : r) {
-                rr.emplace(rr.cend(), import_value(v)); // throw
-            }
-        }
-    }
-
     basic_csv_table& assign(std::true_type, const basic_csv_table& other)
     {
         basic_csv_table(other).swap(*this);                 // throw

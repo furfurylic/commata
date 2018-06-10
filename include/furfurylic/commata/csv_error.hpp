@@ -33,7 +33,7 @@ struct npos_impl
     constexpr static T npos = static_cast<T>(-1);
 };
 
-// to define this in a header, npos_impl is a template
+// To define this in a header, npos_impl is a template
 template <class T>
 constexpr T npos_impl<T>::npos;
 
@@ -55,14 +55,14 @@ public:
         physical_position_(npos, npos)
     {}
 
-    // copy/move ctors and copy/move assignment ops are explicitly defined
+    // Copy/move ctors and copy/move assignment ops are explicitly defined
     // so that they are noexcept
 
     csv_error(const csv_error& other) noexcept :
         std::exception(other),
         what_(other.what_),
         physical_position_(other.physical_position_)
-        // according to C++14 20.3.2 (1), pair's copy ctor is noexcept
+        // According to C++14 20.3.2 (1), pair's copy ctor is noexcept
     {}
 
     csv_error(csv_error&& other) noexcept :
@@ -77,7 +77,7 @@ public:
         std::exception::operator=(other);
         what_ = other.what_;
         physical_position_ = other.physical_position_;
-        // according to C++14 20.3.2 (1), pair's assignments are noexcept
+        // According to C++14 20.3.2 (1), pair's assignments are noexcept
         return *this;
     }
 
@@ -113,7 +113,7 @@ public:
 
 namespace detail {
 
-// prints a non-negative integer value in the decimal system
+// Prints a non-negative integer value in the decimal system
 // into a sufficient-length buffer
 template <std::size_t N>
 std::streamsize print_pos(char (&s)[N], std::size_t pos)

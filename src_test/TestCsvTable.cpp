@@ -142,6 +142,7 @@ TYPED_TEST(TestCsvValue, Relations)
         { "plastic", "elastic" },       // same length, differ at front
         { "Maria", "Mario" },           // same length, differ at back
         { "galactic", "galactica" },    // have same prefix, lengths differ
+        { "running", "run" },           // have same prefix, lengths differ
         { "identical", "identical" },   // identical
         { "", "empty" }                 // empty
     };
