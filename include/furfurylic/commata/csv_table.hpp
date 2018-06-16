@@ -1470,7 +1470,7 @@ struct arrange_as_is
 {
     using char_type = typename Content::value_type::value_type::value_type;
 
-    explicit arrange_as_is(const Content&)
+    explicit arrange_as_is(Content&)
     {}
 
     void new_record(Content& content) const
@@ -1491,42 +1491,42 @@ class arrange_transposing
 {
     using record_t = typename Content::value_type;
 
+    // Current physical record index; is my current field index
     typename record_t::size_type i_;
-    typename record_t::value_type::size_type j_;
+
+    // Points my current record
+    typename Content::iterator j_;
 
 public:
     using char_type = typename Content::value_type::value_type::value_type;
 
-    explicit arrange_transposing(const Content& content) :
+    explicit arrange_transposing(Content& content) :
         i_(std::accumulate(
             content.cbegin(), content.cend(),
             static_cast<decltype(i_)>(0),
             [](const auto& a, const auto& rec) {
                 return std::max(a, rec.size());
-            })),
-        j_(0)
+            }))
     {}
 
     void new_record(Content& content)
     {
-        for (auto& vertical : content) {
-            vertical.emplace(vertical.cend());  // throw
-        }
         ++i_;
-        j_ = 0;
+        for (auto& rec : content) {
+            rec.insert(rec.cend(), i_ - rec.size(),
+                typename record_t::value_type());   // throw
+        }
+        j_ = content.begin();
     }
 
     void new_value(Content& content, char_type* first, const char_type* last)
     {
         assert(i_ > 0);
-        if (content.size() == j_) {
-            // the second argument is supplied to comply with the sequence
-            // container requirements
-            content.emplace(content.cend(),
+        if (content.end() == j_) {
+            j_ = content.emplace(content.cend(),
                 i_, typename record_t::value_type());   // throw
         }
-        std::next(content.begin(), j_)->back() =
-            typename record_t::value_type(first, last);
+        j_->back() = typename record_t::value_type(first, last);
         ++j_;
     }
 };
