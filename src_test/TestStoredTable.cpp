@@ -24,7 +24,7 @@
 #include <gtest/gtest.h>
 
 #include <furfurylic/commata/stored_table.hpp>
-#include <furfurylic/commata/primitive_parser.hpp>
+#include <furfurylic/commata/parse_csv.hpp>
 
 #include "BaseTest.hpp"
 #include "tracking_allocator.hpp"
@@ -786,7 +786,7 @@ TEST_F(TestStoredTableAllocator, Basics)
                         "AAA,BBB,CCC\n";
         std::stringbuf in(s);
         try {
-            parse(&in, make_stored_table_builder(table));
+            parse_csv(&in, make_stored_table_builder(table));
         } catch (const text_error& e) {
             FAIL() << e.info();
         }
@@ -806,7 +806,7 @@ TEST_F(TestStoredTableAllocator, Basics)
                         "xxx,yyy\n";
         std::stringbuf in(s);
         try {
-            parse(&in, make_stored_table_builder(table2));
+            parse_csv(&in, make_stored_table_builder(table2));
         } catch (const text_error& e) {
             FAIL() << e.info();
         }
@@ -849,7 +849,7 @@ TEST_P(TestStoredTableBuilder, Basics)
     std::stringbuf in(s);
     stored_table table(GetParam());
     try {
-        parse(&in, make_stored_table_builder(table));
+        parse_csv(&in, make_stored_table_builder(table));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -883,7 +883,7 @@ TEST_P(TestStoredTableBuilder, EmptyRowAware)
     std::stringbuf in(s);
     stored_table table(GetParam());
     try {
-        parse(&in, make_empty_physical_row_aware(
+        parse_csv(&in, make_empty_physical_row_aware(
             make_stored_table_builder(table)));
     } catch (const text_error& e) {
         FAIL() << e.info();
@@ -916,7 +916,7 @@ TEST_P(TestStoredTableBuilder, Transpose)
     std::stringbuf in(s);
     stored_table table(GetParam());
     try {
-        parse(&in, make_transposed_stored_table_builder(table));
+        parse_csv(&in, make_transposed_stored_table_builder(table));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -938,7 +938,7 @@ TEST_P(TestStoredTableBuilder, Transpose)
     const char* t = "AAa,BBb";
     std::stringbuf in2(t);
     try {
-        parse(&in2, make_transposed_stored_table_builder(table));
+        parse_csv(&in2, make_transposed_stored_table_builder(table));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }

@@ -46,11 +46,11 @@ enum class state : std::int_fast8_t
 };
 
 template <state s>
-struct handler
+struct parse_step
 {};
 
 template <>
-struct handler<state::left_of_value>
+struct parse_step<state::left_of_value>
 {
     template <class Parser>
     void normal(Parser& parser, typename Parser::char_type c) const
@@ -95,7 +95,7 @@ struct handler<state::left_of_value>
 };
 
 template <>
-struct handler<state::in_value>
+struct parse_step<state::in_value>
 {
     template <class Parser>
     void normal(Parser& parser, typename Parser::char_type c) const
@@ -138,7 +138,7 @@ struct handler<state::in_value>
 };
 
 template <>
-struct handler<state::right_of_open_quote>
+struct parse_step<state::right_of_open_quote>
 {
     template <class Parser>
     void normal(Parser& parser, typename Parser::char_type c) const
@@ -164,7 +164,7 @@ struct handler<state::right_of_open_quote>
 };
 
 template <>
-struct handler<state::in_quoted_value>
+struct parse_step<state::in_quoted_value>
 {
     template <class Parser>
     void normal(Parser& parser, typename Parser::char_type c) const
@@ -192,7 +192,7 @@ struct handler<state::in_quoted_value>
 };
 
 template <>
-struct handler<state::in_quoted_value_after_quote>
+struct parse_step<state::in_quoted_value_after_quote>
 {
     template <class Parser>
     void normal(Parser& parser, typename Parser::char_type c) const
@@ -235,7 +235,7 @@ struct handler<state::in_quoted_value_after_quote>
 };
 
 template <>
-struct handler<state::after_cr>
+struct parse_step<state::after_cr>
 {
     template <class Parser>
     void normal(Parser& parser, typename Parser::char_type c) const
@@ -278,7 +278,7 @@ struct handler<state::after_cr>
 };
 
 template <>
-struct handler<state::after_lf>
+struct parse_step<state::after_lf>
 {
     template <class Parser>
     void normal(Parser& parser, typename Parser::char_type c) const
@@ -415,15 +415,16 @@ public:
 
 struct thru_buffer_control
 {
-    template <class Sink>
-    std::pair<typename Sink::char_type*, std::size_t> do_get_buffer(Sink* f)
+    template <class Handler>
+    std::pair<typename Handler::char_type*, std::size_t> do_get_buffer(
+        Handler* f)
     {
         return f->get_buffer(); // throw
     }
 
-    template <class Sink>
+    template <class Handler>
     void do_release_buffer(
-        const typename Sink::char_type* buffer, Sink* f) noexcept
+        const typename Handler::char_type* buffer, Handler* f) noexcept
     {
         return f->release_buffer(buffer);
     }
@@ -481,81 +482,81 @@ struct has_empty_physical_row :
     decltype(has_empty_physical_row_impl::check<T>(nullptr))
 {};
 
-template <class Sink>
+template <class Handler>
 struct is_full_fledged :
     std::integral_constant<bool,
-        with_buffer_control<Sink>::value
-     && has_start_buffer<Sink>::value && has_end_buffer<Sink>::value
-     && has_empty_physical_row<Sink>::value>
+        with_buffer_control<Handler>::value
+     && has_start_buffer<Handler>::value && has_end_buffer<Handler>::value
+     && has_empty_physical_row<Handler>::value>
 {};
 
-template <class Sink, class BufferControl>
-class full_fledged_sink :
+template <class Handler, class BufferControl>
+class full_fledged_handler :
     BufferControl
 {
-    static_assert(!is_full_fledged<Sink>::value, "");
+    static_assert(!is_full_fledged<Handler>::value, "");
 
-    Sink sink_;
+    Handler handler_;
 
 public:
-    using char_type = typename Sink::char_type;
+    using char_type = typename Handler::char_type;
 
-    full_fledged_sink(Sink&& sink, BufferControl&& buffer_engine) :
+    full_fledged_handler(Handler&& handler, BufferControl&& buffer_engine) :
         BufferControl(std::move(buffer_engine)),
-        sink_(std::move(sink))
+        handler_(std::move(handler))
     {}
 
     std::pair<char_type*, std::size_t> get_buffer()
     {
-        return this->do_get_buffer(&sink_);
+        return this->do_get_buffer(&handler_);
     }
 
     void release_buffer(const char_type* buffer) noexcept
     {
-        this->do_release_buffer(buffer, &sink_);
+        this->do_release_buffer(buffer, &handler_);
     }
 
     void start_buffer(
         const char_type* buffer_begin, const char_type* buffer_end)
     {
-        start_buffer(has_start_buffer<Sink>(), buffer_begin, buffer_end);
+        start_buffer(has_start_buffer<Handler>(), buffer_begin, buffer_end);
     }
 
     void end_buffer(const char_type* buffer_end)
     {
-        end_buffer(has_end_buffer<Sink>(), buffer_end);
+        end_buffer(has_end_buffer<Handler>(), buffer_end);
     }
 
     void start_record(const char_type* record_begin)
     {
-        sink_.start_record(record_begin);
+        handler_.start_record(record_begin);
     }
 
     bool update(const char_type* first, const char_type* last)
     {
-        return sink_.update(first, last);
+        return handler_.update(first, last);
     }
 
     bool finalize(const char_type* first, const char_type* last)
     {
-        return sink_.finalize(first, last);
+        return handler_.finalize(first, last);
     }
 
     bool end_record(const char_type* end)
     {
-        return sink_.end_record(end);
+        return handler_.end_record(end);
     }
 
     bool empty_physical_row(const char_type* where)
     {
-        return empty_physical_row(has_empty_physical_row<Sink>(), where);
+        return empty_physical_row(has_empty_physical_row<Handler>(), where);
     }
 
 private:
     void start_buffer(std::true_type,
         const char_type* buffer_begin, const char_type* buffer_end)
     {
-        sink_.start_buffer(buffer_begin, buffer_end);
+        handler_.start_buffer(buffer_begin, buffer_end);
     }
 
     void start_buffer(std::false_type, ...)
@@ -563,7 +564,7 @@ private:
 
     void end_buffer(std::true_type, const char_type* buffer_end)
     {
-        sink_.end_buffer(buffer_end);
+        handler_.end_buffer(buffer_end);
     }
 
     void end_buffer(std::false_type, ...)
@@ -571,7 +572,7 @@ private:
 
     bool empty_physical_row(std::true_type, const char_type* where)
     {
-        return sink_.empty_physical_row(where);
+        return handler_.empty_physical_row(where);
     }
 
     bool empty_physical_row(std::false_type, ...)
@@ -580,46 +581,46 @@ private:
     }
 };
 
-template <class Sink,
-    std::enable_if_t<!is_full_fledged<Sink>::value, std::nullptr_t>
+template <class Handler,
+    std::enable_if_t<!is_full_fledged<Handler>::value, std::nullptr_t>
         = nullptr>
-auto make_full_fledged(Sink&& sink)
+auto make_full_fledged(Handler&& handler)
 {
-    static_assert(with_buffer_control<Sink>::value, "");
-    return full_fledged_sink<Sink, thru_buffer_control>(
-        std::forward<Sink>(sink), thru_buffer_control());
+    static_assert(with_buffer_control<Handler>::value, "");
+    return full_fledged_handler<Handler, thru_buffer_control>(
+        std::forward<Handler>(handler), thru_buffer_control());
 }
 
-template <class Sink,
-    std::enable_if_t<is_full_fledged<Sink>::value, std::nullptr_t>
+template <class Handler,
+    std::enable_if_t<is_full_fledged<Handler>::value, std::nullptr_t>
         = nullptr>
-decltype(auto) make_full_fledged(Sink&& sink)
+decltype(auto) make_full_fledged(Handler&& handler)
 {
-    return std::forward<Sink>(sink);
+    return std::forward<Handler>(handler);
 }
 
-template <class Sink, class Allocator>
-auto make_full_fledged(Sink&& sink,
+template <class Handler, class Allocator>
+auto make_full_fledged(Handler&& handler,
     std::size_t buffer_size, const Allocator& alloc)
 {
-    static_assert(without_buffer_control<Sink>::value, "");
+    static_assert(without_buffer_control<Handler>::value, "");
     static_assert(std::is_same<
-        typename Sink::char_type,
+        typename Handler::char_type,
         typename std::allocator_traits<Allocator>::value_type>::value, "");
-    return full_fledged_sink<Sink, default_buffer_control<Allocator>>(
-        std::forward<Sink>(sink),
+    return full_fledged_handler<Handler, default_buffer_control<Allocator>>(
+        std::forward<Handler>(handler),
         default_buffer_control<Allocator>(buffer_size, alloc));
 }
 
-template <class Sink>
+template <class Handler>
 class primitive_parser
 {
-    using char_type = typename Sink::char_type;
+    using char_type = typename Handler::char_type;
 
 private:
     // Reading position
     const char_type* p_;
-    Sink f_;
+    Handler f_;
 
     bool record_started_;
     state s_;
@@ -634,14 +635,14 @@ private:
 
 private:
     template <state>
-    friend struct handler;
+    friend struct parse_step;
 
     // To make control flows clearer, we adopt exceptions. Sigh...
     struct parse_aborted
     {};
 
 public:
-    explicit primitive_parser(Sink&& f) :
+    explicit primitive_parser(Handler&& f) :
         f_(std::move(f)),
         record_started_(false), s_(state::after_lf),
         physical_row_index_(parse_error::npos),
@@ -652,7 +653,7 @@ public:
     primitive_parser& operator=(primitive_parser&&) = default;
 
     template <class Tr>
-    bool parse(std::basic_streambuf<char_type, Tr>* in)
+    bool parse_csv(std::basic_streambuf<char_type, Tr>* in)
     {
         auto release = [f = &f_](const char_type* buffer) {
             f->release_buffer(buffer);
@@ -704,13 +705,13 @@ private:
             physical_row_or_buffer_begin_ = begin;
             set_first_last();
             while (p_ < end) {
-                with_handler([this](const auto& h) { h.normal(*this, *p_); });
+                step([this](const auto& h) { h.normal(*this, *p_); });
                 ++p_;
             }
-            with_handler([this](const auto& h) { h.underflow(*this); });
+            step([this](const auto& h) { h.underflow(*this); });
             if (eof_reached) {
                 set_first_last();
-                with_handler([this](const auto& h) { h.eof(*this); });
+                step([this](const auto& h) { h.eof(*this); });
                 if (record_started_) {
                     end_record();
                 }
@@ -805,29 +806,29 @@ private:
 
 private:
     template <class F>
-    void with_handler(F f)
+    void step(F f)
     {
         switch (s_) {
         case state::left_of_value:
-            f(handler<state::left_of_value>());
+            f(parse_step<state::left_of_value>());
             break;
         case state::in_value:
-            f(handler<state::in_value>());
+            f(parse_step<state::in_value>());
             break;
         case state::right_of_open_quote:
-            f(handler<state::right_of_open_quote>());
+            f(parse_step<state::right_of_open_quote>());
             break;
         case state::in_quoted_value:
-            f(handler<state::in_quoted_value>());
+            f(parse_step<state::in_quoted_value>());
             break;
         case state::in_quoted_value_after_quote:
-            f(handler<state::in_quoted_value_after_quote>());
+            f(parse_step<state::in_quoted_value_after_quote>());
             break;
         case state::after_cr:
-            f(handler<state::after_cr>());
+            f(parse_step<state::after_cr>());
             break;
         case state::after_lf:
-            f(handler<state::after_lf>());
+            f(parse_step<state::after_lf>());
             break;
         default:
             assert(false);
@@ -836,94 +837,94 @@ private:
     }
 };
 
-template <class Sink>
-primitive_parser<Sink> make_primitive_parser(Sink&& sink)
+template <class Handler>
+primitive_parser<Handler> make_primitive_parser(Handler&& handler)
 {
-    return primitive_parser<Sink>(std::move(sink));
+    return primitive_parser<Handler>(std::move(handler));
 }
 
-template <class Sink, class D, class = void>
+template <class Handler, class D, class = void>
 struct get_buffer_t
 {};
 
-template <class Sink, class D>
-struct get_buffer_t<Sink, D,
-    std::enable_if_t<has_get_buffer<Sink>::value>>
+template <class Handler, class D>
+struct get_buffer_t<Handler, D,
+    std::enable_if_t<has_get_buffer<Handler>::value>>
 {
-    std::pair<typename Sink::char_type*, std::size_t> get_buffer()
+    std::pair<typename Handler::char_type*, std::size_t> get_buffer()
     {
         return static_cast<D*>(this)->base().get_buffer();
     }
 };
 
-template <class Sink, class D, class = void>
+template <class Handler, class D, class = void>
 struct release_buffer_t
 {};
 
-template <class Sink, class D>
-struct release_buffer_t<Sink, D,
-    std::enable_if_t<has_release_buffer<Sink>::value>>
+template <class Handler, class D>
+struct release_buffer_t<Handler, D,
+    std::enable_if_t<has_release_buffer<Handler>::value>>
 {
-    void release_buffer(const typename Sink::char_type* buffer)
+    void release_buffer(const typename Handler::char_type* buffer)
     {
         static_cast<D*>(this)->base().release_buffer(buffer);
     }
 };
 
-template <class Sink, class D, class = void>
+template <class Handler, class D, class = void>
 struct start_buffer_t
 {};
 
-template <class Sink, class D>
-struct start_buffer_t<Sink, D,
-    std::enable_if_t<has_start_buffer<Sink>::value>>
+template <class Handler, class D>
+struct start_buffer_t<Handler, D,
+    std::enable_if_t<has_start_buffer<Handler>::value>>
 {
     void start_buffer(
-        const typename Sink::char_type* buffer_begin,
-        const typename Sink::char_type* buffer_end)
+        const typename Handler::char_type* buffer_begin,
+        const typename Handler::char_type* buffer_end)
     {
         static_cast<D*>(this)->base().start_buffer(buffer_begin, buffer_end);
     }
 };
 
-template <class Sink, class D, class = void>
+template <class Handler, class D, class = void>
 struct end_buffer_t
 {};
 
-template <class Sink, class D>
-struct end_buffer_t<Sink, D,
-    std::enable_if_t<has_end_buffer<Sink>::value>>
+template <class Handler, class D>
+struct end_buffer_t<Handler, D,
+    std::enable_if_t<has_end_buffer<Handler>::value>>
 {
-    void end_buffer(const typename Sink::char_type* buffer_end)
+    void end_buffer(const typename Handler::char_type* buffer_end)
     {
         static_cast<D*>(this)->base().end_buffer(buffer_end);
     }
 };
 
-template <class Sink, class D, class = void>
+template <class Handler, class D, class = void>
 struct empty_physical_row_t
 {};
 
-template <class Sink, class D>
-struct empty_physical_row_t<Sink, D,
-    std::enable_if_t<has_empty_physical_row<Sink>::value>>
+template <class Handler, class D>
+struct empty_physical_row_t<Handler, D,
+    std::enable_if_t<has_empty_physical_row<Handler>::value>>
 {
-    bool empty_physical_row(const typename Sink::char_type* where)
+    bool empty_physical_row(const typename Handler::char_type* where)
     {
         return static_cast<D*>(this)->base().empty_physical_row(where);
     }
 };
 
-template <class Sink, class D>
-struct sink_decorator :
-    get_buffer_t<Sink, D>, release_buffer_t<Sink, D>,
-    start_buffer_t<Sink, D>, end_buffer_t<Sink, D>,
-    empty_physical_row_t<Sink, D>
+template <class Handler, class D>
+struct handler_decorator :
+    get_buffer_t<Handler, D>, release_buffer_t<Handler, D>,
+    start_buffer_t<Handler, D>, end_buffer_t<Handler, D>,
+    empty_physical_row_t<Handler, D>
 {
-    using char_type = typename Sink::char_type;
+    using char_type = typename Handler::char_type;
 
 protected:
-    sink_decorator()
+    handler_decorator()
     {}
 
 public:
@@ -948,147 +949,155 @@ public:
     }
 };
 
-template <class Sink>
-class wrapper_sink :
-    public detail::sink_decorator<Sink, wrapper_sink<Sink>>
+template <class Handler>
+class wrapper_handler :
+    public detail::handler_decorator<Handler, wrapper_handler<Handler>>
 {
-    Sink* sink_;
+    Handler* handler_;
 
 public:
-    explicit wrapper_sink(Sink& sink) :
-        sink_(&sink)
+    explicit wrapper_handler(Handler& handler) :
+        handler_(&handler)
     {}
 
-    Sink& base()
+    Handler& base()
     {
-        return *sink_;
+        return *handler_;
     }
 };
 
 } // end namespace detail
 
-template <class Tr, class Sink>
-auto parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink)
- -> std::enable_if_t<detail::with_buffer_control<Sink>::value, bool>
+template <class Tr, class Handler>
+auto parse_csv(std::basic_streambuf<typename Handler::char_type, Tr>* in,
+    Handler handler)
+ -> std::enable_if_t<detail::with_buffer_control<Handler>::value, bool>
 {
     return detail::make_primitive_parser(
-        detail::make_full_fledged(std::move(sink))).parse(in);
+        detail::make_full_fledged(std::move(handler))).parse_csv(in);
 }
 
-template <class Tr, class Sink>
-auto parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink)
- -> std::enable_if_t<detail::with_buffer_control<Sink>::value, bool>
+template <class Tr, class Handler>
+auto parse_csv(std::basic_istream<typename Handler::char_type, Tr>& in,
+    Handler handler)
+ -> std::enable_if_t<detail::with_buffer_control<Handler>::value, bool>
 {
-    return parse(in.rdbuf(), std::move(sink));
+    return parse_csv(in.rdbuf(), std::move(handler));
 }
 
-template <class Tr, class Sink,
-    class Allocator = std::allocator<typename Sink::char_type>>
-auto parse(std::basic_streambuf<typename Sink::char_type, Tr>* in, Sink sink,
+template <class Tr, class Handler,
+    class Allocator = std::allocator<typename Handler::char_type>>
+auto parse_csv(std::basic_streambuf<typename Handler::char_type, Tr>* in,
+    Handler handler,
     std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
- -> std::enable_if_t<detail::without_buffer_control<Sink>::value, bool>
+ -> std::enable_if_t<detail::without_buffer_control<Handler>::value, bool>
 {
     return detail::make_primitive_parser(
         detail::make_full_fledged(
-            std::move(sink), buffer_size, alloc)).parse(in);
+            std::move(handler), buffer_size, alloc)).parse_csv(in);
 }
 
-template <class Tr, class Sink,
-    class Allocator = std::allocator<typename Sink::char_type>>
-auto parse(std::basic_istream<typename Sink::char_type, Tr>& in, Sink sink,
+template <class Tr, class Handler,
+    class Allocator = std::allocator<typename Handler::char_type>>
+auto parse_csv(std::basic_istream<typename Handler::char_type, Tr>& in,
+    Handler handler,
     std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
- -> std::enable_if_t<detail::without_buffer_control<Sink>::value, bool>
+ -> std::enable_if_t<detail::without_buffer_control<Handler>::value, bool>
 {
-    return parse(in.rdbuf(), std::move(sink), buffer_size, alloc);
+    return parse_csv(in.rdbuf(), std::move(handler), buffer_size, alloc);
 }
 
-template <class Input, class Sink, class... Args>
-auto parse(Input&& in,
-    const std::reference_wrapper<Sink>& sink, Args&&... args)
+template <class Input, class Handler, class... Args>
+auto parse_csv(Input&& in,
+    const std::reference_wrapper<Handler>& handler, Args&&... args)
 {
-    return parse(std::forward<Input>(in),
-        detail::wrapper_sink<Sink>(sink.get()), std::forward<Args>(args)...);
+    return parse_csv(std::forward<Input>(in),
+        detail::wrapper_handler<Handler>(handler.get()),
+        std::forward<Args>(args)...);
 }
 
-template <class Sink>
-class empty_physical_row_aware_sink :
-    public detail::sink_decorator<
-        std::remove_reference_t<Sink>, empty_physical_row_aware_sink<Sink>>
+template <class Handler>
+class empty_physical_row_aware_handler :
+    public detail::handler_decorator<
+        std::remove_reference_t<Handler>,
+        empty_physical_row_aware_handler<Handler>>
 {
-    Sink sink_;
+    Handler handler_;
 
 public:
-    explicit empty_physical_row_aware_sink(Sink sink) :
-        sink_(std::forward<Sink>(sink)) // do not move because Sink may
-                                        // be an lvalue reference type
+    explicit empty_physical_row_aware_handler(Handler handler) :
+        handler_(std::forward<Handler>(handler))    // do not move because
+                                                    // Handler may be an
+                                                    // lvalue reference type
     {
         using this_t = std::remove_pointer_t<decltype(this)>;
-        using sink_t = std::remove_reference_t<Sink>;
+        using handler_t = std::remove_reference_t<Handler>;
         static_assert(detail::has_get_buffer<this_t>::value
-            == detail::has_get_buffer<sink_t>::value, "");
+            == detail::has_get_buffer<handler_t>::value, "");
         static_assert(detail::has_release_buffer<this_t>::value
-            == detail::has_release_buffer<sink_t>::value, "");
+            == detail::has_release_buffer<handler_t>::value, "");
         static_assert(detail::has_start_buffer<this_t>::value
-            == detail::has_start_buffer<sink_t>::value, "");
+            == detail::has_start_buffer<handler_t>::value, "");
         static_assert(detail::has_end_buffer<this_t>::value
-            == detail::has_end_buffer<sink_t>::value, "");
+            == detail::has_end_buffer<handler_t>::value, "");
     }
 
-    empty_physical_row_aware_sink(const empty_physical_row_aware_sink&)
+    empty_physical_row_aware_handler(const empty_physical_row_aware_handler&)
         = default;
-    empty_physical_row_aware_sink(empty_physical_row_aware_sink&&)
+    empty_physical_row_aware_handler(empty_physical_row_aware_handler&&)
         = default;
 
     // Assignment ops are explicitly defined on the chance that
-    // Sink is an lvalue reference type
+    // Handler is an lvalue reference type
 
-    empty_physical_row_aware_sink& operator=(
-        const empty_physical_row_aware_sink& other)
+    empty_physical_row_aware_handler& operator=(
+        const empty_physical_row_aware_handler& other)
     {
-        sink_ = other.sink_;
+        handler_ = other.handler_;
     }
 
-    empty_physical_row_aware_sink& operator=(
-        empty_physical_row_aware_sink&& other)
+    empty_physical_row_aware_handler& operator=(
+        empty_physical_row_aware_handler&& other)
     {
-        sink_ = std::move(other.sink_);
+        handler_ = std::move(other.handler_);
     }
 
     bool empty_physical_row(
-        const typename empty_physical_row_aware_sink::char_type* where)
+        const typename empty_physical_row_aware_handler::char_type* where)
     {
         this->start_record(where);
         return this->end_record(where);
     }
 
-    Sink& base()
+    Handler& base()
     {
-        return sink_;
+        return handler_;
     }
 
-    const Sink& base() const
+    const Handler& base() const
     {
-        return sink_;
+        return handler_;
     }
 };
 
-template <class Sink,
+template <class Handler,
     std::enable_if_t<
-        !detail::is_std_reference_wrapper<Sink>::value,
+        !detail::is_std_reference_wrapper<Handler>::value,
         std::nullptr_t> = nullptr>
-auto make_empty_physical_row_aware(Sink&& sink)
+auto make_empty_physical_row_aware(Handler&& handler)
 {
-    return empty_physical_row_aware_sink<
-        std::decay_t<Sink>>(std::forward<Sink>(sink));
-    // No one would want to instantiate empty_physical_row_aware_sink with
+    return empty_physical_row_aware_handler<
+        std::decay_t<Handler>>(std::forward<Handler>(handler));
+    // No one would want to instantiate empty_physical_row_aware_handler with
     // const|volatile types (almost none of their members can be invoked),
     // so we use decay_t instead of remove_reference_t.
 }
 
-template <class Sink>
-auto make_empty_physical_row_aware(const std::reference_wrapper<Sink>& sink)
+template <class Handler>
+auto make_empty_physical_row_aware(
+    const std::reference_wrapper<Handler>& handler)
 {
-    return empty_physical_row_aware_sink<Sink&>(sink.get());
+    return empty_physical_row_aware_handler<Handler&>(handler.get());
 }
 
 }}

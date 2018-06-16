@@ -12,7 +12,7 @@
 
 #include <gtest/gtest.h>
 
-#include <furfurylic/commata/primitive_parser.hpp>
+#include <furfurylic/commata/parse_csv.hpp>
 
 #include "BaseTest.hpp"
 
@@ -104,18 +104,18 @@ public:
 
 }
 
-struct TestPrimitiveParserBasics :
+struct TestParseCsvBasics :
     furfurylic::test::BaseTestWithParam<std::size_t>
 {};
 
-TEST_P(TestPrimitiveParserBasics, Narrow)
+TEST_P(TestParseCsvBasics, Narrow)
 {
     std::string s = ",\"col1\", col2 ,col3,\r\n\n"
                     " cell10 ,,\"cell\r\n12\",\"cell\"\"13\"\"\",\"\"\n";
     std::stringbuf buf(s);
     std::vector<std::vector<std::string>> field_values;
     test_collector<char> collector(field_values);
-    ASSERT_TRUE(parse(&buf, collector, GetParam()));
+    ASSERT_TRUE(parse_csv(&buf, collector, GetParam()));
     ASSERT_EQ(2U, field_values.size());
     std::vector<std::string> expected_row0 =
         { "", "col1", " col2 ", "col3", "" };
@@ -125,14 +125,14 @@ TEST_P(TestPrimitiveParserBasics, Narrow)
     ASSERT_EQ(expected_row1, field_values[1]);
 }
 
-TEST_P(TestPrimitiveParserBasics, Wide)
+TEST_P(TestParseCsvBasics, Wide)
 {
     std::wstring s = L"\n\r\rheader1,header2\r\r\n"
                      L"value1,value2\n";
     std::wstringbuf buf(s);
     std::vector<std::vector<std::wstring>> field_values;
     test_collector<wchar_t> collector(field_values);
-    ASSERT_TRUE(parse(&buf, collector, GetParam()));
+    ASSERT_TRUE(parse_csv(&buf, collector, GetParam()));
     ASSERT_EQ(2U, field_values.size());
     std::vector<std::wstring> expected_row0 = { L"header1", L"header2" };
     ASSERT_EQ(expected_row0, field_values[0]);
@@ -140,7 +140,7 @@ TEST_P(TestPrimitiveParserBasics, Wide)
     ASSERT_EQ(expected_row1, field_values[1]);
 }
 
-TEST_P(TestPrimitiveParserBasics, EmptyRowAware)
+TEST_P(TestParseCsvBasics, EmptyRowAware)
 {
     std::wstring s = L"\n"
                      L"\r"
@@ -150,7 +150,7 @@ TEST_P(TestPrimitiveParserBasics, EmptyRowAware)
                      L"y1,y2\n";
     std::wstringbuf buf(s);
     std::vector<std::vector<std::wstring>> field_values;
-    ASSERT_TRUE(parse(&buf, make_empty_physical_row_aware(
+    ASSERT_TRUE(parse_csv(&buf, make_empty_physical_row_aware(
         test_collector<wchar_t>(field_values)), GetParam()));
     ASSERT_EQ(6U, field_values.size());
     ASSERT_TRUE(field_values[0].empty());
@@ -165,30 +165,30 @@ TEST_P(TestPrimitiveParserBasics, EmptyRowAware)
 }
 
 INSTANTIATE_TEST_CASE_P(,
-    TestPrimitiveParserBasics, testing::Values(1, 10, 1024));
+    TestParseCsvBasics, testing::Values(1, 10, 1024));
 
-struct TestPrimitiveParserReference : furfurylic::test::BaseTest
+struct TestParseCsvReference : furfurylic::test::BaseTest
 {};
 
-TEST_F(TestPrimitiveParserReference, Reference)
+TEST_F(TestParseCsvReference, Reference)
 {
     std::string s = "A,B\n\n";
     std::stringbuf buf(s);
     test_collector2<char> collector;
-    ASSERT_TRUE(parse(&buf, std::ref(collector)));
+    ASSERT_TRUE(parse_csv(&buf, std::ref(collector)));
     ASSERT_EQ(1U, collector.field_values().size());
     ASSERT_EQ(2U, collector.field_values()[0].size());
     ASSERT_EQ("A", collector.field_values()[0][0]);
     ASSERT_EQ("B", collector.field_values()[0][1]);
 }
 
-TEST_F(TestPrimitiveParserReference, EmptyRowAware)
+TEST_F(TestParseCsvReference, EmptyRowAware)
 {
     std::string s = "A,B\r\rC,D";
     std::stringbuf buf(s);
     test_collector2<char> collector;
     auto sink = make_empty_physical_row_aware(std::ref(collector));
-    ASSERT_TRUE(parse(&buf, std::move(sink)));
+    ASSERT_TRUE(parse_csv(&buf, std::move(sink)));
     ASSERT_EQ(3U, collector.field_values().size());
     ASSERT_EQ(2U, collector.field_values()[0].size());
     ASSERT_EQ("A", collector.field_values()[0][0]);
@@ -199,16 +199,16 @@ TEST_F(TestPrimitiveParserReference, EmptyRowAware)
     ASSERT_EQ("D", collector.field_values()[2][1]);
 }
 
-struct TestPrimitiveParserEndsWithoutLF :
+struct TestParseCsvEndsWithoutLF :
     testing::TestWithParam<std::pair<const char*, const char*>>
 {};
 
-TEST_P(TestPrimitiveParserEndsWithoutLF, All)
+TEST_P(TestParseCsvEndsWithoutLF, All)
 {
     std::stringbuf buf(GetParam().first);
     std::vector<std::vector<std::string>> field_values;
     test_collector<char> collector(field_values);
-    ASSERT_TRUE(parse(&buf, collector, 1024));
+    ASSERT_TRUE(parse_csv(&buf, collector, 1024));
     ASSERT_EQ(1U, field_values.size());
     std::stringstream s;
     std::copy(field_values[0].cbegin(), field_values[0].cend(),
@@ -216,18 +216,18 @@ TEST_P(TestPrimitiveParserEndsWithoutLF, All)
     ASSERT_EQ(GetParam().second, s.str());
 }
 
-INSTANTIATE_TEST_CASE_P(, TestPrimitiveParserEndsWithoutLF,
+INSTANTIATE_TEST_CASE_P(, TestParseCsvEndsWithoutLF,
     testing::Values(
         std::make_pair("ColA,ColB,ColC", "ColA/ColB/ColC/"),
         std::make_pair("ColA,ColB,\"ColC\"", "ColA/ColB/ColC/"),
         std::make_pair("ColA,ColB,", "ColA/ColB//")));
 
-struct TestPrimitiveParserErrors :
+struct TestParseCsvErrors :
     testing::TestWithParam<
         std::pair<const char*, std::pair<std::size_t, std::size_t>>>
 {};
 
-TEST_P(TestPrimitiveParserErrors, Errors)
+TEST_P(TestParseCsvErrors, Errors)
 {
     std::string s = GetParam().first;
     std::stringbuf buf(s);
@@ -237,7 +237,7 @@ TEST_P(TestPrimitiveParserErrors, Errors)
 
     try {
         // the buffer is shorter than one line
-        parse(&buf, collector, 4);
+        parse_csv(&buf, collector, 4);
         FAIL();
     } catch (const parse_error& e) {
         const auto pos = e.get_physical_position();
@@ -247,7 +247,7 @@ TEST_P(TestPrimitiveParserErrors, Errors)
     }
 }
 
-INSTANTIATE_TEST_CASE_P(, TestPrimitiveParserErrors,
+INSTANTIATE_TEST_CASE_P(, TestParseCsvErrors,
     testing::Values(
         std::make_pair("col\"1\"", std::make_pair(0, 3)),
         std::make_pair("\"col1", std::make_pair(0, 5)),

@@ -12,7 +12,7 @@ include_directories(
     ../include
 )
 add_executable(test_commata
-    TestPrimitiveParser.cpp
+    TestParseCsv.cpp
     TestRecordExtractor.cpp
     TestStoredTable.cpp
     TestTableScanner.cpp
