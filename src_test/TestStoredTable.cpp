@@ -787,7 +787,7 @@ TEST_F(TestStoredTableAllocator, Basics)
         std::stringbuf in(s);
         try {
             parse(&in, make_stored_table_builder(table));
-        } catch (const csv_error& e) {
+        } catch (const text_error& e) {
             FAIL() << e.info();
         }
     }
@@ -807,7 +807,7 @@ TEST_F(TestStoredTableAllocator, Basics)
         std::stringbuf in(s);
         try {
             parse(&in, make_stored_table_builder(table2));
-        } catch (const csv_error& e) {
+        } catch (const text_error& e) {
             FAIL() << e.info();
         }
         table2.content().pop_front();
@@ -850,7 +850,7 @@ TEST_P(TestStoredTableBuilder, Basics)
     stored_table table(GetParam());
     try {
         parse(&in, make_stored_table_builder(table));
-    } catch (const csv_error& e) {
+    } catch (const text_error& e) {
         FAIL() << e.info();
     }
 
@@ -885,7 +885,7 @@ TEST_P(TestStoredTableBuilder, EmptyRowAware)
     try {
         parse(&in, make_empty_physical_row_aware(
             make_stored_table_builder(table)));
-    } catch (const csv_error& e) {
+    } catch (const text_error& e) {
         FAIL() << e.info();
     }
 
@@ -917,7 +917,7 @@ TEST_P(TestStoredTableBuilder, Transpose)
     stored_table table(GetParam());
     try {
         parse(&in, make_transposed_stored_table_builder(table));
-    } catch (const csv_error& e) {
+    } catch (const text_error& e) {
         FAIL() << e.info();
     }
 
@@ -939,7 +939,7 @@ TEST_P(TestStoredTableBuilder, Transpose)
     std::stringbuf in2(t);
     try {
         parse(&in2, make_transposed_stored_table_builder(table));
-    } catch (const csv_error& e) {
+    } catch (const text_error& e) {
         FAIL() << e.info();
     }
 

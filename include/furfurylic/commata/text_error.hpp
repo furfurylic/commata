@@ -39,9 +39,9 @@ constexpr T npos_impl<T>::npos;
 
 } // end namespace detail
 
-class csv_error_info;
+class text_error_info;
 
-class csv_error :
+class text_error :
     public std::exception, public detail::npos_impl<std::size_t>
 {
     std::shared_ptr<std::string> what_;
@@ -50,7 +50,7 @@ class csv_error :
 public:
     template <class T,
         class = std::enable_if_t<std::is_constructible<std::string, T>::value>>
-    explicit csv_error(T&& what_arg) :
+    explicit text_error(T&& what_arg) :
         what_(std::make_shared<std::string>(std::forward<T>(what_arg))),
         physical_position_(npos, npos)
     {}
@@ -58,21 +58,21 @@ public:
     // Copy/move ctors and copy/move assignment ops are explicitly defined
     // so that they are noexcept
 
-    csv_error(const csv_error& other) noexcept :
+    text_error(const text_error& other) noexcept :
         std::exception(other),
         what_(other.what_),
         physical_position_(other.physical_position_)
         // According to C++14 20.3.2 (1), pair's copy ctor is noexcept
     {}
 
-    csv_error(csv_error&& other) noexcept :
+    text_error(text_error&& other) noexcept :
         std::exception(std::move(other)),
         what_(std::move(other.what_)),
         physical_position_(other.physical_position_)
         // ditto
     {}
 
-    csv_error& operator=(const csv_error& other) noexcept
+    text_error& operator=(const text_error& other) noexcept
     {
         std::exception::operator=(other);
         what_ = other.what_;
@@ -81,7 +81,7 @@ public:
         return *this;
     }
 
-    csv_error& operator=(csv_error&& other) noexcept
+    text_error& operator=(text_error&& other) noexcept
     {
         std::exception::operator=(std::move(other));
         what_ = std::move(other.what_);
@@ -108,7 +108,7 @@ public:
             &physical_position_ : nullptr;
     }
 
-    csv_error_info info() const noexcept;
+    text_error_info info() const noexcept;
 };
 
 namespace detail {
@@ -118,7 +118,7 @@ namespace detail {
 template <std::size_t N>
 std::streamsize print_pos(char (&s)[N], std::size_t pos)
 {
-    const auto len = (pos != csv_error::npos) ?
+    const auto len = (pos != text_error::npos) ?
         std::snprintf(s, N, "%zu", pos + 1) :
         std::snprintf(s, N, "n/a");
     assert((len > 0 ) && (static_cast<std::size_t>(len) < N));
@@ -160,24 +160,24 @@ bool sputn(const std::locale& loc,
 
 } // end namespace detail
 
-class csv_error_info
+class text_error_info
 {
-    const csv_error* ex_;
+    const text_error* ex_;
 
 public:
-    explicit csv_error_info(const csv_error& ex) noexcept :
+    explicit text_error_info(const text_error& ex) noexcept :
         ex_(&ex)
     {}
 
 private:
     template <class Ch, class Tr>
     friend std::basic_ostream<Ch, Tr>& operator<<(
-        std::basic_ostream<Ch, Tr>& os, const csv_error_info& i);
+        std::basic_ostream<Ch, Tr>& os, const text_error_info& i);
 };
 
 template <class Ch, class Tr>
 std::basic_ostream<Ch, Tr>& operator<<(
-    std::basic_ostream<Ch, Tr>& os, const csv_error_info& i)
+    std::basic_ostream<Ch, Tr>& os, const text_error_info& i)
 {
     const auto w = i.ex_->what();
     if (const auto p = i.ex_->get_physical_position()) {
@@ -202,19 +202,19 @@ std::basic_ostream<Ch, Tr>& operator<<(
     }
 }
 
-inline csv_error_info csv_error::info() const noexcept
+inline text_error_info text_error::info() const noexcept
 {
-    return csv_error_info(*this);
+    return text_error_info(*this);
 }
 
-inline std::string to_string(const csv_error_info& i)
+inline std::string to_string(const text_error_info& i)
 {
     std::ostringstream s;
     s << i;
     return s.str();
 }
 
-inline std::wstring to_wstring(const csv_error_info& i)
+inline std::wstring to_wstring(const text_error_info& i)
 {
     std::wostringstream s;
     s << i;

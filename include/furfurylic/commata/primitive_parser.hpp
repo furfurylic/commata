@@ -17,7 +17,7 @@
 #include <streambuf>
 #include <utility>
 
-#include "csv_error.hpp"
+#include "text_error.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
 #include "typing_aid.hpp"
@@ -26,10 +26,10 @@ namespace furfurylic {
 namespace commata {
 
 class parse_error :
-    public csv_error
+    public text_error
 {
 public:
-    using csv_error::csv_error;
+    using text_error::text_error;
 };
 
 namespace detail {
@@ -718,7 +718,7 @@ private:
             physical_row_chars_passed_away_ +=
                 p_ - physical_row_or_buffer_begin_;
             return true;
-        } catch (csv_error& e) {
+        } catch (text_error& e) {
             e.set_physical_position(
                 physical_row_index_,
                 (p_ - physical_row_or_buffer_begin_)

@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "allocation_only_allocator.hpp"
-#include "csv_error.hpp"
+#include "text_error.hpp"
 #include "member_like_base.hpp"
 #include "typing_aid.hpp"
 
@@ -674,10 +674,10 @@ private:
     }
 };
 
-class field_conversion_error : public csv_error
+class field_conversion_error : public text_error
 {
 public:
-    using csv_error::csv_error;
+    using text_error::text_error;
 };
 
 class field_not_found : public field_conversion_error

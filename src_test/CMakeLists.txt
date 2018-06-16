@@ -12,11 +12,11 @@ include_directories(
     ../include
 )
 add_executable(test_commata
-    TestCsvError.cpp
     TestPrimitiveParser.cpp
     TestRecordExtractor.cpp
     TestStoredTable.cpp
     TestTableScanner.cpp
+    TestTextError.cpp
 )
 if(commata_disable_pthreads)
     target_link_libraries(test_commata
