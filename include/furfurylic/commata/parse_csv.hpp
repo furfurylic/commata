@@ -36,7 +36,7 @@ namespace detail {
 
 enum class state : std::int_fast8_t
 {
-    left_of_value,
+    after_comma,
     in_value,
     right_of_open_quote,
     in_quoted_value,
@@ -50,7 +50,7 @@ struct parse_step
 {};
 
 template <>
-struct parse_step<state::left_of_value>
+struct parse_step<state::after_comma>
 {
     template <class Parser>
     void normal(Parser& parser, typename Parser::char_type c) const
@@ -103,7 +103,7 @@ struct parse_step<state::in_value>
         switch (c) {
         case key_chars<typename Parser::char_type>::COMMA:
             parser.finalize();
-            parser.change_state(state::left_of_value);
+            parser.change_state(state::after_comma);
             break;
         case key_chars<typename Parser::char_type>::DQUOTE:
             throw parse_error(
@@ -200,7 +200,7 @@ struct parse_step<state::in_quoted_value_after_quote>
         switch (c) {
         case key_chars<typename Parser::char_type>::COMMA:
             parser.finalize();
-            parser.change_state(state::left_of_value);
+            parser.change_state(state::after_comma);
             break;
         case key_chars<typename Parser::char_type>::DQUOTE:
             parser.set_first_last();
@@ -245,7 +245,7 @@ struct parse_step<state::after_cr>
             parser.new_physical_row();
             parser.set_first_last();
             parser.finalize();
-            parser.change_state(state::left_of_value);
+            parser.change_state(state::after_comma);
             break;
         case key_chars<typename Parser::char_type>::DQUOTE:
             parser.new_physical_row();
@@ -288,7 +288,7 @@ struct parse_step<state::after_lf>
             parser.new_physical_row();
             parser.set_first_last();
             parser.finalize();
-            parser.change_state(state::left_of_value);
+            parser.change_state(state::after_comma);
             break;
         case key_chars<typename Parser::char_type>::DQUOTE:
             parser.new_physical_row();
@@ -772,10 +772,8 @@ private:
             f_.start_record(first_);
             record_started_ = true;
         }
-        if (first_ < last_) {
-            if (!f_.update(first_, last_)) {
-                throw parse_aborted();
-            }
+        if ((first_ < last_) && !f_.update(first_, last_)) {
+            throw parse_aborted();
         }
     }
 
@@ -817,8 +815,8 @@ private:
     void step(F f)
     {
         switch (s_) {
-        case state::left_of_value:
-            f(parse_step<state::left_of_value>());
+        case state::after_comma:
+            f(parse_step<state::after_comma>());
             break;
         case state::in_value:
             f(parse_step<state::in_value>());
