@@ -38,9 +38,13 @@ class basic_stored_value
     static Ch empty_value[];
 
 public:
+    static_assert(std::is_same<Ch, typename Tr::char_type>::value, "");
+
     using value_type      = Ch;
     using reference       = Ch&;
     using const_reference = const Ch&;
+    using pointer         = Ch*;
+    using const_pointer   = const Ch*;
     using iterator        = Ch*;
     using const_iterator  = const Ch*;
     using difference_type = std::ptrdiff_t;
@@ -53,10 +57,8 @@ public:
     static constexpr size_type npos = static_cast<size_type>(-1);
 
     basic_stored_value() noexcept :
-        begin_(empty_value), end_(empty_value)
-    {
-        assert(*end_ == Ch());
-    }
+        basic_stored_value(empty_value, empty_value)
+    {}
 
     basic_stored_value(Ch* begin, const Ch* end) noexcept :
         begin_(begin), end_(begin + (end - begin))
@@ -198,6 +200,11 @@ public:
         return begin_ == end_;
     }
 
+    size_type max_size() const noexcept
+    {
+        return npos;
+    }
+
     reference front()
     {
         assert(!empty());
@@ -303,7 +310,8 @@ Ch basic_stored_value<Ch, Tr>::empty_value[] = { Ch() };
 
 template <class Ch, class Tr>
 void swap(
-    basic_stored_value<Ch, Tr>& left, basic_stored_value<Ch, Tr>& right) noexcept
+    basic_stored_value<Ch, Tr>& left,
+    basic_stored_value<Ch, Tr>& right) noexcept
 {
     return left.swap(right);
 }
@@ -313,6 +321,8 @@ namespace detail {
 template <class Left, class Right>
 bool stored_value_eq(const Left& left, const Right& right) noexcept
 {
+    static_assert(std::is_same<typename Left::traits_type,
+                               typename Right::traits_type>::value, "");
     using tr_t = typename Left::traits_type;
     return (left.size() == right.size())
         && (tr_t::compare(left.data(), right.data(), left.size()) == 0);
@@ -321,6 +331,8 @@ bool stored_value_eq(const Left& left, const Right& right) noexcept
 template <class Left, class Right>
 bool stored_value_lt(const Left& left, const Right& right) noexcept
 {
+    static_assert(std::is_same<typename Left::traits_type,
+                               typename Right::traits_type>::value, "");
     using tr_t = typename Left::traits_type;
     if (left.size() < right.size()) {
         return tr_t::compare(left.data(), right.data(), left.size()) <= 0;
@@ -347,7 +359,7 @@ bool operator==(
     // If left is "abc\0def" and right is "abc" followed by '\0'
     // then left == right shall be false
     // and any overrun on right must not occur
-    auto i = left .cbegin();
+    auto i = left.cbegin();
     while (!Tr::eq(*right, Ch())) {
         if (!Tr::eq(*i, *right)) {
             return false;
@@ -395,7 +407,7 @@ bool operator!=(
     const Left& left,
     const basic_stored_value<Ch, Tr>& right) noexcept
 {
-    return !(left == right);
+    return right != left;
 }
 
 template <class Ch, class Tr>
@@ -412,12 +424,11 @@ bool operator<(
     const Ch* right) noexcept
 {
     for (auto l : left) {
-        if (Tr::eq(*right, Ch())) {
+        const auto r = *right;
+        if (Tr::eq(r, Ch()) || Tr::lt(r, l)) {
             return false;
-        } else if (Tr::lt(l, *right)) {
+        } else if (Tr::lt(l, r)) {
             return true;
-        } else if (Tr::lt(*right, l)) {
-            return false;
         }
         ++right;
     }
@@ -430,11 +441,10 @@ bool operator<(
     const basic_stored_value<Ch, Tr>& right) noexcept
 {
     for (auto r : right) {
-        if (Tr::eq(*left, Ch())) {
+        const auto l = *left;
+        if (Tr::eq(l, Ch()) || Tr::lt(l, r)) {
             return true;
-        } else if (Tr::lt(*left, r)) {
-            return true;
-        } else if (Tr::lt(r, *left)) {
+        } else if (Tr::lt(r, l)) {
             return false;
         }
         ++left;
