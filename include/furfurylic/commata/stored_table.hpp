@@ -1103,50 +1103,80 @@ public:
     }
 
     template <class ForwardIterator>
-    value_type& rewrite_value(value_type& value,
+    auto rewrite_value(value_type& value,
         ForwardIterator new_value_begin, ForwardIterator new_value_end)
+     -> std::enable_if_t<
+            std::is_base_of<
+                std::forward_iterator_tag,
+                typename std::iterator_traits<ForwardIterator>::
+                    iterator_category>::value,
+            value_type&>
+    {
+        return rewrite_value_n(value, new_value_begin,
+            static_cast<std::size_t>(
+                std::distance(new_value_begin, new_value_end)));
+    }
+
+    template <class ForwardIterator>
+    auto rewrite_value(value_type& value, ForwardIterator new_value)
+     -> std::enable_if_t<
+            std::is_base_of<
+                std::forward_iterator_tag,
+                typename std::iterator_traits<ForwardIterator>::
+                    iterator_category>::value,
+            value_type&>
+    {
+        return rewrite_value_n(value, new_value, length_to_null(new_value));
+    }
+
+private:
+    template <class InputIterator>
+    std::size_t length_to_null(InputIterator i)
+    {
+        std::size_t length = 0;
+        while (!traits_type::eq(*i, char_type())) {
+            ++i;
+            ++length;
+        }
+        return length;
+    }
+
+    std::size_t length_to_null(const char_type* p)
+    {
+        return traits_type::length(p);
+    }
+
+    template <class InputIterator>
+    value_type& rewrite_value_n(value_type& value,
+        InputIterator new_value_begin, std::size_t new_value_size)
     {
         // We require that [value.begin(), value.end()) and
-        // [new_value_begin, new_value_end) do not overlap
+        // [new_value_begin, new_value_begin + new_value_size) do not overlap
 
-        const auto length = static_cast<std::size_t>(
-            std::distance(new_value_begin, new_value_end));
-        if (length <= value.size()) {
-            traits_type::copy(value.begin(), new_value_begin, length);
-            value.erase(value.cbegin() + length, value.cend());
+        if (new_value_size <= value.size()) {
+            traits_type::copy(value.begin(), new_value_begin, new_value_size);
+            value.erase(value.cbegin() + new_value_size, value.cend());
         } else {
-            auto secured = store_.secure_any(length + 1);
+            auto secured = store_.secure_any(new_value_size + 1);
             if (!secured) {
                 auto a = store_.get_allocator();
-                const auto alloc_size = std::max(length + 1, buffer_size_);
+                const auto alloc_size =
+                    std::max(new_value_size + 1, buffer_size_);
                 secured = std::addressof(
                     *at_t::allocate(a, alloc_size));            // throw
                 store_.add_buffer(secured, alloc_size);         // throw
                 // No need to deallocate secured even when an exception is
                 // thrown by add_buffer because add_buffer consumes secured
-                store_.secure_current_upto(secured + length + 1);
+                store_.secure_current_upto(secured + new_value_size + 1);
             }
-            traits_type::copy(secured, new_value_begin, length);
-            traits_type::assign(secured[length], char_type());
-            value = value_type(secured, secured + length);
+            traits_type::copy(secured, new_value_begin, new_value_size);
+            traits_type::assign(secured[new_value_size], char_type());
+            value = value_type(secured, secured + new_value_size);
         }
         return value;
     }
 
-    template <class ForwardIterator>
-    auto rewrite_value(value_type& value, ForwardIterator new_value)
-     -> decltype(
-            std::declval<typename std::iterator_traits<ForwardIterator>::
-                iterator_category>(),
-            std::declval<value_type>())&
-    {
-        auto last = new_value;
-        while (!traits_type::eq(*last, char_type())) {
-            ++last;
-        }
-        return rewrite_value(value, new_value, last);
-    }
-
+public:
     template <class OtherValue>
     auto rewrite_value(value_type& value, const OtherValue& new_value)
      -> decltype(
