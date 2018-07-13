@@ -633,79 +633,88 @@ struct is_nothrow_swappable :
         // function swap)
 {};
 
+// Used by table_store; externalized to expunge Allocator template param
+// to avoid bloat
+template <class Ch>
+class store_buffer
+{
+    Ch* buffer_;
+    Ch* hwl_;   // high water level: last-past-one of the used elements
+    Ch* end_;   // last-past-one of the buffer_
+
+public:
+    store_buffer() noexcept :
+        buffer_(nullptr)
+    {}
+
+    store_buffer(const store_buffer&) = delete;
+
+    void attach(Ch* buffer, std::size_t size) noexcept
+    {
+        assert(!buffer_);
+        buffer_ = buffer;
+        hwl_ = buffer_;
+        end_ = buffer_ + size;
+    }
+
+    std::pair<Ch*, std::size_t> detach() noexcept
+    {
+        assert(buffer_);
+        std::pair<Ch*, std::size_t> p(buffer_, end_ - buffer_);
+        buffer_ = nullptr;
+        return p;
+    }
+
+    Ch* secured() const noexcept
+    {
+        return hwl_;
+    }
+
+    void secure_upto(Ch* secured_last)
+    {
+        assert(secured_last <= end_);
+        hwl_ = secured_last;
+    }
+
+    Ch* secure(std::size_t size) noexcept
+    {
+        if (size <= static_cast<std::size_t>(end_ - hwl_)) {
+            const auto first = hwl_;
+            hwl_ += size;
+            return first;
+        } else {
+            return nullptr;
+        }
+    }
+
+    void clear() noexcept
+    {
+        hwl_ = buffer_;
+    }
+};
+
+// ditto
+template <class Ch>
+struct store_node : store_buffer<Ch>
+{
+    store_node* next;
+
+    explicit store_node(store_node* n) :
+        next(n)
+    {}
+};
+
 template <class Ch, class Allocator>
 class table_store :
     member_like_base<Allocator>
 {
-    class buffer_type
-    {
-        Ch* buffer_;
-        Ch* hwl_;   // high water level: last-past-one of the used elements
-        Ch* end_;   // last-past-one of the buffer_
-
-    public:
-        buffer_type() noexcept :
-            buffer_(nullptr)
-        {}
-
-        void attach(Ch* buffer, std::size_t size) noexcept
-        {
-            assert(!buffer_);
-            buffer_ = buffer;
-            hwl_ = buffer_;
-            end_ = buffer_ + size;
-        }
-
-        std::pair<Ch*, std::size_t> detach() noexcept
-        {
-            assert(buffer_);
-            std::pair<Ch*, std::size_t> p(buffer_, end_ - buffer_);
-            buffer_ = nullptr;
-            return p;
-        }
-
-        Ch* secured() const noexcept
-        {
-            return hwl_;
-        }
-
-        void secure_upto(Ch* secured_last)
-        {
-            assert(secured_last <= end_);
-            hwl_ = secured_last;
-        }
-
-        Ch* secure(std::size_t size) noexcept
-        {
-            if (size <= static_cast<std::size_t>(end_ - hwl_)) {
-                const auto first = hwl_;
-                hwl_ += size;
-                return first;
-            } else {
-                return nullptr;
-            }
-        }
-
-        void clear() noexcept
-        {
-            hwl_ = buffer_;
-        }
-    };
-
-    struct node_type : buffer_type
-    {
-        node_type* next;
-
-        explicit node_type(node_type* n) :
-            next(n)
-        {}
-    };
+    using node_type = store_node<Ch>;
 
     // At this time we adopt a homemade forward list
     // taking advantage of its constant-time and nofail "splice" ability
     // and its nofail move construction and move assignment
     node_type* buffers_;        // "front" of buffers
-    node_type* buffers_back_;   // "back" of buffers
+    node_type* buffers_back_;   // "back" of buffers, whose next is nullptr
     std::size_t buffers_size_;  // "size" of buffers
 
 private:
@@ -718,22 +727,26 @@ public:
     using allocator_type = Allocator;
     using security = std::vector<Ch*>;
 
-    table_store() :
-        table_store(std::allocator_arg)
-    {}
-
-    table_store(
-        std::allocator_arg_t, const Allocator& alloc = Allocator()) :
+    explicit table_store(
+        std::allocator_arg_t = std::allocator_arg,
+        const Allocator& alloc = Allocator()) :
         member_like_base<Allocator>(alloc),
         buffers_(nullptr), buffers_back_(nullptr),
         buffers_size_(0)
     {}
 
     table_store(table_store&& other) noexcept :
-        member_like_base<Allocator>(std::move(other.get())),
+        table_store(std::allocator_arg, other.get_allocator(),
+            std::move(other))
+    {}
+
+    table_store(std::allocator_arg_t, const Allocator& alloc,
+        table_store&& other) noexcept :
+        member_like_base<Allocator>(alloc),
         buffers_(other.buffers_), buffers_back_(other.buffers_back_),
         buffers_size_(other.buffers_size_)
     {
+        assert(alloc == other.get_allocator());
         other.buffers_ = nullptr;
         other.buffers_back_ = nullptr;
         other.buffers_size_ = 0;
@@ -748,7 +761,11 @@ public:
 
     table_store& operator=(table_store&& other) noexcept
     {
-        table_store(std::move(other)).swap(*this);
+        table_store(
+            std::allocator_arg,
+            select_allocator(*this, other,
+                typename at_t::propagate_on_container_move_assignment()),
+            std::move(other)).swap_force(*this);
         return *this;
     }
 
@@ -777,6 +794,10 @@ public:
             buffers_back_ = buffers_;
         }
         ++buffers_size_;
+
+        assert(buffers_);
+        assert(buffers_back_);
+        assert(!buffers_back_->next);
     }
 
     void secure_current_upto(Ch* secured_last)
@@ -804,22 +825,26 @@ public:
 
     void swap(table_store& other) noexcept
     {
-        using std::swap;
-        if (at_t::propagate_on_container_swap::value) {
-            swap(this->get(), other.get());
-        } else {
-            assert(this->get() == other.get());
-        }
-        swap(buffers_, other.buffers_);
-        swap(buffers_back_, other.buffers_back_);
-        swap(buffers_size_, other.buffers_size_);
+        assert(at_t::propagate_on_container_swap::value
+            || (this->get() == other.get()));
+        swap_alloc(other, typename at_t::propagate_on_container_swap());
+        swap_data(other);
+    }
+
+    void swap_force(table_store& other) noexcept
+    {
+        swap_alloc(other, std::true_type());
+        swap_data(other);
     }
 
     table_store& merge(table_store&& other) noexcept
     {
+        assert(this->get() == other.get());
         if (buffers_back_) {
+            assert(!buffers_back_->next);
             buffers_back_->next = other.buffers_;
         } else {
+            assert(!buffers_);
             buffers_ = other.buffers_;
             buffers_back_ = buffers_;
         }
@@ -832,9 +857,9 @@ public:
 
     security get_security() const
     {
-        security s;
+        security s;                         // throw
         for (auto i = buffers_; i; i = i->next) {
-            s.push_back(i->secured());
+            s.push_back(i->secured());      // throw
         }
         return s;
     }
@@ -856,16 +881,35 @@ public:
     }
 
 private:
-    void reduce_buffer()
+    void reduce_buffer() noexcept
     {
+        assert(buffers_);
+
         typename nat_t::allocator_type na(this->get());
 
         auto next = buffers_->next;
         const auto p = buffers_->detach();
         at_t::deallocate(this->get(), pt_t::pointer_to(*p.first), p.second);
-        buffers_->~node_type();
+        static_assert(std::is_trivially_destructible<node_type>::value, "");
         nat_t::deallocate(na, npt_t::pointer_to(*buffers_), 1);
         buffers_ = next;
+    }
+
+    void swap_alloc(table_store& other, std::true_type) noexcept
+    {
+        using std::swap;
+        swap(this->get(), other.get());
+    }
+
+    void swap_alloc(table_store&, std::false_type) noexcept
+    {}
+
+    void swap_data(table_store& other) noexcept
+    {
+        using std::swap;
+        swap(buffers_, other.buffers_);
+        swap(buffers_back_, other.buffers_back_);
+        swap(buffers_size_, other.buffers_size_);
     }
 };
 
@@ -901,8 +945,8 @@ public:
         std::is_same<
             value_type,
             basic_stored_value<char_type, traits_type>>::value,
-        "Content shall be a container-of-container type of "
-        "basic_stored_value");
+        "Content shall be a sequence-container-of-sequence-container "
+        "type of basic_stored_value");
 
 private:
     using store_type = detail::table_store<char_type, allocator_type>;
