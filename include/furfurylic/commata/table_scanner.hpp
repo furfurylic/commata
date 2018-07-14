@@ -358,6 +358,8 @@ public:
     table_scanner(table_scanner&& other) noexcept(noexcept(
         std::is_nothrow_move_constructible<decltype(scanners_)>::value
      && std::is_nothrow_move_constructible<string_t>::value)) :
+    // We will have nothrow-move-constructible ctors for vector and string in
+    // C++17, so in C++17 we will be able to make this ctor simply "noexcept"
         detail::member_like_base<Allocator>(std::move(other)),
         remaining_header_records_(other.remaining_header_records_),
         j_(other.j_), buffer_size_(other.buffer_size_),
@@ -542,11 +544,13 @@ public:
         if (get_scanner() && (first != last)) {
             if (begin_) {
                 assert(fragmented_value_.empty());
-                fragmented_value_.assign(begin_, end_);     // throw
-                fragmented_value_.append(first, last);      // throw
+                fragmented_value_.
+                    reserve((end_ - begin_) + (last - first));  // throw
+                fragmented_value_.assign(begin_, end_);
+                fragmented_value_.append(first, last);
                 begin_ = nullptr;
             } else if (!fragmented_value_.empty()) {
-                fragmented_value_.append(first, last);      // throw
+                fragmented_value_.append(first, last);          // throw
             } else {
                 begin_ = first;
                 end_ = last;
@@ -560,24 +564,25 @@ public:
         if (const auto scanner = get_scanner()) {
             if (begin_) {
                 if (first != last) {
-                    fragmented_value_.assign(begin_, end_);     // throw
-                    fragmented_value_.append(first, last);      // throw
+                    fragmented_value_.
+                        reserve((end_ - begin_) + (last - first));  // throw
+                    fragmented_value_.assign(begin_, end_);
+                    fragmented_value_.append(first, last);
                     scanner->field_value(std::move(fragmented_value_), *this);
                     fragmented_value_.clear();
                 } else {
-                    *unconst(end_) = Ch();
-                    scanner->field_value(
-                        unconst(begin_), unconst(end_), *this);
+                    *uc(end_) = Ch();
+                    scanner->field_value(uc(begin_), uc(end_), *this);
                 }
+                begin_ = nullptr;
             } else if (!fragmented_value_.empty()) {
-                fragmented_value_.append(first, last);          // throw
+                fragmented_value_.append(first, last);              // throw
                 scanner->field_value(std::move(fragmented_value_), *this);
                 fragmented_value_.clear();
             } else {
-                *unconst(last) = Ch();
-                scanner->field_value(unconst(first), unconst(last), *this);
+                *uc(last) = Ch();
+                scanner->field_value(uc(first), uc(last), *this);
             }
-            begin_ = nullptr;
         }
         ++j_;
         return true;
@@ -661,7 +666,7 @@ private:
         return nullptr;
     }
 
-    Ch* unconst(const Ch* s) const
+    Ch* uc(const Ch* s) const
     {
         const auto tb = true_buffer();
         return tb + (s - tb);
@@ -1305,7 +1310,7 @@ public:
     template <class Ch>
     void field_value(const Ch* begin, const Ch* end)
     {
-        assert(*end == Ch());   // shall be null-teminated
+        assert(*end == Ch());
         this->put(this->convert(begin, end));
     }
 };
