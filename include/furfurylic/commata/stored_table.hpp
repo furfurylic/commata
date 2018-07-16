@@ -1548,7 +1548,7 @@ public:
             j_ = content.emplace(content.cend(),
                 i_, typename record_t::value_type());   // throw
         }
-        j_->back() = typename record_t::value_type(first, last);
+        *j_->rbegin() = typename record_t::value_type(first, last);
         ++j_;
     }
 };
