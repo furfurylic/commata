@@ -60,8 +60,8 @@ public:
         basic_stored_value(empty_value, empty_value)
     {}
 
-    basic_stored_value(Ch* begin, const Ch* end) noexcept :
-        begin_(begin), end_(begin + (end - begin))
+    basic_stored_value(Ch* begin, Ch* end) noexcept :
+        begin_(begin), end_(end)
     {
         assert(*end_ == Ch());
     }
@@ -1501,8 +1501,7 @@ struct arrange_as_is
         content.emplace(content.cend());            // throw
     }
 
-    void new_value(Content& content,
-        char_type* first, const char_type* last) const
+    void new_value(Content& content, char_type* first, char_type* last) const
     {
         auto& back = *content.rbegin();
         back.emplace(back.cend(), first, last);     // throw
@@ -1542,7 +1541,7 @@ public:
         j_ = content.begin();
     }
 
-    void new_value(Content& content, char_type* first, const char_type* last)
+    void new_value(Content& content, char_type* first, char_type* last)
     {
         assert(i_ > 0);
         if (content.end() == j_) {
