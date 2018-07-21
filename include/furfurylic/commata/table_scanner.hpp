@@ -72,7 +72,163 @@ struct accepts_x :
     decltype(accepts_x_impl::check<T, X>(nullptr))
 {};
 
-}
+// We made this class template to give nothrow-move-constructibility to
+// std::vector, so we shall be able to remove this in C++17, in which it has
+// a noexcept move ctor
+template <class T, class = void>
+class nothrow_move_constructible
+{
+    T* t_;
+
+public:
+    template <class AnyAllocator, class... Args>
+    explicit nothrow_move_constructible(
+        std::allocator_arg_t, const AnyAllocator& any_alloc, Args&&... args)
+    {
+        using at_t = typename std::allocator_traits<AnyAllocator>::
+            template rebind_traits<T>;
+        typename at_t::allocator_type alloc(any_alloc);
+        const auto p = at_t::allocate(alloc, 1);
+        t_ = std::addressof(*p);
+        try {
+            ::new(t_) T(std::forward<Args>(args)...);
+        } catch (...) {
+            at_t::deallocate(alloc, p, 1);
+            throw;
+        }
+    }
+
+    nothrow_move_constructible(nothrow_move_constructible&& other) noexcept :
+        t_(other.t_)
+    {
+        other.t_ = nullptr;
+    }
+
+    ~nothrow_move_constructible()
+    {
+        assert(!t_);
+    }
+
+    explicit operator bool() const
+    {
+        return t_ != nullptr;
+    }
+
+    template <class AnyAllocator>
+    void kill(const AnyAllocator& any_alloc)
+    {
+        assert(t_);
+        using at_t = typename std::allocator_traits<AnyAllocator>::
+            template rebind_traits<T>;
+        typename at_t::allocator_type alloc(any_alloc);
+        t_->~T();
+        at_t::deallocate(alloc,
+            std::pointer_traits<typename at_t::pointer>::pointer_to(*t_), 1);
+#ifndef NDEBUG
+        t_ = nullptr;
+#endif
+    }
+
+    T& operator*()
+    {
+        assert(t_);
+        return *t_;
+    }
+
+    const T& operator*() const
+    {
+        assert(t_);
+        return *t_;
+    }
+
+    T* operator->()
+    {
+        assert(t_);
+        return t_;
+    }
+
+    const T* operator->() const
+    {
+        assert(t_);
+        return t_;
+    }
+
+    template <class AnyAllocator>
+    void assign(const AnyAllocator& any_alloc,
+        nothrow_move_constructible&& other) noexcept
+    {
+        kill(any_alloc);
+        t_ = other.t_;
+        other.t_ = nullptr;
+    }
+};
+
+template <class T>
+class nothrow_move_constructible<T,
+    std::enable_if_t<std::is_nothrow_move_constructible<T>::value>>
+{
+    std::aligned_storage_t<sizeof(T), alignof(T)> t_;
+
+public:
+    template <class AnyAllocator, class... Args>
+    explicit nothrow_move_constructible(
+        std::allocator_arg_t, const AnyAllocator&, Args&&... args)
+    {
+        ::new(&*(*this)) T(std::forward<Args>(args)...);
+    }
+
+    nothrow_move_constructible(nothrow_move_constructible&& other) noexcept :
+        t_(std::move(other.t_))
+    {
+        ::new(&*(*this)) T(std::move(*other));
+        other->clear(); // inhibit overkill
+    }
+
+    ~nothrow_move_constructible()
+    {
+        (*this)->~T();
+    }
+
+    constexpr explicit operator bool() const
+    {
+        return true;
+    }
+
+    template <class AnyAllocator>
+    void kill(const AnyAllocator&)
+    {}
+
+    T& operator*()
+    {
+        return *reinterpret_cast<T*>(&t_);
+    }
+
+    const T& operator*() const
+    {
+        return *reinterpret_cast<const T*>(&t_);
+    }
+
+    T* operator->()
+    {
+        return &*(*this);
+    }
+
+    const T* operator->() const
+    {
+        return &*(*this);
+    }
+
+    template <class AnyAllocator>
+    void assign(const AnyAllocator&,
+        nothrow_move_constructible&& other) noexcept
+    {
+        (*this)->~T();
+        ::new(&*(*this)) T(std::move(*other));
+        other->clear(); // inhibit overkill
+    }
+};
+
+} // end namespace detail
 
 template <class Ch, class Tr = std::char_traits<Ch>,
           class Allocator = std::allocator<Ch>>
@@ -284,8 +440,9 @@ class table_scanner :
         typename at_t::template rebind_traits<header_field_scanner>;
     using bfs_at_t =
         typename at_t::template rebind_traits<body_field_scanner>;
-    using bfs_ptr_a_t =
-        typename at_t::template rebind_alloc<typename bfs_at_t::pointer>;
+    using bfs_ptr_t = typename bfs_at_t::pointer;
+    using bfs_ptr_a_t = typename at_t::template rebind_alloc<bfs_ptr_t>;
+    using scanners_a_t = detail::allocation_only_allocator<bfs_ptr_a_t>;
     using res_at_t =
         typename at_t::template rebind_traits<record_end_scanner>;
 
@@ -296,8 +453,8 @@ class table_scanner :
     const Ch* begin_;
     const Ch* end_;
     typename hfs_at_t::pointer header_field_scanner_;
-    std::vector<typename bfs_at_t::pointer,
-        detail::allocation_only_allocator<bfs_ptr_a_t>> scanners_;
+    detail::nothrow_move_constructible<
+        std::vector<bfs_ptr_t, scanners_a_t>> scanners_;
     typename res_at_t::pointer end_scanner_;
     string_t fragmented_value_;
 
@@ -332,8 +489,7 @@ public:
         buffer_size_(sanitize_buffer_size(buffer_size)),
         buffer_(), begin_(nullptr),
         header_field_scanner_(),
-        scanners_(detail::allocation_only_allocator<bfs_ptr_a_t>(
-            bfs_ptr_a_t(this->get()))),
+        scanners_(make_scanners()),
         end_scanner_(nullptr), fragmented_value_(alloc)
     {}
 
@@ -350,16 +506,11 @@ public:
         buffer_(), begin_(nullptr),
         header_field_scanner_(allocate_construct<
             typed_header_field_scanner<HeaderFieldScanner>>(std::move(s))),
-        scanners_(detail::allocation_only_allocator<bfs_ptr_a_t>(
-            bfs_ptr_a_t(this->get()))),
+        scanners_(make_scanners()),
         end_scanner_(nullptr), fragmented_value_(alloc)
     {}
 
-    table_scanner(table_scanner&& other) noexcept(noexcept(
-        std::is_nothrow_move_constructible<decltype(scanners_)>::value
-     && std::is_nothrow_move_constructible<string_t>::value)) :
-    // We will have nothrow-move-constructible ctors for vector and string in
-    // C++17, so in C++17 we will be able to make this ctor simply "noexcept"
+    table_scanner(table_scanner&& other) noexcept :
         detail::member_like_base<Allocator>(std::move(other)),
         remaining_header_records_(other.remaining_header_records_),
         j_(other.j_), buffer_size_(other.buffer_size_),
@@ -382,10 +533,13 @@ public:
         if (header_field_scanner_) {
             destroy_deallocate(header_field_scanner_);
         }
-        for (const auto p : scanners_) {
-            if (p) {
-                destroy_deallocate(p);
+        if (scanners_) {
+            for (const auto p : *scanners_) {
+                if (p) {
+                    destroy_deallocate(p);
+                }
             }
+            scanners_.kill(this->get());
         }
         if (end_scanner_) {
             destroy_deallocate(end_scanner_);
@@ -408,19 +562,22 @@ private:
     void do_set_field_scanner(std::size_t j, FieldScanner s)
     {
         using scanner_t = typed_body_field_scanner<FieldScanner>;
-        if (j >= scanners_.size()) {
-            scanners_.resize(j + 1);                            // throw
-        } else if (const auto scanner = scanners_[j]) {
+        if (!scanners_) {
+            scanners_.assign(this->get(), make_scanners());     // throw
+            scanners_->resize(j + 1);                           // throw
+        } else if (j >= scanners_->size()) {
+            scanners_->resize(j + 1);                           // throw
+        } else if (const auto scanner = (*scanners_)[j]) {
             destroy_deallocate(scanner);
         }
-        scanners_[j] =
+        (*scanners_)[j] =
             allocate_construct<scanner_t>(std::move(s));        // throw
     }
 
     void do_set_field_scanner(std::size_t j, std::nullptr_t)
     {
-        if (j < scanners_.size()) {
-            auto& scanner = scanners_[j];
+        if (scanners_ && (j < scanners_->size())) {
+            auto& scanner = (*scanners_)[j];
             destroy_deallocate(scanner);
             scanner = nullptr;
         }
@@ -429,8 +586,8 @@ private:
 public:
     const std::type_info& get_field_scanner_type(std::size_t j) const
     {
-        if ((j < scanners_.size()) && scanners_[j]) {
-            return scanners_[j]->get_type();
+        if (scanners_ && (j < scanners_->size()) && (*scanners_)[j]) {
+            return (*scanners_)[j]->get_type();
         } else {
             return typeid(void);
         }
@@ -438,7 +595,7 @@ public:
 
     bool has_field_scanner(std::size_t j) const
     {
-        return (j < scanners_.size()) && scanners_[j];
+        return scanners_ && (j < scanners_->size()) && (*scanners_)[j];
     }
 
     template <class FieldScanner>
@@ -458,7 +615,7 @@ private:
     static auto get_field_scanner_g(ThisType& me, std::size_t j)
     {
         return me.has_field_scanner(j) ?
-            me.scanners_[j]->template get_target<FieldScanner>() :
+            (*me.scanners_)[j]->template get_target<FieldScanner>() :
             nullptr;
     }
 
@@ -595,9 +752,11 @@ public:
         } else if (remaining_header_records_ > 0) {
             --remaining_header_records_;
         } else {
-            for (auto j = j_; j < scanners_.size(); ++j) {
-                if (auto scanner = scanners_[j]) {
-                    scanner->field_skipped();
+            if (scanners_) {
+                for (auto j = j_; j < scanners_->size(); ++j) {
+                    if (auto scanner = (*scanners_)[j]) {
+                        scanner->field_skipped();
+                    }
                 }
             }
             if (end_scanner_) {
@@ -647,6 +806,12 @@ private:
         t_at_t::deallocate(a, p, 1);
     }
 
+    auto make_scanners()
+    {
+        return decltype(scanners_)(std::allocator_arg,
+            this->get(), scanners_a_t(bfs_ptr_a_t(this->get())));
+    }
+
     Ch* true_buffer() const noexcept
     {
         assert(buffer_);
@@ -658,8 +823,8 @@ private:
         if (header_field_scanner_) {
             return std::addressof(*header_field_scanner_);
         } else if ((remaining_header_records_ == 0U)
-                && (j_ < scanners_.size())) {
-            if (const auto p = scanners_[j_]) {
+                && scanners_ && (j_ < scanners_->size())) {
+            if (const auto p = (*scanners_)[j_]) {
                 return std::addressof(*p);
             }
         }

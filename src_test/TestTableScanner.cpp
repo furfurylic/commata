@@ -938,6 +938,23 @@ TYPED_TEST(TestTableScanner, Allocators)
     ASSERT_TRUE(a2.tracks(&v2[0][0]));
 }
 
+TYPED_TEST(TestTableScanner, MovedFromState)
+{
+    std::vector<int> values;
+
+    table_scanner<TypeParam> h1;
+    auto t = make_field_translator(values);
+    h1.set_field_scanner(0, std::move(t));
+
+    table_scanner<TypeParam> h2(std::move(h1));
+
+    ASSERT_FALSE(h1.has_field_scanner(0));
+    ASSERT_EQ(typeid(void), h1.get_field_scanner_type(0));
+    ASSERT_EQ(nullptr, h1.template get_field_scanner<decltype(t)>(0));
+
+    ASSERT_NE(nullptr, h2.template get_field_scanner<decltype(t)>(0));
+}
+
 namespace {
 
 struct stateful_header_scanner
