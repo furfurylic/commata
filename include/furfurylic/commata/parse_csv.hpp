@@ -378,13 +378,14 @@ class default_buffer_control :
     typename alloc_traits_t::pointer buffer_;
 
 public:
-    default_buffer_control(std::size_t buffer_size, const Allocator& alloc) :
+    default_buffer_control(
+        std::size_t buffer_size, const Allocator& alloc) noexcept :
         detail::member_like_base<Allocator>(alloc),
         buffer_size_((buffer_size < 1) ? 8192 : buffer_size),
         buffer_()
     {}
 
-    default_buffer_control(default_buffer_control&& other) :
+    default_buffer_control(default_buffer_control&& other) noexcept :
         detail::member_like_base<Allocator>(other.get()),
         buffer_size_(other.buffer_size_),
         buffer_(other.buffer_)
@@ -494,6 +495,7 @@ template <class Handler, class BufferControl>
 class full_fledged_handler :
     BufferControl
 {
+    static_assert(!std::is_reference<Handler>::value, "");
     static_assert(!is_full_fledged<Handler>::value, "");
 
     Handler handler_;
@@ -501,7 +503,8 @@ class full_fledged_handler :
 public:
     using char_type = typename Handler::char_type;
 
-    full_fledged_handler(Handler&& handler, BufferControl&& buffer_engine) :
+    full_fledged_handler(Handler&& handler, BufferControl&& buffer_engine)
+        noexcept(std::is_nothrow_move_constructible<Handler>::value) :
         BufferControl(std::move(buffer_engine)),
         handler_(std::move(handler))
     {}
@@ -585,7 +588,9 @@ template <class Handler,
     std::enable_if_t<!is_full_fledged<Handler>::value, std::nullptr_t>
         = nullptr>
 auto make_full_fledged(Handler&& handler)
+    noexcept(std::is_nothrow_move_constructible<Handler>::value)
 {
+    static_assert(!std::is_reference<Handler>::value, "");
     static_assert(with_buffer_control<Handler>::value, "");
     return full_fledged_handler<Handler, thru_buffer_control>(
         std::forward<Handler>(handler), thru_buffer_control());
@@ -594,15 +599,18 @@ auto make_full_fledged(Handler&& handler)
 template <class Handler,
     std::enable_if_t<is_full_fledged<Handler>::value, std::nullptr_t>
         = nullptr>
-decltype(auto) make_full_fledged(Handler&& handler)
+decltype(auto) make_full_fledged(Handler&& handler) noexcept
 {
+    static_assert(!std::is_reference<Handler>::value, "");
     return std::forward<Handler>(handler);
 }
 
 template <class Handler, class Allocator>
 auto make_full_fledged(Handler&& handler,
     std::size_t buffer_size, const Allocator& alloc)
+    noexcept(std::is_nothrow_move_constructible<Handler>::value)
 {
+    static_assert(!std::is_reference<Handler>::value, "");
     static_assert(without_buffer_control<Handler>::value, "");
     static_assert(std::is_same<
         typename Handler::char_type,
@@ -642,7 +650,8 @@ private:
     {};
 
 public:
-    explicit primitive_parser(Handler&& f) :
+    explicit primitive_parser(Handler&& f)
+        noexcept(std::is_nothrow_move_constructible<Handler>::value) :
         f_(std::move(f)),
         record_started_(false), s_(state::after_lf),
         physical_row_index_(parse_error::npos),
@@ -650,7 +659,6 @@ public:
     {}
 
     primitive_parser(primitive_parser&&) = default;
-    primitive_parser& operator=(primitive_parser&&) = default;
 
     template <class Tr>
     bool parse_csv(std::basic_streambuf<char_type, Tr>* in)
@@ -731,7 +739,7 @@ private:
     }
 
 private:
-    void new_physical_row()
+    void new_physical_row() noexcept
     {
         if (physical_row_index_ == parse_error::npos) {
             physical_row_index_ = 0;
@@ -742,18 +750,18 @@ private:
         physical_row_chars_passed_away_ = 0;
     }
 
-    void change_state(state s)
+    void change_state(state s) noexcept
     {
         s_ = s;
     }
 
-    void set_first_last()
+    void set_first_last() noexcept
     {
         first_ = p_;
         last_ = p_;
     }
 
-    void update_last()
+    void update_last() noexcept
     {
         last_ = p_ + 1;
     }
@@ -839,7 +847,10 @@ private:
 
 template <class Handler>
 primitive_parser<Handler> make_primitive_parser(Handler&& handler)
+    noexcept(std::is_nothrow_constructible<
+        primitive_parser<Handler>, Handler&&>::value)
 {
+    static_assert(!std::is_reference<Handler>::value, "");
     return primitive_parser<Handler>(std::move(handler));
 }
 
@@ -865,7 +876,7 @@ template <class Handler, class D>
 struct release_buffer_t<Handler, D,
     std::enable_if_t<has_release_buffer<Handler>::value>>
 {
-    void release_buffer(const typename Handler::char_type* buffer)
+    void release_buffer(const typename Handler::char_type* buffer) noexcept
     {
         static_cast<D*>(this)->base().release_buffer(buffer);
     }
@@ -923,11 +934,6 @@ struct handler_decorator :
 {
     using char_type = typename Handler::char_type;
 
-protected:
-    handler_decorator()
-    {}
-
-public:
     void start_record(const char_type* record_begin)
     {
         static_cast<D*>(this)->base().start_record(record_begin);
@@ -956,11 +962,11 @@ class wrapper_handler :
     Handler* handler_;
 
 public:
-    explicit wrapper_handler(Handler& handler) :
+    explicit wrapper_handler(Handler& handler) noexcept :
         handler_(&handler)
     {}
 
-    Handler& base()
+    Handler& base() const noexcept
     {
         return *handler_;
     }
@@ -1024,7 +1030,8 @@ class empty_physical_row_aware_handler :
     Handler handler_;
 
 public:
-    explicit empty_physical_row_aware_handler(Handler handler) :
+    explicit empty_physical_row_aware_handler(Handler handler)
+        noexcept(std::is_nothrow_move_constructible<Handler>::value) :
         handler_(std::move(handler))
     {}
 
@@ -1036,12 +1043,12 @@ public:
         return this->end_record(where);
     }
 
-    Handler& base()
+    Handler& base() noexcept
     {
         return handler_;
     }
 
-    const Handler& base() const
+    const Handler& base() const noexcept
     {
         return handler_;
     }
@@ -1055,7 +1062,7 @@ class empty_physical_row_aware_handler<Handler&> :
     Handler* handler_;
 
 public:
-    explicit empty_physical_row_aware_handler(Handler& handler) :
+    explicit empty_physical_row_aware_handler(Handler& handler) noexcept :
         handler_(&handler)
     {}
 
@@ -1067,7 +1074,7 @@ public:
         return this->end_record(where);
     }
 
-    Handler& base() const
+    Handler& base() const noexcept
     {
         return *handler_;
     }
@@ -1078,17 +1085,16 @@ template <class Handler,
         !detail::is_std_reference_wrapper<Handler>::value,
         std::nullptr_t> = nullptr>
 auto make_empty_physical_row_aware(Handler&& handler)
+    noexcept(std::is_nothrow_move_constructible<
+                std::remove_reference_t<Handler>>::value)
 {
     return empty_physical_row_aware_handler<
-        std::decay_t<Handler>>(std::forward<Handler>(handler));
-    // No one would want to instantiate empty_physical_row_aware_handler with
-    // const|volatile types (almost none of their members can be invoked),
-    // so we use decay_t instead of remove_reference_t.
+        std::remove_reference_t<Handler>>(std::forward<Handler>(handler));
 }
 
 template <class Handler>
 auto make_empty_physical_row_aware(
-    const std::reference_wrapper<Handler>& handler)
+    const std::reference_wrapper<Handler>& handler) noexcept
 {
     return empty_physical_row_aware_handler<Handler&>(handler.get());
 }

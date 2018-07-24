@@ -25,22 +25,25 @@ class member_like_base<F,
 
 public:
     member_like_base()
+        noexcept(std::is_nothrow_default_constructible<F>::value)
     {}
 
-    explicit member_like_base(const F& f) :
+    explicit member_like_base(const F& f)
+        noexcept(std::is_nothrow_copy_constructible<F>::value) :
         f_(f)
     {}
 
-    explicit member_like_base(F&& f) :
+    explicit member_like_base(F&& f)
+        noexcept(std::is_nothrow_move_constructible<F>::value) :
         f_(std::move(f))
     {}
 
-    F& get()
+    F& get() noexcept
     {
         return f_;
     }
 
-    const F& get() const
+    const F& get() const noexcept
     {
         return f_;
     }
@@ -54,22 +57,25 @@ class member_like_base<F,
 {
 public:
     member_like_base()
+        noexcept(std::is_nothrow_default_constructible<F>::value)
     {}
 
-    explicit member_like_base(const F& f) :
+    explicit member_like_base(const F& f)
+        noexcept(std::is_nothrow_copy_constructible<F>::value) :
         F(f)
     {}
 
-    explicit member_like_base(F&& f) :
+    explicit member_like_base(F&& f)
+        noexcept(std::is_nothrow_move_constructible<F>::value) :
         F(std::move(f))
     {}
 
-    F& get()
+    F& get() noexcept
     {
         return *this;
     }
 
-    const F& get() const
+    const F& get() const noexcept
     {
         return *this;
     }
