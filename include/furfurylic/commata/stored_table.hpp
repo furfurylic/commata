@@ -1575,13 +1575,13 @@ private:
     char_type* field_begin_;
     char_type* field_end_;
 
-    basic_stored_table<Content, Allocator>* table_;
+    table_type* table_;
 
 private:
     using at_t = std::allocator_traits<Allocator>;
 
 public:
-    stored_table_builder(basic_stored_table<Content, Allocator>& table) :
+    explicit stored_table_builder(table_type& table) :
         detail::arrange<Content, Transposes>(table.content()),
         current_buffer_holder_(nullptr), current_buffer_(nullptr),
         field_begin_(nullptr), table_(&table)
@@ -1645,23 +1645,19 @@ public:
 
     std::pair<char_type*, std::size_t> get_buffer()
     {
-        using traits_t =
-            typename Content::value_type::value_type::traits_type;
         std::size_t length;
         if (field_begin_) {
             // In an active value, whose length is "length" so far
             length = static_cast<std::size_t>(field_end_ - field_begin_);
             // We'd like to move the active value to the beginning of the
             // returned buffer
-            std::size_t next_buffer_size;
-            for (next_buffer_size = table_->get_buffer_size();
-                 length >= next_buffer_size / 2; next_buffer_size *= 2);
+            const std::size_t next_buffer_size = get_next_buffer_size(length);
+            using traits_t = typename table_type::traits_type;
             if (current_buffer_holder_
              && (current_buffer_size_ >= next_buffer_size)) {
                 // The current buffer contains no other values
                 // and it suffices in terms of length
-                traits_t::move(
-                    current_buffer_holder_, field_begin_, length);
+                traits_t::move(current_buffer_holder_, field_begin_, length);
             } else {
                 // The current buffer has been committed to the store or
                 // seems to be too short, so we need a new one
@@ -1703,6 +1699,15 @@ public:
         return std::make_pair(current_buffer_ + length, effective_size - 1);
     }
 
+private:
+    std::size_t get_next_buffer_size(std::size_t occupied) const noexcept
+    {
+        std::size_t next = table_->get_buffer_size();
+        for (; occupied >= next / 2; next *= 2);
+        return next;
+    }
+
+public:
     void release_buffer(const char_type* /*buffer*/) noexcept
     {}
 };
