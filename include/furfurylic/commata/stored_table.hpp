@@ -313,17 +313,20 @@ namespace detail {
 template <class Left, class Right>
 bool stored_value_eq(const Left& left, const Right& right) noexcept
 {
-    return std::equal(
-        left.cbegin(), left.cend(), right.cbegin(), right.cend(),
-            [](auto l, auto r) { return Left::traits_type::eq(l, r); });
+    using tr_t = typename Left::traits_type;
+    return (left.size() == right.size())
+        && (tr_t::compare(left.data(), right.data(), left.size()) == 0);
 }
 
 template <class Left, class Right>
 bool stored_value_lt(const Left& left, const Right& right) noexcept
 {
-    return std::lexicographical_compare(
-        left.cbegin(), left.cend(), right.cbegin(), right.cend(),
-            [](auto l, auto r) { return Left::traits_type::lt(l, r); });
+    using tr_t = typename Left::traits_type;
+    if (left.size() < right.size()) {
+        return tr_t::compare(left.data(), right.data(), left.size()) <= 0;
+    } else {
+        return tr_t::compare(left.data(), right.data(), right.size()) < 0;
+    }
 }
 
 } // end namespace detail
@@ -1049,10 +1052,13 @@ public:
     value_type& rewrite_value(value_type& value,
         ForwardIterator new_value_begin, ForwardIterator new_value_end)
     {
+        // We require that [value.begin(), value.end()) and
+        // [new_value_begin, new_value_end) do not overlap
+
         const auto length = static_cast<std::size_t>(
             std::distance(new_value_begin, new_value_end));
         if (length <= value.size()) {
-            std::copy_n(new_value_begin, length, value.begin());
+            traits_type::copy(value.begin(), new_value_begin, length);
             value.erase(value.cbegin() + length, value.cend());
         } else {
             auto secured = store_.secure_any(length + 1);
@@ -1066,8 +1072,8 @@ public:
                 // thrown by add_buffer because add_buffer consumes secured
                 store_.secure_current_upto(secured + length + 1);
             }
-            std::copy_n(new_value_begin, length, secured);
-            secured[length] = typename value_type::value_type();
+            traits_type::copy(secured, new_value_begin, length);
+            traits_type::assign(secured[length], char_type());
             value = value_type(secured, secured + length);
         }
         return value;
@@ -1081,7 +1087,7 @@ public:
             std::declval<value_type>())&
     {
         auto last = new_value;
-        while (*last != char_type()) {
+        while (!traits_type::eq(*last, char_type())) {
             ++last;
         }
         return rewrite_value(value, new_value, last);
@@ -1549,8 +1555,8 @@ class stored_table_builder :
     detail::arrange<Content, Transposes>
 {
 public:
-    using char_type =
-        typename basic_stored_table<Content, Allocator>::char_type;
+    using table_type = basic_stored_table<Content, Allocator>;
+    using char_type = typename table_type::char_type;
 
 private:
     char_type* current_buffer_holder_;
@@ -1599,7 +1605,7 @@ public:
     bool update(const char_type* first, const char_type* last)
     {
         if (field_begin_) {
-            std::memmove(field_end_, first, last - first);
+            table_type::traits_type::move(field_end_, first, last - first);
             field_end_ += last - first;
         } else {
             field_begin_ = current_buffer_ + (first - current_buffer_);
@@ -1611,7 +1617,7 @@ public:
     bool finalize(const char_type* first, const char_type* last)
     {
         update(first, last);
-        *field_end_ = char_type();
+        table_type::traits_type::assign(*field_end_, char_type());
         if (current_buffer_holder_) {
             auto cbh = current_buffer_holder_;
             current_buffer_holder_ = nullptr;
@@ -1630,28 +1636,30 @@ public:
 
     std::pair<char_type*, std::size_t> get_buffer()
     {
+        using traits_t =
+            typename Content::value_type::value_type::traits_type;
         std::size_t length;
         if (field_begin_) {
-            // in an active value, whose length is "length" so far
+            // In an active value, whose length is "length" so far
             length = static_cast<std::size_t>(field_end_ - field_begin_);
-            // we'd like to move the active value to the beginning of the
+            // We'd like to move the active value to the beginning of the
             // returned buffer
             std::size_t next_buffer_size;
             for (next_buffer_size = table_->get_buffer_size();
                  length >= next_buffer_size / 2; next_buffer_size *= 2);
             if (current_buffer_holder_
              && (current_buffer_size_ >= next_buffer_size)) {
-                // the current buffer contains no other values
+                // The current buffer contains no other values
                 // and it suffices in terms of length
-                std::memmove(
+                traits_t::move(
                     current_buffer_holder_, field_begin_, length);
             } else {
-                // the current buffer has been committed to the store,
-                // so we need a new one
+                // The current buffer has been committed to the store or
+                // seems to be too short, so we need a new one
                 auto a = table_->get_allocator();
                 const auto next_buffer = std::addressof(
                     *at_t::allocate(a, next_buffer_size));  // throw
-                std::memcpy(next_buffer, field_begin_, length);
+                traits_t::copy(next_buffer, field_begin_, length);
                 if (current_buffer_holder_) {
                     at_t::deallocate(
                         a, current_buffer_holder_, current_buffer_size_);
@@ -1662,12 +1670,12 @@ public:
             field_begin_ = current_buffer_holder_;
             field_end_   = current_buffer_holder_ + length;
         } else {
-            // out of any active values
+            // Out of any active values
             if (current_buffer_holder_) {
-                // the current buffer contains no values,
+                // The current buffer contains no values,
                 // so we would like to reuse it
             } else {
-                // the current buffer has been committed to the store,
+                // The current buffer has been committed to the store,
                 // so we need a new one
                 auto a = table_->get_allocator();
                 current_buffer_holder_ = std::addressof(
