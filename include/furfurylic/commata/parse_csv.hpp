@@ -1019,51 +1019,18 @@ auto parse_csv(Input&& in,
 template <class Handler>
 class empty_physical_row_aware_handler :
     public detail::handler_decorator<
-        std::remove_reference_t<Handler>,
-        empty_physical_row_aware_handler<Handler>>
+        Handler, empty_physical_row_aware_handler<Handler>>
 {
     Handler handler_;
 
 public:
     explicit empty_physical_row_aware_handler(Handler handler) :
-        handler_(std::forward<Handler>(handler))    // do not move because
-                                                    // Handler may be an
-                                                    // lvalue reference type
-    {
-        using this_t = std::remove_pointer_t<decltype(this)>;
-        using handler_t = std::remove_reference_t<Handler>;
-        static_assert(detail::has_get_buffer<this_t>::value
-            == detail::has_get_buffer<handler_t>::value, "");
-        static_assert(detail::has_release_buffer<this_t>::value
-            == detail::has_release_buffer<handler_t>::value, "");
-        static_assert(detail::has_start_buffer<this_t>::value
-            == detail::has_start_buffer<handler_t>::value, "");
-        static_assert(detail::has_end_buffer<this_t>::value
-            == detail::has_end_buffer<handler_t>::value, "");
-    }
+        handler_(std::move(handler))
+    {}
 
-    empty_physical_row_aware_handler(const empty_physical_row_aware_handler&)
-        = default;
-    empty_physical_row_aware_handler(empty_physical_row_aware_handler&&)
-        = default;
+    // Defaulted copy/move ops are all right
 
-    // Assignment ops are explicitly defined on the chance that
-    // Handler is an lvalue reference type
-
-    empty_physical_row_aware_handler& operator=(
-        const empty_physical_row_aware_handler& other)
-    {
-        handler_ = other.handler_;
-    }
-
-    empty_physical_row_aware_handler& operator=(
-        empty_physical_row_aware_handler&& other)
-    {
-        handler_ = std::move(other.handler_);
-    }
-
-    bool empty_physical_row(
-        const typename empty_physical_row_aware_handler::char_type* where)
+    bool empty_physical_row(const typename Handler::char_type* where)
     {
         this->start_record(where);
         return this->end_record(where);
@@ -1077,6 +1044,32 @@ public:
     const Handler& base() const
     {
         return handler_;
+    }
+};
+
+template <class Handler>
+class empty_physical_row_aware_handler<Handler&> :
+    public detail::handler_decorator<
+        Handler, empty_physical_row_aware_handler<Handler&>>
+{
+    Handler* handler_;
+
+public:
+    explicit empty_physical_row_aware_handler(Handler& handler) :
+        handler_(&handler)
+    {}
+
+    // Defaulted copy/move ops are all right
+
+    bool empty_physical_row(const typename Handler::char_type* where)
+    {
+        this->start_record(where);
+        return this->end_record(where);
+    }
+
+    Handler& base() const
+    {
+        return *handler_;
     }
 };
 

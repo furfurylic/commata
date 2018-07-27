@@ -197,6 +197,8 @@ TEST_F(TestParseCsvReference, EmptyRowAware)
     ASSERT_EQ(2U, collector.field_values()[2].size());
     ASSERT_EQ("C", collector.field_values()[2][0]);
     ASSERT_EQ("D", collector.field_values()[2][1]);
+
+    ASSERT_EQ(&collector, &sink.base());
 }
 
 struct TestParseCsvEndsWithoutLF :
