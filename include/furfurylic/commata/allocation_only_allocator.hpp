@@ -16,6 +16,30 @@ namespace furfurylic {
 namespace commata {
 namespace detail {
 
+template <class A, class = void>
+struct reference_forwarded
+{
+    using type = typename A::value_type&;
+};
+
+template <class A>
+struct reference_forwarded<A, typename A::reference>
+{
+    using type = typename A::reference;
+};
+
+template <class A, class = void>
+struct const_reference_forwarded
+{
+    using type = const typename A::value_type&;
+};
+
+template <class A>
+struct const_reference_forwarded<A, typename A::const_reference>
+{
+    using type = typename A::const_reference;
+};
+
 template <class Allocator>
 class allocation_only_allocator :
     member_like_base<Allocator>
@@ -35,6 +59,11 @@ public:
     using size_type = typename base_traits::size_type;
     using difference_type = typename base_traits::difference_type;
 
+    // These types are not required by the C++14 standard, but
+    // std::basic_string which comes with gcc 7.3.1 seems to do
+    using reference = typename reference_forwarded<Allocator>::type;
+    using const_reference = typename reference_forwarded<Allocator>::type;
+
     template <class U>
     struct rebind
     {
@@ -42,20 +71,25 @@ public:
             typename base_traits::template rebind_alloc<U>>;
     };
 
+    // Default-constructibility of an allocator is not mandated by the C++14
+    // standard, but std::basic_string which comes with gcc 7.3.1 requires it
+    allocation_only_allocator() noexcept
+    {}
+
     // To make wrappers
-    explicit allocation_only_allocator(const Allocator& other) :
+    explicit allocation_only_allocator(const Allocator& other) noexcept :
         member_like_base<Allocator>(other)
     {}
 
     // ditto
-    explicit allocation_only_allocator(Allocator&& other) :
+    explicit allocation_only_allocator(Allocator&& other) noexcept :
         member_like_base<Allocator>(std::move(other))
     {}
 
     // To make rebound copies
     template <class Allocator2>
     explicit allocation_only_allocator(
-        const allocation_only_allocator<Allocator2>& other) :
+        const allocation_only_allocator<Allocator2>& other) noexcept :
         member_like_base<Allocator>(Allocator(other.get()))
     {}
 
@@ -100,12 +134,12 @@ public:
     using propagate_on_container_swap =
         typename base_traits::propagate_on_container_swap;
 
-    decltype(auto) base()
+    decltype(auto) base() noexcept
     {
         return this->get();
     }
 
-    decltype(auto) base() const
+    decltype(auto) base() const noexcept
     {
         return this->get();
     }
@@ -125,7 +159,7 @@ private:
 template <class Allocator1, class Allocator2>
 inline bool operator==(
     const allocation_only_allocator<Allocator1>& left,
-    const allocation_only_allocator<Allocator2>& right)
+    const allocation_only_allocator<Allocator2>& right) noexcept
 {
     return left.base() == right.base();
 }
@@ -133,7 +167,7 @@ inline bool operator==(
 template <class Allocator1, class Allocator2>
 inline bool operator!=(
     const allocation_only_allocator<Allocator1>& left,
-    const allocation_only_allocator<Allocator2>& right)
+    const allocation_only_allocator<Allocator2>& right) noexcept
 {
     return !(left == right);
 }

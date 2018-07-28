@@ -18,7 +18,6 @@
 #include <string>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 #include "allocation_only_allocator.hpp"
 #include "text_error.hpp"
@@ -132,12 +131,16 @@ class record_extractor_impl :
     const Ch* current_begin_;   // current records's begin if not the buffer
                                 // switched, current buffer's begin otherwise
     std::basic_streambuf<Ch, Tr>* out_;
-    std::vector<Ch, alloc_t> field_buffer_;
-    std::vector<Ch, alloc_t> record_buffer_;// populated only after the buffer
-                                            // switched in a unknown (included
-                                            // or not) record and shall not
-                                            // overlap with interval
-                                            // [current_begin_, +inf)
+
+    // We use string instead of vector for its nothrow-movability, but in
+    // C++17 we shall have nothrow-movable vector, so then we shall be able to
+    // adopt vector
+    std::basic_string<Ch, Tr, alloc_t> field_buffer_;
+    std::basic_string<Ch, Tr, alloc_t> record_buffer_;
+                                // populated only after the buffer switched in
+                                // a unknown (included or not) record and
+                                // shall not overlap with interval
+                                // [current_begin_, +inf)
 
     friend class record_extractor<
         FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
@@ -164,8 +167,11 @@ public:
         field_buffer_(alloc_t(alloc)), record_buffer_(alloc_t(alloc))
     {}
 
-    record_extractor_impl(record_extractor_impl&&) = default;
-    record_extractor_impl& operator=(record_extractor_impl&&) = default;
+    record_extractor_impl(record_extractor_impl&&) noexcept = default;
+
+    // Move-assignment shall be deleted because of basic_string's propagation
+    // of the allocator in C++14 is apocryphal (it does not to be able to be
+    // noexcept unconditionally)
 
     allocator_type get_allocator() const noexcept
     {
@@ -184,8 +190,7 @@ public:
             flush_current(buffer_end);
             break;
         case record_mode::unknown:
-            record_buffer_.insert(
-                record_buffer_.cend(), current_begin_, buffer_end);
+            record_buffer_.append(current_begin_, buffer_end);
             break;
         default:
             break;
@@ -204,7 +209,7 @@ public:
     {
         if ((header_yet() && (target_field_index_ == npos))
          || (field_index_ == target_field_index_)) {
-            field_buffer_.insert(field_buffer_.cend(), first, last);
+            field_buffer_.append(first, last);
         }
         return true;
     }
@@ -261,7 +266,7 @@ public:
     }
 
 private:
-    bool header_yet() const
+    bool header_yet() const noexcept
     {
         return header_mode_ != record_mode::unknown;
     }
@@ -272,7 +277,7 @@ private:
         if (field_buffer_.empty()) {
             return f(first, last);
         } else {
-            field_buffer_.insert(field_buffer_.cend(), first, last);
+            field_buffer_.append(first, last);
             const auto r = f(
                 &field_buffer_[0], &field_buffer_[0] + field_buffer_.size());
             field_buffer_.clear();
@@ -375,7 +380,6 @@ public:
     {}
 
     record_extractor(record_extractor&&) = default;
-    record_extractor& operator=(record_extractor&&) = default;
 };
 
 template <class FieldValuePred, class Ch,
@@ -411,8 +415,6 @@ public:
 
     record_extractor_with_indexed_key(
         record_extractor_with_indexed_key&&) = default;
-    record_extractor_with_indexed_key& operator=(
-        record_extractor_with_indexed_key&&) = default;
 };
 
 template <class Ch, class Tr, class Allocator>
@@ -432,7 +434,7 @@ public:
         s_(std::move(s))
     {}
 
-    bool operator()(const Ch* begin, const Ch* end) const
+    bool operator()(const Ch* begin, const Ch* end) const noexcept
     {
         const auto rlen = static_cast<decltype(s_.size())>(end - begin);
         return (s_.size() == rlen)
