@@ -3,7 +3,9 @@
  * http://unlicense.org
  */
 
+#include <limits>
 #include <sstream>
+#include <string>
 #include <tuple>
 
 #include <gtest/gtest.h>
@@ -12,8 +14,10 @@
 #include <furfurylic/commata/record_extractor.hpp>
 
 #include "BaseTest.hpp"
+#include "tracking_allocator.hpp"
 
 using namespace furfurylic::commata;
+using namespace furfurylic::test;
 
 struct TestRecordExtractor :
     furfurylic::test::BaseTestWithParam<std::size_t>
@@ -200,10 +204,10 @@ TEST_F(TestRecordExtractorFinalPredicateForValue, Basics)
               out.str());
 }
 
-struct TestRecordExtractorReference : furfurylic::test::BaseTest
+struct TestRecordExtractorMiscellaneous : furfurylic::test::BaseTest
 {};
 
-TEST_F(TestRecordExtractorReference, Basics)
+TEST_F(TestRecordExtractorMiscellaneous, Reference)
 {
     const char* s = "instrument,type\n"
                     "viola,string\n"
@@ -231,4 +235,22 @@ TEST_F(TestRecordExtractorReference, Basics)
               "tuba,brass\n"
               "clarinet,woodwind\n",
               out.str());
+}
+
+TEST_F(TestRecordExtractorMiscellaneous, Allocator)
+{
+    std::size_t total = 0;
+    tracking_allocator<std::allocator<char>> alloc(total);
+
+    const char* s = "instrument,type\n"
+                    "castanets,idiophone\n"
+                    "clarinet,woodwind\n";
+    std::stringbuf in(s);
+    std::stringbuf out;
+
+    // ditto
+    auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
+        "instrument", "clarinet");
+    parse_csv<std::char_traits<char>, decltype(ex)>(&in, std::move(ex), 8U);
+    ASSERT_GT(total, 0U);
 }

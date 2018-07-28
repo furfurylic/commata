@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <ostream>
 #include <streambuf>
 #include <sstream>
@@ -19,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "allocation_only_allocator.hpp"
 #include "text_error.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
@@ -91,20 +93,26 @@ public:
     using text_error::text_error;
 };
 
-template <class FieldNamePred, class FieldValuePred, class Ch, class Tr>
+template <class FieldNamePred, class FieldValuePred,
+          class Ch, class Tr, class Allocator>
 class record_extractor;
 
-template <class FieldValuePred, class Ch, class Tr>
+template <class FieldValuePred,
+          class Ch, class Tr, class Allocator>
 class record_extractor_with_indexed_key;
 
 namespace detail {
 
 template <class FieldNamePred, class FieldValuePred,
-    class Ch, class Tr = std::char_traits<Ch>>
+    class Ch, class Tr, class Allocator>
 class record_extractor_impl :
     field_name_pred_base<FieldNamePred>,
     field_value_pred_base<FieldValuePred>
 {
+    using field_name_pred_t = field_name_pred_base<FieldNamePred>;
+    using field_value_pred_t = field_value_pred_base<FieldValuePred>;
+    using alloc_t = detail::allocation_only_allocator<Allocator>;
+
     enum class record_mode : std::int_fast8_t
     {
         unknown,
@@ -124,22 +132,25 @@ class record_extractor_impl :
     const Ch* current_begin_;   // current records's begin if not the buffer
                                 // switched, current buffer's begin otherwise
     std::basic_streambuf<Ch, Tr>* out_;
-    std::vector<Ch> field_buffer_;
-    std::vector<Ch> record_buffer_; // pupulated only after the buffer switched
-                                    // in a unknown (included or not ) record
-                                    // and shall not overlap with interval
-                                    // [current_begin_, +inf)
+    std::vector<Ch, alloc_t> field_buffer_;
+    std::vector<Ch, alloc_t> record_buffer_;// populated only after the buffer
+                                            // switched in a unknown (included
+                                            // or not) record and shall not
+                                            // overlap with interval
+                                            // [current_begin_, +inf)
 
-    using field_name_pred_t = field_name_pred_base<FieldNamePred>;
-    using field_value_pred_t = field_value_pred_base<FieldValuePred>;
-
-    friend class record_extractor<FieldNamePred, FieldValuePred, Ch, Tr>;
-    friend class record_extractor_with_indexed_key<FieldValuePred, Ch, Tr>;
+    friend class record_extractor<
+        FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
+    friend class record_extractor_with_indexed_key<
+        FieldValuePred, Ch, Tr, Allocator>;
 
 public:
     using char_type = Ch;
+    using traits_type = Tr;
+    using allocator_type = Allocator;
 
     record_extractor_impl(
+        std::allocator_arg_t, const Allocator& alloc,
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePred field_name_pred, FieldValuePred field_value_pred,
         bool includes_header, std::size_t max_record_num) :
@@ -149,11 +160,17 @@ public:
             record_mode::include : record_mode::exclude),
         record_mode_(record_mode::exclude),
         record_num_to_include_(max_record_num), target_field_index_(npos),
-        field_index_(0), out_(out)
+        field_index_(0), out_(out),
+        field_buffer_(alloc_t(alloc)), record_buffer_(alloc_t(alloc))
     {}
 
     record_extractor_impl(record_extractor_impl&&) = default;
     record_extractor_impl& operator=(record_extractor_impl&&) = default;
+
+    allocator_type get_allocator() const noexcept
+    {
+        return field_buffer_.get_allocator().base();
+    }
 
     void start_buffer(const Ch* buffer_begin, const Ch* /*buffer_end*/)
     {
@@ -329,20 +346,31 @@ private:
 
 } // end namespace detail
 
-template <class FieldNamePred, class FieldValuePred,
-    class Ch, class Tr = std::char_traits<Ch>>
+template <class FieldNamePred, class FieldValuePred, class Ch,
+    class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>>
 class record_extractor :
-    public detail::record_extractor_impl<FieldNamePred, FieldValuePred, Ch, Tr>
+    public detail::record_extractor_impl<
+        FieldNamePred, FieldValuePred, Ch, Tr, Allocator>
 {
     using base = detail::record_extractor_impl<
-        FieldNamePred, FieldValuePred, Ch, Tr>;
+        FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
 
 public:
     record_extractor(
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePred field_name_pred, FieldValuePred field_value_pred,
         bool includes_header = true, std::size_t max_record_num = base::npos) :
-        base(out, std::move(field_name_pred),
+        record_extractor(
+            std::allocator_arg, Allocator(), out, field_name_pred,
+            field_value_pred, includes_header, max_record_num)
+    {}
+
+    record_extractor(
+        std::allocator_arg_t, const Allocator& alloc,
+        std::basic_streambuf<Ch, Tr>* out,
+        FieldNamePred field_name_pred, FieldValuePred field_value_pred,
+        bool includes_header = true, std::size_t max_record_num = base::npos) :
+        base(std::allocator_arg, alloc, out, std::move(field_name_pred),
             std::move(field_value_pred), includes_header, max_record_num)
     {}
 
@@ -350,21 +378,33 @@ public:
     record_extractor& operator=(record_extractor&&) = default;
 };
 
-template <class FieldValuePred, class Ch, class Tr = std::char_traits<Ch>>
+template <class FieldValuePred, class Ch,
+    class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>>
 class record_extractor_with_indexed_key :
     public detail::record_extractor_impl<
-        detail::hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr>
+        detail::hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr, Allocator>
 {
     using base = detail::record_extractor_impl<
-        detail::hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr>;
+        detail::hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr, Allocator>;
 
 public:
     record_extractor_with_indexed_key(
         std::basic_streambuf<Ch, Tr>* out,
         std::size_t target_field_index, FieldValuePred field_value_pred,
         bool includes_header = true, std::size_t max_record_num = base::npos) :
-        base(out, detail::hollow_field_name_pred<Ch>(),
-            std::move(field_value_pred), includes_header, max_record_num)
+        record_extractor_with_indexed_key(
+            std::allocator_arg, Allocator(), out, target_field_index,
+            field_value_pred, includes_header, max_record_num)
+    {}
+
+    record_extractor_with_indexed_key(
+        std::allocator_arg_t, const Allocator& alloc,
+        std::basic_streambuf<Ch, Tr>* out,
+        std::size_t target_field_index, FieldValuePred field_value_pred,
+        bool includes_header = true, std::size_t max_record_num = base::npos) :
+        base(std::allocator_arg, alloc, out,
+            detail::hollow_field_name_pred<Ch>(), std::move(field_value_pred),
+            includes_header, max_record_num)
     {
         this->target_field_index_ = target_field_index;
     }
@@ -457,8 +497,9 @@ using string_pred_t = typename string_pred<Ch, T>::type;
 } // end namespace detail
 
 template <class FieldNamePred, class FieldValuePred,
-    class Ch, class Tr, class... Appendices>
+    class Ch, class Tr, class Allocator, class... Appendices>
 auto make_record_extractor(
+    std::allocator_arg_t, const Allocator& alloc,
     std::basic_streambuf<Ch, Tr>* out,
     FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
@@ -466,12 +507,12 @@ auto make_record_extractor(
         !std::is_integral<FieldNamePred>::value,
         record_extractor<
             detail::string_pred_t<Ch, FieldNamePred>,
-            detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr>>
+            detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr, Allocator>>
 {
     return record_extractor<
             detail::string_pred_t<Ch, FieldNamePred>,
-            detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr>(
-        out,
+            detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr, Allocator>(
+        std::allocator_arg, alloc, out,
         detail::string_pred_t<Ch, FieldNamePred>(
             std::forward<FieldNamePred>(field_name_pred)),
         detail::string_pred_t<Ch, FieldValuePred>(
@@ -479,48 +520,47 @@ auto make_record_extractor(
         std::forward<Appendices>(appendices)...);
 }
 
-template <class FieldNamePred, class FieldValuePred,
-    class Ch, class Tr, class... Appendices>
+template <class FieldValuePred,
+    class Ch, class Tr, class Allocator, class... Appendices>
 auto make_record_extractor(
-    std::basic_ostream<Ch, Tr>& out,
-    FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
-    Appendices&&... appendices)
- -> std::enable_if_t<
-        !std::is_integral<FieldNamePred>::value,
-        record_extractor<
-            detail::string_pred_t<Ch, FieldNamePred>,
-            detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr>>
-{
-    return make_record_extractor(out.rdbuf(),
-        std::forward<FieldNamePred>(field_name_pred),
-        std::forward<FieldValuePred>(field_value_pred),
-        std::forward<Appendices>(appendices)...);
-}
-
-template <class FieldValuePred, class Ch, class Tr, class... Appendices>
-auto make_record_extractor(
+    std::allocator_arg_t, const Allocator& alloc,
     std::basic_streambuf<Ch, Tr>* out,
     std::size_t target_field_index, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
 {
     return record_extractor_with_indexed_key<
-        detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr>(
-            out,
+        detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr, Allocator>(
+            std::allocator_arg, alloc, out,
             target_field_index,
             detail::string_pred_t<Ch, FieldValuePred>(
                 std::forward<FieldValuePred>(field_value_pred)),
             std::forward<Appendices>(appendices)...);
 }
 
-template <class FieldValuePred, class Ch, class Tr, class... Appendices>
+template <class Ch, class Tr, class Allocator, class... Appendices>
 auto make_record_extractor(
-    std::basic_ostream<Ch, Tr>& out,
-    std::size_t target_field_index, FieldValuePred&& field_value_pred,
-    Appendices&&... appendices)
+    std::allocator_arg_t, const Allocator& alloc,
+    std::basic_ostream<Ch, Tr>& out, Appendices&&... appendices)
 {
-    return make_record_extractor(out.rdbuf(), target_field_index,
-        std::forward<FieldValuePred>(field_value_pred),
+    return make_record_extractor(
+        std::allocator_arg, alloc, out.rdbuf(),
         std::forward<Appendices>(appendices)...);
+}
+
+template <class Ch, class Tr, class... Appendices>
+auto make_record_extractor(
+    std::basic_streambuf<Ch, Tr>* out, Appendices&&... appendices)
+{
+    return make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
+        out, std::forward<Appendices>(appendices)...);
+}
+
+template <class Ch, class Tr, class... Appendices>
+auto make_record_extractor(
+    std::basic_ostream<Ch, Tr>& out, Appendices&&... appendices)
+{
+    return make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
+        out, std::forward<Appendices>(appendices)...);
 }
 
 }}

@@ -10,6 +10,7 @@
 #include <memory>
 #include <utility>
 #include <unordered_map>
+#include <vector>
 
 namespace furfurylic { namespace test {
 
@@ -35,7 +36,7 @@ public:
 
     // C++14 standard does not mandate default-constructibility of allocators
     // but some implementations require it
-    tracking_allocator() :
+    tracking_allocator() noexcept :
         allocated_(nullptr), total_(nullptr)
     {}
 
@@ -44,14 +45,20 @@ public:
     tracking_allocator(
         std::vector<std::pair<char*, char*>>& allocated,
         typename base_traits::size_type& total,
-        const BaseAllocator& base = BaseAllocator()) :
+        const BaseAllocator& base = BaseAllocator()) noexcept :
         BaseAllocator(base), allocated_(&allocated), total_(&total)
     {}
 
     explicit tracking_allocator(
         std::vector<std::pair<char*, char*>>& allocated,
-        const BaseAllocator& base = BaseAllocator()) :
+        const BaseAllocator& base = BaseAllocator()) noexcept :
         BaseAllocator(base), allocated_(&allocated), total_(nullptr)
+    {}
+
+    tracking_allocator(
+        typename base_traits::size_type& total,
+        const BaseAllocator& base = BaseAllocator()) noexcept :
+        BaseAllocator(base), allocated_(nullptr), total_(&total)
     {}
 
     tracking_allocator(const tracking_allocator& other) noexcept = default;
@@ -64,12 +71,16 @@ public:
 
     auto allocate(typename base_traits::size_type n)
     {
-        allocated_->emplace_back();                             // throw
+        if (allocated_) {
+            allocated_->emplace_back();                         // throw
+        }
         try {
-            const auto p = base_traits::allocate(*this, n);      // throw
+            const auto p = base_traits::allocate(*this, n);     // throw
             char* const f = static_cast<char*>(true_addressof(p));
             const auto l = f + n * sizeof(typename base_traits::value_type);
-            allocated_->back() = std::make_pair(f, l);
+            if (allocated_) {
+                allocated_->back() = std::make_pair(f, l);
+            }
             if (total_) {
                 *total_ += l - f;
             }
@@ -84,14 +95,16 @@ public:
         typename base_traits::pointer p,
         typename base_traits::size_type n) noexcept
     {
-        const auto i = std::find_if(
-            allocated_->cbegin(), allocated_->cend(),
-            [p](auto be) {
-                return be.first == tracking_allocator::true_addressof(p);
-                    // "tracking_allocator::" is to satiate GCC 6.3.1
-            });
-        assert(i != allocated_->cend());
-        allocated_->erase(i);
+        if (allocated_) {
+            const auto i = std::find_if(
+                allocated_->cbegin(), allocated_->cend(),
+                [p](auto be) {
+                    return be.first == tracking_allocator::true_addressof(p);
+                        // "tracking_allocator::" is to satiate GCC 6.3.1
+                });
+            assert(i != allocated_->cend());
+            allocated_->erase(i);
+        }
         BaseAllocator::deallocate(p, n);
     }
 
@@ -105,9 +118,11 @@ public:
 
     bool tracks(const void* p) const noexcept
     {
-        for (const auto& be : *allocated_) {
-            if ((be.first <= p) && (p < be.second)) {
-                return true;
+        if (allocated_) {
+            for (const auto& be : *allocated_) {
+                if ((be.first <= p) && (p < be.second)) {
+                    return true;
+                }
             }
         }
         return false;
