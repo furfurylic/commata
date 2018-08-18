@@ -4,6 +4,7 @@
  */
 
 #ifdef _MSC_VER
+#pragma warning(disable:4503)
 #pragma warning(disable:4996)
 #endif
 
@@ -17,6 +18,7 @@
 #include <scoped_allocator>
 #include <string>
 #include <sstream>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -27,6 +29,7 @@
 #include <furfurylic/commata/parse_csv.hpp>
 
 #include "BaseTest.hpp"
+#include "identified_allocator.hpp"
 #include "tracking_allocator.hpp"
 
 using namespace furfurylic::commata;
@@ -601,8 +604,7 @@ static_assert(detail::is_std_list<std::list<double>>::value, "");
 static_assert(!detail::is_std_list<std::vector<std::deque<int>>>::value, "");
 
 static_assert(std::is_default_constructible<stored_table>::value, "");
-static_assert(noexcept(std::declval<stored_table&>().content()), "");
-static_assert(noexcept(std::declval<const stored_table&>().content()), "");
+static_assert(std::is_nothrow_move_constructible<stored_table>::value, "");
 
 struct TestStoredTable : furfurylic::test::BaseTest
 {};
@@ -686,6 +688,99 @@ TEST_F(TestStoredTable, Copy)
     ASSERT_EQ("cat", table1[0][0]);
 }
 
+TEST_F(TestStoredTable, Move)
+{
+    stored_table table1;
+    table1.content().emplace_back(1U);
+    table1.rewrite_value(table1[0][0], "table");
+
+    const auto content = &table1.content();
+    const auto record0 = &table1[0];
+    const auto value00 = &table1[0][0];
+    const auto char000 = &table1[0][0][0];
+
+    // Move ctor
+
+    stored_table table2(std::move(table1));
+
+    ASSERT_TRUE(table1.is_singular());
+    ASSERT_TRUE(table1.empty());
+    ASSERT_EQ(table1.size(), 0U);
+
+    ASSERT_EQ(1U, table2.size());
+    ASSERT_EQ(1U, table2[0].size());
+    ASSERT_EQ("table", table2[0][0]);
+
+    ASSERT_EQ(content, &table2.content());
+    ASSERT_EQ(record0, &table2[0]);
+    ASSERT_EQ(value00, &table2[0][0]);
+    ASSERT_EQ(char000, &table2[0][0][0]);
+
+    // Move assignment
+
+    stored_table table3;
+
+    table3 = std::move(table2);
+
+    ASSERT_TRUE(table2.is_singular());
+    ASSERT_TRUE(table2.empty());
+    ASSERT_EQ(table2.size(), 0U);
+    table2.clear();
+
+    ASSERT_EQ(1U, table3.size());
+    ASSERT_EQ(1U, table3[0].size());
+    ASSERT_EQ("table", table3[0][0]);
+
+    ASSERT_EQ(content, &table3.content());
+    ASSERT_EQ(record0, &table3[0]);
+    ASSERT_EQ(value00, &table3[0][0]);
+    ASSERT_EQ(char000, &table3[0][0][0]);
+}
+
+TEST_F(TestStoredTable, WithSingular)
+{
+    wstored_table table1;
+    table1.content().emplace_back(1U);
+    table1.rewrite_value(table1[0][0], L"table");
+
+    const auto char000 = &table1[0][0][0];
+
+    wstored_table table2(std::move(table1));
+
+    ASSERT_TRUE(table1.is_singular()) << "Test's precondition";
+
+    // Copy ctor with singular
+
+    wstored_table table3(table1);
+    ASSERT_TRUE(table3.is_singular());
+
+    // Move ctor with singular
+
+    wstored_table table4(table3);
+    ASSERT_TRUE(table3.is_singular());
+    ASSERT_TRUE(table4.is_singular());
+
+    // Copy assignment from singular
+
+    wstored_table table5;
+    table5 = table3;
+    ASSERT_TRUE(table5.is_singular());
+
+    // Move assignment from singular
+
+    wstored_table table6;
+    table6 = std::move(table4);
+    ASSERT_TRUE(table4.is_singular());
+    ASSERT_TRUE(table6.is_singular());
+
+    // Swap with singular
+
+    swap(table2, table6);
+    ASSERT_TRUE (table2.is_singular());
+    ASSERT_FALSE(table6.is_singular());
+    ASSERT_EQ(char000, &table6[0][0][0]);
+}
+
 TEST_F(TestStoredTable, MergeLists)
 {
     basic_stored_table<std::list<std::vector<stored_value>>> table1(10U);
@@ -761,25 +856,83 @@ TYPED_TEST(TestStoredTableMerge, Merge)
     ASSERT_EQ("consectetur", (*table1.content().crbegin())          [0]);
 }
 
+TYPED_TEST(TestStoredTableMerge, WithSingular)
+{
+    using t1_t = basic_stored_table<typename TypeParam::first_type>;
+    using t2_t = basic_stored_table<typename TypeParam::second_type>;
+
+    t1_t table1;
+
+    t2_t table2;
+    table2.content().emplace_back();
+    table2.content().back().emplace_back();
+    table2.content().back().back() = table2.import_value("value");
+    const auto char000 = &table2.content().back().back().back();
+
+    {
+        t1_t table3(std::move(table1));
+        ASSERT_TRUE(table1.is_singular()) << "Test's precondition";
+    }
+
+    table2 += table1;
+    ASSERT_EQ(1U, table2.size());
+    ASSERT_EQ(1U, table2.content().back().size());
+    ASSERT_EQ("value", table2.content().back().back());
+    ASSERT_EQ(char000, &table2.content().back().back().back());
+
+    table2 += std::move(table1);
+    ASSERT_EQ(1U, table2.size());
+    ASSERT_EQ(1U, table2.content().back().size());
+    ASSERT_EQ("value", table2.content().back().back());
+    ASSERT_EQ(char000, &table2.content().back().back().back());
+
+    table1 += std::move(table2);
+    ASSERT_EQ(1U, table1.size());
+    ASSERT_EQ(1U, table1.content().back().size());
+    ASSERT_EQ("value", table1.content().back().back());
+    ASSERT_EQ(char000, &table2.content().back().back().back());
+
+    if (table2.is_singular()) {
+        table2 += table1;
+        ASSERT_EQ(1U, table2.size());
+        ASSERT_EQ(1U, table2.content().back().size());
+        ASSERT_EQ("value", table2.content().back().back());
+        ASSERT_NE(char000, &table2.content().back().back().back());
+    }
+}
+
 struct TestStoredTableAllocator : BaseTest
 {};
 
 TEST_F(TestStoredTableAllocator, Basics)
 {
-    using AA = tracking_allocator<std::allocator<char>>;
-    using A = std::scoped_allocator_adaptor<AA>;
-
     using Record = std::vector<
         stored_value,
-        typename std::allocator_traits<A>::
-            template rebind_alloc<stored_value>>;
+        tracking_allocator<std::allocator<stored_value>>>;
     using Content = std::deque<
         Record,
-        typename std::allocator_traits<A>::template rebind_alloc<Record>>;
+        std::scoped_allocator_adaptor<
+            tracking_allocator<std::allocator<Record>>,
+            Record::allocator_type>>;
+    using Table = basic_stored_table<
+        Content,
+        std::scoped_allocator_adaptor<
+            tracking_allocator<std::allocator<Content>>,
+            tracking_allocator<std::allocator<Record>>,
+            tracking_allocator<std::allocator<stored_value>>>>;
+
+    std::vector<std::pair<char*, char*>> allocated2;
+    tracking_allocator<std::allocator<stored_value>> a2(allocated2);
 
     std::vector<std::pair<char*, char*>> allocated1;
-    AA a(allocated1);
-    basic_stored_table<Content, A> table(std::allocator_arg, a, 1024);
+    tracking_allocator<std::allocator<Record>> a1(allocated1);
+
+    std::vector<std::pair<char*, char*>> allocated0;
+    tracking_allocator<std::allocator<Content>> a0(allocated0);
+
+    Table::allocator_type a(a0, a1, a2);
+
+    Table table(std::allocator_arg, a, 1024);
     {
         const char* s = "Col1,Col2\n"
                         "aaa,bbb,ccc\n"
@@ -792,15 +945,24 @@ TEST_F(TestStoredTableAllocator, Basics)
         }
     }
 
-    ASSERT_TRUE(a == table.content().get_allocator());
-    ASSERT_TRUE(a == table.content().front().get_allocator());
-    ASSERT_TRUE(a.tracks(&table.content().front()));
-    ASSERT_TRUE(a.tracks(&table.content().front().front()));
-    ASSERT_TRUE(a.tracks(&table.content().front().front().front()));
+    ASSERT_EQ(a1, table.content().get_allocator());
+    ASSERT_EQ(a2, table.content().front().get_allocator());
+    ASSERT_TRUE(a1.tracks(&table.content().front()));
+    ASSERT_TRUE(a2.tracks(&table.content().front().front()));
+    ASSERT_TRUE(a0.tracks(&table.content().front().front().front()));
 
-    std::vector<std::pair<char*, char*>> allocated2;
-    AA b(allocated2);
-    basic_stored_table<Content, A> table2(std::allocator_arg, b);
+    std::vector<std::pair<char*, char*>> bllocated2;
+    Record::allocator_type b2(bllocated2);
+
+    std::vector<std::pair<char*, char*>> bllocated1;
+    tracking_allocator<std::allocator<Record>> b1(bllocated1);
+
+    std::vector<std::pair<char*, char*>> bllocated0;
+    tracking_allocator<std::allocator<Content>> b0(bllocated0);
+
+    Table::allocator_type b(b0, b1, b2);
+
+    Table table2(std::allocator_arg, b);
     {
         const char* s = "Col1,Col2\n"
                         "xxx,yyy\n";
@@ -816,24 +978,147 @@ TEST_F(TestStoredTableAllocator, Basics)
     table += std::move(table2); // Not move but copy because of allocators
 
     ASSERT_EQ(1U, table2.size());
-    ASSERT_TRUE(b.tracks(&table2[0]));
-    ASSERT_TRUE(b.tracks(&table2[0].front()));
-    ASSERT_TRUE(b.tracks(&table2[0].front().front()));
+    ASSERT_TRUE(b1.tracks(&table2[0]));
+    ASSERT_TRUE(b2.tracks(&table2[0].front()));
+    ASSERT_TRUE(b0.tracks(&table2[0].front().front()));
 
     table2.clear();
 
     ASSERT_EQ(4U, table.size());
-    ASSERT_TRUE(a.tracks(&table[3]));
-    ASSERT_TRUE(a.tracks(&table[3].front()));
-    ASSERT_TRUE(a.tracks(&table[3].front().front()));
+    ASSERT_TRUE(a1.tracks(&table[3]));
+    ASSERT_TRUE(a2.tracks(&table[3].front()));
+    ASSERT_TRUE(a0.tracks(&table[3].front().front()));
 }
 
-static_assert(std::is_nothrow_move_constructible<
-    stored_table_builder<wstored_table::content_type,
-        std::allocator<wchar_t>>>::value, "");
-static_assert(std::is_nothrow_move_constructible<
-    stored_table_builder<stored_table::content_type,
-        std::allocator<char>, true>>::value, "");
+typedef testing::Types<
+    std::tuple<std::true_type, std::true_type, std::true_type>,
+    std::tuple<std::true_type, std::true_type, std::false_type>,
+    std::tuple<std::true_type, std::false_type, std::true_type>,
+    std::tuple<std::true_type, std::false_type, std::false_type>,
+    std::tuple<std::false_type, std::true_type, std::true_type>,
+    std::tuple<std::false_type, std::true_type, std::false_type>,
+    std::tuple<std::false_type, std::false_type, std::true_type>,
+    std::tuple<std::false_type, std::false_type, std::false_type>
+> TF3;
+
+template <class T>
+struct TestStoredTableAllocatorPropagation : BaseTest
+{
+    template <class Content, class Allocator>
+    static void init_table(basic_stored_table<Content, Allocator>& table)
+    {
+        table.content().resize(1);
+        table[0].resize(1);
+        table[0][0] = table.import_value("ABC");
+    }
+};
+
+TYPED_TEST_CASE(TestStoredTableAllocatorPropagation, TF3);
+
+TYPED_TEST(TestStoredTableAllocatorPropagation, CopyAssignment)
+{
+    const auto pocca = std::tuple_element_t<0, TypeParam>::value;
+    const auto pocma = std::tuple_element_t<1, TypeParam>::value;
+    const auto pocs  = std::tuple_element_t<2, TypeParam>::value;
+
+    using content_t = std::vector<std::vector<stored_value>>;
+    using a_t = identified_allocator<content_t, pocca, pocma, pocs>;
+
+    a_t a1(1);
+    basic_stored_table<content_t, a_t> table1(std::allocator_arg, a1);
+    this->init_table(table1);
+
+    a_t a2(2);
+    basic_stored_table<content_t, a_t> table2(std::allocator_arg, a2);
+    this->init_table(table2);
+
+    table2 = table1;
+    const a_t& expected = pocca ? a1 : a2;
+    ASSERT_EQ(expected, table2.get_allocator());
+}
+
+TYPED_TEST(TestStoredTableAllocatorPropagation, MoveAssignment)
+{
+    const auto pocca = std::tuple_element_t<0, TypeParam>::value;
+    const auto pocma = std::tuple_element_t<1, TypeParam>::value;
+    const auto pocs  = std::tuple_element_t<2, TypeParam>::value;
+
+    using content_t = std::vector<std::vector<stored_value>>;
+    using a_t = identified_allocator<content_t, pocca, pocma, pocs>;
+
+    a_t a1(1);
+    basic_stored_table<content_t, a_t> table1(std::allocator_arg, a1);
+    this->init_table(table1);
+
+    a_t a2(2);
+    basic_stored_table<content_t, a_t> table2(std::allocator_arg, a2);
+    this->init_table(table2);
+
+    table2 = std::move(table1);
+    const a_t& expected = pocma ? a1 : a2;
+    ASSERT_EQ(expected, table2.get_allocator());
+
+    ASSERT_EQ(pocma, table1.is_singular());
+}
+
+TYPED_TEST(TestStoredTableAllocatorPropagation, MoveAssignmentCompatibleAlloc)
+{
+    const auto pocca = std::tuple_element_t<0, TypeParam>::value;
+    const auto pocma = std::tuple_element_t<1, TypeParam>::value;
+    const auto pocs  = std::tuple_element_t<2, TypeParam>::value;
+
+    using content_t = std::vector<std::vector<stored_value>>;
+    using a_t = identified_allocator<content_t, pocca, pocma, pocs, true>;
+
+    a_t a1(1);
+    basic_stored_table<content_t, a_t> table1(std::allocator_arg, a1);
+    this->init_table(table1);
+
+    a_t a2(2);
+    basic_stored_table<content_t, a_t> table2(std::allocator_arg, a2);
+    this->init_table(table2);
+
+    table2 = std::move(table1);
+    const a_t& expected = pocma ? a1 : a2;
+    ASSERT_EQ(expected, table2.get_allocator());
+
+    ASSERT_TRUE(table1.is_singular());
+}
+
+TYPED_TEST(TestStoredTableAllocatorPropagation, Swap)
+{
+    const auto pocca = std::tuple_element_t<0, TypeParam>::value;
+    const auto pocma = std::tuple_element_t<1, TypeParam>::value;
+    const auto pocs  = std::tuple_element_t<2, TypeParam>::value;
+
+    using content_t = std::vector<std::vector<stored_value>>;
+    using a_t = identified_allocator<content_t, pocca, pocma, pocs, true>;
+
+    a_t a1(1);
+    basic_stored_table<content_t, a_t> table1(std::allocator_arg, a1);
+    this->init_table(table1);
+
+    a_t a2(2);
+    basic_stored_table<content_t, a_t> table2(std::allocator_arg, a2);
+    this->init_table(table2);
+
+    table2.swap(table1);
+    const auto expected1 = pocs ? a2.id() : a1.id();
+    const auto expected2 = pocs ? a1.id() : a2.id();
+    ASSERT_EQ(expected1, table1.get_allocator().id());
+    ASSERT_EQ(expected2, table2.get_allocator().id());
+}
+
+static_assert(
+    std::is_nothrow_move_constructible<
+        stored_table_builder<
+            wstored_table::content_type,
+            wstored_table::allocator_type>>::value, "");
+static_assert(
+    std::is_nothrow_move_constructible<
+        stored_table_builder<
+            stored_table::content_type,
+            stored_table::allocator_type, true>>::value, "");
 
 struct TestStoredTableBuilder :
     furfurylic::test::BaseTestWithParam<std::size_t>
@@ -954,4 +1239,3 @@ TEST_P(TestStoredTableBuilder, Transpose)
 
 INSTANTIATE_TEST_CASE_P(,
     TestStoredTableBuilder, testing::Values(2, 11, 1024));
-

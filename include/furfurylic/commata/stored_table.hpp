@@ -634,6 +634,18 @@ struct is_nothrow_swappable :
         // function swap)
 {};
 
+template <class T>
+auto select_allocator(const T&, const T& r, std::true_type)
+{
+    return r.get_allocator();
+}
+
+template <class T>
+auto select_allocator(const T& l, const T&, std::false_type)
+{
+    return l.get_allocator();
+}
+
 // Used by table_store; externalized to expunge Allocator template param
 // to avoid bloat
 template <class Ch>
@@ -922,6 +934,28 @@ void swap(
     left.swap(right);
 }
 
+template <class T>
+struct is_basic_stored_value :
+    std::false_type
+{};
+
+template <class... Args>
+struct is_basic_stored_value<basic_stored_value<Args...>> :
+    std::true_type
+{};
+
+}
+
+template <class Content, class Allocator = std::allocator<Content>>
+class basic_stored_table;
+
+namespace detail {
+
+template <class ContentL, class ContentR, class Allocator>
+void append_no_singular(
+    basic_stored_table<ContentL, Allocator>& left,
+    basic_stored_table<ContentR, Allocator>&& right);
+
 } // end namespace detail
 
 enum stored_table_builder_option : std::uint_fast8_t
@@ -933,8 +967,7 @@ template <class Content, class Allocator,
     std::underlying_type_t<stored_table_builder_option> Options>
 class stored_table_builder;
 
-template <class Content, class Allocator =
-    std::allocator<typename Content::value_type::value_type::value_type>>
+template <class Content, class Allocator>
 class basic_stored_table
 {
 public:
@@ -942,69 +975,117 @@ public:
     using content_type    = Content;
     using record_type     = typename content_type::value_type;
     using value_type      = typename record_type::value_type;
-    using reference       = value_type&;
-    using const_reference = const value_type&;
     using char_type       = typename value_type::value_type;
     using traits_type     = typename value_type::traits_type;
     using size_type       = typename content_type::size_type;
 
-    static_assert(
-        std::is_same<
-            value_type,
-            basic_stored_value<char_type, traits_type>>::value,
+    static_assert(detail::is_basic_stored_value<value_type>::value,
         "Content shall be a sequence-container-of-sequence-container "
         "type of basic_stored_value");
+    static_assert(
+        std::is_same<content_type, typename Allocator::value_type>::value,
+        "Allocator shall have value_type which is the same as content_type");
 
 private:
-    using store_type = detail::table_store<char_type, allocator_type>;
-    using at_t = typename std::allocator_traits<allocator_type>;
-    using ra_t = typename at_t::template rebind_alloc<record_type>;
+    using at_t = std::allocator_traits<allocator_type>;
+    using cat_t = typename at_t::template rebind_traits<char_type>;
+    using store_type =
+        detail::table_store<char_type, typename cat_t::allocator_type>;
 
     friend class stored_table_builder<Content, Allocator, true>;
     friend class stored_table_builder<Content, Allocator, false>;
 
-    template <class ContentL, class ContentR, class AllocatorXY>
-    friend basic_stored_table<ContentL, AllocatorXY>& operator+=(
-        basic_stored_table<ContentL, AllocatorXY>& left,
-        basic_stored_table<ContentR, AllocatorXY>&& right);
+    template <class ContentL, class ContentR, class Allocator2>
+    friend void detail::append_no_singular(
+        basic_stored_table<ContentL, Allocator2>& left,
+        basic_stored_table<ContentR, Allocator2>&& right);
 
 private:
     store_type store_;
-    content_type records_;
+    typename at_t::pointer records_;
 
     std::size_t buffer_size_;
 
 public:
-    basic_stored_table(std::size_t buffer_size = default_buffer_size) :
+    explicit basic_stored_table(
+        std::size_t buffer_size = default_buffer_size) :
         basic_stored_table(std::allocator_arg, Allocator(), buffer_size)
     {}
 
-    basic_stored_table(std::allocator_arg_t,
+    explicit basic_stored_table(std::allocator_arg_t,
         const Allocator& alloc = Allocator(),
         std::size_t buffer_size = default_buffer_size) :
-        basic_stored_table(std::uses_allocator<content_type, ra_t>(),
-            alloc, buffer_size)
+        store_(std::allocator_arg, typename cat_t::allocator_type(alloc)),
+        records_(allocate_create_content(alloc)),
+        buffer_size_(sanitize_buffer_size(buffer_size, alloc))
     {}
+
+    basic_stored_table(const basic_stored_table& other) :
+        basic_stored_table(std::allocator_arg, 
+            at_t::select_on_container_copy_construction(other.get_allocator()),
+            other)
+    {}
+
+    basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
+        const basic_stored_table& other) :
+        store_(std::allocator_arg, typename cat_t::allocator_type(alloc)),
+        records_(nullptr), buffer_size_(other.buffer_size_)
+    {
+        if (other.is_singular()) {
+            // leave also *this singular
+            assert(is_singular());
+            return;
+        }
+        records_ = allocate_create_content(alloc);                  // throw
+        try {
+            reserve(content(), other.content().size());             // throw
+            for (const auto& r : other.content()) {
+                const auto e = content().emplace(content().cend()); // throw
+                reserve(*e, r.size());                              // throw
+                for (const auto& v : r) {
+                    e->insert(e->cend(), import_value(v));          // throw
+                }
+            }
+        } catch (...) {
+            destroy_deallocate_content(alloc, records_);
+            throw;
+        }
+    }
+
+    basic_stored_table(basic_stored_table&& other) noexcept :
+        store_(std::move(other.store_)), records_(other.records_),
+        buffer_size_(other.buffer_size_)
+    {
+        other.records_ = nullptr;
+    }
+
+    basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
+        basic_stored_table&& other) :
+        store_(std::allocator_arg, typename cat_t::allocator_type(alloc)),
+        records_(nullptr), buffer_size_(other.buffer_size_)
+    {
+        if (alloc == other.get_allocator()) {
+            store_type s(std::allocator_arg,
+                store_.get_allocator(), std::move(other.store_));
+            store_.swap_force(s);
+            using std::swap;
+            swap(records_/*nullptr*/, other.records_);
+        } else {
+            basic_stored_table(std::allocator_arg, alloc, other).
+                swap_force(*this);  // throw
+        }
+    }
+
+    ~basic_stored_table()
+    {
+        destroy_deallocate_content(get_allocator(), records_);
+    }
 
 private:
-    // For allocator-aware containers
-    basic_stored_table(std::true_type,
-        const Allocator& alloc, std::size_t buffer_size) :
-        store_(std::allocator_arg, alloc), records_(ra_t(alloc)),
-        buffer_size_(sanitize_buffer_size(buffer_size, alloc))
-    {}
-
-    // For not-allocator-aware containers
-    basic_stored_table(std::false_type,
-        const Allocator& alloc, std::size_t buffer_size) :
-        store_(std::allocator_arg, alloc), records_(),
-        buffer_size_(sanitize_buffer_size(buffer_size, alloc))
-    {}
-
     static constexpr std::size_t default_buffer_size =
         std::min<std::size_t>(std::numeric_limits<std::size_t>::max(), 8192U);
 
-    std::size_t sanitize_buffer_size(
+    static std::size_t sanitize_buffer_size(
         std::size_t buffer_size, const Allocator& alloc)
     {
         return std::min(
@@ -1012,76 +1093,66 @@ private:
             at_t::max_size(alloc));
     }
 
-public:
-    basic_stored_table(const basic_stored_table& other) :
-        basic_stored_table(std::allocator_arg,
-            at_t::select_on_container_copy_construction(other.get_allocator()),
-            other)
-    {}
-
-private:
-    basic_stored_table(std::allocator_arg_t,
-        const Allocator& alloc, const basic_stored_table& other) :
-        basic_stored_table(std::allocator_arg, alloc, other.get_buffer_size())
+    template <class... Args>
+    static auto allocate_create_content(Allocator a, Args&&... args)
     {
-        for (const auto& r : other.content()) {
-            const auto e = content().emplace(content().cend()); // throw
-            for (const auto& v : r) {
-                e->insert(e->cend(), import_value(v));          // throw
-            }
+        auto records = at_t::allocate(a, 1);                    // throw
+        try {
+            at_t::construct(a, std::addressof(*records),
+                std::forward<Args>(args)...);                   // throw
+        } catch (...) {
+            at_t::deallocate(a, records, 1);
+            throw;
+        }
+        return records;
+    }
+
+    static void destroy_deallocate_content(
+        Allocator a, typename at_t::pointer records)
+    {
+        if (records) {
+            at_t::destroy(a, std::addressof(*records));
+            at_t::deallocate(a, records, 1);
         }
     }
 
-public:
-    basic_stored_table(basic_stored_table&& other)
-        noexcept(std::is_nothrow_move_constructible<content_type>::value) :
-        store_(std::move(other.store_)),
-        records_(std::move(other.records_)),
-        buffer_size_(other.buffer_size_)
+    template <class Container>
+    static void reserve(Container&, typename Container::size_type)
     {}
 
+    template <class... Ts>
+    static void reserve(std::vector<Ts...>& c,
+        typename std::vector<Ts...>::size_type n)
+    {
+        c.reserve(n);
+    }
+
+public:
     basic_stored_table& operator=(const basic_stored_table& other)
     {
-        return assign(typename at_t::propagate_on_container_copy_assignment(),
-            other);                 // throw
+        basic_stored_table(
+            std::allocator_arg,
+            detail::select_allocator(*this, other,
+                typename at_t::propagate_on_container_copy_assignment()),
+            other).swap_force(*this);   // throw
+        return *this;
     }
 
     basic_stored_table& operator=(basic_stored_table&& other)
-        noexcept(
-            std::is_nothrow_move_assignable<content_type>::value
-         && std::allocator_traits<allocator_type>::
-                propagate_on_container_move_assignment::value)
+        noexcept(at_t::propagate_on_container_move_assignment::value)
     {
-        return assign(typename at_t::propagate_on_container_move_assignment(),
-            std::move(other));      // throw
-    }
-
-private:
-    basic_stored_table& assign(std::true_type, const basic_stored_table& other)
-    {
-        basic_stored_table(other).swap(*this);                 // throw
-        return *this;
-    }
-
-    basic_stored_table& assign(
-        std::false_type, const basic_stored_table& other)
-    {
-        basic_stored_table(std::allocator_arg, get_allocator(), other)
-            .swap(*this);                                   // throw
-        return *this;
-    }
-
-    basic_stored_table& assign(
-        std::true_type, basic_stored_table&& other) noexcept
-    {
-        basic_stored_table(std::move(other)).swap(*this);
+        basic_stored_table(
+            std::allocator_arg,
+            detail::select_allocator(*this, other,
+                typename at_t::propagate_on_container_move_assignment()),
+            std::move(other)).swap_force(*this);    // throw
         return *this;
     }
 
 public:
     allocator_type get_allocator() const noexcept
     {
-        return store_.get_allocator();
+        return typename at_t::allocator_type(store_.get_allocator());
     }
 
     std::size_t get_buffer_size() const noexcept
@@ -1089,14 +1160,21 @@ public:
         return buffer_size_;
     }
 
-    content_type& content() noexcept
+    bool is_singular() const noexcept
     {
-        return records_;
+        return !records_;
     }
 
-    const content_type& content() const noexcept
+    content_type& content()
     {
-        return records_;
+        assert(!is_singular());
+        return *records_;
+    }
+
+    const content_type& content() const
+    {
+        assert(!is_singular());
+        return *records_;
     }
 
     record_type& operator[](size_type record_index)
@@ -1170,7 +1248,7 @@ private:
                 const auto alloc_size =
                     std::max(new_value_size + 1, buffer_size_);
                 secured = std::addressof(
-                    *at_t::allocate(a, alloc_size));            // throw
+                    *cat_t::allocate(a, alloc_size));           // throw
                 store_.add_buffer(secured, alloc_size);         // throw
                 // No need to deallocate secured even when an exception is
                 // thrown by add_buffer because add_buffer consumes secured
@@ -1215,20 +1293,22 @@ public:
     size_type size() const
         noexcept(noexcept(std::declval<const content_type&>().size()))
     {
-        return content().size();
+        return is_singular() ? 0 : content().size();
     }
 
     bool empty() const
         noexcept(noexcept(std::declval<const content_type&>().empty()))
     {
-        return content().empty();
+        return is_singular() || content().empty();
     }
 
     void clear()
         noexcept(noexcept(std::declval<content_type&>().clear()))
     {
-        content().clear();
-        store_   .clear();
+        if (!is_singular()) {
+            content().clear();
+        }
+        store_.clear();
     }
 
     void shrink_to_fit()
@@ -1236,22 +1316,35 @@ public:
         basic_stored_table(*this).swap(*this);     // throw
     }
 
-    void swap(basic_stored_table& other)
-        noexcept(noexcept(std::declval<content_type&>().
-                            swap(std::declval<content_type&>())))
+    void swap(basic_stored_table& other) noexcept
     {
-        using std::swap;
-        assert((at_t::propagate_on_container_swap::value
+        assert((cat_t::propagate_on_container_swap::value
              || (get_allocator() == other.get_allocator())) &&
                 "Swapping two basic_stored_tables with allocators of which "
                 "POCS is false and which do not equal each other delivers "
                 "an undefined behaviour; this is it");
-        swap(content()   , other.content());        // ?
-        swap(store_      , other.store_);
+        using std::swap;
+        swap(store_, other.store_);
+        swap(records_, other.records_);
         swap(buffer_size_, other.buffer_size_);
     }
 
 private:
+    char_type* allocate_buffer(std::size_t size)
+    {
+        auto a = store_.get_allocator();
+        return std::addressof(*cat_t::allocate(a, size));
+    }
+
+    void deallocate_buffer(char_type* p, std::size_t size)
+    {
+        auto a = store_.get_allocator();
+        return cat_t::deallocate(
+            a,
+            std::pointer_traits<typename cat_t::pointer>::pointer_to(*p),
+            size);
+    }
+
     void add_buffer(char_type* buffer, std::size_t size)
     {
         store_.add_buffer(buffer, size);
@@ -1261,13 +1354,21 @@ private:
     {
         store_.secure_current_upto(secured_last);
     }
+
+    // Unconditionally swaps all contents including allocators
+    void swap_force(basic_stored_table& other) noexcept
+    {
+        using std::swap;
+        store_.swap_force(other.store_);
+        swap(records_, other.records_);
+        swap(buffer_size_, other.buffer_size_);
+    }
 };
 
 template <class Content, class Allocator>
 void swap(
     basic_stored_table<Content, Allocator>& left,
-    basic_stored_table<Content, Allocator>& right)
-    noexcept(noexcept(left.swap(right)))
+    basic_stored_table<Content, Allocator>& right) noexcept
 {
     left.swap(right);
 }
@@ -1525,6 +1626,28 @@ struct is_basic_stored_table<basic_stored_table<Content, Allocator>> :
     std::true_type
 {};
 
+template <class ContentL, class ContentR, class AllocatorL, class AllocatorR>
+void append_no_singular(
+    basic_stored_table<ContentL, AllocatorL>& left,
+    const basic_stored_table<ContentR, AllocatorR>& right)
+{
+    import_whole_stored_table(left, right);                 // throw
+}
+
+template <class ContentL, class ContentR, class Allocator>
+void append_no_singular(
+    basic_stored_table<ContentL, Allocator>& left,
+    basic_stored_table<ContentR, Allocator>&& right)
+{
+    if (left.store_.get_allocator() == right.store_.get_allocator()) {
+        append_stored_table_content(
+            left.content(), std::move(right.content()));    // throw
+        left.store_.merge(std::move(right.store_));
+    } else {
+        append_no_singular(left, right);                    // throw
+    }
+}
+
 } // end namespace detail
 
 template <class ContentL, class ContentR, class AllocatorL, class AllocatorR>
@@ -1532,7 +1655,15 @@ basic_stored_table<ContentL, AllocatorL>& operator+=(
     basic_stored_table<ContentL, AllocatorL>& left,
     const basic_stored_table<ContentR, AllocatorR>& right)
 {
-    return detail::import_whole_stored_table(left, right);
+    if (left.is_singular()) {
+        basic_stored_table<ContentL, AllocatorL> l(
+            std::allocator_arg, left.get_allocator());          // throw
+        detail::append_no_singular(l, right);                   // throw
+        left.swap(l);
+    } else if (!right.is_singular()) {
+        detail::append_no_singular(left, right);                // throw
+    }
+    return left;
 }
 
 template <class ContentL, class ContentR, class Allocator>
@@ -1540,14 +1671,15 @@ basic_stored_table<ContentL, Allocator>& operator+=(
     basic_stored_table<ContentL, Allocator>& left,
     basic_stored_table<ContentR, Allocator>&& right)
 {
-    if (left.store_.get_allocator() == right.store_.get_allocator()) {
-        detail::append_stored_table_content(
-            left.content(), std::move(right.content()));    // throw
-        left.store_.merge(std::move(right.store_));
-        return left;
-    } else {
-        return left += right;                               // throw
+    if (left.is_singular()) {
+        basic_stored_table<ContentL, Allocator> l(
+            std::allocator_arg, left.get_allocator());          // throw
+        detail::append_no_singular(l, std::move(right));        // throw
+        left.swap(l);
+    } else if (!right.is_singular()) {
+        detail::append_no_singular(left, std::move(right));     // throw
     }
+    return left;
 }
 
 template <class TableL, class TableR>
@@ -1661,9 +1793,6 @@ private:
 
     table_type* table_;
 
-private:
-    using at_t = std::allocator_traits<Allocator>;
-
 public:
     explicit stored_table_builder(table_type& table) :
         detail::arrange<Content, Options>(table.content()),
@@ -1685,8 +1814,8 @@ public:
     ~stored_table_builder()
     {
         if (current_buffer_holder_) {
-            auto a = table_->get_allocator();
-            at_t::deallocate(a, current_buffer_holder_, current_buffer_size_);
+            table_->deallocate_buffer(
+                current_buffer_holder_, current_buffer_size_);
         }
     }
 
@@ -1745,13 +1874,12 @@ public:
             } else {
                 // The current buffer has been committed to the store or
                 // seems to be too short, so we need a new one
-                auto a = table_->get_allocator();
-                const auto next_buffer = std::addressof(
-                    *at_t::allocate(a, next_buffer_size));  // throw
+                const auto next_buffer =
+                    table_->allocate_buffer(next_buffer_size);      // throw
                 traits_t::copy(next_buffer, field_begin_, length);
                 if (current_buffer_holder_) {
-                    at_t::deallocate(
-                        a, current_buffer_holder_, current_buffer_size_);
+                    table_->deallocate_buffer(
+                        current_buffer_holder_, current_buffer_size_);
                 }
                 current_buffer_holder_ = next_buffer;
                 current_buffer_size_ = next_buffer_size;
@@ -1766,9 +1894,8 @@ public:
             } else {
                 // The current buffer has been committed to the store,
                 // so we need a new one
-                auto a = table_->get_allocator();
-                current_buffer_holder_ = std::addressof(
-                    *at_t::allocate(a, table_->get_buffer_size())); // throw
+                current_buffer_holder_ = table_->allocate_buffer(
+                    table_->get_buffer_size());                     // throw
                 current_buffer_size_ = table_->get_buffer_size();
             }
             length = 0;

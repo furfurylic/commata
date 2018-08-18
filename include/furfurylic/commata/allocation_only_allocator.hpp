@@ -93,6 +93,28 @@ public:
         member_like_base<Allocator>(Allocator(other.get()))
     {}
 
+    // C++14 standard does not require this
+    template <class OtherAllocator>
+    allocation_only_allocator& operator=(
+        const allocation_only_allocator<OtherAllocator>& other)
+        noexcept(std::is_nothrow_assignable<
+            Allocator&, const OtherAllocator&>::value)
+    {
+        static_cast<Allocator&>(*this) = other;
+        return *this;
+    }
+
+    // ditto
+    template <class OtherAllocator>
+    allocation_only_allocator& operator=(
+        allocation_only_allocator<OtherAllocator>&& other)
+        noexcept(std::is_nothrow_assignable<
+            Allocator&, OtherAllocator>::value)
+    {
+        static_cast<Allocator&>(*this) = std::move(other);
+        return *this;
+    }
+
     template <class... Args>
     auto allocate(size_type n, Args&&... args)
     {
