@@ -1375,6 +1375,8 @@ void swap(
 
 namespace detail {
 
+#ifndef NDEBUG
+
 template <class T, class = void>
 struct has_non_pocs_allocator_type :
     std::false_type
@@ -1387,18 +1389,42 @@ struct has_non_pocs_allocator_type<T,
     std::true_type
 {};
 
+struct is_allocator_aware_impl
+{
+    template <class T>
+    static std::true_type check(typename T::allocator_type* = nullptr);
+
+    template <class T>
+    static std::false_type check(...);
+};
+
 template <class T>
-struct is_nothrow_propagating_swappable :
-    std::integral_constant<bool,
-        is_nothrow_swappable<T>::value
-     && !has_non_pocs_allocator_type<T>::value>
+struct is_allocator_aware :
+    decltype(is_allocator_aware_impl::check<T>(nullptr))
 {};
+
+template <class T>
+auto have_inequal_allocators(const T& l, const T& r)
+ -> std::enable_if_t<is_allocator_aware<T>::value, bool>
+{
+    return l.get_allocator() != r.get_allocator();
+}
+
+template <class T>
+auto have_inequal_allocators(const T& l, const T& r)
+ -> std::enable_if_t<!is_allocator_aware<T>::value, bool>
+{
+    return false;
+}
+
+#endif
 
 template <class T>
 auto nothrow_emigrate(T& from, T& to)
  -> std::enable_if_t<!std::is_nothrow_move_assignable<T>::value>
 {
-    static_assert(is_nothrow_propagating_swappable<T>::value, "");
+    assert(!has_non_pocs_allocator_type<T>::value
+        && !have_inequal_allocators(from, to));
     from.swap(to);
 }
 
@@ -1455,7 +1481,7 @@ auto append_stored_table_content_adaptive(
  -> std::enable_if_t<
         std::is_nothrow_move_assignable<
             typename ContentL::value_type>::value
-     || is_nothrow_propagating_swappable<
+     || is_nothrow_swappable<
             typename ContentL::value_type>::value>
 {
     static_assert(std::is_same<typename ContentL::value_type,
@@ -1466,6 +1492,9 @@ auto append_stored_table_content_adaptive(
     //   there are no effects on the before-end elements.
     // - ContentL's erase() at the end does not throw an exception.
     // - ContentR's erase() at the end does not throw an exception.
+    // - If ContentL::value_type is not nothrow-move-assigable and allocator-
+    //   aware, the allocator type has true_type for propagate_on_container_-
+    //   swap or has is_always_equal property
 
     const auto left_original_size = left_content.size();    // ?
     try {
@@ -1496,10 +1525,15 @@ auto append_stored_table_content_adaptive(
     std::list<Record, AllocatorL>& left_content, ContentR&& right_content)
  -> std::enable_if_t<
         std::is_nothrow_move_assignable<Record>::value
-     || is_nothrow_propagating_swappable<Record>::value>
+     || is_nothrow_swappable<Record>::value>
 {
     static_assert(
         std::is_same<Record, typename ContentR::value_type>::value, "");
+
+    // We require:
+    // - If Record is not nothrow-move-assigable and allocator-aware, the
+    //   allocator type has true_type for propagate_on_container_swap or has
+    //   is_always_equal property
 
     std::list<Record, AllocatorL> right(
         left_content.get_allocator());                  // throw
@@ -1526,11 +1560,9 @@ auto append_stored_table_content_adaptive(
  -> std::enable_if_t<
         !std::is_nothrow_move_assignable<
             typename ContentL::value_type>::value
-     && !is_nothrow_propagating_swappable<
+     && !is_nothrow_swappable<
             typename ContentL::value_type>::value>
 {
-    // In fact, even if POCS == false, swapping is OK if allocators are equal;
-    // we've decided, however, not to rescue such rare cases
     append_stored_table_content_primitive(left_content, right_content);
 }
 
