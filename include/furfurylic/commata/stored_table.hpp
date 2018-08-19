@@ -944,18 +944,6 @@ struct is_basic_stored_value<basic_stored_value<Args...>> :
     std::true_type
 {};
 
-}
-
-template <class Content, class Allocator = std::allocator<Content>>
-class basic_stored_table;
-
-namespace detail {
-
-template <class ContentL, class ContentR, class Allocator>
-void append_no_singular(
-    basic_stored_table<ContentL, Allocator>& left,
-    basic_stored_table<ContentR, Allocator>&& right);
-
 } // end namespace detail
 
 enum stored_table_builder_option : std::uint_fast8_t
@@ -967,7 +955,7 @@ template <class Content, class Allocator,
     std::underlying_type_t<stored_table_builder_option> Options>
 class stored_table_builder;
 
-template <class Content, class Allocator>
+template <class Content, class Allocator = std::allocator<Content>>
 class basic_stored_table
 {
 public:
@@ -995,10 +983,8 @@ private:
     friend class stored_table_builder<Content, Allocator, true>;
     friend class stored_table_builder<Content, Allocator, false>;
 
-    template <class ContentL, class ContentR, class Allocator2>
-    friend void detail::append_no_singular(
-        basic_stored_table<ContentL, Allocator2>& left,
-        basic_stored_table<ContentR, Allocator2>&& right);
+    template <class OtherContent, class OtherAllocator>
+    friend class basic_stored_table;
 
 private:
     store_type store_;
@@ -1036,16 +1022,9 @@ public:
             assert(is_singular());
             return;
         }
-        records_ = allocate_create_content(alloc);                  // throw
+        records_ = allocate_create_content(alloc);  // throw
         try {
-            reserve(content(), other.content().size());             // throw
-            for (const auto& r : other.content()) {
-                const auto e = content().emplace(content().cend()); // throw
-                reserve(*e, r.size());                              // throw
-                for (const auto& v : r) {
-                    e->insert(e->cend(), import_value(v));          // throw
-                }
-            }
+            copy_from(other.content());             // throw
         } catch (...) {
             destroy_deallocate_content(alloc, records_);
             throw;
@@ -1114,17 +1093,6 @@ private:
             at_t::destroy(a, std::addressof(*records));
             at_t::deallocate(a, records, 1);
         }
-    }
-
-    template <class Container>
-    static void reserve(Container&, typename Container::size_type)
-    {}
-
-    template <class... Ts>
-    static void reserve(std::vector<Ts...>& c,
-        typename std::vector<Ts...>::size_type n)
-    {
-        c.reserve(n);
     }
 
 public:
@@ -1329,6 +1297,108 @@ public:
         swap(buffer_size_, other.buffer_size_);
     }
 
+    template <class OtherContent, class OtherAllocator>
+    basic_stored_table& operator+=(
+        const basic_stored_table<OtherContent, OtherAllocator>& other)
+    {
+        return operator_plus_assign_impl(other);
+    }
+
+    template <class OtherContent>
+    basic_stored_table& operator+=(
+        basic_stored_table<OtherContent, Allocator>&& other)
+    {
+        return operator_plus_assign_impl(std::move(other));
+    }
+
+private:
+    template <class OtherTable>
+    basic_stored_table& operator_plus_assign_impl(OtherTable&& other)
+    {
+        if (is_singular()) {
+            basic_stored_table t(
+                std::allocator_arg, get_allocator());               // throw
+            t.append_no_singular(std::forward<OtherTable>(other));  // throw
+            t.swap(*this);
+        } else if (!other.is_singular()) {
+            append_no_singular(std::forward<OtherTable>(other));    // throw
+        }
+        return *this;
+    }
+
+    template <class OtherContent, class OtherAllocator>
+    void append_no_singular(
+        const basic_stored_table<OtherContent, OtherAllocator>& other)
+    {
+        other.copy_to(*this);
+    }
+
+    template <class OtherContent>
+    void append_no_singular(
+        basic_stored_table<OtherContent, Allocator>&& other);
+
+    template <class ContentTo, class AllocatorTo>
+    void copy_to(basic_stored_table<ContentTo, AllocatorTo>& to) const
+    {
+        // We require:
+        // - if an exception is thrown by ContentTo's emplace() at the end,
+        //   there are no effects on the before-end elements.
+        // - ContentTo's erase() at the end does not throw an exception.
+
+        to.guard_rewrite([c = &content()](auto& t) {
+            auto& tc = t.content();
+            const auto original_size = tc.size();       // ?
+            try {
+                t.copy_from(*c);                        // throw
+            } catch (...) {
+                tc.erase(std::next(tc.cbegin(), original_size), tc.cend());
+                throw;
+            }
+        });
+    }
+
+    template <class RecordTo, class AllocatorRTo, class AllocatorTo>
+    void copy_to(basic_stored_table<std::list<RecordTo, AllocatorRTo>,
+                                    AllocatorTo>& to) const
+    {
+        std::list<RecordTo, AllocatorRTo> r2(
+            to.content().get_allocator());              // throw
+        to.guard_rewrite([&r2, c = &content()](auto& t) {
+            t.copy_from(*c, r2);                        // throw
+        });
+        to.content().splice(to.content().cend(), r2);
+    }
+
+    template <class OtherContent>
+    void copy_from(const OtherContent& other)
+    {
+        copy_from(other, content());                            // throw
+    }
+
+    template <class OtherContent>
+    void copy_from(const OtherContent& other, content_type& records)
+    {
+        reserve(records, records.size() + other.size());        // throw
+        for (const auto& r : other) {
+            const auto e = records.emplace(records.cend());     // throw
+            reserve(*e, r.size());                              // throw
+            for (const auto& v : r) {
+                e->insert(e->cend(), import_value(v));          // throw
+            }
+        }
+    }
+
+    template <class Container>
+    static void reserve(Container&, typename Container::size_type)
+    {}
+
+    template <class... Ts>
+    static void reserve(std::vector<Ts...>& c,
+        typename std::vector<Ts...>::size_type n)
+    {
+        c.reserve(n);
+    }
+
 private:
     char_type* allocate_buffer(std::size_t size)
     {
@@ -1368,7 +1438,8 @@ private:
 template <class Content, class Allocator>
 void swap(
     basic_stored_table<Content, Allocator>& left,
-    basic_stored_table<Content, Allocator>& right) noexcept
+    basic_stored_table<Content, Allocator>& right)
+    noexcept(noexcept(left.swap(right)))
 {
     left.swap(right);
 }
@@ -1435,6 +1506,12 @@ auto nothrow_emigrate(T& from, T& to)
     to = std::move(from);
 }
 
+template <class T>
+using is_nothrow_emigratable =
+    std::integral_constant<bool,
+        std::is_nothrow_move_assignable<T>::value
+     || is_nothrow_swappable<T>::value>;
+
 template <class ContentL, class ContentR>
 void append_stored_table_content_primitive(ContentL& l, ContentR&& r)
 {
@@ -1473,10 +1550,7 @@ void append_stored_table_content_primitive(
 template <class ContentL, class ContentR>
 auto append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
  -> std::enable_if_t<
-        std::is_nothrow_move_assignable<
-            typename ContentL::value_type>::value
-     || is_nothrow_swappable<
-            typename ContentL::value_type>::value>
+        is_nothrow_emigratable<typename ContentL::value_type>::value>
 {
     static_assert(std::is_same<typename ContentL::value_type,
         typename ContentR::value_type>::value, "");
@@ -1515,9 +1589,7 @@ auto append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
 template <class Record, class AllocatorL, class ContentR>
 auto append_stored_table_content_adaptive(
     std::list<Record, AllocatorL>& l, ContentR&& r)
- -> std::enable_if_t<
-        std::is_nothrow_move_assignable<Record>::value
-     || is_nothrow_swappable<Record>::value>
+ -> std::enable_if_t<is_nothrow_emigratable<Record>::value>
 {
     static_assert(
         std::is_same<Record, typename ContentR::value_type>::value, "");
@@ -1548,10 +1620,7 @@ auto append_stored_table_content_adaptive(
 template <class ContentL, class ContentR>
 auto append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
  -> std::enable_if_t<
-        !std::is_nothrow_move_assignable<
-            typename ContentL::value_type>::value
-     && !is_nothrow_swappable<
-            typename ContentL::value_type>::value>
+        !is_nothrow_emigratable<typename ContentL::value_type>::value>
 {
     append_stored_table_content_primitive(l, r);
 }
@@ -1583,57 +1652,6 @@ void append_stored_table_content(
     }
 }
 
-template <class ContentL, class AllocatorX, class ContentR, class AllocatorY>
-basic_stored_table<ContentL, AllocatorX>& import_whole_stored_table(
-    basic_stored_table<ContentL, AllocatorX>& left,
-    const basic_stored_table<ContentR, AllocatorY>& right)
-{
-    // We require:
-    // - if an exception is thrown by ContentL's emplace() at the end,
-    //   there are no effects on the before-end elements.
-    // - ContentL's erase() at the end does not throw an exception.
-
-    left.guard_rewrite([&right](auto& t) {
-        auto& tc = t.content();
-        const auto original_size = tc.size();                       // ?
-        try {
-            for (const auto& r : right.content()) {
-                const auto i = tc.emplace(tc.cend());               // throw
-                for (const auto& v : r) {
-                    i->insert(i->cend(), t.import_value(v));        // throw
-                }
-            }
-        } catch (...) {
-            tc.erase(std::next(tc.cbegin(), original_size), tc.cend());
-            throw;
-        }
-    });
-    return left;
-}
-
-template <
-    class RecordL, class AllocatorL, class AllocatorX,
-    class ContentR, class AllocatorY>
-basic_stored_table<std::list<RecordL, AllocatorL>, AllocatorX>&
-import_whole_stored_table(
-    basic_stored_table<std::list<RecordL, AllocatorL>, AllocatorX>& left,
-    const basic_stored_table<ContentR, AllocatorY>& right)
-{
-    std::list<RecordL, AllocatorL> l(
-        left.content().get_allocator());            // throw
-    left.guard_rewrite([&l, &right](auto& t) {
-        for (const auto& r : right.content()) {
-            l.emplace_back();                       // throw
-            auto& ll = l.back();
-            for (const auto& v : r) {
-                ll.push_back(t.import_value(v));    // throw
-            }
-        }
-    });
-    left.content().splice(left.content().cend(), l);
-    return left;
-}
-
 template <class T>
 struct is_basic_stored_table : std::false_type
 {};
@@ -1643,60 +1661,20 @@ struct is_basic_stored_table<basic_stored_table<Content, Allocator>> :
     std::true_type
 {};
 
-template <class ContentL, class ContentR, class AllocatorL, class AllocatorR>
-void append_no_singular(
-    basic_stored_table<ContentL, AllocatorL>& left,
-    const basic_stored_table<ContentR, AllocatorR>& right)
-{
-    import_whole_stored_table(left, right);                 // throw
-}
-
-template <class ContentL, class ContentR, class Allocator>
-void append_no_singular(
-    basic_stored_table<ContentL, Allocator>& left,
-    basic_stored_table<ContentR, Allocator>&& right)
-{
-    if (left.store_.get_allocator() == right.store_.get_allocator()) {
-        append_stored_table_content(
-            left.content(), std::move(right.content()));    // throw
-        left.store_.merge(std::move(right.store_));
-    } else {
-        append_no_singular(left, right);                    // throw
-    }
-}
-
 } // end namespace detail
 
-template <class ContentL, class ContentR, class AllocatorL, class AllocatorR>
-basic_stored_table<ContentL, AllocatorL>& operator+=(
-    basic_stored_table<ContentL, AllocatorL>& left,
-    const basic_stored_table<ContentR, AllocatorR>& right)
+template <class Content, class Allocator>
+template <class OtherContent>
+void basic_stored_table<Content, Allocator>::append_no_singular(
+    basic_stored_table<OtherContent, Allocator>&& other)
 {
-    if (left.is_singular()) {
-        basic_stored_table<ContentL, AllocatorL> l(
-            std::allocator_arg, left.get_allocator());          // throw
-        detail::append_no_singular(l, right);                   // throw
-        left.swap(l);
-    } else if (!right.is_singular()) {
-        detail::append_no_singular(left, right);                // throw
+    if (store_.get_allocator() == other.store_.get_allocator()) {
+        detail::append_stored_table_content(
+            content(), std::move(other.content()));     // throw
+        store_.merge(std::move(other.store_));
+    } else {
+        append_no_singular(other);                      // throw
     }
-    return left;
-}
-
-template <class ContentL, class ContentR, class Allocator>
-basic_stored_table<ContentL, Allocator>& operator+=(
-    basic_stored_table<ContentL, Allocator>& left,
-    basic_stored_table<ContentR, Allocator>&& right)
-{
-    if (left.is_singular()) {
-        basic_stored_table<ContentL, Allocator> l(
-            std::allocator_arg, left.get_allocator());          // throw
-        detail::append_no_singular(l, std::move(right));        // throw
-        left.swap(l);
-    } else if (!right.is_singular()) {
-        detail::append_no_singular(left, std::move(right));     // throw
-    }
-    return left;
 }
 
 template <class TableL, class TableR>
