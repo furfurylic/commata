@@ -1436,8 +1436,7 @@ auto nothrow_emigrate(T& from, T& to)
 }
 
 template <class ContentL, class ContentR>
-void append_stored_table_content_primitive(
-    ContentL& left_content, ContentR&& right_content)
+void append_stored_table_content_primitive(ContentL& l, ContentR&& r)
 {
     // We require:
     // - if an exception is thrown by ContentL's emplace() at the end,
@@ -1445,39 +1444,34 @@ void append_stored_table_content_primitive(
     // - ContentL's erase() at the end does not throw an exception.
     // - ContentR's erase() at the end does not throw an exception.
 
-    const auto left_original_size = left_content.size();        // ?
+    const auto left_original_size = l.size();               // ?
     try {
-        for (auto& r : right_content) {
-            left_content.emplace(
-                left_content.cend(), r.cbegin(), r.cend());     // throw
+        for (auto& rr : r) {
+            l.emplace(l.cend(), rr.cbegin(), rr.cend());    // throw
         }
     } catch (...) {
-        left_content.erase(
-            std::next(left_content.begin(), left_original_size),
-            left_content.cend());
+        l.erase(std::next(l.begin(), left_original_size), l.cend());
         throw;
     }
 
     // Make sure right_content has no reference to moved values;
     // we use erase() instead of clear() to simplify requirements
-    right_content.erase(right_content.cbegin(), right_content.cend());
+    r.erase(r.cbegin(), r.cend());
 }
 
 template <class RecordL, class AllocatorL, class ContentR>
 void append_stored_table_content_primitive(
-    std::list<RecordL, AllocatorL>& left_content, ContentR&& right_content)
+    std::list<RecordL, AllocatorL>& l, ContentR&& r)
 {
-    std::list<RecordL, AllocatorL> right(
-        left_content.get_allocator());                          // throw
-    for (auto& r : right_content) {
-        right.emplace_back(r.cbegin(), r.cend());               // throw
+    std::list<RecordL, AllocatorL> r2(l.get_allocator());   // throw
+    for (auto& rr : r) {
+        r2.emplace_back(rr.cbegin(), rr.cend());            // throw
     }
-    left_content.splice(left_content.cend(), right);
+    l.splice(l.cend(), r2);
 }
 
 template <class ContentL, class ContentR>
-auto append_stored_table_content_adaptive(
-    ContentL& left_content, ContentR&& right_content)
+auto append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
  -> std::enable_if_t<
         std::is_nothrow_move_assignable<
             typename ContentL::value_type>::value
@@ -1496,33 +1490,31 @@ auto append_stored_table_content_adaptive(
     //   aware, the allocator type has true_type for propagate_on_container_-
     //   swap or has is_always_equal property
 
-    const auto left_original_size = left_content.size();    // ?
+    const auto left_original_size = l.size();    // ?
     try {
         // We do move-emplace instead of emplace-and-swap because it seems
         // unlikely that default-construct-then-swap is less exception-prone
         // than move-construct
-        for (auto& r : right_content) {
-            left_content.emplace(
-                left_content.cend(), std::move(r));         // throw
+        for (auto& rr : r) {
+            l.emplace(l.cend(), std::move(rr));         // throw
         }
     } catch (...) {
-        const auto le = std::next(left_content.begin(), left_original_size);
-        auto j = right_content.begin();
-        for (auto i = le, ie = left_content.end(); i != ie; ++i, ++j) {
+        const auto le = std::next(l.begin(), left_original_size);
+        for (auto i = le, ie = l.end(), j = r.begin(); i != ie; ++i, ++j) {
             nothrow_emigrate(*i, *j);
         }
-        left_content.erase(le, left_content.cend());
+        l.erase(le, l.cend());
         throw;
     }
 
     // Make sure right_content has no reference to moved values;
     // we use erase() instead of clear() to simplify requirements
-    right_content.erase(right_content.cbegin(), right_content.cend());
+    r.erase(r.cbegin(), r.cend());
 }
 
 template <class Record, class AllocatorL, class ContentR>
 auto append_stored_table_content_adaptive(
-    std::list<Record, AllocatorL>& left_content, ContentR&& right_content)
+    std::list<Record, AllocatorL>& l, ContentR&& r)
  -> std::enable_if_t<
         std::is_nothrow_move_assignable<Record>::value
      || is_nothrow_swappable<Record>::value>
@@ -1535,66 +1527,59 @@ auto append_stored_table_content_adaptive(
     //   allocator type has true_type for propagate_on_container_swap or has
     //   is_always_equal property
 
-    std::list<Record, AllocatorL> right(
-        left_content.get_allocator());                  // throw
+    std::list<Record, AllocatorL> r2(l.get_allocator());    // throw
     try {
         // We do move-emplace instead of emplace-and-swap because it seems
         // unlikely that default-construct-then-swap is less exception-prone
         // than move-construct
-        for (auto& r : right_content) {
-            right.push_back(std::move(r));              // throw
+        for (auto& rr : r) {
+            r2.push_back(std::move(rr));                    // throw
         }
     } catch (...) {
-        auto j = right_content.begin();
-        for (auto i = right.begin(), ie = right.end(); i != ie; ++i, ++j) {
+        for (auto i = r2.begin(), ie = r2.end(), j = r.begin();
+                i != ie; ++i, ++j) {
             nothrow_emigrate(*i, *j);
         }
         throw;
     }
-    left_content.splice(left_content.cend(), right);
+    l.splice(l.cend(), r2);
 }
 
 template <class ContentL, class ContentR>
-auto append_stored_table_content_adaptive(
-    ContentL& left_content, ContentR&& right_content)
+auto append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
  -> std::enable_if_t<
         !std::is_nothrow_move_assignable<
             typename ContentL::value_type>::value
      && !is_nothrow_swappable<
             typename ContentL::value_type>::value>
 {
-    append_stored_table_content_primitive(left_content, right_content);
+    append_stored_table_content_primitive(l, r);
 }
 
 template <class ContentL, class ContentR>
-auto append_stored_table_content(
-    ContentL& left_content, ContentR&& right_content)
+auto append_stored_table_content(ContentL& l, ContentR&& r)
  -> std::enable_if_t<!std::is_same<
         typename ContentL::value_type, typename ContentR::value_type>::value>
 {
-    append_stored_table_content_primitive(left_content, right_content);
+    append_stored_table_content_primitive(l, r);
 }
 
 template <class ContentL, class ContentR>
-auto append_stored_table_content(
-    ContentL& left_content, ContentR&& right_content)
+auto append_stored_table_content(ContentL& l, ContentR&& r)
  -> std::enable_if_t<std::is_same<
         typename ContentL::value_type, typename ContentR::value_type>::value>
 {
-    append_stored_table_content_adaptive(
-        left_content, std::move(right_content));
+    append_stored_table_content_adaptive(l, std::move(r));
 }
 
 template <class Record, class Allocator>
 void append_stored_table_content(
-    std::list<Record, Allocator>& left_content,
-    std::list<Record, Allocator>&& right_content)
+    std::list<Record, Allocator>& l, std::list<Record, Allocator>&& r)
 {
-    if (left_content.get_allocator() == right_content.get_allocator()) {
-        left_content.splice(left_content.cend(), right_content);
+    if (l.get_allocator() == r.get_allocator()) {
+        l.splice(l.cend(), r);
     } else {
-        append_stored_table_content_adaptive(
-            left_content, std::move(right_content));    // throw
+        append_stored_table_content_adaptive(l, std::move(r));  // throw
     }
 }
 
