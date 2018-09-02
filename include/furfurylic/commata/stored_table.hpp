@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <iterator>
@@ -923,7 +924,13 @@ void swap(
 
 } // end namespace detail
 
-template <class Content, class Allocator, bool Transposes>
+enum stored_table_builder_option : std::uint_fast8_t
+{
+    stored_table_builder_option_transpose = 1
+};
+
+template <class Content, class Allocator,
+    std::underlying_type_t<stored_table_builder_option> Options>
 class stored_table_builder;
 
 template <class Content, class Allocator =
@@ -1627,15 +1634,18 @@ public:
     }
 };
 
-template <class Content, bool Transposes>
-using arrange = std::conditional_t<Transposes,
+template <class Content,
+    std::underlying_type_t<stored_table_builder_option> Options>
+using arrange = std::conditional_t<
+    (Options & stored_table_builder_option_transpose) != 0U,
     arrange_transposing<Content>, arrange_as_is<Content>>;
 
 } // end namespace detail
 
-template <class Content, class Allocator, bool Transposes = false>
+template <class Content, class Allocator,
+    std::underlying_type_t<stored_table_builder_option> Options = 0U>
 class stored_table_builder :
-    detail::arrange<Content, Transposes>
+    detail::arrange<Content, Options>
 {
 public:
     using table_type = basic_stored_table<Content, Allocator>;
@@ -1656,13 +1666,13 @@ private:
 
 public:
     explicit stored_table_builder(table_type& table) :
-        detail::arrange<Content, Transposes>(table.content()),
+        detail::arrange<Content, Options>(table.content()),
         current_buffer_holder_(nullptr), current_buffer_(nullptr),
         field_begin_(nullptr), table_(&table)
     {}
 
     stored_table_builder(stored_table_builder&& other) noexcept :
-        detail::arrange<Content, Transposes>(other),
+        detail::arrange<Content, Options>(other),
         current_buffer_holder_(other.current_buffer_holder_),
         current_buffer_(other.current_buffer_),
         current_buffer_size_(other.current_buffer_size_),
@@ -1796,7 +1806,8 @@ template <class Content, class Allocator>
 auto make_transposed_stored_table_builder(
     basic_stored_table<Content, Allocator>& table)
 {
-    return stored_table_builder<Content, Allocator, true>(table);
+    return stored_table_builder<Content, Allocator,
+        stored_table_builder_option_transpose>(table);
 }
 
 }}
