@@ -1395,7 +1395,7 @@ struct is_output_iterator : std::false_type
 template <class T>
 struct is_output_iterator<T,
     std::enable_if_t<
-        std::is_same<
+        std::is_base_of<
             std::output_iterator_tag,
             typename std::iterator_traits<T>::iterator_category>::value
      || std::is_base_of<
@@ -1633,9 +1633,8 @@ using first_t = typename first<Ts...>::type;
 template <class T, class Sink, class... Appendices,
     std::enable_if_t<
         !detail::is_std_string<T>::value
-     && !std::is_same<
-            std::decay_t<detail::first_t<Appendices...>>,
-            std::locale>::value,
+     && !std::is_base_of<
+            std::locale, std::decay_t<detail::first_t<Appendices...>>>::value,
         std::nullptr_t> = nullptr>
 auto make_field_translator_na(Sink sink, Appendices&&... appendices)
 {
@@ -1744,7 +1743,7 @@ auto make_back_insert_iterator(Container& c, std::false_type)
 
 template <class Container, class... Appendices,
     std::enable_if_t<
-        !std::is_same<std::allocator_arg_t, std::decay_t<Container>>::value
+        !std::is_base_of<std::allocator_arg_t, std::decay_t<Container>>::value
      && !detail::is_std_string<std::decay_t<Container>>::value,
         decltype(std::declval<typename Container::iterator*>(), nullptr)>
     = nullptr>
@@ -1758,7 +1757,7 @@ auto make_field_translator(Container& values, Appendices&&... appendices)
 
 template <class Allocator, class Container, class... Appendices,
     std::enable_if_t<
-        !std::is_same<std::allocator_arg_t, std::decay_t<Container>>::value
+        !std::is_base_of<std::allocator_arg_t, std::decay_t<Container>>::value
      && !detail::is_std_string<std::decay_t<Container>>::value,
         decltype(std::declval<typename Container::iterator*>(), nullptr)>
     = nullptr>
