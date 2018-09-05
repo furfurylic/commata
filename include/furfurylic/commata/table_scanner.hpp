@@ -988,6 +988,8 @@ struct numeric_type_traits<long double>
     static constexpr const auto wcsto = std::wcstold;
 };
 
+// D must derive from raw_converter_base<D, H> (CRTP)
+// and must have member functions "engine" for const char* and const wchar_t*
 template <class D, class H>
 class raw_converter_base :
     member_like_base<H>
@@ -1052,6 +1054,7 @@ using void_t = void;
 template <class T, class H, class = void>
 struct raw_converter;
 
+// For integral types
 template <class T, class H>
 struct raw_converter<T, H, std::enable_if_t<std::is_integral<T>::value,
         void_t<decltype(numeric_type_traits<T>::strto)>>> :
@@ -1071,6 +1074,7 @@ struct raw_converter<T, H, std::enable_if_t<std::is_integral<T>::value,
     }
 };
 
+// For floating-point types
 template <class T, class H>
 struct raw_converter<T, H, std::enable_if_t<std::is_floating_point<T>::value,
         void_t<decltype(numeric_type_traits<T>::strto)>>> :
@@ -1090,6 +1094,7 @@ struct raw_converter<T, H, std::enable_if_t<std::is_floating_point<T>::value,
     }
 };
 
+// For types without corresponding "raw_type"
 template <class T, class H, class = void>
 struct converter :
     private raw_converter<T, H>
@@ -1150,6 +1155,7 @@ struct restrained_converter<T, H, U,
     }
 };
 
+// For types which have corresponding "raw_type"
 template <class T, class H>
 struct converter<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
     restrained_converter<T, H, typename numeric_type_traits<T>::raw_type>
@@ -1594,6 +1600,8 @@ public:
 
     void field_value(std::basic_string<Ch, Tr, Allocator>&& value)
     {
+        // std::basic_string which comes with gcc 7.3.1 does not seem to have
+        // "move-with-specified-allocator" ctor
         if (value.get_allocator() == get_allocator()) {
             this->put(std::move(value));
         } else {
