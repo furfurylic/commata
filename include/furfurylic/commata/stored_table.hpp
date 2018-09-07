@@ -26,6 +26,7 @@
 #include "formatted_output.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
+#include "propagation_controlled_allocator.hpp"
 
 namespace furfurylic {
 namespace commata {
@@ -976,9 +977,15 @@ public:
 
 private:
     using at_t = std::allocator_traits<allocator_type>;
-    using cat_t = typename at_t::template rebind_traits<char_type>;
-    using store_type =
-        detail::table_store<char_type, typename cat_t::allocator_type>;
+    using ca_base_t = typename at_t::template rebind_alloc<char_type>;
+    using cat_t = std::allocator_traits<
+        detail::propagation_controlled_allocator<
+            ca_base_t,
+            at_t::propagate_on_container_copy_assignment::value,
+            at_t::propagate_on_container_move_assignment::value,
+            at_t::propagate_on_container_swap::value>>;
+    using ca_t = typename cat_t::allocator_type;
+    using store_type = detail::table_store<char_type, ca_t>;
 
     friend class stored_table_builder<Content, Allocator, true>;
     friend class stored_table_builder<Content, Allocator, false>;
@@ -1001,7 +1008,7 @@ public:
     explicit basic_stored_table(std::allocator_arg_t,
         const Allocator& alloc = Allocator(),
         std::size_t buffer_size = default_buffer_size) :
-        store_(std::allocator_arg, typename cat_t::allocator_type(alloc)),
+        store_(std::allocator_arg, ca_t(ca_base_t(alloc))),
         records_(allocate_create_content(alloc)),
         buffer_size_(sanitize_buffer_size(buffer_size, alloc))
     {}
@@ -1014,7 +1021,7 @@ public:
 
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
         const basic_stored_table& other) :
-        store_(std::allocator_arg, typename cat_t::allocator_type(alloc)),
+        store_(std::allocator_arg, ca_t(ca_base_t(alloc))),
         records_(nullptr), buffer_size_(other.buffer_size_)
     {
         if (other.is_singular()) {
@@ -1040,7 +1047,7 @@ public:
 
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
         basic_stored_table&& other) :
-        store_(std::allocator_arg, typename cat_t::allocator_type(alloc)),
+        store_(std::allocator_arg, ca_t(ca_base_t(alloc))),
         records_(nullptr), buffer_size_(other.buffer_size_)
     {
         if (alloc == other.get_allocator()) {
@@ -1120,7 +1127,7 @@ public:
 public:
     allocator_type get_allocator() const noexcept
     {
-        return typename at_t::allocator_type(store_.get_allocator());
+        return typename at_t::allocator_type(store_.get_allocator().base());
     }
 
     std::size_t get_buffer_size() const noexcept
