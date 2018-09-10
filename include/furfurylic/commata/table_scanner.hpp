@@ -1467,7 +1467,7 @@ template <class T, class Sink,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class numeric_field_translator :
     detail::converter<T, ConversionErrorHandler>,
-    public detail::translator<Sink, SkippingHandler>
+    detail::translator<Sink, SkippingHandler>
 {
 public:
     explicit numeric_field_translator(
@@ -1480,6 +1480,9 @@ public:
         detail::translator<Sink, SkippingHandler>(
             std::move(sink), std::move(handle_skipping))
     {}
+
+    using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
+    using detail::translator<Sink, SkippingHandler>::field_skipped;
 
     template <class Ch>
     void field_value(const Ch* begin, const Ch* end)
@@ -1494,7 +1497,7 @@ template <class T, class Sink,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class locale_based_numeric_field_translator :
     detail::converter<T, ConversionErrorHandler>,
-    public detail::translator<Sink, SkippingHandler>
+    detail::translator<Sink, SkippingHandler>
 {
     std::locale loc_;
 
@@ -1516,6 +1519,9 @@ public:
             std::move(sink), std::move(handle_skipping)),
         loc_(loc), decimal_point_c_()
     {}
+
+    using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
+    using detail::translator<Sink, SkippingHandler>::field_skipped;
 
     template <class Ch>
     void field_value(Ch* begin, Ch* end)
@@ -1567,7 +1573,7 @@ template <class Sink, class Ch,
         fail_if_skipped<std::basic_string<Ch, Tr, Allocator>>>
 class string_field_translator :
     detail::member_like_base<Allocator>,
-    public detail::translator<Sink, SkippingHandler>
+    detail::translator<Sink, SkippingHandler>
 {
 public:
     using allocator_type = Allocator;
@@ -1591,6 +1597,9 @@ public:
     {
         return detail::member_like_base<Allocator>::get();
     }
+
+    using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
+    using detail::translator<Sink, SkippingHandler>::field_skipped;
 
     void field_value(Ch* begin, Ch* end)
     {
