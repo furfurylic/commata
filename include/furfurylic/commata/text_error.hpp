@@ -9,10 +9,10 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <limits>
-#include <locale>
 #include <memory>
 #include <ostream>
 #include <sstream>
@@ -125,37 +125,14 @@ std::streamsize print_pos(char (&s)[N], std::size_t pos)
     return static_cast<std::streamsize>(len);
 }
 
-template <class Tr>
-std::nullptr_t getloc(std::basic_ostream<char, Tr>&)
+template <std::size_t N>
+std::streamsize print_pos(wchar_t (&s)[N], std::size_t pos)
 {
-    return nullptr;
-}
-
-template <class Ch, class Tr>
-std::locale getloc(std::basic_ostream<Ch, Tr>& os)
-{
-    return os.getloc();
-}
-
-template <class Tr>
-bool sputn(std::nullptr_t,
-    std::basic_streambuf<char, Tr>* sb, const char* s, std::streamsize n)
-{
-    return sb->sputn(s, n) == n;
-}
-
-template <class Ch, class Tr>
-bool sputn(const std::locale& loc,
-    std::basic_streambuf<Ch, Tr>* sb, const char* s, std::streamsize n)
-{
-    const auto& facet = std::use_facet<std::ctype<Ch>>(loc);
-    for (std::streamsize i = 0; i < n; ++i) {
-        const auto c = s[i];
-        if (sb->sputc(facet.widen(c)) == Tr::eof()) {
-            return false;
-        }
-    }
-    return true;
+    const auto len = (pos != text_error::npos) ?
+        std::swprintf(s, N, L"%zu", pos + 1) :
+        std::swprintf(s, N, L"n/a");
+    assert((len > 0 ) && (static_cast<std::size_t>(len) < N));
+    return static_cast<std::streamsize>(len);
 }
 
 } // end namespace detail
@@ -170,35 +147,133 @@ public:
     {}
 
 private:
-    template <class Ch, class Tr>
-    friend std::basic_ostream<Ch, Tr>& operator<<(
-        std::basic_ostream<Ch, Tr>& os, const text_error_info& i);
+    template <class Tr>
+    friend std::basic_ostream<char, Tr>& operator<<(
+        std::basic_ostream<char, Tr>& os, const text_error_info& i);
+
+    template <class Tr>
+    friend std::basic_ostream<wchar_t, Tr>& operator<<(
+        std::basic_ostream<wchar_t, Tr>& os, const text_error_info& i);
 };
 
-template <class Ch, class Tr>
-std::basic_ostream<Ch, Tr>& operator<<(
-    std::basic_ostream<Ch, Tr>& os, const text_error_info& i)
+template <class Tr>
+std::basic_ostream<char, Tr>& operator<<(
+    std::basic_ostream<char, Tr>& os, const text_error_info& i)
 {
-    const auto w = i.ex_->what();
     if (const auto p = i.ex_->get_physical_position()) {
+        // line
         char l[std::numeric_limits<std::size_t>::digits10 + 2];
-        char c[sizeof(l)];
-        const auto w_len = static_cast<std::streamsize>(std::strlen(w));
         const auto l_len = detail::print_pos(l, p->first);
+
+        // column
+        char c[sizeof(l)];
         const auto c_len = detail::print_pos(c, p->second);
-        const auto n = w_len + l_len + c_len + 15/* =7+8. See below */;
-        const auto loc = detail::getloc(os);
+
+        // what
+        const auto w = i.ex_->what();
+        const auto w_len = static_cast<std::streamsize>(std::strlen(w));
+
+        const auto n = w_len + l_len + c_len + ((w_len > 0) ? 15 : 27);
+
         return detail::formatted_output(os, n,
-            [w, w_len, l = &l[0], l_len, c = &c[0], c_len, &loc]
+            [w, w_len, l = &l[0], l_len, c = &c[0], c_len]
             (auto* sb) {
-                return detail::sputn(loc, sb, w, w_len)
-                    && detail::sputn(loc, sb, "; line ", 7)
-                    && detail::sputn(loc, sb, l, l_len)
-                    && detail::sputn(loc, sb, " column ", 8)
-                    && detail::sputn(loc, sb, c, c_len);
+                if (w_len > 0) {
+                    if ((sb->sputn(w, w_len) != w_len)
+                     || (sb->sputn("; line ", 7) != 7)) {
+                        return false;
+                    }
+                } else if (sb->sputn("Text error at line ", 19) != 19) {
+                    return false;
+                }
+                return (sb->sputn(l, l_len) == l_len)
+                    && (sb->sputn(" column ", 8) == 8)
+                    && (sb->sputn(c, c_len) == c_len);
             });
+
     } else {
-        return os << w;
+        return os << i.ex_->what();
+    }
+}
+
+template <class Tr>
+std::basic_ostream<wchar_t, Tr>& operator<<(
+    std::basic_ostream<wchar_t, Tr>& os, const text_error_info& i)
+{
+    // Count the wide characters in what, which may be an NTMBS
+    auto w_raw = i.ex_->what();
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4996)
+#endif
+    auto w_len = static_cast<std::streamsize>(std::mbstowcs(0, w_raw, 0));
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+    if (w_len == -1) {
+        // Conversion failed
+        w_raw = "";
+        w_len = 0;
+    }
+
+    if (const auto p = i.ex_->get_physical_position()) {
+        // line
+        wchar_t l[std::numeric_limits<std::size_t>::digits10 + 2];
+        const auto l_len = detail::print_pos(l, p->first);
+
+        // column
+        wchar_t c[sizeof(l)];
+        const auto c_len = detail::print_pos(c, p->second);
+
+        const auto n = w_len + l_len + c_len + ((w_len > 0) ? 15 : 27);
+
+        return detail::formatted_output(os, n,
+            [w_raw, w_len, l = &l[0], l_len, c = &c[0], c_len]
+            (auto* sb) {
+                if (w_len > 0) {
+                    std::unique_ptr<wchar_t[]> w(
+                        new wchar_t[w_len + 1]);                    // throw
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4996)
+#endif
+                    std::mbstowcs(w.get(), w_raw, w_len);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+                    w[w_len] = L'\0';   // maybe not required
+                    if ((sb->sputn(w.get(), w_len) != w_len)
+                     || (sb->sputn(L"; line ", 7) != 7)) {
+                        return false;
+                    }
+                } else if (sb->sputn(L"Text error at line ", 19) != 19) {
+                    return false;
+                }
+                return (sb->sputn(l, l_len) == l_len)
+                    && (sb->sputn(L" column ", 8) == 8)
+                    && (sb->sputn(c, c_len) == c_len);
+            });
+
+    } else if (w_len > 0) {
+        return detail::formatted_output(os, w_len,
+            [w_raw, &w_len]
+            (auto* sb) {
+                std::unique_ptr<wchar_t[]> w(
+                    new wchar_t[w_len + 1]);                        // throw
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4996)
+#endif
+                std::mbstowcs(w.get(), w_raw, w_len);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+                w[w_len] = L'\0';   // maybe not required
+                return sb->sputn(w.get(), w_len) == w_len;
+            });
+
+    } else {
+        return os;
     }
 }
 
