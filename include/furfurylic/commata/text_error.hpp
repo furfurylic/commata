@@ -146,21 +146,17 @@ public:
         ex_(&ex)
     {}
 
-private:
-    template <class Tr>
-    friend std::basic_ostream<char, Tr>& operator<<(
-        std::basic_ostream<char, Tr>& os, const text_error_info& i);
-
-    template <class Tr>
-    friend std::basic_ostream<wchar_t, Tr>& operator<<(
-        std::basic_ostream<wchar_t, Tr>& os, const text_error_info& i);
+    const text_error& error() const noexcept
+    {
+        return *ex_;
+    }
 };
 
 template <class Tr>
 std::basic_ostream<char, Tr>& operator<<(
     std::basic_ostream<char, Tr>& os, const text_error_info& i)
 {
-    if (const auto p = i.ex_->get_physical_position()) {
+    if (const auto p = i.error().get_physical_position()) {
         // line
         char l[std::numeric_limits<std::size_t>::digits10 + 2];
         const auto l_len = detail::print_pos(l, p->first);
@@ -170,7 +166,7 @@ std::basic_ostream<char, Tr>& operator<<(
         const auto c_len = detail::print_pos(c, p->second);
 
         // what
-        const auto w = i.ex_->what();
+        const auto w = i.error().what();
         const auto w_len = static_cast<std::streamsize>(std::strlen(w));
 
         const auto n = w_len + l_len + c_len + ((w_len > 0) ? 15 : 27);
@@ -192,7 +188,7 @@ std::basic_ostream<char, Tr>& operator<<(
             });
 
     } else {
-        return os << i.ex_->what();
+        return os << i.error().what();
     }
 }
 
@@ -201,7 +197,7 @@ std::basic_ostream<wchar_t, Tr>& operator<<(
     std::basic_ostream<wchar_t, Tr>& os, const text_error_info& i)
 {
     // Count the wide characters in what, which may be an NTMBS
-    auto w_raw = i.ex_->what();
+    auto w_raw = i.error().what();
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4996)
@@ -216,7 +212,7 @@ std::basic_ostream<wchar_t, Tr>& operator<<(
         w_len = 0;
     }
 
-    if (const auto p = i.ex_->get_physical_position()) {
+    if (const auto p = i.error().get_physical_position()) {
         // line
         wchar_t l[std::numeric_limits<std::size_t>::digits10 + 2];
         const auto l_len = detail::print_pos(l, p->first);
