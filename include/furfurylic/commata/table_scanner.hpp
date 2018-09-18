@@ -465,7 +465,7 @@ public:
 
     explicit table_scanner(
         std::size_t header_record_count = 0U,
-        size_type buffer_size = default_buffer_size) :
+        size_type buffer_size = 0U) :
         table_scanner(std::allocator_arg, Allocator(),
             header_record_count, buffer_size)
     {}
@@ -475,7 +475,7 @@ public:
         class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
     explicit table_scanner(
         HeaderFieldScanner s,
-        size_type buffer_size = default_buffer_size) :
+        size_type buffer_size = 0U) :
         table_scanner(
             std::allocator_arg, Allocator(), std::move(s), buffer_size)
     {}
@@ -483,7 +483,7 @@ public:
     table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
         std::size_t header_record_count = 0U,
-        size_type buffer_size = default_buffer_size) :
+        size_type buffer_size = 0U) :
         detail::member_like_base<Allocator>(alloc),
         remaining_header_records_(header_record_count), j_(0),
         buffer_size_(sanitize_buffer_size(buffer_size)),
@@ -499,7 +499,7 @@ public:
     table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
         HeaderFieldScanner s,
-        size_type buffer_size = default_buffer_size) :
+        size_type buffer_size = 0U) :
         detail::member_like_base<Allocator>(alloc),
         remaining_header_records_(0U), j_(0),
         buffer_size_(sanitize_buffer_size(buffer_size)),
@@ -774,9 +774,12 @@ private:
 
     size_type sanitize_buffer_size(size_type buffer_size)
     {
+        if (buffer_size == 0U) {
+            buffer_size = default_buffer_size;
+        }
         return std::min(
-            std::max(buffer_size, static_cast<size_type>(2U)),
-            at_t::max_size(this->get()));
+                std::max(buffer_size, static_cast<size_type>(2U)),
+                at_t::max_size(this->get()));
     }
 
     template <class T, class... Args>

@@ -1037,8 +1037,7 @@ public:
 
     bool empty_physical_row(const typename Handler::char_type* where)
     {
-        this->start_record(where);
-        return this->end_record(where);
+        return this->start_record(where), this->end_record(where);
     }
 
     Handler& base() noexcept
@@ -1068,8 +1067,7 @@ public:
 
     bool empty_physical_row(const typename Handler::char_type* where)
     {
-        this->start_record(where);
-        return this->end_record(where);
+        return this->start_record(where), this->end_record(where);
     }
 
     Handler& base() const noexcept
@@ -1083,11 +1081,10 @@ template <class Handler,
         !detail::is_std_reference_wrapper<Handler>::value,
         std::nullptr_t> = nullptr>
 auto make_empty_physical_row_aware(Handler&& handler)
-    noexcept(std::is_nothrow_move_constructible<
-                std::remove_reference_t<Handler>>::value)
+    noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
 {
     return empty_physical_row_aware_handler<
-        std::remove_reference_t<Handler>>(std::forward<Handler>(handler));
+        std::decay_t<Handler>>(std::forward<Handler>(handler));
 }
 
 template <class Handler>
