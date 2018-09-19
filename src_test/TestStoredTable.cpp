@@ -1162,13 +1162,13 @@ TEST_P(TestStoredTableBuilder, Basics)
     ASSERT_EQ("vb\n3",    table[3][2]);
 }
 
-TEST_P(TestStoredTableBuilder, EmptyRowAware)
+TEST_P(TestStoredTableBuilder, EmptyLineAware)
 {
     const char* s = "\r1,2,3,4\na,b\r\n\nx,y,z\r\n\"\"";
     std::stringbuf in(s);
     stored_table table(GetParam());
     try {
-        parse_csv(&in, make_empty_physical_row_aware(
+        parse_csv(&in, make_empty_physical_line_aware(
             make_stored_table_builder(table)));
     } catch (const text_error& e) {
         FAIL() << e.info();

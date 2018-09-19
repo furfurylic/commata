@@ -95,9 +95,9 @@ public:
         return what_->c_str(); // std::string::c_str is noexcept
     }
 
-    void set_physical_position(std::size_t row = npos, std::size_t col = npos)
+    void set_physical_position(std::size_t line = npos, std::size_t col = npos)
     {
-        physical_position_ = std::make_pair(row, col);
+        physical_position_ = std::make_pair(line, col);
     }
 
     const std::pair<std::size_t, std::size_t>* get_physical_position() const

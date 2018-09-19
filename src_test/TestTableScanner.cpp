@@ -617,7 +617,7 @@ TYPED_TEST(TestTableScanner, SkippedWithNoErrors)
          "\n"
          "A";
     try {
-        parse_csv(s, make_empty_physical_row_aware(std::move(h)));
+        parse_csv(s, make_empty_physical_line_aware(std::move(h)));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -851,9 +851,9 @@ TYPED_TEST(TestTableScanner, BufferSize)
         h.set_field_scanner(1, make_field_translator(values1));
 
         std::basic_stringbuf<TypeParam> buf;
-        const auto row = str("ABC,123\n");
+        const auto line = str("ABC,123\n");
         for (std::size_t i = 0; i < 50; ++i) {
-            buf.sputn(row.data(), row.size());
+            buf.sputn(line.data(), line.size());
         }
 
         try {

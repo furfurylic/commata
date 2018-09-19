@@ -242,25 +242,25 @@ struct parse_step<state::after_cr>
     {
         switch (c) {
         case key_chars<typename Parser::char_type>::COMMA:
-            parser.new_physical_row();
+            parser.new_physical_line();
             parser.set_first_last();
             parser.finalize();
             parser.change_state(state::after_comma);
             break;
         case key_chars<typename Parser::char_type>::DQUOTE:
-            parser.new_physical_row();
+            parser.new_physical_line();
             parser.force_start_record();
             parser.change_state(state::right_of_open_quote);
             break;
         case key_chars<typename Parser::char_type>::CR:
-            parser.new_physical_row();
-            parser.empty_physical_row();
+            parser.new_physical_line();
+            parser.empty_physical_line();
             break;
         case key_chars<typename Parser::char_type>::LF:
             parser.change_state(state::after_lf);
             break;
         default:
-            parser.new_physical_row();
+            parser.new_physical_line();
             parser.set_first_last();
             parser.update_last();
             parser.change_state(state::in_value);
@@ -285,27 +285,27 @@ struct parse_step<state::after_lf>
     {
         switch (c) {
         case key_chars<typename Parser::char_type>::COMMA:
-            parser.new_physical_row();
+            parser.new_physical_line();
             parser.set_first_last();
             parser.finalize();
             parser.change_state(state::after_comma);
             break;
         case key_chars<typename Parser::char_type>::DQUOTE:
-            parser.new_physical_row();
+            parser.new_physical_line();
             parser.force_start_record();
             parser.change_state(state::right_of_open_quote);
             break;
         case key_chars<typename Parser::char_type>::CR:
-            parser.new_physical_row();
-            parser.empty_physical_row();
+            parser.new_physical_line();
+            parser.empty_physical_line();
             parser.change_state(state::after_cr);
             break;
         case key_chars<typename Parser::char_type>::LF:
-            parser.new_physical_row();
-            parser.empty_physical_row();
+            parser.new_physical_line();
+            parser.empty_physical_line();
             break;
         default:
-            parser.new_physical_row();
+            parser.new_physical_line();
             parser.set_first_last();
             parser.update_last();
             parser.change_state(state::in_value);
@@ -466,11 +466,11 @@ struct has_end_buffer :
     decltype(has_end_buffer_impl::check<T>(nullptr))
 {};
 
-struct has_empty_physical_row_impl
+struct has_empty_physical_line_impl
 {
     template <class T>
     static auto check(T*) -> decltype(
-        std::declval<bool&>() = std::declval<T&>().empty_physical_row(
+        std::declval<bool&>() = std::declval<T&>().empty_physical_line(
             std::declval<const typename T::char_type*>()),
         std::true_type());
 
@@ -479,8 +479,8 @@ struct has_empty_physical_row_impl
 };
 
 template <class T>
-struct has_empty_physical_row :
-    decltype(has_empty_physical_row_impl::check<T>(nullptr))
+struct has_empty_physical_line :
+    decltype(has_empty_physical_line_impl::check<T>(nullptr))
 {};
 
 template <class Handler>
@@ -488,7 +488,7 @@ struct is_full_fledged :
     std::integral_constant<bool,
         with_buffer_control<Handler>::value
      && has_start_buffer<Handler>::value && has_end_buffer<Handler>::value
-     && has_empty_physical_row<Handler>::value>
+     && has_empty_physical_line<Handler>::value>
 {};
 
 template <class Handler, class BufferControl>
@@ -550,9 +550,9 @@ public:
         return handler_.end_record(end);
     }
 
-    bool empty_physical_row(const char_type* where)
+    bool empty_physical_line(const char_type* where)
     {
-        return empty_physical_row(has_empty_physical_row<Handler>(), where);
+        return empty_physical_line(has_empty_physical_line<Handler>(), where);
     }
 
 private:
@@ -573,12 +573,12 @@ private:
     void end_buffer(std::false_type, ...)
     {}
 
-    bool empty_physical_row(std::true_type, const char_type* where)
+    bool empty_physical_line(std::true_type, const char_type* where)
     {
-        return handler_.empty_physical_row(where);
+        return handler_.empty_physical_line(where);
     }
 
-    bool empty_physical_row(std::false_type, ...)
+    bool empty_physical_line(std::false_type, ...)
     {
         return true;
     }
@@ -636,10 +636,10 @@ private:
     const char_type* first_;
     const char_type* last_;
 
-    std::size_t physical_row_index_;
-    const char_type* physical_row_or_buffer_begin_;
-    // Number of chars of this row before physical_row_or_buffer_begin_
-    std::size_t physical_row_chars_passed_away_;
+    std::size_t physical_line_index_;
+    const char_type* physical_line_or_buffer_begin_;
+    // Number of chars of this line before physical_line_or_buffer_begin_
+    std::size_t physical_line_chars_passed_away_;
 
 private:
     template <state>
@@ -654,8 +654,8 @@ public:
         noexcept(std::is_nothrow_move_constructible<Handler>::value) :
         f_(std::move(f)),
         record_started_(false), s_(state::after_lf),
-        physical_row_index_(parse_error::npos),
-        physical_row_chars_passed_away_(0)
+        physical_line_index_(parse_error::npos),
+        physical_line_chars_passed_away_(0)
     {}
 
     primitive_parser(primitive_parser&&) = default;
@@ -710,7 +710,7 @@ private:
     {
         try {
             p_ = begin;
-            physical_row_or_buffer_begin_ = begin;
+            physical_line_or_buffer_begin_ = begin;
             set_first_last();
             while (p_ < end) {
                 step([this](const auto& h) { h.normal(*this, *p_); });
@@ -724,14 +724,14 @@ private:
                     end_record();
                 }
             }
-            physical_row_chars_passed_away_ +=
-                p_ - physical_row_or_buffer_begin_;
+            physical_line_chars_passed_away_ +=
+                p_ - physical_line_or_buffer_begin_;
             return true;
         } catch (text_error& e) {
             e.set_physical_position(
-                physical_row_index_,
-                (p_ - physical_row_or_buffer_begin_)
-                    + physical_row_chars_passed_away_);
+                physical_line_index_,
+                (p_ - physical_line_or_buffer_begin_)
+                    + physical_line_chars_passed_away_);
             throw;
         } catch (const parse_aborted&) {
             return false;
@@ -739,15 +739,15 @@ private:
     }
 
 private:
-    void new_physical_row() noexcept
+    void new_physical_line() noexcept
     {
-        if (physical_row_index_ == parse_error::npos) {
-            physical_row_index_ = 0;
+        if (physical_line_index_ == parse_error::npos) {
+            physical_line_index_ = 0;
         } else {
-            ++physical_row_index_;
+            ++physical_line_index_;
         }
-        physical_row_or_buffer_begin_ = p_;
-        physical_row_chars_passed_away_ = 0;
+        physical_line_or_buffer_begin_ = p_;
+        physical_line_chars_passed_away_ = 0;
     }
 
     void change_state(state s) noexcept
@@ -802,10 +802,10 @@ private:
         record_started_ = false;
     }
 
-    void empty_physical_row()
+    void empty_physical_line()
     {
         assert(!record_started_);
-        if (!f_.empty_physical_row(p_)) {
+        if (!f_.empty_physical_line(p_)) {
             throw parse_aborted();
         }
     }
@@ -911,16 +911,16 @@ struct end_buffer_t<Handler, D,
 };
 
 template <class Handler, class D, class = void>
-struct empty_physical_row_t
+struct empty_physical_line_t
 {};
 
 template <class Handler, class D>
-struct empty_physical_row_t<Handler, D,
-    std::enable_if_t<has_empty_physical_row<Handler>::value>>
+struct empty_physical_line_t<Handler, D,
+    std::enable_if_t<has_empty_physical_line<Handler>::value>>
 {
-    bool empty_physical_row(const typename Handler::char_type* where)
+    bool empty_physical_line(const typename Handler::char_type* where)
     {
-        return static_cast<D*>(this)->base().empty_physical_row(where);
+        return static_cast<D*>(this)->base().empty_physical_line(where);
     }
 };
 
@@ -928,7 +928,7 @@ template <class Handler, class D>
 struct handler_decorator :
     get_buffer_t<Handler, D>, release_buffer_t<Handler, D>,
     start_buffer_t<Handler, D>, end_buffer_t<Handler, D>,
-    empty_physical_row_t<Handler, D>
+    empty_physical_line_t<Handler, D>
 {
     using char_type = typename Handler::char_type;
 
@@ -1021,21 +1021,21 @@ auto parse_csv(Input&& in,
 }
 
 template <class Handler>
-class empty_physical_row_aware_handler :
+class empty_physical_line_aware_handler :
     public detail::handler_decorator<
-        Handler, empty_physical_row_aware_handler<Handler>>
+        Handler, empty_physical_line_aware_handler<Handler>>
 {
     Handler handler_;
 
 public:
-    explicit empty_physical_row_aware_handler(Handler handler)
+    explicit empty_physical_line_aware_handler(Handler handler)
         noexcept(std::is_nothrow_move_constructible<Handler>::value) :
         handler_(std::move(handler))
     {}
 
     // Defaulted copy/move ops are all right
 
-    bool empty_physical_row(const typename Handler::char_type* where)
+    bool empty_physical_line(const typename Handler::char_type* where)
     {
         return this->start_record(where), this->end_record(where);
     }
@@ -1052,20 +1052,20 @@ public:
 };
 
 template <class Handler>
-class empty_physical_row_aware_handler<Handler&> :
+class empty_physical_line_aware_handler<Handler&> :
     public detail::handler_decorator<
-        Handler, empty_physical_row_aware_handler<Handler&>>
+        Handler, empty_physical_line_aware_handler<Handler&>>
 {
     Handler* handler_;
 
 public:
-    explicit empty_physical_row_aware_handler(Handler& handler) noexcept :
+    explicit empty_physical_line_aware_handler(Handler& handler) noexcept :
         handler_(&handler)
     {}
 
     // Defaulted copy/move ops are all right
 
-    bool empty_physical_row(const typename Handler::char_type* where)
+    bool empty_physical_line(const typename Handler::char_type* where)
     {
         return this->start_record(where), this->end_record(where);
     }
@@ -1080,18 +1080,18 @@ template <class Handler,
     std::enable_if_t<
         !detail::is_std_reference_wrapper<Handler>::value,
         std::nullptr_t> = nullptr>
-auto make_empty_physical_row_aware(Handler&& handler)
+auto make_empty_physical_line_aware(Handler&& handler)
     noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
 {
-    return empty_physical_row_aware_handler<
+    return empty_physical_line_aware_handler<
         std::decay_t<Handler>>(std::forward<Handler>(handler));
 }
 
 template <class Handler>
-auto make_empty_physical_row_aware(
+auto make_empty_physical_line_aware(
     const std::reference_wrapper<Handler>& handler) noexcept
 {
-    return empty_physical_row_aware_handler<Handler&>(handler.get());
+    return empty_physical_line_aware_handler<Handler&>(handler.get());
 }
 
 }}

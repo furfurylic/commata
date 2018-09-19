@@ -140,17 +140,17 @@ TEST_P(TestParseCsvBasics, Wide)
     ASSERT_EQ(expected_row1, field_values[1]);
 }
 
-TEST_P(TestParseCsvBasics, EmptyRowAware)
+TEST_P(TestParseCsvBasics, EmptyLineAware)
 {
     std::wstring s = L"\n"
                      L"\r"
                      L"\r"
                      L"x1,x2\r"
-                     L"\"\"\r\n"    // not an empty row
+                     L"\"\"\r\n"    // not an empty line
                      L"y1,y2\n";
     std::wstringbuf buf(s);
     std::vector<std::vector<std::wstring>> field_values;
-    ASSERT_TRUE(parse_csv(&buf, make_empty_physical_row_aware(
+    ASSERT_TRUE(parse_csv(&buf, make_empty_physical_line_aware(
         test_collector<wchar_t>(field_values)), GetParam()));
     ASSERT_EQ(6U, field_values.size());
     ASSERT_TRUE(field_values[0].empty());
@@ -182,12 +182,12 @@ TEST_F(TestParseCsvReference, Reference)
     ASSERT_EQ("B", collector.field_values()[0][1]);
 }
 
-TEST_F(TestParseCsvReference, EmptyRowAware)
+TEST_F(TestParseCsvReference, EmptyLineAware)
 {
     std::string s = "A,B\r\rC,D";
     std::stringbuf buf(s);
     test_collector2<char> collector;
-    auto sink = make_empty_physical_row_aware(std::ref(collector));
+    auto sink = make_empty_physical_line_aware(std::ref(collector));
     ASSERT_TRUE(parse_csv(&buf, std::move(sink)));
     ASSERT_EQ(3U, collector.field_values().size());
     ASSERT_EQ(2U, collector.field_values()[0].size());

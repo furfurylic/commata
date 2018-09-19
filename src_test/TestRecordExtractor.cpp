@@ -130,7 +130,7 @@ struct TestRecordExtractorLimit0 : furfurylic::test::BaseTest
 TEST_F(TestRecordExtractorLimit0, IncludeHeader)
 {
     const char* s = "key_a,key_b,value_a,value_b\r"
-                    "ka1,kb1,va1,\"vb1\r";  // Ill-formed row, but not parsed
+                    "ka1,kb1,va1,\"vb1\r";  // Ill-formed line, but not parsed
     std::stringbuf in(s);
     std::stringbuf out;
     const auto result = parse_csv(&in,
