@@ -39,7 +39,22 @@ constexpr T npos_impl<T>::npos;
 
 } // end namespace detail
 
-class text_error_info;
+class text_error;
+
+class text_error_info
+{
+    const text_error* ex_;
+
+public:
+    explicit text_error_info(const text_error& ex) noexcept :
+        ex_(&ex)
+    {}
+
+    const text_error& error() const noexcept
+    {
+        return *ex_;
+    }
+};
 
 class text_error :
     public std::exception, public detail::npos_impl<std::size_t>
@@ -108,7 +123,10 @@ public:
             &physical_position_ : nullptr;
     }
 
-    text_error_info info() const noexcept;
+    text_error_info info() const noexcept
+    {
+        return text_error_info(*this);
+    }
 };
 
 namespace detail {
@@ -136,21 +154,6 @@ std::streamsize print_pos(wchar_t (&s)[N], std::size_t pos)
 }
 
 } // end namespace detail
-
-class text_error_info
-{
-    const text_error* ex_;
-
-public:
-    explicit text_error_info(const text_error& ex) noexcept :
-        ex_(&ex)
-    {}
-
-    const text_error& error() const noexcept
-    {
-        return *ex_;
-    }
-};
 
 template <class Tr>
 std::basic_ostream<char, Tr>& operator<<(
@@ -271,11 +274,6 @@ std::basic_ostream<wchar_t, Tr>& operator<<(
     } else {
         return os;
     }
-}
-
-inline text_error_info text_error::info() const noexcept
-{
-    return text_error_info(*this);
 }
 
 inline std::string to_string(const text_error_info& i)
