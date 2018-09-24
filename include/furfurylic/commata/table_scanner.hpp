@@ -847,22 +847,22 @@ private:
     }
 };
 
-class field_conversion_error : public text_error
+class field_translation_error : public text_error
 {
 public:
     using text_error::text_error;
 };
 
-class field_not_found : public field_conversion_error
+class field_not_found : public field_translation_error
 {
 public:
-    using field_conversion_error::field_conversion_error;
+    using field_translation_error::field_translation_error;
 };
 
-class field_invalid_format : public field_conversion_error
+class field_invalid_format : public field_translation_error
 {
 public:
-    using field_conversion_error::field_conversion_error;
+    using field_translation_error::field_translation_error;
 };
 
 class field_empty : public field_invalid_format
@@ -871,10 +871,10 @@ public:
     using field_invalid_format::field_invalid_format;
 };
 
-class field_out_of_range : public field_conversion_error
+class field_out_of_range : public field_translation_error
 {
 public:
-    using field_conversion_error::field_conversion_error;
+    using field_translation_error::field_translation_error;
 };
 
 namespace detail {
