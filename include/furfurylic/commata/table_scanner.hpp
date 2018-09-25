@@ -563,15 +563,16 @@ private:
     {
         using scanner_t = typed_body_field_scanner<FieldScanner>;
         if (!scanners_) {
-            scanners_.assign(this->get(), make_scanners());     // throw
-            scanners_->resize(j + 1);                           // throw
+            scanners_.assign(this->get(), make_scanners());         // throw
+            scanners_->resize(j + 1);                               // throw
         } else if (j >= scanners_->size()) {
-            scanners_->resize(j + 1);                           // throw
-        } else if (const auto scanner = (*scanners_)[j]) {
+            scanners_->resize(j + 1);                               // throw
+        }
+        const auto p = allocate_construct<scanner_t>(std::move(s)); // throw
+        if (const auto scanner = (*scanners_)[j]) {
             destroy_deallocate(scanner);
         }
-        (*scanners_)[j] =
-            allocate_construct<scanner_t>(std::move(s));        // throw
+        (*scanners_)[j] = p;
     }
 
     void do_set_field_scanner(std::size_t j, std::nullptr_t)
