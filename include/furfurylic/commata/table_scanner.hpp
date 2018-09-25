@@ -243,14 +243,14 @@ class table_scanner :
         virtual const std::type_info& get_type() const = 0;
 
         template <class T>
-        const T* get_target() const
+        const T* get_target() const noexcept
         {
             return (get_type() == typeid(T)) ?
                 static_cast<const T*>(get_target_v()) : nullptr;
         }
 
         template <class T>
-        T* get_target()
+        T* get_target() noexcept
         {
             return (get_type() == typeid(T)) ?
                 static_cast<T*>(get_target_v()) : nullptr;
@@ -342,7 +342,7 @@ class table_scanner :
             scanner().field_skipped();
         }
 
-        const std::type_info& get_type() const override
+        const std::type_info& get_type() const noexcept override
         {
             // Static types suffice for we do slicing on construction
             return typeid(FieldScanner);
@@ -371,28 +371,28 @@ class table_scanner :
                 &*value.begin(), &*value.begin() + value.size());
         }
 
-        const void* get_target_v() const override
+        const void* get_target_v() const noexcept override
         {
             return &scanner_;
         }
 
-        void* get_target_v() override
+        void* get_target_v() noexcept override
         {
             return &scanner_;
         }
 
-        decltype(auto) scanner()
+        decltype(auto) scanner() noexcept
         {
             return scanner_impl(
                 detail::is_std_reference_wrapper<FieldScanner>());
         }
 
-        decltype(auto) scanner_impl(std::false_type)
+        decltype(auto) scanner_impl(std::false_type) noexcept
         {
             return static_cast<FieldScanner&>(scanner_);
         }
 
-        decltype(auto) scanner_impl(std::true_type)
+        decltype(auto) scanner_impl(std::true_type) noexcept
         {
             return static_cast<typename FieldScanner::type&>(scanner_.get());
         }
@@ -418,18 +418,18 @@ class table_scanner :
             scanner_();
         }
 
-        const std::type_info& get_type() const override
+        const std::type_info& get_type() const noexcept override
         {
             return typeid(T);
         }
 
     private:
-        const void* get_target_v() const override
+        const void* get_target_v() const noexcept override
         {
             return &scanner_;
         }
 
-        void* get_target_v() override
+        void* get_target_v() noexcept override
         {
             return &scanner_;
         }
@@ -585,7 +585,7 @@ private:
     }
 
 public:
-    const std::type_info& get_field_scanner_type(std::size_t j) const
+    const std::type_info& get_field_scanner_type(std::size_t j) const noexcept
     {
         if (scanners_ && (j < scanners_->size()) && (*scanners_)[j]) {
             return (*scanners_)[j]->get_type();
@@ -594,26 +594,26 @@ public:
         }
     }
 
-    bool has_field_scanner(std::size_t j) const
+    bool has_field_scanner(std::size_t j) const noexcept
     {
         return scanners_ && (j < scanners_->size()) && (*scanners_)[j];
     }
 
     template <class FieldScanner>
-    const FieldScanner* get_field_scanner(std::size_t j) const
+    const FieldScanner* get_field_scanner(std::size_t j) const noexcept
     {
         return get_field_scanner_g<FieldScanner>(*this, j);
     }
 
     template <class FieldScanner>
-    FieldScanner* get_field_scanner(std::size_t j)
+    FieldScanner* get_field_scanner(std::size_t j) noexcept
     {
         return get_field_scanner_g<FieldScanner>(*this, j);
     }
 
 private:
     template <class FieldScanner, class ThisType>
-    static auto get_field_scanner_g(ThisType& me, std::size_t j)
+    static auto get_field_scanner_g(ThisType& me, std::size_t j) noexcept
     {
         return me.has_field_scanner(j) ?
             (*me.scanners_)[j]->template get_target<FieldScanner>() :
@@ -641,7 +641,7 @@ private:
     }
 
 public:
-    const std::type_info& get_record_end_scanner_type() const
+    const std::type_info& get_record_end_scanner_type() const noexcept
     {
         if (end_scanner_) {
             return end_scanner_->get_type();
@@ -650,19 +650,19 @@ public:
         }
     }
 
-    bool has_record_end_scanner() const
+    bool has_record_end_scanner() const noexcept
     {
         return end_scanner_ != nullptr;
     }
 
     template <class RecordEndScanner>
-    const RecordEndScanner* get_record_end_scanner() const
+    const RecordEndScanner* get_record_end_scanner() const noexcept
     {
         return get_record_end_scanner_g<RecordEndScanner>(*this);
     }
 
     template <class RecordEndScanner>
-    RecordEndScanner* get_record_end_scanner()
+    RecordEndScanner* get_record_end_scanner() noexcept
     {
         return get_record_end_scanner_g<RecordEndScanner>(*this);
     }
@@ -1183,7 +1183,8 @@ class default_if_skipped
     T default_value_;
 
 public:
-    explicit default_if_skipped(T default_value = T()) :
+    explicit default_if_skipped(T default_value = T())
+        noexcept(std::is_nothrow_move_constructible<T>::value) :
         default_value_(std::move(default_value))
     {}
 
