@@ -1020,6 +1020,8 @@ auto parse_csv(Input&& in,
         std::forward<Args>(args)...);
 }
 
+namespace detail {
+
 template <class Handler>
 class empty_physical_line_aware_handler :
     public detail::handler_decorator<
@@ -1033,7 +1035,7 @@ public:
         handler_(std::move(handler))
     {}
 
-    // Defaulted copy/move ops are all right
+    // Defaulted move ctor is all right
 
     bool empty_physical_line(const typename Handler::char_type* where)
     {
@@ -1041,11 +1043,6 @@ public:
     }
 
     Handler& base() noexcept
-    {
-        return handler_;
-    }
-
-    const Handler& base() const noexcept
     {
         return handler_;
     }
@@ -1063,7 +1060,7 @@ public:
         handler_(&handler)
     {}
 
-    // Defaulted copy/move ops are all right
+    // Defaulted move ctor is all right
 
     bool empty_physical_line(const typename Handler::char_type* where)
     {
@@ -1076,6 +1073,8 @@ public:
     }
 };
 
+}
+
 template <class Handler,
     std::enable_if_t<
         !detail::is_std_reference_wrapper<Handler>::value,
@@ -1083,7 +1082,7 @@ template <class Handler,
 auto make_empty_physical_line_aware(Handler&& handler)
     noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
 {
-    return empty_physical_line_aware_handler<
+    return detail::empty_physical_line_aware_handler<
         std::decay_t<Handler>>(std::forward<Handler>(handler));
 }
 
@@ -1091,7 +1090,7 @@ template <class Handler>
 auto make_empty_physical_line_aware(
     const std::reference_wrapper<Handler>& handler) noexcept
 {
-    return empty_physical_line_aware_handler<Handler&>(handler.get());
+    return detail::empty_physical_line_aware_handler<Handler&>(handler.get());
 }
 
 }}
