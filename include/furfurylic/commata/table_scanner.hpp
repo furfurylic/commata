@@ -1013,23 +1013,31 @@ public:
         if (begin == middle) {
             // no conversion could be performed
             if (has_postfix) {
-                return static_cast<result_t>(eh().invalid_format(begin, end));
+                return static_cast<result_t>(get_conversion_error_handler().
+                    invalid_format(begin, end));
             } else {
                 // whitespace only
-                return static_cast<result_t>(eh().empty());
+                return static_cast<result_t>(get_conversion_error_handler().
+                    empty());
             }
         } else if (has_postfix) {
             // if a not-whitespace-extra-character found, it is NG
-            return static_cast<result_t>(eh().invalid_format(begin, end));
+            return static_cast<result_t>(get_conversion_error_handler().
+                invalid_format(begin, end));
         } else if (errno == ERANGE) {
-            return static_cast<result_t>(eh().out_of_range(begin, end, r));
+            return static_cast<result_t>(get_conversion_error_handler().
+                out_of_range(begin, end, r));
         } else {
             return r;
         }
     }
 
-protected:
-    H& eh()
+    H& get_conversion_error_handler()
+    {
+        return this->get();
+    }
+
+    const H& get_conversion_error_handler() const
     {
         return this->get();
     }
@@ -1083,6 +1091,8 @@ struct raw_converter<T, H, std::enable_if_t<std::is_floating_point<T>::value,
 {
     using raw_converter_base<raw_converter<T, H>, H>
         ::raw_converter_base;
+    using raw_converter_base<raw_converter<T, H>, H>
+        ::get_conversion_error_handler;
 
     auto engine(const char* s, char** e) const
     {
@@ -1101,6 +1111,7 @@ struct converter :
     private raw_converter<T, H>
 {
     using raw_converter<T, H>::raw_converter;
+    using raw_converter<T, H>::get_conversion_error_handler;
 
     template <class Ch>
     auto convert(const Ch* begin, const Ch* end)
@@ -1114,16 +1125,17 @@ struct restrained_converter :
     private raw_converter<U, H>
 {
     using raw_converter<U, H>::raw_converter;
+    using raw_converter<U, H>::get_conversion_error_handler;
 
     template <class Ch>
     T convert(const Ch* begin, const Ch* end)
     {
         const auto result = this->convert_raw(begin, end);
         if (result < std::numeric_limits<T>::lowest()) {
-            return this->eh().
+            return this->get_conversion_error_handler().
                 out_of_range(begin, end, std::numeric_limits<T>::lowest());
         } else if (std::numeric_limits<T>::max() < result) {
-            return this->eh().
+            return this->get_conversion_error_handler().
                 out_of_range(begin, end, std::numeric_limits<T>::max());
         } else {
             return static_cast<T>(result);
@@ -1137,6 +1149,7 @@ struct restrained_converter<T, H, U,
     private raw_converter<U, H>
 {
     using raw_converter<U, H>::raw_converter;
+    using raw_converter<U, H>::get_conversion_error_handler;
 
     template <class Ch>
     T convert(const Ch* begin, const Ch* end)
@@ -1151,7 +1164,7 @@ struct restrained_converter<T, H, U,
                 return static_cast<T>(s);
             }
         }
-        return this->eh().out_of_range(
+        return this->get_conversion_error_handler().out_of_range(
             begin, end, std::numeric_limits<T>::max());
     }
 };
@@ -1485,6 +1498,8 @@ public:
 
     using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
     using detail::translator<Sink, SkippingHandler>::field_skipped;
+    using detail::converter<T, ConversionErrorHandler>::
+        get_conversion_error_handler;
 
     template <class Ch>
     void field_value(const Ch* begin, const Ch* end)
@@ -1524,6 +1539,8 @@ public:
 
     using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
     using detail::translator<Sink, SkippingHandler>::field_skipped;
+    using detail::converter<T, ConversionErrorHandler>::
+        get_conversion_error_handler;
 
     template <class Ch>
     void field_value(Ch* begin, Ch* end)
