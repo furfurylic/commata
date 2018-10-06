@@ -1010,20 +1010,14 @@ public:
             std::find_if<const Ch*>(middle, end, [](Ch c) {
                 return !is_space(c);
             }) != end;
-        if (begin == middle) {
-            // no conversion could be performed
-            if (has_postfix) {
-                return static_cast<result_t>(get_conversion_error_handler().
-                    invalid_format(begin, end));
-            } else {
-                // whitespace only
-                return static_cast<result_t>(get_conversion_error_handler().
-                    empty());
-            }
-        } else if (has_postfix) {
+        if (has_postfix) {
             // if a not-whitespace-extra-character found, it is NG
             return static_cast<result_t>(get_conversion_error_handler().
                 invalid_format(begin, end));
+        } else if (begin == middle) {
+            // whitespace only
+            return static_cast<result_t>(get_conversion_error_handler().
+                empty());
         } else if (errno == ERANGE) {
             return static_cast<result_t>(get_conversion_error_handler().
                 out_of_range(begin, end, r));
@@ -1620,7 +1614,7 @@ public:
     using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
     using detail::translator<Sink, SkippingHandler>::field_skipped;
 
-    void field_value(Ch* begin, Ch* end)
+    void field_value(const Ch* begin, const Ch* end)
     {
         this->put(std::basic_string<Ch, Tr, Allocator>(
             begin, end, get_allocator()));
@@ -1633,7 +1627,7 @@ public:
         if (value.get_allocator() == get_allocator()) {
             this->put(std::move(value));
         } else {
-            this->field_value(&value[0], &value[0] + value.size());
+            this->field_value(value.c_str(), value.c_str() + value.size());
         }
     }
 };
