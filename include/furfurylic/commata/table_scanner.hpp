@@ -1032,12 +1032,12 @@ public:
         }
     }
 
-    H& get_conversion_error_handler()
+    H& get_conversion_error_handler() noexcept
     {
         return this->get();
     }
 
-    const H& get_conversion_error_handler() const
+    const H& get_conversion_error_handler() const noexcept
     {
         return this->get();
     }
@@ -1431,12 +1431,12 @@ public:
         sink_(std::move(sink))
     {}
 
-    const SkippingHandler& get_skipping_handler() const
+    const SkippingHandler& get_skipping_handler() const noexcept
     {
         return this->get();
     }
 
-    SkippingHandler& get_skipping_handler()
+    SkippingHandler& get_skipping_handler() noexcept
     {
         return this->get();
     }
@@ -1612,7 +1612,7 @@ public:
             std::move(sink), std::move(handle_skipping))
     {}
 
-    allocator_type get_allocator() const
+    allocator_type get_allocator() const noexcept
     {
         return detail::member_like_base<Allocator>::get();
     }
