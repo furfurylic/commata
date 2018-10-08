@@ -1600,8 +1600,8 @@ public:
     explicit string_field_translator(
         Sink sink,
         SkippingHandler handle_skipping = SkippingHandler()) :
-        string_field_translator(
-            std::allocator_arg, Allocator(), sink, std::move(handle_skipping))
+        detail::translator<Sink, SkippingHandler>(
+            std::move(sink), std::move(handle_skipping))
     {}
 
     string_field_translator(
@@ -1755,6 +1755,23 @@ struct is_back_insertable :
     decltype(is_back_insertable_impl::check<T>(nullptr))
 {};
 
+struct is_insertable_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().insert(std::declval<T&>().end(),
+            std::declval<typename T::value_type>()),
+        std::true_type());
+
+    template <class T>
+    static auto check(...)->std::false_type;
+};
+
+template <class T>
+struct is_insertable :
+    decltype(is_insertable_impl::check<T>(nullptr))
+{};
+
 template <class Container>
 auto make_back_insert_iterator(Container& c, std::true_type)
 {
@@ -1770,11 +1787,9 @@ auto make_back_insert_iterator(Container& c, std::false_type)
 } // end namespace detail
 
 template <class Container, class... Appendices,
-    std::enable_if_t<
-        !std::is_base_of<std::allocator_arg_t, std::decay_t<Container>>::value
-     && !detail::is_std_string<std::decay_t<Container>>::value,
-        decltype(std::declval<typename Container::iterator*>(), nullptr)>
-    = nullptr>
+    std::enable_if_t<detail::is_back_insertable<Container>::value
+                  || detail::is_insertable<Container>::value, std::nullptr_t>*
+        = nullptr>
 auto make_field_translator(Container& values, Appendices&&... appendices)
 {
     return make_field_translator<typename Container::value_type>(
@@ -1784,11 +1799,9 @@ auto make_field_translator(Container& values, Appendices&&... appendices)
 }
 
 template <class Allocator, class Container, class... Appendices,
-    std::enable_if_t<
-        !std::is_base_of<std::allocator_arg_t, std::decay_t<Container>>::value
-     && !detail::is_std_string<std::decay_t<Container>>::value,
-        decltype(std::declval<typename Container::iterator*>(), nullptr)>
-    = nullptr>
+    std::enable_if_t<detail::is_back_insertable<Container>::value
+                  || detail::is_insertable<Container>::value, std::nullptr_t>*
+        = nullptr>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Container& values, Appendices&&... appendices)
 {
