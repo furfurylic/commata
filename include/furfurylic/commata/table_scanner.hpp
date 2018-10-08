@@ -1194,8 +1194,7 @@ class default_if_skipped
     T default_value_;
 
 public:
-    explicit default_if_skipped(T default_value = T())
-        noexcept(std::is_nothrow_move_constructible<T>::value) :
+    explicit default_if_skipped(T default_value = T()) :
         default_value_(std::move(default_value))
     {}
 
@@ -1350,6 +1349,9 @@ public:
         set(replacement_underflow, on_underflow);
     }
 
+    replace_if_conversion_failed(const replace_if_conversion_failed&) = default;
+    ~replace_if_conversion_failed() = default;
+
     template <class Ch>
     T invalid_format(const Ch* begin, const Ch* end) const
     {
@@ -1499,6 +1501,14 @@ public:
             std::move(sink), std::move(handle_skipping))
     {}
 
+    numeric_field_translator(const numeric_field_translator&) = default;
+    numeric_field_translator(numeric_field_translator&&) = default;
+    ~numeric_field_translator() = default;
+    numeric_field_translator& operator=(const numeric_field_translator&)
+        = default;
+    numeric_field_translator& operator=(numeric_field_translator&&)
+        = default;
+
     using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
     using detail::translator<Sink, SkippingHandler>::field_skipped;
     using detail::converter<T, ConversionErrorHandler>::
@@ -1539,6 +1549,16 @@ public:
             std::move(sink), std::move(handle_skipping)),
         loc_(loc), decimal_point_c_()
     {}
+
+    locale_based_numeric_field_translator(
+        const locale_based_numeric_field_translator&) = default;
+    locale_based_numeric_field_translator(
+        locale_based_numeric_field_translator&&) = default;
+    ~locale_based_numeric_field_translator() = default;
+    locale_based_numeric_field_translator& operator=(
+        const locale_based_numeric_field_translator&) = default;
+    locale_based_numeric_field_translator& operator=(
+        locale_based_numeric_field_translator&&) = default;
 
     using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
     using detail::translator<Sink, SkippingHandler>::field_skipped;
@@ -1614,6 +1634,14 @@ public:
         detail::translator<Sink, SkippingHandler>(
             std::move(sink), std::move(handle_skipping))
     {}
+
+    string_field_translator(const string_field_translator&) = default;
+    string_field_translator(string_field_translator&&) = default;
+    ~string_field_translator() = default;
+    string_field_translator& operator=(const string_field_translator&)
+        = default;
+    string_field_translator& operator=(string_field_translator&&)
+        = default;
 
     allocator_type get_allocator() const noexcept
     {
