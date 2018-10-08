@@ -1019,8 +1019,12 @@ public:
             return static_cast<result_t>(get_conversion_error_handler().
                 empty());
         } else if (errno == ERANGE) {
+            using limits_t =
+                std::numeric_limits<std::remove_const_t<decltype(r)>>;
+            const int s = (r == limits_t::max()) ? 1 :
+                          (r == limits_t::lowest()) ? -1 : 0;
             return static_cast<result_t>(get_conversion_error_handler().
-                out_of_range(begin, end, r));
+                out_of_range(begin, end, s));
         } else {
             return r;
         }
@@ -1127,10 +1131,10 @@ struct restrained_converter :
         const auto result = this->convert_raw(begin, end);
         if (result < std::numeric_limits<T>::lowest()) {
             return this->get_conversion_error_handler().
-                out_of_range(begin, end, std::numeric_limits<T>::lowest());
+                out_of_range(begin, end, -1);
         } else if (std::numeric_limits<T>::max() < result) {
             return this->get_conversion_error_handler().
-                out_of_range(begin, end, std::numeric_limits<T>::max());
+                out_of_range(begin, end, 1);
         } else {
             return static_cast<T>(result);
         }
@@ -1159,7 +1163,7 @@ struct restrained_converter<T, H, U,
             }
         }
         return this->get_conversion_error_handler().out_of_range(
-            begin, end, std::numeric_limits<T>::max());
+            begin, end, 1);
     }
 };
 
@@ -1215,9 +1219,9 @@ struct fail_if_conversion_failed
         throw field_invalid_format(s.str());
     }
 
-    template <class Ch, class U>
+    template <class Ch>
     [[noreturn]]
-    T out_of_range(const Ch* begin, const Ch* end, U /*proposed*/) const
+    T out_of_range(const Ch* begin, const Ch* end, int /*sign*/) const
     {
         assert(*end == Ch());
         std::ostringstream s;
@@ -1311,10 +1315,11 @@ class replace_if_conversion_failed
         replacement_empty = 0,
         replacement_invalid_format = 1,
         replacement_above_upper_limit = 2,
-        replacement_below_lower_limit = 3
+        replacement_below_lower_limit = 3,
+        replacement_underflow = 4
     };
 
-    std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[4];
+    std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[5];
     std::int_fast8_t has_;
 
 public:
@@ -1322,23 +1327,27 @@ public:
         class Empty = std::nullptr_t,
         class InvalidFormat = std::nullptr_t,
         class AboveUpperLimit = std::nullptr_t,
-        class BelowLowerLimit = std::nullptr_t>
+        class BelowLowerLimit = std::nullptr_t,
+        class Underflow = std::nullptr_t>
     explicit replace_if_conversion_failed(
         Empty on_empty = Empty(),
         InvalidFormat on_invalid_format = InvalidFormat(),
         AboveUpperLimit on_above_upper_limit = AboveUpperLimit(),
-        BelowLowerLimit on_below_lower_limit = BelowLowerLimit()) :
+        BelowLowerLimit on_below_lower_limit = BelowLowerLimit(),
+        Underflow on_underflow = Underflow()) noexcept :
         has_(0)
     {
         // This class template is designed for arithmetic types
         static_assert(
-            std::is_trivially_copy_constructible<T>::value
+            std::is_trivially_default_constructible<T>::value
+         && std::is_trivially_copy_constructible<T>::value
          && std::is_trivially_destructible<T>::value, "");
 
         set(replacement_empty, on_empty);
         set(replacement_invalid_format, on_invalid_format);
         set(replacement_above_upper_limit, on_above_upper_limit);
         set(replacement_below_lower_limit, on_below_lower_limit);
+        set(replacement_underflow, on_underflow);
     }
 
     template <class Ch>
@@ -1351,19 +1360,19 @@ public:
         }
     }
 
-    template <class Ch, class U>
-    T out_of_range(const Ch* begin, const Ch* end, U proposed) const
+    template <class Ch>
+    T out_of_range(const Ch* begin, const Ch* end, int sign) const
     {
-        using limits_t = std::numeric_limits<T>;
-        if (proposed >= limits_t::max()) {
+        if (sign > 0) {
             if (const auto p = get(replacement_above_upper_limit)) {
                 return *p;
             }
         } else if (const auto p = get(replacement_below_lower_limit)) {
             return *p;
+        } else if (const auto q = get(replacement_underflow)) {
+            return *q;
         }
-        return fail_if_conversion_failed<T>()
-            .out_of_range(begin, end, proposed);
+        return fail_if_conversion_failed<T>().out_of_range(begin, end, sign);
     }
 
     T empty() const
@@ -1376,16 +1385,16 @@ public:
     }
 
 private:
-    void set(replacement r, const T& value)
+    void set(replacement r, const T& value) noexcept
     {
         *reinterpret_cast<T*>(&replacements_[r]) = value;
         has_ |= 1 << r;
     }
 
-    void set(replacement, std::nullptr_t)
+    void set(replacement, std::nullptr_t) noexcept
     {}
 
-    const T* get(replacement r) const
+    const T* get(replacement r) const noexcept
     {
         if (has_ & (1 << r)) {
             return reinterpret_cast<const T*>(&replacements_[r]);
