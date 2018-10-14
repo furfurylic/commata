@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <cwchar>
 #include <cwctype>
 #include <iomanip>
@@ -1214,7 +1215,8 @@ struct fail_if_conversion_failed
         assert(*end == Ch());
         std::ostringstream s;
         narrow(s, begin, end);
-        s << ": cannot convert to an instance of " << name;
+        s << ": cannot convert";
+        write_name<T>(s, " to an instance of ");
         throw field_invalid_format(s.str());
     }
 
@@ -1225,7 +1227,8 @@ struct fail_if_conversion_failed
         assert(*end == Ch());
         std::ostringstream s;
         narrow(s, begin, end);
-        s << ": out of range of " << name;
+        s << ": out of range";
+        write_name<T>(s, " of ");
         throw field_out_of_range(s.str());
     }
 
@@ -1233,12 +1236,24 @@ struct fail_if_conversion_failed
     T empty() const
     {
         std::ostringstream s;
-        s << "Cannot convert an empty string to an instance of " << name;
+        s << "Cannot convert an empty string";
+        write_name<T>(s, " to an instance of ");
         throw field_empty(s.str());
     }
 
 private:
-    static constexpr const char* name = detail::numeric_type_traits<T>::name;
+    template <class U>
+    static std::ostream& write_name(std::ostream& os, const char* prefix,
+        decltype(detail::numeric_type_traits<U>::name)* = nullptr)
+    {
+        return os << prefix << detail::numeric_type_traits<T>::name;
+    }
+
+    template <class U>
+    static std::ostream& write_name(std::ostream& os, ...)
+    {
+        return os;
+    }
 
     template <class Ch>
     static void narrow(std::ostream& os, const Ch* begin, const Ch* end)
@@ -1309,17 +1324,23 @@ private:
 template <class T>
 class replace_if_conversion_failed
 {
-    enum replacement : std::int_fast8_t
-    {
-        replacement_empty = 0,
-        replacement_invalid_format = 1,
-        replacement_above_upper_limit = 2,
-        replacement_below_lower_limit = 3,
-        replacement_underflow = 4
-    };
+    static constexpr unsigned replacement_empty = 0;
+    static constexpr unsigned replacement_invalid_format = 1;
+    static constexpr unsigned replacement_above_upper_limit = 2;
+    static constexpr unsigned replacement_below_lower_limit = 3;
+    static constexpr unsigned replacement_underflow = 4;
+    static constexpr unsigned replacement_n = 5;
 
-    std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[5];
+    std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[replacement_n];
     std::int_fast8_t has_;
+
+private:
+    template <class U>
+    using is_affordable =
+        std::integral_constant<
+            bool,
+            std::is_constructible<T, U>::value
+         || std::is_same<U, std::nullptr_t>::value>;
 
 public:
     template <
@@ -1327,7 +1348,14 @@ public:
         class InvalidFormat = std::nullptr_t,
         class AboveUpperLimit = std::nullptr_t,
         class BelowLowerLimit = std::nullptr_t,
-        class Underflow = std::nullptr_t>
+        class Underflow = std::nullptr_t,
+        std::enable_if_t<
+            is_affordable<Empty>::value
+         && is_affordable<InvalidFormat>::value
+         && is_affordable<AboveUpperLimit>::value
+         && is_affordable<BelowLowerLimit>::value
+         && is_affordable<Underflow>::value,
+            std::nullptr_t> = nullptr>
     explicit replace_if_conversion_failed(
         Empty on_empty = Empty(),
         InvalidFormat on_invalid_format = InvalidFormat(),
@@ -1336,12 +1364,6 @@ public:
         Underflow on_underflow = Underflow()) noexcept :
         has_(0)
     {
-        // This class template is designed for arithmetic types
-        static_assert(
-            std::is_trivially_default_constructible<T>::value
-         && std::is_trivially_copy_constructible<T>::value
-         && std::is_trivially_destructible<T>::value, "");
-
         set(replacement_empty, on_empty);
         set(replacement_invalid_format, on_invalid_format);
         set(replacement_above_upper_limit, on_above_upper_limit);
@@ -1349,9 +1371,130 @@ public:
         set(replacement_underflow, on_underflow);
     }
 
-    replace_if_conversion_failed(const replace_if_conversion_failed&) = default;
-    ~replace_if_conversion_failed() = default;
+    replace_if_conversion_failed(const replace_if_conversion_failed& other) :
+        replace_if_conversion_failed(
+            other, std::is_trivially_copyable<T>())
+    {}
 
+    replace_if_conversion_failed(replace_if_conversion_failed&& other)
+        noexcept(std::is_nothrow_move_constructible<T>::value) :
+        replace_if_conversion_failed(
+            std::move(other), std::is_trivially_copyable<T>())
+    {}
+
+private:
+    replace_if_conversion_failed(const replace_if_conversion_failed& other,
+        std::true_type) noexcept :
+        has_(other.has_)
+    {
+        std::memcpy(&replacements_, &other.replacements_,
+            sizeof replacements_);
+    }
+
+    replace_if_conversion_failed(const replace_if_conversion_failed& other,
+        std::false_type) :
+        has_(0)
+    {
+        for (unsigned i = 0; i < replacement_n; ++i) {
+            if (const auto p = other.get(i)) {
+                set(i, *p);
+            }
+        }
+    }
+
+    replace_if_conversion_failed(replace_if_conversion_failed&& other,
+        std::false_type)
+        noexcept(std::is_nothrow_move_constructible<T>::value) :
+        has_(0)
+    {
+        for (unsigned i = 0; i < replacement_n; ++i) {
+            if (const auto p = other.get(i)) {
+                set(i, std::move(*p));  // ?
+                other.reset(i);
+            }
+        }
+    }
+
+public:
+    ~replace_if_conversion_failed()
+    {
+        destroy(std::is_trivially_destructible<T>());
+    }
+
+private:
+    void destroy(std::true_type)
+    {}
+
+    void destroy(std::false_type)
+    {
+        for (unsigned i = 0; i < replacement_n; ++i) {
+            if (const auto p = get(i)) {
+                destroy(i);
+            }
+        }
+    }
+
+public:
+    replace_if_conversion_failed& operator=(
+        const replace_if_conversion_failed& other)
+    {
+        assign(other, std::is_trivially_copyable<T>());
+        return *this;
+    }
+
+    replace_if_conversion_failed& operator=(
+        replace_if_conversion_failed&& other)
+        noexcept(std::is_nothrow_move_constructible<T>::value)
+    {
+        assign(std::move(other), std::is_trivially_copyable<T>());
+        return *this;
+    }
+
+private:
+    void assign(const replace_if_conversion_failed& other,
+        std::true_type) noexcept
+    {
+        std::memcpy(&replacements_, &other.replacements_,
+            sizeof replacements_);
+        has_ = other.has_;
+    }
+
+    void assign(const replace_if_conversion_failed& other, std::false_type)
+    {
+        for (unsigned i = 0; i < replacement_n; ++i) {
+            const auto p = other.get(i);
+            if (const auto q = get(i)) {
+                if (p) {
+                    *q = *p;
+                } else {
+                    reset(i);
+                }
+            } else if (p) {
+                set(i, *p);
+            }
+        }
+    }
+
+    void assign(replace_if_conversion_failed&& other, std::false_type)
+        noexcept(std::is_nothrow_move_constructible<T>::value)
+    {
+        for (unsigned i = 0; i < replacement_n; ++i) {
+            const auto p = other.get(i);
+            if (const auto q = get(i)) {
+                if (p) {
+                    *q = std::move(*p);
+                    other.reset(i);
+                } else {
+                    reset(i);
+                }
+            } else if (p) {
+                set(i, std::move(*p));
+                other.reset(i);
+            }
+        }
+    }
+
+public:
     template <class Ch>
     T invalid_format(const Ch* begin, const Ch* end) const
     {
@@ -1369,10 +1512,12 @@ public:
             if (const auto p = get(replacement_above_upper_limit)) {
                 return *p;
             }
-        } else if (const auto p = get(replacement_below_lower_limit)) {
+        } else if (sign < 0) {
+            if (const auto p = get(replacement_below_lower_limit)) {
+                return *p;
+            }
+        } else if (const auto p = get(replacement_underflow)) {
             return *p;
-        } else if (const auto q = get(replacement_underflow)) {
-            return *q;
         }
         return fail_if_conversion_failed<T>().out_of_range(begin, end, sign);
     }
@@ -1387,19 +1532,40 @@ public:
     }
 
 private:
-    void set(replacement r, const T& value) noexcept
+    template <class U>
+    void set(unsigned r, U&& value)
     {
-        *reinterpret_cast<T*>(&replacements_[r]) = value;
+        ::new(&replacements_[r]) T(std::forward<U>(value));
         has_ |= 1 << r;
     }
 
-    void set(replacement, std::nullptr_t) noexcept
+    void set(unsigned, std::nullptr_t) noexcept
     {}
 
-    const T* get(replacement r) const noexcept
+    void reset(unsigned r) noexcept
+    {
+        destroy(r);
+        has_ &= ~(1 << r);
+    }
+
+    void destroy(unsigned r) noexcept
+    {
+        reinterpret_cast<T*>(&replacements_[r])->~T();
+    }
+
+    const T* get(unsigned r) const noexcept
     {
         if (has_ & (1 << r)) {
             return reinterpret_cast<const T*>(&replacements_[r]);
+        } else {
+            return nullptr;
+        }
+    }
+
+    T* get(unsigned r) noexcept
+    {
+        if (has_ & (1 << r)) {
+            return reinterpret_cast<T*>(&replacements_[r]);
         } else {
             return nullptr;
         }

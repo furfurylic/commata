@@ -1054,3 +1054,50 @@ TEST_F(TestTableScannerReference, RecordEndScanner)
     ASSERT_EQ(   200, v[2]);
     ASSERT_EQ(-12345, v[3]);
 }
+
+struct TestReplaceIfConversionFailed : BaseTest
+{};
+
+TEST_F(TestReplaceIfConversionFailed, NonArithmetic)
+{
+    replace_if_conversion_failed<std::string> r("E", nullptr, "U", nullptr, "X");
+    auto r2 = std::move(r); // move ctor
+    char d[] = "dummy";
+    ASSERT_STREQ("E", r2.empty().c_str());
+    ASSERT_THROW(r2.invalid_format(d, d + sizeof d - 1), field_invalid_format);
+    ASSERT_STREQ("U", r2.out_of_range(d, d + sizeof d - 1, 1).c_str());
+    ASSERT_THROW(r2.out_of_range(d, d + sizeof d - 1, -1), field_out_of_range);
+    ASSERT_STREQ("X", r2.out_of_range(d, d + sizeof d - 1, 0).c_str());
+
+    replace_if_conversion_failed<std::string> s(nullptr, "i", "u", "l");
+    auto s2 = s;            // copy ctor
+    ASSERT_THROW(s.empty(), field_empty);
+    ASSERT_STREQ("i", s.invalid_format(d, d + sizeof d - 1).c_str());
+    ASSERT_STREQ("u", s.out_of_range(d, d + sizeof d - 1, 1).c_str());
+    ASSERT_STREQ("l", s.out_of_range(d, d + sizeof d - 1, -1).c_str());
+    ASSERT_THROW(s.out_of_range(d, d + sizeof d - 1, 0), field_out_of_range);
+    ASSERT_THROW(s2.empty(), field_empty);
+    ASSERT_STREQ("i", s2.invalid_format(d, d + sizeof d - 1).c_str());
+    ASSERT_STREQ("u", s2.out_of_range(d, d + sizeof d - 1, 1).c_str());
+    ASSERT_STREQ("l", s2.out_of_range(d, d + sizeof d - 1, -1).c_str());
+    ASSERT_THROW(s2.out_of_range(d, d + sizeof d - 1, 0), field_out_of_range);
+
+    r = s;              // copy assignment
+    ASSERT_THROW(s.empty(), field_empty);
+    ASSERT_STREQ("i", s.invalid_format(d, d + sizeof d - 1).c_str());
+    ASSERT_STREQ("u", s.out_of_range(d, d + sizeof d - 1, 1).c_str());
+    ASSERT_STREQ("l", s.out_of_range(d, d + sizeof d - 1, -1).c_str());
+    ASSERT_THROW(s.out_of_range(d, d + sizeof d - 1, 0), field_out_of_range);
+    ASSERT_THROW(r.empty(), field_empty);
+    ASSERT_STREQ("i", r.invalid_format(d, d + sizeof d - 1).c_str());
+    ASSERT_STREQ("u", r.out_of_range(d, d + sizeof d - 1, 1).c_str());
+    ASSERT_STREQ("l", r.out_of_range(d, d + sizeof d - 1, -1).c_str());
+    ASSERT_THROW(r.out_of_range(d, d + sizeof d - 1, 0), field_out_of_range);
+
+    s = std::move(r2);  // move assignment
+    ASSERT_STREQ("E", s.empty().c_str());
+    ASSERT_THROW(s.invalid_format(d, d + sizeof d - 1), field_invalid_format);
+    ASSERT_STREQ("U", s.out_of_range(d, d + sizeof d - 1, 1).c_str());
+    ASSERT_THROW(s.out_of_range(d, d + sizeof d - 1, -1), field_out_of_range);
+    ASSERT_STREQ("X", s.out_of_range(d, d + sizeof d - 1, 0).c_str());
+}
