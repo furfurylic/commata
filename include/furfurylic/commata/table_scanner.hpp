@@ -1651,12 +1651,12 @@ private:
 template <class T, class Sink,
     class SkippingHandler = fail_if_skipped<T>,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
-class numeric_field_translator :
+class arithmetic_field_translator :
     detail::converter<T, ConversionErrorHandler>,
     detail::translator<Sink, SkippingHandler>
 {
 public:
-    explicit numeric_field_translator(
+    explicit arithmetic_field_translator(
         Sink sink,
         SkippingHandler handle_skipping = SkippingHandler(),
         ConversionErrorHandler handle_conversion_error
@@ -1667,12 +1667,12 @@ public:
             std::move(sink), std::move(handle_skipping))
     {}
 
-    numeric_field_translator(const numeric_field_translator&) = default;
-    numeric_field_translator(numeric_field_translator&&) = default;
-    ~numeric_field_translator() = default;
-    numeric_field_translator& operator=(const numeric_field_translator&)
+    arithmetic_field_translator(const arithmetic_field_translator&) = default;
+    arithmetic_field_translator(arithmetic_field_translator&&) = default;
+    ~arithmetic_field_translator() = default;
+    arithmetic_field_translator& operator=(const arithmetic_field_translator&)
         = default;
-    numeric_field_translator& operator=(numeric_field_translator&&)
+    arithmetic_field_translator& operator=(arithmetic_field_translator&&)
         = default;
 
     using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
@@ -1691,7 +1691,7 @@ public:
 template <class T, class Sink,
     class SkippingHandler = fail_if_skipped<T>,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
-class locale_based_numeric_field_translator :
+class locale_based_arithmetic_field_translator :
     detail::converter<T, ConversionErrorHandler>,
     detail::translator<Sink, SkippingHandler>
 {
@@ -1704,7 +1704,7 @@ class locale_based_numeric_field_translator :
                                 // to mimic std::strtol and its comrades
 
 public:
-    locale_based_numeric_field_translator(
+    locale_based_arithmetic_field_translator(
         Sink sink, const std::locale& loc,
         SkippingHandler handle_skipping = SkippingHandler(),
         ConversionErrorHandler handle_conversion_error
@@ -1716,15 +1716,15 @@ public:
         loc_(loc), decimal_point_c_()
     {}
 
-    locale_based_numeric_field_translator(
-        const locale_based_numeric_field_translator&) = default;
-    locale_based_numeric_field_translator(
-        locale_based_numeric_field_translator&&) = default;
-    ~locale_based_numeric_field_translator() = default;
-    locale_based_numeric_field_translator& operator=(
-        const locale_based_numeric_field_translator&) = default;
-    locale_based_numeric_field_translator& operator=(
-        locale_based_numeric_field_translator&&) = default;
+    locale_based_arithmetic_field_translator(
+        const locale_based_arithmetic_field_translator&) = default;
+    locale_based_arithmetic_field_translator(
+        locale_based_arithmetic_field_translator&&) = default;
+    ~locale_based_arithmetic_field_translator() = default;
+    locale_based_arithmetic_field_translator& operator=(
+        const locale_based_arithmetic_field_translator&) = default;
+    locale_based_arithmetic_field_translator& operator=(
+        locale_based_arithmetic_field_translator&&) = default;
 
     using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
     using detail::translator<Sink, SkippingHandler>::field_skipped;
@@ -1863,7 +1863,7 @@ template <class T, class Sink, class... Appendices,
         std::nullptr_t> = nullptr>
 auto make_field_translator_na(Sink sink, Appendices&&... appendices)
 {
-    return numeric_field_translator<T, Sink, Appendices...>(
+    return arithmetic_field_translator<T, Sink, Appendices...>(
         std::move(sink), std::forward<Appendices>(appendices)...);
 }
 
@@ -1873,7 +1873,7 @@ template <class T, class Sink, class... Appendices,
 auto make_field_translator_na(
     Sink sink, const std::locale& loc, Appendices&&... appendices)
 {
-    return locale_based_numeric_field_translator<
+    return locale_based_arithmetic_field_translator<
                 T, Sink, Appendices...>(
             std::move(sink), loc, std::forward<Appendices>(appendices)...);
 }
