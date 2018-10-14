@@ -461,6 +461,7 @@ class table_scanner :
 
 public:
     using char_type = Ch;
+    using traits_type = Tr;
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits<Allocator>::size_type;
 
