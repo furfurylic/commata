@@ -380,9 +380,17 @@ bool operator==(
     return detail::stored_value_eq(left, right);
 }
 
-template <class Left, class Ch, class Tr>
+template <class Ch, class Tr>
 bool operator==(
-    const Left& left,
+    const Ch* left,
+    const basic_stored_value<Ch, Tr>& right) noexcept
+{
+    return right == left;
+}
+
+template <class Ch, class Tr, class Allocator>
+bool operator==(
+    const std::basic_string<Ch, Tr, Allocator>& left,
     const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return right == left;
@@ -396,20 +404,36 @@ bool operator!=(
     return !(left == right);
 }
 
-template <class Ch, class Tr, class Right>
+template <class Ch, class Tr>
 bool operator!=(
     const basic_stored_value<Ch, Tr>& left,
-    const Right& right) noexcept
+    const Ch* right) noexcept
 {
     return !(left == right);
 }
 
-template <class Left, class Ch, class Tr>
+template <class Ch, class Tr, class Allocator>
 bool operator!=(
-    const Left& left,
+    const basic_stored_value<Ch, Tr>& left,
+    const std::basic_string<Ch, Tr, Allocator>& right) noexcept
+{
+    return !(left == right);
+}
+
+template <class Ch, class Tr>
+bool operator!=(
+    const Ch* left,
     const basic_stored_value<Ch, Tr>& right) noexcept
 {
-    return right != left;
+    return !(left == right);
+}
+
+template <class Ch, class Tr, class Allocator>
+bool operator!=(
+    const std::basic_string<Ch, Tr, Allocator>& left,
+    const basic_stored_value<Ch, Tr>& right) noexcept
+{
+    return !(left == right);
 }
 
 template <class Ch, class Tr>
@@ -439,6 +463,14 @@ bool operator<(
 
 template <class Ch, class Tr>
 bool operator<(
+    const basic_stored_value<Ch, Tr>& left,
+    const std::basic_string<Ch, Tr>& right) noexcept
+{
+    return detail::stored_value_lt(left, right);
+}
+
+template <class Ch, class Tr>
+bool operator<(
     const Ch* left,
     const basic_stored_value<Ch, Tr>& right) noexcept
 {
@@ -452,14 +484,6 @@ bool operator<(
         ++left;
     }
     return false;   // at least left == right
-}
-
-template <class Ch, class Tr>
-bool operator<(
-    const basic_stored_value<Ch, Tr>& left,
-    const std::basic_string<Ch, Tr>& right) noexcept
-{
-    return detail::stored_value_lt(left, right);
 }
 
 template <class Ch, class Tr>
@@ -478,17 +502,33 @@ bool operator>(
     return right < left;
 }
 
-template <class Ch, class Tr, class Right>
+template <class Ch, class Tr>
 bool operator>(
     const basic_stored_value<Ch, Tr>& left,
-    const Right& right) noexcept
+    const Ch* right) noexcept
 {
     return right < left;
 }
 
-template <class Left, class Ch, class Tr>
+template <class Ch, class Tr>
 bool operator>(
-    const Left& left,
+    const basic_stored_value<Ch, Tr>& left,
+    const std::basic_string<Ch, Tr>& right) noexcept
+{
+    return right < left;
+}
+
+template <class Ch, class Tr>
+bool operator>(
+    const Ch* left,
+    const basic_stored_value<Ch, Tr>& right) noexcept
+{
+    return right < left;
+}
+
+template <class Ch, class Tr>
+bool operator>(
+    const std::basic_string<Ch, Tr>& left,
     const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return right < left;
@@ -502,17 +542,33 @@ bool operator<=(
     return !(right < left);
 }
 
-template <class Ch, class Tr, class Right>
+template <class Ch, class Tr>
 bool operator<=(
     const basic_stored_value<Ch, Tr>& left,
-    const Right& right) noexcept
+    const Ch* right) noexcept
 {
     return !(right < left);
 }
 
-template <class Left, class Ch, class Tr>
+template <class Ch, class Tr>
 bool operator<=(
-    const Left& left,
+    const basic_stored_value<Ch, Tr>& left,
+    const std::basic_string<Ch, Tr>& right) noexcept
+{
+    return !(right < left);
+}
+
+template <class Ch, class Tr>
+bool operator<=(
+    const Ch* left,
+    const basic_stored_value<Ch, Tr>& right) noexcept
+{
+    return !(right < left);
+}
+
+template <class Ch, class Tr>
+bool operator<=(
+    const std::basic_string<Ch, Tr>& left,
     const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return !(right < left);
@@ -526,17 +582,33 @@ bool operator>=(
     return !(left < right);
 }
 
-template <class Ch, class Tr, class Right>
+template <class Ch, class Tr>
 bool operator>=(
     const basic_stored_value<Ch, Tr>& left,
-    const Right& right) noexcept
+    const Ch* right) noexcept
 {
     return !(left < right);
 }
 
-template <class Left, class Ch, class Tr>
+template <class Ch, class Tr>
 bool operator>=(
-    const Left& left,
+    const basic_stored_value<Ch, Tr>& left,
+    const std::basic_string<Ch, Tr>& right) noexcept
+{
+    return !(left < right);
+}
+
+template <class Ch, class Tr>
+bool operator>=(
+    const Ch* left,
+    const basic_stored_value<Ch, Tr>& right) noexcept
+{
+    return !(left < right);
+}
+
+template <class Ch, class Tr>
+bool operator>=(
+    const std::basic_string<Ch, Tr>& left,
     const basic_stored_value<Ch, Tr>& right) noexcept
 {
     return !(left < right);
