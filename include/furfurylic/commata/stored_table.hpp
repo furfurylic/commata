@@ -628,8 +628,8 @@ std::basic_ostream<Ch, Tr>& operator<<(
         });
 }
 
-using stored_value = basic_stored_value<char, std::char_traits<char>>;
-using wstored_value = basic_stored_value<wchar_t, std::char_traits<wchar_t>>;
+using stored_value = basic_stored_value<char>;
+using wstored_value = basic_stored_value<wchar_t>;
 
 }}
 
