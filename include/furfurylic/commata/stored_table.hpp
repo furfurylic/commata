@@ -1019,15 +1019,6 @@ struct is_basic_stored_value<basic_stored_value<Args...>> :
 
 } // end namespace detail
 
-enum stored_table_builder_option : std::uint_fast8_t
-{
-    stored_table_builder_option_transpose = 1
-};
-
-template <class Content, class Allocator,
-    std::underlying_type_t<stored_table_builder_option> Options>
-class stored_table_builder;
-
 template <class Content, class Allocator = std::allocator<Content>>
 class basic_stored_table
 {
@@ -1058,9 +1049,6 @@ private:
             at_t::propagate_on_container_swap::value>>;
     using ca_t = typename cat_t::allocator_type;
     using store_type = detail::table_store<char_type, ca_t>;
-
-    friend class stored_table_builder<Content, Allocator, true>;
-    friend class stored_table_builder<Content, Allocator, false>;
 
     template <class OtherContent, class OtherAllocator>
     friend class basic_stored_table;
@@ -1291,15 +1279,13 @@ private:
         } else {
             auto secured = store_.secure_any(new_value_size + 1);
             if (!secured) {
-                auto a = store_.get_allocator();
                 const auto alloc_size =
                     std::max(new_value_size + 1, buffer_size_);
-                secured = std::addressof(
-                    *cat_t::allocate(a, alloc_size));           // throw
-                store_.add_buffer(secured, alloc_size);         // throw
+                secured = allocate_buffer(alloc_size);   // throw
+                add_buffer(secured, alloc_size);         // throw
                 // No need to deallocate secured even when an exception is
                 // thrown by add_buffer because add_buffer consumes secured
-                store_.secure_current_upto(secured + new_value_size + 1);
+                secure_current_upto(secured + new_value_size + 1);
             }
             traits_type::copy(secured, new_value_begin, new_value_size);
             traits_type::assign(secured[new_value_size], char_type());
@@ -1388,6 +1374,31 @@ public:
         basic_stored_table<OtherContent, Allocator>&& other)
     {
         return operator_plus_assign_impl(std::move(other));
+    }
+
+    char_type* allocate_buffer(std::size_t size)
+    {
+        auto a = store_.get_allocator();
+        return std::addressof(*cat_t::allocate(a, size));
+    }
+
+    void deallocate_buffer(char_type* p, std::size_t size)
+    {
+        auto a = store_.get_allocator();
+        return cat_t::deallocate(
+            a,
+            std::pointer_traits<typename cat_t::pointer>::pointer_to(*p),
+            size);
+    }
+
+    void add_buffer(char_type* buffer, std::size_t size)
+    {
+        store_.add_buffer(buffer, size);
+    }
+
+    void secure_current_upto(char_type* secured_last)
+    {
+        store_.secure_current_upto(secured_last);
     }
 
 private:
@@ -1479,31 +1490,6 @@ private:
     }
 
 private:
-    char_type* allocate_buffer(std::size_t size)
-    {
-        auto a = store_.get_allocator();
-        return std::addressof(*cat_t::allocate(a, size));
-    }
-
-    void deallocate_buffer(char_type* p, std::size_t size)
-    {
-        auto a = store_.get_allocator();
-        return cat_t::deallocate(
-            a,
-            std::pointer_traits<typename cat_t::pointer>::pointer_to(*p),
-            size);
-    }
-
-    void add_buffer(char_type* buffer, std::size_t size)
-    {
-        store_.add_buffer(buffer, size);
-    }
-
-    void secure_current_upto(char_type* secured_last)
-    {
-        store_.secure_current_upto(secured_last);
-    }
-
     // Unconditionally swaps all contents including allocators
     void swap_force(basic_stored_table& other) noexcept
     {
@@ -1800,6 +1786,11 @@ using stored_table  =
     basic_stored_table<std::deque<std::vector<stored_value>>>;
 using wstored_table =
     basic_stored_table<std::deque<std::vector<wstored_value>>>;
+
+enum stored_table_builder_option : std::uint_fast8_t
+{
+    stored_table_builder_option_transpose = 1
+};
 
 namespace detail {
 
