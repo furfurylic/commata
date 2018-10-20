@@ -202,7 +202,7 @@ public:
         return begin_ == end_;
     }
 
-    size_type max_size() const noexcept
+    constexpr size_type max_size() const noexcept
     {
         return npos;
     }
