@@ -68,16 +68,9 @@ public:
         assert(*end_ == Ch());
     }
 
-    basic_stored_value(const basic_stored_value& other) noexcept :
-        begin_(other.begin_), end_(other.end_)
-    {}
-
+    basic_stored_value(const basic_stored_value& other) noexcept = default;
     basic_stored_value& operator=(const basic_stored_value& other) noexcept
-    {
-        begin_ = other.begin_;
-        end_ = other.end_;
-        return *this;
-    }
+        = default;
 
     iterator begin() noexcept
     {
