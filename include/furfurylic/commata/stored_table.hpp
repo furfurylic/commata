@@ -1740,6 +1740,14 @@ struct is_basic_stored_table<basic_stored_table<Content, Allocator>> :
     std::true_type
 {};
 
+template <class TableL, class TableR>
+auto plus_stored_table_impl(TableL&& left, TableR&& right)
+{
+    std::decay_t<TableL> l(std::forward<TableL>(left));     // throw
+    l += std::forward<TableR>(right);                       // throw
+    return l;
+}
+
 } // end namespace detail
 
 template <class Content, class Allocator>
@@ -1756,16 +1764,36 @@ void basic_stored_table<Content, Allocator>::append_no_singular(
     }
 }
 
-template <class TableL, class TableR>
-auto operator+(TableL&& left, TableR&& right)
- -> std::enable_if_t<
-        detail::is_basic_stored_table<std::decay_t<TableL>>::value
-     && detail::is_basic_stored_table<std::decay_t<TableR>>::value,
-        std::decay_t<TableL>>
+template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+auto operator+(
+    const basic_stored_table<ContentL, AllocatorL>& left,
+    const basic_stored_table<ContentR, AllocatorR>& right)
 {
-    std::decay_t<TableL> l(std::forward<TableL>(left));     // throw
-    l += std::forward<TableR>(right);                       // throw
-    return l;
+    return detail::plus_stored_table_impl(left, right);
+}
+
+template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+auto operator+(
+    const basic_stored_table<ContentL, AllocatorL>& left,
+    basic_stored_table<ContentR, AllocatorR>&& right)
+{
+    return detail::plus_stored_table_impl(left, std::move(right));
+}
+
+template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+auto operator+(
+    basic_stored_table<ContentL, AllocatorL>&& left,
+    const basic_stored_table<ContentR, AllocatorR>& right)
+{
+    return detail::plus_stored_table_impl(std::move(left), right);
+}
+
+template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+auto operator+(
+    basic_stored_table<ContentL, AllocatorL>&& left,
+    basic_stored_table<ContentR, AllocatorR>&& right)
+{
+    return detail::plus_stored_table_impl(std::move(left), std::move(right));
 }
 
 using stored_table  =
