@@ -35,7 +35,6 @@
 using namespace furfurylic::commata;
 using namespace furfurylic::test;
 
-static_assert(noexcept(stored_value(nullptr, nullptr)), "");
 static_assert(std::is_nothrow_copy_constructible<stored_value>::value, "");
 static_assert(std::is_nothrow_copy_assignable<stored_value>::value, "");
 static_assert(noexcept(std::declval<stored_value&>().begin()), "");

@@ -62,7 +62,7 @@ public:
         basic_stored_value(empty_value, empty_value)
     {}
 
-    basic_stored_value(Ch* begin, Ch* end) noexcept :
+    basic_stored_value(Ch* begin, Ch* end) :
         begin_(begin), end_(end)
     {
         assert(*end_ == Ch());
