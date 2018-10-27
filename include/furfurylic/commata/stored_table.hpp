@@ -17,6 +17,7 @@
 #include <list>
 #include <memory>
 #include <numeric>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -149,14 +150,18 @@ public:
     reference at(size_type pos)
     {
         // pos == size() is NG, IAW std::basic_string
-        check_pos(pos); // throw
+        if (pos >= size()) {
+            throw_pos(pos);     // throw
+        }
         return (*this)[pos];
     }
 
     const_reference at(size_type pos) const
     {
         // ditto
-        check_pos(pos); // throw
+        if (pos >= size()) {
+            throw_pos(pos);     // throw
+        }
         return (*this)[pos];
     }
 
@@ -238,7 +243,9 @@ public:
 
     basic_stored_value& erase(size_type pos = 0, size_type n = npos)
     {
-        check_pos(pos); // throw
+        if (pos > size()) {
+            throw_pos(pos);
+        }
         const auto xlen = std::min(n, size() - pos);    // length of removal
         const auto first = cbegin() + pos;
         erase(first, first + xlen);
@@ -287,12 +294,12 @@ public:
     }
 
 private:
-    void check_pos(size_type pos) const
+    [[noreturn]]
+    void throw_pos(size_type pos) const
     {
-        if (pos >= size()) {
-            throw std::out_of_range(
-                std::to_string(pos) + " is too large for this value");
-        }
+        std::ostringstream s;
+        s << pos << " is too large for this value, whose size is " << size();
+        throw std::out_of_range(s.str());
     }
 };
 

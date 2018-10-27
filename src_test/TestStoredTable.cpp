@@ -344,7 +344,8 @@ TYPED_TEST(TestStoredValue, EraseByIndex)
     auto s = str0("latter");        // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
 
-    ASSERT_THROW(v.erase(6), std::out_of_range);
+    ASSERT_NO_THROW(v.erase(6));
+    ASSERT_THROW(v.erase(7), std::out_of_range);
 
     ASSERT_EQ(
         &v,
