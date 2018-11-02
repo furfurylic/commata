@@ -1060,14 +1060,12 @@ private:
     std::size_t buffer_size_;
 
 public:
-    explicit basic_stored_table(
-        std::size_t buffer_size = default_buffer_size) :
+    explicit basic_stored_table(std::size_t buffer_size = 0U) :
         basic_stored_table(std::allocator_arg, Allocator(), buffer_size)
     {}
 
-    explicit basic_stored_table(std::allocator_arg_t,
-        const Allocator& alloc = Allocator(),
-        std::size_t buffer_size = default_buffer_size) :
+    basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
+        std::size_t buffer_size = 0U) :
         store_(std::allocator_arg, ca_t(ca_base_t(alloc))),
         records_(allocate_create_content(alloc)),
         buffer_size_(sanitize_buffer_size(buffer_size, alloc))
@@ -1081,8 +1079,8 @@ public:
 
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
         const basic_stored_table& other) :
-        store_(std::allocator_arg, ca_t(ca_base_t(alloc))),
-        records_(nullptr), buffer_size_(other.buffer_size_)
+        store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
+        buffer_size_(std::min(at_t::max_size(alloc), other.buffer_size_))
     {
         if (other.is_singular()) {
             // leave also *this singular
@@ -1107,8 +1105,8 @@ public:
 
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
         basic_stored_table&& other) :
-        store_(std::allocator_arg, ca_t(ca_base_t(alloc))),
-        records_(nullptr), buffer_size_(other.buffer_size_)
+        store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
+        buffer_size_(std::min(at_t::max_size(alloc), other.buffer_size_))
     {
         if (alloc == other.get_allocator()) {
             store_type s(std::allocator_arg,
@@ -1134,6 +1132,9 @@ private:
     static std::size_t sanitize_buffer_size(
         std::size_t buffer_size, const Allocator& alloc)
     {
+        if (buffer_size == 0U) {
+            buffer_size = default_buffer_size;
+        }
         return std::min(
             std::max(buffer_size, static_cast<std::size_t>(2U)),
             at_t::max_size(alloc));
@@ -1270,24 +1271,21 @@ private:
     value_type& rewrite_value_n(value_type& value,
         InputIterator new_value_begin, std::size_t new_value_size)
     {
-        // We require that [value.begin(), value.end()) and
-        // [new_value_begin, new_value_begin + new_value_size) do not overlap
-
         if (new_value_size <= value.size()) {
-            traits_type::copy(value.begin(), new_value_begin, new_value_size);
+            traits_type::move(value.begin(), new_value_begin, new_value_size);
             value.erase(value.cbegin() + new_value_size, value.cend());
         } else {
             auto secured = store_.secure_any(new_value_size + 1);
             if (!secured) {
                 const auto alloc_size =
                     std::max(new_value_size + 1, buffer_size_);
-                secured = allocate_buffer(alloc_size);   // throw
-                add_buffer(secured, alloc_size);         // throw
+                secured = allocate_buffer(alloc_size);  // throw
+                add_buffer(secured, alloc_size);        // throw
                 // No need to deallocate secured even when an exception is
                 // thrown by add_buffer because add_buffer consumes secured
                 secure_current_upto(secured + new_value_size + 1);
             }
-            traits_type::copy(secured, new_value_begin, new_value_size);
+            traits_type::move(secured, new_value_begin, new_value_size);
             traits_type::assign(secured[new_value_size], char_type());
             value = value_type(secured, secured + new_value_size);
         }
@@ -1376,21 +1374,6 @@ public:
         return operator_plus_assign_impl(std::move(other));
     }
 
-    char_type* allocate_buffer(std::size_t size)
-    {
-        auto a = store_.get_allocator();
-        return std::addressof(*cat_t::allocate(a, size));
-    }
-
-    void deallocate_buffer(char_type* p, std::size_t size)
-    {
-        auto a = store_.get_allocator();
-        return cat_t::deallocate(
-            a,
-            std::pointer_traits<typename cat_t::pointer>::pointer_to(*p),
-            size);
-    }
-
     void add_buffer(char_type* buffer, std::size_t size)
     {
         store_.add_buffer(buffer, size);
@@ -1402,6 +1385,12 @@ public:
     }
 
 private:
+    char_type* allocate_buffer(std::size_t size)
+    {
+        auto a = store_.get_allocator();
+        return std::addressof(*cat_t::allocate(a, size));
+    }
+
     template <class OtherTable>
     basic_stored_table& operator_plus_assign_impl(OtherTable&& other)
     {
@@ -1503,8 +1492,7 @@ private:
 template <class Content, class Allocator>
 void swap(
     basic_stored_table<Content, Allocator>& left,
-    basic_stored_table<Content, Allocator>& right)
-    noexcept(noexcept(left.swap(right)))
+    basic_stored_table<Content, Allocator>& right) noexcept
 {
     left.swap(right);
 }
@@ -1625,9 +1613,6 @@ auto append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
     //   there are no effects on the before-end elements.
     // - ContentL's erase() at the end does not throw an exception.
     // - ContentR's erase() at the end does not throw an exception.
-    // - If ContentL::value_type is not nothrow-move-assigable and allocator-
-    //   aware, the allocator type has true_type for propagate_on_container_-
-    //   swap or has is_always_equal property
 
     const auto left_original_size = l.size();    // ?
     try {
@@ -1658,11 +1643,6 @@ auto append_stored_table_content_adaptive(
 {
     static_assert(
         std::is_same<Record, typename ContentR::value_type>::value, "");
-
-    // We require:
-    // - If Record is not nothrow-move-assigable and allocator-aware, the
-    //   allocator type has true_type for propagate_on_container_swap or has
-    //   is_always_equal property
 
     std::list<Record, AllocatorL> r2(l.get_allocator());    // throw
     try {
@@ -1907,8 +1887,7 @@ public:
     ~stored_table_builder()
     {
         if (current_buffer_holder_) {
-            table_->deallocate_buffer(
-                current_buffer_holder_, current_buffer_size_);
+            deallocate_buffer(current_buffer_holder_, current_buffer_size_);
         }
     }
 
@@ -1968,10 +1947,10 @@ public:
                 // The current buffer has been committed to the store or
                 // seems to be too short, so we need a new one
                 const auto next_buffer =
-                    table_->allocate_buffer(next_buffer_size);      // throw
+                    allocate_buffer(next_buffer_size);              // throw
                 traits_t::copy(next_buffer, field_begin_, length);
                 if (current_buffer_holder_) {
-                    table_->deallocate_buffer(
+                    deallocate_buffer(
                         current_buffer_holder_, current_buffer_size_);
                 }
                 current_buffer_holder_ = next_buffer;
@@ -1987,8 +1966,8 @@ public:
             } else {
                 // The current buffer has been committed to the store,
                 // so we need a new one
-                current_buffer_holder_ = table_->allocate_buffer(
-                    table_->get_buffer_size());                     // throw
+                current_buffer_holder_ =
+                    allocate_buffer(table_->get_buffer_size());     // throw
                 current_buffer_size_ = table_->get_buffer_size();
             }
             length = 0;
@@ -2009,6 +1988,25 @@ private:
         std::size_t next = table_->get_buffer_size();
         for (; occupied >= next / 2; next *= 2);
         return next;
+    }
+
+    char_type* allocate_buffer(std::size_t size)
+    {
+        using cat_t = typename std::allocator_traits<Allocator>::template
+            rebind_traits<char_type>;
+        typename cat_t::allocator_type a(table_->get_allocator());
+        return std::addressof(*cat_t::allocate(a, size));
+    }
+
+    void deallocate_buffer(char_type* p, std::size_t size) noexcept
+    {
+        using cat_t = typename std::allocator_traits<Allocator>::template
+            rebind_traits<char_type>;
+        typename cat_t::allocator_type a(table_->get_allocator());
+        cat_t::deallocate(
+            a,
+            std::pointer_traits<typename cat_t::pointer>::pointer_to(*p),
+            size);
     }
 
 public:
