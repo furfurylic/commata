@@ -1706,11 +1706,26 @@ struct is_basic_stored_table<basic_stored_table<Content, Allocator>> :
     std::true_type
 {};
 
-template <class TableL, class TableR>
-auto plus_stored_table_impl(TableL&& left, TableR&& right)
+template <class ContentL, class AllocatorL, class TableR>
+auto plus_stored_table_impl(
+    const basic_stored_table<ContentL, AllocatorL>& left, TableR&& right)
 {
-    std::decay_t<TableL> l(std::forward<TableL>(left));     // throw
+    basic_stored_table<ContentL, AllocatorL> l(left);       // throw
     l += std::forward<TableR>(right);                       // throw
+    return l;
+}
+
+template <class ContentL, class AllocatorL, class TableR>
+auto plus_stored_table_impl(
+    basic_stored_table<ContentL, AllocatorL>&& left, TableR&& right)
+{
+    basic_stored_table<ContentL, AllocatorL> l(std::move(left));    // throw
+    try {
+        l += std::forward<TableR>(right);                           // throw
+    } catch (...) {
+        l.swap(left);
+        throw;
+    }
     return l;
 }
 
