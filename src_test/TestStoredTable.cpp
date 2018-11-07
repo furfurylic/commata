@@ -1109,6 +1109,45 @@ TYPED_TEST(TestStoredTableAllocatorPropagation, Swap)
     ASSERT_EQ(expected2, table2.get_allocator().id());
 }
 
+TYPED_TEST(TestStoredTableAllocatorPropagation, GenericCopyCtor)
+{
+    const auto pocca = std::tuple_element_t<0, TypeParam>::value;
+    const auto pocma = std::tuple_element_t<1, TypeParam>::value;
+    const auto pocs = std::tuple_element_t<2, TypeParam>::value;
+
+    using content_t = std::vector<std::vector<stored_value>>;
+    using a_t = identified_allocator<content_t, pocca, pocma, pocs>;
+
+    a_t a1(1);
+    basic_stored_table<content_t, a_t> table1(std::allocator_arg, a1);
+    this->init_table(table1);
+
+    a_t a2(2);
+    basic_stored_table<content_t, a_t> table2(std::allocator_arg, a2, table1);
+
+    ASSERT_EQ(a2, table2.get_allocator());
+}
+
+TYPED_TEST(TestStoredTableAllocatorPropagation, GenericMoveCtor)
+{
+    const auto pocca = std::tuple_element_t<0, TypeParam>::value;
+    const auto pocma = std::tuple_element_t<1, TypeParam>::value;
+    const auto pocs = std::tuple_element_t<2, TypeParam>::value;
+
+    using content_t = std::vector<std::vector<stored_value>>;
+    using a_t = identified_allocator<content_t, pocca, pocma, pocs>;
+
+    a_t a1(1);
+    basic_stored_table<content_t, a_t> table1(std::allocator_arg, a1);
+    this->init_table(table1);
+
+    a_t a2(2);
+    basic_stored_table<content_t, a_t> table2(
+        std::allocator_arg, a2, std::move(table1));
+
+    ASSERT_EQ(a2, table2.get_allocator());
+}
+
 static_assert(
     std::is_nothrow_move_constructible<
         stored_table_builder<

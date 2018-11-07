@@ -1096,6 +1096,25 @@ public:
         }
     }
 
+    template <class OtherContent, class OtherAllocator>
+    basic_stored_table(
+        const basic_stored_table<OtherContent, OtherAllocator>& other) :
+        basic_stored_table(std::allocator_arg, other.get_allocator(), other)
+    {}
+
+    template <class OtherContent, class OtherAllocator>
+    basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
+        const basic_stored_table<OtherContent, OtherAllocator>& other) :
+        store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
+        buffer_size_(other.get_buffer_size())
+    {
+        if (!other.is_singular()) {
+            basic_stored_table t(std::allocator_arg, get_allocator());
+            t += other;
+            swap_force(t);
+        }
+    }
+
     basic_stored_table(basic_stored_table&& other) noexcept :
         store_(std::move(other.store_)), records_(other.records_),
         buffer_size_(other.buffer_size_)
@@ -1117,6 +1136,27 @@ public:
         } else {
             basic_stored_table(std::allocator_arg, alloc, other).
                 swap_force(*this);  // throw
+        }
+    }
+
+    template <class OtherContent, class OtherAllocator>
+    basic_stored_table(
+        basic_stored_table<OtherContent, OtherAllocator>&& other) :
+        basic_stored_table(std::allocator_arg, other.get_allocator(),
+            std::move(other))
+    {}
+
+    template <class OtherContent, class OtherAllocator>
+    basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
+        basic_stored_table<OtherContent, OtherAllocator>&& other) :
+        store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
+        buffer_size_(other.get_buffer_size())
+    {
+        assert(is_singular());
+        if (!other.is_singular()) {
+            basic_stored_table t(std::allocator_arg, get_allocator());
+            t += std::move(other);
+            swap_force(t);
         }
     }
 
@@ -1398,7 +1438,7 @@ private:
             basic_stored_table t(
                 std::allocator_arg, get_allocator());               // throw
             t.append_no_singular(std::forward<OtherTable>(other));  // throw
-            t.swap(*this);
+            swap(t);
         } else if (!other.is_singular()) {
             append_no_singular(std::forward<OtherTable>(other));    // throw
         }
