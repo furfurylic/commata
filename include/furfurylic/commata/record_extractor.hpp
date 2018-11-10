@@ -417,6 +417,8 @@ public:
         record_extractor_with_indexed_key&&) = default;
 };
 
+namespace detail {
+
 template <class Ch, class Tr, class Allocator>
 class string_eq;
 
@@ -452,49 +454,67 @@ std::basic_ostream<Ch, Tr>& operator<<(
     return os << o.s_;
 }
 
-namespace detail {
-
-template <class Ch, class T, class = void>
-struct string_pred;
-
-template <class Ch, class T>
-struct string_pred<Ch, T,
-    std::enable_if_t<
-        is_std_string<std::decay_t<T>>::value
-     && std::is_same<Ch, typename std::decay_t<T>::value_type>::value>>
-// We'd like to copy the string into the extractor, but don't like any slicing
-// to take place, so use of is_std_string is sufficient and preferrable to use
-// of std::is_base_of.
+template <class Ch, class Tr, class Allocator, class OtherAllocator>
+string_eq<Ch, Tr, OtherAllocator> make_string_pred(
+    std::basic_string<Ch, Tr, OtherAllocator>&& s, const Allocator&)
 {
-    using type = string_eq<
-        Ch,
-        typename std::decay_t<T>::traits_type,
-        typename std::decay_t<T>::allocator_type>;
-};
+    return string_eq<Ch, Tr, OtherAllocator>(std::move(s));
+}
 
-template <class Ch, class T>
-struct string_pred<Ch, T,
-    std::enable_if_t<
-        !is_std_string<std::decay_t<T>>::value
-     && std::is_constructible<std::basic_string<Ch>, T&&>::value>>
-// Be careful with reference collapsing when you read codes above
-// (T can be an lvalue refecence type).
+template <class Ch, class Tr, class Allocator, class T>
+auto make_string_pred(const T& s, const Allocator& a)
+ -> std::enable_if_t<
+        std::is_constructible<std::basic_string<Ch, Tr, Allocator>,
+        const T&, const Allocator&>::value, string_eq<Ch, Tr, Allocator>>
 {
-    using type = string_eq<Ch, std::char_traits<Ch>, std::allocator<Ch>>;
-};
+    return string_eq<Ch, Tr, Allocator>(
+        std::basic_string<Ch, Tr, Allocator>(s, a));
+}
 
-template <class Ch, class T>
-struct string_pred<Ch, T,
-    std::enable_if_t<
-        !is_std_string<std::decay_t<T>>::value
-     && !std::is_constructible<std::basic_string<Ch>, T&&>::value>>
-// ditto
+template <class Ch, class Tr, class Allocator, class T>
+auto make_string_pred(T&& s, const Allocator&)
+ -> std::enable_if_t<
+        !std::is_constructible<std::basic_string<Ch, Tr, Allocator>,
+        const T&, const Allocator&>::value, T&&>
 {
-    using type = std::decay_t<T>;
-};
+    return std::forward<T>(s);
+}
 
-template <class Ch, class T>
-using string_pred_t = typename string_pred<Ch, T>::type;
+template <class TargetFieldIndex, class FieldValuePred,
+    class Ch, class Tr, class Allocator, class... Appendices>
+auto make_record_extractor_impl(
+    std::true_type,
+    std::allocator_arg_t, const Allocator& alloc,
+    std::basic_streambuf<Ch, Tr>* out,
+    TargetFieldIndex target_field_index, FieldValuePred&& field_value_pred,
+    Appendices&&... appendices)
+{
+    auto fvp = detail::make_string_pred<Ch, Tr, Allocator>(
+        std::forward<FieldValuePred>(field_value_pred), alloc);
+    return record_extractor_with_indexed_key<decltype(fvp), Ch, Tr, Allocator>(
+        std::allocator_arg, alloc, out,
+        static_cast<std::size_t>(target_field_index), std::move(fvp),
+        std::forward<Appendices>(appendices)...);
+}
+
+template <class FieldNamePred, class FieldValuePred,
+    class Ch, class Tr, class Allocator, class... Appendices>
+auto make_record_extractor_impl(
+    std::false_type,
+    std::allocator_arg_t, const Allocator& alloc,
+    std::basic_streambuf<Ch, Tr>* out,
+    FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
+    Appendices&&... appendices)
+{
+    auto fnp = detail::make_string_pred<Ch, Tr, Allocator>(
+        std::forward<FieldNamePred>(field_name_pred), alloc);
+    auto fvp = detail::make_string_pred<Ch, Tr, Allocator>(
+        std::forward<FieldValuePred>(field_value_pred), alloc);
+    return record_extractor<decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
+        std::allocator_arg, alloc, out,
+        std::move(fnp), std::move(fvp),
+        std::forward<Appendices>(appendices)...);
+}
 
 } // end namespace detail
 
@@ -505,38 +525,13 @@ auto make_record_extractor(
     std::basic_streambuf<Ch, Tr>* out,
     FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
- -> std::enable_if_t<
-        !std::is_integral<FieldNamePred>::value,
-        record_extractor<
-            detail::string_pred_t<Ch, FieldNamePred>,
-            detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr, Allocator>>
 {
-    return record_extractor<
-            detail::string_pred_t<Ch, FieldNamePred>,
-            detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr, Allocator>(
+    return detail::make_record_extractor_impl(
+        std::is_integral<std::decay_t<FieldNamePred>>(),
         std::allocator_arg, alloc, out,
-        detail::string_pred_t<Ch, FieldNamePred>(
-            std::forward<FieldNamePred>(field_name_pred)),
-        detail::string_pred_t<Ch, FieldValuePred>(
-            std::forward<FieldValuePred>(field_value_pred)),
+        std::forward<FieldNamePred>(field_name_pred),
+        std::forward<FieldValuePred>(field_value_pred),
         std::forward<Appendices>(appendices)...);
-}
-
-template <class FieldValuePred,
-    class Ch, class Tr, class Allocator, class... Appendices>
-auto make_record_extractor(
-    std::allocator_arg_t, const Allocator& alloc,
-    std::basic_streambuf<Ch, Tr>* out,
-    std::size_t target_field_index, FieldValuePred&& field_value_pred,
-    Appendices&&... appendices)
-{
-    return record_extractor_with_indexed_key<
-        detail::string_pred_t<Ch, FieldValuePred>, Ch, Tr, Allocator>(
-            std::allocator_arg, alloc, out,
-            target_field_index,
-            detail::string_pred_t<Ch, FieldValuePred>(
-                std::forward<FieldValuePred>(field_value_pred)),
-            std::forward<Appendices>(appendices)...);
 }
 
 template <class Ch, class Tr, class Allocator, class... Appendices>

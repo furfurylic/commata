@@ -250,7 +250,7 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
 
     // ditto
     auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
-        "instrument", "clarinet");
+        "instrument", std::string("clar") + "inet");
     parse_csv<std::char_traits<char>, decltype(ex)>(&in, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }
