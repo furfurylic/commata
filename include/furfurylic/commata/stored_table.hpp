@@ -1853,6 +1853,7 @@ template <class Content>
 class arrange_transposing
 {
     using record_t = typename Content::value_type;
+    using value_t = typename record_t::value_type;
 
     // Current physical record index; is my current field index
     typename record_t::size_type i_;
@@ -1875,10 +1876,6 @@ public:
     void new_record(Content& content)
     {
         ++i_;
-        for (auto& rec : content) {
-            rec.insert(rec.cend(), i_ - rec.size(),
-                typename record_t::value_type());   // throw
-        }
         j_ = content.begin();
     }
 
@@ -1886,10 +1883,11 @@ public:
     {
         assert(i_ > 0);
         if (content.end() == j_) {
-            j_ = content.emplace(content.cend(),
-                i_, typename record_t::value_type());   // throw
+            j_ = content.emplace(content.cend(), i_, value_t());    // throw
+        } else {
+            j_->insert(j_->cend(), i_ - j_->size(), value_t());     // throw
         }
-        *j_->rbegin() = typename record_t::value_type(first, last);
+        *j_->rbegin() = value_t(first, last);
         ++j_;
     }
 };

@@ -1245,6 +1245,10 @@ TEST_P(TestStoredTableBuilder, Transpose)
         FAIL() << e.info();
     }
 
+    // |Col1|aaa|AAA|
+    // |Col2|bbb|BBB|
+    // |    |ccc|CCC|
+
     ASSERT_EQ(3U, table.size());
     ASSERT_EQ(3U, table[0].size());
     ASSERT_EQ("Col1", table[0][0]);
@@ -1267,13 +1271,16 @@ TEST_P(TestStoredTableBuilder, Transpose)
         FAIL() << e.info();
     }
 
+    // |Col1|aaa|AAA|AAa|
+    // |Col2|bbb|BBB|BBb|
+    // |    |ccc|CCC|
+
     ASSERT_EQ(3U, table.size());
     ASSERT_EQ(4U, table[0].size());
     ASSERT_EQ("AAa", table[0][3]);
     ASSERT_EQ(4U, table[1].size());
     ASSERT_EQ("BBb", table[1][3]);
-    ASSERT_EQ(4U, table[2].size());
-    ASSERT_EQ("", table[2][3]);
+    ASSERT_EQ(3U, table[2].size());
 }
 
 INSTANTIATE_TEST_CASE_P(,
