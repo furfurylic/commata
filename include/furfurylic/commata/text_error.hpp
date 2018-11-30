@@ -50,6 +50,9 @@ public:
         ex_(&ex)
     {}
 
+    text_error_info(const text_error_info& ex) noexcept = default;
+    text_error_info& operator=(const text_error_info& ex) noexcept = default;
+
     const text_error& error() const noexcept
     {
         return *ex_;
