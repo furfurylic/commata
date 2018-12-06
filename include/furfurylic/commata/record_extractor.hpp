@@ -168,6 +168,7 @@ public:
     {}
 
     record_extractor_impl(record_extractor_impl&&) noexcept = default;
+    ~record_extractor_impl() = default;
 
     // Move-assignment shall be deleted because of basic_string's propagation
     // of the allocator in C++14 is apocryphal (it does not to be able to be
@@ -380,6 +381,7 @@ public:
     {}
 
     record_extractor(record_extractor&&) = default;
+    ~record_extractor() = default;
 };
 
 template <class FieldValuePred, class Ch,
@@ -415,6 +417,7 @@ public:
 
     record_extractor_with_indexed_key(
         record_extractor_with_indexed_key&&) = default;
+    ~record_extractor_with_indexed_key() = default;
 };
 
 namespace detail {
