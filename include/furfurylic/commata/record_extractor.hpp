@@ -170,8 +170,8 @@ public:
     record_extractor_impl(record_extractor_impl&&) noexcept = default;
     ~record_extractor_impl() = default;
 
-    // Move-assignment shall be deleted because of basic_string's propagation
-    // of the allocator in C++14 is apocryphal (it does not to be able to be
+    // Move-assignment shall be deleted because basic_string's propagation of
+    // the allocator in C++14 is apocryphal (it does not seem able to be
     // noexcept unconditionally)
 
     allocator_type get_allocator() const noexcept
