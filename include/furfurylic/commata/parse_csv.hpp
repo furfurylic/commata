@@ -1075,12 +1075,12 @@ public:
 
 }
 
-template <class Handler,
-    std::enable_if_t<
-        !detail::is_std_reference_wrapper<Handler>::value,
-        std::nullptr_t> = nullptr>
+template <class Handler>
 auto make_empty_physical_line_aware(Handler&& handler)
     noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
+ -> std::enable_if_t<
+        !detail::is_std_reference_wrapper<Handler>::value,
+        detail::empty_physical_line_aware_handler<std::decay_t<Handler>>>
 {
     return detail::empty_physical_line_aware_handler<
         std::decay_t<Handler>>(std::forward<Handler>(handler));
@@ -1089,6 +1089,7 @@ auto make_empty_physical_line_aware(Handler&& handler)
 template <class Handler>
 auto make_empty_physical_line_aware(
     const std::reference_wrapper<Handler>& handler) noexcept
+ -> detail::empty_physical_line_aware_handler<Handler&>
 {
     return detail::empty_physical_line_aware_handler<Handler&>(handler.get());
 }
