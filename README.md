@@ -1,6 +1,5 @@
-# commata
-Just another C++14 CSV parser
+# Commata
+Just another header-only C++14 CSV parser
 
-[Specification](https://furfurylic.github.io/commata/CommataSpecification.xml)
-
-
+ - [Primer](CommataPrimer.md)
+ - [Specification](https://furfurylic.github.io/commata/CommataSpecification.xml)
