@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2018-12-23 (UTC)</signature>
+<signature>2018-12-24 (UTC)</signature>
 
 <section id="general">
   <name>General</name>
@@ -1086,6 +1086,10 @@ namespace furfurylic {
       std::basic_ostream&lt;Ch, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;Ch, Tr>&amp; os,
                                              const basic_stored_value&lt;Ch, Tr>&amp; o);
 
+    template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;Ch>>
+      std::basic_string&lt;Ch, Tr, Allocator> to_string(basic_stored_value&lt;Ch, Tr>&amp; o,
+                                                     const Allocator&amp; alloc);
+
     <c>// <n><xref id="basic_stored_value.swap"/>, basic_stored_value specialized algorithms:</n></c>
     template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; left,
                                             basic_stored_value&lt;Ch, Tr>&amp; right) noexcept;
@@ -1218,6 +1222,8 @@ namespace furfurylic {
       const_pointer c_str() const noexcept;
       pointer       data()        noexcept;
       const_pointer data()  const noexcept;
+
+      template &lt;class Allocator> explicit operator std::basic_string&lt;Ch, Tr, Allocator>() const;
 
       <c>// <n><xref id="basic_stored_value.modifiers"/>, modifiers:</n></c>
       iterator erase(const_iterator first, const_iterator last);
@@ -1387,6 +1393,13 @@ const_pointer data()  const noexcept;
           </code>
           <returns><c>b</c>.</returns>
           <remark>The range [<c>r</c>, <c>r + size()</c>] is readable and the range [<c>r</c>, <c>r + size() - 1</c>) is writable where <c>r</c> is the returned value.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class Allocator> explicit operator std::basic_string&lt;Ch, Tr, Allocator>() const;
+          </code>
+          <returns><c>std::basic_string&lt;Ch, Tr, Allocator>(cbegin(), cend())</c>.</returns>
         </code-item>
       </section>
 
@@ -1633,6 +1646,18 @@ template &lt;class Ch, class Tr>
                      Forms a character sequence <c>seq</c>, initially consisting of the elements defined by the range [<c>o.cbegin()</c>, <c>o.cend()</c>).
                      Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c>, where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>; then calls <c>os.width(0)</c>.</effects>
             <returns><c>os</c>.</returns>
+          </code-item>
+        </section>
+
+        <section id="basic_stored_value.conversion">
+          <name><c>basic_stored_value</c> conversion</name>
+          <code-item>
+            <code>
+template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;Ch>>
+  std::basic_string&lt;Ch, Tr, Allocator> to_string(basic_stored_value&lt;Ch, Tr>&amp; o,
+                                                 const Allocator&amp; alloc = Allocator());
+            </code>
+            <returns><c>std::basic_string&lt;Ch, Tr, Allocator>(o.cbegin(), o.cend(), alloc)</c>.</returns>
           </code-item>
         </section>
       </section>

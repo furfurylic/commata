@@ -214,6 +214,24 @@ TYPED_TEST(TestStoredValue, Relations)
     }
 }
 
+TYPED_TEST(TestStoredValue, Strings)
+{
+    using char_t = TypeParam;
+    using value_t = basic_stored_value<char_t>;
+
+    const auto str0 = char_helper<char_t>::str0;
+
+    auto s = str0("x-ray");   // s.back() == '\0'
+    value_t v(&s[0], &s[s.size() - 1]);
+    const auto& cv = v;
+
+    std::basic_string<char_t> str(cv);
+    ASSERT_EQ(str, v);
+
+    std::basic_string<char_t> str2 = to_string(cv);
+    ASSERT_EQ(str2, v);
+}
+
 TYPED_TEST(TestStoredValue, Sizes)
 {
     using char_t = TypeParam;

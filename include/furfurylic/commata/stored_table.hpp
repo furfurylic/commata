@@ -185,6 +185,12 @@ public:
         return begin_;
     }
 
+    template <class Allocator>
+    explicit operator std::basic_string<Ch, Tr, Allocator>() const
+    {
+        return std::basic_string<Ch, Tr, Allocator>(cbegin(), cend());
+    }
+
     size_type size() const noexcept
     {
         return static_cast<size_type>(end_ - begin_);
@@ -309,6 +315,15 @@ constexpr typename basic_stored_value<Ch, Tr>::size_type
 
 template <class Ch, class Tr>
 Ch basic_stored_value<Ch, Tr>::empty_value[] = { Ch() };
+
+template <class Ch, class Tr = std::char_traits<Ch>,
+    class Allocator = std::allocator<Ch>>
+std::basic_string<Ch, Tr, Allocator>
+    to_string(const basic_stored_value<Ch, Tr>& v,
+        const Allocator& alloc = Allocator())
+{
+    return std::basic_string<Ch, Tr, Allocator>(v.cbegin(), v.cend(), alloc);
+}
 
 template <class Ch, class Tr>
 void swap(
