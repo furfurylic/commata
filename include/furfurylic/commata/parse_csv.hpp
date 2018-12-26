@@ -470,7 +470,7 @@ struct has_empty_physical_line_impl
 {
     template <class T>
     static auto check(T*) -> decltype(
-        std::declval<bool&>() = std::declval<T&>().empty_physical_line(
+        std::declval<T&>().empty_physical_line(
             std::declval<const typename T::char_type*>()),
         std::true_type());
 
@@ -530,27 +530,27 @@ public:
         end_buffer(has_end_buffer<Handler>(), buffer_end);
     }
 
-    void start_record(const char_type* record_begin)
+    auto start_record(const char_type* record_begin)
     {
-        handler_.start_record(record_begin);
+        return handler_.start_record(record_begin);
     }
 
-    bool update(const char_type* first, const char_type* last)
+    auto update(const char_type* first, const char_type* last)
     {
         return handler_.update(first, last);
     }
 
-    bool finalize(const char_type* first, const char_type* last)
+    auto finalize(const char_type* first, const char_type* last)
     {
         return handler_.finalize(first, last);
     }
 
-    bool end_record(const char_type* end)
+    auto end_record(const char_type* end)
     {
         return handler_.end_record(end);
     }
 
-    bool empty_physical_line(const char_type* where)
+    auto empty_physical_line(const char_type* where)
     {
         return empty_physical_line(has_empty_physical_line<Handler>(), where);
     }
@@ -573,12 +573,12 @@ private:
     void end_buffer(std::false_type, ...)
     {}
 
-    bool empty_physical_line(std::true_type, const char_type* where)
+    auto empty_physical_line(std::true_type, const char_type* where)
     {
         return handler_.empty_physical_line(where);
     }
 
-    bool empty_physical_line(std::false_type, ...)
+    auto empty_physical_line(std::false_type, ...)
     {
         return true;
     }
@@ -769,48 +769,72 @@ private:
     void update()
     {
         if (!record_started_) {
-            f_.start_record(first_);
+            do_or_abort([this] {
+                return f_.start_record(first_);
+            });
             record_started_ = true;
         }
-        if ((first_ < last_) && !f_.update(first_, last_)) {
-            throw parse_aborted();
+        if (first_ < last_) {
+            do_or_abort([this] {
+                return f_.update(first_, last_);
+            });
         }
     }
 
     void finalize()
     {
         if (!record_started_) {
-            f_.start_record(first_);
+            do_or_abort([this] {
+                return f_.start_record(first_);
+            });
             record_started_ = true;
         }
-        if (!f_.finalize(first_, last_)) {
-            throw parse_aborted();
-        }
+        do_or_abort([this] {
+            return f_.finalize(first_, last_);
+        });
     }
 
     void force_start_record()
     {
-        f_.start_record(p_);
+        do_or_abort([this] {
+            return f_.start_record(p_);
+        });
         record_started_ = true;
     }
 
     void end_record()
     {
-        if (!f_.end_record(p_)) {
-            throw parse_aborted();
-        }
+        do_or_abort([this] {
+            return f_.end_record(p_);
+        });
         record_started_ = false;
     }
 
     void empty_physical_line()
     {
         assert(!record_started_);
-        if (!f_.empty_physical_line(p_)) {
+        do_or_abort([this] {
+            f_.empty_physical_line(p_);
+        });
+    }
+
+private:
+    template <class F>
+    static auto do_or_abort(F f)
+     -> std::enable_if_t<std::is_void<decltype(f())>::value>
+    {
+        f();
+    }
+
+    template <class F>
+    static auto do_or_abort(F f)
+     -> std::enable_if_t<!std::is_void<decltype(f())>::value>
+    {
+        if (!f()) {
             throw parse_aborted();
         }
     }
 
-private:
     template <class F>
     void step(F f)
     {
@@ -918,7 +942,7 @@ template <class Handler, class D>
 struct empty_physical_line_t<Handler, D,
     std::enable_if_t<has_empty_physical_line<Handler>::value>>
 {
-    bool empty_physical_line(const typename Handler::char_type* where)
+    auto empty_physical_line(const typename Handler::char_type* where)
     {
         return static_cast<D*>(this)->base().empty_physical_line(where);
     }
@@ -932,22 +956,22 @@ struct handler_decorator :
 {
     using char_type = typename Handler::char_type;
 
-    void start_record(const char_type* record_begin)
+    auto start_record(const char_type* record_begin)
     {
-        static_cast<D*>(this)->base().start_record(record_begin);
+        return static_cast<D*>(this)->base().start_record(record_begin);
     }
 
-    bool update(const char_type* first, const char_type* last)
+    auto update(const char_type* first, const char_type* last)
     {
         return static_cast<D*>(this)->base().update(first, last);
     }
 
-    bool finalize(const char_type* first, const char_type* last)
+    auto finalize(const char_type* first, const char_type* last)
     {
         return static_cast<D*>(this)->base().finalize(first, last);
     }
 
-    bool end_record(const char_type* end)
+    auto end_record(const char_type* end)
     {
         return static_cast<D*>(this)->base().end_record(end);
     }
@@ -1022,10 +1046,60 @@ auto parse_csv(Input&& in,
 
 namespace detail {
 
+template <class D, class Ch>
+class empty_physical_line_aware_handler_base
+{
+    D* d()
+    {
+        return static_cast<D*>(this);
+    }
+
+    void empty_physical_line(const Ch* where,
+        std::true_type)
+    {
+        d()->start_record(where);
+        d()->end_record(where);
+    }
+
+    auto empty_physical_line(const Ch* where,
+        std::false_type)
+    {
+        return essay([t = d(), where] { return t->start_record(where); })
+            && essay([t = d(), where] { return t->end_record(where); });
+    }
+
+    template <class F>
+    static auto essay(F f)
+     -> std::enable_if_t<std::is_void<decltype(f())>::value, bool>
+    {
+        f();
+        return true;
+    }
+
+    template <class F>
+    static auto essay(F f)
+     -> std::enable_if_t<!std::is_void<decltype(f())>::value, bool>
+    {
+        return f();
+    }
+
+public:
+    auto empty_physical_line(const Ch* where)
+    {
+        return empty_physical_line(where,
+            std::integral_constant<bool,
+                std::is_void<decltype(d()->start_record(where))>::value
+             && std::is_void<decltype(d()->end_record(where))>::value>());
+    }
+};
+
 template <class Handler>
 class empty_physical_line_aware_handler :
     public detail::handler_decorator<
-        Handler, empty_physical_line_aware_handler<Handler>>
+        Handler, empty_physical_line_aware_handler<Handler>>,
+    public empty_physical_line_aware_handler_base<
+            empty_physical_line_aware_handler<Handler>,
+            typename Handler::char_type>
 {
     Handler handler_;
 
@@ -1037,11 +1111,6 @@ public:
 
     // Defaulted move ctor is all right
 
-    bool empty_physical_line(const typename Handler::char_type* where)
-    {
-        return this->start_record(where), this->end_record(where);
-    }
-
     Handler& base() noexcept
     {
         return handler_;
@@ -1051,7 +1120,10 @@ public:
 template <class Handler>
 class empty_physical_line_aware_handler<Handler&> :
     public detail::handler_decorator<
-        Handler, empty_physical_line_aware_handler<Handler&>>
+        Handler, empty_physical_line_aware_handler<Handler&>>,
+    public empty_physical_line_aware_handler_base<
+            empty_physical_line_aware_handler<Handler&>,
+            typename Handler::char_type>
 {
     Handler* handler_;
 
@@ -1061,11 +1133,6 @@ public:
     {}
 
     // Defaulted move ctor is all right
-
-    bool empty_physical_line(const typename Handler::char_type* where)
-    {
-        return this->start_record(where), this->end_record(where);
-    }
 
     Handler& base() const noexcept
     {

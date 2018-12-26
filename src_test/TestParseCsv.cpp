@@ -39,25 +39,21 @@ public:
         field_values_->emplace_back();
     }
 
-    bool update(const Ch* first, const Ch* last)
+    void update(const Ch* first, const Ch* last)
     {
         field_value_.append(first, last);
-        return true;
     }
 
-    bool finalize(const Ch* first, const Ch* last)
+    void finalize(const Ch* first, const Ch* last)
     {
         field_value_.append(first, last);
         field_values_->back().emplace_back();
         field_values_->back().back().swap(field_value_);
             // field_value_ is cleared here
-        return true;
     }
 
-    bool end_record(const Ch* /*record_end*/)
-    {
-        return true;
-    }
+    void end_record(const Ch* /*record_end*/)
+    {}
 };
 
 template <class Ch>
@@ -81,19 +77,19 @@ public:
         base_.start_record(record_begin);
     }
 
-    bool update(const Ch* first, const Ch* last)
+    void update(const Ch* first, const Ch* last)
     {
-        return base_.update(first, last);
+        base_.update(first, last);
     }
 
-    bool finalize(const Ch* first, const Ch* last)
+    void finalize(const Ch* first, const Ch* last)
     {
-        return base_.finalize(first, last);
+        base_.finalize(first, last);
     }
 
-    bool end_record(const Ch* record_end)
+    void end_record(const Ch* record_end)
     {
-        return base_.end_record(record_end);
+        base_.end_record(record_end);
     }
 
     const std::vector<std::vector<std::basic_string<Ch>>>& field_values() const

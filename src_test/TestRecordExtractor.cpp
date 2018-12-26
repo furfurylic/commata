@@ -179,7 +179,7 @@ TEST_F(TestRecordExtractorIndexed, Basics)
 
 struct FinalPredicateForValue final
 {
-    bool operator()(const char* first ,const char* last) const
+    bool operator()(const char* first, const char* last) const
     {
         return std::string(first, last).substr(0, 3) == "kb1";
     }

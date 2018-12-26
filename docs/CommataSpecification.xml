@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2018-12-24 (UTC)</signature>
+<signature>2018-12-26 (UTC)</signature>
 
 <section id="general">
   <name>General</name>
@@ -142,61 +142,62 @@
       <tr>
         <td>(6)</td>
         <td><c>t.empty_physical_line()</c></td>
-        <td>Contextually convertible to <c>bool</c></td>
+        <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
         <td><p>Called when the parser finds an empty line outside any record.
                Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
-            <p>If the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
-        <td>Returns <c>true</c> without doing any other things.</td>
+            <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+        <td>Does nothing.</td>
       </tr>
 
       <tr>
         <td>(7)</td>
         <td><c>t.start_record(rb)</c></td>
-        <td>(Not used)</td>
+        <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
         <td><p>Called when the parser begin to process a record.
                Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
             <p><c>rb</c> is a pointer to the const-qualified first character of the record. If the first field of the records is quoted, <c>*rb</c> shall be a double quote.</p>
-            <p><c>rb</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>) where <c>bb</c> is the argument of the latest call of (4) and gb is the return value of the latest call of (2).</p></td>
-        <td></td>
+            <p><c>rb</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>) where <c>bb</c> is the argument of the latest call of (4) and gb is the return value of the latest call of (2).</p>
+            <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+        <td/>
       </tr>
 
       <tr>
         <td>(8)</td>
         <td><c>t.end_record(re)</c></td>
-        <td>Contextually convertible to <c>bool</c></td>
+        <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
         <td><p>Called when the parser finishes processing a record.
                Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
             <p><c>re</c> is the past-the-end pointer of the const-qualified characters that forms the record. If the last field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</p>
             <p><c>re</c> resides in [<c>vb</c>, <c>be</c>] where vb is an argument of the latest call of (4) (first argument), (7) (first argument), (9) (second argument) or (10) (second argument), and
                <c>be</c> is the second argument of the latest call of (4).</p>
-            <p>If the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
-        <td></td>
+            <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+        <td/>
       </tr>
 
       <tr>
         <td>(9)</td>
         <td><c>t.update(f, l)</c></td>
-        <td>Contextually convertible to <c>bool</c></td>
+        <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
         <td><p>Called when the parser finds a non-final chunk of a field value.
                Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
             <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified and resides [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
                (4) (first argument), (7) (first argument), this (second argument) or (10) (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
             <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the text handler can reach the range as non-const, it may modify the elements in the range.</p>
-            <p>If the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
-         <td></td>
+            <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+         <td/>
       </tr>
 
       <tr>
         <td>(10)</td>
         <td><c>t.finalize(f, l)</c></td>
-        <td>Contextually convertible to <c>bool</c></td>
+        <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
         <td><p>Called when the parser found a final chunk of a field value.
                Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
             <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified  and resides in [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
                (4) (first argument), (7) (first argument), (9) (second argument) or this (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
             <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the text handler can reach the range as non-const, it may modify the element in the range.</p>
-            <p>If the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
-        <td></td>
+            <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+        <td/>
       </tr>
     </table>
   </section>
@@ -563,7 +564,12 @@ template &lt;class Handler>
         <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements, except that in the second overload it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
         <returns>An object of an unspecified type whose type meets the <c>TextHandler</c> requirements and that holds an object <c>h</c> where <c>h</c> is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
                  It forwards calls of its member functions to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
-                 it calls <c>h.start_record(where)</c> and <c>h.end_record(where)</c> sequentially, and returns the return value of the latter.</returns>
+                 it first calls <c>h.start_record(where)</c>, and if its contexually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
+                 Its return type and the return value are as follows:
+                 <ul>
+                   <li>if both of the return types of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>,</li>
+                   <li>otherwise, the return type shall be <c>bool</c> and the return type shall be <c>false</c> if and only if either of the the contextually converted return values to <c>bool</c> of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> is <c>false</c>.</li>
+                 </ul></returns>
         <remark>The first overload shall not participate in overload resolution unless <c>std::decay_t&lt;Handler></c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
                 The expression inside <c>noexcept</c> of the first overload is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;Handler>>::value</c>.</remark>
       </code-item>
