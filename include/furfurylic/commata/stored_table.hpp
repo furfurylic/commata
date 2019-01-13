@@ -1964,7 +1964,7 @@ public:
         this->new_record(table_->content());    // throw
     }
 
-    bool update(const char_type* first, const char_type* last)
+    void update(const char_type* first, const char_type* last)
     {
         if (field_begin_) {
             table_type::traits_type::move(field_end_, first, last - first);
@@ -1973,10 +1973,9 @@ public:
             field_begin_ = current_buffer_ + (first - current_buffer_);
             field_end_   = current_buffer_ + (last  - current_buffer_);
         }
-        return true;
     }
 
-    bool finalize(const char_type* first, const char_type* last)
+    void finalize(const char_type* first, const char_type* last)
     {
         update(first, last);
         table_type::traits_type::assign(*field_end_, char_type());
@@ -1988,13 +1987,10 @@ public:
         this->new_value(table_->content(), field_begin_, field_end_); // throw
         table_->secure_current_upto(field_end_ + 1);
         field_begin_ = nullptr;
-        return true;
     }
 
-    bool end_record(const char_type* /*record_end*/)
-    {
-        return true;
-    }
+    void end_record(const char_type* /*record_end*/)
+    {}
 
     std::pair<char_type*, std::size_t> get_buffer()
     {

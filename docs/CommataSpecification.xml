@@ -2291,9 +2291,9 @@ namespace furfurylic {
       std::pair&lt;char_type*, std::size_t> get_buffer();
       void release_buffer(const char_type* buffer) noexcept;
       void start_record(const char_type* record_begin);
-      bool end_record(const char_type* record_end);
-      bool update(const char_type* first, const char_type* last);
-      bool finalize(const char_type* first, const char_type* last);
+      void end_record(const char_type* record_end);
+      void update(const char_type* first, const char_type* last);
+      void finalize(const char_type* first, const char_type* last);
     };
   }
 }
