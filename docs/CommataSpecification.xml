@@ -2645,9 +2645,9 @@ namespace furfurylic {
       std::pair&lt;Ch*, std::size_t> get_buffer();
       void release_buffer(const Ch* buffer);
       void start_record(const Ch* record_begin);
-      bool end_record(const Ch* record_end);
-      bool update(const Ch* first, const Ch* last);
-      bool finalize(const Ch* first, const Ch* last);
+      void end_record(const Ch* record_end);
+      void update(const Ch* first, const Ch* last);
+      void finalize(const Ch* first, const Ch* last);
     };
   }
 }

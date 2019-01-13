@@ -699,7 +699,7 @@ public:
     void start_record(const Ch* /*record_begin*/)
     {}
 
-    bool update(const Ch* first, const Ch* last)
+    void update(const Ch* first, const Ch* last)
     {
         if (get_scanner() && (first != last)) {
             if (begin_) {
@@ -716,10 +716,9 @@ public:
                 end_ = last;
             }
         }
-        return true;
     }
 
-    bool finalize(const Ch* first, const Ch* last)
+    void finalize(const Ch* first, const Ch* last)
     {
         if (const auto scanner = get_scanner()) {
             if (begin_) {
@@ -745,10 +744,9 @@ public:
             }
         }
         ++j_;
-        return true;
     }
 
-    bool end_record(const Ch* /*record_end*/)
+    void end_record(const Ch* /*record_end*/)
     {
         if (header_field_scanner_) {
             header_field_scanner_->so_much_for_header(*this);
@@ -767,7 +765,6 @@ public:
             }
         }
         j_ = 0;
-        return true;
     }
 
 private:
