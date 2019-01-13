@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2018-12-26 (UTC)</signature>
+<signature>2019-01-13 (UTC)</signature>
 
 <section id="general">
   <name>General</name>
@@ -702,8 +702,8 @@ namespace furfurylic {
       void end_buffer(const Ch* buffer_end);
       void start_record(const Ch* record_begin);
       bool end_record(const Ch* record_end);
-      bool update(const Ch* first, const Ch* last);
-      bool finalize(const Ch* first, const Ch* last);
+      void update(const Ch* first, const Ch* last);
+      void finalize(const Ch* first, const Ch* last);
     };
   }
 }
@@ -830,8 +830,8 @@ namespace furfurylic {
       void end_buffer(const Ch* buffer_end);
       void start_record(const Ch* record_begin);
       bool end_record(const Ch* record_end);
-      bool update(const Ch* first, const Ch* last);
-      bool finalize(const Ch* first, const Ch* last);
+      void update(const Ch* first, const Ch* last);
+      void finalize(const Ch* first, const Ch* last);
     };
   }
 }

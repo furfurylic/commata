@@ -206,16 +206,15 @@ public:
         assert(record_buffer_.empty());
     }
 
-    bool update(const Ch* first, const Ch* last)
+    void update(const Ch* first, const Ch* last)
     {
         if ((header_yet() && (target_field_index_ == npos))
          || (field_index_ == target_field_index_)) {
             field_buffer_.append(first, last);
         }
-        return true;
     }
 
-    bool finalize(const Ch* first, const Ch* last)
+    void finalize(const Ch* first, const Ch* last)
     {
         using namespace std::placeholders;
         if (header_yet()) {
@@ -243,7 +242,6 @@ public:
                 exclude();
             }
         }
-        return true;
     }
 
     bool end_record(const Ch* record_end)
