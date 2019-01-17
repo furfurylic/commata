@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-01-13 (UTC)</signature>
+<signature>2019-01-17 (UTC)</signature>
 
 <section id="general">
   <name>General</name>
@@ -2834,7 +2834,7 @@ template &lt;class T>       T* get_record_end_scanner()       noexcept;
             <td>(1)</td>
             <td><c>h()</c></td>
             <td><c>T</c></td>
-            <td>Called when the corresponding field has been skipped, that is, the record has had too few fields to reach the field).
+            <td>Called when the corresponding field has been skipped, that is, the record has had too few fields to reach the field.
                 The return value is a replacement for the translated value of the field.</td>
           </tr>
         </table>
@@ -3378,8 +3378,8 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
             </code>
             <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
             <effects>First calls a parsing function indicated in <xref id="table.arithmetic_field_translator.parsing_functions"/> for <c>T</c> and <c>Ch</c> to get a arithmetic value <c>v</c> of the range [<c>begin</c>, <c>end</c>).
-                     Then put a value indicated in <xref id="table.arithmetic_field_translator.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c> into the field translator sink.
-                     In <xref id="table.arithmetic_field_translator.branching"/>, <c>ceh</c> is the conversion error handler. <c>g</c> is a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, zero otherwise.</effects>
+                     Then does an action indicated in <xref id="table.arithmetic_field_translator.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
+                     In <xref id="table.arithmetic_field_translator.branching"/>, <c>ceh</c> is the conversion error handler, and <c>g</c> is a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, zero otherwise.</effects>
 
             <table id="table.arithmetic_field_translator.parsing_functions">
               <caption>The parsing functions used by <c>arithmetic_field_translator</c></caption>
@@ -3430,14 +3430,14 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
 
             <table id="table.arithmetic_field_translator.branching">
               <caption>The value <c>arithmetic_field_translator</c> puts into the field translator sink</caption>
-              <col width="8"/><col width="8"/><col width="4"/><col width="5"/><col width="7"/>
+              <col width="5"/><col width="5"/><col width="3"/><col width="3"/><col width="8"/>
 
               <tr>
                 <th>The call leaves some non-whitespace characters in the range unconsumed</th>
                 <th>The call consumes some characters in the range</th>
                 <th><c>errno == ERANGE</c></th>
                 <th><c>v</c> is in the domain of <c>T</c></th>
-                <th>The value put into the field translator sink</th>
+                <th>Action</th>
               </tr>
 
               <tr>
@@ -3445,7 +3445,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
                 <td>Yes</td>
                 <td>No</td>
                 <td>Yes</td>
-                <td><c>v</c></td>
+                <td>Puts <c>v</c> into the field translator sink</td>
               </tr>
 
               <tr>
@@ -3453,7 +3453,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
                 <td>Yes</td>
                 <td>No</td>
                 <td>No</td>
-                <td><c>ceh.out_of_range(begin, end, g)</c></td>
+                <td>Evaluates <c>ceh.out_of_range(begin, end, g)</c> and puts the result into the field translator sink.</td>
               </tr>
 
               <tr>
@@ -3461,7 +3461,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
                 <td>Yes</td>
                 <td>Yes</td>
                 <td>&#8211;</td>
-                <td><c>ceh.out_of_range(begin, end, g)</c></td>
+                <td>Evaluates <c>ceh.out_of_range(begin, end, g)</c> and puts the result into the field translator sink.</td>
               </tr>
 
               <tr>
@@ -3469,7 +3469,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
                 <td>No</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
-                <td><c>ceh.empty()</c></td>
+                <td>Evaluates <c>ceh.empty()</c> and puts the result into the field translator sink.</td>
               </tr>
 
               <tr>
@@ -3477,7 +3477,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
                 <td>&#8211;</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
-                <td><c>ceh.invalid_format(begin, end)</c></td>
+                <td>Evaluates <c>ceh.invalid_format(begin, end)</c> and puts the result into the field translator sink.</td>
               </tr>
             </table>
 
@@ -3487,7 +3487,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
             <code>
 void field_skipped();
             </code>
-            <effects>Puts <c>sh()</c> into the field translator sink where <c>sh</c> is the skipping handler.</effects>
+            <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
           </code-item>
         </section>
       </section>
@@ -3631,7 +3631,7 @@ template &lt;class Ch> void field_value(Ch* begin, Ch* end);
             <code>
 void field_skipped();
             </code>
-            <effects>Puts <c>sh()</c> into the field translator sink where <c>sh</c> is the skipping handler.</effects>
+            <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
           </code-item>
         </section>
       </section>
@@ -3782,7 +3782,7 @@ void field_value(std::basic_string&lt;Ch, Tr, Alloc>&amp;&amp; value);
             <code>
 void field_skipped();
             </code>
-            <effects>Puts <c>sh()</c> into the field translator sink where <c>sh</c> is the skipping handler.</effects>
+            <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
           </code-item>
         </section>
       </section>
