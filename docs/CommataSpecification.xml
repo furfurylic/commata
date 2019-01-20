@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-01-19 (UTC)</signature>
+<signature>2019-01-20 (UTC)</signature>
 
 <section id="general">
   <name>General</name>
@@ -582,6 +582,18 @@ template &lt;class Handler>
   <section id="extractor">
     <name>Extraction of records into another stream</name>
 
+    <section id="extractor.general">
+      <name>General</name>
+
+      <p>Commata offers two class templates <c>record_extractor</c> (<xref id="record_extractor"/>) and <c>record_extractor_with_indexed_key</c> (<xref id="record_extractor_with_indexed_key"/>), whose instances meet <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>), as simple facilities to reduce text records.</p>
+      <p>An object of an instance of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> receives parsing events from a parser and forwards some qualified records into another stream.
+         Whether a record is qualified to be forwarded or not is decided by the value of its field at the <n>target field index</n>.
+         The target field index can be given explicitly by the program (with <c>record_extractor_with_indexed_key</c>), or can be decided in reference to the first one record (with <c>record_extractor</c>).</p>
+      <p>A record that can not be decided whether it is qualified to be forwarded or not due to non-existence of the field at the target field index shall cause an exception.</p>
+      <p>An object of an instance of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
+      <p>In this subclause, the first one record of a CSV text is called its <n>header</n> record.</p>
+    </section>
+
     <section id="record_extractor_hpp">
       <name>Header <c>"record_extractor.hpp"</c> synopsis</name>
 
@@ -627,15 +639,6 @@ namespace furfurylic {
   }
 }
       </codeblock>
-
-      <p>In header <c>"record_extractor.hpp"</c>, two class templates <c>record_extractor</c> (<xref id="record_extractor"/>) and <c>record_extractor_with_indexed_key</c> (<xref id="record_extractor_with_indexed_key"/>), whose instances meet <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>), and their helper classes and functions are defined.</p>
-
-      <p>An object of an instance of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> receives parsing events from a parser and forwards some qualified records into another stream.
-         Whether a record is qualified to be forwarded or not is decided by the value of its field at the <n>target field index</n>.
-         The target field index can be given explicitly by the program (with <c>record_extractor_with_indexed_key</c>), or can be decided in reference to the first one record (with <c>record_extractor</c>).</p>
-      <p>A record that can not be decided whether it is qualified to be forwarded or not due to non-existence of the field at the target field index shall cause an exception.</p>
-      <p>An object of an instance of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
-      <p>In this subclause, the first one record of a CSV text is called its <n>header</n> record.</p>
     </section>
 
     <section id="record_extraction_error">
@@ -661,7 +664,7 @@ template &lt;class T>
   explicit record_extraction_error(T&amp;&amp; what_arg);
         </code>
         <effects>Constructs an object of <c>record_extraction_error</c>.</effects>
-        <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
+        <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
         <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
       </code-item>
     </section>
@@ -924,7 +927,7 @@ allocator_type get_allocator() const noexcept;
       <ul>
         <li>if <c>P</c> is <c>std::basic_string&lt;Ch, Tr, A></c> for a certain <c>A</c>,
             a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, A></c> object <c>s</c> initialized with <c>std::move(p)</c> and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
-        <li>otherwise, if <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, P, Allocator>>::value</c> is <c>true</c>,
+        <li>otherwise, if <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, P, Allocator>>::value</c> is not <c>false</c>,
             a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::forward&lt;P>(p)</c> and <c>alloc</c> and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
         <li>otherwise, if <c>P</c> is an lvalue reference type, an lvalue reference to <c>p</c>,</li>
         <li>otherwise, an rvalue reference to <c>p</c>.</li>
