@@ -266,8 +266,8 @@ namespace furfurylic {
       text_error&amp; set_physical_position(std::size_t row = npos, std::size_t col = npos);
       const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noexcept;
 
-      text_error_info info() const noexcept {
-        return text_error_info(*this);
+      text_error_info info(std::size_t base = 1) const noexcept {
+        return text_error_info(*this, base);
       }
     };
   }
@@ -341,14 +341,16 @@ namespace furfurylic {
   namespace commata {
     class text_error_info {
     public:
-      explicit text_error_info(const text_error&amp; ex) noexcept;
+      text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
       text_error_info(const text_error_info&amp; other) noexcept;
       text_error_info&amp; operator=(const text_error_info&amp; other) noexcept;
 
       const text_error&amp; error() const noexcept;
+      std::size_t get_base() const noexcept;
 
     private:
       const text_error* e;  <c>// <n>exposition only</n></c>
+      std::size_t b;        <c>// <n>exposition only</n></c>
     };
   }
 }
@@ -359,23 +361,23 @@ namespace furfurylic {
 
     <code-item>
       <code>
-explicit text_error_info(const text_error&amp; ex) noexcept;
+text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
       </code>
-      <effects>Initializes <c>e</c> with <c>&amp;ex</c>.</effects>
+      <effects>Initializes <c>e</c> with <c>&amp;ex</c> and <c>b</c> with <c>base</c>.</effects>
     </code-item>
 
     <code-item>
       <code>
 text_error_info(const text_error_info&amp; other) noexcept;
       </code>
-      <effects>Initializes <c>e</c> with <c>other.e</c>.</effects>
+      <effects>Initializes <c>e</c> with <c>other.e</c> and <c>b</c> with <c>other.b</c>.</effects>
     </code-item>
 
     <code-item>
       <code>
 text_error_info&amp; operator=(const text_error_info&amp; other) noexcept;
       </code>
-      <effects>Assigns <c>e</c> from <c>other.e</c>.</effects>
+      <effects>Assigns <c>e</c> from <c>other.e</c> and <c>b</c> from <c>other.b</c>.</effects>
     </code-item>
 
     <code-item>
@@ -383,6 +385,13 @@ text_error_info&amp; operator=(const text_error_info&amp; other) noexcept;
 const text_error&amp; error() const noexcept;
       </code>
       <returns><c>*e</c>.</returns>
+    </code-item>
+
+    <code-item>
+      <code>
+std::size_t get_base() const noexcept;
+      </code>
+      <returns><c>b</c>.</returns>
     </code-item>
 
     <section id="text_error_info.char_repr">
@@ -398,7 +407,7 @@ template &lt;class Tr>
                                               const text_error_info&amp; i);
         </code>
         <effects>Behaves as a formatted output function of <c>os</c>.
-                 Forms a character sequence <c>seq</c> of an unspecified concise character representation of <c>i.error()</c> from <c>i.error().what()</c> and <c>i.error().get_physical_position()</c>, in which the line number and the column number are one-based.
+                 Forms a character sequence <c>seq</c> of an unspecified concise character representation of <c>i.error()</c> from <c>i.error().what()</c> and <c>i.error().get_physical_position()</c>, in which the line number and the column number are <c>b</c>-based.
                  Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c> where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>. Then calls <c>os.width(0)</c>.</effects>
         <returns><c>os</c>.</returns>
         <remark>The second function template shall try to convert <c>i.error().what()</c> from a null-terminated multibyte string into a wide character string.</remark>

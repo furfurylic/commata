@@ -44,10 +44,11 @@ class text_error;
 class text_error_info
 {
     const text_error* ex_;
+    std::size_t base_;
 
 public:
-    explicit text_error_info(const text_error& ex) noexcept :
-        ex_(&ex)
+    text_error_info(const text_error& ex, std::size_t base) noexcept :
+        ex_(&ex), base_(base)
     {}
 
     text_error_info(const text_error_info& ex) noexcept = default;
@@ -56,6 +57,11 @@ public:
     const text_error& error() const noexcept
     {
         return *ex_;
+    }
+
+    std::size_t get_base() const noexcept
+    {
+        return base_;
     }
 };
 
@@ -128,9 +134,9 @@ public:
             &physical_position_ : nullptr;
     }
 
-    text_error_info info() const noexcept
+    text_error_info info(std::size_t base = 1U) const noexcept
     {
-        return text_error_info(*this);
+        return text_error_info(*this, base);
     }
 };
 
@@ -139,20 +145,20 @@ namespace detail {
 // Prints a non-negative integer value in the decimal system
 // into a sufficient-length buffer
 template <std::size_t N>
-std::streamsize print_pos(char (&s)[N], std::size_t pos)
+std::streamsize print_pos(char (&s)[N], std::size_t pos, std::size_t base)
 {
     const auto len = (pos != text_error::npos) ?
-        std::snprintf(s, N, "%zu", pos + 1) :
+        std::snprintf(s, N, "%zu", pos + base) :
         std::snprintf(s, N, "n/a");
     assert((len > 0 ) && (static_cast<std::size_t>(len) < N));
     return static_cast<std::streamsize>(len);
 }
 
 template <std::size_t N>
-std::streamsize print_pos(wchar_t (&s)[N], std::size_t pos)
+std::streamsize print_pos(wchar_t (&s)[N], std::size_t pos, std::size_t base)
 {
     const auto len = (pos != text_error::npos) ?
-        std::swprintf(s, N, L"%zu", pos + 1) :
+        std::swprintf(s, N, L"%zu", pos + base) :
         std::swprintf(s, N, L"n/a");
     assert((len > 0 ) && (static_cast<std::size_t>(len) < N));
     return static_cast<std::streamsize>(len);
@@ -167,11 +173,11 @@ std::basic_ostream<char, Tr>& operator<<(
     if (const auto p = i.error().get_physical_position()) {
         // line
         char l[std::numeric_limits<std::size_t>::digits10 + 2];
-        const auto l_len = detail::print_pos(l, p->first);
+        const auto l_len = detail::print_pos(l, p->first, i.get_base());
 
         // column
         char c[sizeof(l)];
-        const auto c_len = detail::print_pos(c, p->second);
+        const auto c_len = detail::print_pos(c, p->second, i.get_base());
 
         // what
         const auto w = i.error().what();
@@ -223,11 +229,11 @@ std::basic_ostream<wchar_t, Tr>& operator<<(
     if (const auto p = i.error().get_physical_position()) {
         // line
         wchar_t l[std::numeric_limits<std::size_t>::digits10 + 2];
-        const auto l_len = detail::print_pos(l, p->first);
+        const auto l_len = detail::print_pos(l, p->first, i.get_base());
 
         // column
         wchar_t c[sizeof(l)];
-        const auto c_len = detail::print_pos(c, p->second);
+        const auto c_len = detail::print_pos(c, p->second, i.get_base());
 
         const auto n = w_len + l_len + c_len + ((w_len > 0) ? 15 : 27);
 
