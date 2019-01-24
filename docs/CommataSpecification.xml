@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-01-20 (UTC)</signature>
+<signature>2019-01-24 (UTC)</signature>
 
 <section id="general">
   <name>General</name>
@@ -206,6 +206,11 @@
 <section id="diagnostics">
   <name>Diagnostics facilities</name>
 
+  <section id="diagnostics.general">
+    <name>General</name>
+    <p>This clause describes an exception class <c>text_error</c> (<xref id="text_error"/>), which defines the base class for the types of objects thrown while the parsers are comsuming the texts, and some facilities to access information that <c>text_error</c> objects hold.</p>
+  </section>
+
   <section id="header_text_error_hpp">
     <name>Header <c>"text_error.hpp"</c> synopsis</name>
     <codeblock>
@@ -236,9 +241,6 @@ namespace furfurylic {
   }
 }
     </codeblock>
-
-    <p>Header <c>"text_error.hpp"</c> provides an exception class <c>text_error</c> (<xref id="text_error"/>), which defines the base class for the types of objects thrown while the parsers are comsuming the texts.
-       In addition, this header offers some facilities to easily access information that <c>text_error</c> objects hold.</p>
   </section>
 
   <section id="text_error">
@@ -284,7 +286,7 @@ namespace furfurylic {
 template &lt;class T> explicit text_error(T&amp;&amp; what_arg);
         </code>
         <effects>Constructs an object of <c>text_error</c>.</effects>
-        <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg))</c>.</postcondition>
+        <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg))</c>.</postcondition>
         <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
       </code-item>
 
@@ -294,7 +296,7 @@ text_error(const text_error&amp; other) noexcept;
 text_error(text_error&amp;&amp; other) noexcept;
         </code>
         <effects>Constructs an object of <c>text_error</c> from another object of <c>text_error</c>.</effects>
-        <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (opp ? (*opp == *get_physical_position()) : (get_physical_position() == nullptr))</c> where <c>ow</c> is the value of <c>other.what()</c> and <c>opp</c> is the value of <c>other.get_physical_position()</c> before the call.</postcondition>
+        <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (opp ? (*opp == *get_physical_position()) : (get_physical_position() == nullptr))</c> is not <c>false</c> where <c>ow</c> is the value of <c>other.what()</c> and <c>opp</c> is the value of <c>other.get_physical_position()</c> before the call.</postcondition>
       </code-item>
 
       <code-item>
@@ -303,7 +305,7 @@ text_error&amp; operator=(const text_error&amp; other) noexcept;
 text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
         </code>
         <effects>Assigns an object of <c>text_error</c> from another object of <c>text_error</c>.</effects>
-        <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (opp ? (*opp == *get_physical_position()) : (get_physical_position() == nullptr))</c> where <c>ow</c> is the value of <c>other.what()</c> and <c>opp</c> is the value of <c>other.get_physical_position()</c> before the call.</postcondition>
+        <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (opp ? (*opp == *get_physical_position()) : (get_physical_position() == nullptr))</c> is not <c>false</c> where <c>ow</c> is the value of <c>other.what()</c> and <c>opp</c> is the value of <c>other.get_physical_position()</c> before the call.</postcondition>
         <returns><c>*this</c>.</returns>
       </code-item>
     </section>
@@ -315,8 +317,8 @@ text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
         <code>
 text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col = npos);
         </code>
-        <effects>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, removes the position information if it exists. Otherwise, sets the position information whose line number is <c>line</c> and column number is <c>col</c>.</effects>
-        <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>get_physical_position() == nullptr</c> shall be <c>true</c>. Otherwise, <c>*get_physical_position() == std::make_pair(line, col)</c> shall be <c>true</c>.</postcondition>
+        <effects>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, removes the position information if it exists. Otherwise, sets the position information whose line number and column number are <c>line</c> and <c>col</c> respectively.</effects>
+        <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>get_physical_position() == nullptr</c> shall not be <c>false</c>. Otherwise, <c>*get_physical_position() == std::make_pair(line, col)</c> shall not be <c>false</c>.</postcondition>
         <returns><c>*this</c>.</returns>
         <remark>The row number and column number shall be zero-based.</remark>
       </code-item>
@@ -416,6 +418,11 @@ std::wstring to_wstring(const text_error_info&amp; i);
 <section id="parser">
   <name>The parser</name>
 
+  <section id="parser.general">
+    <name>General</name>
+    <p>This clause describes components several functions to utilize the parser (<xref id="intro"/>) of the CSV text format (<xref id="definitions.csv_text"/>) and some classes and functions to report parse errors and to make some wrappers of the text handlers (<xref id="intro"/>).</p>
+  </section>
+
   <section id="header_parse_csv_hpp">
     <name>Header <c>"parse_csv.hpp"</c> synopsis</name>
     <codeblock>
@@ -458,8 +465,6 @@ namespace furfurylic {
   }
 }
     </codeblock>
-
-    <p>The header <c>"parse_csv.hpp"</c> defines several functions to utilize the parser (<xref id="intro"/>) of the CSV text format (<xref id="definitions.csv_text"/>) and some classes and functions to report parse errors and to make some wrappers of the text handlers (<xref id="intro"/>).</p>
   </section>
 
   <section id="parse_error">
@@ -485,8 +490,8 @@ template &lt;class T>
   explicit parse_error(T&amp;&amp; what_arg);
       </code>
       <effects>Constructs an object of parse_error.</effects>
-      <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-      <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is <c>true</c>.</remark>
+      <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
+      <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
     </code-item>
   </section>
 
@@ -549,31 +554,31 @@ template &lt;class Input, class Handler, class... Args>
     </code-item>
   </section>
 
-    <section id="empty_physical_line_aware_handler">
-      <name>Creation of text handler wrappers aware of empty physical lines</name>
+  <section id="empty_physical_line_aware_handler">
+    <name>Creation of text handler wrappers aware of empty physical lines</name>
 
-      <code-item>
-        <code>
+    <code-item>
+      <code>
 template &lt;class Handler>
   <nc>unspecified</nc>
     make_empty_physical_line_aware(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
 template &lt;class Handler>
   <nc>unspecified</nc>
     make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
-        </code>
-        <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements, except that in the second overload it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
-        <returns>An object of an unspecified type whose type meets the <c>TextHandler</c> requirements and that holds an object <c>h</c> where <c>h</c> is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
-                 It forwards calls of its member functions to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
-                 it first calls <c>h.start_record(where)</c>, and if its contexually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
-                 Its return type and the return value are as follows:
-                 <ul>
-                   <li>if both of the return types of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>,</li>
-                   <li>otherwise, the return type shall be <c>bool</c> and the return type shall be <c>false</c> if and only if either of the the contextually converted return values to <c>bool</c> of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> is <c>false</c>.</li>
-                 </ul></returns>
-        <remark>The first overload shall not participate in overload resolution unless <c>std::decay_t&lt;Handler></c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
-                The expression inside <c>noexcept</c> of the first overload is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;Handler>>::value</c>.</remark>
-      </code-item>
-    </section>
+      </code>
+      <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements, except that in the second overload it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
+      <returns>An object of an unspecified type whose type meets the <c>TextHandler</c> requirements and that holds an object <c>h</c> where <c>h</c> is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
+               It forwards calls of its member functions to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
+               it first calls <c>h.start_record(where)</c>, and if its contexually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
+               Its return type and the return value are as follows:
+               <ul>
+                 <li>if both of the return types of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>,</li>
+                 <li>otherwise, the return type shall be <c>bool</c> and the return type shall be <c>false</c> unless both of the the return values contextually converted to <c>bool</c> of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are not <c>false</c>.</li>
+               </ul></returns>
+      <remark>The first overload shall not participate in overload resolution unless <c>std::decay_t&lt;Handler></c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
+              The expression inside <c>noexcept</c> of the first overload is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;Handler>>::value</c>.</remark>
+    </code-item>
+  </section>
 </section>
 
 <section id="built-in_handlers">
