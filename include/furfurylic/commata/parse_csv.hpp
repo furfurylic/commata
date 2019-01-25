@@ -17,9 +17,10 @@
 #include <streambuf>
 #include <utility>
 
-#include "parse_error.hpp"
+#include "handler_decorator.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
+#include "parse_error.hpp"
 #include "typing_aid.hpp"
 
 namespace furfurylic {
@@ -314,40 +315,6 @@ struct parse_step<state::after_lf>
     {}
 };
 
-struct has_get_buffer_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<std::pair<typename T::char_type*, std::size_t>&>() =
-            std::declval<T&>().get_buffer(),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
-template <class T>
-struct has_get_buffer :
-    decltype(has_get_buffer_impl::check<T>(nullptr))
-{};
-
-struct has_release_buffer_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<T&>().release_buffer(
-            std::declval<const typename T::char_type*>()),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
-template <class T>
-struct has_release_buffer :
-    decltype(has_release_buffer_impl::check<T>(nullptr))
-{};
-
 template <class T>
 struct with_buffer_control :
     std::integral_constant<bool,
@@ -422,58 +389,6 @@ struct thru_buffer_control
         return f->release_buffer(buffer);
     }
 };
-
-struct has_start_buffer_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<T&>().start_buffer(
-            std::declval<const typename T::char_type*>(),
-            std::declval<const typename T::char_type*>()),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
-template <class T>
-struct has_start_buffer :
-    decltype(has_start_buffer_impl::check<T>(nullptr))
-{};
-
-struct has_end_buffer_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<T&>().end_buffer(
-            std::declval<const typename T::char_type*>()),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
-template <class T>
-struct has_end_buffer :
-    decltype(has_end_buffer_impl::check<T>(nullptr))
-{};
-
-struct has_empty_physical_line_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<T&>().empty_physical_line(
-            std::declval<const typename T::char_type*>()),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
-template <class T>
-struct has_empty_physical_line :
-    decltype(has_empty_physical_line_impl::check<T>(nullptr))
-{};
 
 template <class Handler>
 struct is_full_fledged :
@@ -868,124 +783,6 @@ primitive_parser<Handler> make_primitive_parser(Handler&& handler)
     return primitive_parser<Handler>(std::move(handler));
 }
 
-template <class Handler, class D, class = void>
-struct get_buffer_t
-{};
-
-template <class Handler, class D>
-struct get_buffer_t<Handler, D,
-    std::enable_if_t<has_get_buffer<Handler>::value>>
-{
-    std::pair<typename Handler::char_type*, std::size_t> get_buffer()
-    {
-        return static_cast<D*>(this)->base().get_buffer();
-    }
-};
-
-template <class Handler, class D, class = void>
-struct release_buffer_t
-{};
-
-template <class Handler, class D>
-struct release_buffer_t<Handler, D,
-    std::enable_if_t<has_release_buffer<Handler>::value>>
-{
-    void release_buffer(const typename Handler::char_type* buffer) noexcept
-    {
-        static_cast<D*>(this)->base().release_buffer(buffer);
-    }
-};
-
-template <class Handler, class D, class = void>
-struct start_buffer_t
-{};
-
-template <class Handler, class D>
-struct start_buffer_t<Handler, D,
-    std::enable_if_t<has_start_buffer<Handler>::value>>
-{
-    void start_buffer(
-        const typename Handler::char_type* buffer_begin,
-        const typename Handler::char_type* buffer_end)
-    {
-        static_cast<D*>(this)->base().start_buffer(buffer_begin, buffer_end);
-    }
-};
-
-template <class Handler, class D, class = void>
-struct end_buffer_t
-{};
-
-template <class Handler, class D>
-struct end_buffer_t<Handler, D,
-    std::enable_if_t<has_end_buffer<Handler>::value>>
-{
-    void end_buffer(const typename Handler::char_type* buffer_end)
-    {
-        static_cast<D*>(this)->base().end_buffer(buffer_end);
-    }
-};
-
-template <class Handler, class D, class = void>
-struct empty_physical_line_t
-{};
-
-template <class Handler, class D>
-struct empty_physical_line_t<Handler, D,
-    std::enable_if_t<has_empty_physical_line<Handler>::value>>
-{
-    auto empty_physical_line(const typename Handler::char_type* where)
-    {
-        return static_cast<D*>(this)->base().empty_physical_line(where);
-    }
-};
-
-template <class Handler, class D>
-struct handler_decorator :
-    get_buffer_t<Handler, D>, release_buffer_t<Handler, D>,
-    start_buffer_t<Handler, D>, end_buffer_t<Handler, D>,
-    empty_physical_line_t<Handler, D>
-{
-    using char_type = typename Handler::char_type;
-
-    auto start_record(const char_type* record_begin)
-    {
-        return static_cast<D*>(this)->base().start_record(record_begin);
-    }
-
-    auto update(const char_type* first, const char_type* last)
-    {
-        return static_cast<D*>(this)->base().update(first, last);
-    }
-
-    auto finalize(const char_type* first, const char_type* last)
-    {
-        return static_cast<D*>(this)->base().finalize(first, last);
-    }
-
-    auto end_record(const char_type* end)
-    {
-        return static_cast<D*>(this)->base().end_record(end);
-    }
-};
-
-template <class Handler>
-class wrapper_handler :
-    public detail::handler_decorator<Handler, wrapper_handler<Handler>>
-{
-    Handler* handler_;
-
-public:
-    explicit wrapper_handler(Handler& handler) noexcept :
-        handler_(&handler)
-    {}
-
-    Handler& base() const noexcept
-    {
-        return *handler_;
-    }
-};
-
 } // end namespace detail
 
 template <class Tr, class Handler>
@@ -1034,123 +831,6 @@ auto parse_csv(Input&& in,
     return parse_csv(std::forward<Input>(in),
         detail::wrapper_handler<Handler>(handler.get()),
         std::forward<Args>(args)...);
-}
-
-namespace detail {
-
-template <class D, class Ch>
-class empty_physical_line_aware_handler_base
-{
-    D* d()
-    {
-        return static_cast<D*>(this);
-    }
-
-    void empty_physical_line(const Ch* where,
-        std::true_type)
-    {
-        d()->start_record(where);
-        d()->end_record(where);
-    }
-
-    auto empty_physical_line(const Ch* where,
-        std::false_type)
-    {
-        return essay([t = d(), where] { return t->start_record(where); })
-            && essay([t = d(), where] { return t->end_record(where); });
-    }
-
-    template <class F>
-    static auto essay(F f)
-     -> std::enable_if_t<std::is_void<decltype(f())>::value, bool>
-    {
-        f();
-        return true;
-    }
-
-    template <class F>
-    static auto essay(F f)
-     -> std::enable_if_t<!std::is_void<decltype(f())>::value, bool>
-    {
-        return f();
-    }
-
-public:
-    auto empty_physical_line(const Ch* where)
-    {
-        return empty_physical_line(where,
-            std::integral_constant<bool,
-                std::is_void<decltype(d()->start_record(where))>::value
-             && std::is_void<decltype(d()->end_record(where))>::value>());
-    }
-};
-
-template <class Handler>
-class empty_physical_line_aware_handler :
-    public detail::handler_decorator<
-        Handler, empty_physical_line_aware_handler<Handler>>,
-    public empty_physical_line_aware_handler_base<
-            empty_physical_line_aware_handler<Handler>,
-            typename Handler::char_type>
-{
-    Handler handler_;
-
-public:
-    explicit empty_physical_line_aware_handler(Handler handler)
-        noexcept(std::is_nothrow_move_constructible<Handler>::value) :
-        handler_(std::move(handler))
-    {}
-
-    // Defaulted move ctor is all right
-
-    Handler& base() noexcept
-    {
-        return handler_;
-    }
-};
-
-template <class Handler>
-class empty_physical_line_aware_handler<Handler&> :
-    public detail::handler_decorator<
-        Handler, empty_physical_line_aware_handler<Handler&>>,
-    public empty_physical_line_aware_handler_base<
-            empty_physical_line_aware_handler<Handler&>,
-            typename Handler::char_type>
-{
-    Handler* handler_;
-
-public:
-    explicit empty_physical_line_aware_handler(Handler& handler) noexcept :
-        handler_(&handler)
-    {}
-
-    // Defaulted move ctor is all right
-
-    Handler& base() const noexcept
-    {
-        return *handler_;
-    }
-};
-
-}
-
-template <class Handler>
-auto make_empty_physical_line_aware(Handler&& handler)
-    noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
- -> std::enable_if_t<
-        !detail::is_std_reference_wrapper<Handler>::value,
-        detail::empty_physical_line_aware_handler<std::decay_t<Handler>>>
-{
-    return detail::empty_physical_line_aware_handler<
-        std::decay_t<Handler>>(std::forward<Handler>(handler));
-}
-
-template <class Handler>
-auto make_empty_physical_line_aware(
-    const std::reference_wrapper<Handler>& handler) noexcept
- -> detail::empty_physical_line_aware_handler<Handler&>
-{
-    return detail::empty_physical_line_aware_handler<Handler&>(handler.get());
 }
 
 }}

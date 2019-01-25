@@ -203,17 +203,20 @@
   </section>
 </section>
 
-<section id="diagnostics">
-  <name>Diagnostics facilities</name>
+<section id="utility">
+  <name>General utilities</name>
 
-  <section id="diagnostics.general">
-    <name>General</name>
-    <p>This clause describes an exception class <c>text_error</c> (<xref id="text_error"/>), which defines the base class for the types of objects thrown while the parsers are comsuming the texts, and some facilities to access information that <c>text_error</c> objects hold.</p>
-  </section>
+  <section id="diagnostics">
+    <name>Diagnostics facilities</name>
 
-  <section id="header_text_error_hpp">
-    <name>Header <c>"text_error.hpp"</c> synopsis</name>
-    <codeblock>
+    <section id="diagnostics.general">
+      <name>General</name>
+      <p>This subclause describes an exception class <c>text_error</c> (<xref id="text_error"/>), which defines the base class for the types of objects thrown while the parsers are comsuming the texts, and some facilities to access information that <c>text_error</c> objects hold.</p>
+    </section>
+
+    <section id="header_text_error_hpp">
+      <name>Header <c>"text_error.hpp"</c> synopsis</name>
+      <codeblock>
 #include &lt;cstddef>
 #include &lt;exception>
 #include &lt;ostream>
@@ -240,13 +243,13 @@ namespace furfurylic {
     std::wstring to_wstring(const text_error_info&amp; i);
   }
 }
-    </codeblock>
-  </section>
+      </codeblock>
+    </section>
 
-  <section id="text_error">
-    <name>Class <c>text_error</c></name>
+    <section id="text_error">
+      <name>Class <c>text_error</c></name>
 
-    <codeblock>
+      <codeblock>
 namespace furfurylic {
   namespace commata {
     class text_error : public std::exception {
@@ -272,71 +275,71 @@ namespace furfurylic {
     };
   }
 }
-    </codeblock>
+      </codeblock>
 
-    <p>The class <c>text_error</c> defines the base class for the types of the objects thrown by Commata library.</p>
-    <p>An object of <c>text_error</c> can optionally have a physical position information, which consists of the line number and the column number of the point in the input text that has made the exception thrown.
-       <c>npos</c> is a special value for the line number and the column number which indicates "no information."</p>
+      <p>The class <c>text_error</c> defines the base class for the types of the objects thrown by Commata library.</p>
+      <p>An object of <c>text_error</c> can optionally have a physical position information, which consists of the line number and the column number of the point in the input text that has made the exception thrown.
+         <c>npos</c> is a special value for the line number and the column number which indicates "no information."</p>
 
-    <section id="text_error.cons">
-      <name><c>text_error</c> constructors and assignment operators</name>
+      <section id="text_error.cons">
+        <name><c>text_error</c> constructors and assignment operators</name>
 
-      <code-item>
-        <code>
+        <code-item>
+          <code>
 template &lt;class T> explicit text_error(T&amp;&amp; what_arg);
-        </code>
-        <effects>Constructs an object of <c>text_error</c>.</effects>
-        <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg))</c>.</postcondition>
-        <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
-      </code-item>
+          </code>
+          <effects>Constructs an object of <c>text_error</c>.</effects>
+          <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg))</c>.</postcondition>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+        </code-item>
 
-      <code-item>
-        <code>
+        <code-item>
+          <code>
 text_error(const text_error&amp; other) noexcept;
 text_error(text_error&amp;&amp; other) noexcept;
-        </code>
-        <effects>Constructs an object of <c>text_error</c> from another object of <c>text_error</c>.</effects>
-        <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (opp ? (*opp == *get_physical_position()) : (get_physical_position() == nullptr))</c> is not <c>false</c> where <c>ow</c> is the value of <c>other.what()</c> and <c>opp</c> is the value of <c>other.get_physical_position()</c> before the call.</postcondition>
-      </code-item>
+          </code>
+          <effects>Constructs an object of <c>text_error</c> from another object of <c>text_error</c>.</effects>
+          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (opp ? (*opp == *get_physical_position()) : (get_physical_position() == nullptr))</c> is not <c>false</c> where <c>ow</c> is the value of <c>other.what()</c> and <c>opp</c> is the value of <c>other.get_physical_position()</c> before the call.</postcondition>
+        </code-item>
 
-      <code-item>
-        <code>
+        <code-item>
+          <code>
 text_error&amp; operator=(const text_error&amp; other) noexcept;
 text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
-        </code>
-        <effects>Assigns an object of <c>text_error</c> from another object of <c>text_error</c>.</effects>
-        <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (opp ? (*opp == *get_physical_position()) : (get_physical_position() == nullptr))</c> is not <c>false</c> where <c>ow</c> is the value of <c>other.what()</c> and <c>opp</c> is the value of <c>other.get_physical_position()</c> before the call.</postcondition>
-        <returns><c>*this</c>.</returns>
-      </code-item>
-    </section>
+          </code>
+          <effects>Assigns an object of <c>text_error</c> from another object of <c>text_error</c>.</effects>
+          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (opp ? (*opp == *get_physical_position()) : (get_physical_position() == nullptr))</c> is not <c>false</c> where <c>ow</c> is the value of <c>other.what()</c> and <c>opp</c> is the value of <c>other.get_physical_position()</c> before the call.</postcondition>
+          <returns><c>*this</c>.</returns>
+        </code-item>
+      </section>
 
-    <section id="text_error.physical_position">
-      <name><c>text_error</c> physical position information</name>
+      <section id="text_error.physical_position">
+        <name><c>text_error</c> physical position information</name>
 
-      <code-item>
-        <code>
+        <code-item>
+          <code>
 text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col = npos);
-        </code>
-        <effects>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, removes the position information if it exists. Otherwise, sets the position information whose line number and column number are <c>line</c> and <c>col</c> respectively.</effects>
-        <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>get_physical_position() == nullptr</c> shall not be <c>false</c>. Otherwise, <c>*get_physical_position() == std::make_pair(line, col)</c> shall not be <c>false</c>.</postcondition>
-        <returns><c>*this</c>.</returns>
-        <remark>The row number and column number shall be zero-based.</remark>
-      </code-item>
+          </code>
+          <effects>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, removes the position information if it exists. Otherwise, sets the position information whose line number and column number are <c>line</c> and <c>col</c> respectively.</effects>
+          <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>get_physical_position() == nullptr</c> shall not be <c>false</c>. Otherwise, <c>*get_physical_position() == std::make_pair(line, col)</c> shall not be <c>false</c>.</postcondition>
+          <returns><c>*this</c>.</returns>
+          <remark>The row number and column number shall be zero-based.</remark>
+        </code-item>
 
-      <code-item>
-        <code>
+        <code-item>
+          <code>
 const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noexcept;
-        </code>
-        <returns>If <c>*this</c> holds a physical position information, a pointer to an pair of its line number and column number. Otherwise, <c>nullptr</c>.</returns>
-        <remark>The row number and column number shall be zero-based.</remark>
-      </code-item>
+          </code>
+          <returns>If <c>*this</c> holds a physical position information, a pointer to an pair of its line number and column number. Otherwise, <c>nullptr</c>.</returns>
+          <remark>The row number and column number shall be zero-based.</remark>
+        </code-item>
+      </section>
     </section>
-  </section>
 
-  <section id="text_error_info">
-    <name>Class <c>text_error_info</c></name>
+    <section id="text_error_info">
+      <name>Class <c>text_error_info</c></name>
 
-    <codeblock>
+      <codeblock>
 namespace furfurylic {
   namespace commata {
     class text_error_info {
@@ -354,78 +357,78 @@ namespace furfurylic {
     };
   }
 }
-    </codeblock>
+      </codeblock>
 
-    <p>An object of the class <c>text_error_info</c> is a mere reference-wrapper of an object of the class <c>text_error</c>.
-       This class offers a simple character representation of objects of the class <c>text_error</c>.</p>
-
-    <code-item>
-      <code>
-text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
-      </code>
-      <effects>Initializes <c>e</c> with <c>&amp;ex</c> and <c>b</c> with <c>base</c>.</effects>
-    </code-item>
-
-    <code-item>
-      <code>
-text_error_info(const text_error_info&amp; other) noexcept;
-      </code>
-      <effects>Initializes <c>e</c> with <c>other.e</c> and <c>b</c> with <c>other.b</c>.</effects>
-    </code-item>
-
-    <code-item>
-      <code>
-text_error_info&amp; operator=(const text_error_info&amp; other) noexcept;
-      </code>
-      <effects>Assigns <c>e</c> from <c>other.e</c> and <c>b</c> from <c>other.b</c>.</effects>
-    </code-item>
-
-    <code-item>
-      <code>
-const text_error&amp; error() const noexcept;
-      </code>
-      <returns><c>*e</c>.</returns>
-    </code-item>
-
-    <code-item>
-      <code>
-std::size_t get_base() const noexcept;
-      </code>
-      <returns><c>b</c>.</returns>
-    </code-item>
-
-    <section id="text_error_info.char_repr">
-      <name><c>text_error_info</c> character representations</name>
+      <p>An object of the class <c>text_error_info</c> is a mere reference-wrapper of an object of the class <c>text_error</c>.
+         This class offers a simple character representation of objects of the class <c>text_error</c>.</p>
 
       <code-item>
         <code>
+text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
+        </code>
+        <effects>Initializes <c>e</c> with <c>&amp;ex</c> and <c>b</c> with <c>base</c>.</effects>
+      </code-item>
+
+      <code-item>
+        <code>
+text_error_info(const text_error_info&amp; other) noexcept;
+        </code>
+        <effects>Initializes <c>e</c> with <c>other.e</c> and <c>b</c> with <c>other.b</c>.</effects>
+      </code-item>
+
+      <code-item>
+        <code>
+text_error_info&amp; operator=(const text_error_info&amp; other) noexcept;
+        </code>
+        <effects>Assigns <c>e</c> from <c>other.e</c> and <c>b</c> from <c>other.b</c>.</effects>
+      </code-item>
+
+      <code-item>
+        <code>
+const text_error&amp; error() const noexcept;
+        </code>
+        <returns><c>*e</c>.</returns>
+      </code-item>
+
+      <code-item>
+        <code>
+std::size_t get_base() const noexcept;
+        </code>
+        <returns><c>b</c>.</returns>
+      </code-item>
+
+      <section id="text_error_info.char_repr">
+        <name><c>text_error_info</c> character representations</name>
+
+        <code-item>
+          <code>
 template &lt;class Tr>
   std::basic_ostream&lt;char, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;char, Tr>&amp; os,
                                            const text_error_info&amp; i);
 template &lt;class Tr>
   std::basic_ostream&lt;wchar_t, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;wchar_t, Tr>&amp; os,
                                               const text_error_info&amp; i);
-        </code>
-        <effects>Behaves as a formatted output function of <c>os</c>.
-                 Forms a character sequence <c>seq</c> of an unspecified concise character representation of <c>i.error()</c> from <c>i.error().what()</c> and <c>i.error().get_physical_position()</c>, in which the line number and the column number are <c>b</c>-based.
+          </code>
+          <effects>Behaves as a formatted output function of <c>os</c>.
+                   Forms a character sequence <c>seq</c> of an unspecified concise character representation of <c>i.error()</c> from <c>i.error().what()</c> and <c>i.error().get_physical_position()</c>, in which the line number and the column number are <c>b</c>-based.
                  Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c> where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>. Then calls <c>os.width(0)</c>.</effects>
-        <returns><c>os</c>.</returns>
-        <remark>The second function template shall try to convert <c>i.error().what()</c> from a null-terminated multibyte string into a wide character string.</remark>
-      </code-item>
+          <returns><c>os</c>.</returns>
+          <remark>The second function template shall try to convert <c>i.error().what()</c> from a null-terminated multibyte string into a wide character string.</remark>
+        </code-item>
 
-      <code-item>
-        <code>
+        <code-item>
+          <code>
 std::string to_string(const text_error_info&amp; i);
 std::wstring to_wstring(const text_error_info&amp; i);
-        </code>
-        <returns>A character representation of <c>i.error()</c> that is the same as the <c>operator&lt;&lt;</c> inserts into a stream.</returns>
-      </code-item>
+          </code>
+          <returns>A character representation of <c>i.error()</c> that is the same as the <c>operator&lt;&lt;</c> inserts into a stream.</returns>
+        </code-item>
+      </section>
     </section>
-  </section>
 
-  <section id="header_parse_error_hpp">
-    <name>Header <c>"parse_error.hpp"</c> synopsis</name>
-    <codeblock>
+    <section id="header_parse_error_hpp">
+      <name>Header <c>"parse_error.hpp"</c> synopsis</name>
+      <codeblock>
 #include "text_error.hpp"
 
 namespace furfurylic {
@@ -433,13 +436,13 @@ namespace furfurylic {
     class parse_error;
   }
 }
-    </codeblock>
-  </section>
+      </codeblock>
+    </section>
 
-  <section id="parse_error">
-    <name>Class <c>parse_error</c></name>
+    <section id="parse_error">
+      <name>Class <c>parse_error</c></name>
 
-    <codeblock>
+      <codeblock>
 namespace furfurylic {
   namespace commata {
     class parse_error : public text_error {
@@ -449,19 +452,69 @@ namespace furfurylic {
     };
   }
 }
-    </codeblock>
+      </codeblock>
 
-    <p>An exception of type <c>parse_error</c> is thrown by the parser, for example by <c>parse_csv</c> (<xref id="parse_csv"/>), when the text does not have an appropriate format.</p>
+      <p>An exception of type <c>parse_error</c> is thrown by the parser, for example by <c>parse_csv</c> (<xref id="parse_csv"/>), when the text does not have an appropriate format.</p>
 
-    <code-item>
-      <code>
+      <code-item>
+        <code>
 template &lt;class T>
   explicit parse_error(T&amp;&amp; what_arg);
-      </code>
-      <effects>Constructs an object of parse_error.</effects>
-      <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-      <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
-    </code-item>
+        </code>
+        <effects>Constructs an object of parse_error.</effects>
+        <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
+        <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+      </code-item>
+    </section>
+  </section>
+
+  <section id="handler_wrappers">
+    <name>Wrappers of text handlers</name>
+
+    <section id="header_empty_physical_line_aware_handler">
+      <name>Header <c>"empty_physical_line_aware_handler.hpp"</c> synopsis</name>
+      <codeblock>
+#include &lt;functional>
+
+namespace furfurylic {
+  namespace commata {
+    <c>// <n><xref id="empty_physical_line_aware_handler"/>, creation of text handler wrappers aware of empty physical lines:</n></c>
+    template &lt;class Handler>
+      <nc>unspecified</nc>
+        make_empty_physical_line_aware(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
+    template &lt;class Handler>
+      <nc>unspecified</nc>
+        make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
+  }
+}
+      </codeblock>
+    </section>
+
+    <section id="empty_physical_line_aware_handler">
+      <name>Creation of text handler wrappers aware of empty physical lines</name>
+
+      <code-item>
+        <code>
+template &lt;class Handler>
+  <nc>unspecified</nc>
+    make_empty_physical_line_aware(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
+template &lt;class Handler>
+  <nc>unspecified</nc>
+    make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
+        </code>
+        <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements, except that in the second overload it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
+        <returns>An object of an unspecified type whose type meets the <c>TextHandler</c> requirements and that holds an object <c>h</c> where <c>h</c> is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
+                 It forwards calls of its member functions to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
+                 it first calls <c>h.start_record(where)</c>, and if its contexually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
+                 Its return type and the return value are as follows:
+                 <ul>
+                   <li>if both of the return types of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>,</li>
+                   <li>otherwise, the return type shall be <c>bool</c> and the return type shall be <c>false</c> unless both of the the return values contextually converted to <c>bool</c> of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are not <c>false</c>.</li>
+                 </ul></returns>
+        <remark>The first overload shall not participate in overload resolution unless <c>std::decay_t&lt;Handler></c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
+                The expression inside <c>noexcept</c> of the first overload is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;Handler>>::value</c>.</remark>
+      </code-item>
+    </section>
   </section>
 </section>
 
@@ -501,14 +554,6 @@ namespace furfurylic {
                      std::size_t buffer_size = 0, const Allocator&amp; alloc = Allocator());
     template &lt;class Input, class Handler, class... Args>
       bool parse_csv(Input&amp;&amp; in, const std::reference_wrapper&lt;Handler>&amp; handler, Args&amp;&amp;... args);
-
-    <c>// <n><xref id="empty_physical_line_aware_handler"/>, creation of text handler wrappers aware of empty physical lines:</n></c>
-    template &lt;class Handler>
-      <nc>unspecified</nc>
-        make_empty_physical_line_aware(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
-    template &lt;class Handler>
-      <nc>unspecified</nc>
-        make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
   }
 }
     </codeblock>
@@ -570,32 +615,6 @@ template &lt;class Input, class Handler, class... Args>
                Then forwards the call to other <c>parse_csv</c> function templates with the second argument being <c>h</c>.</effects>
       <returns>The return value of the forwarded call above.</returns>
       <throws>Any exception thrown by the forwarded call above.</throws>
-    </code-item>
-  </section>
-
-  <section id="empty_physical_line_aware_handler">
-    <name>Creation of text handler wrappers aware of empty physical lines</name>
-
-    <code-item>
-      <code>
-template &lt;class Handler>
-  <nc>unspecified</nc>
-    make_empty_physical_line_aware(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
-template &lt;class Handler>
-  <nc>unspecified</nc>
-    make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
-      </code>
-      <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements, except that in the second overload it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
-      <returns>An object of an unspecified type whose type meets the <c>TextHandler</c> requirements and that holds an object <c>h</c> where <c>h</c> is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
-               It forwards calls of its member functions to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
-               it first calls <c>h.start_record(where)</c>, and if its contexually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
-               Its return type and the return value are as follows:
-               <ul>
-                 <li>if both of the return types of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>,</li>
-                 <li>otherwise, the return type shall be <c>bool</c> and the return type shall be <c>false</c> unless both of the the return values contextually converted to <c>bool</c> of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are not <c>false</c>.</li>
-               </ul></returns>
-      <remark>The first overload shall not participate in overload resolution unless <c>std::decay_t&lt;Handler></c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
-              The expression inside <c>noexcept</c> of the first overload is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;Handler>>::value</c>.</remark>
     </code-item>
   </section>
 </section>

@@ -22,6 +22,7 @@
 
 #include <gtest/gtest.h>
 
+#include <furfurylic/commata/empty_physical_line_aware_handler.hpp>
 #include <furfurylic/commata/parse_csv.hpp>
 #include <furfurylic/commata/text_error.hpp>
 #include <furfurylic/commata/table_scanner.hpp>

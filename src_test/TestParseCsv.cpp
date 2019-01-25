@@ -12,6 +12,7 @@
 
 #include <gtest/gtest.h>
 
+#include <furfurylic/commata/empty_physical_line_aware_handler.hpp>
 #include <furfurylic/commata/parse_csv.hpp>
 
 #include "BaseTest.hpp"
