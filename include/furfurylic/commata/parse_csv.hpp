@@ -17,21 +17,13 @@
 #include <streambuf>
 #include <utility>
 
-#include "text_error.hpp"
+#include "parse_error.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
 #include "typing_aid.hpp"
 
 namespace furfurylic {
 namespace commata {
-
-class parse_error :
-    public text_error
-{
-public:
-    using text_error::text_error;
-};
-
 namespace detail {
 
 enum class state : std::int_fast8_t

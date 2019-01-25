@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-01-24 (UTC)</signature>
+<signature>2019-01-25 (UTC)</signature>
 
 <section id="general">
   <name>General</name>
@@ -422,6 +422,47 @@ std::wstring to_wstring(const text_error_info&amp; i);
       </code-item>
     </section>
   </section>
+
+  <section id="header_parse_error_hpp">
+    <name>Header <c>"parse_error.hpp"</c> synopsis</name>
+    <codeblock>
+#include "text_error.hpp"
+
+namespace furfurylic {
+  namespace commata {
+    class parse_error;
+  }
+}
+    </codeblock>
+  </section>
+
+  <section id="parse_error">
+    <name>Class <c>parse_error</c></name>
+
+    <codeblock>
+namespace furfurylic {
+  namespace commata {
+    class parse_error : public text_error {
+    public:
+      template &lt;class T>
+        explicit parse_error(T&amp;&amp; what_arg);
+    };
+  }
+}
+    </codeblock>
+
+    <p>An exception of type <c>parse_error</c> is thrown by the parser, for example by <c>parse_csv</c> (<xref id="parse_csv"/>), when the text does not have an appropriate format.</p>
+
+    <code-item>
+      <code>
+template &lt;class T>
+  explicit parse_error(T&amp;&amp; what_arg);
+      </code>
+      <effects>Constructs an object of parse_error.</effects>
+      <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
+      <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+    </code-item>
+  </section>
 </section>
 
 <section id="parser">
@@ -441,13 +482,10 @@ std::wstring to_wstring(const text_error_info&amp; i);
 #include &lt;memory>
 #include &lt;streambuf>
 
-#include "text_error.hpp"
+#include "parse_error.hpp"
 
 namespace furfurylic {
   namespace commata {
-    <c>// <n><xref id="parse_error"/>, parse_error:</n></c>
-    class parse_error;
-
     <c>// <n><xref id="parse_csv"/>, functions that utilize the parser:</n></c>
     template &lt;class Tr, class Handler>
       bool parse_csv(std::basic_streambuf&lt;typename Handler::char_type, Tr>* in, Handler handler);
@@ -474,34 +512,6 @@ namespace furfurylic {
   }
 }
     </codeblock>
-  </section>
-
-  <section id="parse_error">
-    <name>Class <c>parse_error</c></name>
-
-    <codeblock>
-namespace furfurylic {
-  namespace commata {
-    class parse_error : public text_error {
-    public:
-      template &lt;class T>
-        explicit parse_error(T&amp;&amp; what_arg);
-    };
-  }
-}
-    </codeblock>
-
-    <p>An exception of type <c>parse_error</c> is thrown by the parser, that is, by <c>parse_csv</c> (<xref id="parse_csv"/>), when the text does not have an appropriate format.</p>
-
-    <code-item>
-      <code>
-template &lt;class T>
-  explicit parse_error(T&amp;&amp; what_arg);
-      </code>
-      <effects>Constructs an object of parse_error.</effects>
-      <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-      <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
-    </code-item>
   </section>
 
   <section id="parse_csv">
