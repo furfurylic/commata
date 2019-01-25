@@ -3,8 +3,8 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_GUARD_E8F031F6_10D8_4585_9012_CFADC2F95BA7
-#define FURFURYLIC_GUARD_E8F031F6_10D8_4585_9012_CFADC2F95BA7
+#ifndef COMMATA_GUARD_E8F031F6_10D8_4585_9012_CFADC2F95BA7
+#define COMMATA_GUARD_E8F031F6_10D8_4585_9012_CFADC2F95BA7
 
 #include <cassert>
 #include <cstddef>
@@ -23,7 +23,6 @@
 
 #include "formatted_output.hpp"
 
-namespace furfurylic {
 namespace commata {
 namespace detail {
 
@@ -301,6 +300,6 @@ inline std::wstring to_wstring(const text_error_info& i)
     return s.str();
 }
 
-}}
+}
 
 #endif

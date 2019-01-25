@@ -25,16 +25,16 @@
 
 #include <gtest/gtest.h>
 
-#include <furfurylic/commata/empty_physical_line_aware_handler.hpp>
-#include <furfurylic/commata/stored_table.hpp>
-#include <furfurylic/commata/parse_csv.hpp>
+#include <commata/empty_physical_line_aware_handler.hpp>
+#include <commata/stored_table.hpp>
+#include <commata/parse_csv.hpp>
 
 #include "BaseTest.hpp"
 #include "identified_allocator.hpp"
 #include "tracking_allocator.hpp"
 
-using namespace furfurylic::commata;
-using namespace furfurylic::test;
+using namespace commata;
+using namespace commata::test;
 
 static_assert(std::is_nothrow_copy_constructible<stored_value>::value, "");
 static_assert(std::is_nothrow_copy_assignable<stored_value>::value, "");
@@ -516,7 +516,7 @@ static_assert(noexcept(
 
 }
 
-class TestTableStore : public furfurylic::test::BaseTest
+class TestTableStore : public BaseTest
 {};
 
 TEST_F(TestTableStore, Basics)
@@ -625,7 +625,7 @@ static_assert(!detail::is_std_list<std::vector<std::deque<int>>>::value, "");
 static_assert(std::is_default_constructible<stored_table>::value, "");
 static_assert(std::is_nothrow_move_constructible<stored_table>::value, "");
 
-struct TestStoredTable : furfurylic::test::BaseTest
+struct TestStoredTable : BaseTest
 {};
 
 TEST_F(TestStoredTable, RewriteValue)
@@ -829,7 +829,7 @@ TEST_F(TestStoredTable, MergeLists)
 }
 
 template <class ContentLR>
-struct TestStoredTableMerge : furfurylic::test::BaseTest
+struct TestStoredTableMerge : BaseTest
 {};
 
 typedef testing::Types<
@@ -1178,8 +1178,7 @@ static_assert(
             stored_table::content_type,
             stored_table::allocator_type, true>>::value, "");
 
-struct TestStoredTableBuilder :
-    furfurylic::test::BaseTestWithParam<std::size_t>
+struct TestStoredTableBuilder : BaseTestWithParam<std::size_t>
 {};
 
 TEST_P(TestStoredTableBuilder, Basics)

@@ -3,8 +3,8 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_GUARD_F6071085_9476_4724_95ED_E1DA376E837C
-#define FURFURYLIC_GUARD_F6071085_9476_4724_95ED_E1DA376E837C
+#ifndef COMMATA_GUARD_F6071085_9476_4724_95ED_E1DA376E837C
+#define COMMATA_GUARD_F6071085_9476_4724_95ED_E1DA376E837C
 
 #include <memory>
 #include <type_traits>
@@ -12,7 +12,6 @@
 
 #include "member_like_base.hpp"
 
-namespace furfurylic {
 namespace commata {
 namespace detail {
 
@@ -194,6 +193,6 @@ inline bool operator!=(
     return !(left == right);
 }
 
-}}}
+}}
 
 #endif

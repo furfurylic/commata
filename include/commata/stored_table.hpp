@@ -3,8 +3,8 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_GUARD_44AB64F1_C45A_45AC_9277_F2735CCE832E
-#define FURFURYLIC_GUARD_44AB64F1_C45A_45AC_9277_F2735CCE832E
+#ifndef COMMATA_GUARD_44AB64F1_C45A_45AC_9277_F2735CCE832E
+#define COMMATA_GUARD_44AB64F1_C45A_45AC_9277_F2735CCE832E
 
 #include <algorithm>
 #include <cassert>
@@ -29,7 +29,6 @@
 #include "member_like_base.hpp"
 #include "propagation_controlled_allocator.hpp"
 
-namespace furfurylic {
 namespace commata {
 
 template <class Ch, class Tr = std::char_traits<Ch>>
@@ -646,16 +645,15 @@ std::basic_ostream<Ch, Tr>& operator<<(
 using stored_value = basic_stored_value<char>;
 using wstored_value = basic_stored_value<wchar_t>;
 
-}}
+}
 
 namespace std {
 
 template <class Ch, class Tr>
-struct hash<furfurylic::commata::basic_stored_value<Ch, Tr>>
+struct hash<commata::basic_stored_value<Ch, Tr>>
 {
     std::size_t operator()(
-        const furfurylic::commata::basic_stored_value<Ch, Tr>& x)
-            const noexcept
+        const commata::basic_stored_value<Ch, Tr>& x) const noexcept
     {
         // We'd like this function to return the same hash value as
         // std::basic_string, but it is impossible, so we borrow
@@ -673,7 +671,7 @@ struct hash<furfurylic::commata::basic_stored_value<Ch, Tr>>
 
 } // end namespace std
 
-namespace furfurylic { namespace commata {
+namespace commata {
 
 namespace detail {
 
@@ -2092,6 +2090,6 @@ auto make_transposed_stored_table_builder(
         stored_table_builder_option_transpose>(table);
 }
 
-}}
+}
 
 #endif

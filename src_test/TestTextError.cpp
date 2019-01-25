@@ -11,9 +11,9 @@
 
 #include <gtest/gtest.h>
 
-#include <furfurylic/commata/text_error.hpp>
+#include <commata/text_error.hpp>
 
-using namespace furfurylic::commata;
+using namespace commata;
 
 static_assert(
     std::is_nothrow_move_constructible<text_error>::value,

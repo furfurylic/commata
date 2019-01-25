@@ -3,14 +3,13 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_GUARD_5BAA6AA2_1785_4F1B_AB40_3FC95A78EB2B
-#define FURFURYLIC_GUARD_5BAA6AA2_1785_4F1B_AB40_3FC95A78EB2B
+#ifndef COMMATA_GUARD_5BAA6AA2_1785_4F1B_AB40_3FC95A78EB2B
+#define COMMATA_GUARD_5BAA6AA2_1785_4F1B_AB40_3FC95A78EB2B
 
 #include <ios>
 #include <ostream>
 #include <streambuf>
 
-namespace furfurylic {
 namespace commata {
 namespace detail {
 
@@ -67,6 +66,6 @@ std::basic_ostream<Ch, Tr>& formatted_output(
     return os;
 }
 
-}}}
+}}
 
 #endif

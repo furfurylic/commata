@@ -22,16 +22,16 @@
 
 #include <gtest/gtest.h>
 
-#include <furfurylic/commata/empty_physical_line_aware_handler.hpp>
-#include <furfurylic/commata/parse_csv.hpp>
-#include <furfurylic/commata/text_error.hpp>
-#include <furfurylic/commata/table_scanner.hpp>
+#include <commata/empty_physical_line_aware_handler.hpp>
+#include <commata/parse_csv.hpp>
+#include <commata/text_error.hpp>
+#include <commata/table_scanner.hpp>
 
 #include "BaseTest.hpp"
 #include "tracking_allocator.hpp"
 
-using namespace furfurylic::commata;
-using namespace furfurylic::test;
+using namespace commata;
+using namespace commata::test;
 
 namespace {
 
@@ -279,8 +279,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     }
 }
 
-struct TestFieldTranslatorForChar :
-    furfurylic::test::BaseTest
+struct TestFieldTranslatorForChar : BaseTest
 {};
 
 TEST_F(TestFieldTranslatorForChar, Correct)

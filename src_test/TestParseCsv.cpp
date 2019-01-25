@@ -12,12 +12,12 @@
 
 #include <gtest/gtest.h>
 
-#include <furfurylic/commata/empty_physical_line_aware_handler.hpp>
-#include <furfurylic/commata/parse_csv.hpp>
+#include <commata/empty_physical_line_aware_handler.hpp>
+#include <commata/parse_csv.hpp>
 
 #include "BaseTest.hpp"
 
-using namespace furfurylic::commata;
+using namespace commata;
 
 namespace {
 
@@ -102,7 +102,7 @@ public:
 }
 
 struct TestParseCsvBasics :
-    furfurylic::test::BaseTestWithParam<std::size_t>
+    commata::test::BaseTestWithParam<std::size_t>
 {};
 
 TEST_P(TestParseCsvBasics, Narrow)
@@ -164,7 +164,7 @@ TEST_P(TestParseCsvBasics, EmptyLineAware)
 INSTANTIATE_TEST_CASE_P(,
     TestParseCsvBasics, testing::Values(1, 10, 1024));
 
-struct TestParseCsvReference : furfurylic::test::BaseTest
+struct TestParseCsvReference : commata::test::BaseTest
 {};
 
 TEST_F(TestParseCsvReference, Reference)

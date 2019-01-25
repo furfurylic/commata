@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace furfurylic { namespace test {
+namespace commata { namespace test {
 
 template <class BaseAllocator>
 class tracking_allocator :

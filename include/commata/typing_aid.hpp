@@ -3,14 +3,13 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_GUARD_9F3EFB02_5C6D_449D_A895_01323928E6BC
-#define FURFURYLIC_GUARD_9F3EFB02_5C6D_449D_A895_01323928E6BC
+#ifndef COMMATA_GUARD_9F3EFB02_5C6D_449D_A895_01323928E6BC
+#define COMMATA_GUARD_9F3EFB02_5C6D_449D_A895_01323928E6BC
 
 #include <functional>
 #include <string>
 #include <type_traits>
 
-namespace furfurylic {
 namespace commata {
 namespace detail {
 
@@ -32,6 +31,6 @@ template <class T>
 struct is_std_reference_wrapper<std::reference_wrapper<T>> : std::true_type
 {};
 
-}}}
+}}
 
 #endif

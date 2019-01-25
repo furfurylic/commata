@@ -3,8 +3,8 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_GUARD_D53E08F9_CF1C_4762_BF77_1A6FB68C6A96
-#define FURFURYLIC_GUARD_D53E08F9_CF1C_4762_BF77_1A6FB68C6A96
+#ifndef COMMATA_GUARD_D53E08F9_CF1C_4762_BF77_1A6FB68C6A96
+#define COMMATA_GUARD_D53E08F9_CF1C_4762_BF77_1A6FB68C6A96
 
 #include <ios>
 #include <cstddef>
@@ -25,7 +25,6 @@
 #include "member_like_base.hpp"
 #include "typing_aid.hpp"
 
-namespace furfurylic {
 namespace commata {
 namespace detail {
 
@@ -561,6 +560,6 @@ auto make_record_extractor(
         out, std::forward<Appendices>(appendices)...);
 }
 
-}}
+}
 
 #endif

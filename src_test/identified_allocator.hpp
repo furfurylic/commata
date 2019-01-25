@@ -9,7 +9,7 @@
 #include <cstddef>
 #include <type_traits>
 
-namespace furfurylic { namespace test {
+namespace commata { namespace test {
 
 template <class T, bool POCCA, bool POCMA, bool POCS, bool IAE = false>
 class identified_allocator

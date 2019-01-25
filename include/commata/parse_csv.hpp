@@ -3,8 +3,8 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_GUARD_4B6A00F6_E33D_4114_9F57_D2C2E984E809
-#define FURFURYLIC_GUARD_4B6A00F6_E33D_4114_9F57_D2C2E984E809
+#ifndef COMMATA_GUARD_4B6A00F6_E33D_4114_9F57_D2C2E984E809
+#define COMMATA_GUARD_4B6A00F6_E33D_4114_9F57_D2C2E984E809
 
 #include <cassert>
 #include <cstddef>
@@ -23,7 +23,6 @@
 #include "parse_error.hpp"
 #include "typing_aid.hpp"
 
-namespace furfurylic {
 namespace commata {
 namespace detail {
 
@@ -833,6 +832,6 @@ auto parse_csv(Input&& in,
         std::forward<Args>(args)...);
 }
 
-}}
+}
 
 #endif

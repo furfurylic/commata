@@ -10,17 +10,16 @@
 
 #include <gtest/gtest.h>
 
-#include <furfurylic/commata/parse_csv.hpp>
-#include <furfurylic/commata/record_extractor.hpp>
+#include <commata/parse_csv.hpp>
+#include <commata/record_extractor.hpp>
 
 #include "BaseTest.hpp"
 #include "tracking_allocator.hpp"
 
-using namespace furfurylic::commata;
-using namespace furfurylic::test;
+using namespace commata;
+using namespace commata::test;
 
-struct TestRecordExtractor :
-    furfurylic::test::BaseTestWithParam<std::size_t>
+struct TestRecordExtractor : BaseTestWithParam<std::size_t>
 {};
 
 TEST_P(TestRecordExtractor, LeftmostKey)
@@ -124,7 +123,7 @@ INSTANTIATE_TEST_CASE_P(, TestRecordExtractorLimit,
         testing::Bool(),
         testing::Values(1, std::numeric_limits<std::size_t>::max())));
 
-struct TestRecordExtractorLimit0 : furfurylic::test::BaseTest
+struct TestRecordExtractorLimit0 : BaseTest
 {};
 
 TEST_F(TestRecordExtractorLimit0, IncludeHeader)
@@ -155,7 +154,7 @@ TEST_F(TestRecordExtractorLimit0, ExcludeHeaderNoSuchKey)
     }
 }
 
-struct TestRecordExtractorIndexed : furfurylic::test::BaseTest
+struct TestRecordExtractorIndexed : BaseTest
 {};
 
 TEST_F(TestRecordExtractorIndexed, Basics)
@@ -185,7 +184,7 @@ struct FinalPredicateForValue final
     }
 };
 
-struct TestRecordExtractorFinalPredicateForValue : furfurylic::test::BaseTest
+struct TestRecordExtractorFinalPredicateForValue : BaseTest
 {};
 
 TEST_F(TestRecordExtractorFinalPredicateForValue, Basics)
@@ -197,14 +196,15 @@ TEST_F(TestRecordExtractorFinalPredicateForValue, Basics)
                     "ka1,kb13,\"vb\n3\",vb3";
     std::stringbuf in(s);
     std::stringbuf out;
-    parse_csv(&in, make_record_extractor(&out, 1, FinalPredicateForValue()), 1024);
+    parse_csv(&in,
+        make_record_extractor(&out, 1, FinalPredicateForValue()), 1024);
     ASSERT_EQ("key_a,key_b,value_a,value_b\n"
               "ka2,kb12,va2,vb2\n"
               "ka1,kb13,\"vb\n3\",vb3\n",
               out.str());
 }
 
-struct TestRecordExtractorMiscellaneous : furfurylic::test::BaseTest
+struct TestRecordExtractorMiscellaneous : BaseTest
 {};
 
 TEST_F(TestRecordExtractorMiscellaneous, Reference)

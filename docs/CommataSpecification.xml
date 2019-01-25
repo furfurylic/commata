@@ -222,26 +222,24 @@
 #include &lt;ostream>
 #include &lt;string>
 
-namespace furfurylic {
-  namespace commata {
-    class text_error;   <c>// <n>forward declation</n></c>
+namespace commata {
+  class text_error;   <c>// <n>forward declation</n></c>
 
-    <c>// <n><xref id="text_error_info"/>, class text_error_info:</n></c>
-    class text_error_info;
+  <c>// <n><xref id="text_error_info"/>, class text_error_info:</n></c>
+  class text_error_info;
 
-    <c>// <n><xref id="text_error"/>, class text_error:</n></c>
-    class text_error;
+  <c>// <n><xref id="text_error"/>, class text_error:</n></c>
+  class text_error;
 
-    <c>// <n><xref id="text_error_info.char_repr"/>, chracter representations of text_error_info:</n></c>
-    template &lt;class Tr>
-      std::basic_ostream&lt;char, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;char, Tr>&amp; os,
-                                               const text_error_info&amp; i);
-    template &lt;class Tr>
-      std::basic_ostream&lt;wchar_t, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;wchar_t, Tr>&amp; os,
-                                                  const text_error_info&amp; i);
-    std::string to_string(const text_error_info&amp; i);
-    std::wstring to_wstring(const text_error_info&amp; i);
-  }
+  <c>// <n><xref id="text_error_info.char_repr"/>, chracter representations of text_error_info:</n></c>
+  template &lt;class Tr>
+    std::basic_ostream&lt;char, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;char, Tr>&amp; os,
+                                             const text_error_info&amp; i);
+  template &lt;class Tr>
+    std::basic_ostream&lt;wchar_t, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;wchar_t, Tr>&amp; os,
+                                                const text_error_info&amp; i);
+  std::string to_string(const text_error_info&amp; i);
+  std::wstring to_wstring(const text_error_info&amp; i);
 }
       </codeblock>
     </section>
@@ -250,30 +248,28 @@ namespace furfurylic {
       <name>Class <c>text_error</c></name>
 
       <codeblock>
-namespace furfurylic {
-  namespace commata {
-    class text_error : public std::exception {
-    public:
-      static constexpr std::size_t npos = -1;
+namespace commata {
+  class text_error : public std::exception {
+  public:
+    static constexpr std::size_t npos = -1;
 
-      <c>// <n><xref id="text_error.cons"/>, constructors and assignment operators:</n></c>
-      template &lt;class T> explicit text_error(T&amp;&amp; what_arg);
-      text_error(const text_error&amp; other) noexcept;
-      text_error(text_error&amp;&amp; other) noexcept;
-      text_error&amp; operator=(const text_error&amp; other) noexcept;
-      text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
+    <c>// <n><xref id="text_error.cons"/>, constructors and assignment operators:</n></c>
+    template &lt;class T> explicit text_error(T&amp;&amp; what_arg);
+    text_error(const text_error&amp; other) noexcept;
+    text_error(text_error&amp;&amp; other) noexcept;
+    text_error&amp; operator=(const text_error&amp; other) noexcept;
+    text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
 
-      const char* what() const noexcept override;
+    const char* what() const noexcept override;
 
-      <c>// <n><xref id="text_error.physical_position"/>, physical postion information:</n></c>
-      text_error&amp; set_physical_position(std::size_t row = npos, std::size_t col = npos);
-      const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noexcept;
+    <c>// <n><xref id="text_error.physical_position"/>, physical postion information:</n></c>
+    text_error&amp; set_physical_position(std::size_t row = npos, std::size_t col = npos);
+    const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noexcept;
 
-      text_error_info info(std::size_t base = 1) const noexcept {
-        return text_error_info(*this, base);
-      }
-    };
-  }
+    text_error_info info(std::size_t base = 1) const noexcept {
+      return text_error_info(*this, base);
+    }
+  };
 }
       </codeblock>
 
@@ -340,22 +336,20 @@ const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noex
       <name>Class <c>text_error_info</c></name>
 
       <codeblock>
-namespace furfurylic {
-  namespace commata {
-    class text_error_info {
-    public:
-      text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
-      text_error_info(const text_error_info&amp; other) noexcept;
-      text_error_info&amp; operator=(const text_error_info&amp; other) noexcept;
+namespace commata {
+  class text_error_info {
+  public:
+    text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
+    text_error_info(const text_error_info&amp; other) noexcept;
+    text_error_info&amp; operator=(const text_error_info&amp; other) noexcept;
 
-      const text_error&amp; error() const noexcept;
-      std::size_t get_base() const noexcept;
+    const text_error&amp; error() const noexcept;
+    std::size_t get_base() const noexcept;
 
-    private:
-      const text_error* e;  <c>// <n>exposition only</n></c>
-      std::size_t b;        <c>// <n>exposition only</n></c>
-    };
-  }
+  private:
+    const text_error* e;  <c>// <n>exposition only</n></c>
+    std::size_t b;        <c>// <n>exposition only</n></c>
+  };
 }
       </codeblock>
 
@@ -431,10 +425,8 @@ std::wstring to_wstring(const text_error_info&amp; i);
       <codeblock>
 #include "text_error.hpp"
 
-namespace furfurylic {
-  namespace commata {
-    class parse_error;
-  }
+namespace commata {
+  class parse_error;
 }
       </codeblock>
     </section>
@@ -443,14 +435,12 @@ namespace furfurylic {
       <name>Class <c>parse_error</c></name>
 
       <codeblock>
-namespace furfurylic {
-  namespace commata {
-    class parse_error : public text_error {
-    public:
-      template &lt;class T>
-        explicit parse_error(T&amp;&amp; what_arg);
-    };
-  }
+namespace commata {
+  class parse_error : public text_error {
+  public:
+    template &lt;class T>
+      explicit parse_error(T&amp;&amp; what_arg);
+  };
 }
       </codeblock>
 
@@ -476,16 +466,14 @@ template &lt;class T>
       <codeblock>
 #include &lt;functional>
 
-namespace furfurylic {
-  namespace commata {
-    <c>// <n><xref id="empty_physical_line_aware_handler"/>, creation of text handler wrappers aware of empty physical lines:</n></c>
-    template &lt;class Handler>
-      <nc>unspecified</nc>
-        make_empty_physical_line_aware(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
-    template &lt;class Handler>
-      <nc>unspecified</nc>
-        make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
-  }
+namespace commata {
+  <c>// <n><xref id="empty_physical_line_aware_handler"/>, creation of text handler wrappers aware of empty physical lines:</n></c>
+  template &lt;class Handler>
+    <nc>unspecified</nc>
+      make_empty_physical_line_aware(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
+  template &lt;class Handler>
+    <nc>unspecified</nc>
+      make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
 }
       </codeblock>
     </section>
@@ -537,24 +525,22 @@ template &lt;class Handler>
 
 #include "parse_error.hpp"
 
-namespace furfurylic {
-  namespace commata {
-    <c>// <n><xref id="parse_csv"/>, functions that utilize the parser:</n></c>
-    template &lt;class Tr, class Handler>
-      bool parse_csv(std::basic_streambuf&lt;typename Handler::char_type, Tr>* in, Handler handler);
-    template &lt;class Tr, class Handler>
-      bool parse_csv(std::basic_istream&lt;typename Handler::char_type, Tr>&amp; in, Handler handler);
-    template &lt;class Tr, class Handler,
-              class Allocator = std::allocator&lt;typename Handler::char_type>>
-      bool parse_csv(std::basic_streambuf&lt;typename Handler::char_type, Tr>* in, Handler handler,
-                     std::size_t buffer_size = 0, const Allocator&amp; alloc = Allocator());
-    template &lt;class Tr, class Handler,
-              class Allocator = std::allocator&lt;typename Handler::char_type>>
-      bool parse_csv(std::basic_istream&lt;typename Handler::char_type, Tr>&amp; in, Handler handler,
-                     std::size_t buffer_size = 0, const Allocator&amp; alloc = Allocator());
-    template &lt;class Input, class Handler, class... Args>
-      bool parse_csv(Input&amp;&amp; in, const std::reference_wrapper&lt;Handler>&amp; handler, Args&amp;&amp;... args);
-  }
+namespace commata {
+  <c>// <n><xref id="parse_csv"/>, functions that utilize the parser:</n></c>
+  template &lt;class Tr, class Handler>
+    bool parse_csv(std::basic_streambuf&lt;typename Handler::char_type, Tr>* in, Handler handler);
+  template &lt;class Tr, class Handler>
+    bool parse_csv(std::basic_istream&lt;typename Handler::char_type, Tr>&amp; in, Handler handler);
+  template &lt;class Tr, class Handler,
+            class Allocator = std::allocator&lt;typename Handler::char_type>>
+    bool parse_csv(std::basic_streambuf&lt;typename Handler::char_type, Tr>* in, Handler handler,
+                   std::size_t buffer_size = 0, const Allocator&amp; alloc = Allocator());
+  template &lt;class Tr, class Handler,
+            class Allocator = std::allocator&lt;typename Handler::char_type>>
+    bool parse_csv(std::basic_istream&lt;typename Handler::char_type, Tr>&amp; in, Handler handler,
+                   std::size_t buffer_size = 0, const Allocator&amp; alloc = Allocator());
+  template &lt;class Input, class Handler, class... Args>
+    bool parse_csv(Input&amp;&amp; in, const std::reference_wrapper&lt;Handler>&amp; handler, Args&amp;&amp;... args);
 }
     </codeblock>
   </section>
@@ -649,37 +635,35 @@ template &lt;class Input, class Handler, class... Args>
 
 #include "text_error.hpp"
 
-namespace furfurylic {
-  namespace commata {
-    <c>// <n><xref id="record_extraction_error"/>, record_extraction_error:</n></c>
-    class record_extraction_error;
+namespace commata {
+  <c>// <n><xref id="record_extraction_error"/>, record_extraction_error:</n></c>
+  class record_extraction_error;
 
-    <c>// <n><xref id="record_extractor"/>, record_extractor:</n></c>
-    template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class Allocator>
-      class record_extractor;
+  <c>// <n><xref id="record_extractor"/>, record_extractor:</n></c>
+  template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class Allocator>
+    class record_extractor;
 
-    <c>// <n><xref id="record_extractor_with_indexed_key"/>, record_extractor_with_indexed_key:</n></c>
-    template &lt;class FieldValuePred, class Ch, class Tr, class Allocator>
-      class record_extractor_with_indexed_key;
+  <c>// <n><xref id="record_extractor_with_indexed_key"/>, record_extractor_with_indexed_key:</n></c>
+  template &lt;class FieldValuePred, class Ch, class Tr, class Allocator>
+    class record_extractor_with_indexed_key;
 
-    <c>// <n><xref id="record_extractor.creation"/>, creation functions:</n></c>
-    template &lt;class FieldNamePred, class FieldValuePred,
-              class Ch, class Tr, class Allocator, class... Appendices>
-      <nc>unspecified</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                        std::basic_streambuf&lt;Ch, Tr>* out,
-                                        FieldNamePred&amp;&amp; field_name_pred,
-                                        FieldValuePred&amp;&amp; field_value_pred,
-                                        Appendices&amp;&amp;... appendices);
-    template &lt;class Ch, class Tr, class Allocator, class... Appendices>
-      <nc>unspecified</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                        std::basic_ostream&lt;Ch, Tr>&amp; out, Appendices&amp;&amp;... appendices);
-    template &lt;class Ch, class Tr, class... Appendices>
-      <nc>unspecified</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
-                                        Appendices&amp;&amp;... appendices);
-    template &lt;class Ch, class Tr, class... Appendices>
-      <nc>unspecified</nc> make_record_extractor(std::basic_ostream&lt;Ch, Tr>&amp; out,
-                                        Appendices&amp;... appendices);
-  }
+  <c>// <n><xref id="record_extractor.creation"/>, creation functions:</n></c>
+  template &lt;class FieldNamePred, class FieldValuePred,
+            class Ch, class Tr, class Allocator, class... Appendices>
+    <nc>unspecified</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                      std::basic_streambuf&lt;Ch, Tr>* out,
+                                      FieldNamePred&amp;&amp; field_name_pred,
+                                      FieldValuePred&amp;&amp; field_value_pred,
+                                      Appendices&amp;&amp;... appendices);
+  template &lt;class Ch, class Tr, class Allocator, class... Appendices>
+    <nc>unspecified</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                      std::basic_ostream&lt;Ch, Tr>&amp; out, Appendices&amp;&amp;... appendices);
+  template &lt;class Ch, class Tr, class... Appendices>
+    <nc>unspecified</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
+                                      Appendices&amp;&amp;... appendices);
+  template &lt;class Ch, class Tr, class... Appendices>
+    <nc>unspecified</nc> make_record_extractor(std::basic_ostream&lt;Ch, Tr>&amp; out,
+                                      Appendices&amp;... appendices);
 }
       </codeblock>
     </section>
@@ -688,14 +672,12 @@ namespace furfurylic {
       <name>Class <c>record_extraction_error</c></name>
 
       <codeblock>
-namespace furfurylic {
-  namespace commata {
-    class record_extraction_error : public text_error {
-    public:
-      template &lt;class T>
-        explicit record_extraction_error(T&amp;&amp; what_arg);
-    };
-  }
+namespace commata {
+  class record_extraction_error : public text_error {
+  public:
+    template &lt;class T>
+      explicit record_extraction_error(T&amp;&amp; what_arg);
+  };
 }
       </codeblock>
 
@@ -716,42 +698,40 @@ template &lt;class T>
       <name>Class template <c>record_extractor</c></name>
 
       <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class FieldNamePred, class FieldValuePred, class Ch,
-              class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
-      class record_extractor {
-    public:
-      static constexpr std::size_t npos = -1;
+namespace commata {
+  template &lt;class FieldNamePred, class FieldValuePred, class Ch,
+            class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
+    class record_extractor {
+  public:
+    static constexpr std::size_t npos = -1;
 
-      using char_type = Ch;
-      using traits_type = Tr;
-      using allocator_type = Allocator;
+    using char_type = Ch;
+    using traits_type = Tr;
+    using allocator_type = Allocator;
 
-      <c>// <n><xref id="record_extractor.cons"/>, construct/copy/destroy:</n></c>
-      record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
-                       FieldNamePred field_name_pred, FieldValuePred field_value_pred,
-                       bool includes_header = true, std::size_t max_record_num = npos);
-      record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                       std::basic_streambuf&lt;Ch, Tr>* out,
-                       FieldNamePred field_name_pred, FieldValuePred field_value_pred,
-                       bool includes_header = true, std::size_t max_record_num = npos);
-      record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
-     ~record_extractor();
+    <c>// <n><xref id="record_extractor.cons"/>, construct/copy/destroy:</n></c>
+    record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
+                     FieldNamePred field_name_pred, FieldValuePred field_value_pred,
+                     bool includes_header = true, std::size_t max_record_num = npos);
+    record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                     std::basic_streambuf&lt;Ch, Tr>* out,
+                     FieldNamePred field_name_pred, FieldValuePred field_value_pred,
+                     bool includes_header = true, std::size_t max_record_num = npos);
+    record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
+   ~record_extractor();
 
-      <c>// <n><xref id="record_extractor.accessors"/>, accessors:</n></c>
-      allocator_type get_allocator() const noexcept;
+    <c>// <n><xref id="record_extractor.accessors"/>, accessors:</n></c>
+    allocator_type get_allocator() const noexcept;
 
-      <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
-      // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
-      void start_buffer(const Ch* buffer_begin, const Ch* buffer_end);
-      void end_buffer(const Ch* buffer_end);
-      void start_record(const Ch* record_begin);
-      bool end_record(const Ch* record_end);
-      void update(const Ch* first, const Ch* last);
-      void finalize(const Ch* first, const Ch* last);
-    };
-  }
+    <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
+    // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
+    void start_buffer(const Ch* buffer_begin, const Ch* buffer_end);
+    void end_buffer(const Ch* buffer_end);
+    void start_record(const Ch* record_begin);
+    bool end_record(const Ch* record_end);
+    void update(const Ch* first, const Ch* last);
+    void finalize(const Ch* first, const Ch* last);
+  };
 }
       </codeblock>
 
@@ -839,47 +819,45 @@ allocator_type get_allocator() const noexcept;
       <name>Class template <c>record_extractor_with_indexed_key</c></name>
 
       <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class FieldValuePred, class Ch,
-              class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
-      class record_extractor_with_indexed_key {
-    public:
-      static constexpr std::size_t npos = -1;
+namespace commata {
+  template &lt;class FieldValuePred, class Ch,
+            class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
+    class record_extractor_with_indexed_key {
+  public:
+    static constexpr std::size_t npos = -1;
 
-      using char_type = Ch;
-      using traits_type = Tr;
-      using allocator_type = Allocator;
+    using char_type = Ch;
+    using traits_type = Tr;
+    using allocator_type = Allocator;
 
-      <c>// <n><xref id="record_extractor_with_indexed_key.cons"/>, construct/copy/destroy:</n></c>
-      record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
-                                        std::size_t target_field_index,
-                                        FieldValuePred field_value_pred,
-                                        bool includes_header = true,
-                                        std::size_t max_record_num = npos);
-      record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
-                                        std::basic_streambuf&lt;Ch, Tr>* out,
-                                        std::size_t target_field_index,
-                                        FieldValuePred field_value_pred,
-                                        bool includes_header = true,
-                                        std::size_t max_record_num = npos);
-      record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; other)
-                                        noexcept(<nc>see below</nc>);
-     ~record_extractor_with_indexed_key();
+    <c>// <n><xref id="record_extractor_with_indexed_key.cons"/>, construct/copy/destroy:</n></c>
+    record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
+                                      std::size_t target_field_index,
+                                      FieldValuePred field_value_pred,
+                                      bool includes_header = true,
+                                      std::size_t max_record_num = npos);
+    record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
+                                      std::basic_streambuf&lt;Ch, Tr>* out,
+                                      std::size_t target_field_index,
+                                      FieldValuePred field_value_pred,
+                                      bool includes_header = true,
+                                      std::size_t max_record_num = npos);
+    record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; other)
+                                      noexcept(<nc>see below</nc>);
+   ~record_extractor_with_indexed_key();
 
-      <c>// <n><xref id="record_extractor_with_indexed_key.accessors"/>, accessors:</n></c>
-      allocator_type get_allocator() const noexcept;
+    <c>// <n><xref id="record_extractor_with_indexed_key.accessors"/>, accessors:</n></c>
+    allocator_type get_allocator() const noexcept;
 
-      <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
-      // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
-      void start_buffer(const Ch* buffer_begin, const Ch* buffer_end);
-      void end_buffer(const Ch* buffer_end);
-      void start_record(const Ch* record_begin);
-      bool end_record(const Ch* record_end);
-      void update(const Ch* first, const Ch* last);
-      void finalize(const Ch* first, const Ch* last);
-    };
-  }
+    <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
+    // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
+    void start_buffer(const Ch* buffer_begin, const Ch* buffer_end);
+    void end_buffer(const Ch* buffer_end);
+    void start_record(const Ch* record_begin);
+    bool end_record(const Ch* record_end);
+    void update(const Ch* first, const Ch* last);
+    void finalize(const Ch* first, const Ch* last);
+  };
 }
       </codeblock>
 
@@ -1041,172 +1019,170 @@ template &lt;class Ch, class Tr, class... Appendices>
 #include &lt;type_traits>
 #include &lt;vector>
 
-namespace furfurylic {
-  namespace commata {
-    <c>// <n><xref id="basic_stored_value"/>, basic_stored_value:</n></c>
-    template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class basic_stored_value;
+namespace commata {
+  <c>// <n><xref id="basic_stored_value"/>, basic_stored_value:</n></c>
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class basic_stored_value;
 
-    <c>// <n><xref id="basic_stored_value.nonmember"/>, basic_stored_value non-member functions:</n></c>
-    template &lt;class Ch, class Tr>
-      bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator==(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const Ch*                                   right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator==(const Ch*                                   left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  <c>// <n><xref id="basic_stored_value.nonmember"/>, basic_stored_value non-member functions:</n></c>
+  template &lt;class Ch, class Tr>
+    bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator==(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const Ch*                                   right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator==(const Ch*                                   left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
 
-    template &lt;class Ch, class Tr>
-      bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator!=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const Ch*                                   right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator!=(const Ch*                                   left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator!=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const Ch*                                   right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator!=(const Ch*                                   left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
 
-    template &lt;class Ch, class Tr>
-      bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator&lt; (const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const Ch*                                   right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator&lt; (const Ch*                                   left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator&lt; (const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const Ch*                                   right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator&lt; (const Ch*                                   left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
 
-    template &lt;class Ch, class Tr>
-      bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator> (const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const Ch*                                   right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator> (const Ch*                                   left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator> (const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const Ch*                                   right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator> (const Ch*                                   left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
 
-    template &lt;class Ch, class Tr>
-      bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator&lt;=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const Ch*                                   right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator&lt;=(const Ch*                                   left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator&lt;=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const Ch*                                   right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator&lt;=(const Ch*                                   left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
 
-    template &lt;class Ch, class Tr>
-      bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-    template &lt;class Ch, class Tr, class Allocator>
-      bool operator>=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                      const Ch*                                   right) noexcept;
-    template &lt;class Ch, class Tr>
-      bool operator>=(const Ch*                                   left,
-                      const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    bool operator>=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                    const Ch*                                   right) noexcept;
+  template &lt;class Ch, class Tr>
+    bool operator>=(const Ch*                                   left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
 
-    template &lt;class Ch, class Tr>
-      std::basic_ostream&lt;Ch, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;Ch, Tr>&amp; os,
-                                             const basic_stored_value&lt;Ch, Tr>&amp; o);
+  template &lt;class Ch, class Tr>
+    std::basic_ostream&lt;Ch, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;Ch, Tr>&amp; os,
+                                           const basic_stored_value&lt;Ch, Tr>&amp; o);
 
-    template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;Ch>>
-      std::basic_string&lt;Ch, Tr, Allocator> to_string(basic_stored_value&lt;Ch, Tr>&amp; o,
-                                                     const Allocator&amp; alloc);
+  template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;Ch>>
+    std::basic_string&lt;Ch, Tr, Allocator> to_string(basic_stored_value&lt;Ch, Tr>&amp; o,
+                                                   const Allocator&amp; alloc);
 
-    <c>// <n><xref id="basic_stored_value.swap"/>, basic_stored_value specialized algorithms:</n></c>
-    template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; left,
-                                            basic_stored_value&lt;Ch, Tr>&amp; right) noexcept;
+  <c>// <n><xref id="basic_stored_value.swap"/>, basic_stored_value specialized algorithms:</n></c>
+  template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; left,
+                                          basic_stored_value&lt;Ch, Tr>&amp; right) noexcept;
 
-    using stored_value  = basic_stored_value&lt;char>;
-    using wstored_value = basic_stored_value&lt;wchar_t>;
+  using stored_value  = basic_stored_value&lt;char>;
+  using wstored_value = basic_stored_value&lt;wchar_t>;
 
-    <c>// <n><xref id="basic_stored_table"/>, basic_stored_table:</n></c>
-    template &lt;class Content, class Allocator = std::allocator&lt;Content>> class basic_stored_table;
+  <c>// <n><xref id="basic_stored_table"/>, basic_stored_table:</n></c>
+  template &lt;class Content, class Allocator = std::allocator&lt;Content>> class basic_stored_table;
 
-    <c>// <n><xref id="basic_stored_table.nonmember"/>, basic_stored_table non-member functions:</n></c>
-    template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-      basic_stored_table&lt;ContentL, AllocatorL>
-        operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
-                  const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
-    template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-      basic_stored_table&lt;ContentL, AllocatorL>
-        operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
-                        basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
-    template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-      basic_stored_table&lt;ContentL, AllocatorL>
-        operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
-                  const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
-    template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-      basic_stored_table&lt;ContentL, AllocatorL>
-        operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
-                        basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
+  <c>// <n><xref id="basic_stored_table.nonmember"/>, basic_stored_table non-member functions:</n></c>
+  template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+    basic_stored_table&lt;ContentL, AllocatorL>
+      operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
+                const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
+  template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+    basic_stored_table&lt;ContentL, AllocatorL>
+      operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
+                      basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
+  template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+    basic_stored_table&lt;ContentL, AllocatorL>
+      operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
+                const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
+  template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+    basic_stored_table&lt;ContentL, AllocatorL>
+      operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
+                      basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
 
-    <c>// <n><xref id="basic_stored_table.swap"/>, basic_stored_table specialized algorithms:</n></c>
-    template &lt;class Content, class Allocator>
-      void swap(basic_stored_table&lt;Content, Allocator>&amp; left,
-                basic_stored_table&lt;Content, Allocator>&amp; right) noexcept;
+  <c>// <n><xref id="basic_stored_table.swap"/>, basic_stored_table specialized algorithms:</n></c>
+  template &lt;class Content, class Allocator>
+    void swap(basic_stored_table&lt;Content, Allocator>&amp; left,
+              basic_stored_table&lt;Content, Allocator>&amp; right) noexcept;
 
-    using stored_table  = basic_stored_table&lt;std::deque&lt;std::vector&lt;stored_value>>>;
-    using wstored_table = basic_stored_table&lt;std::deque&lt;std::vector&lt;wstored_value>>>;
+  using stored_table  = basic_stored_table&lt;std::deque&lt;std::vector&lt;stored_value>>>;
+  using wstored_table = basic_stored_table&lt;std::deque&lt;std::vector&lt;wstored_value>>>;
 
-    enum stored_table_builder_option : <nc>unspecified</nc> {
-      stored_table_builder_option_transpose = 1
-    };
+  enum stored_table_builder_option : <nc>unspecified</nc> {
+    stored_table_builder_option_transpose = 1
+  };
 
-    <c>// <n><xref id="stored_table_builder"/>, stored_table_builder:</n></c>
-    template &lt;class Content, class Allocator,
-              std::underlying_type_t&lt;stored_table_builder_option> Options = 0>
-      class stored_table_builder;
+  <c>// <n><xref id="stored_table_builder"/>, stored_table_builder:</n></c>
+  template &lt;class Content, class Allocator,
+            std::underlying_type_t&lt;stored_table_builder_option> Options = 0>
+    class stored_table_builder;
 
-    <c>// <n><xref id="stored_table_builder.creation"/>, stored_table_builder creation functions:</n></c>
-    template &lt;class Content, class Allocator>
-      <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table);
-    template &lt;class Content, class Allocator>
-      <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table);
-  }
+  <c>// <n><xref id="stored_table_builder.creation"/>, stored_table_builder creation functions:</n></c>
+  template &lt;class Content, class Allocator>
+    <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table);
+  template &lt;class Content, class Allocator>
+    <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table);
 }
 
 namespace std {
   <c>// <n><xref id="basic_stored_value.hash"/>, basic_stored_value hash support:</n></c>
-  template &lt;class Ch, class Tr> struct hash&lt;furfurylic::commata::basic_stored_value&lt;Ch, Tr>>;
+  template &lt;class Ch, class Tr> struct hash&lt;commata::basic_stored_value&lt;Ch, Tr>>;
 }
       </codeblock>
     </section>
@@ -1215,89 +1191,87 @@ namespace std {
       <name>Class template <c>basic_stored_value</c></name>
 
       <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class basic_stored_value {
-    public:
-      using value_type      = Ch;
-      using reference       = Ch&amp;;
-      using const_reference = const Ch&amp;;
-      using pointer         = Ch*;
-      using const_pointer   = const Ch*;
-      using iterator        = Ch*;
-      using const_iterator  = const Ch*;
-      using difference_type = std::ptrdiff_t;
-      using size_type       = std::size_t;
-      using traits_type     = Tr;
+namespace commata {
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class basic_stored_value {
+  public:
+    using value_type      = Ch;
+    using reference       = Ch&amp;;
+    using const_reference = const Ch&amp;;
+    using pointer         = Ch*;
+    using const_pointer   = const Ch*;
+    using iterator        = Ch*;
+    using const_iterator  = const Ch*;
+    using difference_type = std::ptrdiff_t;
+    using size_type       = std::size_t;
+    using traits_type     = Tr;
 
-      using reverse_iterator       = std::reverse_iterator&lt;iterator>;
-      using const_reverse_iterator = std::reverse_iterator&lt;const_iterator>;
+    using reverse_iterator       = std::reverse_iterator&lt;iterator>;
+    using const_reverse_iterator = std::reverse_iterator&lt;const_iterator>;
 
-      static constexpr size_type npos = -1;
+    static constexpr size_type npos = -1;
 
-      <c>// <n><xref id="basic_stored_value.cons"/>, construct/copy/destroy:</n></c>
-      basic_stored_value() noexcept;
-      basic_stored_value(Ch* begin, Ch* end);
-      basic_stored_value(const basic_stored_value&amp; other) noexcept = default;
-      basic_stored_value&amp; operator=(const basic_stored_value&amp; other) noexcept = default;
+    <c>// <n><xref id="basic_stored_value.cons"/>, construct/copy/destroy:</n></c>
+    basic_stored_value() noexcept;
+    basic_stored_value(Ch* begin, Ch* end);
+    basic_stored_value(const basic_stored_value&amp; other) noexcept = default;
+    basic_stored_value&amp; operator=(const basic_stored_value&amp; other) noexcept = default;
 
-      <c>// <n><xref id="basic_stored_value.iterators"/>, iterators:</n></c>
-      iterator       begin()        noexcept;
-      const_iterator begin()  const noexcept;
-      const_iterator cbegin() const noexcept;
+    <c>// <n><xref id="basic_stored_value.iterators"/>, iterators:</n></c>
+    iterator       begin()        noexcept;
+    const_iterator begin()  const noexcept;
+    const_iterator cbegin() const noexcept;
 
-      iterator       end()        noexcept;
-      const_iterator end()  const noexcept;
-      const_iterator cend() const noexcept;
+    iterator       end()        noexcept;
+    const_iterator end()  const noexcept;
+    const_iterator cend() const noexcept;
 
-      reverse_iterator       rbegin()        noexcept;
-      const_reverse_iterator rbegin()  const noexcept;
-      const_reverse_iterator crbegin() const noexcept;
+    reverse_iterator       rbegin()        noexcept;
+    const_reverse_iterator rbegin()  const noexcept;
+    const_reverse_iterator crbegin() const noexcept;
 
-      reverse_iterator       rend()        noexcept;
-      const_reverse_iterator rend()  const noexcept;
-      const_reverse_iterator crend() const noexcept;
+    reverse_iterator       rend()        noexcept;
+    const_reverse_iterator rend()  const noexcept;
+    const_reverse_iterator crend() const noexcept;
 
-      <c>// <n><xref id="basic_stored_value.capacity"/>, capacity:</n></c>
-      size_type size()   const noexcept;
-      size_type length() const noexcept;
-      constpxpr size_type max_size() const noexcept;
-      void clear() noexcept;
-      bool empty() const noexcept;
+    <c>// <n><xref id="basic_stored_value.capacity"/>, capacity:</n></c>
+    size_type size()   const noexcept;
+    size_type length() const noexcept;
+    constpxpr size_type max_size() const noexcept;
+    void clear() noexcept;
+    bool empty() const noexcept;
 
-      <c>// <n><xref id="basic_stored_value.access"/>, element accesss:</n></c>
-      reference       operator[](size_type pos);
-      const_reference operator[](size_type pos) const;
-      reference       at(size_type pos);
-      const_reference at(size_type pos) const;
+    <c>// <n><xref id="basic_stored_value.access"/>, element accesss:</n></c>
+    reference       operator[](size_type pos);
+    const_reference operator[](size_type pos) const;
+    reference       at(size_type pos);
+    const_reference at(size_type pos) const;
 
-      reference       front();
-      const_reference front() const;
-      reference       back();
-      const_reference back()  const;
+    reference       front();
+    const_reference front() const;
+    reference       back();
+    const_reference back()  const;
 
-      pointer       c_str()       noexcept;
-      const_pointer c_str() const noexcept;
-      pointer       data()        noexcept;
-      const_pointer data()  const noexcept;
+    pointer       c_str()       noexcept;
+    const_pointer c_str() const noexcept;
+    pointer       data()        noexcept;
+    const_pointer data()  const noexcept;
 
-      template &lt;class Allocator> explicit operator std::basic_string&lt;Ch, Tr, Allocator>() const;
+    template &lt;class Allocator> explicit operator std::basic_string&lt;Ch, Tr, Allocator>() const;
 
-      <c>// <n><xref id="basic_stored_value.modifiers"/>, modifiers:</n></c>
-      iterator erase(const_iterator first, const_iterator last);
-      iterator erase(const_iterator position);
-      basic_stored_value&amp; erase(size_type pos = 0, size_type n = npos);
+    <c>// <n><xref id="basic_stored_value.modifiers"/>, modifiers:</n></c>
+    iterator erase(const_iterator first, const_iterator last);
+    iterator erase(const_iterator position);
+    basic_stored_value&amp; erase(size_type pos = 0, size_type n = npos);
 
-      void pop_front();
-      void pop_back();
+    void pop_front();
+    void pop_back();
 
-      void swap(basic_stored_value&amp; other) noexcept;
+    void swap(basic_stored_value&amp; other) noexcept;
 
-    private:
-      Ch* b;    <c>// <nc>exposition only</nc></c>
-      Ch* e;    <c>// <nc>exposition only</nc></c>
-    };
-  }
+  private:
+    Ch* b;    <c>// <nc>exposition only</nc></c>
+    Ch* e;    <c>// <nc>exposition only</nc></c>
+  };
 }
       </codeblock>
 
@@ -1737,7 +1711,7 @@ template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; le
 
         <codeblock>
 namespace std {
-  template &lt;class Ch, class Tr> struct hash&lt;furfurylic::commata::basic_stored_value&lt;Ch, Tr>>;
+  template &lt;class Ch, class Tr> struct hash&lt;commata::basic_stored_value&lt;Ch, Tr>>;
 }
         </codeblock>
         <p>This template specialization shall meet the requirements of class template <c>std::hash</c>.</p>
@@ -1751,88 +1725,86 @@ namespace std {
         <name>Class template <c>basic_stored_table</c> overview</name>
 
         <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class Content, class Allocator = std::allocator&lt;Content>>
-      class basic_stored_table {
-    public:
-      using allocator_type  = Allocator;
-      using content_type    = Content;
-      using record_type     = typename content_type::value_type;
-      using value_type      = typename record_type::value_type;
-      using char_type       = typename value_type::value_type;
-      using traits_type     = typename value_type::traits_type;
-      using size_type       = typename content_type::size_type;
+namespace commata {
+  template &lt;class Content, class Allocator = std::allocator&lt;Content>>
+    class basic_stored_table {
+  public:
+    using allocator_type  = Allocator;
+    using content_type    = Content;
+    using record_type     = typename content_type::value_type;
+    using value_type      = typename record_type::value_type;
+    using char_type       = typename value_type::value_type;
+    using traits_type     = typename value_type::traits_type;
+    using size_type       = typename content_type::size_type;
 
-      <c>// <n><xref id="basic_stored_table.cons"/>, construct/copy/destroy:</n></c>
-      explicit basic_stored_table(std::size_t buffer_size = 0);
-      basic_stored_table(const basic_stored_table&amp;  other);
-      basic_stored_table(      basic_stored_table&amp;&amp; other) noexcept;
-      template &lt;class OtherContent, class OtherAllocator>
-        basic_stored_table(
-          const basic_stored_table&lt;OtherContent, OtherAllocator>&amp;  other);
-      template &lt;class OtherContent, class OtherAllocator>
-        basic_stored_table(
-                basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
-      basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
-                         std::size_t buffer_size = 0);
-      basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
-                         const basic_stored_table&amp;  other);
-      basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
-                               basic_stored_table&amp;&amp; other);
-      template &lt;class OtherContent, class OtherAllocator>
-        basic_stored_table(
-          std::allocator_arg_t, const Allocator&amp; alloc,
-          const basic_stored_table&lt;OtherContent, OtherAllocator>&amp;  other);
-      template &lt;class OtherContent, class OtherAllocator>
-        basic_stored_table(
-          std::allocator_arg_t, const Allocator&amp; alloc,
-                basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
-     ~basic_stored_table();
-      basic_stored_table&amp; operator=(const basic_stored_table&amp;  other);
-      basic_stored_table&amp; operator=(      basic_stored_table&amp;&amp; other);
+    <c>// <n><xref id="basic_stored_table.cons"/>, construct/copy/destroy:</n></c>
+    explicit basic_stored_table(std::size_t buffer_size = 0);
+    basic_stored_table(const basic_stored_table&amp;  other);
+    basic_stored_table(      basic_stored_table&amp;&amp; other) noexcept;
+    template &lt;class OtherContent, class OtherAllocator>
+      basic_stored_table(
+        const basic_stored_table&lt;OtherContent, OtherAllocator>&amp;  other);
+    template &lt;class OtherContent, class OtherAllocator>
+      basic_stored_table(
+              basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
+    basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
+                       std::size_t buffer_size = 0);
+    basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
+                       const basic_stored_table&amp;  other);
+    basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
+                             basic_stored_table&amp;&amp; other);
+    template &lt;class OtherContent, class OtherAllocator>
+      basic_stored_table(
+        std::allocator_arg_t, const Allocator&amp; alloc,
+        const basic_stored_table&lt;OtherContent, OtherAllocator>&amp;  other);
+    template &lt;class OtherContent, class OtherAllocator>
+      basic_stored_table(
+        std::allocator_arg_t, const Allocator&amp; alloc,
+              basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
+   ~basic_stored_table();
+    basic_stored_table&amp; operator=(const basic_stored_table&amp;  other);
+    basic_stored_table&amp; operator=(      basic_stored_table&amp;&amp; other);
 
-      <c>// <n><xref id="basic_stored_table.constituents"/>, access to the constituents:</n></c>
-      allocator_type get_allocator() const noexcept;
-      std::size_t get_buffer_size() const noexcept;
-      bool is_singular() const noexcept;
-      content_type&amp;       content();
-      const content_type&amp; content() const;
-      record_type&amp;       operator[](size_type record_index);
-      const record_type&amp; operator[](size_type record_index) const;
-      size_type size() const noexcept(<nc>see below</nc>);
-      bool empty() const noexcept(<nc>see below</nc>);
-      void clear() noexcept(<nc>see below</nc>);
+     <c>// <n><xref id="basic_stored_table.constituents"/>, access to the constituents:</n></c>
+    allocator_type get_allocator() const noexcept;
+    std::size_t get_buffer_size() const noexcept;
+    bool is_singular() const noexcept;
+    content_type&amp;       content();
+    const content_type&amp; content() const;
+    record_type&amp;       operator[](size_type record_index);
+    const record_type&amp; operator[](size_type record_index) const;
+    size_type size() const noexcept(<nc>see below</nc>);
+    bool empty() const noexcept(<nc>see below</nc>);
+    void clear() noexcept(<nc>see below</nc>);
 
-      <c>// <n><xref id="basic_stored_table.capacity"/>, capacity:</n></c>
-      void shrink_to_fit();
+    <c>// <n><xref id="basic_stored_table.capacity"/>, capacity:</n></c>
+    void shrink_to_fit();
 
-      <c>// <n><xref id="basic_stored_table.rewrite"/>, store operations:</n></c>
-      template &lt;class ForwardIterator>
-        value_type&amp;
-          rewrite_value(value_type&amp; value,
-                        ForwardIterator new_value_begin, ForwardIterator new_value_end);
-      template &lt;class ForwardIterator>
-        value_type&amp; rewrite_value(value_type&amp; value, ForwardIterator new_value);
-      template &lt;class OtherValue>
-        value_type&amp; rewrite_value(value_type&amp; value, const OtherValue&amp; new_value);
-      template &lt;class... Args> value_type import_value(Args&amp;&amp;... args);
-      template &lt;class F> void guard_rewrite(F f);
+    <c>// <n><xref id="basic_stored_table.rewrite"/>, store operations:</n></c>
+    template &lt;class ForwardIterator>
+      value_type&amp;
+        rewrite_value(value_type&amp; value,
+                      ForwardIterator new_value_begin, ForwardIterator new_value_end);
+    template &lt;class ForwardIterator>
+      value_type&amp; rewrite_value(value_type&amp; value, ForwardIterator new_value);
+    template &lt;class OtherValue>
+      value_type&amp; rewrite_value(value_type&amp; value, const OtherValue&amp; new_value);
+    template &lt;class... Args> value_type import_value(Args&amp;&amp;... args);
+    template &lt;class F> void guard_rewrite(F f);
 
-      <c>// <n><xref id="basic_stored_table.primitives"/>, primitive store operations:</n></c>
-      void add_buffer(char_type* buffer, std::size_t size);
-      void secure_current_upto(char_type* secured_last);
+    <c>// <n><xref id="basic_stored_table.primitives"/>, primitive store operations:</n></c>
+    void add_buffer(char_type* buffer, std::size_t size);
+    void secure_current_upto(char_type* secured_last);
 
-      <c>// <n><xref id="basic_stored_table.modifiers"/>, modifiers:</n></c>
-      template &lt;class OtherContent, class OtherAllocator>
-        basic_stored_table&amp; operator+=(
-          const basic_stored_table&lt;OtherContent, OtherAllocator>&amp; other);
-      template &lt;class OtherContent>
-        basic_stored_table&amp; operator+=(
-                basic_stored_table&lt;OtherContent, Allocator>&amp;&amp;     other);
-      void swap(basic_stored_table&amp; other) noexcept;
-    };
-  }
+    <c>// <n><xref id="basic_stored_table.modifiers"/>, modifiers:</n></c>
+    template &lt;class OtherContent, class OtherAllocator>
+      basic_stored_table&amp; operator+=(
+        const basic_stored_table&lt;OtherContent, OtherAllocator>&amp; other);
+    template &lt;class OtherContent>
+      basic_stored_table&amp; operator+=(
+              basic_stored_table&lt;OtherContent, Allocator>&amp;&amp;     other);
+    void swap(basic_stored_table&amp; other) noexcept;
+  };
 }
         </codeblock>
 
@@ -2324,30 +2296,28 @@ template &lt;class Content, class Allocator>
       <name>Class template <c>stored_table_builder</c></name>
 
       <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class Content, class Allocator,
-              std::underlying_type_t&lt;stored_table_builder_option> Options = 0>
-      class stored_table_builder {
-    public:
-      using table_type = basic_stored_table&lt;Content, Allocator>;
-      using char_type = typename table_type::char_type;
+namespace commata {
+  template &lt;class Content, class Allocator,
+            std::underlying_type_t&lt;stored_table_builder_option> Options = 0>
+    class stored_table_builder {
+  public:
+    using table_type = basic_stored_table&lt;Content, Allocator>;
+    using char_type = typename table_type::char_type;
 
-      <c>// <n><xref id="stored_table_builder.cons"/>, construct/copy/destroy:</n></c>
-      explicit stored_table_builder(table_type&amp; table);
-      stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
-     ~stored_table_builder();
+    <c>// <n><xref id="stored_table_builder.cons"/>, construct/copy/destroy:</n></c>
+    explicit stored_table_builder(table_type&amp; table);
+    stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
+   ~stored_table_builder();
 
-      <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
-      // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
-      std::pair&lt;char_type*, std::size_t> get_buffer();
-      void release_buffer(const char_type* buffer) noexcept;
-      void start_record(const char_type* record_begin);
-      void end_record(const char_type* record_end);
-      void update(const char_type* first, const char_type* last);
-      void finalize(const char_type* first, const char_type* last);
-    };
-  }
+    <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
+    // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
+    std::pair&lt;char_type*, std::size_t> get_buffer();
+    void release_buffer(const char_type* buffer) noexcept;
+    void start_record(const char_type* record_begin);
+    void end_record(const char_type* record_end);
+    void update(const char_type* first, const char_type* last);
+    void finalize(const char_type* first, const char_type* last);
+  };
 }
       </codeblock>
 
@@ -2705,55 +2675,53 @@ template &lt;class Content, class Allocator>
 
 #include "text_error.hpp"
 
-namespace furfurylic {
-  namespace commata {
-    <c>// <n><xref id="table_scanner"/>, table_scanner:</n></c>
-    template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
-      class table_scanner;
+namespace commata {
+  <c>// <n><xref id="table_scanner"/>, table_scanner:</n></c>
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
+    class table_scanner;
 
-    <c>// <n><xref id="scanner.builtin.exceptions"/>, exception classes:</n></c>
-    class field_translation_error : public text_error;
-      class field_not_found : public field_translation_error;
-      class field_invalid_format : public field_translation_error;
-        class field_empty : public field_invalid_format;
-      class field_out_of_range : public field_translation_error;
+  <c>// <n><xref id="scanner.builtin.exceptions"/>, exception classes:</n></c>
+  class field_translation_error : public text_error;
+    class field_not_found : public field_translation_error;
+    class field_invalid_format : public field_translation_error;
+      class field_empty : public field_invalid_format;
+    class field_out_of_range : public field_translation_error;
 
-    <c>// <n><xref id="scanner.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
-    template &lt;class T> struct fail_if_skipped;
-    template &lt;class T> class default_if_skipped;
+  <c>// <n><xref id="scanner.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
+  template &lt;class T> struct fail_if_skipped;
+  template &lt;class T> class default_if_skipped;
 
-    <c>// <n><xref id="scanner.builtin.conversion_error_handlers"/>, default conversion error handler classes:</n></c>
-    template &lt;class T> struct fail_if_conversion_failed;
-    template &lt;class T> class replace_if_conversion_failed;
+  <c>// <n><xref id="scanner.builtin.conversion_error_handlers"/>, default conversion error handler classes:</n></c>
+  template &lt;class T> struct fail_if_conversion_failed;
+  template &lt;class T> class replace_if_conversion_failed;
 
-    <c>// <n><xref id="arithmetic_field_translator"/>, arithmetic_field_translator:</n></c>
-    template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
-              class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
-      class arithmetic_field_translator;
+  <c>// <n><xref id="arithmetic_field_translator"/>, arithmetic_field_translator:</n></c>
+  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
+            class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
+    class arithmetic_field_translator;
 
-    <c>// <n><xref id="locale_based_arithmetic_field_translator"/>, locale_based_arithmetic_field_translator:</n></c>
-    template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
-              class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
-      class locale_based_arithmetic_field_translator;
+  <c>// <n><xref id="locale_based_arithmetic_field_translator"/>, locale_based_arithmetic_field_translator:</n></c>
+  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
+            class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
+    class locale_based_arithmetic_field_translator;
 
-    <c>// <n><xref id="string_field_translator"/>, string_field_translator:</n></c>
-    template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
-              class Allocator = std::allocator&lt;Ch>,
-              class SkippingHandler = fail_if_skipped&lt;std::basic_string&lt;Ch, Tr, Allocator>>>
-      class string_field_translator;
+  <c>// <n><xref id="string_field_translator"/>, string_field_translator:</n></c>
+  template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
+            class Allocator = std::allocator&lt;Ch>,
+            class SkippingHandler = fail_if_skipped&lt;std::basic_string&lt;Ch, Tr, Allocator>>>
+    class string_field_translator;
 
-    <c>// <n><xref id="make_field_translator"/>, creation of default field scanners:</n></c>
-    template &lt;class T, class Sink, class... Appendices>
-      <nc>see below</nc> make_field_translator(Sink sink, Appendices&amp;&amp;... appendices);
-    template &lt;class T, class Allocator, class Sink, class... Appendices>
-      <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                                      Sink sink, Appendices&amp;&amp;... appendices);
-    template &lt;class Container, class... Appendices>
-      <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
-    template &lt;class Allocator, class Container, class... Appendices>
-      <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                                      Container&amp; values, Appendices&amp;&amp;... appendices);
-  }
+  <c>// <n><xref id="make_field_translator"/>, creation of default field scanners:</n></c>
+  template &lt;class T, class Sink, class... Appendices>
+    <nc>see below</nc> make_field_translator(Sink sink, Appendices&amp;&amp;... appendices);
+  template &lt;class T, class Allocator, class Sink, class... Appendices>
+    <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
+                                    Sink sink, Appendices&amp;&amp;... appendices);
+  template &lt;class Container, class... Appendices>
+    <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
+  template &lt;class Allocator, class Container, class... Appendices>
+    <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
+                                    Container&amp; values, Appendices&amp;&amp;... appendices);
 }
       </codeblock>
     </section>
@@ -2765,55 +2733,53 @@ namespace furfurylic {
         <name>Class template <c>table_scanner</c> overview</name>
 
         <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
-      class table_scanner {
-    public:
-      using char_type = Ch;
-      using allocator_type = Allocator;
-      using size_type = typename std::allocator_traits&lt;Allocator>::size_type;
+namespace commata {
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
+    class table_scanner {
+  public:
+    using char_type = Ch;
+    using allocator_type = Allocator;
+    using size_type = typename std::allocator_traits&lt;Allocator>::size_type;
 
-      <c>// <n><xref id="table_scanner.cons"/>, construction:</n></c>
-      explicit table_scanner(std::size_t header_record_count = 0, size_type buffer_size = 0);
+    <c>// <n><xref id="table_scanner.cons"/>, construction:</n></c>
+    explicit table_scanner(std::size_t header_record_count = 0, size_type buffer_size = 0);
+    table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
+                  std::size_t header_record_count = 0, size_type buffer_size = 0);
+    template &lt;class HeaderFieldScanner>
+      explicit table_scanner(HeaderFieldScanner s, size_type buffer_size = 0);
+    template &lt;class HeaderFieldScanner>
       table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-                    std::size_t header_record_count = 0, size_type buffer_size = 0);
-      template &lt;class HeaderFieldScanner>
-        explicit table_scanner(HeaderFieldScanner s, size_type buffer_size = 0);
-      template &lt;class HeaderFieldScanner>
-        table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-                      HeaderFieldScanner s, size_type buffer_size = 0);
-      table_scanner(table_scanner&amp;&amp; other) noexcept;
+                    HeaderFieldScanner s, size_type buffer_size = 0);
+    table_scanner(table_scanner&amp;&amp; other) noexcept;
 
-     ~table_scanner();
+   ~table_scanner();
 
-      <c>// <n><xref id="table_scanner.allocator"/>, allocator access:</n></c>
-      allocator_type get_allocator() const noexcept;
+    <c>// <n><xref id="table_scanner.allocator"/>, allocator access:</n></c>
+    allocator_type get_allocator() const noexcept;
 
-      <c>// <n><xref id="table_scanner.field_scanner_access"/>, body field scanner access:</n></c>
-      template &lt;class T = std::nullptr_t> void set_field_scanner(std::size_t j, T s = T());
-      bool has_field_scanner(std::size_t j) const noexcept;
-      const std::type_info&amp; get_field_scanner_type(std::size_t j) const noexcept;
-      template &lt;class T> const T* get_field_scanner(std::size_t j) const noexcept;
-      template &lt;class T>       T* get_field_scanner(std::size_t j)       noexcept;
+    <c>// <n><xref id="table_scanner.field_scanner_access"/>, body field scanner access:</n></c>
+    template &lt;class T = std::nullptr_t> void set_field_scanner(std::size_t j, T s = T());
+    bool has_field_scanner(std::size_t j) const noexcept;
+    const std::type_info&amp; get_field_scanner_type(std::size_t j) const noexcept;
+    template &lt;class T> const T* get_field_scanner(std::size_t j) const noexcept;
+    template &lt;class T>       T* get_field_scanner(std::size_t j)       noexcept;
 
-      <c>// <n><xref id="table_scanner.record_end_scanner_access"/>, record-end scanner access:</n></c>
-      template &lt;class T = std::nullptr_t> void set_record_end_scanner(T s = T());
-      bool has_record_end_scanner() const noexcept;
-      const std::type_info&amp; get_record_end_scanner_type() const noexcept;
-      template &lt;class T> const T* get_record_end_scanner() const noexcept;
-      template &lt;class T>       T* get_record_end_scanner()       noexcept;
+    <c>// <n><xref id="table_scanner.record_end_scanner_access"/>, record-end scanner access:</n></c>
+    template &lt;class T = std::nullptr_t> void set_record_end_scanner(T s = T());
+    bool has_record_end_scanner() const noexcept;
+    const std::type_info&amp; get_record_end_scanner_type() const noexcept;
+    template &lt;class T> const T* get_record_end_scanner() const noexcept;
+    template &lt;class T>       T* get_record_end_scanner()       noexcept;
 
-      <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
-      // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
-      std::pair&lt;Ch*, std::size_t> get_buffer();
-      void release_buffer(const Ch* buffer);
-      void start_record(const Ch* record_begin);
-      void end_record(const Ch* record_end);
-      void update(const Ch* first, const Ch* last);
-      void finalize(const Ch* first, const Ch* last);
-    };
-  }
+    <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
+    // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
+    std::pair&lt;Ch*, std::size_t> get_buffer();
+    void release_buffer(const Ch* buffer);
+    void start_record(const Ch* record_begin);
+    void end_record(const Ch* record_end);
+    void update(const Ch* first, const Ch* last);
+    void finalize(const Ch* first, const Ch* last);
+  };
 }
         </codeblock>
 
@@ -2950,14 +2916,12 @@ template &lt;class T>       T* get_record_end_scanner()       noexcept;
         <name>Class <c>field_translation_error</c></name>
 
         <codeblock>
-namespace furfurylic {
-  namespace commata {
-    class field_translation_error : public text_error {
-    public:
-      template &lt;class T>
-        explicit field_translation_error(T&amp;&amp; what_arg);
-    };
-  }
+namespace commata {
+  class field_translation_error : public text_error {
+  public:
+    template &lt;class T>
+      explicit field_translation_error(T&amp;&amp; what_arg);
+  };
 }
         </codeblock>
 
@@ -2978,14 +2942,12 @@ template &lt;class T>
         <name>Class <c>field_not_found</c></name>
 
         <codeblock>
-namespace furfurylic {
-  namespace commata {
-    class field_not_found : public field_translation_error {
-    public:
-      template &lt;class T>
-        explicit field_not_found(T&amp;&amp; what_arg);
-    };
-  }
+namespace commata {
+  class field_not_found : public field_translation_error {
+  public:
+    template &lt;class T>
+      explicit field_not_found(T&amp;&amp; what_arg);
+  };
 }
         </codeblock>
 
@@ -3006,14 +2968,12 @@ template &lt;class T>
         <name>Class <c>field_invalid_format</c></name>
 
         <codeblock>
-namespace furfurylic {
-  namespace commata {
-    class field_invalid_format : public field_translation_error {
-    public:
-      template &lt;class T>
-        explicit field_invalid_format(T&amp;&amp; what_arg);
-    };
-  }
+namespace commata {
+  class field_invalid_format : public field_translation_error {
+  public:
+    template &lt;class T>
+      explicit field_invalid_format(T&amp;&amp; what_arg);
+  };
 }
         </codeblock>
 
@@ -3034,14 +2994,12 @@ template &lt;class T>
         <name>Class <c>field_empty</c></name>
 
         <codeblock>
-namespace furfurylic {
-  namespace commata {
-    class field_empty : public field_invalid_format {
-    public:
-      template &lt;class T>
-        explicit field_empty(T&amp;&amp; what_arg);
-    };
-  }
+namespace commata {
+  class field_empty : public field_invalid_format {
+  public:
+    template &lt;class T>
+      explicit field_empty(T&amp;&amp; what_arg);
+  };
 }
         </codeblock>
 
@@ -3062,14 +3020,12 @@ template &lt;class T>
         <name>Class <c>field_out_of_range</c></name>
 
         <codeblock>
-namespace furfurylic {
-  namespace commata {
-    class field_out_of_range : public field_translation_error {
-    public:
-      template &lt;class T>
-        explicit field_out_of_range(T&amp;&amp; what_arg);
-    };
-  }
+namespace commata {
+  class field_out_of_range : public field_translation_error {
+  public:
+    template &lt;class T>
+      explicit field_out_of_range(T&amp;&amp; what_arg);
+  };
 }
         </codeblock>
 
@@ -3094,12 +3050,10 @@ template &lt;class T>
         <name>Struct template <c>fail_if_skipped</c></name>
 
         <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class T> struct fail_if_skipped {
-      [[noreturn]] T operator()() const;
-    };
-  }
+namespace commata {
+  template &lt;class T> struct fail_if_skipped {
+    [[noreturn]] T operator()() const;
+  };
 }
         </codeblock>
 
@@ -3117,17 +3071,15 @@ namespace furfurylic {
         <name>Class template <c>default_if_skipped</c></name>
 
         <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class T> class default_if_skipped {
-    public:
-      explicit default_if_skipped(T default_value = T());
-      T operator()() const;
+namespace commata {
+  template &lt;class T> class default_if_skipped {
+  public:
+    explicit default_if_skipped(T default_value = T());
+    T operator()() const;
 
-    private:
-      T d;  <c>// <n>exposition only</n></c>
-    };
-  }
+   private:
+    T d;  <c>// <n>exposition only</n></c>
+  };
 }
         </codeblock>
 
@@ -3157,14 +3109,12 @@ T operator()() const;
         <name>Struct template <c>fail_if_conversion_failed</c></name>
 
         <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class T> struct fail_if_conversion_failed {
-      template &lt;class Ch> [[noreturn]] T invalid_format(const Ch*, const Ch*) const;
-      template &lt;class Ch> [[noreturn]] T out_of_range(const Ch*, const Ch*, int) const;
-                          [[noreturn]] T empty() const;
-    };
-  }
+namespace commata {
+  template &lt;class T> struct fail_if_conversion_failed {
+    template &lt;class Ch> [[noreturn]] T invalid_format(const Ch*, const Ch*) const;
+    template &lt;class Ch> [[noreturn]] T out_of_range(const Ch*, const Ch*, int) const;
+                        [[noreturn]] T empty() const;
+  };
 }
         </codeblock>
 
@@ -3196,29 +3146,27 @@ template &lt;class Ch> [[noreturn]] T out_of_range(const Ch*, const Ch*, int) co
         <name>Class template <c>replace_if_conversion_failed</c></name>
 
         <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class T> class replace_if_conversion_failed {
-      template &lt;class Empty = std::nullptr_t, class InvalidFormat = std::nullptr_t,
-                class AboveUpperLimit = std::nullptr_t, class BelowLowerLimit = std::nullptr_t>
-        explicit
-          replace_if_conversion_failed(Empty           on_empty             = Empty(),
-                                       InvalidFormat   on_invalid_format    = InvalidFormat(),
-                                       AboveUpperLimit on_above_upper_limit = AboveUpperLimit(),
-                                       BelowLowerLimit on_below_lower_limit = BelowLowerLimit(),
-                                       Underflow       on_underflow         = Underflow());
-      replace_if_conversion_failed(const replace_if_conversion_failed&amp; other);
-      replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
-     ~replace_if_conversion_failed();
-      replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&amp; other);
-      replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&amp; other)
-        noexcept(<nc>see below</nc>);
+namespace commata {
+  template &lt;class T> class replace_if_conversion_failed {
+    template &lt;class Empty = std::nullptr_t, class InvalidFormat = std::nullptr_t,
+              class AboveUpperLimit = std::nullptr_t, class BelowLowerLimit = std::nullptr_t>
+      explicit
+        replace_if_conversion_failed(Empty           on_empty             = Empty(),
+                                     InvalidFormat   on_invalid_format    = InvalidFormat(),
+                                     AboveUpperLimit on_above_upper_limit = AboveUpperLimit(),
+                                     BelowLowerLimit on_below_lower_limit = BelowLowerLimit(),
+                                     Underflow       on_underflow         = Underflow());
+    replace_if_conversion_failed(const replace_if_conversion_failed&amp; other);
+    replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
+   ~replace_if_conversion_failed();
+    replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&amp; other);
+    replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&amp; other)
+      noexcept(<nc>see below</nc>);
 
-      template &lt;class Ch> T invalid_format(const Ch*, const Ch*) const;
-      template &lt;class Ch> T out_of_range(const Ch*, const Ch*, int sign) const;
-                          T empty() const;
-    };
-  }
+    template &lt;class Ch> T invalid_format(const Ch*, const Ch*) const;
+    template &lt;class Ch> T out_of_range(const Ch*, const Ch*, int sign) const;
+                        T empty() const;
+  };
 }
         </codeblock>
 
@@ -3316,33 +3264,31 @@ T empty() const;
       <name>Class template <c>arithmetic_field_translator</c></name>
 
       <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
-              class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
-      class arithmetic_field_translator {
-    public:
-      <c>// <n><xref id="arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>
-      explicit arithmetic_field_translator(
-               Sink sink, SkippingHandler handle_skipping = SkippingHandler(),
-               ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
-      arithmetic_field_translator(const arithmetic_field_translator&amp; other);
-      arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
-     ~arithmetic_field_translator();
-      arithmetic_field_translator&amp; operator=(const arithmetic_field_translator&amp; other);
-      arithmetic_field_translator&amp; operator=(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+namespace commata {
+  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
+            class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
+    class arithmetic_field_translator {
+  public:
+    <c>// <n><xref id="arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    explicit arithmetic_field_translator(
+             Sink sink, SkippingHandler handle_skipping = SkippingHandler(),
+             ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
+    arithmetic_field_translator(const arithmetic_field_translator&amp; other);
+    arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+   ~arithmetic_field_translator();
+    arithmetic_field_translator&amp; operator=(const arithmetic_field_translator&amp; other);
+    arithmetic_field_translator&amp; operator=(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
 
-      <c>// <n><xref id="arithmetic_field_translator.handler_access"/>, handler access:</n></c>
-      const SkippingHandler&amp; get_skipping_handler() const noexcept;
-            SkippingHandler&amp; get_skipping_handler() noexcept;
-      const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
-            ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
+    <c>// <n><xref id="arithmetic_field_translator.handler_access"/>, handler access:</n></c>
+    const SkippingHandler&amp; get_skipping_handler() const noexcept;
+          SkippingHandler&amp; get_skipping_handler() noexcept;
+    const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
+          ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
 
-      <c>// <n><xref id="arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="field_scanner.requirements"/>):</n></c>
-      template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
-      void field_skipped();
-    };
-  }
+    <c>// <n><xref id="arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="field_scanner.requirements"/>):</n></c>
+    template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
+    void field_skipped();
+  };
 }
       </codeblock>
 
@@ -3545,38 +3491,36 @@ void field_skipped();
       <name>Class template <c>locale_based_arithmetic_field_translator</c></name>
 
       <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
-              class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
-      class locale_based_arithmetic_field_translator {
-    public:
-      <c>// <n><xref id="locale_based_arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>
-      explicit locale_based_arithmetic_field_translator(
-               Sink sink, const std::locale&amp; loc,
-               SkippingHandler handle_skipping = SkippingHandler(),
-               ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
-      locale_based_arithmetic_field_translator(
-        const locale_based_arithmetic_field_translator&amp; other);
-      locale_based_arithmetic_field_translator(
-        locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
-     ~locale_based_arithmetic_field_translator();
-      locale_based_arithmetic_field_translator&amp; operator=(
-        const locale_based_arithmetic_field_translator&amp; other);
-      locale_based_arithmetic_field_translator&amp; operator=(
-        locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+namespace commata {
+  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
+            class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
+    class locale_based_arithmetic_field_translator {
+  public:
+    <c>// <n><xref id="locale_based_arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    explicit locale_based_arithmetic_field_translator(
+             Sink sink, const std::locale&amp; loc,
+             SkippingHandler handle_skipping = SkippingHandler(),
+             ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
+    locale_based_arithmetic_field_translator(
+      const locale_based_arithmetic_field_translator&amp; other);
+    locale_based_arithmetic_field_translator(
+      locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+   ~locale_based_arithmetic_field_translator();
+    locale_based_arithmetic_field_translator&amp; operator=(
+      const locale_based_arithmetic_field_translator&amp; other);
+    locale_based_arithmetic_field_translator&amp; operator=(
+      locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
 
-      <c>// <n><xref id="locale_based_arithmetic_field_translator.handler_access"/>, handler access:</n></c>
-      const SkippingHandler&amp; get_skipping_handler() const noexcept;
-            SkippingHandler&amp; get_skipping_handler() noexcept;
-      const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
-            ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
+    <c>// <n><xref id="locale_based_arithmetic_field_translator.handler_access"/>, handler access:</n></c>
+    const SkippingHandler&amp; get_skipping_handler() const noexcept;
+          SkippingHandler&amp; get_skipping_handler() noexcept;
+    const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
+          ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
 
-      <c>// <n><xref id="locale_based_arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="field_scanner.requirements"/>):</n></c>
-      template &lt;class Ch> void field_value(Ch* begin, Ch* end);
-      void field_skipped();
-    };
-  }
+    <c>// <n><xref id="locale_based_arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="field_scanner.requirements"/>):</n></c>
+    template &lt;class Ch> void field_value(Ch* begin, Ch* end);
+    void field_skipped();
+  };
 }
       </codeblock>
 
@@ -3689,39 +3633,37 @@ void field_skipped();
       <name>Class template <c>string_field_translator</c></name>
 
       <codeblock>
-namespace furfurylic {
-  namespace commata {
-    template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
-              class Allocator = std::allocator&lt;Ch>,
-              class SkippingHandler = fail_if_skipped&lt;std::basic_string&lt;Ch, Tr, Allocator>>>
-      class string_field_translator {
-    public:
-      using allocator_type = Allocator;
+namespace commata {
+  template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
+            class Allocator = std::allocator&lt;Ch>,
+            class SkippingHandler = fail_if_skipped&lt;std::basic_string&lt;Ch, Tr, Allocator>>>
+    class string_field_translator {
+  public:
+    using allocator_type = Allocator;
 
-      <c>// <n><xref id="string_field_translator.cons"/>, construct/copy/destroy:</n></c>
-      explicit string_field_translator(Sink sink,
-                                       SkippingHandler handle_skipping = SkippingHandler());
-      string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink sink,
-                              SkippingHandler handle_skipping = SkippingHandler());
-      string_field_translator(const string_field_translator&amp; other);
-      string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
-     ~string_field_translator();
-      string_field_translator&amp; operator=(const string_field_translator&amp; other);
-      string_field_translator&amp; operator=(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+    <c>// <n><xref id="string_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    explicit string_field_translator(Sink sink,
+                                     SkippingHandler handle_skipping = SkippingHandler());
+    string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink sink,
+                            SkippingHandler handle_skipping = SkippingHandler());
+    string_field_translator(const string_field_translator&amp; other);
+    string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+   ~string_field_translator();
+    string_field_translator&amp; operator=(const string_field_translator&amp; other);
+    string_field_translator&amp; operator=(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
 
-      <c>// <n><xref id="string_field_translator.allocator"/>, allocator access:</n></c>
-      allocator_type get_allocator() const noexcept;
+    <c>// <n><xref id="string_field_translator.allocator"/>, allocator access:</n></c>
+    allocator_type get_allocator() const noexcept;
 
-      <c>// <n><xref id="string_field_translator.handler_access"/>, handler access:</n></c>
-      const SkippingHandler&amp; get_skipping_handler() const noexcept;
-            SkippingHandler&amp; get_skipping_handler() noexcept;
+    <c>// <n><xref id="string_field_translator.handler_access"/>, handler access:</n></c>
+    const SkippingHandler&amp; get_skipping_handler() const noexcept;
+          SkippingHandler&amp; get_skipping_handler() noexcept;
 
-      <c>// <n><xref id="string_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="field_scanner.requirements"/>):</n></c>
-      void field_value(const Ch* begin, const Ch* end);
-      void field_value(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; value);
-      void field_skipped();
-    };
-  }
+    <c>// <n><xref id="string_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="field_scanner.requirements"/>):</n></c>
+    void field_value(const Ch* begin, const Ch* end);
+    void field_value(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; value);
+    void field_skipped();
+  };
 }
       </codeblock>
 

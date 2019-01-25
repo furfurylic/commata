@@ -3,14 +3,13 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_GUARD_9BB11E06_54C5_4E51_BB52_0E8ACAA3146E
-#define FURFURYLIC_GUARD_9BB11E06_54C5_4E51_BB52_0E8ACAA3146E
+#ifndef COMMATA_GUARD_9BB11E06_54C5_4E51_BB52_0E8ACAA3146E
+#define COMMATA_GUARD_9BB11E06_54C5_4E51_BB52_0E8ACAA3146E
 
 #include <cstddef>
 #include <type_traits>
 #include <utility>
 
-namespace furfurylic {
 namespace commata {
 namespace detail {
 
@@ -218,6 +217,6 @@ public:
     }
 };
 
-}}}
+}}
 
 #endif

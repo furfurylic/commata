@@ -17,7 +17,7 @@
 
 #include <gtest/gtest.h>
 
-namespace furfurylic { namespace test {
+namespace commata { namespace test {
 
 class MemoryLeakCheck
 {

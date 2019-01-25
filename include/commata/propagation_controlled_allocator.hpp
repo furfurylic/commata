@@ -3,8 +3,8 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_GUARD_22665F19_C38E_420B_BA0A_34827245F1F5
-#define FURFURYLIC_GUARD_22665F19_C38E_420B_BA0A_34827245F1F5
+#ifndef COMMATA_GUARD_22665F19_C38E_420B_BA0A_34827245F1F5
+#define COMMATA_GUARD_22665F19_C38E_420B_BA0A_34827245F1F5
 
 #include <memory>
 #include <type_traits>
@@ -12,7 +12,6 @@
 
 #include "member_like_base.hpp"
 
-namespace furfurylic {
 namespace commata {
 namespace detail {
 
@@ -131,6 +130,6 @@ public:
     }
 };
 
-}}}
+}}
 
 #endif

@@ -3,8 +3,8 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_GUARD_0CB954D8_962A_4FA7_AE1E_25DF95DFFD36
-#define FURFURYLIC_GUARD_0CB954D8_962A_4FA7_AE1E_25DF95DFFD36
+#ifndef COMMATA_GUARD_0CB954D8_962A_4FA7_AE1E_25DF95DFFD36
+#define COMMATA_GUARD_0CB954D8_962A_4FA7_AE1E_25DF95DFFD36
 
 #include <functional>
 #include <type_traits>
@@ -12,7 +12,6 @@
 #include "handler_decorator.hpp"
 #include "typing_aid.hpp"
 
-namespace furfurylic {
 namespace commata {
 namespace detail {
 
@@ -131,6 +130,6 @@ auto make_empty_physical_line_aware(
     return detail::empty_physical_line_aware_handler<Handler&>(handler.get());
 }
 
-}}
+}
 
 #endif

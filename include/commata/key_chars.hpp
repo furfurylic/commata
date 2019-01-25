@@ -3,10 +3,9 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_GUARD_BF20840C_9605_400A_A368_82EE9D338213
-#define FURFURYLIC_GUARD_BF20840C_9605_400A_A368_82EE9D338213
+#ifndef COMMATA_GUARD_BF20840C_9605_400A_A368_82EE9D338213
+#define COMMATA_GUARD_BF20840C_9605_400A_A368_82EE9D338213
 
-namespace furfurylic {
 namespace commata {
 namespace detail {
 
@@ -31,6 +30,6 @@ struct key_chars<wchar_t>
     static const wchar_t LF     = L'\n';
 };
 
-}}}
+}}
 
 #endif
