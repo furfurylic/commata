@@ -2,17 +2,48 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-01-25 (UTC)</signature>
+<signature>2019-02-01 (UTC)</signature>
 
-<section id="general">
-  <name>General</name>
+<section id="introduction">
+  <name>Introduction</name>
 
-  <section id="intro">
-    <name>Introduction</name>
+  <section id="introduction.general">
+    <name>General</name>
 
-    <p>Commata is a header-only library in C++14 to handle CSV texts. It consists of two loosely-coupled parts following:</p>
+    <p>This document describes the specifications of Commata, which is a header-only library in C++14 to handle formatted texts, such as CSV texts.</p>
+    <p>In this document, many terms and names introduced in ISO C++14 standard are referred without notice.
+       &#x201c;Unspecified behavior,&#x201d; &#x201c;<c>DefaultConstructible</c> requirements,&#x201d; &#x201c;formatted output function,&#x201d; &#x201c;<c>&lt;string></c>&#x201d; (as a header name) and &#x201c;<c>std::string</c>&#x201d; are the examples.</p>
+
+    <p>The normativity of the specifications on this document is the same as the normativity of the description of the ISO C++14 standard for its conforming standard library implementations except that:</p>
     <ul>
-      <li>the <n>parser</n>, which reads a CSV text (<xref id="definitions.csv_text"/>) from a stream or a stream buffer and emits events to a handler, which is called a <n>text handler</n>, and</li>
+      <li>class templates and function templates shall not have any additional template parameters no matter whether they have their default template-arguments, and</li>
+      <li>member templates shall not have any additional template parameters no matter whether they have their default template arguments, except that constructor templates can have ones with their default template arguments.</li>
+      <li>member function templates shall not have any additional parameters no matter whether they have their default arguments.</li>
+    </ul>
+  </section>
+
+  <section id="introduction.using">
+    <name>Using Commata</name>
+
+    <p>A translation unit may include headers described in this document in any order.
+       Each may be included more than once, with no effect different from being included exactly once.</p>
+    <p>A translation unit shall include a header described in this document only outside of any external declaration or definition, and shall include the header lexically before the first reference in that translation unit to any of the entities declared in that header.</p>
+    <p>A translation unit shall not define a macro whose name meets one of the following before a point of an <c>#include</c> preprocessor directive which includes a header described in this document:</p>
+    <ul>
+      <li>it consists only of one uppercase alphabetic letter,</li>
+      <li>it begins with a lowercase alphabetic letter,</li>
+      <li>it consists only of alphabetic letters and decimal digit characters, the number of the latter of which may possibly be zero, contains both of an uppercase alphabetic letter and a lowercase one, and begins with an uppercase one, nor</li>
+      <li>it begins with <c>COMMATA_</c>.</li>
+    </ul>
+    <p>Headers described in this document may define macros whose name begin with <c>COMMATA_</c> and may not define any macros with other names.</p>
+  </section>
+
+  <section id="concepts">
+    <name>Basic concepts</name>
+
+    <p>Commata consists of two loosely-coupled parts following:</p>
+    <ul>
+      <li>the <n>parser</n>, which reads a sequence of char-like objects in a certain format such as a CSV text (<xref id="definitions.csv_text"/>) from a stream or a stream buffer and emits events to a handler, which is called a <n>text handler</n>, and</li>
       <li>default text handlers, objects of which receive events from the parser and do some default operation on them.</li>
     </ul>
     <p>Due to this loosely-coupled nature, you can implement your own new text handler and make the parser emit events to an object of it. The requrements that the parser need text handlers to meet are bundled as the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>).</p>
@@ -21,29 +52,40 @@
   <section id="definitions">
     <name>Definitions</name>
 
-    <section id="definitions.csv_text">
-      <name>The CSV text format</name>
+    <section id="definitions.text_table">
+      <name>Text tables</name>
 
-      <p>The parser of Commata defines the CSV text format as follows:</p>
+      <p>Events that text handlers receive from the parser conform the <n>text table</n> model following:</p>
       <ul>
-        <li>A <n>CSV text</n> is a sequence of <n>records</n> delimited by <n>line breaks</n>.
-            The last record in the CSV text is or is not followed by a line break.
-            A record itself can include line breaks in it.</li>
-        <li>Each record is a sequence of <n>fields</n> delimited by commas. The last field in the record shall not be followed by a comma.</li>
-        <li>Each field shall be either of the following:
+        <li>Each text table has its <n>char type</n> that is a char-like type.</li>
+        <li>A text table is a sequence of <n>text records</n>.</li>
+        <li>A text record is a sequence of <n>text fields</n>.</li>
+        <li>Each text field has its <n>text value</n>, which is a sequence of the char type objects.</li>
+      </ul>
+    </section>
+
+    <section id="definitions.csv_text">
+      <name>CSV texts</name>
+
+      <p>The CSV parser of Commata (<xref id="parse_csv"/>) conforms the <n>CSV text</n> model following:</p>
+      <ul>
+        <li>A CSV text is a representation of a text table (<xref id="definitions.text_table"/>) as a sequence of objects whose type is the char type of the text table.</li>
+        <li>Each CSV text has its <n>char type</n> that is equal to the char type of the text table.</li>
+        <li>Each text field of a text table represented as a CSV text is either of a <n>quoted field</n> or a <n>unquoted field</n>.</li>
+        <li>A quoted field is represented as a sequence of the char type objects that starts with a double quote and ends with a double quote.
+            Its representation cannot contain odd number of contiguous double quotes after the the starting double quote and before the ending double quote.</li>
+        <li>An unquoted field is represented as a sequence of the char type objects that does not contain any double quotes, commas and <n>line breaks</n>.</li>
+        <li>The text value of a quoted field is defined as follows:
             <ul>
-              <li>a <n>quoted field</n>, which starts and ends with a double quote, or</li>
-              <li>an <n>unquoted field</n>, which does not start with a double quote and does not end with a double quote either.</li>
+              <li>first make a copy of the sequence of characters of the range [the next character of the starting double quote, the previous character of the ending double quote],</li>
+              <li>then replace every occurrence of two contiguous double quotes in it into one double quote.</li>
             </ul>
         </li>
-        <li>Each quoted field shall not contain odd number of contiguous double quotes in the range [the next character of the starting double quote, the previous character of the ending double quote].</li>
-        <li>Each unquoted field shall not contain either of double quotes, commas, or line breaks in it.</li>
-        <li>Each field has its <n>value</n> defined as follows:
-            <ul>
-              <li>for a quoted field, first making a copy of the sequence of characters of the range [the next character of the starting double quote, the previous character of the ending double quote] and then replacing every occurrence of two contiguous double quotes in it into one double quote, and</li>
-              <li>for an unquoted field, simply making a copy of the sequence of characters that the field itself consists of.</li>
-            </ul>
-        </li>
+        <li>The text value of an unquoted field is the representation as a sequence of the char type objects itself.</li>
+        <li>In a CSV text, each text record is represented as a comma-delimited sequence of representations of its text fields.
+            The representation of the final text field in a text record is not followed by a comma.</li>
+        <li>In a CSV text, the representations of its text records are delimited by a line break.
+            The representation of the final record is or is not followed by a line break.</li>
         <li>Each line break is either of CR, LF, or CRLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRLF is a two-character sequence the first character of which is CR and the second is LF.</li>
       </ul>
     </section>
@@ -52,10 +94,14 @@
       <name>Other definitions</name>
 
       <ul>
-        <li>A <n>field index</n> of a field in a CSV text is a number i where the field is the i-th field in the record it belongs to. Whether i is zero-based or one-based depends on situation.</li>
-        <li>A <n>line</n> or <n>physical line</n> in a CSV text is a sequence of characters delimited by line breaks. It does not contain any line breaks in it.</li>
-        <li>A <n>column</n> or <n>physical column</n> in a CSV text is a bundle of the same distant characters from the first character of each line.</li>
-        <li>A <n>position</n> or <n>physical position</n> of a character in a CSV text is the pair of m and n where the character belongs to the m-th line and the n-th column. Whether m and n are zero-based or one-based depends on situation.</li>
+        <li>A <n>record index</n> of a text record in a text table is a number i where the record is the i-th record in the text table.
+            It depends on situation whether i is zero-based or one-based.</li>
+        <li>A <n>field index</n> of a text field in a text record is a number j where the field is the j-th field in the text record.
+            It depends on situation whether j is zero-based or one-based.</li>
+        <li>A <n>line</n> or <n>physical line</n> in a sequence of char-like objects is a sequence of characters delimited by line breaks. It does not contain any line breaks in it.</li>
+        <li>A <n>column</n> or <n>physical column</n> in a sequence of char-like objects is a bundle of the same distant characters from the first character of each line.</li>
+        <li>A <n>position</n> or <n>physical position</n> of a character in a sequence of char-like objects is the pair of m and n where the character belongs to the m-th line and the n-th column.
+            It depends on situation whether m and n are zero-based or one-based.</li>
       </ul>
     </section>
   </section>
@@ -207,7 +253,7 @@
   <name>General utilities</name>
 
   <section id="diagnostics">
-    <name>Diagnostics facilities</name>
+    <name>Diagnostic facilities</name>
 
     <section id="diagnostics.general">
       <name>General</name>
@@ -274,8 +320,8 @@ namespace commata {
       </codeblock>
 
       <p>The class <c>text_error</c> defines the base class for the types of the objects thrown by Commata library.</p>
-      <p>An object of <c>text_error</c> can optionally have a physical position information, which consists of the line number and the column number of the point in the input text that has made the exception thrown.
-         <c>npos</c> is a special value for the line number and the column number which indicates "no information."</p>
+      <p>An object of <c>text_error</c> can optionally have a physical position information (<xref id="definitions.others"/>), which consists of the line number and the column number of the point in the input text that has made the exception thrown.
+         <c>npos</c> is a special value for the line number and the column number which indicates &#x201c;no information.&#x201d;</p>
 
       <section id="text_error.cons">
         <name><c>text_error</c> constructors and assignment operators</name>
@@ -285,26 +331,41 @@ namespace commata {
 template &lt;class T> explicit text_error(T&amp;&amp; what_arg);
           </code>
           <effects>Constructs an object of <c>text_error</c>.</effects>
-          <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg))</c>.</postcondition>
+          <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; !get_physical_position()</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg))</c>.</postcondition>
           <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
 text_error(const text_error&amp; other) noexcept;
-text_error(text_error&amp;&amp; other) noexcept;
           </code>
           <effects>Constructs an object of <c>text_error</c> from another object of <c>text_error</c>.</effects>
-          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (opp ? (*opp == *get_physical_position()) : (get_physical_position() == nullptr))</c> is not <c>false</c> where <c>ow</c> is the value of <c>other.what()</c> and <c>opp</c> is the value of <c>other.get_physical_position()</c> before the call.</postcondition>
+          <postcondition><c>(std::strcmp(other.what(), what() == 0) &amp;&amp; (other.get_physical_position() ? (*other.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> is not <c>false</c>.</postcondition>
+        </code-item>
+
+        <code-item>
+          <code>
+text_error(text_error&amp;&amp; other) noexcept;
+          </code>
+          <effects>Constructs an object of <c>text_error</c> from another object of <c>text_error</c> placing <c>other</c> in an unspecified state.</effects>
+          <postcondition><c>(std::strcmp(c.what(), what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be not <c>false</c> where <c>c</c> is an object that would be copy-constructed from <c>other</c> before the call.</postcondition>
         </code-item>
 
         <code-item>
           <code>
 text_error&amp; operator=(const text_error&amp; other) noexcept;
-text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
           </code>
           <effects>Assigns an object of <c>text_error</c> from another object of <c>text_error</c>.</effects>
-          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (opp ? (*opp == *get_physical_position()) : (get_physical_position() == nullptr))</c> is not <c>false</c> where <c>ow</c> is the value of <c>other.what()</c> and <c>opp</c> is the value of <c>other.get_physical_position()</c> before the call.</postcondition>
+          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (other.get_physical_position() ? (*other.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> is not <c>false</c>.</postcondition>
+          <returns><c>*this</c>.</returns>
+        </code-item>
+
+        <code-item>
+          <code>
+text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
+          </code>
+          <effects>Assigns an object of <c>text_error</c> from another object of <c>text_error</c> placing <c>other</c> in an unspecified state.</effects>
+          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position() == nullptr)</c> shall not <c>false</c> where <c>c</c> is an object that would be copy-constructed from <c>other</c> before the call.</postcondition>
           <returns><c>*this</c>.</returns>
         </code-item>
       </section>
@@ -511,7 +572,7 @@ template &lt;class Handler>
 
   <section id="parser.general">
     <name>General</name>
-    <p>This clause describes components several functions to utilize the parser (<xref id="intro"/>) of the CSV text format (<xref id="definitions.csv_text"/>) and some classes and functions to report parse errors and to make some wrappers of the text handlers (<xref id="intro"/>).</p>
+    <p>This clause describes components several functions to utilize the parser (<xref id="concepts"/>) of the CSV text format (<xref id="definitions.csv_text"/>) and some classes and functions to report parse errors and to make some wrappers of the text handlers (<xref id="concepts"/>).</p>
   </section>
 
   <section id="header_parse_csv_hpp">
@@ -526,7 +587,7 @@ template &lt;class Handler>
 #include "parse_error.hpp"
 
 namespace commata {
-  <c>// <n><xref id="parse_csv"/>, functions that utilize the parser:</n></c>
+  <c>// <n><xref id="parse_csv"/>, functions that utilize the CSV parser:</n></c>
   template &lt;class Tr, class Handler>
     bool parse_csv(std::basic_streambuf&lt;typename Handler::char_type, Tr>* in, Handler handler);
   template &lt;class Tr, class Handler>
@@ -546,7 +607,7 @@ namespace commata {
   </section>
 
   <section id="parse_csv">
-    <name>Utilizing the parser</name>
+    <name>Utilizing the CSV parser</name>
 
     <code-item>
       <code>
@@ -583,7 +644,7 @@ template &lt;class Tr, class Handler,
                The parsing events are sent to a copy of <c>handler</c>.
                If any call on <c>handler</c> throws an object of the type <c>text_error</c>, the parser set the position information into it with the <c>set_physical_position</c> member function and rethrow it.
                The parser shall allocate and deallocate character buffers with (possibly a copy of) <c>alloc</c>.
-               The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means "no hint."
+               The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x201c;no hint.&#x201d;
                The parser shall be destroyed when this function exits.</effects>
       <returns><c>true</c> if the parser finished the parsing process without abortion, <c>false</c> otherwise.</returns>
       <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by <c>handler</c>, <c>alloc</c> and their copies.</throws>
@@ -999,9 +1060,8 @@ template &lt;class Ch, class Tr, class... Appendices>
     <section id="table.general">
       <name>General</name>
 
-      <p>Commata offers a <n>text table</n> class template named <c>basic_stored_table</c> (<xref id="basic_stored_table"/>).
-         An object of its instance contains the text values of all text fields (<xref id="definitions.csv_text"/>) found by the parser, and offers a two-dimensional table-like view of them.
-         The text values are represented by class template <c>basic_stored_value</c> (<xref id="basic_stored_value"/>), an object of an instance of which is actually a contiguous and null-terminated range of char-like objects.</p>
+      <p>Commata offers class template <c>basic_stored_table</c> (<xref id="basic_stored_table"/>), which is an implementation of a in-memory text table (<xref id="definitions.text_table"/>).
+         The text values of text fields contained by an object of an instance of it are represented by class template <c>basic_stored_value</c> (<xref id="basic_stored_value"/>), an object of an instance of which is actually a contiguous and null-terminated range of char type objects of the text table.</p>
       <p>A text table is built by an object of an instance of <c>stored_table_builder</c> (<xref id="stored_table_builder"/>), whose instances meet <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>).</p>
     </section>
 
@@ -1808,7 +1868,7 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The class template <c>basic_stored_table</c> is a facility to make an image in memory of text values arranged two-dimensionally.</p>
+        <p>The class template <c>basic_stored_table</c> is a facility to make an in-memory image of text values arranged two-dimensionally.</p>
 
         <p>The template parameter <c>Content</c> shall be a sequence container type of a sequence container type of <c>basic_stored_value&lt;Ch, Tr></c> (<xref id="basic_stored_value"/>) for some <c>Ch</c> and <c>Tr</c>.
            Note that <c>std::array</c> and <c>std::forward_list</c> do not qualify because they lack some essential functionalities of sequence containers.</p>
@@ -2417,7 +2477,7 @@ template &lt;class Content, class Allocator>
 
         <p>Commata offers a <n>table scanner</n> class template, whose name is <c>table_scanner</c> (<xref id="table_scanner"/>), whose instances meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) as a simple facility for one-pass scanning of texts.</p>
         <p>A table scanner object can hold a <n>body field scanner</n> object for each field to which it forwards the field values, and it can hold a <n>record-end scanner</n> object to which it noitifies the end-of-record events.</p>
-        <p>In addition, a table scanner object can be configured to recognize some first records as "header" records. It can simply ignore the header records or can forward the field values in the header to a <n>header field scanner</n> object it holds optionally.</p>
+        <p>In addition, a table scanner object can be configured to recognize some first records as &#x201c;header&#x201d; records. It can simply ignore the header records or can forward the field values in the header to a <n>header field scanner</n> object it holds optionally.</p>
         <p>Properties that the type of the body field scanners shall meet, type of the record-end scanners shall meet, and the type of the header field scanners shall meet are bundled as
            the <c>BodyFieldScanner</c>, the <c>RecordEndScanner</c> and the <c>HeaderFieldScanner</c> requirements respectively.</p>
       </section>
@@ -2453,7 +2513,7 @@ template &lt;class Content, class Allocator>
             <td>(1)</td>
             <td><c>s.field_value(b, e)</c></td>
             <td>(Not used)</td>
-            <td>Called when the table scanner has finalized a value of the field of a body record.
+            <td>Called when the table scanner has finalized a text value of the field of a body record.
                 The value of the field is [<c>b</c>, <c>e</c>), and <c>e</c> is dereferenceable and points the terminating zero. It is unspecified which of (1) and (2) the table scanner calls.</td>
             <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (2) with it.</td>
           </tr>
@@ -2462,7 +2522,7 @@ template &lt;class Content, class Allocator>
             <td>(2)</td>
             <td><c>s.field_value(rv)</c></td>
             <td>(Not used)</td>
-            <td>Called when the table scanner has finalized a value of the field of a body record. The value of the field is <c>rv</c>.</td>
+            <td>Called when the table scanner has finalized a text value of the field of a body record. The value of the field is <c>rv</c>.</td>
             <td>Calls (1) with <c>&amp;*rv.begin()</c> and <c>&amp;*rv.begin() + rv.size()</c>.</td>
           </tr>
 
@@ -2800,7 +2860,7 @@ table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
           </code>
           <effects>Constructs an object of <c>table_scanner</c>.
                    The scanner shall ignore the first <c>header_record_count</c> records as header records.
-                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means "no hint."
+                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x201c;no hint.&#x201d;
                    The scanner shall allocate and deallocate memory with a default-constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
           <postcondition><c>*this</c> has neither a header field scanner nor any body field scanners installed.</postcondition>
         </code-item>
@@ -2815,7 +2875,7 @@ template &lt;class HeaderFieldScanner>
           </code>
           <requires><c>HeaderFieldScanner</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>Ch</c>.</requires>
           <effects>Constructs an object of <c>table_scanner</c> with an header field scanner object installed.
-                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means "no hint."
+                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x201c;no hint.&#x201d;
                    The scanner shall allocate and deallocate memory with a default-constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
           <postcondition><c>*this</c> has a header field scanner constructed as a copy of <c>s</c> installed and no body field scanners installed.</postcondition>
           <remark>These constructors shall not participate in overload resolution unless <c>std::is_integral&lt;HeaderFieldScanner>::value</c> is <c>false</c>.</remark>
