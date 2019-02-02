@@ -1303,3 +1303,106 @@ TEST_P(TestStoredTableBuilder, Transpose)
 
 INSTANTIATE_TEST_CASE_P(,
     TestStoredTableBuilder, testing::Values(2, 11, 1024));
+
+struct TestStoredTableConst : BaseTest
+{};
+
+TEST_F(TestStoredTableConst, Value)
+{
+    const auto str = char_helper<char>::str;
+    const auto str0 = char_helper<char>::str0;
+
+    auto s = str0("abcde");
+    stored_value v(&s[0], &s[0] + s.size() - 1);
+
+    auto sa = str("abcd");
+    auto sb = str("abcde");
+    auto sc = str("abcdE");
+    auto sd = str("abcdef");
+
+    // test copy ctor and relationship
+    cstored_value cv(v);
+    // ==
+    ASSERT_TRUE(cv == v);
+    ASSERT_TRUE(v == cv);
+    ASSERT_TRUE(cv == "abcde");
+    ASSERT_TRUE(cv == sb);
+    ASSERT_TRUE("abcde" == cv);
+    ASSERT_TRUE(sb == cv);
+    // !=
+    ASSERT_TRUE(cv != "abcdE");
+    ASSERT_TRUE(cv != sc);
+    ASSERT_TRUE("abcdE" != cv);
+    ASSERT_TRUE(sc != cv);
+    // <
+    ASSERT_TRUE(cv < "abcdef");
+    ASSERT_TRUE(cv < sd);
+    ASSERT_TRUE("abcd" < cv);
+    ASSERT_TRUE(sa < cv);
+    // >
+    ASSERT_TRUE(cv > "abcd");
+    ASSERT_TRUE(cv > sa);
+    ASSERT_TRUE("abcdef" > cv);
+    ASSERT_TRUE(sd > cv);
+    // <=
+    ASSERT_TRUE(cv <= "abcdef");
+    ASSERT_TRUE(cv <= sd);
+    ASSERT_TRUE("abcd" <= cv);
+    ASSERT_TRUE(sa <= cv);
+    ASSERT_TRUE(cv <= "abcde");
+    ASSERT_TRUE(cv <= sb);
+    ASSERT_TRUE("abcde" <= cv);
+    ASSERT_TRUE(sb <= cv);
+    // >=
+    ASSERT_TRUE(cv >= "abcd");
+    ASSERT_TRUE(cv >= sa);
+    ASSERT_TRUE("abcdef" >= cv);
+    ASSERT_TRUE(sd >= cv);
+    ASSERT_TRUE(cv >= "abcde");
+    ASSERT_TRUE(cv >= sb);
+    ASSERT_TRUE("abcde" >= cv);
+    ASSERT_TRUE(sb >= cv);
+
+    // test copy assignment
+    auto t = str0("xyzuv");
+    basic_stored_value<char> v2(&t[0], &t[0] + t.size() - 1);
+    cv = v2;
+    ASSERT_EQ(cv, "xyzuv");
+
+    // test with streams
+    std::stringstream stream;
+    stream << cv;
+    ASSERT_EQ("xyzuv", stream.str());
+}
+
+TEST_F(TestStoredTableConst, Table)
+{
+    cwstored_table table;
+    static_assert(
+        std::is_same<decltype(table)::char_type, wchar_t>::value, "");
+    auto value = table.import_value(L"alpha-beta-gamma");
+    const auto b = value.begin();
+    table.rewrite_value(value, L"alpha-beta-delta");
+    // in-place rewriting cannot take place
+    ASSERT_NE(value.begin(), b);
+}
+
+TEST_F(TestStoredTableConst, Build)
+{
+    const char* s = "A1,B1\n"
+                    "A2,B2\n"
+                    "A3,B3\n";
+    std::stringbuf in(s);
+    cstored_table table;
+    try {
+        parse_csv(&in, make_stored_table_builder(table));
+    } catch (const text_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(3U, table.size());
+    ASSERT_EQ(2U, table[0].size());
+    ASSERT_EQ("A1", table[0][0]);
+    ASSERT_EQ(2U, table[2].size());
+    ASSERT_EQ("B3", table[2][1]);
+}

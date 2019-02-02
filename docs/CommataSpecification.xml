@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-02-01 (UTC)</signature>
+<signature>2019-02-02 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -109,13 +109,13 @@
   <section id="text_handler.requirements">
     <name><c>TextHandler</c> requirements</name>
 
-    <p>A type <c>T</c> meets the <c>TextHandler</c> requirements for a char-like type <c>Ch</c> if:</p>
+    <p>A type <c>T</c> meets the <c>TextHandler</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
     <ul>
       <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
       <li>the expressions shown in <xref id="table.text_handler.requirements"/> are valid and have the indidated semantics.</li>
     </ul>
 
-    <p>In <xref id="table.text_handler.requirements"/>, <c>T</c> and <c>Ch</c> are cv-unqualified. <c>t</c> is an lvalue of <c>T</c>.</p>
+    <p>In <xref id="table.text_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>.</p>
 
     <p>A requirement is optional if the last column of <xref id="table.text_handler.requirements"/> specifies a default.</p>
     <p>If (2) in <xref id="table.text_handler.requirements"/> is satisfied without falling back on the default, then also (3) shall be so. Likewise, if (3) is satisfied without falling back on the default, then also (2) shall be so.
@@ -1081,119 +1081,122 @@ template &lt;class Ch, class Tr, class... Appendices>
 
 namespace commata {
   <c>// <n><xref id="basic_stored_value"/>, basic_stored_value:</n></c>
-  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class basic_stored_value;
+  template &lt;class Ch, class Tr = std::char_traits&lt;std::remove_const_t&lt;Ch>>>
+    class basic_stored_value;
 
   <c>// <n><xref id="basic_stored_value.nonmember"/>, basic_stored_value non-member functions:</n></c>
-  template &lt;class Ch, class Tr>
-    bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator==(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const Ch*                                   right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator==(const Ch*                                   left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator==(const basic_stored_value&lt;ChL, Tr>&amp;           left,
+                    const basic_stored_value&lt;ChR, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator==(const basic_stored_value&lt;ChC, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp;  right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator==(const std::basic_string&lt;Ch, Tr, Allocator>&amp;  left,
+                    const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator==(const basic_stored_value&lt;ChC, Tr>&amp;           left,
+                    const Ch*                                    right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator==(const Ch*                                    left,
+                    const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
 
-  template &lt;class Ch, class Tr>
-    bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator!=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator!=(const basic_stored_value&lt;ChL, Tr>&amp;           left,
+                    const basic_stored_value&lt;ChR, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator!=(const basic_stored_value&lt;ChC, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp;  right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator!=(const std::basic_string&lt;Ch, Tr, Allocator>&amp;  left,
+                    const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator!=(const basic_stored_value&lt;ChC, Tr>&amp;           left,
                     const Ch*                                   right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator!=(const Ch*                                   left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator!=(const Ch*                                    left,
+                    const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
 
-  template &lt;class Ch, class Tr>
-    bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator&lt; (const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const Ch*                                   right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator&lt; (const Ch*                                   left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator&lt; (const basic_stored_value&lt;ChL, Tr>&amp;           left,
+                    const basic_stored_value&lt;ChR, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator&lt; (const basic_stored_value&lt;ChC, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp;  right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator&lt; (const std::basic_string&lt;Ch, Tr, Allocator>&amp;  left,
+                    const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator&lt; (const basic_stored_value&lt;ChC, Tr>&amp;           left,
+                    const Ch*                                    right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator&lt; (const Ch*                                    left,
+                    const basic_stored_value&lt;Ch, Tr>&amp;            right) noexcept;
 
-  template &lt;class Ch, class Tr>
-    bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator> (const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const Ch*                                   right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator> (const Ch*                                   left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator> (const basic_stored_value&lt;ChL, Tr>&amp;           left,
+                    const basic_stored_value&lt;ChR, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator> (const basic_stored_value&lt;ChC, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp;  right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator> (const std::basic_string&lt;Ch, Tr, Allocator>&amp;  left,
+                    const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator> (const basic_stored_value&lt;ChC, Tr>&amp;           left,
+                    const Ch*                                    right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator> (const Ch*                                    left,
+                    const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
 
-  template &lt;class Ch, class Tr>
-    bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator&lt;=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const Ch*                                   right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator&lt;=(const Ch*                                   left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator&lt;=(const basic_stored_value&lt;ChL, Tr>&amp;           left,
+                    const basic_stored_value&lt;ChR, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator&lt;=(const basic_stored_value&lt;ChC, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp;  right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator&lt;=(const std::basic_string&lt;Ch, Tr, Allocator>&amp;  left,
+                    const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator&lt;=(const basic_stored_value&lt;ChC, Tr>&amp;           left,
+                    const Ch*                                    right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator&lt;=(const Ch*                                    left,
+                    const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
 
-  template &lt;class Ch, class Tr>
-    bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    bool operator>=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                    const Ch*                                   right) noexcept;
-  template &lt;class Ch, class Tr>
-    bool operator>=(const Ch*                                   left,
-                    const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator>=(const basic_stored_value&lt;ChL, Tr>&amp;           left,
+                    const basic_stored_value&lt;ChR, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator>=(const basic_stored_value&lt;ChC, Tr>&amp;           left,
+                    const std::basic_string&lt;Ch, Tr, Allocator>&amp;  right) noexcept;
+  template &lt;class Ch, class ChC, class Tr, class Allocator>
+    bool operator>=(const std::basic_string&lt;Ch, Tr, Allocator>&amp;  left,
+                    const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator>=(const basic_stored_value&lt;ChC, Tr>&amp;           left,
+                    const Ch*                                    right) noexcept;
+  template &lt;class Ch, class ChC, class Tr>
+    bool operator>=(const Ch*                                    left,
+                    const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
 
-  template &lt;class Ch, class Tr>
+  template &lt;class Ch, class ChC, class Tr>
     std::basic_ostream&lt;Ch, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;Ch, Tr>&amp; os,
-                                           const basic_stored_value&lt;Ch, Tr>&amp; o);
+                                           const basic_stored_value&lt;ChC, Tr>&amp; o);
 
-  template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;Ch>>
-    std::basic_string&lt;Ch, Tr, Allocator> to_string(basic_stored_value&lt;Ch, Tr>&amp; o,
-                                                   const Allocator&amp; alloc);
+  template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove_const&lt;Ch>>>
+    std::basic_string&lt;std::remove_const&lt;Ch>, Tr, Allocator> to_string(
+      basic_stored_value&lt;Ch, Tr>&amp; o, const Allocator&amp; alloc);
 
   <c>// <n><xref id="basic_stored_value.swap"/>, basic_stored_value specialized algorithms:</n></c>
   template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; left,
                                           basic_stored_value&lt;Ch, Tr>&amp; right) noexcept;
 
-  using stored_value  = basic_stored_value&lt;char>;
-  using wstored_value = basic_stored_value&lt;wchar_t>;
+  using stored_value   = basic_stored_value&lt;char>;
+  using wstored_value  = basic_stored_value&lt;wchar_t>;
+  using cstored_value  = basic_stored_value&lt;const char>;
+  using cwstored_value = basic_stored_value&lt;const wchar_t>;
 
   <c>// <n><xref id="basic_stored_table"/>, basic_stored_table:</n></c>
   template &lt;class Content, class Allocator = std::allocator&lt;Content>> class basic_stored_table;
@@ -1221,8 +1224,10 @@ namespace commata {
     void swap(basic_stored_table&lt;Content, Allocator>&amp; left,
               basic_stored_table&lt;Content, Allocator>&amp; right) noexcept;
 
-  using stored_table  = basic_stored_table&lt;std::deque&lt;std::vector&lt;stored_value>>>;
-  using wstored_table = basic_stored_table&lt;std::deque&lt;std::vector&lt;wstored_value>>>;
+  using stored_table   = basic_stored_table&lt;std::deque&lt;std::vector&lt;stored_value>>>;
+  using wstored_table  = basic_stored_table&lt;std::deque&lt;std::vector&lt;wstored_value>>>;
+  using cstored_table  = basic_stored_table&lt;std::deque&lt;std::vector&lt;cstored_value>>>;
+  using cwstored_table = basic_stored_table&lt;std::deque&lt;std::vector&lt;cwstored_value>>>;
 
   enum stored_table_builder_option : <nc>unspecified</nc> {
     stored_table_builder_option_transpose = 1
@@ -1252,7 +1257,8 @@ namespace std {
 
       <codeblock>
 namespace commata {
-  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class basic_stored_value {
+  template &lt;class Ch, class Tr = std::char_traits&lt;std::remove_const_t&lt;Ch>>>
+    class basic_stored_value {
   public:
     using value_type      = Ch;
     using reference       = Ch&amp;;
@@ -1275,6 +1281,11 @@ namespace commata {
     basic_stored_value(Ch* begin, Ch* end);
     basic_stored_value(const basic_stored_value&amp; other) noexcept = default;
     basic_stored_value&amp; operator=(const basic_stored_value&amp; other) noexcept = default;
+
+    template &lt;class OtherCh>
+      basic_stored_value(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
+    template &lt;class OtherCh>
+      basic_stored_value&amp; operator=(const basic_stored_value&amp; other) noexcept;
 
     <c>// <n><xref id="basic_stored_value.iterators"/>, iterators:</n></c>
     iterator       begin()        noexcept;
@@ -1316,7 +1327,8 @@ namespace commata {
     pointer       data()        noexcept;
     const_pointer data()  const noexcept;
 
-    template &lt;class Allocator> explicit operator std::basic_string&lt;Ch, Tr, Allocator>() const;
+    template &lt;class Allocator> explicit operator
+      std::basic_string&lt;std::remove_const_t&lt;Ch>, Tr, Allocator>() const;
 
     <c>// <n><xref id="basic_stored_value.modifiers"/>, modifiers:</n></c>
     iterator erase(const_iterator first, const_iterator last);
@@ -1357,6 +1369,24 @@ basic_stored_value(Ch* begin, Ch* end);
           <requires>[<c>begin</c>, <c>end</c>] shall be a valid range. <c>*end</c> shall be equal to <c>0</c>.</requires>
           <throws>Nothing.</throws>
           <effects>Initializes <c>b</c> with <c>begin</c> and <c>e</c> with <c>end</c>.</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class OtherCh>
+  basic_stored_value(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
+          </code>
+          <effects>Initializes <c>b</c> with <c>other.begin()</c> and <c>e</c> with <c>other.end()</c>.</effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is const-qualified and <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class OtherCh>
+  basic_stored_value&amp; operator=(const basic_stored_value&amp; other) noexcept;
+          </code>
+          <effects>Assigns <c>b</c> from <c>other.begin()</c> and <c>e</c> from <c>other.end()</c>.</effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is const-qualified and <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
         </code-item>
       </section>
 
@@ -1489,9 +1519,10 @@ const_pointer data()  const noexcept;
 
         <code-item>
           <code>
-template &lt;class Allocator> explicit operator std::basic_string&lt;Ch, Tr, Allocator>() const;
+template &lt;class Allocator> explicit operator
+  std::basic_string&lt;std::remove_const_t&lt;Ch>, Tr, Allocator>() const;
           </code>
-          <returns><c>std::basic_string&lt;Ch, Tr, Allocator>(cbegin(), cend())</c>.</returns>
+          <returns><c>std::basic_string&lt;std::remove_const_t&lt;Ch>, Tr, Allocator>(cbegin(), cend())</c>.</returns>
         </code-item>
       </section>
 
@@ -1562,35 +1593,38 @@ void swap(basic_stored_value&amp; other) noexcept;
           <name><c>operator==</c></name>
           <code-item>
             <code>
-template &lt;class Ch, class Tr>
-  bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
-  bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+template &lt;class ChL, class ChR, class Tr>
+  bool operator==(const basic_stored_value&lt;ChL, Tr>&amp;          left,
+                  const basic_stored_value&lt;ChR, Tr>&amp;          right) noexcept;
+template &lt;class Ch, class ChC, class Tr, class Allocator>
+  bool operator==(const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
+template &lt;class Ch, class ChC, class Tr, class Allocator>
   bool operator==(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>left.size() == right.size() &amp;&amp; Tr::compare(left.data(), right.data(), left.size()) == 0</c>.</returns>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
           </code-item>
 
           <code-item>
             <code>
-template &lt;class Ch, class Tr>
-  bool operator==(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+template &lt;class Ch, class ChC, class Tr>
+  bool operator==(const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const Ch*                                   right) noexcept;
             </code>
-            <returns><c>left == basic_stored_value&lt;Ch, Tr>(right, right + Tr::length(right))</c>.</returns>
+            <returns><c>left == basic_stored_value&lt;ChC, Tr>(right, right + Tr::length(right))</c>.</returns>
+            <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type.</remark>
           </code-item>
 
           <code-item>
             <code>
-template &lt;class Ch, class Tr>
+template &lt;class Ch, class ChC, class Tr>
   bool operator==(const Ch*                                   left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>right == left</c>.</returns>
+            <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type.</remark>
           </code-item>
         </section>
 
@@ -1598,23 +1632,24 @@ template &lt;class Ch, class Tr>
           <name><c>operator!=</c></name>
           <code-item>
             <code>
-template &lt;class Ch, class Tr>
-  bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
-  bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+template &lt;class ChL, class ChR, class Tr>
+  bool operator!=(const basic_stored_value&lt;ChL, Tr>&amp;          left,
+                  const basic_stored_value&lt;ChR, Tr>&amp;          right) noexcept;
+template &lt;class Ch, class ChC, class Tr, class Allocator>
+  bool operator!=(const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
+template &lt;class Ch, class ChC, class Tr, class Allocator>
   bool operator!=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-template &lt;class Ch, class Tr>
-  bool operator!=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
+template &lt;class Ch, class ChC, class Tr>
+  bool operator!=(const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const Ch*                                   right) noexcept;
-template &lt;class Ch, class Tr>
+template &lt;class Ch, class ChC, class Tr>
   bool operator!=(const Ch*                                   left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>!(left == right)</c>.</returns>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
           </code-item>
         </section>
 
@@ -1622,35 +1657,38 @@ template &lt;class Ch, class Tr>
           <name><c>operator&lt;</c></name>
           <code-item>
             <code>
-template &lt;class Ch, class Tr>
-  bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
-  bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
+template &lt;class ChL, class ChR, class Tr>
+  bool operator&lt; (const basic_stored_value&lt;ChL, Tr>&amp;          left,
+                  const basic_stored_value&lt;ChR, Tr>&amp;          right) noexcept;
+template &lt;class Ch, class ChC, class Tr, class Allocator>
+  bool operator&lt; (const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
+template &lt;class Ch, class ChC, class Tr, class Allocator>
   bool operator&lt; (const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>c &lt; 0 || (c == 0 &amp;&amp; left.size() &lt; right.size())</c> where <c>c</c> is the return value of <c>Tr::compare(left.data(), right.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>left.size()</c> and <c>right.size()</c>.</returns>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
           </code-item>
 
           <code-item>
             <code>
-template &lt;class Ch, class Tr>
-  bool operator&lt; (const basic_stored_value&lt;Ch, Tr>&amp;           left,
+template &lt;class Ch, class ChC, class Tr>
+  bool operator&lt; (const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const Ch*                                   right) noexcept;
             </code>
             <returns><c>left &lt; basic_stored_value&lt;Ch, Tr>(right, right + Tr::length(right))</c>.</returns>
+            <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type.</remark>
           </code-item>
 
           <code-item>
             <code>
-template &lt;class Ch, class Tr>
+template &lt;class Ch, class ChC, class Tr>
   bool operator&lt; (const Ch*                                   left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>basic_stored_value&lt;Ch, Tr>(left, left + Tr::length(left)) &lt; right</c>.</returns>
+            <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type.</remark>
           </code-item>
         </section>
 
@@ -1658,23 +1696,24 @@ template &lt;class Ch, class Tr>
           <name><c>operator></c></name>
           <code-item>
             <code>
-template &lt;class Ch, class Tr>
-  bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
-  bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
+template &lt;class ChL, class ChR, class Tr>
+  bool operator> (const basic_stored_value&lt;ChL, Tr>&amp;          left,
+                  const basic_stored_value&lt;ChR, Tr>&amp;          right) noexcept;
+template &lt;class Ch, class ChC, class Tr, class Allocator>
+  bool operator> (const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
+template &lt;class Ch, class ChC, class Tr, class Allocator>
   bool operator> (const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-template &lt;class Ch, class Tr>
-  bool operator> (const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
+template &lt;class Ch, class ChC, class Tr>
+  bool operator> (const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const Ch*                                   right) noexcept;
-template &lt;class Ch, class Tr>
+template &lt;class Ch, class ChC, class Tr>
   bool operator> (const Ch*                                   left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>right &lt; left</c>.</returns>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
           </code-item>
         </section>
 
@@ -1682,23 +1721,24 @@ template &lt;class Ch, class Tr>
           <name><c>operator&lt;=</c></name>
           <code-item>
             <code>
-template &lt;class Ch, class Tr>
-  bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
-  bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+template &lt;class ChL, class ChR, class Tr>
+  bool operator&lt;=(const basic_stored_value&lt;ChL, Tr>&amp;          left,
+                  const basic_stored_value&lt;ChR, Tr>&amp;          right) noexcept;
+template &lt;class Ch, class ChC, class Tr, class Allocator>
+  bool operator&lt;=(const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
+template &lt;class Ch, class ChC, class Tr, class Allocator>
   bool operator&lt;=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-template &lt;class Ch, class Tr>
-  bool operator&lt;=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
+template &lt;class Ch, class ChC, class Tr>
+  bool operator&lt;=(const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const Ch*                                   right) noexcept;
-template &lt;class Ch, class Tr>
+template &lt;class Ch, class ChC, class Tr>
   bool operator&lt;=(const Ch*                                   left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>!(right &lt; left)</c>.</returns>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
           </code-item>
         </section>
 
@@ -1706,23 +1746,24 @@ template &lt;class Ch, class Tr>
           <name><c>operator>=</c></name>
           <code-item>
             <code>
-template &lt;class Ch, class Tr>
-  bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
-  bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+template &lt;class ChL, class ChR, class Tr>
+  bool operator>=(const basic_stored_value&lt;ChL, Tr>&amp;          left,
+                  const basic_stored_value&lt;ChR, Tr>&amp;          right) noexcept;
+template &lt;class Ch, class ChC, class Tr, class Allocator>
+  bool operator>=(const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const std::basic_string&lt;Ch, Tr, Allocator>&amp; right) noexcept;
-template &lt;class Ch, class Tr, class Allocator>
+template &lt;class Ch, class ChC, class Tr, class Allocator>
   bool operator>=(const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
-template &lt;class Ch, class Tr>
-  bool operator>=(const basic_stored_value&lt;Ch, Tr>&amp;           left,
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
+template &lt;class Ch, class ChC, class Tr>
+  bool operator>=(const basic_stored_value&lt;ChC, Tr>&amp;          left,
                   const Ch*                                   right) noexcept;
-template &lt;class Ch, class Tr>
+template &lt;class Ch, class ChC, class Tr>
   bool operator>=(const Ch*                                   left,
-                  const basic_stored_value&lt;Ch, Tr>&amp;           right) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>!(left &lt; right)</c>.</returns>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
           </code-item>
         </section>
 
@@ -1730,14 +1771,15 @@ template &lt;class Ch, class Tr>
           <name><c>operator&lt;&lt;</c></name>
           <code-item>
             <code>
-template &lt;class Ch, class Tr>
+template &lt;class Ch, class ChC, class Tr>
   std::basic_ostream&lt;Ch, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;Ch, Tr>&amp; os,
-                                         const basic_stored_value&lt;Ch, Tr>&amp; o);
+                                         const basic_stored_value&lt;ChC, Tr>&amp; o);
             </code>
             <effects>Behaves as a formatted output function of <c>os</c>.
                      Forms a character sequence <c>seq</c>, initially consisting of the elements defined by the range [<c>o.cbegin()</c>, <c>o.cend()</c>).
                      Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c>, where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>; then calls <c>os.width(0)</c>.</effects>
             <returns><c>os</c>.</returns>
+            <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type.</remark>
           </code-item>
         </section>
 
@@ -1746,10 +1788,10 @@ template &lt;class Ch, class Tr>
           <code-item>
             <code>
 template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;Ch>>
-  std::basic_string&lt;Ch, Tr, Allocator> to_string(basic_stored_value&lt;Ch, Tr>&amp; o,
-                                                 const Allocator&amp; alloc = Allocator());
+  std::basic_string&lt;std::remove_const&lt;Ch>, Tr, Allocator> to_string(
+    basic_stored_value&lt;Ch, Tr>&amp; o, const Allocator&amp; alloc = Allocator());
             </code>
-            <returns><c>std::basic_string&lt;Ch, Tr, Allocator>(o.cbegin(), o.cend(), alloc)</c>.</returns>
+            <returns><c>std::basic_string&lt;std::remote_const&lt;Ch>, Tr, Allocator>(o.cbegin(), o.cend(), alloc)</c>.</returns>
           </code-item>
         </section>
       </section>
@@ -1793,7 +1835,7 @@ namespace commata {
     using content_type    = Content;
     using record_type     = typename content_type::value_type;
     using value_type      = typename record_type::value_type;
-    using char_type       = typename value_type::value_type;
+    using char_type       = std::remove_const_t&lt;typename value_type::value_type>;
     using traits_type     = typename value_type::traits_type;
     using size_type       = typename content_type::size_type;
 
@@ -1825,7 +1867,7 @@ namespace commata {
     basic_stored_table&amp; operator=(const basic_stored_table&amp;  other);
     basic_stored_table&amp; operator=(      basic_stored_table&amp;&amp; other);
 
-     <c>// <n><xref id="basic_stored_table.constituents"/>, access to the constituents:</n></c>
+    <c>// <n><xref id="basic_stored_table.constituents"/>, access to the constituents:</n></c>
     allocator_type get_allocator() const noexcept;
     std::size_t get_buffer_size() const noexcept;
     bool is_singular() const noexcept;

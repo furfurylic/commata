@@ -31,7 +31,7 @@
 
 namespace commata {
 
-template <class Ch, class Tr = std::char_traits<Ch>>
+template <class Ch, class Tr = std::char_traits<std::remove_const_t<Ch>>>
 class basic_stored_value
 {
     Ch* begin_;
@@ -40,7 +40,11 @@ class basic_stored_value
     static Ch empty_value[];
 
 public:
-    static_assert(std::is_same<Ch, typename Tr::char_type>::value, "");
+    static_assert(
+        std::is_same<
+            std::remove_const_t<Ch>,
+            typename Tr::char_type>::value,
+        "");
 
     using value_type      = Ch;
     using reference       = Ch&;
@@ -71,6 +75,24 @@ public:
     basic_stored_value(const basic_stored_value& other) noexcept = default;
     basic_stored_value& operator=(const basic_stored_value& other) noexcept
         = default;
+
+    template <
+        class OtherCh,
+        std::enable_if_t<std::is_const<Ch>::value
+                      && std::is_same<Ch, const OtherCh>::value>* = nullptr>
+    basic_stored_value(const basic_stored_value<OtherCh, Tr>& other)
+        noexcept : basic_stored_value(other.begin(), other.end())
+    {}
+
+    template <
+        class OtherCh,
+        std::enable_if_t<std::is_const<Ch>::value
+                      && std::is_same<Ch, const OtherCh>::value>* = nullptr>
+    basic_stored_value& operator=(
+        const basic_stored_value<OtherCh, Tr>& other) noexcept
+    {
+        return *this = basic_stored_value(other);
+    }
 
     iterator begin() noexcept
     {
@@ -185,9 +207,11 @@ public:
     }
 
     template <class Allocator>
-    explicit operator std::basic_string<Ch, Tr, Allocator>() const
+    explicit operator
+        std::basic_string<std::remove_const_t<Ch>, Tr, Allocator>() const
     {
-        return std::basic_string<Ch, Tr, Allocator>(cbegin(), cend());
+        return std::basic_string<std::remove_const_t<Ch>, Tr, Allocator>(
+            cbegin(), cend());
     }
 
     size_type size() const noexcept
@@ -315,13 +339,14 @@ constexpr typename basic_stored_value<Ch, Tr>::size_type
 template <class Ch, class Tr>
 Ch basic_stored_value<Ch, Tr>::empty_value[] = { Ch() };
 
-template <class Ch, class Tr = std::char_traits<Ch>,
-    class Allocator = std::allocator<Ch>>
-std::basic_string<Ch, Tr, Allocator>
+template <class Ch, class Tr,
+    class Allocator = std::allocator<std::remove_const_t<Ch>>>
+std::basic_string<std::remove_const_t<Ch>, Tr, Allocator>
     to_string(const basic_stored_value<Ch, Tr>& v,
         const Allocator& alloc = Allocator())
 {
-    return std::basic_string<Ch, Tr, Allocator>(v.cbegin(), v.cend(), alloc);
+    return std::basic_string<std::remove_const_t<Ch>, Tr, Allocator>(
+        v.cbegin(), v.cend(), alloc);
 }
 
 template <class Ch, class Tr>
@@ -359,18 +384,23 @@ bool stored_value_lt(const Left& left, const Right& right) noexcept
 
 } // end namespace detail
 
-template <class Ch, class Tr>
-bool operator==(
-    const basic_stored_value<Ch, Tr>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+template <class ChL, class ChR, class Tr>
+auto operator==(
+    const basic_stored_value<ChL, Tr>& left,
+    const basic_stored_value<ChR, Tr>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            std::remove_const_t<ChL>,
+            std::remove_const_t<ChR>>::value, bool>
 {
     return detail::stored_value_eq(left, right);
 }
 
-template <class Ch, class Tr>
-bool operator==(
-    const basic_stored_value<Ch, Tr>& left,
+template <class Ch, class ChC, class Tr>
+auto operator==(
+    const basic_stored_value<ChC, Tr>& left,
     const Ch* right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     // If left is "abc\0def" and right is "abc" followed by '\0'
     // then left == right shall be false
@@ -386,82 +416,98 @@ bool operator==(
     return i == left.cend();
 }
 
-template <class Ch, class Tr, class Allocator>
-bool operator==(
-    const basic_stored_value<Ch, Tr>& left,
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator==(
+    const basic_stored_value<ChC, Tr>& left,
     const std::basic_string<Ch, Tr, Allocator>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return detail::stored_value_eq(left, right);
 }
 
-template <class Ch, class Tr>
-bool operator==(
+template <class Ch, class ChC, class Tr>
+auto operator==(
     const Ch* left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return right == left;
 }
 
-template <class Ch, class Tr, class Allocator>
-bool operator==(
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator==(
     const std::basic_string<Ch, Tr, Allocator>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return right == left;
 }
 
-template <class Ch, class Tr>
-bool operator!=(
-    const basic_stored_value<Ch, Tr>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+template <class ChL, class ChR, class Tr>
+auto operator!=(
+    const basic_stored_value<ChL, Tr>& left,
+    const basic_stored_value<ChR, Tr>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            std::remove_const_t<ChL>,
+            std::remove_const_t<ChR>>::value, bool>
 {
     return !(left == right);
 }
 
-template <class Ch, class Tr>
-bool operator!=(
-    const basic_stored_value<Ch, Tr>& left,
+template <class Ch, class ChC, class Tr>
+auto operator!=(
+    const basic_stored_value<ChC, Tr>& left,
     const Ch* right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(left == right);
 }
 
-template <class Ch, class Tr, class Allocator>
-bool operator!=(
-    const basic_stored_value<Ch, Tr>& left,
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator!=(
+    const basic_stored_value<ChC, Tr>& left,
     const std::basic_string<Ch, Tr, Allocator>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(left == right);
 }
 
-template <class Ch, class Tr>
-bool operator!=(
+template <class Ch, class ChC, class Tr>
+auto operator!=(
     const Ch* left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(left == right);
 }
 
-template <class Ch, class Tr, class Allocator>
-bool operator!=(
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator!=(
     const std::basic_string<Ch, Tr, Allocator>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(left == right);
 }
 
-template <class Ch, class Tr>
-bool operator<(
-    const basic_stored_value<Ch, Tr>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+template <class ChL, class ChR, class Tr>
+auto operator<(
+    const basic_stored_value<ChL, Tr>& left,
+    const basic_stored_value<ChR, Tr>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            std::remove_const_t<ChL>,
+            std::remove_const_t<ChR>>::value, bool>
 {
     return detail::stored_value_lt(left, right);
 }
 
-template <class Ch, class Tr>
-bool operator<(
-    const basic_stored_value<Ch, Tr>& left,
+template <class Ch, class ChC, class Tr>
+auto operator<(
+    const basic_stored_value<ChC, Tr>& left,
     const Ch* right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     for (auto l : left) {
         const auto r = *right;
@@ -475,18 +521,20 @@ bool operator<(
     return !Tr::eq(*right, Ch());
 }
 
-template <class Ch, class Tr>
-bool operator<(
-    const basic_stored_value<Ch, Tr>& left,
-    const std::basic_string<Ch, Tr>& right) noexcept
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator<(
+    const basic_stored_value<ChC, Tr>& left,
+    const std::basic_string<Ch, Tr, Allocator>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return detail::stored_value_lt(left, right);
 }
 
-template <class Ch, class Tr>
-bool operator<(
+template <class Ch, class ChC, class Tr>
+auto operator<(
     const Ch* left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     for (auto r : right) {
         const auto l = *left;
@@ -500,137 +548,165 @@ bool operator<(
     return false;   // at least left == right
 }
 
-template <class Ch, class Tr>
-bool operator<(
-    const std::basic_string<Ch, Tr>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator<(
+    const std::basic_string<Ch, Tr, Allocator>& left,
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return detail::stored_value_lt(left, right);
 }
 
-template <class Ch, class Tr>
-bool operator>(
-    const basic_stored_value<Ch, Tr>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+template <class ChL, class ChR, class Tr>
+auto operator>(
+    const basic_stored_value<ChL, Tr>& left,
+    const basic_stored_value<ChR, Tr>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            std::remove_const_t<ChL>,
+            std::remove_const_t<ChR>>::value, bool>
 {
     return right < left;
 }
 
-template <class Ch, class Tr>
-bool operator>(
-    const basic_stored_value<Ch, Tr>& left,
+template <class Ch, class ChC, class Tr>
+auto operator>(
+    const basic_stored_value<ChC, Tr>& left,
     const Ch* right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return right < left;
 }
 
-template <class Ch, class Tr>
-bool operator>(
-    const basic_stored_value<Ch, Tr>& left,
-    const std::basic_string<Ch, Tr>& right) noexcept
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator>(
+    const basic_stored_value<ChC, Tr>& left,
+    const std::basic_string<Ch, Tr, Allocator>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return right < left;
 }
 
-template <class Ch, class Tr>
-bool operator>(
+template <class Ch, class ChC, class Tr>
+auto operator>(
     const Ch* left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return right < left;
 }
 
-template <class Ch, class Tr>
-bool operator>(
-    const std::basic_string<Ch, Tr>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator>(
+    const std::basic_string<Ch, Tr, Allocator>& left,
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return right < left;
 }
 
-template <class Ch, class Tr>
-bool operator<=(
-    const basic_stored_value<Ch, Tr>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+template <class ChL, class ChR, class Tr>
+auto operator<=(
+    const basic_stored_value<ChL, Tr>& left,
+    const basic_stored_value<ChR, Tr>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            std::remove_const_t<ChL>,
+            std::remove_const_t<ChR>>::value, bool>
 {
     return !(right < left);
 }
 
-template <class Ch, class Tr>
-bool operator<=(
-    const basic_stored_value<Ch, Tr>& left,
+template <class Ch, class ChC, class Tr>
+auto operator<=(
+    const basic_stored_value<ChC, Tr>& left,
     const Ch* right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(right < left);
 }
 
-template <class Ch, class Tr>
-bool operator<=(
-    const basic_stored_value<Ch, Tr>& left,
-    const std::basic_string<Ch, Tr>& right) noexcept
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator<=(
+    const basic_stored_value<ChC, Tr>& left,
+    const std::basic_string<Ch, Tr, Allocator>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(right < left);
 }
 
-template <class Ch, class Tr>
-bool operator<=(
+template <class Ch, class ChC, class Tr>
+auto operator<=(
     const Ch* left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(right < left);
 }
 
-template <class Ch, class Tr>
-bool operator<=(
-    const std::basic_string<Ch, Tr>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator<=(
+    const std::basic_string<Ch, Tr, Allocator>& left,
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(right < left);
 }
 
-template <class Ch, class Tr>
-bool operator>=(
-    const basic_stored_value<Ch, Tr>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+template <class ChL, class ChR, class Tr>
+auto operator>=(
+    const basic_stored_value<ChL, Tr>& left,
+    const basic_stored_value<ChR, Tr>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            std::remove_const_t<ChL>,
+            std::remove_const_t<ChR>>::value, bool>
 {
     return !(left < right);
 }
 
-template <class Ch, class Tr>
-bool operator>=(
-    const basic_stored_value<Ch, Tr>& left,
+template <class Ch, class ChC, class Tr>
+auto operator>=(
+    const basic_stored_value<ChC, Tr>& left,
     const Ch* right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(left < right);
 }
 
-template <class Ch, class Tr>
-bool operator>=(
-    const basic_stored_value<Ch, Tr>& left,
-    const std::basic_string<Ch, Tr>& right) noexcept
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator>=(
+    const basic_stored_value<ChC, Tr>& left,
+    const std::basic_string<Ch, Tr, Allocator>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(left < right);
 }
 
-template <class Ch, class Tr>
-bool operator>=(
+template <class Ch, class ChC, class Tr>
+auto operator>=(
     const Ch* left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(left < right);
 }
 
-template <class Ch, class Tr>
-bool operator>=(
-    const std::basic_string<Ch, Tr>& left,
-    const basic_stored_value<Ch, Tr>& right) noexcept
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator>=(
+    const std::basic_string<Ch, Tr, Allocator>& left,
+    const basic_stored_value<ChC, Tr>& right) noexcept
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value, bool>
 {
     return !(left < right);
 }
 
-template <class Ch, class Tr>
-std::basic_ostream<Ch, Tr>& operator<<(
-    std::basic_ostream<Ch, Tr>& os, const basic_stored_value<Ch, Tr>& o)
+template <class Ch, class ChC, class Tr>
+auto operator<<(
+    std::basic_ostream<Ch, Tr>& os, const basic_stored_value<ChC, Tr>& o)
+ -> std::enable_if_t<
+        std::is_same<std::remove_const_t<ChC>, Ch>::value,
+        std::basic_ostream<Ch, Tr>&>
 {
     // In C++17, this function will be able to be implemented in terms of
     // string_view's operator<<
@@ -644,6 +720,8 @@ std::basic_ostream<Ch, Tr>& operator<<(
 
 using stored_value = basic_stored_value<char>;
 using wstored_value = basic_stored_value<wchar_t>;
+using cstored_value = basic_stored_value<const char>;
+using cwstored_value = basic_stored_value<const wchar_t>;
 
 }
 
@@ -1040,7 +1118,8 @@ public:
     using content_type    = Content;
     using record_type     = typename content_type::value_type;
     using value_type      = typename record_type::value_type;
-    using char_type       = typename value_type::value_type;
+    using char_type       = std::remove_const_t<
+                                typename value_type::value_type>;
     using traits_type     = typename value_type::traits_type;
     using size_type       = typename content_type::size_type;
 
@@ -1324,24 +1403,47 @@ private:
     value_type& rewrite_value_n(value_type& value,
         InputIterator new_value_begin, std::size_t new_value_size)
     {
+        return rewrite_value_n_impl(
+            std::is_const<typename value_type::value_type>(),
+            value, new_value_begin, new_value_size);
+    }
+
+    template <class InputIterator>
+    value_type& rewrite_value_n_impl(std::true_type, value_type& value,
+        InputIterator new_value_begin, std::size_t new_value_size)
+    {
+        return rewrite_value_n_secure(value, new_value_begin, new_value_size);
+    }
+
+    template <class InputIterator>
+    value_type& rewrite_value_n_impl(std::false_type, value_type& value,
+        InputIterator new_value_begin, std::size_t new_value_size)
+    {
         if (new_value_size <= value.size()) {
             traits_type::move(value.begin(), new_value_begin, new_value_size);
             value.erase(value.cbegin() + new_value_size, value.cend());
-        } else {
-            auto secured = store_.secure_any(new_value_size + 1);
-            if (!secured) {
-                const auto alloc_size =
-                    std::max(new_value_size + 1, buffer_size_);
-                secured = allocate_buffer(alloc_size);  // throw
-                add_buffer(secured, alloc_size);        // throw
-                // No need to deallocate secured even when an exception is
-                // thrown by add_buffer because add_buffer consumes secured
-                secure_current_upto(secured + new_value_size + 1);
-            }
-            traits_type::move(secured, new_value_begin, new_value_size);
-            traits_type::assign(secured[new_value_size], char_type());
-            value = value_type(secured, secured + new_value_size);
+            return value;
         }
+        return rewrite_value_n_secure(value, new_value_begin, new_value_size);
+    }
+
+    template <class InputIterator>
+    value_type& rewrite_value_n_secure(value_type& value,
+        InputIterator new_value_begin, std::size_t new_value_size)
+    {
+        auto secured = store_.secure_any(new_value_size + 1);
+        if (!secured) {
+            const auto alloc_size =
+                std::max(new_value_size + 1, buffer_size_);
+            secured = allocate_buffer(alloc_size);  // throw
+            add_buffer(secured, alloc_size);        // throw
+            // No need to deallocate secured even when an exception is
+            // thrown by add_buffer because add_buffer consumes secured
+            secure_current_upto(secured + new_value_size + 1);
+        }
+        traits_type::move(secured, new_value_begin, new_value_size);
+        traits_type::assign(secured[new_value_size], char_type());
+        value = value_type(secured, secured + new_value_size);
         return value;
     }
 
@@ -1834,6 +1936,10 @@ using stored_table  =
     basic_stored_table<std::deque<std::vector<stored_value>>>;
 using wstored_table =
     basic_stored_table<std::deque<std::vector<wstored_value>>>;
+using cstored_table =
+    basic_stored_table<std::deque<std::vector<cstored_value>>>;
+using cwstored_table =
+    basic_stored_table<std::deque<std::vector<cwstored_value>>>;
 
 enum stored_table_builder_option : std::uint_fast8_t
 {
