@@ -1186,19 +1186,103 @@ struct fail_if_skipped
     }
 };
 
+namespace detail {
+
+template <class T, class = void>
+class movable_store
+{
+    // we choose shared_ptr instead of unique_ptr because it is very
+    // difficult and expensive to define "moved-from" states
+    std::shared_ptr<T> t_;
+
+public:
+    movable_store() : t_(std::make_shared<T>())
+    {}
+
+    explicit movable_store(T t) :
+        t_(std::make_shared<T>(std::move(t)))
+    {}
+
+    movable_store(const movable_store& other) noexcept = default;
+    // move ctor is implicitly declared as "deleted" to make "moved-from" state
+    // equal to "copied-from" state, that is, no harmfully disturbed state
+
+    const T& operator*() const noexcept
+    {
+        return *t_;
+    }
+
+    T& operator*() noexcept
+    {
+        return *t_;
+    }
+
+    const T* operator->() const noexcept
+    {
+        return t_.get();
+    }
+
+    T* operator->() noexcept
+    {
+        return t_.get();
+    }
+};
+
+template <class T>
+class movable_store<T,
+    std::enable_if_t<std::is_nothrow_move_constructible<T>::value>>
+{
+    T t_;
+
+public:
+    movable_store() : t_(T())
+    {}
+
+    explicit movable_store(T t) noexcept : t_(std::move(t))
+    {}
+
+    movable_store(const movable_store&) = default;
+    movable_store(movable_store&&) noexcept = default;
+
+    const T& operator*() const noexcept
+    {
+        return t_;
+    }
+
+    T& operator*() noexcept
+    {
+        return t_;
+    }
+
+    const T* operator->() const noexcept
+    {
+        return &t_;
+    }
+
+    T* operator->() noexcept
+    {
+        return &t_;
+    }
+};
+
+}
+
 template <class T>
 class default_if_skipped
 {
-    T default_value_;
+    detail::movable_store<T> default_value_;
 
 public:
     explicit default_if_skipped(T default_value = T()) :
         default_value_(std::move(default_value))
     {}
 
+    default_if_skipped(const default_if_skipped&) = default;
+    default_if_skipped(default_if_skipped&&) noexcept = default;
+
     T operator()() const
     {
-        return default_value_;
+        return *default_value_;
     }
 };
 
@@ -1321,15 +1405,108 @@ private:
 template <class T>
 class replace_if_conversion_failed
 {
-    static constexpr unsigned replacement_empty = 0;
-    static constexpr unsigned replacement_invalid_format = 1;
-    static constexpr unsigned replacement_above_upper_limit = 2;
-    static constexpr unsigned replacement_below_lower_limit = 3;
-    static constexpr unsigned replacement_underflow = 4;
-    static constexpr unsigned replacement_n = 5;
+    struct replacement_store
+    {
+        static constexpr unsigned empty = 0;
+        static constexpr unsigned invalid_format = 1;
+        static constexpr unsigned above_upper_limit = 2;
+        static constexpr unsigned below_lower_limit = 3;
+        static constexpr unsigned underflow = 4;
+        static constexpr unsigned n = 5;
 
-    std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[replacement_n];
-    std::int_fast8_t has_;
+        std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[n];
+        std::uint_fast8_t has_;
+
+        replacement_store() noexcept : has_(0U)
+        {}
+
+        replacement_store(const replacement_store& other)
+            noexcept(std::is_trivially_copyable<T>::value) :
+            replacement_store(other, std::is_trivially_copyable<T>())
+        {}
+
+        replacement_store(replacement_store&& other)
+            noexcept(
+                std::is_trivially_copyable<T>::value
+             || std::is_nothrow_move_constructible<T>::value) :
+            replacement_store(
+                std::move(other), std::is_trivially_copyable<T>())
+        {}
+
+    private:
+        replacement_store(const replacement_store& other, std::true_type)
+            noexcept :
+            has_(other.has_)
+        {
+            std::memcpy(&replacements_, &other.replacements_,
+                sizeof replacements_);
+        }
+
+        template <class Other>
+        replacement_store(Other&& other, std::false_type) :
+            has_(0U)
+        {
+            using f_t = std::conditional_t<
+                std::is_lvalue_reference<Other>::value, const T&, T>;
+            for (unsigned r = 0; r < n; ++r) {
+                if (const auto p = other.get(r)) {
+                    init(r, std::forward<f_t>(*p));
+                }
+            }
+        }
+
+    public:
+        ~replacement_store()
+        {
+            destroy(std::is_trivially_destructible<T>());
+        }
+
+        template <class U>
+        void init(unsigned r, U&& value)
+        {
+            assert(!has(r));
+            ::new(replacements_ + r) T(std::forward<U>(value));
+            has_ |= 1U << r;
+        }
+
+        void init(unsigned r, std::nullptr_t) noexcept
+        {
+            static_cast<void>(r);
+            assert(!has(r));
+        }
+
+        const T* get(unsigned r) const noexcept
+        {
+            return has(r) ?
+                reinterpret_cast<const T*>(replacements_ + r) : nullptr;
+        }
+
+    private:
+        T* get(unsigned r) noexcept
+        {
+            return has(r) ?
+                reinterpret_cast<T*>(replacements_ + r) : nullptr;
+        }
+
+        unsigned has(unsigned r) const noexcept
+        {
+            return has_ & (1U << r);
+        }
+
+        void destroy(std::true_type) noexcept
+        {}
+
+        void destroy(std::false_type) noexcept
+        {
+            for (unsigned r = 0; r < n; ++r) {
+                if (has(r)) {
+                    reinterpret_cast<const T*>(replacements_ + r)->~T();
+                }
+            }
+        }
+    };
+
+    detail::movable_store<replacement_store> store_;
 
 private:
     template <class U>
@@ -1358,144 +1535,27 @@ public:
         InvalidFormat on_invalid_format = InvalidFormat(),
         AboveUpperLimit on_above_upper_limit = AboveUpperLimit(),
         BelowLowerLimit on_below_lower_limit = BelowLowerLimit(),
-        Underflow on_underflow = Underflow()) noexcept :
-        has_(0)
+        Underflow on_underflow = Underflow())
     {
-        set(replacement_empty, on_empty);
-        set(replacement_invalid_format, on_invalid_format);
-        set(replacement_above_upper_limit, on_above_upper_limit);
-        set(replacement_below_lower_limit, on_below_lower_limit);
-        set(replacement_underflow, on_underflow);
+        store_->init(replacement_store::empty, on_empty);
+        store_->init(replacement_store::invalid_format, on_invalid_format);
+        store_->init(replacement_store::above_upper_limit,
+            on_above_upper_limit);
+        store_->init(replacement_store::below_lower_limit,
+            on_below_lower_limit);
+        store_->init(replacement_store::underflow, on_underflow);
     }
 
-    replace_if_conversion_failed(const replace_if_conversion_failed& other) :
-        replace_if_conversion_failed(
-            other, std::is_trivially_copyable<T>())
-    {}
+    replace_if_conversion_failed(const replace_if_conversion_failed&)
+        = default;
+    replace_if_conversion_failed(replace_if_conversion_failed&&) noexcept
+        = default;
+    ~replace_if_conversion_failed() = default;
 
-    replace_if_conversion_failed(replace_if_conversion_failed&& other)
-        noexcept(std::is_nothrow_move_constructible<T>::value) :
-        replace_if_conversion_failed(
-            std::move(other), std::is_trivially_copyable<T>())
-    {}
-
-private:
-    replace_if_conversion_failed(const replace_if_conversion_failed& other,
-        std::true_type) noexcept :
-        has_(other.has_)
-    {
-        std::memcpy(&replacements_, &other.replacements_,
-            sizeof replacements_);
-    }
-
-    replace_if_conversion_failed(const replace_if_conversion_failed& other,
-        std::false_type) :
-        has_(0)
-    {
-        for (unsigned i = 0; i < replacement_n; ++i) {
-            if (const auto p = other.get(i)) {
-                set(i, *p);
-            }
-        }
-    }
-
-    replace_if_conversion_failed(replace_if_conversion_failed&& other,
-        std::false_type)
-        noexcept(std::is_nothrow_move_constructible<T>::value) :
-        has_(0)
-    {
-        for (unsigned i = 0; i < replacement_n; ++i) {
-            if (const auto p = other.get(i)) {
-                set(i, std::move(*p));  // ?
-                other.reset(i);
-            }
-        }
-    }
-
-public:
-    ~replace_if_conversion_failed()
-    {
-        destroy(std::is_trivially_destructible<T>());
-    }
-
-private:
-    void destroy(std::true_type)
-    {}
-
-    void destroy(std::false_type)
-    {
-        for (unsigned i = 0; i < replacement_n; ++i) {
-            if (const auto p = get(i)) {
-                destroy(i);
-            }
-        }
-    }
-
-public:
-    replace_if_conversion_failed& operator=(
-        const replace_if_conversion_failed& other)
-    {
-        assign(other, std::is_trivially_copyable<T>());
-        return *this;
-    }
-
-    replace_if_conversion_failed& operator=(
-        replace_if_conversion_failed&& other)
-        noexcept(std::is_nothrow_move_constructible<T>::value)
-    {
-        assign(std::move(other), std::is_trivially_copyable<T>());
-        return *this;
-    }
-
-private:
-    void assign(const replace_if_conversion_failed& other,
-        std::true_type) noexcept
-    {
-        std::memcpy(&replacements_, &other.replacements_,
-            sizeof replacements_);
-        has_ = other.has_;
-    }
-
-    void assign(const replace_if_conversion_failed& other, std::false_type)
-    {
-        for (unsigned i = 0; i < replacement_n; ++i) {
-            const auto p = other.get(i);
-            if (const auto q = get(i)) {
-                if (p) {
-                    *q = *p;
-                } else {
-                    reset(i);
-                }
-            } else if (p) {
-                set(i, *p);
-            }
-        }
-    }
-
-    void assign(replace_if_conversion_failed&& other, std::false_type)
-        noexcept(std::is_nothrow_move_constructible<T>::value)
-    {
-        for (unsigned i = 0; i < replacement_n; ++i) {
-            const auto p = other.get(i);
-            if (const auto q = get(i)) {
-                if (p) {
-                    *q = std::move(*p);
-                    other.reset(i);
-                } else {
-                    reset(i);
-                }
-            } else if (p) {
-                set(i, std::move(*p));
-                other.reset(i);
-            }
-        }
-    }
-
-public:
     template <class Ch>
     T invalid_format(const Ch* begin, const Ch* end) const
     {
-        if (const auto p = get(replacement_invalid_format)) {
+        if (const auto p = store_->get(replacement_store::invalid_format)) {
             return *p;
         } else {
             return fail_if_conversion_failed<T>().invalid_format(begin, end);
@@ -1506,14 +1566,16 @@ public:
     T out_of_range(const Ch* begin, const Ch* end, int sign) const
     {
         if (sign > 0) {
-            if (const auto p = get(replacement_above_upper_limit)) {
+            if (const auto p =
+                    store_->get(replacement_store::above_upper_limit)) {
                 return *p;
             }
         } else if (sign < 0) {
-            if (const auto p = get(replacement_below_lower_limit)) {
+            if (const auto p =
+                    store_->get(replacement_store::below_lower_limit)) {
                 return *p;
             }
-        } else if (const auto p = get(replacement_underflow)) {
+        } else if (const auto p = store_->get(replacement_store::underflow)) {
             return *p;
         }
         return fail_if_conversion_failed<T>().out_of_range(begin, end, sign);
@@ -1521,50 +1583,10 @@ public:
 
     T empty() const
     {
-        if (const auto p = get(replacement_empty)) {
+        if (const auto p = store_->get(replacement_store::empty)) {
             return *p;
         } else {
             return fail_if_conversion_failed<T>().empty();
-        }
-    }
-
-private:
-    template <class U>
-    void set(unsigned r, U&& value)
-    {
-        ::new(&replacements_[r]) T(std::forward<U>(value));
-        has_ |= 1 << r;
-    }
-
-    void set(unsigned, std::nullptr_t) noexcept
-    {}
-
-    void reset(unsigned r) noexcept
-    {
-        destroy(r);
-        has_ &= ~(1 << r);
-    }
-
-    void destroy(unsigned r) noexcept
-    {
-        reinterpret_cast<T*>(&replacements_[r])->~T();
-    }
-
-    const T* get(unsigned r) const noexcept
-    {
-        if (has_ & (1 << r)) {
-            return reinterpret_cast<const T*>(&replacements_[r]);
-        } else {
-            return nullptr;
-        }
-    }
-
-    T* get(unsigned r) noexcept
-    {
-        if (has_ & (1 << r)) {
-            return reinterpret_cast<T*>(&replacements_[r]);
-        } else {
-            return nullptr;
         }
     }
 };
@@ -1664,13 +1686,8 @@ public:
             std::move(sink), std::move(handle_skipping))
     {}
 
-    arithmetic_field_translator(const arithmetic_field_translator&) = default;
     arithmetic_field_translator(arithmetic_field_translator&&) = default;
     ~arithmetic_field_translator() = default;
-    arithmetic_field_translator& operator=(const arithmetic_field_translator&)
-        = default;
-    arithmetic_field_translator& operator=(arithmetic_field_translator&&)
-        = default;
 
     using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
     using detail::translator<Sink, SkippingHandler>::field_skipped;
@@ -1714,14 +1731,8 @@ public:
     {}
 
     locale_based_arithmetic_field_translator(
-        const locale_based_arithmetic_field_translator&) = default;
-    locale_based_arithmetic_field_translator(
         locale_based_arithmetic_field_translator&&) = default;
     ~locale_based_arithmetic_field_translator() = default;
-    locale_based_arithmetic_field_translator& operator=(
-        const locale_based_arithmetic_field_translator&) = default;
-    locale_based_arithmetic_field_translator& operator=(
-        locale_based_arithmetic_field_translator&&) = default;
 
     using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
     using detail::translator<Sink, SkippingHandler>::field_skipped;
@@ -1798,13 +1809,8 @@ public:
             std::move(sink), std::move(handle_skipping))
     {}
 
-    string_field_translator(const string_field_translator&) = default;
     string_field_translator(string_field_translator&&) = default;
     ~string_field_translator() = default;
-    string_field_translator& operator=(const string_field_translator&)
-        = default;
-    string_field_translator& operator=(string_field_translator&&)
-        = default;
 
     allocator_type get_allocator() const noexcept
     {

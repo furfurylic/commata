@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-02-02 (UTC)</signature>
+<signature>2019-02-08 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3177,10 +3177,10 @@ namespace commata {
   template &lt;class T> class default_if_skipped {
   public:
     explicit default_if_skipped(T default_value = T());
+    default_if_skipped(const default_if_skipped&amp; other);
+    default_if_skipped(default_if_skipped&amp;&amp; other) noexcept;
+   ~default_if_skipped();
     T operator()() const;
-
-   private:
-    T d;  <c>// <n>exposition only</n></c>
   };
 }
         </codeblock>
@@ -3192,14 +3192,21 @@ namespace commata {
           <code>
 explicit default_if_skipped(T default_value = T());
           </code>
-          <effects>Initializes <c>d</c> with <c>default_value</c>.</effects>
+          <postcondition><c>(*this)() == default_value</c> shall not be <c>false</c>.</postcondition>
         </code-item>
 
         <code-item>
           <code>
-T operator()() const;
+default_if_skipped(const default_if_skipped&amp; other);
           </code>
-          <returns><c>d</c>.</returns>
+          <postcondition><c>(*this)() == other()</c> shall not be <c>false</c>.</postcondition>
+        </code-item>
+
+        <code-item>
+          <code>
+default_if_skipped(default_if_skipped&amp;&amp; other) noexcept;
+          </code>
+          <postcondition><c>(*this)() == d</c> shall not be <c>false</c> where <c>d</c> is the value that <c>other()</c> would return before the call.</postcondition>
         </code-item>
       </section>
     </section>
@@ -3259,11 +3266,8 @@ namespace commata {
                                      BelowLowerLimit on_below_lower_limit = BelowLowerLimit(),
                                      Underflow       on_underflow         = Underflow());
     replace_if_conversion_failed(const replace_if_conversion_failed&amp; other);
-    replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
+    replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept;
    ~replace_if_conversion_failed();
-    replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&amp; other);
-    replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&amp; other)
-      noexcept(<nc>see below</nc>);
 
     template &lt;class Ch> T invalid_format(const Ch*, const Ch*) const;
     template &lt;class Ch> T out_of_range(const Ch*, const Ch*, int sign) const;
@@ -3289,49 +3293,23 @@ template &lt;class Empty = std::nullptr_t, class InvalidFormat = std::nullptr_t,
                                  BelowLowerLimit on_below_lower_limit = BelowLowerLimit(),
                                  Underflow       on_underflow         = Underflow());
           </code>
-          <effects>Installs <c>replacement_for_empty</c> as a copy of <c>on_empty</c> if <c>Empty</c> is <c>T</c>.
+          <effects>Installs <c>replacement_for_empty</c> constructed from <c>std::move(on_empty)</c> if and only if <c>Empty</c> is a different type from <c>std::nullptr_t</c> and <c>std::is_constructible&lt;T, Empty>::value</c> is not <c>false</c>.
                    Does the same with <c>replacement_for_invalid_format</c>, <c>replacement_for_above_upper_limit</c> and <c>replacement_for_below_lower_limit</c>.</effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c> are the same type as <c>T</c> or <c>std::nullptr_t</c>.</remark>
+          <remark>This overload shall not participate in overload resolution if any <c>U</c> of <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> or <c>BelowLowerLimit</c> satisfies that <c>U</c> is a different type from <c>std::nullptr_t</c> and <c>std::is_constructible&lt;T, U>::value</c> is <c>false</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
 replace_if_conversion_failed(const replace_if_conversion_failed&amp; other);
           </code>
-          <effects>If <c>other</c> has <c>replacement_for_empty</c> installed, installs <c>replacement_for_empty</c> as a copy of it.
-                   Does the same with <c>replacement_for_invalid_format</c>, <c>replacement_for_above_upper_limit</c> and <c>replacement_for_below_lower_limit</c>.</effects>
+          <postcondition>Member functions <c>invalid_format</c>, <c>out_of_range</c> and <c>replacement_for_empty</c> behave the same as those of <c>other</c>.</postcondition>
         </code-item>
 
         <code-item>
           <code>
-replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
+replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept;
           </code>
-          <effects>If <c>other</c> has <c>replacement_for_empty</c> installed, installs <c>replacement_for_empty</c> from an xvalue of it.
-                   Does the same with <c>replacement_for_invalid_format</c>, <c>replacement_for_above_upper_limit</c> and <c>replacement_for_below_lower_limit</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.
-                  When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&amp; other);
-          </code>
-          <requires><c>T</c> shall be <c>CopyAssignable</c>.</requires>
-          <effects>If <c>other</c> has <c>replacement_for_empty</c> installed, installs <c>replacement_for_empty</c> as a copy of it; otherwise, uninstalls <c>replacement_for_empty</c> of <c>*this</c> if installed.
-                   Does the same with <c>replacement_for_invalid_format</c>, <c>replacement_for_above_upper_limit</c> and <c>replacement_for_below_lower_limit</c>.</effects>
-          <remark>When this function exits via an exception, <c>*this</c> will be placed in an unspecified state.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&amp; other)
-  noexcept(<nc>see below</nc>);
-          </code>
-          <requires><c>T</c> shall be <c>MoveAssignable</c>.</requires>
-          <effects>If <c>other</c> has <c>replacement_for_empty</c> installed, installs <c>replacement_for_empty</c> from an xvalue of it; otherwise, uninstalls <c>replacement_for_empty</c> of <c>*this</c> if installed.
-                   Does the same with <c>replacement_for_invalid_format</c>, <c>replacement_for_above_upper_limit</c> and <c>replacement_for_below_lower_limit</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable&lt;T>::value</c>.
-                  When this function exits via an exception, both of <c>*this</c> and <c>other</c> will be placed in an unspecified state.</remark>
+          <postcondition>Member functions <c>invalid_format</c>, <c>out_of_range</c> and <c>replacement_for_empty</c> behave like <c>other</c> would do before the call.</postcondition>
         </code-item>
 
         <code-item>
@@ -3375,11 +3353,8 @@ namespace commata {
     explicit arithmetic_field_translator(
              Sink sink, SkippingHandler handle_skipping = SkippingHandler(),
              ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
-    arithmetic_field_translator(const arithmetic_field_translator&amp; other);
     arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~arithmetic_field_translator();
-    arithmetic_field_translator&amp; operator=(const arithmetic_field_translator&amp; other);
-    arithmetic_field_translator&amp; operator=(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="arithmetic_field_translator.handler_access"/>, handler access:</n></c>
     const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -3414,38 +3389,11 @@ explicit arithmetic_field_translator(
 
         <code-item>
           <code>
-arithmetic_field_translator(const arithmetic_field_translator&amp; other);
-          </code>
-          <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>CopyConstructible</c>.</requires>
-          <effects>Initializes a object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with the corresponding objects of <c>other</c>.</effects>
-        </code-item>
-
-        <code-item>
-          <code>
 arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes a object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
                   When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-arithmetic_field_translator&amp; operator=(const arithmetic_field_translator&amp; other);
-          </code>
-          <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>CopyAssignable</c>.</requires>
-          <effects>Assigns each of the field translator sink object, the skipping handler object and the conversion error handler object of <c>other</c> to the corresponding object of <c>*this</c>.</effects>
-          <remark>When this function exits via an exception, <c>*this</c> will be placed in an unspecified state.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-arithmetic_field_translator&amp; operator=(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>MoveAssignable</c>.</requires>
-          <effects>Assigns each xvalue of the field translator sink object, the skipping handler object and the conversion error handler object of <c>other</c> to the corresponding object of <c>*this</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable&lt;Sink>::value &amp;&amp; std::is_nothrow_move_assignable&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_assignable&lt;ConversionErrorHandler>::value</c>.
-                  When this function exits via an exception, both of <c>*this</c> and <c>other</c> will be placed in their unspecified states.</remark>
         </code-item>
       </section>
 
@@ -3604,14 +3552,8 @@ namespace commata {
              SkippingHandler handle_skipping = SkippingHandler(),
              ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
     locale_based_arithmetic_field_translator(
-      const locale_based_arithmetic_field_translator&amp; other);
-    locale_based_arithmetic_field_translator(
       locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~locale_based_arithmetic_field_translator();
-    locale_based_arithmetic_field_translator&amp; operator=(
-      const locale_based_arithmetic_field_translator&amp; other);
-    locale_based_arithmetic_field_translator&amp; operator=(
-      locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="locale_based_arithmetic_field_translator.handler_access"/>, handler access:</n></c>
     const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -3649,40 +3591,11 @@ explicit locale_based_arithmetic_field_translator(
         <code-item>
           <code>
 locale_based_arithmetic_field_translator(
-  const locale_based_arithmetic_field_translator&amp; other);
-          </code>
-          <effects>Initializes a object of <c>locale_based_arithmetic_field_translator</c> that holds copies of the field translator sink object of <c>other</c>, the locale of <c>other</c>, the skipping handler object of <c>other</c> and the conversion error handler object of <c>other</c>.</effects>
-        </code-item>
-
-        <code-item>
-          <code>
-locale_based_arithmetic_field_translator(
   locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes a object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
                   When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-locale_based_arithmetic_field_translator&amp; operator=(
-  const locale_based_arithmetic_field_translator&amp; other);
-          </code>
-          <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>CopyAssignable</c>.</requires>
-          <effects>Assigns each of the field translator sink object, the locale object, the skipping handler object and the conversion error handler object of <c>other</c> to the corresponding object of <c>*this</c>.</effects>
-          <remark>When this function exits via an exception, <c>*this</c> will be placed in an unspecified state.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-locale_based_arithmetic_field_translator&amp; operator=(
-  locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>MoveAssignable</c>.</requires>
-          <effects>Assigns each xvalue of the field translator sink object, the locale object, the skipping handler object and the conversion error handler object of <c>other</c> to the corresponding object of <c>*this</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable&lt;Sink>::value &amp;&amp; std::is_nothrow_move_assignable&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_assignable&lt;ConversionErrorHandler>::value</c>.
-                  When this function exits via an exception, both of <c>*this</c> and <c>other</c> will be placed in their unspecified states.</remark>
         </code-item>
       </section>
 
@@ -3748,11 +3661,8 @@ namespace commata {
                                      SkippingHandler handle_skipping = SkippingHandler());
     string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink sink,
                             SkippingHandler handle_skipping = SkippingHandler());
-    string_field_translator(const string_field_translator&amp; other);
     string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~string_field_translator();
-    string_field_translator&amp; operator=(const string_field_translator&amp; other);
-    string_field_translator&amp; operator=(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="string_field_translator.allocator"/>, allocator access:</n></c>
     allocator_type get_allocator() const noexcept;
@@ -3797,40 +3707,11 @@ string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink s
 
         <code-item>
           <code>
-string_field_translator(const string_field_translator&amp; other);
-          </code>
-          <effects>Initializes a object of <c>string_field_translator</c> that holds an allocator object, a field translator sink object, and a skipping handler object initialized with the corresponding objects of <c>other</c>.</effects>
-          <remark>This constructor simply copies the allocator object without consulting <c>std::allocator_traits&lt;Allocator>::select_on_container_copy_construction</c>.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
 string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes a object of <c>string_field_translator</c> that holds an allocator object, a field translator sink object, and a skipping handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value</c>.
                   When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-string_field_translator&amp; operator=(const string_field_translator&amp; other);
-          </code>
-          <requires><c>Sink</c> and <c>SkippingHandler</c> shall be <c>CopyAssignable</c>.</requires>
-          <effects>Assigns each of the allocator object, the field translator sink object, and the skipping handler object of <c>other</c> to the corresponding object of <c>*this</c>.</effects>
-          <remark>This function simply assigns the allocator object from <c>other</c> to <c>*this</c> without consulting <c>std::allocator_traits&lt;Allocator>::propagate_on_container_copy_assignment</c>.
-                  When this function exits via an exception, <c>*this</c> will be placed in an unspecified state.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-string_field_translator&amp; operator=(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <requires><c>Sink</c> and <c>SkippingHandler</c> shall be <c>MoveAssignable</c>.</requires>
-          <effects>Assigns each xvalue of the allocator object, the field translator sink object, and the skipping handler object of <c>other</c> to the corresponding object of <c>*this</c>.</effects>
-          <remark>This function simply assigns the allocator object from <c>other</c> to <c>*this</c> without consulting <c>std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable&lt;Sink>::value &amp;&amp; std::is_nothrow_move_assignable&lt;SkippingHandler>::value</c>.
-                  When this function exits via an exception, both of <c>*this</c> and <c>other</c> will be placed in their unspecified states.</remark>
         </code-item>
       </section>
 

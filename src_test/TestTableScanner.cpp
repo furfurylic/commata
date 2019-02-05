@@ -610,7 +610,6 @@ TYPED_TEST(TestTableScanner, SkippedWithNoErrors)
             values1, default_if_skipped<int>()))>(1U);
     ASSERT_NE(scanner1, nullptr);
     ASSERT_EQ(50, scanner1->get_skipping_handler()());
-    *scanner1 = make_field_translator(values1, default_if_skipped<int>(-15));
 
     std::basic_stringstream<TypeParam> s;
     s << "XYZ,20\n"
@@ -624,7 +623,7 @@ TYPED_TEST(TestTableScanner, SkippedWithNoErrors)
 
     const std::deque<string_t> expected0 =
         { str("XYZ"), string_t(), str("A") };
-    const std::deque<int> expected1 = { 20, -15, -15 };
+    const std::deque<int> expected1 = { 20, 50, 50 };
     ASSERT_EQ(expected0, values0);
     ASSERT_EQ(expected1, values1);
 }
@@ -1001,13 +1000,10 @@ TEST_F(TestTableScannerReference, HeaderScanner)
 
 TEST_F(TestTableScannerReference, FieldScanner)
 {
-    std::vector<int> values0;
     std::vector<int> values1;
-    auto field_scanner = make_field_translator(values0);
+    auto field_scanner = make_field_translator(values1);
     table_scanner<char> scanner;
     scanner.set_field_scanner(0, std::ref(field_scanner));
-
-    field_scanner = make_field_translator(values1);
 
     ASSERT_EQ(typeid(std::reference_wrapper<decltype(field_scanner)>),
         scanner.get_field_scanner_type(0));
@@ -1019,7 +1015,6 @@ TEST_F(TestTableScannerReference, FieldScanner)
         FAIL() << e.info();
     }
 
-    ASSERT_TRUE(values0.empty());
     ASSERT_EQ(1U, values1.size());
     ASSERT_EQ(100, values1[0]);
 }
@@ -1058,46 +1053,68 @@ TEST_F(TestTableScannerReference, RecordEndScanner)
 struct TestReplaceIfConversionFailed : BaseTest
 {};
 
-TEST_F(TestReplaceIfConversionFailed, NonArithmetic)
+TEST_F(TestReplaceIfConversionFailed, NonArithmeticNoThrowMoveConstructible)
 {
-    replace_if_conversion_failed<std::string> r("E", nullptr, "U", nullptr, "X");
-    auto r2 = std::move(r); // move ctor
-    char d[] = "dummy";
-    ASSERT_STREQ("E", r2.empty().c_str());
-    ASSERT_THROW(r2.invalid_format(d, d + sizeof d - 1), field_invalid_format);
-    ASSERT_STREQ("U", r2.out_of_range(d, d + sizeof d - 1, 1).c_str());
-    ASSERT_THROW(r2.out_of_range(d, d + sizeof d - 1, -1), field_out_of_range);
-    ASSERT_STREQ("X", r2.out_of_range(d, d + sizeof d - 1, 0).c_str());
+    using r_t = replace_if_conversion_failed<std::string>;
+    static_assert(std::is_nothrow_move_constructible<r_t>::value, "");
 
-    replace_if_conversion_failed<std::string> s(nullptr, "i", "u", "l");
-    auto s2 = s;            // copy ctor
-    ASSERT_THROW(s.empty(), field_empty);
-    ASSERT_STREQ("i", s.invalid_format(d, d + sizeof d - 1).c_str());
-    ASSERT_STREQ("u", s.out_of_range(d, d + sizeof d - 1, 1).c_str());
-    ASSERT_STREQ("l", s.out_of_range(d, d + sizeof d - 1, -1).c_str());
-    ASSERT_THROW(s.out_of_range(d, d + sizeof d - 1, 0), field_out_of_range);
-    ASSERT_THROW(s2.empty(), field_empty);
-    ASSERT_STREQ("i", s2.invalid_format(d, d + sizeof d - 1).c_str());
-    ASSERT_STREQ("u", s2.out_of_range(d, d + sizeof d - 1, 1).c_str());
-    ASSERT_STREQ("l", s2.out_of_range(d, d + sizeof d - 1, -1).c_str());
-    ASSERT_THROW(s2.out_of_range(d, d + sizeof d - 1, 0), field_out_of_range);
+    r_t r("E", nullptr, "U", nullptr, "X");
+    std::vector<r_t> rs;
+    rs.push_back(r);
+    rs.push_back(std::move(r));
+    for (const auto& r2 : rs) {
+        const char d[] = "dummy";
+        const auto de = d + sizeof d - 1;
+        ASSERT_STREQ("E", r2.empty().c_str());
+        ASSERT_THROW(r2.invalid_format(d, de), field_invalid_format);
+        ASSERT_STREQ("U", r2.out_of_range(d, de, 1).c_str());
+        ASSERT_THROW(r2.out_of_range(d, de, -1), field_out_of_range);
+        ASSERT_STREQ("X", r2.out_of_range(d, de, 0).c_str());
+    }
+}
 
-    r = s;              // copy assignment
-    ASSERT_THROW(s.empty(), field_empty);
-    ASSERT_STREQ("i", s.invalid_format(d, d + sizeof d - 1).c_str());
-    ASSERT_STREQ("u", s.out_of_range(d, d + sizeof d - 1, 1).c_str());
-    ASSERT_STREQ("l", s.out_of_range(d, d + sizeof d - 1, -1).c_str());
-    ASSERT_THROW(s.out_of_range(d, d + sizeof d - 1, 0), field_out_of_range);
-    ASSERT_THROW(r.empty(), field_empty);
-    ASSERT_STREQ("i", r.invalid_format(d, d + sizeof d - 1).c_str());
-    ASSERT_STREQ("u", r.out_of_range(d, d + sizeof d - 1, 1).c_str());
-    ASSERT_STREQ("l", r.out_of_range(d, d + sizeof d - 1, -1).c_str());
-    ASSERT_THROW(r.out_of_range(d, d + sizeof d - 1, 0), field_out_of_range);
+namespace {
 
-    s = std::move(r2);  // move assignment
-    ASSERT_STREQ("E", s.empty().c_str());
-    ASSERT_THROW(s.invalid_format(d, d + sizeof d - 1), field_invalid_format);
-    ASSERT_STREQ("U", s.out_of_range(d, d + sizeof d - 1, 1).c_str());
-    ASSERT_THROW(s.out_of_range(d, d + sizeof d - 1, -1), field_out_of_range);
-    ASSERT_STREQ("X", s.out_of_range(d, d + sizeof d - 1, 0).c_str());
+class char_holder
+{
+    char* n_;
+
+public:
+    explicit char_holder(char n) : n_(new char(n))
+    {}
+
+    char_holder(const char_holder& o) : n_(new char(*o.n_))
+    {}
+
+    ~char_holder()
+    {
+        delete n_;
+    }
+
+    char operator()() const
+    {
+        return *n_;
+    }
+};
+
+}
+
+TEST_F(TestReplaceIfConversionFailed, NonArithmeticNonNoThrowMoveConstructible)
+{
+    using r_t = replace_if_conversion_failed<char_holder>;
+    static_assert(std::is_nothrow_move_constructible<r_t>::value, "");
+
+    r_t r(nullptr, char_holder('I'), nullptr, char_holder('B'), nullptr);
+    std::vector<r_t> rs;
+    rs.push_back(r);
+    rs.push_back(std::move(r));
+    for (const auto& r2 : rs) {
+        const char d[] = "dummy";
+        const auto de = d + sizeof d - 1;
+        ASSERT_THROW(r2.empty(), field_empty);
+        ASSERT_EQ('I', r2.invalid_format(d, de)());
+        ASSERT_THROW(r2.out_of_range(d, de, 1), field_out_of_range);
+        ASSERT_EQ('B', r2.out_of_range(d, de, -1)());
+        ASSERT_THROW(r2.out_of_range(d, de, 0), field_out_of_range);
+    }
 }
