@@ -1176,11 +1176,10 @@ struct converter<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
 
 } // end namespace detail
 
-template <class T>
 struct fail_if_skipped
 {
     [[noreturn]]
-    T operator()() const
+    void operator()() const
     {
         throw field_not_found("This field did not appear in this record");
     }
@@ -1631,16 +1630,20 @@ public:
         return this->get();
     }
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4702)
-#endif
     void field_skipped()
     {
+        do_field_skipped(std::is_void<decltype(get_skipping_handler()())>());
+    }
+
+private:
+    void do_field_skipped(std::true_type)
+    {
+        get_skipping_handler()();
+    }
+
+    void do_field_skipped(std::false_type)
+    {
         put(get_skipping_handler()());
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
     }
 
 protected:
@@ -1668,7 +1671,7 @@ private:
 } // end namespace detail
 
 template <class T, class Sink,
-    class SkippingHandler = fail_if_skipped<T>,
+    class SkippingHandler = fail_if_skipped,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class arithmetic_field_translator :
     detail::converter<T, ConversionErrorHandler>,
@@ -1703,7 +1706,7 @@ public:
 };
 
 template <class T, class Sink,
-    class SkippingHandler = fail_if_skipped<T>,
+    class SkippingHandler = fail_if_skipped,
     class ConversionErrorHandler = fail_if_conversion_failed<T>>
 class locale_based_arithmetic_field_translator :
     detail::converter<T, ConversionErrorHandler>,
@@ -1785,8 +1788,7 @@ private:
 
 template <class Sink, class Ch,
     class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>,
-    class SkippingHandler =
-        fail_if_skipped<std::basic_string<Ch, Tr, Allocator>>>
+    class SkippingHandler = fail_if_skipped>
 class string_field_translator :
     detail::member_like_base<Allocator>,
     detail::translator<Sink, SkippingHandler>

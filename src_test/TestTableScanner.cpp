@@ -243,15 +243,15 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     
     table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values0,
-        fail_if_skipped<value_t>(),
+        fail_if_skipped(),
         replace_if_conversion_failed<value_t>(
             static_cast<value_t>(34))));
     h.set_field_scanner(1, make_field_translator(values1,
-        fail_if_skipped<value_t>(),
+        fail_if_skipped(),
         replace_if_conversion_failed<value_t>(
             nullptr, static_cast<value_t>(42))));
     h.set_field_scanner(2, make_field_translator(values2,
-        fail_if_skipped<value_t>(),
+        fail_if_skipped(),
         replace_if_conversion_failed<value_t>(
             nullptr, nullptr, static_cast<value_t>(1), static_cast<value_t>(0))));
 

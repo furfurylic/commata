@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-02-08 (UTC)</signature>
+<signature>2019-02-09 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2703,9 +2703,9 @@ template &lt;class Content, class Allocator>
           <tr>
             <td>(1)</td>
             <td><c>h()</c></td>
-            <td><c>T</c></td>
+            <td><c>T</c> or <c>void</c></td>
             <td>Called when the corresponding field has been skipped, that is, the record has had too few fields to reach the field.
-                The return value is a replacement for the translated value of the field.</td>
+                If the return type is <c>void</c>, the skipped field is simply ignored. Otherwise, the returned value is used as a replacement for the translated value of the field.</td>
           </tr>
         </table>
       </section>
@@ -2790,7 +2790,7 @@ namespace commata {
     class field_out_of_range : public field_translation_error;
 
   <c>// <n><xref id="scanner.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
-  template &lt;class T> struct fail_if_skipped;
+  struct fail_if_skipped;
   template &lt;class T> class default_if_skipped;
 
   <c>// <n><xref id="scanner.builtin.conversion_error_handlers"/>, default conversion error handler classes:</n></c>
@@ -2798,12 +2798,12 @@ namespace commata {
   template &lt;class T> class replace_if_conversion_failed;
 
   <c>// <n><xref id="arithmetic_field_translator"/>, arithmetic_field_translator:</n></c>
-  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
+  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
             class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
     class arithmetic_field_translator;
 
   <c>// <n><xref id="locale_based_arithmetic_field_translator"/>, locale_based_arithmetic_field_translator:</n></c>
-  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
+  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
             class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
     class locale_based_arithmetic_field_translator;
 
@@ -3149,21 +3149,22 @@ template &lt;class T>
       <name>Default skipping handler classes</name>
 
       <section id="fail_if_skipped">
-        <name>Struct template <c>fail_if_skipped</c></name>
+        <name>Struct <c>fail_if_skipped</c></name>
 
         <codeblock>
 namespace commata {
-  template &lt;class T> struct fail_if_skipped {
-    [[noreturn]] T operator()() const;
+  struct fail_if_skipped {
+    [[noreturn]] void operator()() const;
   };
 }
         </codeblock>
 
-        <p>The struct template <c>fail_if_skipped</c> offers types that meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>). An object of them makes the parsing process fail when the corresponding field is not found in a record.</p>
+        <p>The struct <c>fail_if_skipped</c> is a type that meets the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>).
+           An object of them makes the parsing process fail when the corresponding field is not found in a record.</p>
 
         <code-item>
           <code>
-[[noreturn]] T operator()() const;
+[[noreturn]] void operator()() const;
           </code>
           <effects>Throws an object of <c>field_not_found</c> (<xref id="field_not_found"/>).</effects>
         </code-item>
@@ -3345,7 +3346,7 @@ T empty() const;
 
       <codeblock>
 namespace commata {
-  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
+  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
             class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
     class arithmetic_field_translator {
   public:
@@ -3542,7 +3543,7 @@ void field_skipped();
 
       <codeblock>
 namespace commata {
-  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped&lt;T>,
+  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
             class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
     class locale_based_arithmetic_field_translator {
   public:
