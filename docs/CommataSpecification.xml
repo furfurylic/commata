@@ -2719,15 +2719,19 @@ template &lt;class Content, class Allocator>
           <li>the expressions shown in <xref id="table.conversion_error_handler.requirements"/> are valid and have the indidated semantics.</li>
         </ul>
 
+        <p><xref id="table.conversion_error_handler.requirements"/> shows two expressions per row.
+           It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.</p>
+
         <p>In <xref id="table.conversion_error_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
            <c>b</c> and <c>e</c> are pointers to cv-unqualified <c>Ch</c>.
            The range [<c>b</c>, <c>e</c>) is the value of the field.
            <c>e</c> can be dereferenced and points the terminating zero.
-           The type of <c>s</c> is <c>int</c>.</p>
+           The type of <c>s</c> is <c>int</c>.
+           <c>n</c> is a null pointer whose type is <c>T*</c>.</p>
 
         <table id="table.conversion_error_handler.requirements">
           <caption><c>ConversionErrorHandler</c> requirements</caption>
-          <col width="1"/><col width="4"/><col width="3"/><col width="16"/>
+          <col width="1"/><col width="4"/><col width="2"/><col width="16"/>
 
           <tr>
             <th>#</th>
@@ -2737,28 +2741,40 @@ template &lt;class Content, class Allocator>
           </tr>
 
           <tr>
-            <td>(1)</td>
+            <td rowspan="2">(1)</td>
             <td><c>h.invalid_format(b, e)</c></td>
-            <td><c>T</c></td>
-            <td>Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a format error.
+            <td rowspan="2"><c>T</c></td>
+            <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a format error.
                 The return value is a replacement for the translated value of the field.</td>
           </tr>
 
           <tr>
-            <td>(2)</td>
+            <td><c>h.invalid_format(b, e, n)</c></td>
+          </tr>
+
+          <tr>
+            <td rowspan="2">(2)</td>
             <td><c>h.out_of_range(b, e, s)</c></td>
-            <td><c>T</c></td>
-            <td>Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a range error.
+            <td rowspan="2"><c>T</c></td>
+            <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a range error.
                 <c>s</c> shall has a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, or <c>0</c> otherwise.
                 The return value is a replacement for the translated value of the field.</td>
           </tr>
 
           <tr>
-            <td>(3)</td>
+            <td><c>h.out_of_range(b, e, s, n)</c></td>
+          </tr>
+
+          <tr>
+            <td rowspan="2">(3)</td>
             <td><c>h.empty()</c></td>
-            <td><c>T</c></td>
-            <td>Called when the corresponding field has a value that is empty.
+            <td rowspan="2"><c>T</c></td>
+            <td rowspan="2">Called when the corresponding field has a value that is empty.
                 The return value is a replacement for the translated value of the field.</td>
+          </tr>
+
+          <tr>
+            <td><c>h.empty(n)</c></td>
           </tr>
         </table>
       </section>
@@ -2794,17 +2810,17 @@ namespace commata {
   template &lt;class T> class default_if_skipped;
 
   <c>// <n><xref id="scanner.builtin.conversion_error_handlers"/>, default conversion error handler classes:</n></c>
-  template &lt;class T> struct fail_if_conversion_failed;
+  struct fail_if_conversion_failed;
   template &lt;class T> class replace_if_conversion_failed;
 
   <c>// <n><xref id="arithmetic_field_translator"/>, arithmetic_field_translator:</n></c>
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
-            class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
+            class ConversionErrorHandler = fail_if_conversion_failed>
     class arithmetic_field_translator;
 
   <c>// <n><xref id="locale_based_arithmetic_field_translator"/>, locale_based_arithmetic_field_translator:</n></c>
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
-            class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
+            class ConversionErrorHandler = fail_if_conversion_failed>
     class locale_based_arithmetic_field_translator;
 
   <c>// <n><xref id="string_field_translator"/>, string_field_translator:</n></c>
@@ -3216,37 +3232,41 @@ default_if_skipped(default_if_skipped&amp;&amp; other) noexcept;
       <name>Default conversion error handler classes</name>
 
       <section id="fail_if_conversion_failed">
-        <name>Struct template <c>fail_if_conversion_failed</c></name>
+        <name>Struct <c>fail_if_conversion_failed</c></name>
 
         <codeblock>
 namespace commata {
-  template &lt;class T> struct fail_if_conversion_failed {
-    template &lt;class Ch> [[noreturn]] T invalid_format(const Ch*, const Ch*) const;
-    template &lt;class Ch> [[noreturn]] T out_of_range(const Ch*, const Ch*, int) const;
-                        [[noreturn]] T empty() const;
+  struct fail_if_conversion_failed {
+    template &lt;class T, class Ch>
+      [[noreturn]] T invalid_format(const Ch*, const Ch*, T* = nullptr) const;
+    template &lt;class T, class Ch>
+      [[noreturn]] T out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
+    template &lt;class T> [[noreturn]] T empty(T* = nullptr) const;
   };
 }
         </codeblock>
 
-        <p>The struct template <c>fail_if_conversion_failed</c> offers types that meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>). An object of them makes the parsing process fail on any conversion errors.</p>
+        <p>The struct <c>fail_if_conversion_failed</c> is a type that meets the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>). An object of them makes the parsing process fail on any conversion errors.</p>
 
         <code-item>
           <code>
-template &lt;class Ch> [[noreturn]] T invalid_format(const Ch*, const Ch*) const;
+template &lt;class T, class Ch>
+  [[noreturn]] T invalid_format(const Ch*, const Ch*, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</effects>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class Ch> [[noreturn]] T out_of_range(const Ch*, const Ch*, int) const;
+template &lt;class T, class Ch>
+  [[noreturn]] T out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</effects>
         </code-item>
 
         <code-item>
           <code>
-[[noreturn]] T empty() const;
+template &lt;class T> [[noreturn]] T empty(T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</effects>
         </code-item>
@@ -3338,8 +3358,8 @@ T empty() const;
           <effects>If <c>replacement_for_empty</c> is installed, returns it.
                    Otherwise, throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</effects>
         </code-item>
-      </section>
     </section>
+  </section>
 
     <section id="arithmetic_field_translator">
       <name>Class template <c>arithmetic_field_translator</c></name>
@@ -3347,7 +3367,7 @@ T empty() const;
       <codeblock>
 namespace commata {
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
-            class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
+            class ConversionErrorHandler = fail_if_conversion_failed>
     class arithmetic_field_translator {
   public:
     <c>// <n><xref id="arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>
@@ -3544,7 +3564,7 @@ void field_skipped();
       <codeblock>
 namespace commata {
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
-            class ConversionErrorHandler = fail_if_conversion_failed&lt;T>>
+            class ConversionErrorHandler = fail_if_conversion_failed>
     class locale_based_arithmetic_field_translator {
   public:
     <c>// <n><xref id="locale_based_arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>

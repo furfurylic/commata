@@ -222,11 +222,17 @@
 </xsl:template>
 
 <xsl:template match="th">
-  <th><xsl:apply-templates/></th>
+  <th>
+    <xsl:if test="@rowspan"><xsl:attribute name="rowspan"><xsl:value-of select="@rowspan"/></xsl:attribute></xsl:if>
+    <xsl:apply-templates/>
+  </th>
 </xsl:template>
 
 <xsl:template match="td">
-  <td><xsl:apply-templates/></td>
+  <td>
+    <xsl:if test="@rowspan"><xsl:attribute name="rowspan"><xsl:value-of select="@rowspan"/></xsl:attribute></xsl:if>
+    <xsl:apply-templates/>
+  </td>
 </xsl:template>
 
 <xsl:template name="trim-left">

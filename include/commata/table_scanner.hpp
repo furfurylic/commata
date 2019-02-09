@@ -1010,32 +1010,32 @@ public:
             }) != end;
         if (has_postfix) {
             // if a not-whitespace-extra-character found, it is NG
-            return static_cast<result_t>(get_conversion_error_handler().
+            return static_cast<result_t>(this->get().
                 invalid_format(begin, end));
         } else if (begin == middle) {
             // whitespace only
-            return static_cast<result_t>(get_conversion_error_handler().
+            return static_cast<result_t>(this->get().
                 empty());
         } else if (errno == ERANGE) {
             using limits_t =
                 std::numeric_limits<std::remove_const_t<decltype(r)>>;
             const int s = (r == limits_t::max()) ? 1 :
                           (r == limits_t::lowest()) ? -1 : 0;
-            return static_cast<result_t>(get_conversion_error_handler().
+            return static_cast<result_t>(this->get().
                 out_of_range(begin, end, s));
         } else {
             return r;
         }
     }
 
-    H& get_conversion_error_handler() noexcept
+    decltype(auto) get_conversion_error_handler() noexcept
     {
-        return this->get();
+        return this->get().get();
     }
 
-    const H& get_conversion_error_handler() const noexcept
+    decltype(auto) get_conversion_error_handler() const noexcept
     {
-        return this->get();
+        return this->get().get();
     }
 
 private:
@@ -1067,6 +1067,8 @@ struct raw_converter<T, H, std::enable_if_t<std::is_integral<T>::value,
 {
     using raw_converter_base<raw_converter<T, H>, H>
         ::raw_converter_base;
+    using raw_converter_base<raw_converter<T, H>, H>
+        ::get_conversion_error_handler;
 
     auto engine(const char* s, char** e) const
     {
@@ -1101,13 +1103,151 @@ struct raw_converter<T, H, std::enable_if_t<std::is_floating_point<T>::value,
     }
 };
 
+template <class Ch>
+struct has_simple_invalid_format_impl
+{
+    template <class F>
+    static auto check(F*) -> decltype(
+        std::declval<F&>().invalid_format(
+            std::declval<const Ch*>(), std::declval<const Ch*>()),
+        std::true_type());
+
+    template <class F>
+    static auto check(...) -> std::false_type;
+};
+
+template <class F, class Ch>
+struct has_simple_invalid_format :
+    decltype(has_simple_invalid_format_impl<Ch>::template
+        check<F>(nullptr))
+{};
+
+template <class Ch>
+struct has_simple_out_of_range_impl
+{
+    template <class F>
+    static auto check(F*) -> decltype(
+        std::declval<F&>().out_of_range(
+            std::declval<const Ch*>(), std::declval<const Ch*>(),
+            std::declval<int>()),
+        std::true_type());
+
+    template <class F>
+    static auto check(...) -> std::false_type;
+};
+
+template <class F, class Ch>
+struct has_simple_out_of_range :
+    decltype(has_simple_out_of_range_impl<Ch>::template
+        check<F>(nullptr))
+{};
+
+struct has_simple_empty_impl
+{
+    template <class F>
+    static auto check(F*) -> decltype(
+        std::declval<F&>().empty(),
+        std::true_type());
+
+    template <class F>
+    static auto check(...) -> std::false_type;
+};
+
+template <class F>
+struct has_simple_empty :
+    decltype(has_simple_empty_impl::check<F>(nullptr))
+{};
+
+template <class T>
+struct conversion_error_facade
+{
+    template <class H, class Ch,
+        std::enable_if_t<has_simple_invalid_format<H, Ch>::value>* = nullptr>
+    static T invalid_format(H& h, const Ch* begin, const Ch* end)
+    {
+        return h.invalid_format(begin, end);
+    }
+
+    template <class H, class Ch,
+        std::enable_if_t<!has_simple_invalid_format<H, Ch>::value>* = nullptr>
+    static T invalid_format(H& h, const Ch* begin, const Ch* end)
+    {
+        return h.invalid_format(begin, end, static_cast<T*>(nullptr));
+    }
+
+    template <class H, class Ch,
+        std::enable_if_t<has_simple_out_of_range<H, Ch>::value>* = nullptr>
+    static T out_of_range(H& h, const Ch* begin, const Ch* end, int sign)
+    {
+        return h.out_of_range(begin, end, sign);
+    }
+
+    template <class H, class Ch,
+        std::enable_if_t<!has_simple_out_of_range<H, Ch>::value>* = nullptr>
+    static T out_of_range(H& h, const Ch* begin, const Ch* end, int sign)
+    {
+        return h.out_of_range(begin, end, sign, static_cast<T*>(nullptr));
+    }
+
+    template <class H,
+        std::enable_if_t<has_simple_empty<H>::value>* = nullptr>
+    static T empty(H& h)
+    {
+        return h.empty();
+    }
+
+    template <class H,
+        std::enable_if_t<!has_simple_empty<H>::value>* = nullptr>
+    static T empty(H& h)
+    {
+        return h.empty(static_cast<T*>(nullptr));
+    }
+};
+
+template <class T, class H>
+struct typed_conversion_error_handler :
+    private member_like_base<H>
+{
+    using member_like_base<H>::member_like_base;
+    using member_like_base<H>::get;
+
+    template <class Ch>
+    T invalid_format(const Ch* begin, const Ch* end) const
+    {
+        return conversion_error_facade<T>::
+            invalid_format(this->get(), begin, end);
+    }
+
+    template <class Ch>
+    T out_of_range(const Ch* begin, const Ch* end, int sign) const
+    {
+        return conversion_error_facade<T>::
+            out_of_range(this->get(), begin, end, sign);
+    }
+
+    T empty() const
+    {
+        return conversion_error_facade<T>::empty(this->get());
+    }
+};
+
 // For types without corresponding "raw_type"
 template <class T, class H, class = void>
 struct converter :
-    private raw_converter<T, H>
+    private raw_converter<T, typed_conversion_error_handler<T, H>>
 {
-    using raw_converter<T, H>::raw_converter;
-    using raw_converter<T, H>::get_conversion_error_handler;
+    converter(const H& h) :
+        raw_converter<T, typed_conversion_error_handler<T, H>>(
+            typed_conversion_error_handler<T, H>(h))
+    {}
+
+    converter(H&& h) :
+        raw_converter<T, typed_conversion_error_handler<T, H>>(
+            typed_conversion_error_handler<T, H>(std::move(h)))
+    {}
+
+    using raw_converter<T, typed_conversion_error_handler<T, H>>::
+        get_conversion_error_handler;
 
     template <class Ch>
     auto convert(const Ch* begin, const Ch* end)
@@ -1128,11 +1268,11 @@ struct restrained_converter :
     {
         const auto result = this->convert_raw(begin, end);
         if (result < std::numeric_limits<T>::lowest()) {
-            return this->get_conversion_error_handler().
-                out_of_range(begin, end, -1);
+            return conversion_error_facade<T>::out_of_range(
+                this->get_conversion_error_handler(), begin, end, -1);
         } else if (std::numeric_limits<T>::max() < result) {
-            return this->get_conversion_error_handler().
-                out_of_range(begin, end, 1);
+            return conversion_error_facade<T>::out_of_range(
+                this->get_conversion_error_handler(), begin, end, 1);
         } else {
             return static_cast<T>(result);
         }
@@ -1160,18 +1300,28 @@ struct restrained_converter<T, H, U,
                 return static_cast<T>(s);
             }
         }
-        return this->get_conversion_error_handler().out_of_range(
-            begin, end, 1);
+        return conversion_error_facade<T>::out_of_range(
+            this->get_conversion_error_handler(), begin, end, 1);
     }
 };
 
 // For types which have corresponding "raw_type"
 template <class T, class H>
 struct converter<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
-    restrained_converter<T, H, typename numeric_type_traits<T>::raw_type>
+    restrained_converter<T, typed_conversion_error_handler<T, H>,
+        typename numeric_type_traits<T>::raw_type>
 {
-    using restrained_converter<T, H, typename numeric_type_traits<T>::raw_type>
-        ::restrained_converter;
+    converter(const H& h) :
+        restrained_converter<T, typed_conversion_error_handler<T, H>,
+            typename numeric_type_traits<T>::raw_type>(
+                typed_conversion_error_handler<T, H>(h))
+    {}
+
+    converter(H&& h) :
+        restrained_converter<T, typed_conversion_error_handler<T, H>,
+            typename numeric_type_traits<T>::raw_type>(
+                typed_conversion_error_handler<T, H>(std::move(h)))
+    {}
 };
 
 } // end namespace detail
@@ -1285,12 +1435,11 @@ public:
     }
 };
 
-template <class T>
 struct fail_if_conversion_failed
 {
-    template <class Ch>
+    template <class T, class Ch>
     [[noreturn]]
-    T invalid_format(const Ch* begin, const Ch* end) const
+    T invalid_format(const Ch* begin, const Ch* end, T* = nullptr) const
     {
         assert(*end == Ch());
         std::ostringstream s;
@@ -1300,9 +1449,9 @@ struct fail_if_conversion_failed
         throw field_invalid_format(s.str());
     }
 
-    template <class Ch>
+    template <class T, class Ch>
     [[noreturn]]
-    T out_of_range(const Ch* begin, const Ch* end, int /*sign*/) const
+    T out_of_range(const Ch* begin, const Ch* end, int, T* = nullptr) const
     {
         assert(*end == Ch());
         std::ostringstream s;
@@ -1312,8 +1461,9 @@ struct fail_if_conversion_failed
         throw field_out_of_range(s.str());
     }
 
+    template <class T>
     [[noreturn]]
-    T empty() const
+    T empty(T* = nullptr) const
     {
         std::ostringstream s;
         s << "Cannot convert an empty string";
@@ -1322,14 +1472,14 @@ struct fail_if_conversion_failed
     }
 
 private:
-    template <class U>
+    template <class T>
     static std::ostream& write_name(std::ostream& os, const char* prefix,
-        decltype(detail::numeric_type_traits<U>::name)* = nullptr)
+        decltype(detail::numeric_type_traits<T>::name)* = nullptr)
     {
         return os << prefix << detail::numeric_type_traits<T>::name;
     }
 
-    template <class U>
+    template <class T>
     static std::ostream& write_name(std::ostream& os, ...)
     {
         return os;
@@ -1557,7 +1707,7 @@ public:
         if (const auto p = store_->get(replacement_store::invalid_format)) {
             return *p;
         } else {
-            return fail_if_conversion_failed<T>().invalid_format(begin, end);
+            return fail_if_conversion_failed().invalid_format<T>(begin, end);
         }
     }
 
@@ -1577,7 +1727,7 @@ public:
         } else if (const auto p = store_->get(replacement_store::underflow)) {
             return *p;
         }
-        return fail_if_conversion_failed<T>().out_of_range(begin, end, sign);
+        return fail_if_conversion_failed().out_of_range<T>(begin, end, sign);
     }
 
     T empty() const
@@ -1585,7 +1735,7 @@ public:
         if (const auto p = store_->get(replacement_store::empty)) {
             return *p;
         } else {
-            return fail_if_conversion_failed<T>().empty();
+            return fail_if_conversion_failed().empty<T>();
         }
     }
 };
@@ -1672,7 +1822,7 @@ private:
 
 template <class T, class Sink,
     class SkippingHandler = fail_if_skipped,
-    class ConversionErrorHandler = fail_if_conversion_failed<T>>
+    class ConversionErrorHandler = fail_if_conversion_failed>
 class arithmetic_field_translator :
     detail::converter<T, ConversionErrorHandler>,
     detail::translator<Sink, SkippingHandler>
@@ -1707,7 +1857,7 @@ public:
 
 template <class T, class Sink,
     class SkippingHandler = fail_if_skipped,
-    class ConversionErrorHandler = fail_if_conversion_failed<T>>
+    class ConversionErrorHandler = fail_if_conversion_failed>
 class locale_based_arithmetic_field_translator :
     detail::converter<T, ConversionErrorHandler>,
     detail::translator<Sink, SkippingHandler>
