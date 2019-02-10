@@ -249,11 +249,11 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     h.set_field_scanner(1, make_field_translator(values1,
         fail_if_skipped(),
         replace_if_conversion_failed<value_t>(
-            nullptr, static_cast<value_t>(42))));
+            replacement_fail, static_cast<value_t>(42))));
     h.set_field_scanner(2, make_field_translator(values2,
         fail_if_skipped(),
         replace_if_conversion_failed<value_t>(
-            nullptr, nullptr, static_cast<value_t>(1), static_cast<value_t>(0))));
+            replacement_fail, replacement_fail, static_cast<value_t>(1), static_cast<value_t>(0))));
 
     stringstream_t s;
     s << "-5,x," << maxxPlus1 << '\n'
@@ -1050,6 +1050,30 @@ TEST_F(TestTableScannerReference, RecordEndScanner)
     ASSERT_EQ(-12345, v[3]);
 }
 
+struct TestReplacement : BaseTest
+{};
+
+TEST_F(TestReplacement, Basics)
+{
+    replacement<std::string> r(std::string("ABCDEFG"));
+    ASSERT_NE(r.get(), nullptr);
+    ASSERT_STREQ("ABCDEFG", r.get()->c_str());
+    ASSERT_STREQ(r.get()->c_str(), r->c_str());
+    ASSERT_EQ(std::string("ABCDEFG"), *r);
+
+    const auto r2(std::move(r));
+    ASSERT_NE(r2.get(), nullptr);
+    ASSERT_STREQ("ABCDEFG", r2.get()->c_str());
+    ASSERT_STREQ(r2.get()->c_str(), r2->c_str());
+    ASSERT_EQ(std::string("ABCDEFG"), *r2);
+}
+
+TEST_F(TestReplacement, None)
+{
+    replacement<std::string> r;
+    ASSERT_EQ(nullptr, r.get());
+}
+
 struct TestReplaceIfConversionFailed : BaseTest
 {};
 
@@ -1058,18 +1082,18 @@ TEST_F(TestReplaceIfConversionFailed, NonArithmeticNoThrowMoveConstructible)
     using r_t = replace_if_conversion_failed<std::string>;
     static_assert(std::is_nothrow_move_constructible<r_t>::value, "");
 
-    r_t r("E", nullptr, "U", nullptr, "X");
+    r_t r("E", replacement_fail, "U", replacement_fail, "X");
     std::vector<r_t> rs;
     rs.push_back(r);
     rs.push_back(std::move(r));
     for (const auto& r2 : rs) {
         const char d[] = "dummy";
         const auto de = d + sizeof d - 1;
-        ASSERT_STREQ("E", r2.empty().c_str());
+        ASSERT_STREQ("E", r2.empty()->c_str());
         ASSERT_THROW(r2.invalid_format(d, de), field_invalid_format);
-        ASSERT_STREQ("U", r2.out_of_range(d, de, 1).c_str());
+        ASSERT_STREQ("U", r2.out_of_range(d, de, 1)->c_str());
         ASSERT_THROW(r2.out_of_range(d, de, -1), field_out_of_range);
-        ASSERT_STREQ("X", r2.out_of_range(d, de, 0).c_str());
+        ASSERT_STREQ("X", r2.out_of_range(d, de, 0)->c_str());
     }
 }
 
@@ -1104,7 +1128,7 @@ TEST_F(TestReplaceIfConversionFailed, NonArithmeticNonNoThrowMoveConstructible)
     using r_t = replace_if_conversion_failed<char_holder>;
     static_assert(std::is_nothrow_move_constructible<r_t>::value, "");
 
-    r_t r(nullptr, char_holder('I'), nullptr, char_holder('B'), nullptr);
+    r_t r(replacement_fail, char_holder('I'), replacement_fail, char_holder('B'), replacement_fail);
     std::vector<r_t> rs;
     rs.push_back(r);
     rs.push_back(std::move(r));
@@ -1112,9 +1136,50 @@ TEST_F(TestReplaceIfConversionFailed, NonArithmeticNonNoThrowMoveConstructible)
         const char d[] = "dummy";
         const auto de = d + sizeof d - 1;
         ASSERT_THROW(r2.empty(), field_empty);
-        ASSERT_EQ('I', r2.invalid_format(d, de)());
+        ASSERT_EQ('I', (*r2.invalid_format(d, de))());
         ASSERT_THROW(r2.out_of_range(d, de, 1), field_out_of_range);
-        ASSERT_EQ('B', r2.out_of_range(d, de, -1)());
+        ASSERT_EQ('B', (*r2.out_of_range(d, de, -1))());
         ASSERT_THROW(r2.out_of_range(d, de, 0), field_out_of_range);
     }
+}
+
+namespace {
+
+template <class T>
+class calc_average
+{
+    T n_ = 0;
+    T sum_ = T();
+
+public:
+    void operator()(T n)
+    {
+        ++n_;
+        sum_ += n;
+    }
+
+    T yield() const
+    {
+        return sum_ / n_;
+    }
+};
+
+}
+
+TEST_F(TestReplaceIfConversionFailed, Ignored)
+{
+    replace_if_conversion_failed<int> r(replacement_ignore, replacement_ignore);
+    calc_average<int> a;
+    table_scanner<char> scanner;
+    scanner.set_field_scanner(0,
+        make_field_translator<int>(std::ref(a), fail_if_skipped(), std::move(r)));
+
+    try {
+        std::stringbuf buf("100\nn/a\n\n200");
+        parse_csv(&buf, std::move(scanner));
+    } catch (const text_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(150, a.yield());
 }

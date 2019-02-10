@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-02-09 (UTC)</signature>
+<signature>2019-02-21 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2691,7 +2691,7 @@ template &lt;class Content, class Allocator>
 
         <table id="table.skipping_handler.requirements">
           <caption><c>SkippingHandler</c> requirements</caption>
-          <col width="1"/><col width="4"/><col width="3"/><col width="16"/>
+          <col width="1"/><col width="4"/><col width="3"/><col width="15"/>
 
           <tr>
             <th>#</th>
@@ -2731,7 +2731,7 @@ template &lt;class Content, class Allocator>
 
         <table id="table.conversion_error_handler.requirements">
           <caption><c>ConversionErrorHandler</c> requirements</caption>
-          <col width="1"/><col width="4"/><col width="2"/><col width="16"/>
+          <col width="1"/><col width="4"/><col width="3"/><col width="15"/>
 
           <tr>
             <th>#</th>
@@ -2743,9 +2743,10 @@ template &lt;class Content, class Allocator>
           <tr>
             <td rowspan="2">(1)</td>
             <td><c>h.invalid_format(b, e)</c></td>
-            <td rowspan="2"><c>T</c></td>
+            <td rowspan="2"><c>replacement&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a format error.
-                The return value is a replacement for the translated value of the field.</td>
+                If <c>r.get()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
+                otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
           </tr>
 
           <tr>
@@ -2755,10 +2756,11 @@ template &lt;class Content, class Allocator>
           <tr>
             <td rowspan="2">(2)</td>
             <td><c>h.out_of_range(b, e, s)</c></td>
-            <td rowspan="2"><c>T</c></td>
+            <td rowspan="2"><c>replacement&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a range error.
                 <c>s</c> shall has a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, or <c>0</c> otherwise.
-                The return value is a replacement for the translated value of the field.</td>
+                If <c>r.get()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
+                otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
           </tr>
 
           <tr>
@@ -2768,9 +2770,10 @@ template &lt;class Content, class Allocator>
           <tr>
             <td rowspan="2">(3)</td>
             <td><c>h.empty()</c></td>
-            <td rowspan="2"><c>T</c></td>
+            <td rowspan="2"><c>replacement&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has a value that is empty.
-                The return value is a replacement for the translated value of the field.</td>
+                If <c>r.get()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
+                otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
           </tr>
 
           <tr>
@@ -2804,6 +2807,15 @@ namespace commata {
     class field_invalid_format : public field_translation_error;
       class field_empty : public field_invalid_format;
     class field_out_of_range : public field_translation_error;
+
+  struct replacement_ignore_t {};
+  constexpr replacement_ignore_t replacement_ignore = replacement_ignore_t{};
+
+  <c>// <n><xref id="replacement"/>, replacement:</n></c>
+  template &lt;class T> class replacement;
+
+  struct replacement_fail_t {};
+  constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
 
   <c>// <n><xref id="scanner.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
   struct fail_if_skipped;
@@ -3161,6 +3173,107 @@ template &lt;class T>
       </section>
     </section>
 
+    <section id="replacement">
+      <name>Class template <c>replacement</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class T> class replacement {
+  public:
+    using value_type = T;
+
+    replacement() noexcept;
+    replacement(replacement_ignore_t) noexcept;
+    explicit replacement(const T&amp; t);
+    explicit replacement(T&amp;&amp; t) noexcept(<nc>see below</nc>);
+    replacement(replacement&amp;&amp; other) noexcept(<nc>see below</nc>);
+    template &lt;class U> replacement(replacement&lt;U>&amp;&amp; other) noexcept(<nc>see below</nc>);
+   ~replacement();
+
+    const T* get() const noexcept;
+          T* get() noexcept;
+    const T&amp; operator*() const;
+          T&amp; operator*();
+    const T* operator->() const;
+          T* operator->();
+  };
+}
+      </codeblock>
+
+      <p>The class template <c>replacement</c> offers types an object of which is able either to contain a value or not to contain a value.
+         This class template is used to define <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>).</p>
+      <p><c>T</c> shall not be a reference type and shall satisfy the <c>Destructible</c> requirements.</p>
+
+      <code-item>
+        <code>
+replacement() noexcept;
+replacement(replacement_ignore_t) noexcept;
+        </code>
+        <postcondition><c>*this</c> shall not contain a value.</postcondition>
+      </code-item>
+
+      <code-item>
+        <code>
+explicit replacement(const T&amp; t);
+        </code>
+        <requires><c>T</c> shall be <c>CopyConstructible</c>.</requires>
+        <postcondition><c>*this</c> shall contain a value constructed from <c>t</c>.</postcondition>
+      </code-item>
+
+      <code-item>
+        <code>
+explicit replacement(T&amp;&amp; t) noexcept(<nc>see below</nc>);
+        </code>
+        <requires><c>T</c> shall be <c>MoveConstructible</c>.</requires>
+        <postcondition><c>*this</c> shall contain a value constructed from <c>std::move(t)</c>.</postcondition>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+replacement(replacement&amp;&amp; other) noexcept(<nc>see below</nc>);
+        </code>
+        <requires><c>T</c> shall be <c>MoveConstructible</c>.</requires>
+        <effects>If <c>other</c> contains a value, constructs the contained value of <c>*this</c> from <c>std::move(*other)</c>.</effects>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class U> replacement(replacement&lt;U>&amp;&amp; other) noexcept(<nc>see below</nc>);
+        </code>
+        <requires><c>std::is_constructible&lt;T, U&amp;&amp;>::value</c> shall be not <c>false</c>.</requires>
+        <effects>If <c>other</c> contains a value, constructs the contained value of <c>*this</c> from <c>std::move(*other)</c>.</effects>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;T, U&amp;&amp;>::value</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+const T* get() const noexcept;
+      T* get() noexcept;
+        </code>
+        <returns>A pointer that points the contained value of <c>*this</c>. If none is contained, <c>nullptr</c>.</returns>
+      </code-item>
+
+      <code-item>
+        <code>
+const T&amp; operator*() const;
+      T&amp; operator*();
+        </code>
+        <requires><c>get() == nullptr</c> shall be <c>false</c>.</requires>
+        <returns><c>*get()</c>.</returns>
+      </code-item>
+
+      <code-item>
+        <code>
+const T* operator->() const;
+      T* operator->();
+        </code>
+        <requires><c>get() == nullptr</c> shall be <c>false</c>.</requires>
+        <returns><c>get()</c>.</returns>
+      </code-item>
+    </section>
+
     <section id="scanner.builtin.skipping_handlers">
       <name>Default skipping handler classes</name>
 
@@ -3197,12 +3310,13 @@ namespace commata {
     default_if_skipped(const default_if_skipped&amp; other);
     default_if_skipped(default_if_skipped&amp;&amp; other) noexcept;
    ~default_if_skipped();
+
     T operator()() const;
   };
 }
         </codeblock>
 
-        <p>The class template <c>default_if_skipped</c> offers type that meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>). An object of them supplements the corresponding field that is not found in a record with a fixed value.</p>
+        <p>The class template <c>default_if_skipped</c> offers types that meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>). An object of them supplements the corresponding field that is not found in a record with a fixed value.</p>
         <p><c>T</c> shall be <c>CopyConstructible</c>.</p>
 
         <code-item>
@@ -3238,10 +3352,10 @@ default_if_skipped(default_if_skipped&amp;&amp; other) noexcept;
 namespace commata {
   struct fail_if_conversion_failed {
     template &lt;class T, class Ch>
-      [[noreturn]] T invalid_format(const Ch*, const Ch*, T* = nullptr) const;
+      [[noreturn]] replacement&lt;T> invalid_format(const Ch*, const Ch*, T* = nullptr) const;
     template &lt;class T, class Ch>
-      [[noreturn]] T out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
-    template &lt;class T> [[noreturn]] T empty(T* = nullptr) const;
+      [[noreturn]] replacement&lt;T> out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
+    template &lt;class T> [[noreturn]] replacement&lt;T> empty(T* = nullptr) const;
   };
 }
         </codeblock>
@@ -3251,7 +3365,7 @@ namespace commata {
         <code-item>
           <code>
 template &lt;class T, class Ch>
-  [[noreturn]] T invalid_format(const Ch*, const Ch*, T* = nullptr) const;
+  [[noreturn]] replacement&lt;T> invalid_format(const Ch*, const Ch*, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</effects>
         </code-item>
@@ -3259,14 +3373,14 @@ template &lt;class T, class Ch>
         <code-item>
           <code>
 template &lt;class T, class Ch>
-  [[noreturn]] T out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
+  [[noreturn]] replacement&lt;T> out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</effects>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class T> [[noreturn]] T empty(T* = nullptr) const;
+template &lt;class T> [[noreturn]] replacement&lt;T> empty(T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</effects>
         </code-item>
@@ -3278,21 +3392,21 @@ template &lt;class T> [[noreturn]] T empty(T* = nullptr) const;
         <codeblock>
 namespace commata {
   template &lt;class T> class replace_if_conversion_failed {
-    template &lt;class Empty = std::nullptr_t, class InvalidFormat = std::nullptr_t,
-              class AboveUpperLimit = std::nullptr_t, class BelowLowerLimit = std::nullptr_t>
+    template &lt;class Empty = T, class InvalidFormat = T,
+              class AboveUpperLimit = T, class BelowLowerLimit = T, class Underflow = T>
       explicit
-        replace_if_conversion_failed(Empty           on_empty             = Empty(),
-                                     InvalidFormat   on_invalid_format    = InvalidFormat(),
-                                     AboveUpperLimit on_above_upper_limit = AboveUpperLimit(),
-                                     BelowLowerLimit on_below_lower_limit = BelowLowerLimit(),
-                                     Underflow       on_underflow         = Underflow());
+        replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
+                                     InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
+                                     AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit(),
+                                     BelowLowerLimit&amp;&amp; on_below_lower_limit = BelowLowerLimit(),
+                                     Underflow&amp;&amp;       on_underflow         = Underflow());
     replace_if_conversion_failed(const replace_if_conversion_failed&amp; other);
     replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept;
    ~replace_if_conversion_failed();
 
-    template &lt;class Ch> T invalid_format(const Ch*, const Ch*) const;
-    template &lt;class Ch> T out_of_range(const Ch*, const Ch*, int sign) const;
-                        T empty() const;
+    template &lt;class Ch> replacement&lt;T> invalid_format(const Ch*, const Ch*) const;
+    template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int sign) const;
+                        replacement&lt;T> empty() const;
   };
 }
         </codeblock>
@@ -3300,63 +3414,224 @@ namespace commata {
         <p>The class template <c>replace_if_conversion_failed</c> offers types that meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>).
            On a conversion error, an object of them can make the parsing process fail or offer a substitution of the field value, depending on the category of the error.</p>
         <p><c>T</c> shall be <c>CopyConstructible</c>.</p>
-        <p>An object of <c>replace_if_conversion_failed</c> can have five <n>replacements</n>: <c>replacement_for_empty</c>, <c>replacement_for_invalid_format</c>, <c>replacement_for_above_upper_limit</c>, <c>replacement_for_below_lower_limit</c>, and <c>replacement_for_underflow</c>.
-           These replacements can be independently installed or not installed into the object of <c>replace_if_conversion_failed</c>.</p>
+        <p>An object of <c>replace_if_conversion_failed</c> can have five <n>replacement actions</n>: <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
+           These replacement actions can be configured to be either of the three types illustrated in <xref id="table.replace_if_conversion_failed.replacement_actions"/> independently on one object of <c>replace_if_conversion_failed</c>.</p>
+
+        <table id="table.replace_if_conversion_failed.replacement_actions">
+          <caption>Types of replacement actions</caption>
+          <col width="1"/><col width="2"/><col width="27"/>
+
+          <tr>
+            <th>#</th>
+            <th>Type</th>
+            <th>Effects</th>
+          </tr>
+
+          <tr>
+            <td>(1)</td>
+            <td><c>copy</c></td>
+            <td>Copy-constructs an object of <c>T</c> from an object installed into this replacement action and put it to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
+          </tr>
+
+          <tr>
+            <td>(2)</td>
+            <td><c>ignore</c></td>
+            <td>Silently ignores the conversion error without doing anything on the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
+          </tr>
+
+          <tr>
+            <td>(3)</td>
+            <td><c>fail</c></td>
+            <td>Throws an exception without doing anything on the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
+          </tr>
+        </table>
 
         <code-item>
           <code>
-template &lt;class Empty = std::nullptr_t, class InvalidFormat = std::nullptr_t,
-          class AboveUpperLimit = std::nullptr_t, class BelowLowerLimit = std::nullptr_t>
+template &lt;class Empty = T, class InvalidFormat = T,
+          class AboveUpperLimit = T, class BelowLowerLimit = T, class Underflow = T>
   explicit
-    replace_if_conversion_failed(Empty           on_empty             = Empty(),
-                                 InvalidFormat   on_invalid_format    = InvalidFormat(),
-                                 AboveUpperLimit on_above_upper_limit = AboveUpperLimit(),
-                                 BelowLowerLimit on_below_lower_limit = BelowLowerLimit(),
-                                 Underflow       on_underflow         = Underflow());
+    replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
+                                 InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
+                                 AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit(),
+                                 BelowLowerLimit&amp;&amp; on_below_lower_limit = BelowLowerLimit(),
+                                 Underflow&amp;&amp;       on_underflow         = Underflow());
           </code>
-          <effects>Installs <c>replacement_for_empty</c> constructed from <c>std::move(on_empty)</c> if and only if <c>Empty</c> is a different type from <c>std::nullptr_t</c> and <c>std::is_constructible&lt;T, Empty>::value</c> is not <c>false</c>.
-                   Does the same with <c>replacement_for_invalid_format</c>, <c>replacement_for_above_upper_limit</c> and <c>replacement_for_below_lower_limit</c>.</effects>
-          <remark>This overload shall not participate in overload resolution if any <c>U</c> of <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> or <c>BelowLowerLimit</c> satisfies that <c>U</c> is a different type from <c>std::nullptr_t</c> and <c>std::is_constructible&lt;T, U>::value</c> is <c>false</c>.</remark>
+          <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
+                   Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
+                   Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
+                   Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>.</effects>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_base_of&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;Empty>>::value</c> is <c>false</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
 replace_if_conversion_failed(const replace_if_conversion_failed&amp; other);
           </code>
-          <postcondition>Member functions <c>invalid_format</c>, <c>out_of_range</c> and <c>replacement_for_empty</c> behave the same as those of <c>other</c>.</postcondition>
+          <postcondition>Member functions <c>invalid_format</c>, <c>out_of_range</c> and <c>empty</c> behave the same as those of <c>other</c>.</postcondition>
         </code-item>
 
         <code-item>
           <code>
 replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept;
           </code>
-          <postcondition>Member functions <c>invalid_format</c>, <c>out_of_range</c> and <c>replacement_for_empty</c> behave like <c>other</c> would do before the call.</postcondition>
+          <postcondition>Member functions <c>invalid_format</c>, <c>out_of_range</c> and <c>empty</c> behave like <c>other</c> would do before the call.</postcondition>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class Ch> T invalid_format(const Ch*, const Ch*) const;
+template &lt;class Ch> replacement&lt;T> invalid_format(const Ch*, const Ch*) const;
           </code>
-          <effects>If the <c>replacement_for_invalid_format</c> is installed, returns it.
-                   Otherwise, throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</effects>
+          <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.invalid_format"/> in reference to the <c>action_on_invalid_format</c> of <c>*this</c>.</effects>
+
+          <table id="table.replace_if_conversion_failed.invalid_format">
+            <caption>Effects of calling of <c>invalid_format</c></caption>
+            <col width="5"/><col width="8"/><col width="5"/><col width="18"/>
+
+            <tr>
+              <th>#</th>
+              <th>Referenced action</th>
+              <th>Type of the action</th>
+              <th>Effects</th>
+            </tr>
+
+            <tr>
+              <td>(1)</td>
+              <td rowspan="3"><c>action_on_invalid_format</c></td>
+              <td><c>copy</c></td>
+              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+            </tr>
+
+            <tr>
+              <td>(2)</td>
+              <td><c>ignore</c></td>
+              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+            </tr>
+
+            <tr>
+              <td>(3)</td>
+              <td><c>fail</c></td>
+              <td>Throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</td>
+            </tr>
+          </table>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class Ch> T out_of_range(const Ch*, const Ch*, int sign) const;
+template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int sign) const;
           </code>
-          <effects>If <c>sign</c> has a positive value and <c>replacement_for_above_upper_limit</c> is installed, returns it.
-                   Otherwise, if <c>signed</c> has a negative value and <c>replacement_for_below_lower_limit</c> is installed, returns it.
-                   Otherwise, if <c>signed</c> is equal to <c>0</c> and <c>replacement_for_underflow</c> is installed, returns it.
-                   Otherwise, throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</effects>
+          <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.out_of_range"/> in reference to <c>sign</c> and the <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> of <c>*this</c>.</effects>
+
+          <table id="table.replace_if_conversion_failed.out_of_range">
+            <caption>Effects of calling of <c>out_of_range</c></caption>
+            <col width="2"/><col width="3"/><col width="8"/><col width="5"/><col width="18"/>
+
+            <tr>
+              <th>#</th>
+              <th><c>sign</c></th>
+              <th>Referenced action</th>
+              <th>Type of the action</th>
+              <th>Effects</th>
+            </tr>
+
+            <tr>
+              <td>(1)</td>
+              <td rowspan="3">positive</td>
+              <td rowspan="3"><c>action_on_above_upper_limit</c></td>
+              <td><c>copy</c></td>
+              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+            </tr>
+
+            <tr>
+              <td>(2)</td>
+              <td><c>ignore</c></td>
+              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+            </tr>
+
+            <tr>
+              <td>(3)</td>
+              <td><c>fail</c></td>
+              <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
+            </tr>
+
+            <tr>
+              <td>(4)</td>
+              <td rowspan="3">negative</td>
+              <td rowspan="3"><c>action_on_below_lower_limit</c></td>
+              <td><c>copy</c></td>
+              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+            </tr>
+
+            <tr>
+              <td>(5)</td>
+              <td><c>ignore</c></td>
+              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+            </tr>
+
+            <tr>
+              <td>(6)</td>
+              <td><c>fail</c></td>
+              <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
+            </tr>
+
+            <tr>
+              <td>(7)</td>
+              <td rowspan="3"><c>0</c></td>
+              <td rowspan="3"><c>action_on_underflow</c></td>
+              <td><c>copy</c></td>
+              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+            </tr>
+
+            <tr>
+              <td>(8)</td>
+              <td><c>ignore</c></td>
+              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+            </tr>
+
+            <tr>
+              <td>(9)</td>
+              <td><c>fail</c></td>
+              <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
+            </tr>
+          </table>
         </code-item>
 
         <code-item>
           <code>
-T empty() const;
+replacement&lt;T> empty() const;
           </code>
-          <effects>If <c>replacement_for_empty</c> is installed, returns it.
-                   Otherwise, throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</effects>
+          <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.empty"/> in reference to the <c>action_on_empty</c> of <c>*this</c>.</effects>
+
+          <table id="table.replace_if_conversion_failed.empty">
+            <caption>Effects of a call to <c>empty</c></caption>
+            <col width="5"/><col width="8"/><col width="5"/><col width="18"/>
+
+            <tr>
+              <th>#</th>
+              <th>Referenced action</th>
+              <th>Type of the action</th>
+              <th>Effects</th>
+            </tr>
+
+            <tr>
+              <td>(1)</td>
+              <td rowspan="3"><c>action_on_empty</c></td>
+              <td><c>copy</c></td>
+              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+            </tr>
+
+            <tr>
+              <td>(2)</td>
+              <td><c>ignore</c></td>
+              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+            </tr>
+
+            <tr>
+              <td>(3)</td>
+              <td><c>fail</c></td>
+              <td>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</td>
+            </tr>
+          </table>
         </code-item>
     </section>
   </section>
@@ -3446,7 +3721,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
           <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
           <effects>First calls a parsing function indicated in <xref id="table.arithmetic_field_translator.parsing_functions"/> for <c>T</c> and <c>Ch</c> to get a arithmetic value <c>v</c> of the range [<c>begin</c>, <c>end</c>).
                    Then does an action indicated in <xref id="table.arithmetic_field_translator.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
-                   In <xref id="table.arithmetic_field_translator.branching"/>, <c>ceh</c> is the conversion error handler, and <c>g</c> is a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, zero otherwise.</effects>
+                   In <xref id="table.arithmetic_field_translator.branching"/>, <c>ceh</c> is the conversion error handler, <c>n</c> is a null pointer of type <c>T*</c>, and <c>g</c> is a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, zero otherwise.</effects>
 
           <table id="table.arithmetic_field_translator.parsing_functions">
             <caption>The parsing functions used by <c>arithmetic_field_translator</c></caption>
@@ -3520,7 +3795,8 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
               <td>Yes</td>
               <td>No</td>
               <td>No</td>
-              <td>Evaluates <c>ceh.out_of_range(begin, end, g)</c> and puts the result into the field translator sink.</td>
+              <td>Evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and let <c>r</c> be the return value.
+                  Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
             </tr>
 
             <tr>
@@ -3528,7 +3804,8 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
               <td>Yes</td>
               <td>Yes</td>
               <td>&#8211;</td>
-              <td>Evaluates <c>ceh.out_of_range(begin, end, g)</c> and puts the result into the field translator sink.</td>
+              <td>Evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and let <c>r</c> be the return value.
+                  Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
             </tr>
 
             <tr>
@@ -3536,7 +3813,8 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
               <td>No</td>
               <td>&#8211;</td>
               <td>&#8211;</td>
-              <td>Evaluates <c>ceh.empty()</c> and puts the result into the field translator sink.</td>
+              <td>Evaluates <c>ceh.empty()</c> or <c>ceh.empty(n)</c> and let <c>r</c> be the return value.
+                  Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
             </tr>
 
             <tr>
@@ -3544,7 +3822,8 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
               <td>&#8211;</td>
               <td>&#8211;</td>
               <td>&#8211;</td>
-              <td>Evaluates <c>ceh.invalid_format(begin, end)</c> and puts the result into the field translator sink.</td>
+              <td>Evaluates <c>ceh.invalid_format(begin, end)</c> or <c>ceh.invalid_format(begin, end, n)</c> and let <c>r</c> be the return value.
+                  Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
             </tr>
           </table>
         </code-item>
