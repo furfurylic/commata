@@ -1517,29 +1517,61 @@ constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
 
 struct fail_if_skipped
 {
+    template <class T>
     [[noreturn]]
-    void operator()() const
+    replacement<T> operator()(T*) const
     {
         throw field_not_found("This field did not appear in this record");
     }
 };
 
 template <class T>
-class default_if_skipped
+class replace_if_skipped
 {
+    enum class mode
+    {
+        replace,
+        fail,
+        ignore
+    };
+
+    mode mode_;
     detail::movable_store<T> default_value_;
 
 public:
-    explicit default_if_skipped(T default_value = T()) :
-        default_value_(std::move(default_value))
+    explicit replace_if_skipped(replacement_fail_t) noexcept :
+        mode_(mode::fail)
     {}
 
-    default_if_skipped(const default_if_skipped&) = default;
-    default_if_skipped(default_if_skipped&&) noexcept = default;
+    explicit replace_if_skipped(replacement_ignore_t) noexcept :
+        mode_(mode::ignore)
+    {}
 
-    T operator()() const
+    template <class U = T,
+        std::enable_if_t<
+            !std::is_base_of<replace_if_skipped<T>, std::decay_t<U>>::value
+         && !std::is_base_of<replacement_ignore_t, std::decay_t<U>>::value
+         && !std::is_base_of<replacement_fail_t, std::decay_t<U>>::value,
+            std::nullptr_t> = nullptr>
+    replace_if_skipped(U&& default_value = U()) :
+        mode_(mode::replace),
+        default_value_(std::forward<U>(default_value))
+    {}
+
+    replace_if_skipped(const replace_if_skipped&) = default;
+    replace_if_skipped(replace_if_skipped&&) noexcept = default;
+
+    replacement<T> operator()() const
     {
-        return *default_value_;
+        switch (mode_) {
+        case mode::replace:
+            return replacement<T>(*default_value_);
+        case mode::fail:
+            fail_if_skipped()(static_cast<T*>(nullptr));
+            // fall through
+        default:
+            return replacement<T>();
+        }
     }
 };
 
@@ -1910,7 +1942,23 @@ struct is_output_iterator<T,
     std::true_type
 {};
 
-template <class Sink, class SkippingHandler>
+struct has_simple_call_impl
+{
+    template <class F>
+    static auto check(F*) -> decltype(
+        std::declval<F&>()(),
+        std::true_type());
+
+    template <class F>
+    static auto check(...) -> std::false_type;
+};
+
+template <class F>
+struct has_simple_call :
+    decltype(has_simple_call_impl::check<F>(nullptr))
+{};
+
+template <class T, class Sink, class SkippingHandler>
 class translator :
     member_like_base<SkippingHandler>
 {
@@ -1934,49 +1982,50 @@ public:
 
     void field_skipped()
     {
-        do_field_skipped(std::is_void<decltype(get_skipping_handler()())>());
+        if (const auto p = call_skipping_handler(
+                has_simple_call<SkippingHandler>()).get()) {
+            put(std::move(*p));
+        }
     }
 
 private:
-    void do_field_skipped(std::true_type)
-    {
-        get_skipping_handler()();
+    auto call_skipping_handler(std::true_type) {
+        return get_skipping_handler()();
     }
 
-    void do_field_skipped(std::false_type)
-    {
-        put(get_skipping_handler()());
+    auto call_skipping_handler(std::false_type) {
+        return get_skipping_handler()(static_cast<T*>(nullptr));
     }
 
 protected:
-    template <class T>
-    void put(T&& value)
+    template <class U>
+    void put(U&& value)
     {
-        do_put(std::forward<T>(value), is_output_iterator<Sink>());
+        do_put(std::forward<U>(value), is_output_iterator<Sink>());
     }
 
-    template <class T>
-    void put(replacement<T>&& value)
+    template <class U>
+    void put(replacement<U>&& value)
     {
         do_put(std::move(value), is_output_iterator<Sink>());
     }
 
 private:
-    template <class T>
-    void do_put(T&& value, std::true_type)
+    template <class U>
+    void do_put(U&& value, std::true_type)
     {
-        *sink_ = std::forward<T>(value);
+        *sink_ = std::forward<U>(value);
         ++sink_;
     }
 
-    template <class T>
-    void do_put(T&& value, std::false_type)
+    template <class U>
+    void do_put(U&& value, std::false_type)
     {
-        sink_(std::forward<T>(value));
+        sink_(std::forward<U>(value));
     }
 
-    template <class T>
-    void do_put(replacement<T>&& value, std::true_type)
+    template <class U>
+    void do_put(replacement<U>&& value, std::true_type)
     {
         if (auto p = value.get()) {
             *sink_ = std::move(*p);
@@ -1984,8 +2033,8 @@ private:
         }
     }
 
-    template <class T>
-    void do_put(replacement<T>&& value, std::false_type)
+    template <class U>
+    void do_put(replacement<U>&& value, std::false_type)
     {
         if (auto p = value.get()) {
             sink_(std::move(*p));
@@ -2000,7 +2049,7 @@ template <class T, class Sink,
     class ConversionErrorHandler = fail_if_conversion_failed>
 class arithmetic_field_translator :
     detail::converter<T, ConversionErrorHandler>,
-    detail::translator<Sink, SkippingHandler>
+    detail::translator<T, Sink, SkippingHandler>
 {
 public:
     explicit arithmetic_field_translator(
@@ -2010,15 +2059,15 @@ public:
             = ConversionErrorHandler()) :
         detail::converter<T, ConversionErrorHandler>(
             std::move(handle_conversion_error)),
-        detail::translator<Sink, SkippingHandler>(
+        detail::translator<T, Sink, SkippingHandler>(
             std::move(sink), std::move(handle_skipping))
     {}
 
     arithmetic_field_translator(arithmetic_field_translator&&) = default;
     ~arithmetic_field_translator() = default;
 
-    using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
-    using detail::translator<Sink, SkippingHandler>::field_skipped;
+    using detail::translator<T, Sink, SkippingHandler>::get_skipping_handler;
+    using detail::translator<T, Sink, SkippingHandler>::field_skipped;
     using detail::converter<T, ConversionErrorHandler>::
         get_conversion_error_handler;
 
@@ -2035,7 +2084,7 @@ template <class T, class Sink,
     class ConversionErrorHandler = fail_if_conversion_failed>
 class locale_based_arithmetic_field_translator :
     detail::converter<T, ConversionErrorHandler>,
-    detail::translator<Sink, SkippingHandler>
+    detail::translator<T, Sink, SkippingHandler>
 {
     std::locale loc_;
 
@@ -2053,7 +2102,7 @@ public:
             = ConversionErrorHandler()) :
         detail::converter<T, ConversionErrorHandler>(
             std::move(handle_conversion_error)),
-        detail::translator<Sink, SkippingHandler>(
+        detail::translator<T, Sink, SkippingHandler>(
             std::move(sink), std::move(handle_skipping)),
         loc_(loc), decimal_point_c_()
     {}
@@ -2062,8 +2111,8 @@ public:
         locale_based_arithmetic_field_translator&&) = default;
     ~locale_based_arithmetic_field_translator() = default;
 
-    using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
-    using detail::translator<Sink, SkippingHandler>::field_skipped;
+    using detail::translator<T, Sink, SkippingHandler>::get_skipping_handler;
+    using detail::translator<T, Sink, SkippingHandler>::field_skipped;
     using detail::converter<T, ConversionErrorHandler>::
         get_conversion_error_handler;
 
@@ -2116,24 +2165,27 @@ template <class Sink, class Ch,
     class SkippingHandler = fail_if_skipped>
 class string_field_translator :
     detail::member_like_base<Allocator>,
-    detail::translator<Sink, SkippingHandler>
+    detail::translator<
+        std::basic_string<Ch, Tr, Allocator>, Sink, SkippingHandler>
 {
+    using target_t = std::basic_string<Ch, Tr, Allocator>;
+    using translator_t = detail::translator<
+        std::basic_string<Ch, Tr, Allocator>, Sink, SkippingHandler>;
+
 public:
     using allocator_type = Allocator;
 
     explicit string_field_translator(
         Sink sink,
         SkippingHandler handle_skipping = SkippingHandler()) :
-        detail::translator<Sink, SkippingHandler>(
-            std::move(sink), std::move(handle_skipping))
+        translator_t(std::move(sink), std::move(handle_skipping))
     {}
 
     string_field_translator(
         std::allocator_arg_t, const Allocator& alloc, Sink sink,
         SkippingHandler handle_skipping = SkippingHandler()) :
         detail::member_like_base<Allocator>(alloc),
-        detail::translator<Sink, SkippingHandler>(
-            std::move(sink), std::move(handle_skipping))
+        translator_t(std::move(sink), std::move(handle_skipping))
     {}
 
     string_field_translator(string_field_translator&&) = default;
@@ -2144,8 +2196,8 @@ public:
         return detail::member_like_base<Allocator>::get();
     }
 
-    using detail::translator<Sink, SkippingHandler>::get_skipping_handler;
-    using detail::translator<Sink, SkippingHandler>::field_skipped;
+    using translator_t::get_skipping_handler;
+    using translator_t::field_skipped;
 
     void field_value(const Ch* begin, const Ch* end)
     {

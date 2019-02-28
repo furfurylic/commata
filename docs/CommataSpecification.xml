@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-02-21 (UTC)</signature>
+<signature>2019-03-01 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2687,7 +2687,11 @@ template &lt;class Content, class Allocator>
           <li>the expression shown in <xref id="table.skipping_handler.requirements"/> is valid and have the indidated semantics.</li>
         </ul>
 
-        <p>In <xref id="table.skipping_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.</p>
+        <p><xref id="table.skipping_handler.requirements"/> shows two expressions per row.
+           It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.</p>
+
+        <p>In <xref id="table.skipping_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
+           <c>n</c> is a null pointer whose type is <c>T*</c>.</p>
 
         <table id="table.skipping_handler.requirements">
           <caption><c>SkippingHandler</c> requirements</caption>
@@ -2701,11 +2705,16 @@ template &lt;class Content, class Allocator>
           </tr>
 
           <tr>
-            <td>(1)</td>
+            <td rowspan="2">(1)</td>
             <td><c>h()</c></td>
-            <td><c>T</c> or <c>void</c></td>
-            <td>Called when the corresponding field has been skipped, that is, the record has had too few fields to reach the field.
-                If the return type is <c>void</c>, the skipped field is simply ignored. Otherwise, the returned value is used as a replacement for the translated value of the field.</td>
+            <td rowspan="2"><c>replacement&lt;T></c></td>
+            <td rowspan="2">Called when the corresponding field has been skipped, that is, the record has had too few fields to reach the field.
+                If <c>r.get()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
+                otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
+          </tr>
+
+          <tr>
+            <td><c>h(n)</c></td>
           </tr>
         </table>
       </section>
@@ -2819,7 +2828,7 @@ namespace commata {
 
   <c>// <n><xref id="scanner.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
   struct fail_if_skipped;
-  template &lt;class T> class default_if_skipped;
+  template &lt;class T> class replace_if_skipped;
 
   <c>// <n><xref id="scanner.builtin.conversion_error_handlers"/>, default conversion error handler classes:</n></c>
   struct fail_if_conversion_failed;
@@ -3283,7 +3292,7 @@ const T* operator->() const;
         <codeblock>
 namespace commata {
   struct fail_if_skipped {
-    [[noreturn]] void operator()() const;
+    template &lt;class T> [[noreturn]] replacement&lt;T> operator()(T*) const;
   };
 }
         </codeblock>
@@ -3293,51 +3302,138 @@ namespace commata {
 
         <code-item>
           <code>
-[[noreturn]] void operator()() const;
+template &lt;class T> [[noreturn]] replacement&lt;T> operator()(T*) const;
           </code>
           <effects>Throws an object of <c>field_not_found</c> (<xref id="field_not_found"/>).</effects>
         </code-item>
       </section>
 
-      <section id="default_if_skipped">
-        <name>Class template <c>default_if_skipped</c></name>
+      <section id="replace_if_skipped">
+        <name>Class template <c>replace_if_skipped</c></name>
 
         <codeblock>
 namespace commata {
-  template &lt;class T> class default_if_skipped {
+  template &lt;class T> class replace_if_skipped {
   public:
-    explicit default_if_skipped(T default_value = T());
-    default_if_skipped(const default_if_skipped&amp; other);
-    default_if_skipped(default_if_skipped&amp;&amp; other) noexcept;
-   ~default_if_skipped();
+    explicit replace_if_skipped(replacement_fail_t) noexcept;
+    explicit replace_if_skipped(replacement_ignore_t) noexcept;
+    template &lt;class U = T> explicit replace_if_skipped(U&amp;&amp; default_value = U());
+    replace_if_skipped(const replace_if_skipped&amp; other);
+    replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept;
+   ~replace_if_skipped();
 
-    T operator()() const;
+    replacement&lt;T> operator()() const;
   };
 }
         </codeblock>
 
-        <p>The class template <c>default_if_skipped</c> offers types that meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>). An object of them supplements the corresponding field that is not found in a record with a fixed value.</p>
+        <p>The class template <c>replace_if_skipped</c> offers types that meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>).
+           An object of them supplements the corresponding field that is not found in a record with a fixed value.</p>
         <p><c>T</c> shall be <c>CopyConstructible</c>.</p>
+        <p>An object of <c>replace_if_skipped</c> has a <n>replacement action</n>.
+           A replacement action can be configured to be either of the three types illustrated in <xref id="table.replace_if_skipped.replacement_actions"/>.</p>
+
+        <table id="table.replace_if_skipped.replacement_actions">
+          <caption>Types of replacement actions</caption>
+          <col width="1"/><col width="2"/><col width="27"/>
+
+          <tr>
+            <th>#</th>
+            <th>Type</th>
+            <th>Effects</th>
+          </tr>
+
+          <tr>
+            <td>(1)</td>
+            <td><c>copy</c></td>
+            <td>Copy-constructs an object of <c>T</c> from an object installed into this replacement action and put it to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
+          </tr>
+
+          <tr>
+            <td>(2)</td>
+            <td><c>ignore</c></td>
+            <td>Silently ignores the conversion error without doing anything on the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
+          </tr>
+
+          <tr>
+            <td>(3)</td>
+            <td><c>fail</c></td>
+            <td>Throws an exception without doing anything on the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
+          </tr>
+        </table>
 
         <code-item>
           <code>
-explicit default_if_skipped(T default_value = T());
+explicit replace_if_skipped(replacement_fail_t) noexcept;
           </code>
-          <postcondition><c>(*this)() == default_value</c> shall not be <c>false</c>.</postcondition>
+          <effects>Configures the replacement action to be <c>fail</c>.</effects>
         </code-item>
 
         <code-item>
           <code>
-default_if_skipped(const default_if_skipped&amp; other);
+explicit replace_if_skipped(replacement_ignore_t) noexcept;
           </code>
-          <postcondition><c>(*this)() == other()</c> shall not be <c>false</c>.</postcondition>
+          <effects>Configures the replacement action to be <c>ignore</c>.</effects>
         </code-item>
 
         <code-item>
           <code>
-default_if_skipped(default_if_skipped&amp;&amp; other) noexcept;
+template &lt;class U = T> explicit replace_if_skipped(U&amp;&amp; default_value = U());
           </code>
-          <postcondition><c>(*this)() == d</c> shall not be <c>false</c> where <c>d</c> is the value that <c>other()</c> would return before the call.</postcondition>
+          <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;U>(default_value)</c>.</effects>
+          <remark>This overload shall not participate in overload resolution unless all of <c>std::is_base_of&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;U>>::value</c>,
+                  <c>std::is_base_of&lt;replacement_fail_t>, std::decay_t&lt;U>>::value</c> and
+                  <c>std::is_base_of&lt;replacement_ignore_t>, std::decay_t&lt;U>>::value</c> are <c>false</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+replace_if_skipped(const replace_if_skipped&amp; other);
+          </code>
+          <postcondition>Member function <c>operator()</c> behaves the same as <c>other</c>'s.</postcondition>
+        </code-item>
+
+        <code-item>
+          <code>
+replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept;
+          </code>
+          <postcondition>Member function <c>operator()</c> behaves like <c>other</c> would do before the call.</postcondition>
+        </code-item>
+
+        <code-item>
+          <code>
+replacement&lt;T> operator()() const;
+          </code>
+          <effects>Does as illustrated in <xref id="table.replace_if_skipped.invalid_format"/> in reference to the replacement action of <c>*this</c>.</effects>
+
+          <table id="table.replace_if_skipped.invalid_format">
+            <caption>Effects of calling of <c>operator()</c></caption>
+            <col width="13"/><col width="5"/><col width="18"/>
+
+            <tr>
+              <th>#</th>
+              <th>Type of the action</th>
+              <th>Effects</th>
+            </tr>
+
+            <tr>
+              <td>(1)</td>
+              <td><c>copy</c></td>
+              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into the action.</td>
+            </tr>
+
+            <tr>
+              <td>(2)</td>
+              <td><c>ignore</c></td>
+              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+            </tr>
+
+            <tr>
+              <td>(3)</td>
+              <td><c>fail</c></td>
+              <td>Throws an object of <c>field_not_found</c> (<xref id="field_not_found"/>).</td>
+            </tr>
+          </table>
         </code-item>
       </section>
     </section>
@@ -3414,37 +3510,8 @@ namespace commata {
         <p>The class template <c>replace_if_conversion_failed</c> offers types that meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>).
            On a conversion error, an object of them can make the parsing process fail or offer a substitution of the field value, depending on the category of the error.</p>
         <p><c>T</c> shall be <c>CopyConstructible</c>.</p>
-        <p>An object of <c>replace_if_conversion_failed</c> can have five <n>replacement actions</n>: <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
-           These replacement actions can be configured to be either of the three types illustrated in <xref id="table.replace_if_conversion_failed.replacement_actions"/> independently on one object of <c>replace_if_conversion_failed</c>.</p>
-
-        <table id="table.replace_if_conversion_failed.replacement_actions">
-          <caption>Types of replacement actions</caption>
-          <col width="1"/><col width="2"/><col width="27"/>
-
-          <tr>
-            <th>#</th>
-            <th>Type</th>
-            <th>Effects</th>
-          </tr>
-
-          <tr>
-            <td>(1)</td>
-            <td><c>copy</c></td>
-            <td>Copy-constructs an object of <c>T</c> from an object installed into this replacement action and put it to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
-          </tr>
-
-          <tr>
-            <td>(2)</td>
-            <td><c>ignore</c></td>
-            <td>Silently ignores the conversion error without doing anything on the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
-          </tr>
-
-          <tr>
-            <td>(3)</td>
-            <td><c>fail</c></td>
-            <td>Throws an exception without doing anything on the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
-          </tr>
-        </table>
+        <p>An object of <c>replace_if_conversion_failed</c> has five replacement actions each of which is equivalent to one which an <c>replace_if_skipped</c> object has (<xref id="replace_if_skipped"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
+           Each of these replacement actions can be configured to be either of the three types illustrated in <xref id="table.replace_if_skipped.replacement_actions"/> independently on one object of <c>replace_if_conversion_failed</c>.</p>
 
         <code-item>
           <code>

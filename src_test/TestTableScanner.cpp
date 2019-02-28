@@ -601,15 +601,15 @@ TYPED_TEST(TestTableScanner, SkippedWithNoErrors)
 
     table_scanner<TypeParam> h;
     h.set_field_scanner(0, make_field_translator(
-        values0, default_if_skipped<string_t>()));
+        values0, replace_if_skipped<string_t>()));
     h.set_field_scanner(1, make_field_translator(
-        values1, default_if_skipped<int>(50)));
+        values1, replace_if_skipped<int>(50)));
 
     const auto scanner1 = h.template
         get_field_scanner<decltype(make_field_translator(
-            values1, default_if_skipped<int>()))>(1U);
+            values1, replace_if_skipped<int>()))>(1U);
     ASSERT_NE(scanner1, nullptr);
-    ASSERT_EQ(50, scanner1->get_skipping_handler()());
+    ASSERT_EQ(50, *scanner1->get_skipping_handler()());
 
     std::basic_stringstream<TypeParam> s;
     s << "XYZ,20\n"
@@ -635,7 +635,7 @@ TYPED_TEST(TestTableScanner, SkippedWithErrors)
 
     table_scanner<TypeParam> h;
     h.set_field_scanner(0, make_field_translator(
-        values0, default_if_skipped<int>(10)));
+        values0, replace_if_skipped<int>(10)));
     h.set_field_scanner(1, make_field_translator(values1));
 
     std::basic_stringstream<TypeParam> s;
