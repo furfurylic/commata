@@ -80,6 +80,46 @@ public:
     }
 };
 
+template <class B, class M>
+class base_member_pair
+{
+    struct pair : member_like_base<B>
+    {
+        M m;
+
+        pair(B base, M member) :
+            member_like_base<B>(std::move(base)), m(std::move(member))
+        {}
+    };
+
+    pair p_;
+
+public:
+    base_member_pair(B first, M second) :
+        p_(std::move(first), std::move(second))
+    {}
+
+    B& base() noexcept
+    {
+        return p_.get();
+    }
+
+    const B& base() const noexcept
+    {
+        return p_.get();
+    }
+
+    M& member() noexcept
+    {
+        return p_.m;
+    }
+
+    const M& member() const noexcept
+    {
+        return p_.m;
+    }
+};
+
 }}
 
 #endif

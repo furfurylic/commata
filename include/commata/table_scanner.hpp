@@ -2190,11 +2190,13 @@ private:
 template <class Sink, class Ch,
     class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>,
     class SkippingHandler = fail_if_skipped>
-class string_field_translator :
-    detail::member_like_base<Allocator>
+class string_field_translator
 {
-    detail::translator<std::basic_string<Ch, Tr, Allocator>,
-        Sink, SkippingHandler> translator_;
+    using translator_t =
+        detail::translator<std::basic_string<Ch, Tr, Allocator>,
+        Sink, SkippingHandler>;
+
+    detail::base_member_pair<Allocator, translator_t> at_;
 
 public:
     using allocator_type = Allocator;
@@ -2202,14 +2204,14 @@ public:
     explicit string_field_translator(
         Sink sink,
         SkippingHandler handle_skipping = SkippingHandler()) :
-        translator_(std::move(sink), std::move(handle_skipping))
+        at_(Allocator(),
+            translator_t(std::move(sink), std::move(handle_skipping)))
     {}
 
     string_field_translator(
         std::allocator_arg_t, const Allocator& alloc, Sink sink,
         SkippingHandler handle_skipping = SkippingHandler()) :
-        detail::member_like_base<Allocator>(alloc),
-        translator_(std::move(sink), std::move(handle_skipping))
+        at_(alloc, translator_t(std::move(sink), std::move(handle_skipping)))
     {}
 
     string_field_translator(string_field_translator&&) = default;
@@ -2217,27 +2219,27 @@ public:
 
     allocator_type get_allocator() const noexcept
     {
-        return detail::member_like_base<Allocator>::get();
+        return at_.base();
     }
 
     const SkippingHandler& get_skipping_handler() const noexcept
     {
-        return translator_.get_skipping_handler();
+        return at_.member().get_skipping_handler();
     }
 
     SkippingHandler& get_skipping_handler() noexcept
     {
-        return translator_.get_skipping_handler();
+        return at_.member().get_skipping_handler();
     }
 
     void field_skipped()
     {
-        translator_.field_skipped();
+        at_.member().field_skipped();
     }
 
     void field_value(const Ch* begin, const Ch* end)
     {
-        translator_.put(std::basic_string<Ch, Tr, Allocator>(
+        at_.member().put(std::basic_string<Ch, Tr, Allocator>(
             begin, end, get_allocator()));
     }
 
@@ -2246,7 +2248,7 @@ public:
         // std::basic_string which comes with gcc 7.3.1 does not seem to have
         // "move-with-specified-allocator" ctor
         if (value.get_allocator() == get_allocator()) {
-            translator_.put(std::move(value));
+            at_.member().put(std::move(value));
         } else {
             field_value(value.c_str(), value.c_str() + value.size());
         }
