@@ -1970,6 +1970,12 @@ public:
         sink_(std::move(sink))
     {}
 
+    // VS2015 needs this ctor. I don't know why.
+    translator(translator&& other) :
+        member_like_base<SkippingHandler>(std::move(other.get())),
+        sink_(std::move(other.sink_))
+    {}
+
     const SkippingHandler& get_skipping_handler() const noexcept
     {
         return this->get();
@@ -1997,7 +2003,7 @@ private:
         return get_skipping_handler()(static_cast<T*>(nullptr));
     }
 
-protected:
+public:
     template <class U>
     void put(U&& value)
     {
@@ -2048,9 +2054,10 @@ template <class T, class Sink,
     class SkippingHandler = fail_if_skipped,
     class ConversionErrorHandler = fail_if_conversion_failed>
 class arithmetic_field_translator :
-    detail::converter<T, ConversionErrorHandler>,
-    detail::translator<T, Sink, SkippingHandler>
+    detail::converter<T, ConversionErrorHandler>
 {
+    detail::translator<T, Sink, SkippingHandler> translator_;
+
 public:
     explicit arithmetic_field_translator(
         Sink sink,
@@ -2059,15 +2066,27 @@ public:
             = ConversionErrorHandler()) :
         detail::converter<T, ConversionErrorHandler>(
             std::move(handle_conversion_error)),
-        detail::translator<T, Sink, SkippingHandler>(
-            std::move(sink), std::move(handle_skipping))
+        translator_(std::move(sink), std::move(handle_skipping))
     {}
 
     arithmetic_field_translator(arithmetic_field_translator&&) = default;
     ~arithmetic_field_translator() = default;
 
-    using detail::translator<T, Sink, SkippingHandler>::get_skipping_handler;
-    using detail::translator<T, Sink, SkippingHandler>::field_skipped;
+    const SkippingHandler& get_skipping_handler() const noexcept
+    {
+        return translator_.get_skipping_handler();
+    }
+
+    SkippingHandler& get_skipping_handler() noexcept
+    {
+        return translator_.get_skipping_handler();
+    }
+
+    void field_skipped()
+    {
+        translator_.field_skipped();
+    }
+
     using detail::converter<T, ConversionErrorHandler>::
         get_conversion_error_handler;
 
@@ -2075,7 +2094,7 @@ public:
     void field_value(const Ch* begin, const Ch* end)
     {
         assert(*end == Ch());
-        this->put(this->convert(begin, end));
+        translator_.put(this->convert(begin, end));
     }
 };
 
@@ -2083,9 +2102,9 @@ template <class T, class Sink,
     class SkippingHandler = fail_if_skipped,
     class ConversionErrorHandler = fail_if_conversion_failed>
 class locale_based_arithmetic_field_translator :
-    detail::converter<T, ConversionErrorHandler>,
-    detail::translator<T, Sink, SkippingHandler>
+    detail::converter<T, ConversionErrorHandler>
 {
+    detail::translator<T, Sink, SkippingHandler> translator_;
     std::locale loc_;
 
     // These are initialized after parsing has started
@@ -2102,8 +2121,7 @@ public:
             = ConversionErrorHandler()) :
         detail::converter<T, ConversionErrorHandler>(
             std::move(handle_conversion_error)),
-        detail::translator<T, Sink, SkippingHandler>(
-            std::move(sink), std::move(handle_skipping)),
+        translator_(std::move(sink), std::move(handle_skipping)),
         loc_(loc), decimal_point_c_()
     {}
 
@@ -2111,8 +2129,21 @@ public:
         locale_based_arithmetic_field_translator&&) = default;
     ~locale_based_arithmetic_field_translator() = default;
 
-    using detail::translator<T, Sink, SkippingHandler>::get_skipping_handler;
-    using detail::translator<T, Sink, SkippingHandler>::field_skipped;
+    const SkippingHandler& get_skipping_handler() const noexcept
+    {
+        return translator_.get_skipping_handler();
+    }
+
+    SkippingHandler& get_skipping_handler() noexcept
+    {
+        return translator_.get_skipping_handler();
+    }
+
+    void field_skipped()
+    {
+        translator_.field_skipped();
+    }
+
     using detail::converter<T, ConversionErrorHandler>::
         get_conversion_error_handler;
 
@@ -2145,7 +2176,7 @@ public:
             ++head;
         }
         *head = Ch();
-        this->put(this->convert(begin, head));
+        translator_.put(this->convert(begin, head));
     }
 
 private:
@@ -2164,13 +2195,10 @@ template <class Sink, class Ch,
     class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>,
     class SkippingHandler = fail_if_skipped>
 class string_field_translator :
-    detail::member_like_base<Allocator>,
-    detail::translator<
-        std::basic_string<Ch, Tr, Allocator>, Sink, SkippingHandler>
+    detail::member_like_base<Allocator>
 {
-    using target_t = std::basic_string<Ch, Tr, Allocator>;
-    using translator_t = detail::translator<
-        std::basic_string<Ch, Tr, Allocator>, Sink, SkippingHandler>;
+    detail::translator<std::basic_string<Ch, Tr, Allocator>,
+        Sink, SkippingHandler> translator_;
 
 public:
     using allocator_type = Allocator;
@@ -2178,14 +2206,14 @@ public:
     explicit string_field_translator(
         Sink sink,
         SkippingHandler handle_skipping = SkippingHandler()) :
-        translator_t(std::move(sink), std::move(handle_skipping))
+        translator_(std::move(sink), std::move(handle_skipping))
     {}
 
     string_field_translator(
         std::allocator_arg_t, const Allocator& alloc, Sink sink,
         SkippingHandler handle_skipping = SkippingHandler()) :
         detail::member_like_base<Allocator>(alloc),
-        translator_t(std::move(sink), std::move(handle_skipping))
+        translator_(std::move(sink), std::move(handle_skipping))
     {}
 
     string_field_translator(string_field_translator&&) = default;
@@ -2196,12 +2224,24 @@ public:
         return detail::member_like_base<Allocator>::get();
     }
 
-    using translator_t::get_skipping_handler;
-    using translator_t::field_skipped;
+    const SkippingHandler& get_skipping_handler() const noexcept
+    {
+        return translator_.get_skipping_handler();
+    }
+
+    SkippingHandler& get_skipping_handler() noexcept
+    {
+        return translator_.get_skipping_handler();
+    }
+
+    void field_skipped()
+    {
+        translator_.field_skipped();
+    }
 
     void field_value(const Ch* begin, const Ch* end)
     {
-        this->put(std::basic_string<Ch, Tr, Allocator>(
+        translator_.put(std::basic_string<Ch, Tr, Allocator>(
             begin, end, get_allocator()));
     }
 
@@ -2210,9 +2250,9 @@ public:
         // std::basic_string which comes with gcc 7.3.1 does not seem to have
         // "move-with-specified-allocator" ctor
         if (value.get_allocator() == get_allocator()) {
-            this->put(std::move(value));
+            translator_.put(std::move(value));
         } else {
-            this->field_value(value.c_str(), value.c_str() + value.size());
+            field_value(value.c_str(), value.c_str() + value.size());
         }
     }
 };
