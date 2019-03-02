@@ -232,8 +232,7 @@ public:
 
 template <class Ch, class Tr = std::char_traits<Ch>,
           class Allocator = std::allocator<Ch>>
-class table_scanner :
-    detail::member_like_base<Allocator>
+class table_scanner
 {
     using string_t = std::basic_string<Ch, Tr, Allocator>;
 
@@ -452,11 +451,11 @@ class table_scanner :
     typename at_t::pointer buffer_;
     const Ch* begin_;
     const Ch* end_;
+    string_t fragmented_value_;
     typename hfs_at_t::pointer header_field_scanner_;
     detail::nothrow_move_constructible<
         std::vector<bfs_ptr_t, scanners_a_t>> scanners_;
     typename res_at_t::pointer end_scanner_;
-    string_t fragmented_value_;
 
 public:
     using char_type = Ch;
@@ -485,13 +484,11 @@ public:
         std::allocator_arg_t, const Allocator& alloc,
         std::size_t header_record_count = 0U,
         size_type buffer_size = 0U) :
-        detail::member_like_base<Allocator>(alloc),
         remaining_header_records_(header_record_count), j_(0),
         buffer_size_(sanitize_buffer_size(buffer_size)),
-        buffer_(), begin_(nullptr),
-        header_field_scanner_(),
-        scanners_(make_scanners()),
-        end_scanner_(nullptr), fragmented_value_(alloc)
+        buffer_(), begin_(nullptr), fragmented_value_(alloc),
+        header_field_scanner_(), scanners_(make_scanners()),
+        end_scanner_(nullptr)
     {}
 
     template <
@@ -501,25 +498,22 @@ public:
         std::allocator_arg_t, const Allocator& alloc,
         HeaderFieldScanner s,
         size_type buffer_size = 0U) :
-        detail::member_like_base<Allocator>(alloc),
         remaining_header_records_(0U), j_(0),
         buffer_size_(sanitize_buffer_size(buffer_size)),
-        buffer_(), begin_(nullptr),
+        buffer_(), begin_(nullptr), fragmented_value_(alloc),
         header_field_scanner_(allocate_construct<
             typed_header_field_scanner<HeaderFieldScanner>>(std::move(s))),
-        scanners_(make_scanners()),
-        end_scanner_(nullptr), fragmented_value_(alloc)
+        scanners_(make_scanners()), end_scanner_(nullptr)
     {}
 
     table_scanner(table_scanner&& other) noexcept :
-        detail::member_like_base<Allocator>(std::move(other)),
         remaining_header_records_(other.remaining_header_records_),
         j_(other.j_), buffer_size_(other.buffer_size_),
         buffer_(other.buffer_), begin_(other.begin_), end_(other.end_),
+        fragmented_value_(std::move(other.fragmented_value_)),
         header_field_scanner_(other.header_field_scanner_),
         scanners_(std::move(other.scanners_)),
-        end_scanner_(other.end_scanner_),
-        fragmented_value_(std::move(other.fragmented_value_))
+        end_scanner_(other.end_scanner_)
     {
         other.buffer_ = nullptr;
         other.header_field_scanner_ = nullptr;
@@ -528,8 +522,9 @@ public:
 
     ~table_scanner()
     {
+        auto a = get_allocator();
         if (buffer_) {
-            at_t::deallocate(this->get(), buffer_, buffer_size_);
+            at_t::deallocate(a, buffer_, buffer_size_);
         }
         if (header_field_scanner_) {
             destroy_deallocate(header_field_scanner_);
@@ -540,7 +535,7 @@ public:
                     destroy_deallocate(p);
                 }
             }
-            scanners_.kill(this->get());
+            scanners_.kill(a);
         }
         if (end_scanner_) {
             destroy_deallocate(end_scanner_);
@@ -549,7 +544,7 @@ public:
 
     allocator_type get_allocator() const noexcept
     {
-        return this->get();
+        return fragmented_value_.get_allocator();
     }
 
     template <class FieldScanner = std::nullptr_t>
@@ -564,7 +559,7 @@ private:
     {
         using scanner_t = typed_body_field_scanner<FieldScanner>;
         if (!scanners_) {
-            scanners_.assign(this->get(), make_scanners());         // throw
+            scanners_.assign(get_allocator(), make_scanners());     // throw
             scanners_->resize(j + 1);                               // throw
         } else if (j >= scanners_->size()) {
             scanners_->resize(j + 1);                               // throw
@@ -681,10 +676,10 @@ public:
     std::pair<Ch*, std::size_t> get_buffer()
     {
         if (!buffer_) {
-            buffer_ = at_t::allocate(
-                this->get(), buffer_size_);         // throw
+            auto a = get_allocator();
+            buffer_ = at_t::allocate(a, buffer_size_);  // throw
         } else if (begin_) {
-            fragmented_value_.assign(begin_, end_); // throw
+            fragmented_value_.assign(begin_, end_);     // throw
             begin_ = nullptr;
         }
         return { true_buffer(), static_cast<std::size_t>(buffer_size_ - 1) };
@@ -778,7 +773,7 @@ private:
         }
         return std::min(
                 std::max(buffer_size, static_cast<size_type>(2U)),
-                at_t::max_size(this->get()));
+                at_t::max_size(get_allocator()));
     }
 
     template <class T, class... Args>
@@ -786,7 +781,7 @@ private:
     {
         using t_alloc_traits_t =
             typename at_t::template rebind_traits<T>;
-        typename t_alloc_traits_t::allocator_type a(this->get());
+        typename t_alloc_traits_t::allocator_type a(get_allocator());
         const auto p = t_alloc_traits_t::allocate(a, 1);    // throw
         try {
             ::new(std::addressof(*p))
@@ -803,15 +798,16 @@ private:
     {
         assert(p);
         using t_at_t = typename at_t::template rebind_traits<T>;
-        typename t_at_t::allocator_type a(this->get());
+        typename t_at_t::allocator_type a(get_allocator());
         std::addressof(*p)->~T();
         t_at_t::deallocate(a, p, 1);
     }
 
     auto make_scanners()
     {
-        return decltype(scanners_)(std::allocator_arg,
-            this->get(), scanners_a_t(bfs_ptr_a_t(this->get())));
+        const auto a = get_allocator();
+        return decltype(scanners_)(std::allocator_arg, a,
+            scanners_a_t(bfs_ptr_a_t(a)));
     }
 
     Ch* true_buffer() const noexcept
