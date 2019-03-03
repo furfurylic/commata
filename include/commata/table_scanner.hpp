@@ -2049,10 +2049,12 @@ private:
 template <class T, class Sink,
     class SkippingHandler = fail_if_skipped,
     class ConversionErrorHandler = fail_if_conversion_failed>
-class arithmetic_field_translator :
-    detail::converter<T, ConversionErrorHandler>
+class arithmetic_field_translator
 {
-    detail::translator<T, Sink, SkippingHandler> translator_;
+    using converter_t = detail::converter<T, ConversionErrorHandler>;
+    using translator_t = detail::translator<T, Sink, SkippingHandler>;
+
+    detail::base_member_pair<converter_t, translator_t> ct_;
 
 public:
     explicit arithmetic_field_translator(
@@ -2060,9 +2062,8 @@ public:
         SkippingHandler handle_skipping = SkippingHandler(),
         ConversionErrorHandler handle_conversion_error
             = ConversionErrorHandler()) :
-        detail::converter<T, ConversionErrorHandler>(
-            std::move(handle_conversion_error)),
-        translator_(std::move(sink), std::move(handle_skipping))
+        ct_(converter_t(std::move(handle_conversion_error)),
+            translator_t(std::move(sink), std::move(handle_skipping)))
     {}
 
     arithmetic_field_translator(arithmetic_field_translator&&) = default;
@@ -2070,27 +2071,34 @@ public:
 
     const SkippingHandler& get_skipping_handler() const noexcept
     {
-        return translator_.get_skipping_handler();
+        return ct_.member().get_skipping_handler();
     }
 
     SkippingHandler& get_skipping_handler() noexcept
     {
-        return translator_.get_skipping_handler();
+        return ct_.member().get_skipping_handler();
     }
 
     void field_skipped()
     {
-        translator_.field_skipped();
+        ct_.member().field_skipped();
     }
 
-    using detail::converter<T, ConversionErrorHandler>::
-        get_conversion_error_handler;
+    ConversionErrorHandler& get_conversion_error_handler() noexcept
+    {
+        return ct_.base().get_conversion_error_handler();
+    }
+
+    const ConversionErrorHandler& get_conversion_error_handler() const noexcept
+    {
+        return ct_.base().get_conversion_error_handler();
+    }
 
     template <class Ch>
     void field_value(const Ch* begin, const Ch* end)
     {
         assert(*end == Ch());
-        translator_.put(this->convert(begin, end));
+        ct_.member().put(ct_.base().convert(begin, end));
     }
 };
 
