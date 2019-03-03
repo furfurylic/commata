@@ -2105,10 +2105,10 @@ public:
 template <class T, class Sink,
     class SkippingHandler = fail_if_skipped,
     class ConversionErrorHandler = fail_if_conversion_failed>
-class locale_based_arithmetic_field_translator :
-    detail::converter<T, ConversionErrorHandler>
+class locale_based_arithmetic_field_translator
 {
-    detail::translator<T, Sink, SkippingHandler> translator_;
+    arithmetic_field_translator<
+        T, Sink, SkippingHandler, ConversionErrorHandler> out_;
     std::locale loc_;
 
     // These are initialized after parsing has started
@@ -2123,9 +2123,8 @@ public:
         SkippingHandler handle_skipping = SkippingHandler(),
         ConversionErrorHandler handle_conversion_error
             = ConversionErrorHandler()) :
-        detail::converter<T, ConversionErrorHandler>(
+        out_(std::move(sink), std::move(handle_skipping),
             std::move(handle_conversion_error)),
-        translator_(std::move(sink), std::move(handle_skipping)),
         loc_(loc), decimal_point_c_()
     {}
 
@@ -2135,21 +2134,28 @@ public:
 
     const SkippingHandler& get_skipping_handler() const noexcept
     {
-        return translator_.get_skipping_handler();
+        return out_.get_skipping_handler();
     }
 
     SkippingHandler& get_skipping_handler() noexcept
     {
-        return translator_.get_skipping_handler();
+        return out_.get_skipping_handler();
     }
 
     void field_skipped()
     {
-        translator_.field_skipped();
+        out_.field_skipped();
     }
 
-    using detail::converter<T, ConversionErrorHandler>::
-        get_conversion_error_handler;
+    ConversionErrorHandler& get_conversion_error_handler() noexcept
+    {
+        return out_.get_conversion_error_handler();
+    }
+
+    const ConversionErrorHandler& get_conversion_error_handler() const noexcept
+    {
+        return out_.get_conversion_error_handler();
+    }
 
     template <class Ch>
     void field_value(Ch* begin, Ch* end)
@@ -2180,7 +2186,7 @@ public:
             ++head;
         }
         *head = Ch();
-        translator_.put(this->convert(begin, head));
+        out_.field_value(begin, head);
     }
 
 private:
