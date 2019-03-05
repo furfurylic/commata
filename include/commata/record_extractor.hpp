@@ -59,20 +59,6 @@ auto field_name_of(const char* prefix, const T& t,
     return field_name_of_impl<T>(prefix, t);
 }
 
-template <class FieldNamePred>
-struct field_name_pred_base :
-    member_like_base<FieldNamePred>
-{
-    using member_like_base<FieldNamePred>::member_like_base;
-};
-
-template <class FieldValuePred>
-struct field_value_pred_base :
-    member_like_base<FieldValuePred>
-{
-    using member_like_base<FieldValuePred>::member_like_base;
-};
-
 template <class Ch>
 struct hollow_field_name_pred
 {
@@ -103,12 +89,8 @@ namespace detail {
 
 template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr, class Allocator>
-class record_extractor_impl :
-    field_name_pred_base<FieldNamePred>,
-    field_value_pred_base<FieldValuePred>
+class record_extractor_impl
 {
-    using field_name_pred_t = field_name_pred_base<FieldNamePred>;
-    using field_value_pred_t = field_value_pred_base<FieldValuePred>;
     using alloc_t = detail::allocation_only_allocator<Allocator>;
 
     enum class record_mode : std::int_fast8_t
@@ -134,8 +116,12 @@ class record_extractor_impl :
     // We use string instead of vector for its nothrow-movability, but in
     // C++17 we shall have nothrow-movable vector, so then we shall be able to
     // adopt vector
-    std::basic_string<Ch, Tr, alloc_t> field_buffer_;
-    std::basic_string<Ch, Tr, alloc_t> record_buffer_;
+    detail::base_member_pair<
+        FieldNamePred,
+        std::basic_string<Ch, Tr, alloc_t>/*field_buffer*/> nf_;
+    detail::base_member_pair<
+        FieldValuePred,
+        std::basic_string<Ch, Tr, alloc_t>/*record_buffer*/> vr_;
                                 // populated only after the buffer switched in
                                 // a unknown (included or not) record and
                                 // shall not overlap with interval
@@ -156,14 +142,15 @@ public:
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePred field_name_pred, FieldValuePred field_value_pred,
         bool includes_header, std::size_t max_record_num) :
-        field_name_pred_t(std::move(field_name_pred)),
-        field_value_pred_t(std::move(field_value_pred)),
         header_mode_(includes_header ?
             record_mode::include : record_mode::exclude),
         record_mode_(record_mode::exclude),
         record_num_to_include_(max_record_num), target_field_index_(npos),
         field_index_(0), out_(out),
-        field_buffer_(alloc_t(alloc)), record_buffer_(alloc_t(alloc))
+        nf_(FieldNamePred(std::move(field_name_pred)),
+            std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc))),
+        vr_(FieldValuePred(std::move(field_value_pred)),
+            std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc)))
     {}
 
     record_extractor_impl(record_extractor_impl&&) noexcept = default;
@@ -175,7 +162,7 @@ public:
 
     allocator_type get_allocator() const noexcept
     {
-        return field_buffer_.get_allocator().base();
+        return field_buffer().get_allocator().base();
     }
 
     void start_buffer(const Ch* buffer_begin, const Ch* /*buffer_end*/)
@@ -190,7 +177,7 @@ public:
             flush_current(buffer_end);
             break;
         case record_mode::unknown:
-            record_buffer_.append(current_begin_, buffer_end);
+            record_buffer().append(current_begin_, buffer_end);
             break;
         default:
             break;
@@ -202,14 +189,14 @@ public:
         current_begin_ = record_begin;
         record_mode_ = header_yet() ? header_mode_ : record_mode::unknown;
         field_index_ = 0;
-        assert(record_buffer_.empty());
+        assert(record_buffer().empty());
     }
 
     void update(const Ch* first, const Ch* last)
     {
         if ((header_yet() && (target_field_index_ == npos))
          || (field_index_ == target_field_index_)) {
-            field_buffer_.append(first, last);
+            field_buffer().append(first, last);
         }
     }
 
@@ -218,8 +205,8 @@ public:
         using namespace std::placeholders;
         if (header_yet()) {
             if ((target_field_index_ == npos)
-             && with_field_buffer_appended(first, last, std::bind(
-                    std::ref(field_name_pred_t::get()), _1, _2))) {
+             && with_field_buffer_appended(first, last,
+                    std::bind(std::ref(nf_.base()), _1, _2))) {
                 target_field_index_ = field_index_;
             }
             ++field_index_;
@@ -229,8 +216,8 @@ public:
         } else {
             if ((record_mode_ == record_mode::unknown)
              && (field_index_ == target_field_index_)) {
-                if (with_field_buffer_appended(first, last, std::bind(
-                        std::ref(field_value_pred_t::get()), _1, _2))) {
+                if (with_field_buffer_appended(first, last,
+                        std::bind(std::ref(vr_.base()), _1, _2))) {
                     include();
                 } else {
                     exclude();
@@ -264,6 +251,16 @@ public:
     }
 
 private:
+    std::basic_string<Ch, Tr, alloc_t>& field_buffer()
+    {
+        return nf_.member();
+    }
+
+    std::basic_string<Ch, Tr, alloc_t>& record_buffer()
+    {
+        return vr_.member();
+    }
+
     bool header_yet() const noexcept
     {
         return header_mode_ != record_mode::unknown;
@@ -272,13 +269,13 @@ private:
     template <class F>
     auto with_field_buffer_appended(const Ch* first, const Ch* last, F f)
     {
-        if (field_buffer_.empty()) {
+        if (field_buffer().empty()) {
             return f(first, last);
         } else {
-            field_buffer_.append(first, last);
-            const auto r = f(
-                &field_buffer_[0], &field_buffer_[0] + field_buffer_.size());
-            field_buffer_.clear();
+            field_buffer().append(first, last);
+            const auto r = f(&field_buffer()[0],
+                &field_buffer()[0] + field_buffer().size());
+            field_buffer().clear();
             return r;
         }
     }
@@ -287,7 +284,7 @@ private:
     {
         std::ostringstream what;
         what << "No matching field"
-             << field_name_of(" for ", field_name_pred_t::get());
+             << field_name_of(" for ", nf_.base());
         return record_extraction_error(what.str());
     }
 
@@ -300,7 +297,7 @@ private:
     void exclude()
     {
         record_mode_ = record_mode::exclude;
-        record_buffer_.clear();
+        record_buffer().clear();
     }
 
     bool flush_record(const Ch* record_end)
@@ -314,12 +311,12 @@ private:
                                                     // from doing anything
             return true;
         case record_mode::exclude:
-            assert(record_buffer_.empty());
+            assert(record_buffer().empty());
             return false;
         case record_mode::unknown:
             assert(!header_yet());
             record_mode_ = record_mode::exclude;    // no such a far field
-            record_buffer_.clear();
+            record_buffer().clear();
             return false;
         default:
             assert(false);
@@ -329,15 +326,15 @@ private:
 
     void flush_record_buffer()
     {
-        if (!record_buffer_.empty()) {
-            out_->sputn(record_buffer_.data(), record_buffer_.size());
-            record_buffer_.clear();
+        if (!record_buffer().empty()) {
+            out_->sputn(record_buffer().data(), record_buffer().size());
+            record_buffer().clear();
         }
     }
 
     void flush_current(const Ch* end)
     {
-        assert(record_buffer_.empty());
+        assert(record_buffer().empty());
         out_->sputn(current_begin_, end - current_begin_);
     }
 
