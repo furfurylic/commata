@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-03-01 (UTC)</signature>
+<signature>2019-03-21 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2517,7 +2517,7 @@ template &lt;class Content, class Allocator>
       <section id="scanner.table.general">
         <name>General</name>
 
-        <p>Commata offers a <n>table scanner</n> class template, whose name is <c>table_scanner</c> (<xref id="table_scanner"/>), whose instances meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) as a simple facility for one-pass scanning of texts.</p>
+        <p>Commata offers a <n>table scanner</n> class template, whose name is <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>), whose instances meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) as a simple facility for one-pass scanning of texts.</p>
         <p>A table scanner object can hold a <n>body field scanner</n> object for each field to which it forwards the field values, and it can hold a <n>record-end scanner</n> object to which it noitifies the end-of-record events.</p>
         <p>In addition, a table scanner object can be configured to recognize some first records as &#x201c;header&#x201d; records. It can simply ignore the header records or can forward the field values in the header to a <n>header field scanner</n> object it holds optionally.</p>
         <p>Properties that the type of the body field scanners shall meet, type of the record-end scanners shall meet, and the type of the header field scanners shall meet are bundled as
@@ -2621,7 +2621,7 @@ template &lt;class Content, class Allocator>
         <p>In <xref id="table.header_field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
            The type of <c>j</c> is <c>std::size_t</c>.
            The type of <c>v</c> is <c>const std::pair&lt;Ch*, Ch*>*</c>.
-           <c>t</c> is an lvalue of the corresponding cv-unqualified <c>table_scanner</c> (<xref id="table_scanner"/>) object.</p>
+           <c>t</c> is an lvalue of the corresponding cv-unqualified <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) object, the first template argument of the type of which is <c>Ch</c>.</p>
 
         <table id="table.header_field_scanner.requirements">
           <caption><c>HeaderFieldScanner</c> requirements</caption>
@@ -2806,9 +2806,12 @@ template &lt;class Content, class Allocator>
 #include "text_error.hpp"
 
 namespace commata {
-  <c>// <n><xref id="table_scanner"/>, table_scanner:</n></c>
+  <c>// <n><xref id="basic_table_scanner"/>, basic_table_scanner:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
-    class table_scanner;
+    class basic_table_scanner;
+
+  using table_scanner = basic_table_scanner&lt;char>;
+  using wtable_scanner = basic_table_scanner&lt;wchar_t>;
 
   <c>// <n><xref id="scanner.builtin.exceptions"/>, exception classes:</n></c>
   class field_translation_error : public text_error;
@@ -2865,45 +2868,45 @@ namespace commata {
       </codeblock>
     </section>
 
-    <section id="table_scanner">
-      <name>Class template <c>table_scanner</c></name>
+    <section id="basic_table_scanner">
+      <name>Class template <c>basic_table_scanner</c></name>
 
-      <section id="table_scanner.overview">
-        <name>Class template <c>table_scanner</c> overview</name>
+      <section id="basic_table_scanner.overview">
+        <name>Class template <c>basic_table_scanner</c> overview</name>
 
         <codeblock>
 namespace commata {
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
-    class table_scanner {
+    class basic_table_scanner {
   public:
     using char_type = Ch;
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits&lt;Allocator>::size_type;
 
-    <c>// <n><xref id="table_scanner.cons"/>, construction:</n></c>
-    explicit table_scanner(std::size_t header_record_count = 0, size_type buffer_size = 0);
-    table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-                  std::size_t header_record_count = 0, size_type buffer_size = 0);
+    <c>// <n><xref id="basic_table_scanner.cons"/>, construction:</n></c>
+    explicit basic_table_scanner(std::size_t header_record_count = 0, size_type buffer_size = 0);
+    basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
+                        std::size_t header_record_count = 0, size_type buffer_size = 0);
     template &lt;class HeaderFieldScanner>
-      explicit table_scanner(HeaderFieldScanner s, size_type buffer_size = 0);
+      explicit basic_table_scanner(HeaderFieldScanner s, size_type buffer_size = 0);
     template &lt;class HeaderFieldScanner>
-      table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-                    HeaderFieldScanner s, size_type buffer_size = 0);
-    table_scanner(table_scanner&amp;&amp; other) noexcept;
+      basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
+                          HeaderFieldScanner s, size_type buffer_size = 0);
+    basic_table_scanner(basic_table_scanner&amp;&amp; other) noexcept;
 
-   ~table_scanner();
+   ~basic_table_scanner();
 
-    <c>// <n><xref id="table_scanner.allocator"/>, allocator access:</n></c>
+    <c>// <n><xref id="basic_table_scanner.allocator"/>, allocator access:</n></c>
     allocator_type get_allocator() const noexcept;
 
-    <c>// <n><xref id="table_scanner.field_scanner_access"/>, body field scanner access:</n></c>
+    <c>// <n><xref id="basic_table_scanner.field_scanner_access"/>, body field scanner access:</n></c>
     template &lt;class T = std::nullptr_t> void set_field_scanner(std::size_t j, T s = T());
     bool has_field_scanner(std::size_t j) const noexcept;
     const std::type_info&amp; get_field_scanner_type(std::size_t j) const noexcept;
     template &lt;class T> const T* get_field_scanner(std::size_t j) const noexcept;
     template &lt;class T>       T* get_field_scanner(std::size_t j)       noexcept;
 
-    <c>// <n><xref id="table_scanner.record_end_scanner_access"/>, record-end scanner access:</n></c>
+    <c>// <n><xref id="basic_table_scanner.record_end_scanner_access"/>, record-end scanner access:</n></c>
     template &lt;class T = std::nullptr_t> void set_record_end_scanner(T s = T());
     bool has_record_end_scanner() const noexcept;
     const std::type_info&amp; get_record_end_scanner_type() const noexcept;
@@ -2922,22 +2925,22 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The class template <c>table_scanner</c> describes the table scanner objects (<xref id="scanner.table.general"/>).
+        <p>The class template <c>basic_table_scanner</c> describes the table scanner objects (<xref id="scanner.table.general"/>).
            An instantiation of it satisfies the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for the template parameter <c>Ch</c>.
            An object of an instantiation of it can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
         <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements and <c>Allocator::value_type</c> shall be a type identical to <c>Ch</c>.</p>
       </section>
 
-      <section id="table_scanner.cons">
-        <name><c>table_scanner</c> construction</name>
+      <section id="basic_table_scanner.cons">
+        <name><c>basic_table_scanner</c> construction</name>
 
         <code-item>
           <code>
-explicit table_scanner(std::size_t header_record_count = 0, size_type buffer_size = 0);
-table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-              std::size_t header_record_count = 0, size_type buffer_size = 0);
+explicit basic_table_scanner(std::size_t header_record_count = 0, size_type buffer_size = 0);
+basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
+                    std::size_t header_record_count = 0, size_type buffer_size = 0);
           </code>
-          <effects>Constructs an object of <c>table_scanner</c>.
+          <effects>Constructs an object of <c>basic_table_scanner</c>.
                    The scanner shall ignore the first <c>header_record_count</c> records as header records.
                    The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x201c;no hint.&#x201d;
                    The scanner shall allocate and deallocate memory with a default-constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
@@ -2947,13 +2950,13 @@ table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
         <code-item>
           <code>
 template &lt;class HeaderFieldScanner>
-  explicit table_scanner(HeaderFieldScanner s, size_type buffer_size = 0);
+  explicit basic_table_scanner(HeaderFieldScanner s, size_type buffer_size = 0);
 template &lt;class HeaderFieldScanner>
-  table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-                HeaderFieldScanner s, size_type buffer_size = 0);
+  basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
+                      HeaderFieldScanner s, size_type buffer_size = 0);
           </code>
           <requires><c>HeaderFieldScanner</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>Ch</c>.</requires>
-          <effects>Constructs an object of <c>table_scanner</c> with an header field scanner object installed.
+          <effects>Constructs an object of <c>basic_table_scanner</c> with an header field scanner object installed.
                    The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x201c;no hint.&#x201d;
                    The scanner shall allocate and deallocate memory with a default-constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
           <postcondition><c>*this</c> has a header field scanner constructed as a copy of <c>s</c> installed and no body field scanners installed.</postcondition>
@@ -2961,8 +2964,8 @@ template &lt;class HeaderFieldScanner>
         </code-item>
       </section>
 
-      <section id="table_scanner.allocator">
-        <name><c>table_scanner</c> allocator access</name>
+      <section id="basic_table_scanner.allocator">
+        <name><c>basic_table_scanner</c> allocator access</name>
         <code-item>
           <code>
 allocator_type get_allocator() const noexcept;
@@ -2971,8 +2974,8 @@ allocator_type get_allocator() const noexcept;
         </code-item>
       </section>
 
-      <section id="table_scanner.field_scanner_access">
-        <name><c>table_scanner</c> body field scanner access</name>
+      <section id="basic_table_scanner.field_scanner_access">
+        <name><c>basic_table_scanner</c> body field scanner access</name>
 
         <code-item>
           <code>
@@ -3010,8 +3013,8 @@ template &lt;class T>       T* get_field_scanner(std::size_t j)       noexcept;
         </code-item>
       </section>
 
-      <section id="table_scanner.record_end_scanner_access">
-        <name><c>table_scanner</c> record-end scanner access</name>
+      <section id="basic_table_scanner.record_end_scanner_access">
+        <name><c>basic_table_scanner</c> record-end scanner access</name>
 
         <code-item>
           <code>

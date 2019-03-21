@@ -232,7 +232,7 @@ public:
 
 template <class Ch, class Tr = std::char_traits<Ch>,
           class Allocator = std::allocator<Ch>>
-class table_scanner
+class basic_table_scanner
 {
     using string_t = std::basic_string<Ch, Tr, Allocator>;
 
@@ -263,13 +263,15 @@ class table_scanner
     struct field_scanner
     {
         virtual ~field_scanner() {}
-        virtual void field_value(Ch* begin, Ch* end, table_scanner& me) = 0;
-        virtual void field_value(string_t&& value, table_scanner& me) = 0;
+        virtual void field_value(
+            Ch* begin, Ch* end, basic_table_scanner& me) = 0;
+        virtual void field_value(
+            string_t&& value, basic_table_scanner& me) = 0;
     };
 
     struct header_field_scanner : field_scanner
     {
-        virtual void so_much_for_header(table_scanner& me) = 0;
+        virtual void so_much_for_header(basic_table_scanner& me) = 0;
     };
 
     template <class HeaderScanner>
@@ -284,7 +286,7 @@ class table_scanner
             scanner_(std::move(s))
         {}
 
-        void field_value(Ch* begin, Ch* end, table_scanner& me) override
+        void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
         {
             const range_t range(begin, end);
             if (!scanner_(me.j_, &range, me)) {
@@ -292,12 +294,12 @@ class table_scanner
             }
         }
 
-        void field_value(string_t&& value, table_scanner& me) override
+        void field_value(string_t&& value, basic_table_scanner& me) override
         {
             field_value(&value[0], &value[0] + value.size(), me);
         }
 
-        void so_much_for_header(table_scanner& me) override
+        void so_much_for_header(basic_table_scanner& me) override
         {
             if (!scanner_(me.j_, static_cast<const range_t*>(nullptr), me)) {
                 me.remove_header_field_scanner();
@@ -320,7 +322,7 @@ class table_scanner
             scanner_(std::move(s))
         {}
 
-        void field_value(Ch* begin, Ch* end, table_scanner& me) override
+        void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
         {
             field_value_r(
                 typename detail::accepts_range<
@@ -328,7 +330,7 @@ class table_scanner
                 begin, end, me);
         }
 
-        void field_value(string_t&& value, table_scanner& me) override
+        void field_value(string_t&& value, basic_table_scanner& me) override
         {
             field_value_s(
                 typename detail::accepts_x<
@@ -348,23 +350,26 @@ class table_scanner
         }
 
     private:
-        void field_value_r(std::true_type, Ch* begin, Ch* end, table_scanner&)
+        void field_value_r(std::true_type,
+            Ch* begin, Ch* end, basic_table_scanner&)
         {
             scanner().field_value(begin, end);
         }
 
         void field_value_r(std::false_type,
-            Ch* begin, Ch* end, table_scanner& me)
+            Ch* begin, Ch* end, basic_table_scanner& me)
         {
             scanner().field_value(string_t(begin, end, me.get_allocator()));
         }
 
-        void field_value_s(std::true_type, string_t&& value, table_scanner&)
+        void field_value_s(std::true_type,
+            string_t&& value, basic_table_scanner&)
         {
             scanner().field_value(std::move(value));
         }
 
-        void field_value_s(std::false_type, string_t&& value, table_scanner&)
+        void field_value_s(std::false_type,
+            string_t&& value, basic_table_scanner&)
         {
             scanner().field_value(
                 &*value.begin(), &*value.begin() + value.size());
@@ -463,24 +468,24 @@ public:
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits<Allocator>::size_type;
 
-    explicit table_scanner(
+    explicit basic_table_scanner(
         std::size_t header_record_count = 0U,
         size_type buffer_size = 0U) :
-        table_scanner(std::allocator_arg, Allocator(),
+        basic_table_scanner(std::allocator_arg, Allocator(),
             header_record_count, buffer_size)
     {}
 
     template <
         class HeaderFieldScanner,
         class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
-    explicit table_scanner(
+    explicit basic_table_scanner(
         HeaderFieldScanner s,
         size_type buffer_size = 0U) :
-        table_scanner(
+        basic_table_scanner(
             std::allocator_arg, Allocator(), std::move(s), buffer_size)
     {}
 
-    table_scanner(
+    basic_table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
         std::size_t header_record_count = 0U,
         size_type buffer_size = 0U) :
@@ -494,7 +499,7 @@ public:
     template <
         class HeaderFieldScanner,
         class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
-    table_scanner(
+    basic_table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
         HeaderFieldScanner s,
         size_type buffer_size = 0U) :
@@ -506,7 +511,7 @@ public:
         scanners_(make_scanners()), end_scanner_(nullptr)
     {}
 
-    table_scanner(table_scanner&& other) noexcept :
+    basic_table_scanner(basic_table_scanner&& other) noexcept :
         remaining_header_records_(other.remaining_header_records_),
         j_(other.j_), buffer_size_(other.buffer_size_),
         buffer_(other.buffer_), begin_(other.begin_), end_(other.end_),
@@ -520,7 +525,7 @@ public:
         other.end_scanner_ = nullptr;
     }
 
-    ~table_scanner()
+    ~basic_table_scanner()
     {
         auto a = get_allocator();
         if (buffer_) {
@@ -841,6 +846,9 @@ private:
         header_field_scanner_ = nullptr;
     }
 };
+
+using table_scanner = basic_table_scanner<char>;
+using wtable_scanner = basic_table_scanner<wchar_t>;
 
 class field_translation_error : public text_error
 {

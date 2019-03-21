@@ -123,7 +123,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Correct)
 
     std::vector<value_t> values;
 
-    table_scanner<char_t> h;
+    basic_table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_stringbuf<char_t> buf(str(" 40\r\n63\t\n-10"));
@@ -150,7 +150,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, UpperLimit)
 
     std::vector<value_t> values;
 
-    table_scanner<char_t> h;
+    basic_table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
@@ -195,7 +195,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
 
     std::vector<value_t> values;
 
-    table_scanner<char_t> h;
+    basic_table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
@@ -241,7 +241,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     std::vector<value_t> values1;
     std::vector<value_t> values2;
     
-    table_scanner<char_t> h;
+    basic_table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values0,
         fail_if_skipped(),
         replace_if_conversion_failed<value_t>(
@@ -288,7 +288,7 @@ TEST_F(TestFieldTranslatorForChar, Correct)
     std::vector<uint_least8_t> values1;     // maybe unsigned char
     std::deque<char> values2;
 
-    table_scanner<char> h;
+    basic_table_scanner<char> h;
     h.set_field_scanner(0, make_field_translator(values0));
     h.set_field_scanner(1, make_field_translator(values1));
     h.set_field_scanner(2, make_field_translator(values2));
@@ -322,7 +322,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, Correct)
 
     std::vector<value_t> values;
 
-    table_scanner<char_t> h;
+    basic_table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_string<char_t> s = str("6.02e23\t\r -5\n");
@@ -365,7 +365,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, UpperLimit)
 
     std::vector<value_t> values;
 
-    table_scanner<char_t> h;
+    basic_table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
@@ -403,7 +403,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, LowerLimit)
 
     std::vector<value_t> values;
 
-    table_scanner<char_t> h;
+    basic_table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     stringstream_t s;
@@ -434,7 +434,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
 
     std::deque<std::basic_string<TypeParam>> values;
 
-    table_scanner<TypeParam> h;
+    basic_table_scanner<TypeParam> h;
     h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_string<TypeParam> s = str("ABC  \n\"xy\rz\"\n\"\"");
@@ -453,7 +453,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
 }
 
 static_assert(
-    std::uses_allocator<table_scanner<char>, std::allocator<char>>::value, "");
+    std::uses_allocator<table_scanner, std::allocator<char>>::value, "");
 
 template <class Ch>
 struct TestTableScanner : BaseTest
@@ -476,7 +476,7 @@ TYPED_TEST(TestTableScanner, Indexed)
     int values5[2];
     string_t values6;
 
-    table_scanner<TypeParam> h(1U);
+    basic_table_scanner<TypeParam> h(1U);
     h.set_field_scanner(0,
         make_field_translator<long>(std::front_inserter(values0)));
     h.set_field_scanner(2, make_field_translator(values22));
@@ -539,7 +539,7 @@ TYPED_TEST(TestTableScanner, RecordEndScanner)
 
     std::vector<std::basic_string<TypeParam>> v;
 
-    table_scanner<TypeParam> h(1U);
+    basic_table_scanner<TypeParam> h(1U);
     h.set_field_scanner(0, make_field_translator(v));
 
     ASSERT_FALSE(h.has_record_end_scanner());
@@ -572,7 +572,7 @@ TYPED_TEST(TestTableScanner, MultilinedHeader)
 {
     std::deque<long> values;
 
-    table_scanner<TypeParam> h(3U);
+    basic_table_scanner<TypeParam> h(3U);
     h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_stringstream<TypeParam> s;
@@ -599,7 +599,7 @@ TYPED_TEST(TestTableScanner, SkippedWithNoErrors)
     std::deque<string_t> values0;
     std::deque<int> values1;
 
-    table_scanner<TypeParam> h;
+    basic_table_scanner<TypeParam> h;
     h.set_field_scanner(0, make_field_translator(
         values0, replace_if_skipped<string_t>()));
     h.set_field_scanner(1, make_field_translator(
@@ -633,7 +633,7 @@ TYPED_TEST(TestTableScanner, SkippedWithErrors)
     std::deque<int> values0;
     std::deque<int> values1;
 
-    table_scanner<TypeParam> h;
+    basic_table_scanner<TypeParam> h;
     h.set_field_scanner(0, make_field_translator(
         values0, replace_if_skipped<int>(10)));
     h.set_field_scanner(1, make_field_translator(values1));
@@ -662,7 +662,7 @@ TYPED_TEST(TestTableScanner, HeaderScan)
     std::vector<unsigned> ids;
     std::vector<short> values1;
 
-    table_scanner<TypeParam> h(
+    basic_table_scanner<TypeParam> h(
         [&ids, &values1, str, this]
         (std::size_t j, const auto* range, auto& f) {
             const std::basic_string<TypeParam>
@@ -698,7 +698,7 @@ TYPED_TEST(TestTableScanner, HeaderScanToTheEnd)
 {
     const auto str = char_helper<TypeParam>::str;
 
-    table_scanner<TypeParam> h(
+    basic_table_scanner<TypeParam> h(
         [](std::size_t j, const auto* range, auto&) {
             if (j == 1) {
                 if (range) {
@@ -734,7 +734,7 @@ public:
     {}
 
     bool operator()(std::size_t j,
-        const std::pair<Ch*, Ch*>* range, table_scanner<Ch>& s)
+        const std::pair<Ch*, Ch*>* range, basic_table_scanner<Ch>& s)
     {
         if (i_ == 0) {
             if (range) {
@@ -764,7 +764,7 @@ TYPED_TEST(TestTableScanner, MultilinedHeaderScan)
 
     std::map<std::basic_string<TypeParam>, std::vector<double>> fx;
     two_lined_fx_header_scanner<TypeParam> h(fx);
-    table_scanner<TypeParam> scanner(std::move(h));
+    basic_table_scanner<TypeParam> scanner(std::move(h));
     auto s = str("AUD,AUD,EUR\r"
                  "JPY,USD,USD\r"
                  "80.0,0.9,1.3\r"
@@ -817,7 +817,7 @@ TYPED_TEST(TestTableScanner, LocaleBased)
     std::vector<int> values0;
     std::deque<double> values1;
 
-    table_scanner<TypeParam> h;
+    basic_table_scanner<TypeParam> h;
     std::locale loc(std::locale::classic(),
         new french_style_numpunct<TypeParam>);
     h.set_field_scanner(0, make_field_translator(values0, loc));
@@ -845,7 +845,7 @@ TYPED_TEST(TestTableScanner, BufferSize)
     std::vector<int> values1;
 
     for (std::size_t buffer_size : { 2U, 3U, 4U, 7U  }) {
-        table_scanner<TypeParam> h(0U, buffer_size);
+        basic_table_scanner<TypeParam> h(0U, buffer_size);
         h.set_field_scanner(0, make_field_translator(values0));
         h.set_field_scanner(1, make_field_translator(values1));
 
@@ -890,7 +890,7 @@ TYPED_TEST(TestTableScanner, Allocators)
     std::size_t total2 = 0U;
     Alloc a2(allocated2, total2);
 
-    table_scanner<TypeParam, Tr, Alloc> scanner(
+    basic_table_scanner<TypeParam, Tr, Alloc> scanner(
         std::allocator_arg, a0, 0U, 20U);   // make underflow happen
 
     // The same allocator as the scanner
@@ -941,11 +941,11 @@ TYPED_TEST(TestTableScanner, MovedFromState)
 {
     std::vector<int> values;
 
-    table_scanner<TypeParam> h1;
+    basic_table_scanner<TypeParam> h1;
     auto t = make_field_translator(values);
     h1.set_field_scanner(0, std::move(t));
 
-    table_scanner<TypeParam> h2(std::move(h1));
+    basic_table_scanner<TypeParam> h2(std::move(h1));
 
     ASSERT_FALSE(h1.has_field_scanner(0));
     ASSERT_EQ(typeid(void), h1.get_field_scanner_type(0));
@@ -983,7 +983,7 @@ TEST_F(TestTableScannerReference, HeaderScanner)
     std::vector<int> values;
     stateful_header_scanner header_scanner;
     header_scanner.values = &values;
-    table_scanner<char> scanner(std::ref(header_scanner));
+    table_scanner scanner(std::ref(header_scanner));
 
     header_scanner.index = 1;
 
@@ -1002,7 +1002,7 @@ TEST_F(TestTableScannerReference, FieldScanner)
 {
     std::vector<int> values1;
     auto field_scanner = make_field_translator(values1);
-    table_scanner<char> scanner;
+    table_scanner scanner;
     scanner.set_field_scanner(0, std::ref(field_scanner));
 
     ASSERT_EQ(typeid(std::reference_wrapper<decltype(field_scanner)>),
@@ -1023,7 +1023,7 @@ TEST_F(TestTableScannerReference, RecordEndScanner)
 {
     std::vector<int> v;
 
-    table_scanner<char> scanner;
+    table_scanner scanner;
     scanner.set_field_scanner(0, make_field_translator(v));
 
     std::function<void()> record_end_scanner = [] {};
@@ -1170,7 +1170,7 @@ TEST_F(TestReplaceIfConversionFailed, Ignored)
 {
     replace_if_conversion_failed<int> r(replacement_ignore, replacement_ignore);
     calc_average<int> a;
-    table_scanner<char> scanner;
+    table_scanner scanner;
     scanner.set_field_scanner(0,
         make_field_translator<int>(std::ref(a), fail_if_skipped(), std::move(r)));
 
