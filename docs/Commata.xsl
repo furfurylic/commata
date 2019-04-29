@@ -58,6 +58,10 @@
         div#toc > ul { padding-left: 0 }
         div#toc li { margin: 0.2em 0 }
         div#toc a code  { color: inherit }
+
+        @media print {
+          body { margin: 0; font-family: sans-serif }
+        }
       </xsl:text></style>
     </head>
     <body>

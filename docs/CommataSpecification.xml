@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-03-21 (UTC)</signature>
+<signature>2019-04-29 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -32,7 +32,7 @@
     <ul>
       <li>it consists only of one uppercase alphabetic letter,</li>
       <li>it begins with a lowercase alphabetic letter,</li>
-      <li>it consists only of alphabetic letters and decimal digit characters, the number of the latter of which may possibly be zero, contains both of an uppercase alphabetic letter and a lowercase one, and begins with an uppercase one, nor</li>
+      <li>it consists only of alphabetic letters and decimal digit characters, the number of the latter of which may possibly be zero, contains both of an uppercase alphabetic letter and a lowercase one, and begins with an uppercase one, or</li>
       <li>it begins with <c>COMMATA_</c>.</li>
     </ul>
     <p>Headers described in this document may define macros whose name begin with <c>COMMATA_</c> and may not define any macros with other names.</p>
@@ -659,7 +659,7 @@ template &lt;class Input, class Handler, class... Args>
       <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>), except that it need not meet either the <c>MoveConstructible</c> requirement or the <c>Destructible</c> requirements.</requires>
       <effects>Creates an object <c>h</c> that wraps <c>handler.get()</c> and forwards calls to <c>handler.get()</c>.
                The type of <c>h</c> is an unspecified type that meets the <c>TextHandler</c> requirements.
-               Then forwards the call to other <c>parse_csv</c> function templates with the second argument being <c>h</c>.</effects>
+               Then forwards the call to the other <c>parse_csv</c> function templates with the second argument being <c>h</c>.</effects>
       <returns>The return value of the forwarded call above.</returns>
       <throws>Any exception thrown by the forwarded call above.</throws>
     </code-item>
@@ -1604,7 +1604,7 @@ template &lt;class Ch, class ChC, class Tr, class Allocator>
                   const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>left.size() == right.size() &amp;&amp; Tr::compare(left.data(), right.data(), left.size()) == 0</c>.</returns>
-            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (the other overloads).</remark>
           </code-item>
 
           <code-item>
@@ -1649,7 +1649,7 @@ template &lt;class Ch, class ChC, class Tr>
                   const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>!(left == right)</c>.</returns>
-            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (the other overloads).</remark>
           </code-item>
         </section>
 
@@ -1668,7 +1668,7 @@ template &lt;class Ch, class ChC, class Tr, class Allocator>
                   const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>c &lt; 0 || (c == 0 &amp;&amp; left.size() &lt; right.size())</c> where <c>c</c> is the return value of <c>Tr::compare(left.data(), right.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>left.size()</c> and <c>right.size()</c>.</returns>
-            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (the other overloads).</remark>
           </code-item>
 
           <code-item>
@@ -1713,7 +1713,7 @@ template &lt;class Ch, class ChC, class Tr>
                   const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>right &lt; left</c>.</returns>
-            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (the other overloads).</remark>
           </code-item>
         </section>
 
@@ -1738,7 +1738,7 @@ template &lt;class Ch, class ChC, class Tr>
                   const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>!(right &lt; left)</c>.</returns>
-            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (the other overloads).</remark>
           </code-item>
         </section>
 
@@ -1763,7 +1763,7 @@ template &lt;class Ch, class ChC, class Tr>
                   const basic_stored_value&lt;ChC, Tr>&amp;          right) noexcept;
             </code>
             <returns><c>!(left &lt; right)</c>.</returns>
-            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (other overloads).</remark>
+            <remark>These overloads shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type (first overload) or <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type (the other overloads).</remark>
           </code-item>
         </section>
 
@@ -1945,7 +1945,7 @@ namespace commata {
             <li>the range [<c>v.cbegin()</c>, <c>v.cend()</c>] resides in a buffer in the store of <c>t</c>, and <c>*v.cend()</c> is equal to <c>Ch()</c>.</li>
           </ul>
           <p>An object of an instance of <c>basic_stored_table</c> is called <n>complete</n> if none of its contained values is not backed by it.
-             A singular object of an instance of <c>basic_stored_table</c> is also complete because it has no contained values.</p>
+             Note that a singular object of an instance of <c>basic_stored_table</c> is also complete because it has no contained values.</p>
         </section>
 
         <section id="basic_stored_table.conds">
@@ -3865,7 +3865,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
               <td>Yes</td>
               <td>No</td>
               <td>No</td>
-              <td>Evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and let <c>r</c> be the return value.
+              <td rowspan="2">Evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and let <c>r</c> be the return value.
                   Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
             </tr>
 
@@ -3874,8 +3874,6 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
               <td>Yes</td>
               <td>Yes</td>
               <td>&#8211;</td>
-              <td>Evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and let <c>r</c> be the return value.
-                  Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
             </tr>
 
             <tr>
