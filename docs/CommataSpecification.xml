@@ -2043,7 +2043,7 @@ template &lt;class OtherContent, class OtherAllocator>
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                    std::size_t buffer_size = 0);
           </code>
-          <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
+          <requires><c>Allocator</c> shall be <c>CopyConstructible</c>.</requires>
           <effects>If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>AT::max_size(alloc)</c> and <c>b2</c> where <c>b2</c> is the greater of <c>buffer_size</c> and <c>2</c>.
                    Otherwise, initializes it to a unspecified value.
                    Initializes the allocator with <c>alloc</c>.
@@ -2076,7 +2076,7 @@ template &lt;class OtherContent, class OtherAllocator>
     const basic_stored_table&lt;OtherContent, OtherAllocator>&amp; other);
           </code>
           <requires><c>OtherContent::char_type</c> and <c>OtherContent::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
-                    <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
+                    <c>Allocator</c> shall be <c>CopyConstructible</c>.</requires>
           <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and <c>other.get_buffer_size()</c>.
                          The value of <c>get_allocator()</c> shall be equal to <c>alloc</c>.
                          The values of <c>size()</c> and <c>other.size()</c> shall be identical.
