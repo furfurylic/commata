@@ -1,5 +1,5 @@
-<project name="CommataSpecifications" default="style">
+<project name="CommataSpecification" default="style">
   <target name="style">
-    <xslt style="Commata.xsl" in="CommataSpecifications.xml" out="CommataSpecifications.html"/>
+    <xslt style="Commata.xsl" in="CommataSpecification.xml" out="CommataSpecification.html"/>
   </target>
 </project>

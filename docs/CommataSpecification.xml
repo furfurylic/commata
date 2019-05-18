@@ -3701,13 +3701,16 @@ replacement&lt;T> empty() const;
             </tr>
           </table>
         </code-item>
+      </section>
     </section>
-  </section>
 
-    <section id="arithmetic_field_translator">
-      <name>Class template <c>arithmetic_field_translator</c></name>
+    <section id="default_field_scanner_classes">
+      <name>Default field scanner classes</name>
 
-      <codeblock>
+      <section id="arithmetic_field_translator">
+        <name>Class template <c>arithmetic_field_translator</c></name>
+
+        <codeblock>
 namespace commata {
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
             class ConversionErrorHandler = fail_if_conversion_failed>
@@ -3731,182 +3734,182 @@ namespace commata {
     void field_skipped();
   };
 }
-      </codeblock>
+        </codeblock>
 
-      <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>).</p>
-      <p><c>T</c> is the target type (<xref id="scanner.builtin_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, <c>double</c>, or <c>long double</c>.
-         <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
-         The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
-         The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
+        <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>).</p>
+        <p><c>T</c> is the target type (<xref id="scanner.builtin_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, <c>double</c>, or <c>long double</c>.
+           <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
+           The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
+           The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
 
-      <section id="arithmetic_field_translator.cons">
-        <name><c>arithmetic_field_translator</c> construct/copy/destroy</name>
-        <code-item>
-          <code>
+        <section id="arithmetic_field_translator.cons">
+          <name><c>arithmetic_field_translator</c> construct/copy/destroy</name>
+          <code-item>
+            <code>
 explicit arithmetic_field_translator(
          Sink sink, SkippingHandler handle_skipping = SkippingHandler(),
          ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
           </code>
           <effects>Initializes a object of <c>arithmetic_field_translator</c> that holds copies of <c>sink</c>, <c>handle_skipping</c> and <c>handle_conversion_error</c>
                    as the field translator sink object, the skipping handler object and the conversion error handler object respectively.</effects>
-        </code-item>
+          </code-item>
 
-        <code-item>
-          <code>
+          <code-item>
+            <code>
 arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <effects>Initializes a object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
-                  When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
-        </code-item>
-      </section>
+            </code>
+            <effects>Initializes a object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
+                    When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
+          </code-item>
+        </section>
 
-      <section id="arithmetic_field_translator.handler_access">
-        <name><c>arithmetic_field_translator</c> handler access</name>
-        <code-item>
-          <code>
+        <section id="arithmetic_field_translator.handler_access">
+          <name><c>arithmetic_field_translator</c> handler access</name>
+          <code-item>
+            <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
       SkippingHandler&amp; get_skipping_handler() noexcept;
-          </code>
-          <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
-        </code-item>
+            </code>
+            <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
+          </code-item>
 
-        <code-item>
-          <code>
+          <code-item>
+            <code>
 const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
       ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
-          </code>
-          <returns>A reference of the conversion error handler held by <c>*this</c>.</returns>
-        </code-item>
-      </section>
+            </code>
+            <returns>A reference of the conversion error handler held by <c>*this</c>.</returns>
+          </code-item>
+        </section>
 
-      <section id="arithmetic_field_translator.scanner">
-        <name><c>arithmetic_field_translator</c> members to meet the <c>BodyFieldScanner</c> requirements</name>
-        <code-item>
-          <code>
+        <section id="arithmetic_field_translator.scanner">
+          <name><c>arithmetic_field_translator</c> members to meet the <c>BodyFieldScanner</c> requirements</name>
+          <code-item>
+            <code>
 template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
-          </code>
-          <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
-          <effects>First calls a parsing function indicated in <xref id="table.arithmetic_field_translator.parsing_functions"/> for <c>T</c> and <c>Ch</c> to get a arithmetic value <c>v</c> of the range [<c>begin</c>, <c>end</c>).
-                   Then does an action indicated in <xref id="table.arithmetic_field_translator.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
-                   In <xref id="table.arithmetic_field_translator.branching"/>, <c>ceh</c> is the conversion error handler, <c>n</c> is a null pointer of type <c>T*</c>, and <c>g</c> is a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, zero otherwise.</effects>
+            </code>
+            <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
+            <effects>First calls a parsing function indicated in <xref id="table.arithmetic_field_translator.parsing_functions"/> for <c>T</c> and <c>Ch</c> to get a arithmetic value <c>v</c> of the range [<c>begin</c>, <c>end</c>).
+                     Then does an action indicated in <xref id="table.arithmetic_field_translator.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
+                     In <xref id="table.arithmetic_field_translator.branching"/>, <c>ceh</c> is the conversion error handler, <c>n</c> is a null pointer of type <c>T*</c>, and <c>g</c> is a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, zero otherwise.</effects>
 
-          <table id="table.arithmetic_field_translator.parsing_functions">
-            <caption>The parsing functions used by <c>arithmetic_field_translator</c></caption>
-            <col width="6"/><col width="2"/><col width="2"/>
+            <table id="table.arithmetic_field_translator.parsing_functions">
+              <caption>The parsing functions used by <c>arithmetic_field_translator</c></caption>
+              <col width="6"/><col width="2"/><col width="2"/>
 
-            <tr>
-              <th><c>T</c></th>
-              <th><c>Ch</c> is <c>char</c></th>
-              <th><c>Ch</c> is <c>wchar_t</c></th>
-            </tr>
+              <tr>
+                <th><c>T</c></th>
+                <th><c>Ch</c> is <c>char</c></th>
+                <th><c>Ch</c> is <c>wchar_t</c></th>
+              </tr>
 
-            <tr>
-              <td><c>char</c> (only if signed), <c>signed char</c>, <c>short</c>, <c>int</c>, or <c>long</c></td>
-              <td><c>std::strtol</c></td>
-              <td><c>std::wcstol</c></td>
-            </tr>
+              <tr>
+                <td><c>char</c> (only if signed), <c>signed char</c>, <c>short</c>, <c>int</c>, or <c>long</c></td>
+                <td><c>std::strtol</c></td>
+                <td><c>std::wcstol</c></td>
+              </tr>
 
-            <tr>
-              <td><c>char</c> (only if unsigned), <c>unsigned char</c>, <c>unsigned short</c>, <c>unsigned</c>, or <c>unsigned long</c></td>
-              <td><c>std::strtoul</c></td>
-              <td><c>std::wcstoul</c></td>
-            </tr>
+              <tr>
+                <td><c>char</c> (only if unsigned), <c>unsigned char</c>, <c>unsigned short</c>, <c>unsigned</c>, or <c>unsigned long</c></td>
+                <td><c>std::strtoul</c></td>
+                <td><c>std::wcstoul</c></td>
+              </tr>
 
-            <tr>
-              <td><c>long long</c></td>
-              <td><c>std::strtoll</c></td>
-              <td><c>std::wcstoll</c></td>
-            </tr>
+              <tr>
+                <td><c>long long</c></td>
+                <td><c>std::strtoll</c></td>
+                <td><c>std::wcstoll</c></td>
+              </tr>
 
-            <tr>
-              <td><c>unsigned long long</c></td>
-              <td><c>std::strtoull</c></td>
-              <td><c>std::wcstoull</c></td>
-            </tr>
+              <tr>
+                <td><c>unsigned long long</c></td>
+                <td><c>std::strtoull</c></td>
+                <td><c>std::wcstoull</c></td>
+              </tr>
 
-            <tr>
-              <td><c>float</c> or <c>double</c></td>
-              <td><c>std::strtod</c></td>
-              <td><c>std::wcstod</c></td>
-            </tr>
+              <tr>
+                <td><c>float</c> or <c>double</c></td>
+                <td><c>std::strtod</c></td>
+                <td><c>std::wcstod</c></td>
+              </tr>
 
-            <tr>
-              <td><c>long double</c></td>
-              <td><c>std::strtold</c></td>
-              <td><c>std::wcstold</c></td>
-            </tr>
-          </table>
+              <tr>
+                <td><c>long double</c></td>
+                <td><c>std::strtold</c></td>
+                <td><c>std::wcstold</c></td>
+              </tr>
+            </table>
 
-          <table id="table.arithmetic_field_translator.branching">
-            <caption>The value <c>arithmetic_field_translator</c> puts into the field translator sink</caption>
-            <col width="5"/><col width="5"/><col width="3"/><col width="3"/><col width="8"/>
+            <table id="table.arithmetic_field_translator.branching">
+              <caption>The value <c>arithmetic_field_translator</c> puts into the field translator sink</caption>
+              <col width="5"/><col width="5"/><col width="3"/><col width="3"/><col width="8"/>
 
-            <tr>
-              <th>The call leaves some non-whitespace characters in the range unconsumed</th>
-              <th>The call consumes some characters in the range</th>
-              <th><c>errno == ERANGE</c></th>
-              <th><c>v</c> is in the domain of <c>T</c></th>
-              <th>Action</th>
-            </tr>
+              <tr>
+                <th>The call leaves some non-whitespace characters in the range unconsumed</th>
+                <th>The call consumes some characters in the range</th>
+                <th><c>errno == ERANGE</c></th>
+                <th><c>v</c> is in the domain of <c>T</c></th>
+                <th>Action</th>
+              </tr>
 
-            <tr>
-              <td>No</td>
-              <td>Yes</td>
-              <td>No</td>
-              <td>Yes</td>
-              <td>Puts <c>v</c> into the field translator sink.</td>
-            </tr>
+              <tr>
+                <td>No</td>
+                <td>Yes</td>
+                <td>No</td>
+                <td>Yes</td>
+                <td>Puts <c>v</c> into the field translator sink.</td>
+              </tr>
 
-            <tr>
-              <td>No</td>
-              <td>Yes</td>
-              <td>No</td>
-              <td>No</td>
-              <td rowspan="2">Evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and let <c>r</c> be the return value.
-                  Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
-            </tr>
+              <tr>
+                <td>No</td>
+                <td>Yes</td>
+                <td>No</td>
+                <td>No</td>
+                <td rowspan="2">Evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and let <c>r</c> be the return value.
+                    Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
+              </tr>
 
-            <tr>
-              <td>No</td>
-              <td>Yes</td>
-              <td>Yes</td>
-              <td>&#8211;</td>
-            </tr>
+              <tr>
+                <td>No</td>
+                <td>Yes</td>
+                <td>Yes</td>
+                <td>&#8211;</td>
+              </tr>
 
-            <tr>
-              <td>No</td>
-              <td>No</td>
-              <td>&#8211;</td>
-              <td>&#8211;</td>
-              <td>Evaluates <c>ceh.empty()</c> or <c>ceh.empty(n)</c> and let <c>r</c> be the return value.
-                  Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
-            </tr>
+              <tr>
+                <td>No</td>
+                <td>No</td>
+                <td>&#8211;</td>
+                <td>&#8211;</td>
+                <td>Evaluates <c>ceh.empty()</c> or <c>ceh.empty(n)</c> and let <c>r</c> be the return value.
+                    Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
+              </tr>
 
-            <tr>
-              <td>Yes</td>
-              <td>&#8211;</td>
-              <td>&#8211;</td>
-              <td>&#8211;</td>
-              <td>Evaluates <c>ceh.invalid_format(begin, end)</c> or <c>ceh.invalid_format(begin, end, n)</c> and let <c>r</c> be the return value.
-                  Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
-            </tr>
-          </table>
-        </code-item>
+              <tr>
+                <td>Yes</td>
+                <td>&#8211;</td>
+                <td>&#8211;</td>
+                <td>&#8211;</td>
+                <td>Evaluates <c>ceh.invalid_format(begin, end)</c> or <c>ceh.invalid_format(begin, end, n)</c> and let <c>r</c> be the return value.
+                    Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
+              </tr>
+            </table>
+          </code-item>
 
-        <code-item>
-          <code>
+          <code-item>
+            <code>
 void field_skipped();
-          </code>
-          <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
-        </code-item>
+            </code>
+            <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
+          </code-item>
+        </section>
       </section>
-    </section>
 
-    <section id="locale_based_arithmetic_field_translator">
-      <name>Class template <c>locale_based_arithmetic_field_translator</c></name>
+      <section id="locale_based_arithmetic_field_translator">
+        <name>Class template <c>locale_based_arithmetic_field_translator</c></name>
 
-      <codeblock>
+        <codeblock>
 namespace commata {
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
             class ConversionErrorHandler = fail_if_conversion_failed>
@@ -3932,88 +3935,88 @@ namespace commata {
     void field_skipped();
   };
 }
-      </codeblock>
+        </codeblock>
 
-      <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
-         The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C-language locale.</p>
-      <p><c>T</c> is the target type (<xref id="scanner.builtin_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, or <c>double</c>.
-         <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
-         The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
-         The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
+        <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
+          The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C-language locale.</p>
+        <p><c>T</c> is the target type (<xref id="scanner.builtin_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, or <c>double</c>.
+          <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
+          The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
+          The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
 
-      <section id="locale_based_arithmetic_field_translator.cons">
-        <name><c>locale_based_arithmetic_field_translator</c> construct/copy/destroy</name>
-        <code-item>
-          <code>
+        <section id="locale_based_arithmetic_field_translator.cons">
+          <name><c>locale_based_arithmetic_field_translator</c> construct/copy/destroy</name>
+          <code-item>
+            <code>
 explicit locale_based_arithmetic_field_translator(
          Sink sink, const std::locale&amp; loc,
          SkippingHandler handle_skipping = SkippingHandler(),
          ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
-          </code>
-          <effects>Initializes a object of <c>locale_based_arithmetic_field_translator</c> that holds copies of <c>sink</c>, <c>loc</c>, <c>handle_skipping</c> and <c>handle_conversion_error</c>
-                   as the field translator sink object, the locale object, the skipping handler object and the conversion error handler object respectively.</effects>
-        </code-item>
+            </code>
+            <effects>Initializes a object of <c>locale_based_arithmetic_field_translator</c> that holds copies of <c>sink</c>, <c>loc</c>, <c>handle_skipping</c> and <c>handle_conversion_error</c>
+                    as the field translator sink object, the locale object, the skipping handler object and the conversion error handler object respectively.</effects>
+          </code-item>
 
-        <code-item>
-          <code>
+          <code-item>
+            <code>
 locale_based_arithmetic_field_translator(
   locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <effects>Initializes a object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
-                  When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
-        </code-item>
-      </section>
+            </code>
+            <effects>Initializes a object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
+                    When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
+          </code-item>
+        </section>
 
-      <section id="locale_based_arithmetic_field_translator.handler_access">
-        <name><c>locale_based_arithmetic_field_translator</c> handler access</name>
-        <code-item>
-          <code>
+        <section id="locale_based_arithmetic_field_translator.handler_access">
+          <name><c>locale_based_arithmetic_field_translator</c> handler access</name>
+          <code-item>
+            <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
       SkippingHandler&amp; get_skipping_handler() noexcept;
-          </code>
-          <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
-        </code-item>
+            </code>
+            <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
+          </code-item>
 
-        <code-item>
-          <code>
+          <code-item>
+            <code>
 const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
       ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
-          </code>
-          <returns>A reference of the conversion error handler held by <c>*this</c>.</returns>
-        </code-item>
-      </section>
+            </code>
+            <returns>A reference of the conversion error handler held by <c>*this</c>.</returns>
+          </code-item>
+        </section>
 
-      <section id="locale_based_arithmetic_field_translator.scanner">
-        <name><c>locale_based_arithmetic_field_translator</c> members to meet the <c>BodyFieldScanner</c> requirements</name>
-        <code-item>
-          <code>
+        <section id="locale_based_arithmetic_field_translator.scanner">
+          <name><c>locale_based_arithmetic_field_translator</c> members to meet the <c>BodyFieldScanner</c> requirements</name>
+          <code-item>
+            <code>
 template &lt;class Ch> void field_value(Ch* begin, Ch* end);
-          </code>
-          <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
-          <effects>If the specified locale has a non-empty grouping spec of the numeric output, removes all digit group separator characters of the specified locale in the range [<c>begin</c>, <c>end</c>) in place.
-                   Replaces the decimal radix separator character of the specified locale in the resulted range on its first occurrence in place with the decimal radix separator character of the C-language locale.
-                   Then calls a parsing function with the resulted range and put a value into the field translator sink as if a <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>) object does.</effects>
-          <remark>Suppose that <c>npf</c> is <c>std::use_facet&lt;std::numpunct&lt;Ch>>(l)</c> where <c>l</c> is the specified locale.
-                  The grouping spec of the numeric output of it is <c>npf.grouping()</c>.
-                  The digit group separator character of the specified locale is <c>npf.thousands_sep()</c>.
-                  The decimal radix separator character of it is <c>npf.decimal_point()</c>.
-                  The decimal radix separator character of the C-language locale is <c>*std::localeconv()->decimal_point</c> conditionally widen with <c>std::btowc</c> to get a value of the type <c>Ch</c>.</remark>
-        </code-item>
+            </code>
+            <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
+            <effects>If the specified locale has a non-empty grouping spec of the numeric output, removes all digit group separator characters of the specified locale in the range [<c>begin</c>, <c>end</c>) in place.
+                    Replaces the decimal radix separator character of the specified locale in the resulted range on its first occurrence in place with the decimal radix separator character of the C-language locale.
+                    Then calls a parsing function with the resulted range and put a value into the field translator sink as if a <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>) object does.</effects>
+            <remark>Suppose that <c>npf</c> is <c>std::use_facet&lt;std::numpunct&lt;Ch>>(l)</c> where <c>l</c> is the specified locale.
+                    The grouping spec of the numeric output of it is <c>npf.grouping()</c>.
+                    The digit group separator character of the specified locale is <c>npf.thousands_sep()</c>.
+                    The decimal radix separator character of it is <c>npf.decimal_point()</c>.
+                    The decimal radix separator character of the C-language locale is <c>*std::localeconv()->decimal_point</c> conditionally widen with <c>std::btowc</c> to get a value of the type <c>Ch</c>.</remark>
+          </code-item>
 
-        <code-item>
-          <code>
+          <code-item>
+            <code>
 void field_skipped();
-          </code>
-          <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
-        </code-item>
+            </code>
+            <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
+          </code-item>
+        </section>
       </section>
-    </section>
 
-    <section id="string_field_translator">
-      <name>Class template <c>string_field_translator</c></name>
+      <section id="string_field_translator">
+        <name>Class template <c>string_field_translator</c></name>
 
-      <codeblock>
+        <codeblock>
 namespace commata {
   template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
             class Allocator = std::allocator&lt;Ch>,
@@ -4043,142 +4046,143 @@ namespace commata {
     void field_skipped();
   };
 }
-      </codeblock>
+        </codeblock>
 
-      <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>).
-         Its target type (<xref id="scanner.builtin_field_scanners.general"/>) is <c>std::basic_string&lt;Ch, Tr, Alloc></c>.</p>
-      <p><c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for <c>std::basic_string&lt;Ch, Tr, Alloc></c> (<xref id="field_translator_sink.requirements"/>).
-         The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>std::basic_string&lt;Ch, Tr, Alloc></c> (<xref id="skipping_handler.requirements"/>).</p>
+        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>).
+          Its target type (<xref id="scanner.builtin_field_scanners.general"/>) is <c>std::basic_string&lt;Ch, Tr, Alloc></c>.</p>
+        <p><c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for <c>std::basic_string&lt;Ch, Tr, Alloc></c> (<xref id="field_translator_sink.requirements"/>).
+          The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>std::basic_string&lt;Ch, Tr, Alloc></c> (<xref id="skipping_handler.requirements"/>).</p>
 
-      <section id="string_field_translator.cons">
-        <name><c>string_field_translator</c> construct/copy/destroy</name>
-        <code-item>
-          <code>
+        <section id="string_field_translator.cons">
+          <name><c>string_field_translator</c> construct/copy/destroy</name>
+          <code-item>
+            <code>
 string_field_translator(Sink sink,
                         SkippingHandler handle_skipping = SkippingHandler());
-          </code>
-          <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
-          <effects>Initializes a object of <c>string_field_translator</c> that holds a default-constructed <c>Allocator</c> object as its allocator, and copies of <c>sink</c> and <c>handle_skipping</c>
-                   as the field translator sink object and the skipping handler object respectively.</effects>
-        </code-item>
+            </code>
+            <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
+            <effects>Initializes a object of <c>string_field_translator</c> that holds a default-constructed <c>Allocator</c> object as its allocator, and copies of <c>sink</c> and <c>handle_skipping</c>
+                    as the field translator sink object and the skipping handler object respectively.</effects>
+          </code-item>
 
-        <code-item>
-          <code>
+          <code-item>
+            <code>
 string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink sink,
                         SkippingHandler handle_skipping = SkippingHandler());
-          </code>
-          <effects>Initializes a object of <c>string_field_translator</c> that holds copies of <c>alloc</c>, <c>sink</c> and <c>handle_skipping</c>
-                   as the allocator object, the field translator sink object and the skipping handler object respectively.</effects>
-        </code-item>
+            </code>
+            <effects>Initializes a object of <c>string_field_translator</c> that holds copies of <c>alloc</c>, <c>sink</c> and <c>handle_skipping</c>
+                    as the allocator object, the field translator sink object and the skipping handler object respectively.</effects>
+          </code-item>
 
-        <code-item>
-          <code>
+          <code-item>
+            <code>
 string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <effects>Initializes a object of <c>string_field_translator</c> that holds an allocator object, a field translator sink object, and a skipping handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value</c>.
-                  When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
-        </code-item>
-      </section>
+            </code>
+            <effects>Initializes a object of <c>string_field_translator</c> that holds an allocator object, a field translator sink object, and a skipping handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value</c>.
+                    When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
+          </code-item>
+        </section>
 
-      <section id="string_field_translator.allocator">
-        <name><c>string_field_translator</c> allocator access</name>
-        <code-item>
-          <code>
+        <section id="string_field_translator.allocator">
+          <name><c>string_field_translator</c> allocator access</name>
+          <code-item>
+            <code>
 allocator_type get_allocator() const noexcept;
-          </code>
-          <returns>A copy of the allocator object used to construct the string.</returns>
-        </code-item>
-      </section>
+            </code>
+            <returns>A copy of the allocator object used to construct the string.</returns>
+          </code-item>
+        </section>
 
-      <section id="string_field_translator.handler_access">
-        <name><c>string_field_translator</c> handler access</name>
-        <code-item>
-          <code>
+        <section id="string_field_translator.handler_access">
+          <name><c>string_field_translator</c> handler access</name>
+          <code-item>
+            <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
       SkippingHandler&amp; get_skipping_handler() noexcept;
-          </code>
-          <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
-        </code-item>
-      </section>
+            </code>
+            <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
+          </code-item>
+        </section>
 
-      <section id="string_field_translator.scanner">
-        <name><c>string_field_translator</c> members to meet the <c>BodyFieldScanner</c> requirements</name>
-        <code-item>
-          <code>
+        <section id="string_field_translator.scanner">
+          <name><c>string_field_translator</c> members to meet the <c>BodyFieldScanner</c> requirements</name>
+          <code-item>
+            <code>
 void field_value(const Ch* begin, const Ch* end);
-          </code>
-          <effects>Puts <c>std::basic_string&lt;Ch, Tr, Alloc>(begin, end, get_allocator())</c> into the field translator sink.</effects>
-        </code-item>
+            </code>
+            <effects>Puts <c>std::basic_string&lt;Ch, Tr, Alloc>(begin, end, get_allocator())</c> into the field translator sink.</effects>
+          </code-item>
 
-        <code-item>
-          <code>
+          <code-item>
+            <code>
 void field_value(std::basic_string&lt;Ch, Tr, Alloc>&amp;&amp; value);
-          </code>
-          <effects>If <c>value.get_allocator() == get_allocator()</c>, puts <c>std::move(value)</c> into the field translator sink. Otherwise, calls <c>field_value(value.c_str(), value.c_str() + value.size())</c>.</effects>
-        </code-item>
+            </code>
+            <effects>If <c>value.get_allocator() == get_allocator()</c>, puts <c>std::move(value)</c> into the field translator sink. Otherwise, calls <c>field_value(value.c_str(), value.c_str() + value.size())</c>.</effects>
+          </code-item>
+
+          <code-item>
+            <code>
+void field_skipped();
+            </code>
+            <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
+          </code-item>
+        </section>
+      </section>
+
+      <section id="make_field_translator">
+        <name>Creation of default field scanners</name>
+
+        <p>In this subclause, a type <c>S</c> is <n>deemed to be an acceptable sink</n> of a type <c>T</c> if:</p>
+        <ul>
+          <li><c>std::iterator_traits&lt;S>::iterator_category</c> is a type equal to <c>std::output_iterator_tag</c>, <c>std::forward_iterator_tag</c>, or their derived type; or</li>
+          <li><c>s(t)</c> is a valid expression where <c>s</c> is an lvalue of <c>S</c> and <c>t</c> is an rvalue of <c>T</c>.</li>
+        </ul>
 
         <code-item>
           <code>
-void field_skipped();
-          </code>
-          <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
-        </code-item>
-      </section>
-    </section>
-
-    <section id="make_field_translator">
-      <name>Creation of default field scanners</name>
-
-      <p>In this subclause, a type <c>S</c> is <n>deemed to be an acceptable sink</n> of a type <c>T</c> if:</p>
-      <ul>
-        <li><c>std::iterator_traits&lt;S>::iterator_category</c> is a type equal to <c>std::output_iterator_tag</c>, <c>std::forward_iterator_tag</c>, or their derived type; or</li>
-        <li><c>s(t)</c> is a valid expression where <c>s</c> is an lvalue of <c>S</c> and <c>t</c> is an rvalue of <c>T</c>.</li>
-      </ul>
-
-      <code-item>
-        <code>
 template &lt;class T, class Sink, class... Appendices>
   <nc>see below</nc> make_field_translator(Sink sink, Appendices&amp;&amp;... appendices);
-        </code>
-        <returns><c>R(std::move(sink), std::forward&lt;Appendices>(appendices)...)</c> where the type <c>R</c> is decided as follows:
-                 <ul>
-                   <li>If <c>T</c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain combination of <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>, <c>string_field_translator&lt;Sink, Ch, Tr, Allocator, Appendices...></c>,</li>
-                   <li>otherwise, if the reference-removed type of the first type of <c>Appendices</c> is a possibly cv-qualified <c>std::locale</c> or its derived type,
-                       <c>locale_based_arithmetic_field_translator&lt;T, Sink, TailOfAppendices...></c> where <c>TailOfAppendices...</c> represents the types of <c>Appendices...</c> without its first type,</li>
-                   <li>otherwise, <c>arithmetic_field_translator&lt;T, Sink, Appendices...></c>.</li>
-                 </ul>
-        </returns>
-        <remark>This overload shall not participate in overload resolution unless <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
-      </code-item>
+          </code>
+          <returns><c>R(std::move(sink), std::forward&lt;Appendices>(appendices)...)</c> where the type <c>R</c> is decided as follows:
+                  <ul>
+                    <li>If <c>T</c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain combination of <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>, <c>string_field_translator&lt;Sink, Ch, Tr, Allocator, Appendices...></c>,</li>
+                    <li>otherwise, if the reference-removed type of the first type of <c>Appendices</c> is a possibly cv-qualified <c>std::locale</c> or its derived type,
+                        <c>locale_based_arithmetic_field_translator&lt;T, Sink, TailOfAppendices...></c> where <c>TailOfAppendices...</c> represents the types of <c>Appendices...</c> without its first type,</li>
+                    <li>otherwise, <c>arithmetic_field_translator&lt;T, Sink, Appendices...></c>.</li>
+                  </ul>
+          </returns>
+          <remark>This overload shall not participate in overload resolution unless <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
+        </code-item>
 
-      <code-item>
-        <code>
+        <code-item>
+          <code>
 template &lt;class T, class Allocator, class Sink, class... Appendices>
   <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
                                   Sink sink, Appendices&amp;&amp;... appendices);
-        </code>
-        <returns><c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, Appendices...>(std::allocator_arg, alloc, std::move(sink), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
-        <remark>This overload shall not participate in overload resolution unless <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
-      </code-item>
+          </code>
+          <returns><c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, Appendices...>(std::allocator_arg, alloc, std::move(sink), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
+          <remark>This overload shall not participate in overload resolution unless <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
+        </code-item>
 
-      <code-item>
-        <code>
+        <code-item>
+          <code>
 template &lt;class Container, class... Appendices>
   <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
 template &lt;class Allocator, class Container, class... Appendices>
   <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
                                   Container&amp; values, Appendices&amp;&amp;... appendices);
-        </code>
-        <returns><c>make_field_translator(std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (first overload) or
-                 <c>make_field_translator(std::allocator_arg, alloc, std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (second overload) where <c>s</c> is an object constructed as follows:
-                 <ul>
-                   <li>if <c>values.push_back(t)</c> is a valid expression where <c>t</c> is an rvalue of <c>typename Container::value_type</c>, <c>std::back_inserter(values)</c>,</li>
-                   <li>otherwise, <c>std::inserter(values, values.end())</c>.</li>
-                 </ul>
-        </returns>
-        <remark>These overloads shall not participate in overload resolution unless <c>c.insert(c.end(), t)</c> is a valid expression where <c>c</c> is an lvalue of <c>Container</c> and <c>t</c> is an rvalue of <c>typename Container::value_type</c>.</remark>
-      </code-item>
+          </code>
+          <returns><c>make_field_translator(std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (first overload) or
+                  <c>make_field_translator(std::allocator_arg, alloc, std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (second overload) where <c>s</c> is an object constructed as follows:
+                  <ul>
+                    <li>if <c>values.push_back(t)</c> is a valid expression where <c>t</c> is an rvalue of <c>typename Container::value_type</c>, <c>std::back_inserter(values)</c>,</li>
+                    <li>otherwise, <c>std::inserter(values, values.end())</c>.</li>
+                  </ul>
+          </returns>
+          <remark>These overloads shall not participate in overload resolution unless <c>c.insert(c.end(), t)</c> is a valid expression where <c>c</c> is an lvalue of <c>Container</c> and <c>t</c> is an rvalue of <c>typename Container::value_type</c>.</remark>
+        </code-item>
+      </section>
     </section>
   </section>
 </section>
