@@ -543,10 +543,7 @@ TEST_F(TestTableStore, Basics)
     ASSERT_EQ(buffer2, store.secure_any(7));
 
     store.clear();
-    {
-        store_t::security expected = { buffer2, buffer1 };
-        ASSERT_EQ(expected, store.get_security());
-    }
+    ASSERT_TRUE(store.get_security().empty());
 }
 
 TEST_F(TestTableStore, Merge)
@@ -1178,6 +1175,113 @@ static_assert(
             stored_table::content_type,
             stored_table::allocator_type, true>>::value, "");
 
+struct TestStoredTableReusingBuffer : BaseTest
+{
+    using at_t =
+        typename std::allocator_traits<stored_table::allocator_type>::
+            template rebind_traits<char>;
+    using a_t = at_t::allocator_type;
+
+    stored_table* table;
+    char* m1;
+    char* m2;
+    char* m3;
+
+    void SetUp()
+    {
+        BaseTest::SetUp();
+        table = new stored_table(50U);
+        a_t a(table->get_allocator());
+        m1 = at_t::allocate(a, 52U);
+        m2 = at_t::allocate(a, 51U);
+        m3 = at_t::allocate(a, 50U);
+        table->add_buffer(m1, 52U);
+        table->add_buffer(m2, 51U);
+        table->add_buffer(m3, 50U);
+        table->clear();
+    }
+
+    void TearDown()
+    {
+        delete table;
+        BaseTest::TearDown();
+    }
+};
+
+TEST_F(TestStoredTableReusingBuffer, First)
+{
+    auto p = table->generate_buffer(50U);
+    ASSERT_EQ(m3, p.first);
+    ASSERT_EQ(50U, p.second);
+
+    table->consume_buffer(m3, 50U);
+}
+
+TEST_F(TestStoredTableReusingBuffer, Middle)
+{
+    auto p = table->generate_buffer(51U);
+    ASSERT_EQ(m2, p.first);
+    ASSERT_EQ(51U, p.second);
+
+    table->consume_buffer(m2, 51U);
+}
+
+TEST_F(TestStoredTableReusingBuffer, Last)
+{
+    auto p = table->generate_buffer(52U);
+    ASSERT_EQ(m1, p.first);
+    ASSERT_EQ(52U, p.second);
+
+    table->consume_buffer(m1, 52U);
+}
+
+TEST_F(TestStoredTableReusingBuffer, NoSuitable)
+{
+    auto p = table->generate_buffer(53U);
+    ASSERT_NE(p.first, m1);
+    ASSERT_NE(p.first, m2);
+    ASSERT_NE(p.first, m3);
+    ASSERT_GE(p.second, 53U);
+
+    table->consume_buffer(p.first, p.second);
+}
+
+TEST_F(TestStoredTableReusingBuffer, Secured)
+{
+    auto v = table->import_value("ABC");
+    ASSERT_GE(v.cbegin(), m3);
+    ASSERT_LT(v.cend(), m3 + 50U);
+
+    // In use:  |50|
+    // Cleared: |51|52|
+
+    auto p = table->generate_buffer(50U);
+    ASSERT_EQ(m2, p.first);
+    ASSERT_EQ(51U, p.second);
+
+    table->consume_buffer(m2, 51U);
+}
+
+TEST_F(TestStoredTableReusingBuffer, DoubleClear)
+{
+    // Cleared: |50|51|52|
+
+    auto v = table->import_value(
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+
+    // In use:  |x (>= 53)|
+    // Cleared: |50|51|52|
+
+    table->clear();
+
+    // Cleared: |50|51|52|x|
+
+    auto p = table->generate_buffer(53U);
+    ASSERT_EQ(v.cbegin(), p.first);
+
+    table->consume_buffer(p.first, p.second);
+}
+
 struct TestStoredTableBuilder : BaseTestWithParam<std::size_t>
 {};
 
@@ -1303,6 +1407,30 @@ TEST_P(TestStoredTableBuilder, Transpose)
 
 INSTANTIATE_TEST_CASE_P(,
     TestStoredTableBuilder, testing::Values(2, 11, 1024));
+
+struct TestStoredTableBuilderReusingBuffer : BaseTest
+{};
+
+TEST_F(TestStoredTableBuilderReusingBuffer, Basics)
+{
+    wstored_table table(100U);
+
+    // use the first buffer
+    const auto v = table.import_value(L"1234567890");
+
+    table.clear();  // the buffer shall be retained
+
+    const wchar_t* s = L"ABCDEFG";
+    std::wstringbuf in(s);
+    try {
+        parse_csv(&in, make_stored_table_builder(table));
+    } catch (const text_error& e) {
+        FAIL() << e.info();
+    }
+
+    // ensure the buffer is reused after table.clear() was called
+    ASSERT_EQ(v.cbegin(), table[0][0].cbegin());
+}
 
 struct TestStoredTableConst : BaseTest
 {};

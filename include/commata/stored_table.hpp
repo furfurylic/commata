@@ -20,6 +20,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -868,6 +869,16 @@ public:
     {
         hwl_ = buffer_;
     }
+
+    bool is_cleared() noexcept
+    {
+        return buffer_ == hwl_;
+    }
+
+    std::size_t size() noexcept
+    {
+        return end_ - buffer_;
+    }
 };
 
 // ditto
@@ -894,6 +905,10 @@ class table_store :
     node_type* buffers_back_;   // "back" of buffers, whose next is nullptr
     std::size_t buffers_size_;  // "size" of buffers
 
+    node_type* buffers_cleared_;        // "front" of cleared buffers
+    node_type* buffers_cleared_back_;   // "back" of cleared buffers,
+                                        // whose next is nullptr
+
 private:
     using at_t = std::allocator_traits<Allocator>;
     using pt_t = std::pointer_traits<typename at_t::pointer>;
@@ -908,8 +923,8 @@ public:
         std::allocator_arg_t = std::allocator_arg,
         const Allocator& alloc = Allocator()) :
         member_like_base<Allocator>(alloc),
-        buffers_(nullptr), buffers_back_(nullptr),
-        buffers_size_(0)
+        buffers_(nullptr), buffers_back_(nullptr), buffers_size_(0),
+        buffers_cleared_(nullptr), buffers_cleared_back_(nullptr)
     {}
 
     table_store(table_store&& other) noexcept :
@@ -921,18 +936,35 @@ public:
         table_store&& other) noexcept :
         member_like_base<Allocator>(alloc),
         buffers_(other.buffers_), buffers_back_(other.buffers_back_),
-        buffers_size_(other.buffers_size_)
+        buffers_size_(other.buffers_size_),
+        buffers_cleared_(other.buffers_cleared_),
+        buffers_cleared_back_(other.buffers_cleared_back_)
     {
         assert(alloc == other.get_allocator());
         other.buffers_ = nullptr;
         other.buffers_back_ = nullptr;
         other.buffers_size_ = 0;
+        other.buffers_cleared_ = nullptr;
+        other.buffers_cleared_back_ = nullptr;
     }
 
     ~table_store()
     {
+        // First splice buffers_ and buffers_cleared_ into buffers_
+        if (!buffers_) {
+            buffers_ = buffers_cleared_;
+        } else {
+            assert(buffers_back_);
+            assert(!buffers_back_->next);
+            buffers_back_->next = buffers_cleared_;
+        }
+
+        // Then destroy all buffers in buffers_
         while (buffers_) {
-            reduce_buffer();
+            std::pair<Ch*, std::size_t> p;
+            std::tie(p, buffers_) = byebye(buffers_);
+            at_t::deallocate(this->get(),
+                pt_t::pointer_to(*p.first), p.second);
         }
     }
 
@@ -955,18 +987,8 @@ public:
     // must not deallocate "buffer" even if an exception is thrown)
     void add_buffer(Ch* buffer, std::size_t size)
     {
-        typename nat_t::allocator_type na(this->get());
-
         // "push_front"-like behaviour
-        const auto buffers0 = buffers_;
-        try {
-            buffers_ = std::addressof(*nat_t::allocate(na, 1)); // throw
-        } catch (...) {
-            at_t::deallocate(this->get(), pt_t::pointer_to(*buffer), size);
-            throw;
-        }
-        ::new(buffers_) node_type(buffers0);
-        buffers_->attach(buffer, size);
+        buffers_ = hello(buffer, size, buffers_);   // throw
         if (!buffers_back_) {
             buffers_back_ = buffers_;
         }
@@ -993,12 +1015,99 @@ public:
         return nullptr;
     }
 
-    void clear() noexcept
+    std::pair<Ch*, std::size_t> generate_buffer(std::size_t min_size)
     {
-        for (auto i = buffers_; i; i = i->next) {
-            i->clear();
+        if (buffers_cleared_) {
+            auto p_prev_next = &buffers_cleared_;
+            auto p = *p_prev_next;
+            decltype(p) prev = nullptr;
+            for (; p; p_prev_next = &p->next, prev = p, p = *p_prev_next) {
+                if (p->size() >= min_size) {
+                    if (p == buffers_cleared_back_) {
+                        buffers_cleared_back_ = prev;
+                    }
+                    std::pair<Ch*, std::size_t> r;
+                    std::tie(r, *p_prev_next) = byebye(p);
+                    return r;
+                }
+            }
+        }
+        return std::make_pair(
+            std::addressof(*at_t::allocate(this->get(), min_size)), // throw
+            min_size);
+    }
+
+    void consume_buffer(Ch* p, std::size_t size)
+    {
+        try {
+            buffers_cleared_ = hello(p, size, buffers_cleared_);    // throw
+            if (!buffers_cleared_back_) {
+                buffers_cleared_back_ = buffers_cleared_;
+            }
+        } catch (...) {
+            at_t::deallocate(this->get(), pt_t::pointer_to(*p), size);
         }
     }
+
+private:
+    // Creates a node which holds [buffer, buffer + size) in front of next;
+    // this function consumes [buffer, buffer + size) at once
+    node_type* hello(Ch* buffer, std::size_t size, node_type* next)
+    {
+        node_type* n;
+        try {
+            typename nat_t::allocator_type na(this->get());
+            n = std::addressof(*nat_t::allocate(na, 1));    // throw
+            ::new(n) node_type(next);                       // throw
+        } catch (...) {
+            // We'd better not call "consume_buffer" because it calls "hello,"
+            // which is this function itself
+            at_t::deallocate(this->get(), pt_t::pointer_to(*buffer), size);
+            throw;
+        }
+        n->attach(buffer, size);
+        return n;
+    }
+
+    // Detachs buffer from a node and then destroys the node; throws nothing
+    std::pair<std::pair<Ch*, std::size_t>, node_type*> byebye(node_type* p)
+    {
+        const auto next = p->next;
+        const auto r = p->detach();
+        typename nat_t::allocator_type na(this->get());
+        nat_t::deallocate(na, npt_t::pointer_to(*p), 1U);
+        static_assert(std::is_trivially_destructible<node_type>::value, "");
+        return std::make_pair(r, next);
+    }
+
+public:
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4706)
+#endif
+    // Clears all elements in buffers_
+    // and then splice buffers_ to buffers_cleared_back_
+    void clear() noexcept
+    {
+        if (buffers_) {
+            auto i = buffers_;
+            do {
+                i->clear();
+            } while ((i = i->next));    // parens to squelch gcc's complaint
+            if (buffers_cleared_back_) {
+                buffers_cleared_back_->next = buffers_;
+            } else {
+                buffers_cleared_ = buffers_;
+            }
+            buffers_cleared_back_ = buffers_back_;
+            buffers_ = nullptr;
+            buffers_back_ = nullptr;
+            buffers_size_ = 0;
+        }
+    }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
     void swap(table_store& other) noexcept
     {
@@ -1017,18 +1126,31 @@ public:
     table_store& merge(table_store&& other) noexcept
     {
         assert(this->get() == other.get());
+
         if (buffers_back_) {
             assert(!buffers_back_->next);
             buffers_back_->next = other.buffers_;
         } else {
             assert(!buffers_);
             buffers_ = other.buffers_;
-            buffers_back_ = buffers_;
         }
+        buffers_back_ = other.buffers_back_;
         buffers_size_ += other.buffers_size_;
         other.buffers_ = nullptr;
         other.buffers_back_ = nullptr;
         other.buffers_size_ = 0;
+
+        if (buffers_cleared_back_) {
+            assert(!buffers_cleared_back_->next);
+            buffers_cleared_back_->next = other.buffers_cleared_;
+        } else {
+            assert(!buffers_cleared_);
+            buffers_cleared_ = other.buffers_cleared_;
+        }
+        buffers_cleared_back_ = other.buffers_cleared_back_;
+        other.buffers_cleared_ = nullptr;
+        other.buffers_cleared_back_ = nullptr;
+
         return *this;
     }
 
@@ -1046,32 +1168,25 @@ public:
         // s = get_security() -> add_buffer() -> set_security(s) is OK
         assert(s.size() <= buffers_size_);
         for (auto k = s.size(); k < buffers_size_; ++k) {
-            reduce_buffer();
+            assert(buffers_);
+            std::pair<Ch*, std::size_t> p;
+            std::tie(p, buffers_) = byebye(buffers_);
+            consume_buffer(p.first, p.second);
+            --buffers_size_;
         }
 
-        auto i = buffers_;
-        auto j = s.cbegin();
-        for (; i; i = i->next, ++j) {
-            i->secure_upto(*j);
+        if (buffers_) {
+            auto i = buffers_;
+            auto j = s.cbegin();
+            for (; i; i = i->next, ++j) {
+                i->secure_upto(*j);
+            }
+        } else {
+            buffers_back_ = nullptr;
         }
-        assert(i == nullptr);
     }
 
 private:
-    void reduce_buffer() noexcept
-    {
-        assert(buffers_);
-
-        typename nat_t::allocator_type na(this->get());
-
-        auto next = buffers_->next;
-        const auto p = buffers_->detach();
-        at_t::deallocate(this->get(), pt_t::pointer_to(*p.first), p.second);
-        static_assert(std::is_trivially_destructible<node_type>::value, "");
-        nat_t::deallocate(na, npt_t::pointer_to(*buffers_), 1);
-        buffers_ = next;
-    }
-
     void swap_alloc(table_store& other, std::true_type) noexcept
     {
         using std::swap;
@@ -1087,6 +1202,8 @@ private:
         swap(buffers_, other.buffers_);
         swap(buffers_back_, other.buffers_back_);
         swap(buffers_size_, other.buffers_size_);
+        swap(buffers_cleared_, other.buffers_cleared_);
+        swap(buffers_cleared_back_, other.buffers_cleared_back_);
     }
 };
 
@@ -1441,10 +1558,10 @@ private:
     {
         auto secured = store_.secure_any(new_value_size + 1);
         if (!secured) {
-            const auto alloc_size =
-                std::max(new_value_size + 1, buffer_size_);
-            secured = allocate_buffer(alloc_size);  // throw
-            add_buffer(secured, alloc_size);        // throw
+            auto alloc_size = std::max(new_value_size + 1, buffer_size_);
+            std::tie(secured, alloc_size) = generate_buffer(alloc_size);
+                                                // throw
+            add_buffer(secured, alloc_size);    // throw
             // No need to deallocate secured even when an exception is
             // thrown by add_buffer because add_buffer consumes secured
             secure_current_upto(secured + new_value_size + 1);
@@ -1537,6 +1654,16 @@ public:
         return operator_plus_assign_impl(std::move(other));
     }
 
+    std::pair<char_type*, std::size_t> generate_buffer(std::size_t min_size)
+    {
+        return store_.generate_buffer(min_size);
+    }
+
+    void consume_buffer(char_type* p, std::size_t size)
+    {
+        return store_.consume_buffer(p, size);
+    }
+
     void add_buffer(char_type* buffer, std::size_t size)
     {
         store_.add_buffer(buffer, size);
@@ -1548,12 +1675,6 @@ public:
     }
 
 private:
-    char_type* allocate_buffer(std::size_t size)
-    {
-        auto a = store_.get_allocator();
-        return std::addressof(*cat_t::allocate(a, size));
-    }
-
     template <class OtherTable>
     basic_stored_table& operator_plus_assign_impl(OtherTable&& other)
     {
@@ -2067,7 +2188,15 @@ public:
     ~stored_table_builder()
     {
         if (current_buffer_holder_) {
-            deallocate_buffer(current_buffer_holder_, current_buffer_size_);
+            using a_t = typename table_type::allocator_type;
+            using cat_t = typename std::allocator_traits<a_t>::template
+                rebind_traits<char_type>;
+            using ca_t = typename cat_t::allocator_type;
+            using p_t = typename cat_t::pointer;
+            using pt_t = std::pointer_traits<p_t>;
+            ca_t a(table_->get_allocator());
+            cat_t::deallocate(
+                a, pt_t::pointer_to(*current_buffer_), current_buffer_size_);
         }
     }
 
@@ -2122,15 +2251,14 @@ public:
             } else {
                 // The current buffer has been committed to the store or
                 // seems to be too short, so we need a new one
-                const auto next_buffer =
-                    allocate_buffer(next_buffer_size);              // throw
-                traits_t::copy(next_buffer, field_begin_, length);
+                const auto p = table_->generate_buffer(next_buffer_size);
+                        // throw
+                traits_t::copy(p.first, field_begin_, length);
                 if (current_buffer_holder_) {
-                    deallocate_buffer(
+                    table_->consume_buffer(
                         current_buffer_holder_, current_buffer_size_);
                 }
-                current_buffer_holder_ = next_buffer;
-                current_buffer_size_ = next_buffer_size;
+                std::tie(current_buffer_holder_, current_buffer_size_) = p;
             }
             field_begin_ = current_buffer_holder_;
             field_end_   = current_buffer_holder_ + length;
@@ -2142,9 +2270,9 @@ public:
             } else {
                 // The current buffer has been committed to the store,
                 // so we need a new one
-                current_buffer_holder_ =
-                    allocate_buffer(table_->get_buffer_size());     // throw
-                current_buffer_size_ = table_->get_buffer_size();
+                std::tie(current_buffer_holder_, current_buffer_size_) =
+                    table_->generate_buffer(table_->get_buffer_size());
+                        // throw
             }
             length = 0;
         }
@@ -2164,25 +2292,6 @@ private:
         std::size_t next = table_->get_buffer_size();
         for (; occupied >= next / 2; next *= 2);
         return next;
-    }
-
-    char_type* allocate_buffer(std::size_t size)
-    {
-        using cat_t = typename std::allocator_traits<Allocator>::template
-            rebind_traits<char_type>;
-        typename cat_t::allocator_type a(table_->get_allocator());
-        return std::addressof(*cat_t::allocate(a, size));
-    }
-
-    void deallocate_buffer(char_type* p, std::size_t size) noexcept
-    {
-        using cat_t = typename std::allocator_traits<Allocator>::template
-            rebind_traits<char_type>;
-        typename cat_t::allocator_type a(table_->get_allocator());
-        cat_t::deallocate(
-            a,
-            std::pointer_traits<typename cat_t::pointer>::pointer_to(*p),
-            size);
     }
 
 public:

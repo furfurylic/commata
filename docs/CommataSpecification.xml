@@ -1895,6 +1895,8 @@ namespace commata {
     template &lt;class F> void guard_rewrite(F f);
 
     <c>// <n><xref id="basic_stored_table.primitives"/>, primitive store operations:</n></c>
+    std::pair&lt;char_type*, std::size_t> generate_buffer(std::size_t min_size);
+    void consume_buffer(char_type* buffer, std::size_t size) const;
     void add_buffer(char_type* buffer, std::size_t size);
     void secure_current_upto(char_type* secured_last);
 
@@ -2256,10 +2258,9 @@ template &lt;class... Args> value_type import_value(Args&amp;&amp;... args);
           <code>
 template &lt;class F> void guard_rewrite(F f);
           </code>
-          <requires><c>f</c> shall possibly call functions that do not change the state of <c>*this</c> except <c>rewrite_value</c>, <c>import_value</c>, <c>add_buffer</c> and <c>secure_current_upto</c>.</requires>
+          <requires><c>f</c> shall possibly call functions that do not change the state of <c>*this</c> except <c>rewrite_value</c>, <c>import_value</c>, <c>generate_buffer</c>, <c>consume_buffer</c>, <c>add_buffer</c> and <c>secure_current_upto</c>.</requires>
           <effects>Calls <c>f()</c>.</effects>
-          <remark>If an exception is thrown, all buffers that have been put into the store of <c>*this</c> during the call of <c>f()</c> are deallocated,
-                  all objects returned by the calls of <c>rewrite_value</c> and therefore <c>import_value</c> during the call of <c>f()</c> are invalidated,
+          <remark>If an exception is thrown, all objects returned by the calls of <c>rewrite_value</c> and therefore <c>import_value</c> during the call of <c>f()</c> are invalidated
                   and the current buffer mark and its reservation marks (<xref id="basic_stored_table.primitives"/>) are restored.</remark>
         </code-item>
       </section>
@@ -2269,9 +2270,33 @@ template &lt;class F> void guard_rewrite(F f);
 
         <code-item>
           <code>
+std::pair&lt;char_type*, std::size_t> generate_buffer(std::size_t min_size);
+          </code>
+          <effects>Optionally finds a buffer in the store whose length is not less than <c>min_size</c> and whose absence does not have any effects on the completeness of the table.
+                   If a suitable buffer is found, then makes the store release the ownership of it.
+                   Otherwise, makes a rebound copy of a return value of <c>get_allocator</c> to <c>char_type</c> and allocates a buffer for <c>min_size</c> <c>char_type</c> objects with it.</effects>
+          <returns>A pair object of a pointer to the first element of a buffer and its length.</returns>
+          <remark>This function does not change the current buffer mark.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+void consume_buffer(char_type* buffer, std::size_t size);
+          </code>
+          <requires><c>p</c> shall point the first element of a buffer allocated by a rebound copy of a return value of <c>get_allocator()</c> to <c>char_type</c>.
+                    <c>size</c> shall match the value passed to the allocator to obtain this memory.
+                    The range [<c>buffer</c>, <c>buffer + size</c>) shall not overlap with any buffers in the store of <c>*this</c>.</requires>
+          <effects>Makes the store take over the ownership of the buffer whose first element is pointed by <c>buffer</c> and whose length is <c>size</c>.
+                   Then optionally makes a rebound copy of <c>get_allocator</c> to <c>char_type</c> and deallocates the buffer with it.</effects>
+          <throws>Nothing.</throws>
+          <remark>This function does not change the current buffer mark.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
 void add_buffer(char_type* buffer, std::size_t size);
           </code>
-          <requires><c>p</c> shall point the first element of a buffer allocated by a rebound copy of a return value of <c>get_allocator()</c> for <c>char_type</c>.
+          <requires><c>p</c> shall point the first element of a buffer allocated by a rebound copy of a return value of <c>get_allocator()</c> to <c>char_type</c>.
                     <c>size</c> shall match the value passed to the allocator to obtain this memory.
                     The range [<c>buffer</c>, <c>buffer + size</c>) shall not overlap with any buffers in the store of <c>*this</c>.</requires>
           <effects>Adds the range [<c>buffer</c>, <c>buffer + size</c>) to the store as a buffer and marks it as the current buffer.</effects>
@@ -2284,6 +2309,7 @@ void secure_current_upto(char_type* secured_last);
           </code>
           <requires><c>secured_last</c> shall point an element in the current buffer or be the past-the-end pointer of the current buffer.</requires>
           <effects>Marks the range [<c>cb</c>, <c>secured_last</c>) as reserved against <c>rewrite_value</c> and therefore <c>import_value</c> (<xref id="basic_stored_table.rewrite"/>), where <c>cb</c> is a pointer to the first element of the current buffer.</effects>
+          <throws>Nothing.</throws>
           <remark>This function does not change the current buffer mark. The reservation marks can not be revoked except by <c>guard_rewrite</c>.</remark>
         </code-item>
       </section>
