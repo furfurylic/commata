@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-05-28 (UTC)</signature>
+<signature>2019-06-08 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2225,9 +2225,10 @@ template &lt;class ForwardIterator>
   value_type&amp; rewrite_value(value_type&amp; value, ForwardIterator new_value);
           </code>
           <requires><c>value</c> shall be backed by <c>*this</c>.
-                    The template parameter <c>ForwardIterator</c> shall meet the <c>ForwardIterator</c> requirements for <c>char_type</c>.</requires>
+                    The template parameter <c>ForwardIterator</c> shall meet the <c>ForwardIterator</c> requirements for <c>char_type</c>.
+                    <c>new_value</c> shall point the first element of a valid null-terminated string of <c>char_type</c>.</requires>
           <effects>Determines the length <c>n</c>, whose value is the smallest nonnegative integer that satisfies <c>traits_type::eq(*std::next(new_value, n), char_type())</c>.
-                   Then calls <c>rewrite_value(new_value, std::next(new_value, n))</c>.</effects>
+                   Then calls <c>rewrite_value(value, new_value, std::next(new_value, n))</c>.</effects>
           <returns><c>value</c>.</returns>
         </code-item>
 
@@ -2237,7 +2238,7 @@ template &lt;class OtherValue>
   value_type&amp; rewrite_value(value_type&amp; value, const OtherValue&amp; new_value);
           </code>
           <requires><c>value</c> shall be backed by <c>*this</c>.</requires>
-          <effects>Calls <c>rewrite_value(new_value.cbegin(), new_value.cend())</c>.</effects>
+          <effects>Calls <c>rewrite_value(value, new_value.cbegin(), new_value.cend())</c>.</effects>
           <returns><c>value</c>.</returns>
           <remark>This overload shall not participate in overload resolution unless <c>OtherValue::const_iterator</c> is a type.</remark>
         </code-item>
