@@ -1994,8 +1994,8 @@ template <class ContentL, class AllocatorL, class TableR>
 auto plus_stored_table_impl(
     const basic_stored_table<ContentL, AllocatorL>& left, TableR&& right)
 {
-    basic_stored_table<ContentL, AllocatorL> l(left);       // throw
-    l += std::forward<TableR>(right);                       // throw
+    auto l(left);                           // throw
+    l += std::forward<TableR>(right);       // throw
     return l;
 }
 
@@ -2003,14 +2003,8 @@ template <class ContentL, class AllocatorL, class TableR>
 auto plus_stored_table_impl(
     basic_stored_table<ContentL, AllocatorL>&& left, TableR&& right)
 {
-    basic_stored_table<ContentL, AllocatorL> l(std::move(left));    // throw
-    try {
-        l += std::forward<TableR>(right);                           // throw
-    } catch (...) {
-        l.swap(left);
-        throw;
-    }
-    return l;
+    left += std::forward<TableR>(right);    // throw
+    return std::move(left);
 }
 
 } // end namespace detail
