@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-06-12 (UTC)</signature>
+<signature>2019-06-15 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -16,8 +16,8 @@
 
     <p>The normativity of the specifications on this document is the same as the normativity of the description of the ISO C++14 standard for its conforming standard library implementations except that:</p>
     <ul>
-      <li>class templates and function templates shall not have any additional template parameters no matter whether they have their default template-arguments, and</li>
-      <li>member templates shall not have any additional template parameters no matter whether they have their default template arguments, except that constructor templates can have ones with their default template arguments.</li>
+      <li>class templates and function templates shall not have any additional template parameters no matter whether they have their default template arguments,</li>
+      <li>member templates shall not have any additional template parameters no matter whether they have their default template arguments, except that constructor templates can have ones with their default template arguments, and</li>
       <li>member function templates shall not have any additional parameters no matter whether they have their default arguments.</li>
     </ul>
   </section>
@@ -28,11 +28,11 @@
     <p>A translation unit may include headers described in this document in any order.
        Each may be included more than once, with no effect different from being included exactly once.</p>
     <p>A translation unit shall include a header described in this document only outside of any external declaration or definition, and shall include the header lexically before the first reference in that translation unit to any of the entities declared in that header.</p>
-    <p>A translation unit shall not define a macro whose name meets one of the following before a point of an <c>#include</c> preprocessor directive which includes a header described in this document:</p>
+    <p>A translation unit shall not define a macro whose name meets one of the following before a point of an <c>#include</c> preprocessor directive that includes a header described in this document:</p>
     <ul>
       <li>it consists only of one uppercase alphabetic letter,</li>
       <li>it begins with a lowercase alphabetic letter,</li>
-      <li>it consists only of alphabetic letters and decimal digit characters, the number of the latter of which may possibly be zero, contains both of an uppercase alphabetic letter and a lowercase one, and begins with an uppercase one, or</li>
+      <li>it consists only of alphabetic letters and possibly zero decimal digit characters, contains both of an uppercase alphabetic letter and a lowercase one, and begins with an uppercase one, or</li>
       <li>it begins with <c>COMMATA_</c>.</li>
     </ul>
     <p>Headers described in this document may define macros whose name begin with <c>COMMATA_</c> and may not define any macros with other names.</p>
@@ -44,7 +44,7 @@
     <p>Commata consists of two loosely-coupled parts following:</p>
     <ul>
       <li>the <n>parser</n>, which reads a sequence of char-like objects in a certain format such as a CSV text (<xref id="definitions.csv_text"/>) from a stream or a stream buffer and emits events to a handler, which is called a <n>text handler</n>, and</li>
-      <li>default text handlers, objects of which receive events from the parser and do some default operation on them.</li>
+      <li>default text handlers, whose objects receive events from the parser and do some default operation on them.</li>
     </ul>
     <p>Due to this loosely-coupled nature, you can implement your own new text handler and make the parser emit events to an object of it. The requrements that the parser need text handlers to meet are bundled as the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>).</p>
   </section>
@@ -86,7 +86,7 @@
             The representation of the final text field in a text record is not followed by a comma.</li>
         <li>In a CSV text, the representations of its text records are delimited by a line break.
             The representation of the final record is or is not followed by a line break.</li>
-        <li>Each line break is either of CR, LF, or CRLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRLF is a two-character sequence the first character of which is CR and the second is LF.</li>
+        <li>Each line break is either of CR, LF, or CRLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRLF is a two-character sequence whose first character is CR and whose second is LF.</li>
       </ul>
     </section>
 
@@ -348,7 +348,7 @@ text_error(const text_error&amp; other) noexcept;
 text_error(text_error&amp;&amp; other) noexcept;
           </code>
           <effects>Constructs an object of <c>text_error</c> from another object of <c>text_error</c> placing <c>other</c> in an unspecified state.</effects>
-          <postcondition><c>(std::strcmp(c.what(), what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be not <c>false</c> where <c>c</c> is an object that would be copy-constructed from <c>other</c> before the call.</postcondition>
+          <postcondition><c>(std::strcmp(c.what(), what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be not <c>false</c> where <c>c</c> is an object that would be copy constructed from <c>other</c> before the call.</postcondition>
         </code-item>
 
         <code-item>
@@ -356,7 +356,7 @@ text_error(text_error&amp;&amp; other) noexcept;
 text_error&amp; operator=(const text_error&amp; other) noexcept;
           </code>
           <effects>Assigns an object of <c>text_error</c> from another object of <c>text_error</c>.</effects>
-          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (other.get_physical_position() ? (*other.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> is not <c>false</c>.</postcondition>
+          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (other.get_physical_position() ? (*other.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be not <c>false</c>.</postcondition>
           <returns><c>*this</c>.</returns>
         </code-item>
 
@@ -365,7 +365,7 @@ text_error&amp; operator=(const text_error&amp; other) noexcept;
 text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
           </code>
           <effects>Assigns an object of <c>text_error</c> from another object of <c>text_error</c> placing <c>other</c> in an unspecified state.</effects>
-          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position() == nullptr)</c> shall not <c>false</c> where <c>c</c> is an object that would be copy-constructed from <c>other</c> before the call.</postcondition>
+          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>c</c> is an object that would be copy constructed from <c>other</c> before the call.</postcondition>
           <returns><c>*this</c>.</returns>
         </code-item>
       </section>
@@ -380,7 +380,8 @@ text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col =
           <effects>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, removes the position information if it exists. Otherwise, sets the position information whose line number and column number are <c>line</c> and <c>col</c> respectively.</effects>
           <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>get_physical_position() == nullptr</c> shall not be <c>false</c>. Otherwise, <c>*get_physical_position() == std::make_pair(line, col)</c> shall not be <c>false</c>.</postcondition>
           <returns><c>*this</c>.</returns>
-          <remark>The row number and column number shall be zero-based.</remark>
+          <remark><c>line</c> and <c>col</c> shall be <c>npos</c> or zero-based numbers of the row and the column.
+                  <c>npos</c> shall mean &#x201c;no information.&#x201d;</remark>
         </code-item>
 
         <code-item>
@@ -388,7 +389,8 @@ text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col =
 const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noexcept;
           </code>
           <returns>If <c>*this</c> holds a physical position information, a pointer to an pair of its line number and column number. Otherwise, <c>nullptr</c>.</returns>
-          <remark>The row number and column number shall be zero-based.</remark>
+          <remark><c>p->first</c> and <c>p->second</c> shall be <c>npos</c> or zero-based numbers of the row and the column where <c>p</c> is the return value that is not equal to <c>nullptr</c>.
+                  <c>npos</c> shall mean &#x201c;no information.&#x201d;</remark>
         </code-item>
       </section>
     </section>
@@ -817,8 +819,8 @@ record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
           </code>
           <requires><c>out</c> shall be a valid pointer.</requires>
           <effects>Constructs an object that holds the copies of the parameters and behaves as <xref id="table.record_extractor.cons"/> shows.
-                   An object constructed by the first overload uses a default-constructed <c>Allocator</c> object to allocate memory.
-                   One constructed by the second overload uses an <c>Allocator</c> object copy-constructed from <c>alloc</c>.</effects>
+                   An object constructed by the first overload uses a default constructed <c>Allocator</c> object to allocate memory.
+                   One constructed by the second overload uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
 
           <table id="table.record_extractor.cons">
             <caption>Principal parameters of the constructors of <c>record_extractor</c> and the behavior of the constructed object</caption>
@@ -945,8 +947,8 @@ record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; all
           </code>
           <requires><c>out</c> shall be a valid pointer.</requires>
           <effects>Constructs an object that holds the copies of the parameters and behaves as <xref id="table.record_extractor_with_indexed_key.cons"/> shows.
-                   An object constructed by the first overload uses a default-constructed <c>Allocator</c> object to allocate memory.
-                   One constructed by the second overload uses an <c>Allocator</c> object copy-constructed from <c>alloc</c>.</effects>
+                   An object constructed by the first overload uses a default constructed <c>Allocator</c> object to allocate memory.
+                   One constructed by the second overload uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
 
           <table id="table.record_extractor_with_indexed_key.ctor">
             <caption>Principal parameters of the constructors of <c>record_extractor_with_indexed_key</c> and the behavior of the constructed object</caption>
@@ -1061,7 +1063,8 @@ template &lt;class Ch, class Tr, class... Appendices>
       <name>General</name>
 
       <p>Commata offers class template <c>basic_stored_table</c> (<xref id="basic_stored_table"/>), which is an implementation of a in-memory text table (<xref id="definitions.text_table"/>).
-         The text values of text fields contained by an object of an instance of it are represented by class template <c>basic_stored_value</c> (<xref id="basic_stored_value"/>), an object of an instance of which is actually a contiguous and null-terminated range of char type objects of the text table.</p>
+         The text values of text fields contained by an object of an instance of it are represented by class template <c>basic_stored_value</c> (<xref id="basic_stored_value"/>),
+         whose instance is a type whose object is actually a contiguous and null-terminated range of char type objects of the text table.</p>
       <p>A text table is built by an object of an instance of <c>stored_table_builder</c> (<xref id="stored_table_builder"/>), whose instances meet <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>).</p>
     </section>
 
@@ -1311,7 +1314,7 @@ namespace commata {
     void clear() noexcept;
     bool empty() const noexcept;
 
-    <c>// <n><xref id="basic_stored_value.access"/>, element accesss:</n></c>
+    <c>// <n><xref id="basic_stored_value.access"/>, element access:</n></c>
     reference       operator[](size_type pos);
     const_reference operator[](size_type pos) const;
     reference       at(size_type pos);
@@ -2459,7 +2462,7 @@ namespace commata {
          In it, <c>c</c> denotes an lvalue reference to <c>content()</c> of the targeted object and <c>s</c> does the value that <c>c.size()</c> had before the parsing.
          Indices <c>i</c> and <c>j</c> are zero-based.
          In addition, <c>operator[]</c> and <c>operator+</c> are used on types that do not necessarily have them well-defined.
-         In these cases, the semaintics of <c>d[n]</c> and <c>p + n</c> is the same as that of <c>*std::next(d.begin(), n)</c> and <c>std::next(p, n)</c> respectively.</p>
+         In these cases, the semantics of <c>d[n]</c> and <c>p + n</c> are the same as those of <c>*std::next(d.begin(), n)</c> and <c>std::next(p, n)</c> respectively.</p>
 
       <table id="table.stored_table_builder.options">
         <caption><c>stored_table_builder</c> options</caption>
@@ -2646,7 +2649,7 @@ template &lt;class Content, class Allocator>
         <p>In <xref id="table.header_field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
            The type of <c>j</c> is <c>std::size_t</c>.
            The type of <c>v</c> is <c>const std::pair&lt;Ch*, Ch*>*</c>.
-           <c>t</c> is an lvalue of the corresponding cv-unqualified <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) object, the first template argument of the type of which is <c>Ch</c>.</p>
+           <c>t</c> is an lvalue of the corresponding cv-unqualified instance of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>), whose first template argument is <c>Ch</c>.</p>
 
         <table id="table.header_field_scanner.requirements">
           <caption><c>HeaderFieldScanner</c> requirements</caption>
@@ -2675,10 +2678,10 @@ template &lt;class Content, class Allocator>
       </section>
     </section>
 
-    <section id="scanner.builtin_field_scanners">
-      <name>Default field scanners</name>
+    <section id="scanner.builtin_body_field_scanners">
+      <name>Default body field scanners</name>
     
-      <section id="scanner.builtin_field_scanners.general">
+      <section id="scanner.builtin_body_field_scanners.general">
         <name>General</name>
 
         <p>The Commata library offers three default body field scanner types that meet the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>):
@@ -2968,7 +2971,7 @@ basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
           <effects>Constructs an object of <c>basic_table_scanner</c>.
                    The scanner shall ignore the first <c>header_record_count</c> records as header records.
                    The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x201c;no hint.&#x201d;
-                   The scanner shall allocate and deallocate memory with a default-constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
+                   The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
           <postcondition><c>*this</c> has neither a header field scanner nor any body field scanners installed.</postcondition>
         </code-item>
 
@@ -2983,7 +2986,7 @@ template &lt;class HeaderFieldScanner>
           <requires><c>HeaderFieldScanner</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>Ch</c>.</requires>
           <effects>Constructs an object of <c>basic_table_scanner</c> with an header field scanner object installed.
                    The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x201c;no hint.&#x201d;
-                   The scanner shall allocate and deallocate memory with a default-constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
+                   The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
           <postcondition><c>*this</c> has a header field scanner constructed as a copy of <c>s</c> installed and no body field scanners installed.</postcondition>
           <remark>These constructors shall not participate in overload resolution unless <c>std::is_integral&lt;HeaderFieldScanner>::value</c> is <c>false</c>.</remark>
         </code-item>
@@ -3237,7 +3240,7 @@ namespace commata {
 }
       </codeblock>
 
-      <p>The class template <c>replacement</c> offers types an object of which is able either to contain a value or not to contain a value.
+      <p>The class template <c>replacement</c> offers types whose object is able either to contain a value or not to contain a value.
          This class template is used to define <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>).</p>
       <p><c>T</c> shall not be a reference type and shall satisfy the <c>Destructible</c> requirements.</p>
 
@@ -3538,7 +3541,7 @@ namespace commata {
         <p>The class template <c>replace_if_conversion_failed</c> offers types that meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>).
            On a conversion error, an object of them can make the parsing process fail or offer a substitution of the field value, depending on the category of the error.</p>
         <p><c>T</c> shall be <c>CopyConstructible</c>.</p>
-        <p>An object of <c>replace_if_conversion_failed</c> has five replacement actions each of which is equivalent to one which an <c>replace_if_skipped</c> object has (<xref id="replace_if_skipped"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
+        <p>An object of <c>replace_if_conversion_failed</c> has five replacement actions similarly to an object of <c>replace_if_skipped</c> (<xref id="replace_if_skipped"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
            Each of these replacement actions can be configured to be either of the three types illustrated in <xref id="table.replace_if_skipped.replacement_actions"/> independently on one object of <c>replace_if_conversion_failed</c>.</p>
 
         <code-item>
@@ -3731,8 +3734,8 @@ replacement&lt;T> empty() const;
       </section>
     </section>
 
-    <section id="default_field_scanner_classes">
-      <name>Default field scanner classes</name>
+    <section id="default_body_field_scanner_classes">
+      <name>Default body field scanner classes</name>
 
       <section id="arithmetic_field_translator">
         <name>Class template <c>arithmetic_field_translator</c></name>
@@ -3764,7 +3767,7 @@ namespace commata {
         </codeblock>
 
         <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>).</p>
-        <p><c>T</c> is the target type (<xref id="scanner.builtin_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, <c>double</c>, or <c>long double</c>.
+        <p><c>T</c> is the target type (<xref id="scanner.builtin_body_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, <c>double</c>, or <c>long double</c>.
            <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
            The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
            The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
@@ -3869,57 +3872,51 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
             </table>
 
             <table id="table.arithmetic_field_translator.branching">
-              <caption>The value <c>arithmetic_field_translator</c> puts into the field translator sink</caption>
+              <caption>The actions done by an <c>arithmetic_field_translator</c> in response to the consequence of calling the parsing function</caption>
               <col width="5"/><col width="5"/><col width="3"/><col width="3"/><col width="8"/>
 
               <tr>
-                <th>The call leaves some non-whitespace characters in the range unconsumed</th>
-                <th>The call consumes some characters in the range</th>
-                <th><c>errno == ERANGE</c></th>
+                <th>The call consumed all characters in the range</th>
+                <th>The range contains at least one character</th>
+                <th><c>errno != ERANGE</c></th>
                 <th><c>v</c> is in the domain of <c>T</c></th>
                 <th>Action</th>
               </tr>
 
               <tr>
-                <td>No</td>
-                <td>Yes</td>
-                <td>No</td>
+                <td rowspan="4">Yes</td>
+                <td rowspan="3">Yes</td>
+                <td rowspan="2">Yes</td>
                 <td>Yes</td>
                 <td>Puts <c>v</c> into the field translator sink.</td>
               </tr>
 
               <tr>
                 <td>No</td>
-                <td>Yes</td>
-                <td>No</td>
-                <td>No</td>
                 <td rowspan="2">Evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and let <c>r</c> be the return value.
-                    Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
+                    Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
               </tr>
 
               <tr>
                 <td>No</td>
-                <td>Yes</td>
-                <td>Yes</td>
                 <td>&#8211;</td>
               </tr>
 
               <tr>
-                <td>No</td>
                 <td>No</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
                 <td>Evaluates <c>ceh.empty()</c> or <c>ceh.empty(n)</c> and let <c>r</c> be the return value.
-                    Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
+                    Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
               </tr>
 
               <tr>
-                <td>Yes</td>
+                <td>No</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
                 <td>Evaluates <c>ceh.invalid_format(begin, end)</c> or <c>ceh.invalid_format(begin, end, n)</c> and let <c>r</c> be the return value.
-                    Then puts the <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
+                    Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
               </tr>
             </table>
           </code-item>
@@ -3966,7 +3963,7 @@ namespace commata {
 
         <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
           The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C-language locale.</p>
-        <p><c>T</c> is the target type (<xref id="scanner.builtin_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, or <c>double</c>.
+        <p><c>T</c> is the target type (<xref id="scanner.builtin_body_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, or <c>double</c>.
           <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
           The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
           The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
@@ -4076,7 +4073,7 @@ namespace commata {
         </codeblock>
 
         <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>).
-          Its target type (<xref id="scanner.builtin_field_scanners.general"/>) is <c>std::basic_string&lt;Ch, Tr, Alloc></c>.</p>
+          Its target type (<xref id="scanner.builtin_body_field_scanners.general"/>) is <c>std::basic_string&lt;Ch, Tr, Alloc></c>.</p>
         <p><c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for <c>std::basic_string&lt;Ch, Tr, Alloc></c> (<xref id="field_translator_sink.requirements"/>).
           The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>std::basic_string&lt;Ch, Tr, Alloc></c> (<xref id="skipping_handler.requirements"/>).</p>
 
@@ -4088,7 +4085,7 @@ explicit string_field_translator(Sink sink,
                                  SkippingHandler handle_skipping = SkippingHandler());
             </code>
             <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
-            <effects>Initializes a object of <c>string_field_translator</c> that holds a default-constructed <c>Allocator</c> object as its allocator, and copies of <c>sink</c> and <c>handle_skipping</c>
+            <effects>Initializes a object of <c>string_field_translator</c> that holds a default constructed <c>Allocator</c> object as its allocator, and copies of <c>sink</c> and <c>handle_skipping</c>
                     as the field translator sink object and the skipping handler object respectively.</effects>
           </code-item>
 
