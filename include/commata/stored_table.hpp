@@ -1188,6 +1188,7 @@ public:
         }
     }
 
+    // This ctor template is here only to get accordance with opetator+=
     template <class OtherContent, class OtherAllocator>
     basic_stored_table(
         const basic_stored_table<OtherContent, OtherAllocator>& other) :
@@ -1197,15 +1198,9 @@ public:
     template <class OtherContent, class OtherAllocator>
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
         const basic_stored_table<OtherContent, OtherAllocator>& other) :
-        store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
-        buffer_size_(other.get_buffer_size())
-    {
-        if (!other.is_singular()) {
-            basic_stored_table t(std::allocator_arg, get_allocator());
-            t += other;
-            swap_force(t);
-        }
-    }
+        basic_stored_table(
+            std::allocator_arg, alloc, mimic_other_t(), other)
+    {}
 
     basic_stored_table(basic_stored_table&& other) noexcept :
         store_(std::move(other.store_)), records_(other.records_),
@@ -1231,6 +1226,7 @@ public:
         }
     }
 
+    // This ctor template is here only to get accordance with opetator+=
     template <class OtherContent, class OtherAllocator>
     basic_stored_table(
         basic_stored_table<OtherContent, OtherAllocator>&& other) :
@@ -1241,17 +1237,29 @@ public:
     template <class OtherContent, class OtherAllocator>
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
         basic_stored_table<OtherContent, OtherAllocator>&& other) :
+        basic_stored_table(
+            std::allocator_arg, alloc, mimic_other_t(), std::move(other))
+    {}
+
+private:
+    struct mimic_other_t {};
+
+    template <class Other>
+    basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
+        mimic_other_t, Other&& other) :
         store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
-        buffer_size_(other.get_buffer_size())
+        buffer_size_(std::min(at_t::max_size(alloc), other.buffer_size_))
     {
         assert(is_singular());
         if (!other.is_singular()) {
-            basic_stored_table t(std::allocator_arg, get_allocator());
-            t += std::move(other);
+            basic_stored_table t(
+                std::allocator_arg, get_allocator(), get_buffer_size());
+            t += std::forward<Other>(other);
             swap_force(t);
         }
     }
 
+public:
     ~basic_stored_table()
     {
         destroy_deallocate_content(get_allocator(), records_);
