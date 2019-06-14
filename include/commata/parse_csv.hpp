@@ -417,12 +417,12 @@ public:
 
     std::pair<char_type*, std::size_t> get_buffer()
     {
-        return this->do_get_buffer(&handler_);
+        return this->do_get_buffer(std::addressof(handler_));
     }
 
     void release_buffer(const char_type* buffer) noexcept
     {
-        this->do_release_buffer(buffer, &handler_);
+        this->do_release_buffer(buffer, std::addressof(handler_));
     }
 
     void start_buffer(
@@ -569,7 +569,7 @@ public:
     template <class Tr>
     bool parse_csv(std::basic_streambuf<char_type, Tr>* in)
     {
-        auto release = [f = &f_](const char_type* buffer) {
+        auto release = [f = std::addressof(f_)](const char_type* buffer) {
             f->release_buffer(buffer);
         };
 

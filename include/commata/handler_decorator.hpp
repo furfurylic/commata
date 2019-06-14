@@ -7,6 +7,7 @@
 #define COMMATA_GUARD_9BB11E06_54C5_4E51_BB52_0E8ACAA3146E
 
 #include <cstddef>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -208,7 +209,7 @@ class wrapper_handler :
 
 public:
     explicit wrapper_handler(Handler& handler) noexcept :
-        handler_(&handler)
+        handler_(std::addressof(handler))
     {}
 
     Handler& base() const noexcept

@@ -423,7 +423,7 @@ namespace commata {
         <code>
 text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
         </code>
-        <effects>Initializes <c>e</c> with <c>&amp;ex</c> and <c>b</c> with <c>base</c>.</effects>
+        <effects>Initializes <c>e</c> with <c>std::addressof(ex)</c> and <c>b</c> with <c>base</c>.</effects>
       </code-item>
 
       <code-item>

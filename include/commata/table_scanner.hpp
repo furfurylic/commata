@@ -289,7 +289,7 @@ class basic_table_scanner
         void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
         {
             const range_t range(begin, end);
-            if (!scanner_(me.j_, &range, me)) {
+            if (!scanner_(me.j_, std::addressof(range), me)) {
                 me.remove_header_field_scanner();
             }
         }
@@ -377,12 +377,12 @@ class basic_table_scanner
 
         const void* get_target_v() const noexcept override
         {
-            return &scanner_;
+            return std::addressof(scanner_);
         }
 
         void* get_target_v() noexcept override
         {
-            return &scanner_;
+            return std::addressof(scanner_);
         }
 
         decltype(auto) scanner() noexcept
@@ -430,12 +430,12 @@ class basic_table_scanner
     private:
         const void* get_target_v() const noexcept override
         {
-            return &scanner_;
+            return std::addressof(scanner_);
         }
 
         void* get_target_v() noexcept override
         {
-            return &scanner_;
+            return std::addressof(scanner_);
         }
     };
 
@@ -1505,12 +1505,12 @@ public:
 
     const T* operator->() const noexcept
     {
-        return &t_;
+        return std::addressof(t_);
     }
 
     T* operator->() noexcept
     {
-        return &t_;
+        return std::addressof(t_);
     }
 };
 

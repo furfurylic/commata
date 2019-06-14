@@ -7,6 +7,7 @@
 #define COMMATA_GUARD_0CB954D8_962A_4FA7_AE1E_25DF95DFFD36
 
 #include <functional>
+#include <memory>
 #include <type_traits>
 
 #include "handler_decorator.hpp"
@@ -98,7 +99,7 @@ class empty_physical_line_aware_handler<Handler&> :
 
 public:
     explicit empty_physical_line_aware_handler(Handler& handler) noexcept :
-        handler_(&handler)
+        handler_(std::addressof(handler))
     {}
 
     // Defaulted move ctor is all right

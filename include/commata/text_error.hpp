@@ -47,7 +47,7 @@ class text_error_info
 
 public:
     text_error_info(const text_error& ex, std::size_t base) noexcept :
-        ex_(&ex), base_(base)
+        ex_(std::addressof(ex)), base_(base)
     {}
 
     text_error_info(const text_error_info& ex) noexcept = default;

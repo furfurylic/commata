@@ -36,7 +36,7 @@ class field_name_of_impl
 
 public:
     field_name_of_impl(const char* prefix, const T& t) :
-        prefix_(prefix), t_(&t)
+        prefix_(prefix), t_(std::addressof(t))
     {}
 
     friend std::ostream& operator<<(
@@ -269,13 +269,13 @@ private:
     template <class F>
     auto with_field_buffer_appended(const Ch* first, const Ch* last, F f)
     {
-        if (field_buffer().empty()) {
+        auto& b = field_buffer();
+        if (b.empty()) {
             return f(first, last);
         } else {
-            field_buffer().append(first, last);
-            const auto r = f(&field_buffer()[0],
-                &field_buffer()[0] + field_buffer().size());
-            field_buffer().clear();
+            b.append(first, last);
+            const auto r = f(&b[0], &b[0] + b.size());
+            b.clear();
             return r;
         }
     }

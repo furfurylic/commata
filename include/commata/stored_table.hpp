@@ -1708,7 +1708,7 @@ private:
         //   there are no effects on the before-end elements.
         // - ContentTo's erase() at the end does not throw an exception.
 
-        to.guard_rewrite([c = &content()](auto& t) {
+        to.guard_rewrite([c = std::addressof(content())](auto& t) {
             auto& tc = t.content();
             const auto original_size = tc.size();       // ?
             try {
@@ -1726,7 +1726,7 @@ private:
     {
         std::list<RecordTo, AllocatorRTo> r2(
             to.content().get_allocator());              // throw
-        to.guard_rewrite([&r2, c = &content()](auto& t) {
+        to.guard_rewrite([&r2, c = std::addressof(content())](auto& t) {
             t.copy_from(*c, r2);                        // throw
         });
         to.content().splice(to.content().cend(), r2);
@@ -2165,7 +2165,7 @@ public:
     explicit stored_table_builder(table_type& table) :
         detail::arrange<Content, Options>(table.content()),
         current_buffer_holder_(nullptr), current_buffer_(nullptr),
-        field_begin_(nullptr), table_(&table)
+        field_begin_(nullptr), table_(std::addressof(table))
     {}
 
     stored_table_builder(stored_table_builder&& other) noexcept :
