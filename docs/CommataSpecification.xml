@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-06-15 (UTC)</signature>
+<signature>2019-06-16 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -470,7 +470,7 @@ template &lt;class Tr>
                    Forms a character sequence <c>seq</c> of an unspecified concise character representation of <c>i.error()</c> from <c>i.error().what()</c> and <c>i.error().get_physical_position()</c>, in which the line number and the column number are <c>b</c>-based.
                  Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c> where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>. Then calls <c>os.width(0)</c>.</effects>
           <returns><c>os</c>.</returns>
-          <remark>The second function template shall try to convert <c>i.error().what()</c> from a null-terminated multibyte string into a wide character string.</remark>
+          <remark>The second function template shall widen each character <c>c</c> in the null-terminated byte string pointed by <c>i.error().what()</c> with <c>os.widen(c)</c>.</remark>
         </code-item>
 
         <code-item>

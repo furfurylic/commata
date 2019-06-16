@@ -163,6 +163,19 @@ std::streamsize print_pos(wchar_t (&s)[N], std::size_t pos, std::size_t base)
     return static_cast<std::streamsize>(len);
 }
 
+template <class Ch, class Tr, std::size_t N>
+bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch(&s)[N])
+{
+    // s shall be null terminated, so s[N - 1] is null
+    return sb->sputn(s, N - 1) == N - 1;
+}
+
+template <class Ch, class Tr>
+bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch* s, std::streamsize n)
+{
+    return sb->sputn(s, n) == n;
+}
+
 } // end namespace detail
 
 template <class Tr>
@@ -188,16 +201,16 @@ std::basic_ostream<char, Tr>& operator<<(
             [w, w_len, l = &l[0], l_len, c = &c[0], c_len]
             (auto* sb) {
                 if (w_len > 0) {
-                    if ((sb->sputn(w, w_len) != w_len)
-                     || (sb->sputn("; line ", 7) != 7)) {
+                    if (!detail::sputn(sb, w, w_len)
+                     || !detail::sputn(sb, "; line ")) {
                         return false;
                     }
-                } else if (sb->sputn("Text error at line ", 19) != 19) {
+                } else if (!detail::sputn(sb, "Text error at line ")) {
                     return false;
                 }
-                return (sb->sputn(l, l_len) == l_len)
-                    && (sb->sputn(" column ", 8) == 8)
-                    && (sb->sputn(c, c_len) == c_len);
+                return detail::sputn(sb, l, l_len)
+                    && detail::sputn(sb, " column ")
+                    && detail::sputn(sb, c, c_len);
             });
 
     } else {
@@ -209,80 +222,43 @@ template <class Tr>
 std::basic_ostream<wchar_t, Tr>& operator<<(
     std::basic_ostream<wchar_t, Tr>& os, const text_error_info& i)
 {
-    // Count the wide characters in what, which may be an NTMBS
-    auto w_raw = i.error().what();
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4996)
-#endif
-    auto w_len = static_cast<std::streamsize>(std::mbstowcs(0, w_raw, 0));
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-    if (w_len == -1) {
-        // Conversion failed
-        w_raw = "";
-        w_len = 0;
-    }
-
     if (const auto p = i.error().get_physical_position()) {
         // line
         wchar_t l[std::numeric_limits<std::size_t>::digits10 + 2];
         const auto l_len = detail::print_pos(l, p->first, i.get_base());
 
         // column
-        wchar_t c[sizeof(l)];
+        wchar_t c[sizeof(l) / sizeof(wchar_t)];
         const auto c_len = detail::print_pos(c, p->second, i.get_base());
+
+        // what
+        const auto w_raw = i.error().what();
+        const auto w_len = static_cast<std::streamsize>(std::strlen(w_raw));
 
         const auto n = w_len + l_len + c_len + ((w_len > 0) ? 15 : 27);
 
         return detail::formatted_output(os, n,
-            [w_raw, w_len, l = &l[0], l_len, c = &c[0], c_len]
+            [&os, w_raw, w_len, l = &l[0], l_len, c = &c[0], c_len]
             (auto* sb) {
                 if (w_len > 0) {
-                    std::unique_ptr<wchar_t[]> w(
-                        new wchar_t[w_len + 1]);                    // throw
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4996)
-#endif
-                    std::mbstowcs(w.get(), w_raw, w_len);
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-                    w[w_len] = L'\0';   // maybe not required
-                    if ((sb->sputn(w.get(), w_len) != w_len)
-                     || (sb->sputn(L"; line ", 7) != 7)) {
+                    for (std::streamsize j = 0; j < w_len; ++j) {
+                      if (sb->sputc(os.widen(w_raw[j])) == Tr::eof()) {
+                          return false;
+                      }
+                    }
+                    if (!detail::sputn(sb, L"; line ")) {
                         return false;
                     }
-                } else if (sb->sputn(L"Text error at line ", 19) != 19) {
+                } else if (!detail::sputn(sb, L"Text error at line ")) {
                     return false;
                 }
-                return (sb->sputn(l, l_len) == l_len)
-                    && (sb->sputn(L" column ", 8) == 8)
-                    && (sb->sputn(c, c_len) == c_len);
-            });
-
-    } else if (w_len > 0) {
-        return detail::formatted_output(os, w_len,
-            [w_raw, &w_len]
-            (auto* sb) {
-                std::unique_ptr<wchar_t[]> w(
-                    new wchar_t[w_len + 1]);                        // throw
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4996)
-#endif
-                std::mbstowcs(w.get(), w_raw, w_len);
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-                w[w_len] = L'\0';   // maybe not required
-                return sb->sputn(w.get(), w_len) == w_len;
+                return detail::sputn(sb, l, l_len)
+                    && detail::sputn(sb, L" column ")
+                    && detail::sputn(sb, c, c_len);
             });
 
     } else {
-        return os;
+        return os << i.error().what();
     }
 }
 
