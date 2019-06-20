@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-06-16 (UTC)</signature>
+<signature>2019-06-20 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -817,7 +817,7 @@ record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                  FieldNamePred field_name_pred, FieldValuePred field_value_pred,
                  bool includes_header = true, std::size_t max_record_num = npos);
           </code>
-          <requires><c>out</c> shall be a valid pointer.</requires>
+          <requires><c>out</c> shall be a valid pointer. For the first overload, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Constructs an object that holds the copies of the parameters and behaves as <xref id="table.record_extractor.cons"/> shows.
                    An object constructed by the first overload uses a default constructed <c>Allocator</c> object to allocate memory.
                    One constructed by the second overload uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
@@ -945,7 +945,7 @@ record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; all
                                   bool includes_header = true,
                                   std::size_t max_record_num = npos);
           </code>
-          <requires><c>out</c> shall be a valid pointer.</requires>
+          <requires><c>out</c> shall be a valid pointer. For the first overload, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Constructs an object that holds the copies of the parameters and behaves as <xref id="table.record_extractor_with_indexed_key.cons"/> shows.
                    An object constructed by the first overload uses a default constructed <c>Allocator</c> object to allocate memory.
                    One constructed by the second overload uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
