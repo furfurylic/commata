@@ -451,28 +451,57 @@ std::basic_ostream<Ch, Tr>& operator<<(
     return os << o.s_;
 }
 
-template <class Ch, class Tr, class Allocator, class OtherAllocator>
-string_eq<Ch, Tr, OtherAllocator> make_string_pred(
-    std::basic_string<Ch, Tr, OtherAllocator>&& s, const Allocator&)
+template <class Ch, class Tr, class Allocator>
+auto make_string_pred(
+    std::basic_string<Ch, Tr, Allocator>&& s, const Allocator&)
+ -> std::enable_if_t<
+        !std::is_constructible<
+            std::basic_string<Ch, Tr, Allocator>,
+            std::basic_string<Ch, Tr, Allocator>&&, const Allocator&>::value,
+        string_eq<Ch, Tr, Allocator>>
 {
-    return string_eq<Ch, Tr, OtherAllocator>(std::move(s));
+    return string_eq<Ch, Tr, Allocator>(
+        std::basic_string<Ch, Tr, Allocator>(std::move(s)));
+}
+
+template <class Ch, class Tr, class Allocator>
+auto make_string_pred(
+    std::basic_string<Ch, Tr, Allocator>&& s, const Allocator& a)
+ -> std::enable_if_t<
+        std::is_constructible<
+            std::basic_string<Ch, Tr, Allocator>,
+            std::basic_string<Ch, Tr, Allocator>&&, const Allocator&>::value,
+        string_eq<Ch, Tr, Allocator>>
+{
+    return string_eq<Ch, Tr, Allocator>(
+        std::basic_string<Ch, Tr, Allocator>(std::move(s), a));
+}
+
+template <class Ch, class Tr, class Allocator, class OtherAllocator>
+string_eq<Ch, Tr, Allocator> make_string_pred(
+    const std::basic_string<Ch, Tr, OtherAllocator>& s, const Allocator& a)
+{
+    return string_eq<Ch, Tr, Allocator>(
+        std::basic_string<Ch, Tr, Allocator>(s.cbegin(), s.cend(), a));
 }
 
 template <class Ch, class Tr, class Allocator, class T>
-auto make_string_pred(const T& s, const Allocator& a)
+auto make_string_pred(T&& s, const Allocator& a)
  -> std::enable_if_t<
-        std::is_constructible<std::basic_string<Ch, Tr, Allocator>,
-        const T&, const Allocator&>::value, string_eq<Ch, Tr, Allocator>>
+        !detail::is_std_string<std::decay_t<T>>::value
+     && std::is_constructible<std::basic_string<Ch, Tr, Allocator>,
+            T&&, const Allocator&>::value, string_eq<Ch, Tr, Allocator>>
 {
     return string_eq<Ch, Tr, Allocator>(
-        std::basic_string<Ch, Tr, Allocator>(s, a));
+        std::basic_string<Ch, Tr, Allocator>(std::forward<T>(s), a));
 }
 
 template <class Ch, class Tr, class Allocator, class T>
 auto make_string_pred(T&& s, const Allocator&)
  -> std::enable_if_t<
-        !std::is_constructible<std::basic_string<Ch, Tr, Allocator>,
-        const T&, const Allocator&>::value, T&&>
+        !detail::is_std_string<std::decay_t<T>>::value
+     && !std::is_constructible<std::basic_string<Ch, Tr, Allocator>,
+            T&&, const Allocator&>::value, T&&>
 {
     return std::forward<T>(s);
 }

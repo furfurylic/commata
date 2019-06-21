@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-06-21 (UTC)</signature>
+<signature>2019-06-23 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1009,10 +1009,20 @@ allocator_type get_allocator() const noexcept;
       <p>In this subclause, a function template <c>template &lt;class Ch, class Tr, class P, class Allocator> <nc>unspecified</nc> STRING_PRED(P&amp;&amp; p, const Allocator&amp; alloc)</c> is introduced for ease of explanation.
          Its return value is as following:</p>
       <ul>
-        <li>if <c>P</c> is <c>std::basic_string&lt;Ch, Tr, A></c> for a certain <c>A</c>,
-            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, A></c> object <c>s</c> initialized with <c>std::move(p)</c> and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
-        <li>otherwise, if <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, P, Allocator>>::value</c> is not <c>false</c>,
-            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::forward&lt;P>(p)</c> and <c>alloc</c> and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
+        <li>if <c>std::decay_t&lt;P></c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c> and
+            <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp;, const Allocator&amp;>>::value</c> is not <c>false</c>
+            (which shall not be <c>false</c> according to ISO C++14 standard),
+            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::forward&lt;P>(p)</c> and <c>alloc</c>,
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
+        <li>otherwise, if <c>std::decay_t&lt;P></c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c>,
+            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::forward&lt;P>(p)</c>,
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
+        <li>otherwise, if <c>std::decay_t&lt;P></c> is <c>std::basic_string&lt;Ch, Tr, A></c> for a certain <c>A</c>,
+            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with arguments being <c>p.cbegin()</c>, <c>p.cend()</c> and <c>alloc</c>,
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
+        <li>otherwise, if <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, P&amp;&amp;, const Allocator&amp;>>::value</c> is not <c>false</c>,
+            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::forward&lt;P>(p)</c> and <c>alloc</c>
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
         <li>otherwise, if <c>P</c> is an lvalue reference type, an lvalue reference to <c>p</c>,</li>
         <li>otherwise, an rvalue reference to <c>p</c>.</li>
       </ul>
@@ -1030,7 +1040,7 @@ template &lt;class FieldNamePred, class FieldValuePred,
         <effects>First makes a non-reference and cv-unqualified type variable <c>fvp</c> initialized with <c>STRING_PRED&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred), alloc)</c>.
                  Then if the reference-removed type of <c>FieldNamePred</c> is an integral type, returns <c>record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(std::allocator_arg, alloc, out, field_name_pred, std::move(fvp), std::forward&lt;Appendices>(appendices)...)</c>.
                  Otherwise, makes one more non-reference and cv-unqualified type variable <c>fnp</c> initialized with <c>STRING_PRED&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred), alloc)</c>,
-                 then returns <c>record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(std::allocator_arg, alloc, out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...)</c>.</effects>
+                 and then returns <c>record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(std::allocator_arg, alloc, out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...)</c>.</effects>
       </code-item>
 
       <code-item>

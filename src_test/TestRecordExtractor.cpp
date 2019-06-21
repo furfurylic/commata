@@ -30,7 +30,8 @@ TEST_P(TestRecordExtractor, LeftmostKey)
                        L"ka1,kb3,vb3,\"vb3\"\r";
     std::wstringbuf in(s);
     std::wstringbuf out;
-    parse_csv(&in, make_record_extractor(&out, L"key_a", L"ka1"), GetParam());
+    std::wstring key_a = L"key_a";
+    parse_csv(&in, make_record_extractor(&out, key_a, L"ka1"), GetParam());
     ASSERT_EQ(L"key_a,key_b,value_a,value_b\n"
               L"\"ka1\",kb1,va1,vb1\n"
               L"ka1,kb3,vb3,\"vb3\"\n",
@@ -250,7 +251,7 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
 
     // ditto
     auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
-        "instrument", std::string("clar") + "inet");
+        "instrument", std::string("clarinet"));
     parse_csv<std::char_traits<char>, decltype(ex)>(&in, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }
