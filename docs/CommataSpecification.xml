@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-06-20 (UTC)</signature>
+<signature>2019-06-21 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2374,7 +2374,8 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
     operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp; left,
               const basic_stored_table&lt;ContentR, AllocatorR>&amp; right);
           </code>
-          <returns><c>basic_stored_table&lt;ContentL, AllocatorL>(left) += right</c>.</returns>
+          <effects>Makes a copy of <c>left</c> with the copy constructor of <c>basic_stored_table&lt;ContentL, AllocatorL></c>, which is named <c>t</c>. Then evaluates <c>t += right</c>.</effects>
+          <returns><c>t</c> above.</returns>
         </code-item>
 
         <code-item>
@@ -2384,7 +2385,8 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
     operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
                     basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
           </code>
-          <returns><c>basic_stored_table&lt;ContentL, AllocatorL>(left) += std::move(right)</c>.</returns>
+          <effects>Makes a copy of <c>left</c> with the copy constructor of <c>basic_stored_table&lt;ContentL, AllocatorL></c>, which is named <c>t</c>. Then evaluates <c>t += std::move(right)</c>.</effects>
+          <returns><c>t</c> above.</returns>
         </code-item>
 
         <code-item>
