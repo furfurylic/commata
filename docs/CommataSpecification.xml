@@ -1552,6 +1552,7 @@ iterator erase(const_iterator first, const_iterator last);
                          Then the string of [<c>b</c>, <c>e</c>) shall be equal to <c>prefix</c> and <c>postfix</c> concatenated.
                          <c>*e</c> shall be <c>0</c>.</postcondition>
           <returns><c>begin() + off</c> where <c>off</c> is the value of <c>first - bb</c> and <c>bb</c> is the value of <c>cbegin()</c> before the call.</returns>
+          <remark>Calling this function invalidates all references, pointers, and iterators referring to the objects in the before-call range [<c>begin()</c>, <c>end()</c>].</remark>
         </code-item>
 
         <code-item>
