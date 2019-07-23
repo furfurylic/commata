@@ -5,7 +5,7 @@ examples. If what you like to know about Commata is not found in this document,
 it is recommended to consult [the specification](https://furfurylic.github.io/commata/CommataSpecification.xml).
 
 Codes here should compile if you configure your compiler refer Commata's
-`include` directory as a include path. You are not likely to be bothered by
+`include` directory as an include path. You are not likely to be bothered by
 link errors because Commata is a header-only library.
 
 For simplicity, codes here omits `#include` directive for the standard library
@@ -65,7 +65,7 @@ reference to a `std::deque<std::vector<commata::stored_value>>` object owned by
 `table`. So `table[0][3]` is a reference to a `commata::stored_value` object.
 
 `table.content()` contains all records in `stars.csv` in order.
-No records are not treated specially, for example, the first record is not
+No records are treated specially, for example, the first record is not
 regarded as the header of the CSV.
 
 Each element of `table.content()` represents a record and consists of values of
@@ -165,7 +165,7 @@ Commata has facilities to perform one-pass scanning and on-the-fly type
 conversion on CSV texts. To process CSV texts in this manner may be less
 flexible but can be far more efficient than to process with fully-loaded images
 of CSV texts. Here is an example to parse `stars.csv` and extract only the
-names and the apparent magnitudes of the stars with that facilities:
+names and the apparent magnitudes of the stars with those facilities:
 
 ```C++
 #include <commata/parse_csv.hpp>
@@ -207,8 +207,8 @@ void one_pass_scanning_sample()
 }
 ```
 
-`make_field_translator` makes a _body field scanner_ object which　transfers
-the translated field value to its parameter.
+`make_field_translator` makes a _body field scanner_ object which transfers
+the translated field value to its argument.
 
 The argument of it can be either of:
  - an lvalue to a non-const container object at the right position or the back
@@ -515,8 +515,8 @@ void one_pass_scanning_error_sample2()
 
 The argument
 `replace_if_skipped<double>(replacement_ignore)`
-instructs the body field scanner to ignore every case that a record does not
-contain too few fields to reach the field (in this case, third field
+instructs the body field scanner to ignore every case that a record contains
+too few fields to reach the field (in this case, third field
 (zero-based)); but it is irrelevant to the above-mentioned exception. (Note
 that the second field is followed by a comma, which makes the third field
 exist.)
