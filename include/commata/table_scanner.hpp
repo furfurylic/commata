@@ -228,6 +228,35 @@ public:
     }
 };
 
+struct typable
+{
+    virtual ~typable() {}
+    virtual const std::type_info& get_type() const = 0;
+
+    template <class T>
+    const T* get_target() const noexcept
+    {
+        return (get_type() == typeid(T)) ?
+            static_cast<const T*>(get_target_v()) : nullptr;
+    }
+
+    template <class T>
+    T* get_target() noexcept
+    {
+        return (get_type() == typeid(T)) ?
+            static_cast<T*>(get_target_v()) : nullptr;
+    }
+
+private:
+    virtual const void* get_target_v() const = 0;
+    virtual void* get_target_v() = 0;
+};
+
+struct record_end_scanner : typable
+{
+    virtual void end_record() = 0;
+};
+
 } // end namespace detail
 
 template <class Ch, class Tr = std::char_traits<Ch>,
@@ -235,30 +264,6 @@ template <class Ch, class Tr = std::char_traits<Ch>,
 class basic_table_scanner
 {
     using string_t = std::basic_string<Ch, Tr, Allocator>;
-
-    struct typable
-    {
-        virtual ~typable() {}
-        virtual const std::type_info& get_type() const = 0;
-
-        template <class T>
-        const T* get_target() const noexcept
-        {
-            return (get_type() == typeid(T)) ?
-                static_cast<const T*>(get_target_v()) : nullptr;
-        }
-
-        template <class T>
-        T* get_target() noexcept
-        {
-            return (get_type() == typeid(T)) ?
-                static_cast<T*>(get_target_v()) : nullptr;
-        }
-
-    private:
-        virtual const void* get_target_v() const = 0;
-        virtual void* get_target_v() = 0;
-    };
 
     struct field_scanner
     {
@@ -307,7 +312,7 @@ class basic_table_scanner
         }
     };
 
-    struct body_field_scanner : field_scanner, typable
+    struct body_field_scanner : field_scanner, detail::typable
     {
         virtual void field_skipped() = 0;
     };
@@ -402,13 +407,8 @@ class basic_table_scanner
         }
     };
 
-    struct record_end_scanner : typable
-    {
-        virtual void end_record() = 0;
-    };
-
     template <class T>
-    class typed_record_end_scanner : public record_end_scanner
+    class typed_record_end_scanner : public detail::record_end_scanner
     {
         T scanner_;
 
@@ -448,7 +448,7 @@ class basic_table_scanner
     using bfs_ptr_a_t = typename at_t::template rebind_alloc<bfs_ptr_t>;
     using scanners_a_t = detail::allocation_only_allocator<bfs_ptr_a_t>;
     using res_at_t =
-        typename at_t::template rebind_traits<record_end_scanner>;
+        typename at_t::template rebind_traits<detail::record_end_scanner>;
 
     std::size_t remaining_header_records_;
     std::size_t j_;
