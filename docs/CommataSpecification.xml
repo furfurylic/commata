@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-06-23 (UTC)</signature>
+<signature>2019-07-29 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -12,7 +12,7 @@
 
     <p>This document describes the specifications of Commata, which is a header-only library in C++14 to handle formatted texts, such as CSV texts.</p>
     <p>In this document, many terms and names introduced in ISO C++14 standard are referred without notice.
-       &#x201c;Unspecified behavior,&#x201d; &#x201c;<c>DefaultConstructible</c> requirements,&#x201d; &#x201c;formatted output function,&#x201d; &#x201c;<c>&lt;string></c>&#x201d; (as a header name) and &#x201c;<c>std::string</c>&#x201d; are the examples.</p>
+       &#x201c;Unspecified behaviour,&#x201d; &#x201c;<c>DefaultConstructible</c> requirements,&#x201d; &#x201c;formatted output function,&#x201d; &#x201c;<c>&lt;string></c>&#x201d; (as a header name) and &#x201c;<c>std::string</c>&#x201d; are the examples.</p>
 
     <p>The normativity of the specifications on this document is the same as the normativity of the description of the ISO C++14 standard for its conforming standard library implementations except that:</p>
     <ul>
@@ -130,7 +130,7 @@
         <th>Expression</th>
         <th>Return Type</th>
         <th>Remark</th>
-        <th>Default Behavior</th>
+        <th>Default Behaviour</th>
       </tr>
 
       <tr>
@@ -823,7 +823,7 @@ record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                    One constructed by the second overload uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
 
           <table id="table.record_extractor.cons">
-            <caption>Principal parameters of the constructors of <c>record_extractor</c> and the behavior of the constructed object</caption>
+            <caption>Principal parameters of the constructors of <c>record_extractor</c> and the behaviour of the constructed object</caption>
             <col width="2"/><col width="12"/>
             <tr>
               <th>Parameter</th>
@@ -951,7 +951,7 @@ record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; all
                    One constructed by the second overload uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
 
           <table id="table.record_extractor_with_indexed_key.ctor">
-            <caption>Principal parameters of the constructors of <c>record_extractor_with_indexed_key</c> and the behavior of the constructed object</caption>
+            <caption>Principal parameters of the constructors of <c>record_extractor_with_indexed_key</c> and the behaviour of the constructed object</caption>
             <col width="2"/><col width="12"/>
             <tr>
               <th>Parameter</th>
@@ -2470,7 +2470,7 @@ namespace commata {
 
       <p>The template parameters <c>Content</c> and <c>Allocator</c> shall be types that make <c>basic_stored_table&lt;Content, Allocator></c> a valid type.</p>
 
-      <p>The template parameter <c>Options</c> is a bitmask to control the behavior of the builder.
+      <p>The template parameter <c>Options</c> is a bitmask to control the behaviour of the builder.
          Its effects are described in <xref id="table.stored_table_builder.options"/>.
          In it, <c>c</c> denotes an lvalue reference to <c>content()</c> of the targeted object and <c>s</c> does the value that <c>c.size()</c> had before the parsing.
          Indices <c>i</c> and <c>j</c> are zero-based.
@@ -2578,7 +2578,7 @@ template &lt;class Content, class Allocator>
            <c>b</c> and <c>e</c> are rvalues of <c>Ch*</c>.
            <c>rv</c> is an rvalue of <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
 
-        <p>Requirements shown as (1) and (2) in <xref id="table.field_scanner.requirements"/> are optional, but at least one of (1) or (2) shall be satisfied without falling back to the default behaviors, because they are defined in a cross-referencing manner.</p>
+        <p>Requirements shown as (1) and (2) in <xref id="table.field_scanner.requirements"/> are optional, but at least one of (1) or (2) shall be satisfied without falling back to the default behaviours, because they are defined in a cross-referencing manner.</p>
 
         <table id="table.field_scanner.requirements">
           <caption><c>BodyFieldScanner</c> requirements</caption>
@@ -2589,7 +2589,7 @@ template &lt;class Content, class Allocator>
             <th>Expression</th>
             <th>Return Type</th>
             <th>Remark</th>
-            <th>Default Behavior</th>
+            <th>Default Behaviour</th>
           </tr>
 
           <tr>
@@ -2693,14 +2693,14 @@ template &lt;class Content, class Allocator>
 
     <section id="scanner.builtin_body_field_scanners">
       <name>Default body field scanners</name>
-    
+
       <section id="scanner.builtin_body_field_scanners.general">
         <name>General</name>
 
         <p>The Commata library offers three default body field scanner types that meet the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>):
            <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>), <c>locale_based_arithmetic_field_translator</c> (<xref id="locale_based_arithmetic_field_translator"/>) and <c>string_field_translator</c> (<xref id="string_field_translator"/>).</p>
         <p>An object of these types <n>translates</n> a field value into a value of its <n>target type</n> and forwards it into its installed <n>sink</n>.</p>
-        <p>Behaviors of these default body scanner objects can be customized through the three concepts: <c>FieldTranslatorSink</c> (<xref id="field_translator_sink.requirements"/>), <c>SkippingHandler</c> (<xref id="skipping_handler.requirements"/>) and <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>).</p>
+        <p>Behaviours of these default body scanner objects can be customized through the three concepts: <c>FieldTranslatorSink</c> (<xref id="field_translator_sink.requirements"/>), <c>SkippingHandler</c> (<xref id="skipping_handler.requirements"/>) and <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>).</p>
       </section>
 
       <section id="field_translator_sink.requirements">
@@ -4225,4 +4225,3 @@ template &lt;class Allocator, class Container, class... Appendices>
 </section>
 
 </document>
-

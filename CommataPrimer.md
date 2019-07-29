@@ -476,7 +476,7 @@ Cannot convert an empty string to an instance of double; line 7 column 19
 This is because the field value for the distance of Deneb is an empty string,
 which is not able to be converted into a `double` value.
 
-This behavior is designed, but if what you want to do is to calculate the
+This behaviour is designed, but if what you want to do is to calculate the
 average of the explicitly specified values of distance, in other words,
 if you want to ignore any occurrences of empty field values, you can do this:
 
