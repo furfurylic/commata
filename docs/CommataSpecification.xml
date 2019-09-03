@@ -861,7 +861,7 @@ record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
           <code>
 record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Move-constructs from an rvalue <c>other</c>.</effects>
+          <effects>Move constructs from an rvalue <c>other</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;FieldNamePred>::value &amp;&amp; std::is_nothrow_move_constructible&lt;FieldValuePred>::value</c>.
                   When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
         </code-item>
@@ -987,7 +987,7 @@ record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; all
 record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; other)
                                   noexcept(<nc>see below</nc>);
           </code>
-          <effects>Move-constructs from an rvalue <c>other</c>.</effects>
+          <effects>Move constructs from an rvalue <c>other</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;FieldValuePred>::value</c>.</remark>
         </code-item>
       </section>
@@ -1360,7 +1360,7 @@ namespace commata {
 }
       </codeblock>
 
-      <p>The class template <c>basic_stored_value</c> describes an object that can refer to a contiguous null-terminated sequence of char-like objects in a store (<xref id="basic_stored_table.parts"/>) of a <c>basic_stored_table</c> object.</p>
+      <p>The class template <c>basic_stored_value</c> describes an object that can reference a contiguous null-terminated sequence of char-like objects in a store (<xref id="basic_stored_table.parts"/>) of a <c>basic_stored_table</c> object.</p>
       <p>Programs shall not modify the value of the terminating null object of the sequence directly.
          Instead, they should use modifiers of this class template (<xref id="basic_stored_value.modifiers"/>) or the store-accessing facilities (<xref id="basic_stored_table.rewrite"/>) of the <c>basic_stored_table</c> object that has the store concerned.</p>
 
@@ -1552,7 +1552,7 @@ iterator erase(const_iterator first, const_iterator last);
                          Then the string of [<c>b</c>, <c>e</c>) shall be equal to <c>prefix</c> and <c>postfix</c> concatenated.
                          <c>*e</c> shall be <c>0</c>.</postcondition>
           <returns><c>begin() + off</c> where <c>off</c> is the value of <c>first - bb</c> and <c>bb</c> is the value of <c>cbegin()</c> before the call.</returns>
-          <remark>Calling this function invalidates all references, pointers, and iterators referring to the objects in the before-call range [<c>begin()</c>, <c>end()</c>].</remark>
+          <remark>Calling this function invalidates all references, pointers, and iterators to the objects in the before-call range [<c>begin()</c>, <c>end()</c>].</remark>
         </code-item>
 
         <code-item>
@@ -1971,7 +1971,7 @@ namespace commata {
              A singular object can be assigned, destroyed, copied from or moved from.
              A singular object has a store, an allocator, and a buffer size similarly to non-singular objects.</p>
 
-          <p>All member functions of <c>basic_stored_table</c> and all non-member functions declared in this header (<xref id="stored_table_hpp"/>) that take at least one parameter whose cv-unqualified type is (possibly a reference to) an instance of <c>basic_stored_table</c> require that the following conditions meet:</p>
+          <p>All member functions of <c>basic_stored_table</c> and all non-member functions declared in this header (<xref id="stored_table_hpp"/>) that take at least one parameter whose reference-removed and cv-unqualified type is an instance of <c>basic_stored_table</c> require that the following conditions meet:</p>
           <ul>
              <li>all participating <c>basic_stored_table</c> objects are complete, and</li>
              <li>no two of the contained values of the participating <c>basic_stored_table</c> objects overlap.</li>
@@ -2113,7 +2113,6 @@ template &lt;class OtherContent, class OtherAllocator>
                          For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the value of <c>*ti</c> shall be equal to the value that <c>record_type(oi->cbegin(), oi->cend())</c> had before this construction.
                          <c>*this</c> may be singular only if <c>other</c> was singular before the construction.</postcondition>
         </code-item>
-
 
         <code-item>
           <code>
@@ -2578,7 +2577,7 @@ template &lt;class Content, class Allocator>
            <c>b</c> and <c>e</c> are rvalues of <c>Ch*</c>.
            <c>rv</c> is an rvalue of <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
 
-        <p>Requirements shown as (1) and (2) in <xref id="table.field_scanner.requirements"/> are optional, but at least one of (1) or (2) shall be satisfied without falling back to the default behaviours, because they are defined in a cross-referencing manner.</p>
+        <p>Requirements shown as (1) and (2) in <xref id="table.field_scanner.requirements"/> are optional, but at least one of (1) and (2) shall be satisfied without falling back to the default behaviors, because they are defined in a cross-referencing manner.</p>
 
         <table id="table.field_scanner.requirements">
           <caption><c>BodyFieldScanner</c> requirements</caption>
@@ -2685,7 +2684,7 @@ template &lt;class Content, class Allocator>
                       The value of the header field is [<c>v->first</c>, <c>v->second</c>), and <c>v->second</c> is dereferenceable and points a null character.</li>
                   <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> is a null pointer.</li>
                 </ul>
-                In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will the first body record.</td>
+                In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will be the first body record.</td>
           </tr>
         </table>
       </section>
@@ -3390,7 +3389,7 @@ namespace commata {
           <tr>
             <td>(1)</td>
             <td><c>copy</c></td>
-            <td>Copy-constructs an object of <c>T</c> from an object installed into this replacement action and put it to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
+            <td>Copy constructs an object of <c>T</c> from an object installed into this replacement action and put it to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
           </tr>
 
           <tr>
@@ -4225,3 +4224,4 @@ template &lt;class Allocator, class Container, class... Appendices>
 </section>
 
 </document>
+
