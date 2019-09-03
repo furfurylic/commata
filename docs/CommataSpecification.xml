@@ -1200,7 +1200,7 @@ namespace commata {
 
   template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove_const&lt;Ch>>>
     std::basic_string&lt;std::remove_const&lt;Ch>, Tr, Allocator> to_string(
-      basic_stored_value&lt;Ch, Tr>&amp; o, const Allocator&amp; alloc);
+      basic_stored_value&lt;Ch, Tr>&amp; o, const Allocator&amp; alloc = Allocator());
 
   <c>// <n><xref id="basic_stored_value.swap"/>, basic_stored_value specialized algorithms:</n></c>
   template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; left,
@@ -2057,7 +2057,6 @@ template &lt;class OtherContent, class OtherAllocator>
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                    std::size_t buffer_size = 0);
           </code>
-          <requires><c>Allocator</c> shall be <c>CopyConstructible</c>.</requires>
           <effects>If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>AT::max_size(alloc)</c> and <c>b2</c> where <c>b2</c> is the greater of <c>buffer_size</c> and <c>2</c>.
                    Otherwise, initializes it to a unspecified value.
                    Initializes the allocator with <c>alloc</c>.
@@ -4197,7 +4196,7 @@ template &lt;class T, class Allocator, class Sink, class... Appendices>
   <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
                                   Sink sink, Appendices&amp;&amp;... appendices);
           </code>
-          <returns><c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, Appendices...>(std::allocator_arg, alloc, std::move(sink), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
+          <returns><c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, Allocator, Appendices...>(std::allocator_arg, alloc, std::move(sink), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
           <remark>This overload shall not participate in overload resolution unless <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
         </code-item>
 
