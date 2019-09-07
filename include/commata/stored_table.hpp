@@ -755,51 +755,6 @@ namespace commata {
 namespace detail {
 
 template <class T>
-struct is_std_vector :
-    std::false_type
-{};
-
-template <class... Args>
-struct is_std_vector<std::vector<Args...>> :
-    std::true_type
-{};
-
-template <class T>
-struct is_std_deque :
-    std::false_type
-{};
-
-template <class... Args>
-struct is_std_deque<std::deque<Args...>> :
-    std::true_type
-{};
-
-template <class T>
-struct is_std_list :
-    std::false_type
-{};
-
-template <class... Args>
-struct is_std_list<std::list<Args...>> :
-    std::true_type
-{};
-
-template <class T>
-struct is_nothrow_swappable :
-    std::integral_constant<bool,
-        // According to C++14 23.2.1 (11), STL containers throw no exceptions
-        // with their swap()
-        is_std_vector<T>::value
-     || is_std_deque<T>::value
-     || is_std_list<T>::value
-     || noexcept(std::declval<T&>().swap(std::declval<T&>()))>
-        // We would like to declare using std::swap; and test swap(a, b),
-        // but freaking VS2015 dislikes it
-        // (in fact we shouldn't care since all containers shall have member
-        // function swap)
-{};
-
-template <class T>
 auto select_allocator(const T&, const T& r, std::true_type)
 {
     return r.get_allocator();
@@ -1826,6 +1781,52 @@ auto have_inequal_allocators(const T& l, const T& r)
 }
 
 #endif
+
+template <class T>
+struct is_std_vector :
+    std::false_type
+{};
+
+template <class... Args>
+struct is_std_vector<std::vector<Args...>> :
+    std::true_type
+{};
+
+template <class T>
+struct is_std_deque :
+    std::false_type
+{};
+
+template <class... Args>
+struct is_std_deque<std::deque<Args...>> :
+    std::true_type
+{};
+
+template <class T>
+struct is_std_list :
+    std::false_type
+{};
+
+template <class... Args>
+struct is_std_list<std::list<Args...>> :
+    std::true_type
+{};
+
+template <class T>
+struct is_nothrow_swappable :
+    std::integral_constant<bool,
+        // According to C++14 23.2.1 (11), STL containers throw no exceptions
+        // with their swap()
+        is_std_vector<T>::value
+     || is_std_deque<T>::value
+     || is_std_list<T>::value
+     || noexcept(std::declval<T&>().swap(std::declval<T&>()))>
+        // We would like to declare using std::swap; and test swap(a, b),
+        // but freaking VS2015 dislikes it
+        // (in fact we shouldn't care since all containers shall have member
+        // function swap).
+        // With C++17, we should rely on std::is_nothrow_swappable.
+{};
 
 template <class T>
 auto nothrow_emigrate(T& from, T& to)
