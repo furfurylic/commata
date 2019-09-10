@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-07-29 (UTC)</signature>
+<signature>2019-09-10 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -12,7 +12,7 @@
 
     <p>This document describes the specifications of Commata, which is a header-only library in C++14 to handle formatted texts, such as CSV texts.</p>
     <p>In this document, many terms and names introduced in ISO C++14 standard are referred without notice.
-       &#x201c;Unspecified behaviour,&#x201d; &#x201c;<c>DefaultConstructible</c> requirements,&#x201d; &#x201c;formatted output function,&#x201d; &#x201c;<c>&lt;string></c>&#x201d; (as a header name) and &#x201c;<c>std::string</c>&#x201d; are the examples.</p>
+       &#x2018;Unspecified behaviour,&#x2019; &#x2018;<c>DefaultConstructible</c> requirements,&#x2019; &#x2018;formatted output function,&#x2019; &#x2018;<c>&lt;string></c>&#x2019; (as a header name) and &#x2018;<c>std::string</c>&#x2019; are the examples.</p>
 
     <p>The normativity of the specifications on this document is the same as the normativity of the description of the ISO C++14 standard for its conforming standard library implementations except that:</p>
     <ul>
@@ -321,7 +321,7 @@ namespace commata {
 
       <p>The class <c>text_error</c> defines the base class for the types of the objects thrown by Commata library.</p>
       <p>An object of <c>text_error</c> can optionally have a physical position information (<xref id="definitions.others"/>), which consists of the line number and the column number of the point in the input text that has made the exception thrown.
-         <c>npos</c> is a special value for the line number and the column number which indicates &#x201c;no information.&#x201d;</p>
+         <c>npos</c> is a special value for the line number and the column number which indicates &#x2018;no information.&#x2019;</p>
 
       <section id="text_error.cons">
         <name><c>text_error</c> constructors and assignment operators</name>
@@ -381,7 +381,7 @@ text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col =
           <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>get_physical_position() == nullptr</c> shall not be <c>false</c>. Otherwise, <c>*get_physical_position() == std::make_pair(line, col)</c> shall not be <c>false</c>.</postcondition>
           <returns><c>*this</c>.</returns>
           <remark><c>line</c> and <c>col</c> shall be <c>npos</c> or zero-based numbers of the row and the column.
-                  <c>npos</c> shall mean &#x201c;no information.&#x201d;</remark>
+                  <c>npos</c> shall mean &#x2018;no information.&#x2019;</remark>
         </code-item>
 
         <code-item>
@@ -390,7 +390,7 @@ const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noex
           </code>
           <returns>If <c>*this</c> holds a physical position information, a pointer to an pair of its line number and column number. Otherwise, <c>nullptr</c>.</returns>
           <remark><c>p->first</c> and <c>p->second</c> shall be <c>npos</c> or zero-based numbers of the row and the column where <c>p</c> is the return value that is not equal to <c>nullptr</c>.
-                  <c>npos</c> shall mean &#x201c;no information.&#x201d;</remark>
+                  <c>npos</c> shall mean &#x2018;no information.&#x2019;</remark>
         </code-item>
       </section>
     </section>
@@ -646,7 +646,7 @@ template &lt;class Tr, class Handler,
                The parsing events are sent to a copy of <c>handler</c>.
                If any call on <c>handler</c> throws an object of the type <c>text_error</c>, the parser set the position information into it with the <c>set_physical_position</c> member function and rethrow it.
                The parser shall allocate and deallocate character buffers with (possibly a copy of) <c>alloc</c>.
-               The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x201c;no hint.&#x201d;
+               The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
                The parser shall be destroyed when this function exits.</effects>
       <returns><c>true</c> if the parser finished the parsing process without abortion, <c>false</c> otherwise.</returns>
       <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by <c>handler</c>, <c>alloc</c> and their copies.</throws>
@@ -2560,7 +2560,7 @@ template &lt;class Content, class Allocator>
 
         <p>Commata offers a <n>table scanner</n> class template, whose name is <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>), whose instances meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) as a simple facility for one-pass scanning of texts.</p>
         <p>A table scanner object can hold a <n>body field scanner</n> object for each field to which it forwards the field values, and it can hold a <n>record-end scanner</n> object to which it noitifies the end-of-record events.</p>
-        <p>In addition, a table scanner object can be configured to recognize some first records as &#x201c;header&#x201d; records. It can simply ignore the header records or can forward the field values in the header to a <n>header field scanner</n> object it holds optionally.</p>
+        <p>In addition, a table scanner object can be configured to recognize some first records as &#x2018;header&#x2019; records. It can simply ignore the header records or can forward the field values in the header to a <n>header field scanner</n> object it holds optionally.</p>
         <p>Properties that the type of the body field scanners shall meet, type of the record-end scanners shall meet, and the type of the header field scanners shall meet are bundled as
            the <c>BodyFieldScanner</c>, the <c>RecordEndScanner</c> and the <c>HeaderFieldScanner</c> requirements respectively.</p>
       </section>
@@ -2983,7 +2983,7 @@ basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
           </code>
           <effects>Constructs an object of <c>basic_table_scanner</c>.
                    The scanner shall ignore the first <c>header_record_count</c> records as header records.
-                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x201c;no hint.&#x201d;
+                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
                    The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
           <postcondition><c>*this</c> has neither a header field scanner nor any body field scanners installed.</postcondition>
         </code-item>
@@ -2998,7 +2998,7 @@ template &lt;class HeaderFieldScanner>
           </code>
           <requires><c>HeaderFieldScanner</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>Ch</c>.</requires>
           <effects>Constructs an object of <c>basic_table_scanner</c> with an header field scanner object installed.
-                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x201c;no hint.&#x201d;
+                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
                    The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
           <postcondition><c>*this</c> has a header field scanner constructed as a copy of <c>s</c> installed and no body field scanners installed.</postcondition>
           <remark>These constructors shall not participate in overload resolution unless <c>std::is_integral&lt;HeaderFieldScanner>::value</c> is <c>false</c>.</remark>
