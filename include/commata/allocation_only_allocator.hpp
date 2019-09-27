@@ -61,7 +61,8 @@ public:
     // These types are not required by the C++14 standard, but
     // std::basic_string which comes with gcc 7.3.1 seems to do
     using reference = typename reference_forwarded<Allocator>::type;
-    using const_reference = typename reference_forwarded<Allocator>::type;
+    using const_reference =
+        typename const_reference_forwarded<Allocator>::type;
 
     template <class U>
     struct rebind
