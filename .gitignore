@@ -33,8 +33,11 @@
 *.orig
 
 # CMake
-build/
+build*/
 
 # MSVC
 .vs/
+
+# Visual Studio Code
+.vscode/
 
