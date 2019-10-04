@@ -261,3 +261,109 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
     parse_csv<std::char_traits<char>, decltype(ex)>(&in, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }
+
+namespace {
+
+template <class RecordExtractor>
+class record_extractor_wrapper
+{
+    RecordExtractor x_;
+    bool in_header_field_value_;
+    const char* buffer_end_;
+
+public:
+    using char_type = char;
+
+    record_extractor_wrapper(RecordExtractor&& x) :
+        x_(std::move(x)), in_header_field_value_(false), buffer_end_(nullptr)
+    {}
+
+    void start_buffer(const char* buffer_begin, const char* buffer_end)
+    {
+        x_.start_buffer(buffer_begin, buffer_end);
+    }
+
+    void end_buffer(const char* buffer_end)
+    {
+        x_.end_buffer(buffer_end);
+        buffer_end_ = buffer_end;
+    }
+
+    void start_record(const char* record_begin)
+    {
+        x_.start_record(record_begin);
+    }
+
+    void end_record(const char* record_end)
+    {
+        x_.end_record(record_end);
+    }
+
+    void update(const char* first, const char* last)
+    {
+        if (x_.is_in_header() && !in_header_field_value_) {
+            insert(first, '[');
+            in_header_field_value_ = true;
+        }
+        x_.update(first, last);
+    }
+
+    void finalize(const char* first, const char* last)
+    {
+        if (x_.is_in_header()) {
+            if (!in_header_field_value_) {
+                insert(first, '[');
+                in_header_field_value_ = false;
+            }
+            x_.update(first, last);
+            insert(last, ']');
+            x_.finalize(last, last);
+        } else {
+            x_.finalize(first, last);
+        }
+    }
+
+private:
+    void insert(const char* before, char c)
+    {
+        char s[2];
+        s[0] = c;
+        x_.end_buffer(before);
+        x_.start_buffer(s, s + 1);
+        x_.update(s, s + 1);
+        x_.end_buffer(s + 1);
+        x_.start_buffer(before, buffer_end_);
+    }
+};
+
+}
+
+TEST_F(TestRecordExtractorMiscellaneous, IsInHeader)
+{
+    const char* s = "instrument,type\n"
+                    "castanets,idiophone\n"
+                    "clarinet,woodwind\n";
+    std::stringbuf in(s);
+    std::stringbuf out;
+
+    auto x = make_record_extractor(&out, "[instrument]", "clarinet");
+    parse_csv(&in, record_extractor_wrapper<decltype(x)>(std::move(x)));
+
+    ASSERT_STREQ("[instrument],[type]\n"
+                 "clarinet,woodwind\n", out.str().c_str());
+}
+
+TEST_F(TestRecordExtractorMiscellaneous, IsInHeaderIndexed)
+{
+    const char* s = "instrument,type\n"
+                    "castanets,idiophone\n"
+                    "clarinet,woodwind\n";
+    std::stringbuf in(s);
+    std::stringbuf out;
+
+    auto x = make_record_extractor(&out, 1U, "woodwind");
+    parse_csv(&in, record_extractor_wrapper<decltype(x)>(std::move(x)));
+
+    ASSERT_STREQ("[instrument],[type]\n"
+                 "clarinet,woodwind\n", out.str().c_str());
+}

@@ -187,14 +187,14 @@ public:
     void start_record(const Ch* record_begin)
     {
         current_begin_ = record_begin;
-        record_mode_ = header_yet() ? header_mode_ : record_mode::unknown;
+        record_mode_ = is_in_header() ? header_mode_ : record_mode::unknown;
         field_index_ = 0;
         assert(record_buffer().empty());
     }
 
     void update(const Ch* first, const Ch* last)
     {
-        if ((header_yet() && (target_field_index_ == npos))
+        if ((is_in_header() && (target_field_index_ == npos))
          || (field_index_ == target_field_index_)) {
             field_buffer().append(first, last);
         }
@@ -203,7 +203,7 @@ public:
     void finalize(const Ch* first, const Ch* last)
     {
         using namespace std::placeholders;
-        if (header_yet()) {
+        if (is_in_header()) {
             if ((target_field_index_ == npos)
              && with_field_buffer_appended(first, last,
                     std::bind(std::ref(nf_.base()), _1, _2))) {
@@ -232,7 +232,7 @@ public:
 
     bool end_record(const Ch* record_end)
     {
-        if (header_yet()) {
+        if (is_in_header()) {
             if (target_field_index_ == npos) {
                 throw no_matching_field();
             }
@@ -250,6 +250,11 @@ public:
         return true;
     }
 
+    bool is_in_header() const noexcept
+    {
+        return header_mode_ != record_mode::unknown;
+    }
+
 private:
     std::basic_string<Ch, Tr, alloc_t>& field_buffer()
     {
@@ -259,11 +264,6 @@ private:
     std::basic_string<Ch, Tr, alloc_t>& record_buffer()
     {
         return vr_.member();
-    }
-
-    bool header_yet() const noexcept
-    {
-        return header_mode_ != record_mode::unknown;
     }
 
     template <class F>
@@ -314,7 +314,7 @@ private:
             assert(record_buffer().empty());
             return false;
         case record_mode::unknown:
-            assert(!header_yet());
+            assert(!is_in_header());
             record_mode_ = record_mode::exclude;    // no such a far field
             record_buffer().clear();
             return false;

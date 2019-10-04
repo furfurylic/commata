@@ -766,6 +766,11 @@ public:
         j_ = 0;
     }
 
+    bool is_in_header() const noexcept
+    {
+        return header_field_scanner_ || (remaining_header_records_ > 0);
+    }
+
 private:
     static constexpr size_type default_buffer_size =
         std::min(std::numeric_limits<size_type>::max(),

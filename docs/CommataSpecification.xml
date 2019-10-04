@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-09-10 (UTC)</signature>
+<signature>2019-10-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -794,6 +794,9 @@ namespace commata {
     bool end_record(const Ch* record_end);
     void update(const Ch* first, const Ch* last);
     void finalize(const Ch* first, const Ch* last);
+
+    <c>// <n><xref id="record_extractor.processing_state"/>, processing state:</n></c>
+    bool is_in_header() const noexcept;
   };
 }
       </codeblock>
@@ -876,6 +879,19 @@ allocator_type get_allocator() const noexcept;
           <returns>A copy of the allocator object used to allocate memory by <c>*this</c>.</returns>
         </code-item>
       </section>
+
+      <section id="record_extractor.processing_state">
+        <name><c>record_extractor</c> processing state</name>
+        <code-item>
+          <code>
+bool is_in_header() const noexcept;
+          </code>
+          <requires>Shall be invoked within a call of <c>parse_csv</c> (<xref id="parse_csv"/>).</requires>
+          <returns><c>true</c> if <c>*this</c> is configured to regard some first records as header records and
+                   <c>end_record</c> has not be called for the final header record; <c>false</c> otherwise.</returns>
+          <note>This member is useful to implement a text handler class whose object wraps a <c>record_extractor</c> object.</note>
+        </code-item>
+      </section>
     </section>
 
     <section id="record_extractor_with_indexed_key">
@@ -920,6 +936,9 @@ namespace commata {
     bool end_record(const Ch* record_end);
     void update(const Ch* first, const Ch* last);
     void finalize(const Ch* first, const Ch* last);
+
+    <c>// <n><xref id="record_extractor_with_indexed_key.processing_state"/>, processing state:</n></c>
+    bool is_in_header() const noexcept;
   };
 }
       </codeblock>
@@ -999,6 +1018,19 @@ record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; ot
 allocator_type get_allocator() const noexcept;
           </code>
           <returns>A copy of the allocator object used to allocate memory by <c>*this</c>.</returns>
+        </code-item>
+      </section>
+
+      <section id="record_extractor_with_indexed_key.processing_state">
+        <name><c>record_extractor_with_indexed_key</c> processing state</name>
+        <code-item>
+          <code>
+bool is_in_header() const noexcept;
+          </code>
+          <requires>Shall be invoked within a call of <c>parse_csv</c> (<xref id="parse_csv"/>).</requires>
+          <returns><c>true</c> if <c>*this</c> is configured to regard some first records as header records and
+                   <c>end_record</c> has not be called for the final header record; <c>false</c> otherwise.</returns>
+          <note>This member is useful to implement a text handler class whose object wraps a <c>record_extractor_with_indexed_key</c> object.</note>
         </code-item>
       </section>
     </section>
@@ -2960,6 +2992,9 @@ namespace commata {
     void end_record(const Ch* record_end);
     void update(const Ch* first, const Ch* last);
     void finalize(const Ch* first, const Ch* last);
+
+    <c>// <n><xref id="basic_table_scanner.processing_state"/>, processing state:</n></c>
+    bool is_in_header() const noexcept;
   };
 }
         </codeblock>
@@ -3086,6 +3121,19 @@ template &lt;class T> const T* get_record_end_scanner() const noexcept;
 template &lt;class T>       T* get_record_end_scanner()       noexcept;
           </code>
           <returns>If <c>get_record_end_scanner_type() == typeid(T)</c>, a pointer to the record-end scanner object installed; otherwise, a null pointer.</returns>
+        </code-item>
+      </section>
+
+      <section id="basic_table_scanner.processing_state">
+        <name><c>basic_table_scanner</c> processing state</name>
+        <code-item>
+          <code>
+bool is_in_header() const noexcept;
+          </code>
+          <requires>Shall be invoked within a call of <c>parse_csv</c> (<xref id="parse_csv"/>).</requires>
+          <returns><c>true</c> if <c>*this</c> is configured to regard some first records as header records and
+                   <c>end_record</c> has not be called for the final header record; <c>false</c> otherwise.</returns>
+          <note>This member is useful to implement a text handler class whose object wraps a <c>basic_table_scanner</c> object.</note>
         </code-item>
       </section>
     </section>

@@ -3,6 +3,10 @@
  * http://unlicense.org
  */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4996)
+#endif
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
@@ -780,6 +784,125 @@ TYPED_TEST(TestTableScanner, MultilinedHeaderScan)
 
     std::vector<double> eur_usd = { 1.3, 1.35 };
     ASSERT_EQ(eur_usd, fx[str("EURUSD")]);
+}
+
+namespace {
+
+template <class Ch>
+class basic_table_scanner_wrapper
+{
+    basic_table_scanner<Ch> s_;
+
+public:
+    using char_type = Ch;
+
+    basic_table_scanner_wrapper(basic_table_scanner<Ch>&& s) :
+        s_(std::move(s))
+    {}
+
+    std::pair<Ch*, std::size_t> get_buffer()
+    {
+        return s_.get_buffer();
+    }
+
+    void release_buffer(const Ch* buffer)
+    {
+        s_.release_buffer(buffer);
+    }
+
+    void start_record(const Ch* record_begin)
+    {
+        s_.start_record(record_begin);
+    }
+
+    void end_record(const Ch* record_end)
+    {
+        s_.end_record(record_end);
+    }
+
+    void update(const Ch* first, const Ch* last)
+    {
+        if (s_.is_in_header()) {
+            to_upper(first, last);
+        }
+        s_.update(first, last);
+    }
+
+    void finalize(const Ch* first, const Ch* last)
+    {
+        if (s_.is_in_header()) {
+            to_upper(first, last);
+        }
+        s_.finalize(first, last);
+    }
+
+private:
+    void to_upper(const Ch* first, const Ch* last) const;
+};
+
+template <>
+void basic_table_scanner_wrapper<char>::
+to_upper(const char* first, const char* last) const
+{
+    std::transform(first, last, const_cast<char*>(first), [](auto c) {
+        return static_cast<char>(
+            std::toupper(static_cast<int>(c)));
+    });
+}
+
+template <>
+void basic_table_scanner_wrapper<wchar_t>::
+to_upper(const wchar_t* first, const wchar_t* last) const
+{
+    std::transform(first, last, const_cast<wchar_t*>(first), [](auto c) {
+        return static_cast<wchar_t>(
+            std::towupper(static_cast<std::wint_t>(c)));
+    });
+}
+
+}
+
+TYPED_TEST(TestTableScanner, IsInHeader)
+{
+    using string = std::basic_string<TypeParam>;
+
+    const auto str = char_helper<TypeParam>::str;
+
+    std::map<string, string> currency_map;
+    std::pair<string, string> record;
+    basic_table_scanner<TypeParam> scanner(
+        [&str, &record](auto j, auto v, auto& t) {
+            if (v) {
+                const string field_name(v->first, v->second);
+                if (field_name == str("COUNTRY")) {
+                    t.set_field_scanner(j, make_field_translator<string>(
+                        [&record](string&& s) {
+                            record.first = std::move(s);
+                        }));
+                } else if (field_name == str("CURRENCY")) {
+                    t.set_field_scanner(j, make_field_translator<string>(
+                        [&record](string&& s) {
+                            record.second = std::move(s);
+                        }));
+                }
+                return true;
+            } else {
+                return false;
+            }
+        });
+    scanner.set_record_end_scanner([&currency_map, &record] {
+        currency_map.insert(std::move(record));
+    });
+
+    auto s = str("Country,Currency\r"
+                 "Ukraine,Hryvnia\r"
+                 "Estonia,Euro\r");
+    std::basic_stringbuf<TypeParam> buf(s);
+    parse_csv(&buf, basic_table_scanner_wrapper<TypeParam>(std::move(scanner)));
+
+    ASSERT_EQ(2U, currency_map.size());
+    ASSERT_EQ(str("Hryvnia"), currency_map[str("Ukraine")]);
+    ASSERT_EQ(str("Euro"), currency_map[str("Estonia")]);
 }
 
 namespace {
