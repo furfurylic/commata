@@ -177,13 +177,17 @@ TEST_F(TestRecordExtractorIndexed, Basics)
               out.str());
 }
 
-struct FinalPredicateForValue final
+namespace {
+
+struct final_predicate_for_value final
 {
     bool operator()(const char* first, const char* last) const
     {
         return std::string(first, last).substr(0, 3) == "kb1";
     }
 };
+
+}
 
 struct TestRecordExtractorFinalPredicateForValue : BaseTest
 {};
@@ -198,7 +202,7 @@ TEST_F(TestRecordExtractorFinalPredicateForValue, Basics)
     std::stringbuf in(s);
     std::stringbuf out;
     parse_csv(&in,
-        make_record_extractor(&out, 1, FinalPredicateForValue()), 1024);
+        make_record_extractor(&out, 1, final_predicate_for_value()), 1024);
     ASSERT_EQ("key_a,key_b,value_a,value_b\n"
               "ka2,kb12,va2,vb2\n"
               "ka1,kb13,\"vb\n3\",vb3\n",
