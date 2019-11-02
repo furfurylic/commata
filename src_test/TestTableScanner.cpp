@@ -145,7 +145,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, UpperLimit)
         [](auto t) { return char_helper<char_t>::template to_string(t); };
     const auto widen = char_helper<char_t>::template widen<const char*>;
 
-    const auto maxx = std::numeric_limits<value_t>::max();
+    constexpr auto maxx = std::numeric_limits<value_t>::max();
     const auto maxxPlus1 = plus1(to_string(maxx + 0));
 
     std::vector<value_t> values;
@@ -190,7 +190,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
         minn = ch('-') + to_string(std::numeric_limits<value_t>::max() + 0);
         minnMinus1 = ch('-') + plus1(plus1(minn.substr(1)));
     }
-    const auto maxx = std::numeric_limits<value_t>::max();
+    constexpr auto maxx = std::numeric_limits<value_t>::max();
     const auto maxxPlus1 = plus1(to_string(maxx + 0));
 
     std::vector<value_t> values;
@@ -234,7 +234,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
         minn = ch('-') + to_string(std::numeric_limits<value_t>::max() + 0);
         minnMinus1 = ch('-') + plus1(plus1(minn.substr(1)));
     }
-    const auto maxx = std::numeric_limits<value_t>::max();
+    constexpr auto maxx = std::numeric_limits<value_t>::max();
     const auto maxxPlus1 = plus1(to_string(maxx + 0));
 
     std::vector<value_t> values0;
@@ -355,7 +355,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, UpperLimit)
 
     const auto widen = char_helper<char_t>::template widen<const char*>;
 
-    const auto maxx = std::numeric_limits<value_t>::max();
+    constexpr auto maxx = std::numeric_limits<value_t>::max();
     string_t maxxBy10;
     {
         stringstream_t ss;
@@ -393,7 +393,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, LowerLimit)
 
     const auto widen = char_helper<char_t>::template widen<const char*>;
 
-    const auto minn = std::numeric_limits<value_t>::lowest();
+    constexpr auto minn = std::numeric_limits<value_t>::lowest();
     string_t minnBy10;
     {
         stringstream_t ss;
