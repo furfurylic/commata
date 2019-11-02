@@ -161,7 +161,7 @@ TEST_P(TestParseCsvBasics, EmptyLineAware)
     ASSERT_EQ(expected_row5, field_values[5]);
 }
 
-INSTANTIATE_TEST_CASE_P(,
+INSTANTIATE_TEST_SUITE_P(,
     TestParseCsvBasics, testing::Values(1, 10, 1024));
 
 struct TestParseCsvReference : commata::test::BaseTest
@@ -213,7 +213,7 @@ TEST_P(TestParseCsvEndsWithoutLF, All)
     ASSERT_EQ(GetParam().second, s.str());
 }
 
-INSTANTIATE_TEST_CASE_P(, TestParseCsvEndsWithoutLF,
+INSTANTIATE_TEST_SUITE_P(, TestParseCsvEndsWithoutLF,
     testing::Values(
         std::make_pair("ColA,ColB,ColC", "ColA/ColB/ColC/"),
         std::make_pair("ColA,ColB,\"ColC\"", "ColA/ColB/ColC/"),
@@ -244,7 +244,7 @@ TEST_P(TestParseCsvErrors, Errors)
     }
 }
 
-INSTANTIATE_TEST_CASE_P(, TestParseCsvErrors,
+INSTANTIATE_TEST_SUITE_P(, TestParseCsvErrors,
     testing::Values(
         std::make_pair("col\"1\"", std::make_pair(0, 3)),
         std::make_pair("\"col1", std::make_pair(0, 5)),

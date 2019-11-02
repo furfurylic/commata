@@ -112,7 +112,7 @@ template <class ChNum>
 struct TestFieldTranslatorForIntegralTypes : BaseTest
 {};
 
-TYPED_TEST_CASE(TestFieldTranslatorForIntegralTypes, ChIntegrals);
+TYPED_TEST_SUITE(TestFieldTranslatorForIntegralTypes, ChIntegrals);
 
 TYPED_TEST(TestFieldTranslatorForIntegralTypes, Correct)
 {
@@ -311,7 +311,7 @@ template <class ChNum>
 struct TestFieldTranslatorForFloatingPointTypes : BaseTest
 {};
 
-TYPED_TEST_CASE(TestFieldTranslatorForFloatingPointTypes, ChFloatingPoints);
+TYPED_TEST_SUITE(TestFieldTranslatorForFloatingPointTypes, ChFloatingPoints);
 
 TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, Correct)
 {
@@ -426,7 +426,7 @@ template <class Ch>
 struct TestFieldTranslatorForStringTypes : BaseTest
 {};
 
-TYPED_TEST_CASE(TestFieldTranslatorForStringTypes, Chs);
+TYPED_TEST_SUITE(TestFieldTranslatorForStringTypes, Chs);
 
 TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
 {
@@ -459,7 +459,7 @@ template <class Ch>
 struct TestTableScanner : BaseTest
 {};
 
-TYPED_TEST_CASE(TestTableScanner, Chs);
+TYPED_TEST_SUITE(TestTableScanner, Chs);
 
 TYPED_TEST(TestTableScanner, Indexed)
 {

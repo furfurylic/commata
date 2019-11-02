@@ -89,7 +89,7 @@ TEST_P(TestRecordExtractor, NoSuchField)
               out.str());
 }
 
-INSTANTIATE_TEST_CASE_P(, TestRecordExtractor, testing::Values(1, 10, 1024));
+INSTANTIATE_TEST_SUITE_P(, TestRecordExtractor, testing::Values(1, 10, 1024));
 
 struct TestRecordExtractorLimit :
     testing::TestWithParam<std::tuple<bool, std::size_t>>
@@ -119,7 +119,7 @@ TEST_P(TestRecordExtractorLimit, Basics)
     ASSERT_EQ(expected, out.str());
 }
 
-INSTANTIATE_TEST_CASE_P(, TestRecordExtractorLimit,
+INSTANTIATE_TEST_SUITE_P(, TestRecordExtractorLimit,
     testing::Combine(
         testing::Bool(),
         testing::Values(1, std::numeric_limits<std::size_t>::max())));

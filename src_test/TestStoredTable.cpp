@@ -69,7 +69,7 @@ struct TestStoredValue : BaseTest
 
 typedef testing::Types<char, wchar_t> Chs;
 
-TYPED_TEST_CASE(TestStoredValue, Chs);
+TYPED_TEST_SUITE(TestStoredValue, Chs);
 
 TYPED_TEST(TestStoredValue, Iterators)
 {
@@ -843,7 +843,7 @@ typedef testing::Types<
         std::list<std::vector<stored_value>>,
         std::deque<std::vector<stored_value>>>> ContentLRs;
 
-TYPED_TEST_CASE(TestStoredTableMerge, ContentLRs);
+TYPED_TEST_SUITE(TestStoredTableMerge, ContentLRs);
 
 TYPED_TEST(TestStoredTableMerge, Merge)
 {
@@ -1029,7 +1029,7 @@ struct TestStoredTableAllocatorPropagation : BaseTest
     }
 };
 
-TYPED_TEST_CASE(TestStoredTableAllocatorPropagation, TF3);
+TYPED_TEST_SUITE(TestStoredTableAllocatorPropagation, TF3);
 
 TYPED_TEST(TestStoredTableAllocatorPropagation, CopyAssignment)
 {
@@ -1405,7 +1405,7 @@ TEST_P(TestStoredTableBuilder, Transpose)
     ASSERT_EQ(3U, table[2].size());
 }
 
-INSTANTIATE_TEST_CASE_P(,
+INSTANTIATE_TEST_SUITE_P(,
     TestStoredTableBuilder, testing::Values(2, 11, 1024));
 
 struct TestStoredTableBuilderReusingBuffer : BaseTest
