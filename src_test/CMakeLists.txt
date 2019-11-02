@@ -1,16 +1,25 @@
-cmake_minimum_required(VERSION 3.0.2)
-option(commata_disable_pthreads "Disable uses of pthreads." OFF)
-set(EXECUTABLE_OUTPUT_PATH ..)
-if(MSVC)
-    add_definitions("/W4 /bigobj")
-else(MSVC)
-    add_definitions("-Wall -std=c++14 -g3")
-endif(MSVC)
-find_package(GTest REQUIRED)
-include_directories(
-    ${GTEST_INCLUDE_DIRS}
-    ../include
+cmake_minimum_required(VERSION 3.14)
+
+include(FetchContent)
+
+FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG        release-1.10.0
 )
+FetchContent_GetProperties(googletest)
+if(NOT googletest_POPULATED)
+    FetchContent_Populate(googletest)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    add_subdirectory(${googletest_SOURCE_DIR}
+                     ${googletest_BINARY_DIR}
+                     EXCLUDE_FROM_ALL)
+endif()
+
+set(CMAKE_CXX_STANDARD 14)
+
+set(EXECUTABLE_OUTPUT_PATH ..)
+
 add_executable(test_commata
     TestParseCsv.cpp
     TestRecordExtractor.cpp
@@ -18,16 +27,28 @@ add_executable(test_commata
     TestTableScanner.cpp
     TestTextError.cpp
 )
-if(commata_disable_pthreads)
-    target_link_libraries(test_commata
-        ${GTEST_BOTH_LIBRARIES}
+
+if(MSVC)
+    target_compile_options(test_commata PUBLIC /W4 /bigobj)
+    target_compile_options(test_commata PUBLIC
+        $<$<CONFIG:MinSizeRel>:/wd4702>
+        $<$<CONFIG:Release>:/wd4702>
+        $<$<CONFIG:RelWithDebInfo>:/wd4702>
     )
-else(commata_disable_pthreads)
-    target_link_libraries(test_commata
-        pthread
-        ${GTEST_BOTH_LIBRARIES}
+else(MSVC)
+    target_compile_definitions(test_commata PUBLIC
+        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
     )
-endif(commata_disable_pthreads)
+    target_compile_options(test_commata PUBLIC
+        $<$<CONFIG:Debug>:-O0 -g3>
+        $<$<CONFIG:RelWithDebInfo>:-O2 -g3>
+    )
+endif(MSVC)
+
+include_directories(../include)
+
+target_link_libraries(test_commata gtest gtest_main)
+
 add_test(
     NAME test_commata
     COMMAND $<TARGET_FILE:test_commata>
