@@ -247,15 +247,17 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
     std::size_t total = 0;
     tracking_allocator<std::allocator<char>> alloc(total);
 
-    const char* s = "instrument,type\n"
-                    "castanets,idiophone\n"
-                    "clarinet,woodwind\n";
+    // Long names are required to make sure that std::string uses its
+    // allocator
+    const char* s = "instrument_______,type\n"
+                    "castanets________,idiophone\n"
+                    "clarinet_________,woodwind\n";
     std::stringbuf in(s);
     std::stringbuf out;
 
     // ditto
     auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
-        "instrument", std::string("clarinet"));
+        "instrument_______", std::string("clarinet_________"));
     parse_csv<std::char_traits<char>, decltype(ex)>(&in, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }
