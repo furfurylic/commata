@@ -1,6 +1,6 @@
 # Commata
 
-Just another header-only C++14 CSV parser
+Just another header-only C++17 CSV parser
 
 ## For users
 
@@ -9,9 +9,9 @@ Just another header-only C++14 CSV parser
 
 ## For developers
 
-Commata is written in C++14 and consists only of headers.
+Commata is written in C++17 and consists only of headers.
 All C++ codes in this repository shall compile and link with
-Microsoft Visual Studio 2015, 2019 and GCC 6.3.
+Microsoft Visual Studio 2019 and GCC 7.3.
 
 This repository also contains a test of it in `src_test` directory.
 Tests are written on [Googletest](https://github.com/google/googletest) v1.10.0.
@@ -33,7 +33,7 @@ You can build it as follows:
     ```
     or
     ```bash
-    $ cmake ../src_test -G "Visual Studio 14 2015" -A Win32
+    $ cmake ../src_test -G "Visual Studio 14 2019" -A Win32
     ```
     or
     ```bash
