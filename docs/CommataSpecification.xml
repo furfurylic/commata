@@ -3442,7 +3442,8 @@ namespace std {
   template &lt;class Ch, class Tr> struct hash&lt;commata::basic_stored_value&lt;Ch, Tr>>;
 }
         </codeblock>
-        <p>This template specialization shall meet the requirements of class template <c>std::hash</c>.</p>
+        <p>This template specialization shall meet the requirements of class template <c>std::hash</c>.
+           The hash value of a <c>basic_stored_value</c> object is equal to the hash value of the corresponding <c>basic_string_view</c> object.</p>
       </section>
     </section>
 

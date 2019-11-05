@@ -605,17 +605,8 @@ struct hash<commata::basic_stored_value<Ch, Tr>>
     std::size_t operator()(
         const commata::basic_stored_value<Ch, Tr>& x) const noexcept
     {
-        // We'd like this function to return the same hash value as
-        // std::basic_string, but it is impossible, so we borrow
-        // Java-String's hash algorithm at this time
-        // In C++17, this function should be implemented in terms of
-        // string_view's hash
-        std::size_t h = 0;
-        for (const auto c : x) {
-            h *= 31;
-            h += static_cast<std::size_t>(c);
-        }
-        return h;
+        return std::hash<std::basic_string_view<std::remove_const_t<Ch>, Tr>>
+                ()(x);
     }
 };
 
