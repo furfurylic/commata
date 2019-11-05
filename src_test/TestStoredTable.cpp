@@ -248,6 +248,26 @@ TYPED_TEST(TestStoredValueNoModification, Strings)
     ASSERT_EQ(str2, v);
 }
 
+TYPED_TEST(TestStoredValueNoModification, Hashes)
+{
+    using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using string_t = std::basic_string<decayed_char_t>;
+    using string_view_t = std::basic_string_view<decayed_char_t>;
+    using value_t = basic_stored_value<char_t>;
+
+    const auto str0 = char_helper<decayed_char_t>::str0;
+
+    auto s = str0("Gamma ray");     // s.back() == '\0'
+    value_t v(&s[0], &s[s.size() - 1]);
+    const auto& cv = v;
+
+    string_t str(cv);
+    ASSERT_EQ(std::hash<string_view_t>()(cv), std::hash<value_t>()(cv));
+    ASSERT_EQ(std::hash<string_t>()(s.substr(0, s.size() - 1)),
+              std::hash<value_t>()(cv));
+}
+
 TYPED_TEST(TestStoredValueNoModification, Sizes)
 {
     using char_t = TypeParam;
