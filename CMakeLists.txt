@@ -34,7 +34,7 @@ target_sources(commata INTERFACE
     include/commata/wrapper_handlers.hpp
     include/commata/write_ntmbs.hpp
 )
-target_compile_features(commata INTERFACE cxx_std_14)
+target_compile_features(commata INTERFACE cxx_std_17)
 
 if(COMMATA_BUILD_TESTS)
     add_subdirectory(src_test)
