@@ -30,7 +30,6 @@
 
 #include "buffer_size.hpp"
 #include "empty_string.hpp"
-#include "formatted_output.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
 #include "propagation_controlled_allocator.hpp"
@@ -580,14 +579,7 @@ auto operator<<(
     const basic_stored_value<ChC, Tr>& o)
  -> decltype(os)
 {
-    // In C++17, this function will be able to be implemented in terms of
-    // string_view's operator<<
-    const auto n = static_cast<std::streamsize>(o.size());
-    return detail::formatted_output(
-        os, n,
-        [b = o.cbegin(), n](auto* sb) {
-            return sb->sputn(b, n) == n;
-        });
+    return os << to_string_view(o);
 }
 
 using stored_value = basic_stored_value<char>;

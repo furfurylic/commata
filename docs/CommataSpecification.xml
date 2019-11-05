@@ -3401,10 +3401,7 @@ template &lt;class ChC, class Tr>
   std::basic_ostream&lt;std::remove_const_t&lt;ChC>, Tr>&amp; operator&lt;&lt;(
     std::basic_ostream&lt;ChC, Tr>&amp; os, const basic_stored_value&lt;ChC, Tr>&amp; o);
           </code>
-          <effects>Behaves as a formatted output function of <c>os</c>.
-                    Forms a character sequence <c>seq</c>, initially consisting of the elements defined by the range [<c>o.cbegin()</c>, <c>o.cend()</c>).
-                    Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c>, where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>; then calls <c>os.width(0)</c>.</effects>
-          <returns><c>os</c>.</returns>
+          <effects>Equivalent to: <c>return os &lt;&lt; to_string_view(o);</c></effects>
         </code-item>
       </section>
 
