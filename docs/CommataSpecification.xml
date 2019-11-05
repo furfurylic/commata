@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
-<title>Specification of Commata, which is just another C++14 CSV parser</title>
+<title>Specification of Commata, which is just another C++17 CSV parser</title>
 <signature>2022-03-27 (UTC)</signature>
 
 <section id="introduction">
@@ -10,11 +10,11 @@
   <section id="introduction.general">
     <name>General</name>
 
-    <p>This document describes the specifications of Commata, which is a header-only library in C++14 to handle formatted texts, such as CSV texts.</p>
-    <p>In this document, many terms and names introduced in ISO C++14 standard are referred without notice.
+    <p>This document describes the specifications of Commata (17), which is a header-only library in C++17 to handle formatted texts, such as CSV texts.</p>
+    <p>In this document, many terms and names introduced in ISO C++17 standard are referred without notice.
        &#x2018;Unspecified behaviour&#x2019;, &#x2018;<c>DefaultConstructible</c> requirements&#x2019;, &#x2018;formatted output function&#x2019;, &#x2018;<c>&lt;string></c>&#x2019; (as a header name) and &#x2018;<c>std::string</c>&#x2019; are the examples.</p>
 
-    <p>The normativity of the specifications on this document is the same as the normativity of the description of the ISO C++14 standard for its conforming standard library implementations except that:</p>
+    <p>The normativity of the specifications on this document is the same as the normativity of the description of the ISO C++17 standard for its conforming standard library implementations except that:</p>
     <ul>
       <li>class templates and function templates shall not have any additional template parameters no matter whether they have their default template arguments,</li>
       <li>member templates shall not have any additional template parameters no matter whether they have their default template arguments, except that constructor templates can have ones with their default template arguments, and</li>
