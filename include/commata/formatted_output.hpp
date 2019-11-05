@@ -19,7 +19,7 @@ std::basic_ostream<Ch, Tr>& formatted_output(
 {
     const auto pad = [&os, n] {
         const auto w = os.width();
-        if ((w > 0) && (static_cast<std::ios_base::streampos>(n) < w)) {
+        if ((w > 0) && (static_cast<std::streampos>(n) < w)) {
             const auto sb = os.rdbuf();
             const auto f = os.fill();
             const auto pad = w - n;
