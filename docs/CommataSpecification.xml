@@ -3853,9 +3853,9 @@ template &lt;class Content, class Allocator, class... Args>
           <tr>
             <td rowspan="2">(1)</td>
             <td><c>h()</c></td>
-            <td rowspan="2"><c>replacement&lt;T></c></td>
+            <td rowspan="2"><c>std::optional&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has been skipped, that is, the record has had too few fields to reach the field.
-                If <c>r.get()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
+                If <c>r.has_value()</c> is not <c>false</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
                 otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
           </tr>
 
@@ -3898,9 +3898,9 @@ template &lt;class Content, class Allocator, class... Args>
           <tr>
             <td rowspan="2">(1)</td>
             <td><c>h.invalid_format(b, e)</c></td>
-            <td rowspan="2"><c>replacement&lt;T></c></td>
+            <td rowspan="2"><c>std::optional&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a format error.
-                If <c>r.get()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
+                If <c>r.has_value()</c> is not <c>false</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
                 otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
           </tr>
 
@@ -3911,10 +3911,10 @@ template &lt;class Content, class Allocator, class... Args>
           <tr>
             <td rowspan="2">(2)</td>
             <td><c>h.out_of_range(b, e, s)</c></td>
-            <td rowspan="2"><c>replacement&lt;T></c></td>
+            <td rowspan="2"><c>std::optional&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a range error.
                 <c>s</c> shall has a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, or <c>0</c> otherwise.
-                If <c>r.get()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
+                If <c>r.has_value()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
                 otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
           </tr>
 
@@ -3925,9 +3925,9 @@ template &lt;class Content, class Allocator, class... Args>
           <tr>
             <td rowspan="2">(3)</td>
             <td><c>h.empty()</c></td>
-            <td rowspan="2"><c>replacement&lt;T></c></td>
+            <td rowspan="2"><c>std::optional&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has a value that is empty.
-                If <c>r.get()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
+                If <c>r.has_value()</c> is not <c>false</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
                 otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
           </tr>
 
@@ -3945,6 +3945,7 @@ template &lt;class Content, class Allocator, class... Args>
 #include &lt;cstddef>
 #include &lt;locale>
 #include &lt;memory>
+#include &lt;optional>
 #include &lt;string>
 #include &lt;typeinfo>
 #include &lt;utility>
@@ -3968,9 +3969,6 @@ namespace commata {
 
   struct replacement_ignore_t {};
   constexpr replacement_ignore_t replacement_ignore = replacement_ignore_t{};
-
-  <c>// <n><xref id="replacement"/>, replacement:</n></c>
-  template &lt;class T> class replacement;
 
   struct replacement_fail_t {};
   constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
@@ -4345,107 +4343,6 @@ template &lt;class T>
       </section>
     </section>
 
-    <section id="replacement">
-      <name>Class template <c>replacement</c></name>
-
-      <codeblock>
-namespace commata {
-  template &lt;class T> class replacement {
-  public:
-    using value_type = T;
-
-    replacement() noexcept;
-    replacement(replacement_ignore_t) noexcept;
-    explicit replacement(const T&amp; t);
-    explicit replacement(T&amp;&amp; t) noexcept(<nc>see below</nc>);
-    replacement(replacement&amp;&amp; other) noexcept(<nc>see below</nc>);
-    template &lt;class U> replacement(replacement&lt;U>&amp;&amp; other) noexcept(<nc>see below</nc>);
-   ~replacement();
-
-    const T* get() const noexcept;
-          T* get() noexcept;
-    const T&amp; operator*() const;
-          T&amp; operator*();
-    const T* operator->() const;
-          T* operator->();
-  };
-}
-      </codeblock>
-
-      <p>The class template <c>replacement</c> offers types whose object is able either to contain a value or not to contain a value.
-         This class template is used to define <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>).</p>
-      <p><c>T</c> shall not be a reference type and shall satisfy the <c>Destructible</c> requirements.</p>
-
-      <code-item>
-        <code>
-replacement() noexcept;
-replacement(replacement_ignore_t) noexcept;
-        </code>
-        <postcondition><c>*this</c> shall not contain a value.</postcondition>
-      </code-item>
-
-      <code-item>
-        <code>
-explicit replacement(const T&amp; t);
-        </code>
-        <requires><c>T</c> shall be <c>CopyConstructible</c>.</requires>
-        <postcondition><c>*this</c> shall contain a value constructed from <c>t</c>.</postcondition>
-      </code-item>
-
-      <code-item>
-        <code>
-explicit replacement(T&amp;&amp; t) noexcept(<nc>see below</nc>);
-        </code>
-        <requires><c>T</c> shall be <c>MoveConstructible</c>.</requires>
-        <postcondition><c>*this</c> shall contain a value constructed from <c>std::move(t)</c>.</postcondition>
-        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
-      </code-item>
-
-      <code-item>
-        <code>
-replacement(replacement&amp;&amp; other) noexcept(<nc>see below</nc>);
-        </code>
-        <requires><c>T</c> shall be <c>MoveConstructible</c>.</requires>
-        <effects>If <c>other</c> contains a value, constructs the contained value of <c>*this</c> from <c>std::move(*other)</c>.</effects>
-        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
-      </code-item>
-
-      <code-item>
-        <code>
-template &lt;class U> replacement(replacement&lt;U>&amp;&amp; other) noexcept(<nc>see below</nc>);
-        </code>
-        <requires><c>std::is_constructible&lt;T, U&amp;&amp;>::value</c> shall be not <c>false</c>.</requires>
-        <effects>If <c>other</c> contains a value, constructs the contained value of <c>*this</c> from <c>std::move(*other)</c>.</effects>
-        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;T, U&amp;&amp;>::value</c>.</remark>
-      </code-item>
-
-      <code-item>
-        <code>
-const T* get() const noexcept;
-      T* get() noexcept;
-        </code>
-        <returns>A pointer that points the contained value of <c>*this</c>. If none is contained, <c>nullptr</c>.</returns>
-      </code-item>
-
-      <code-item>
-        <code>
-const T&amp; operator*() const;
-      T&amp; operator*();
-        </code>
-        <requires><c>get() == nullptr</c> shall be <c>false</c>.</requires>
-        <returns><c>*get()</c>.</returns>
-      </code-item>
-
-      <code-item>
-        <code>
-const T* operator->() const;
-      T* operator->();
-        </code>
-        <requires><c>get() == nullptr</c> shall be <c>false</c>.</requires>
-        <returns><c>get()</c>.</returns>
-      </code-item>
-    </section>
-
     <section id="scanner.builtin.skipping_handlers">
       <name>Default skipping handler classes</name>
 
@@ -4455,7 +4352,7 @@ const T* operator->() const;
         <codeblock>
 namespace commata {
   struct fail_if_skipped {
-    template &lt;class T> [[noreturn]] replacement&lt;T> operator()(T*) const;
+    template &lt;class T> [[noreturn]] std::optional&lt;T> operator()(T*) const;
   };
 }
         </codeblock>
@@ -4465,7 +4362,7 @@ namespace commata {
 
         <code-item>
           <code>
-template &lt;class T> [[noreturn]] replacement&lt;T> operator()(T*) const;
+template &lt;class T> [[noreturn]] std::optional&lt;T> operator()(T*) const;
           </code>
           <effects>Throws an object of <c>field_not_found</c> (<xref id="field_not_found"/>).</effects>
         </code-item>
@@ -4485,7 +4382,7 @@ namespace commata {
     replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept;
    ~replace_if_skipped();
 
-    replacement&lt;T> operator()() const;
+    std::optional&lt;T> operator()() const;
   };
 }
         </codeblock>
@@ -4569,7 +4466,7 @@ replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept;
 
         <code-item>
           <code>
-replacement&lt;T> operator()() const;
+std::optional&lt;T> operator()() const;
           </code>
           <effects>Does as illustrated in <xref id="table.replace_if_skipped.invalid_format"/> in reference to the replacement action of <c>*this</c>.</effects>
 
@@ -4586,13 +4483,13 @@ replacement&lt;T> operator()() const;
             <tr>
               <td>(1)</td>
               <td><c>copy</c></td>
-              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into the action.</td>
+              <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into the action.</td>
             </tr>
 
             <tr>
               <td>(2)</td>
               <td><c>ignore</c></td>
-              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+              <td>Returns <c>std::optional&lt;T>()</c>.</td>
             </tr>
 
             <tr>
@@ -4615,10 +4512,10 @@ replacement&lt;T> operator()() const;
 namespace commata {
   struct fail_if_conversion_failed {
     template &lt;class T, class Ch>
-      [[noreturn]] replacement&lt;T> invalid_format(const Ch*, const Ch*, T* = nullptr) const;
+      [[noreturn]] std::optional&lt;T> invalid_format(const Ch*, const Ch*, T* = nullptr) const;
     template &lt;class T, class Ch>
-      [[noreturn]] replacement&lt;T> out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
-    template &lt;class T> [[noreturn]] replacement&lt;T> empty(T* = nullptr) const;
+      [[noreturn]] std::optional&lt;T> out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
+    template &lt;class T> [[noreturn]] std::optional&lt;T> empty(T* = nullptr) const;
   };
 }
         </codeblock>
@@ -4629,7 +4526,7 @@ namespace commata {
         <code-item>
           <code>
 template &lt;class T, class Ch>
-  [[noreturn]] replacement&lt;T> invalid_format(const Ch*, const Ch*, T* = nullptr) const;
+  [[noreturn]] std::optional&lt;T> invalid_format(const Ch*, const Ch*, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</effects>
         </code-item>
@@ -4637,14 +4534,14 @@ template &lt;class T, class Ch>
         <code-item>
           <code>
 template &lt;class T, class Ch>
-  [[noreturn]] replacement&lt;T> out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
+  [[noreturn]] std::optional&lt;T> out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</effects>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class T> [[noreturn]] replacement&lt;T> empty(T* = nullptr) const;
+template &lt;class T> [[noreturn]] std::optional&lt;T> empty(T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</effects>
         </code-item>
@@ -4679,9 +4576,9 @@ namespace commata {
     replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept;
    ~replace_if_conversion_failed();
 
-    template &lt;class Ch> replacement&lt;T> invalid_format(const Ch*, const Ch*) const;
-    template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int sign) const;
-                        replacement&lt;T> empty() const;
+    template &lt;class Ch> std::optional&lt;T> invalid_format(const Ch*, const Ch*) const;
+    template &lt;class Ch> std::optional&lt;T> out_of_range(const Ch*, const Ch*, int sign) const;
+                        std::optional&lt;T> empty() const;
   };
 }
         </codeblock>
@@ -4763,7 +4660,7 @@ replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexc
 
         <code-item>
           <code>
-template &lt;class Ch> replacement&lt;T> invalid_format(const Ch*, const Ch*) const;
+template &lt;class Ch> std::optional&lt;T> invalid_format(const Ch*, const Ch*) const;
           </code>
           <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.invalid_format"/> in reference to the <c>action_on_invalid_format</c> of <c>*this</c>.</effects>
 
@@ -4782,13 +4679,13 @@ template &lt;class Ch> replacement&lt;T> invalid_format(const Ch*, const Ch*) co
               <td>(1)</td>
               <td rowspan="3"><c>action_on_invalid_format</c></td>
               <td><c>copy</c></td>
-              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+              <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
             </tr>
 
             <tr>
               <td>(2)</td>
               <td><c>ignore</c></td>
-              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+              <td>Returns <c>std::optional&lt;T>()</c>.</td>
             </tr>
 
             <tr>
@@ -4801,7 +4698,7 @@ template &lt;class Ch> replacement&lt;T> invalid_format(const Ch*, const Ch*) co
 
         <code-item>
           <code>
-template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int sign) const;
+template &lt;class Ch> std::optional&lt;T> out_of_range(const Ch*, const Ch*, int sign) const;
           </code>
           <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.out_of_range"/> in reference to <c>sign</c> and the <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> of <c>*this</c>.</effects>
 
@@ -4822,13 +4719,13 @@ template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int 
               <td rowspan="3">positive</td>
               <td rowspan="3"><c>action_on_above_upper_limit</c></td>
               <td><c>copy</c></td>
-              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+              <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
             </tr>
 
             <tr>
               <td>(2)</td>
               <td><c>ignore</c></td>
-              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+              <td>Returns <c>std::optional&lt;T>()</c>.</td>
             </tr>
 
             <tr>
@@ -4842,13 +4739,13 @@ template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int 
               <td rowspan="3">negative</td>
               <td rowspan="3"><c>action_on_below_lower_limit</c></td>
               <td><c>copy</c></td>
-              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+              <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
             </tr>
 
             <tr>
               <td>(5)</td>
               <td><c>ignore</c></td>
-              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+              <td>Returns <c>std::optional&lt;T>()</c>.</td>
             </tr>
 
             <tr>
@@ -4862,13 +4759,13 @@ template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int 
               <td rowspan="3"><c>0</c></td>
               <td rowspan="3"><c>action_on_underflow</c></td>
               <td><c>copy</c></td>
-              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+              <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
             </tr>
 
             <tr>
               <td>(8)</td>
               <td><c>ignore</c></td>
-              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+              <td>Returns <c>std::optional&lt;T>()</c>.</td>
             </tr>
 
             <tr>
@@ -4881,7 +4778,7 @@ template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int 
 
         <code-item>
           <code>
-replacement&lt;T> empty() const;
+std::optional&lt;T> empty() const;
           </code>
           <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.empty"/> in reference to the <c>action_on_empty</c> of <c>*this</c>.</effects>
 
@@ -4900,13 +4797,13 @@ replacement&lt;T> empty() const;
               <td>(1)</td>
               <td rowspan="3"><c>action_on_empty</c></td>
               <td><c>copy</c></td>
-              <td>Returns <c>replacement&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+              <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
             </tr>
 
             <tr>
               <td>(2)</td>
               <td><c>ignore</c></td>
-              <td>Returns <c>replacement&lt;T>(replacement_ignore)</c>.</td>
+              <td>Returns <c>std::optional&lt;T>()</c>.</td>
             </tr>
 
             <tr>

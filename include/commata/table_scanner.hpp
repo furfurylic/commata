@@ -23,6 +23,7 @@
 #include <limits>
 #include <locale>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -775,103 +776,6 @@ public:
 struct replacement_ignore_t {};
 constexpr replacement_ignore_t replacement_ignore = replacement_ignore_t{};
 
-// In C++17, we can abolish this template and use std::optional instead
-template <class T>
-class replacement
-{
-    alignas(T) char store_[sizeof(T)];
-    bool has_;
-
-    template <class U>
-    friend class replacement;
-
-public:
-    using value_type = T;
-
-    replacement() noexcept :
-        has_(false)
-    {}
-
-    replacement(replacement_ignore_t) noexcept :
-        has_(false)
-    {}
-
-    explicit replacement(const T& t) :
-        has_(true)
-    {
-        ::new(store_) T(t);
-    }
-
-    explicit replacement(T&& t)
-        noexcept(std::is_nothrow_move_constructible<T>::value) :
-        has_(true)
-    {
-        ::new(store_) T(std::move(t));
-    }
-
-    replacement(replacement&& other)
-        noexcept(std::is_nothrow_move_constructible<T>::value) :
-        has_(other.has_)
-    {
-        if (const auto p = other.get()) {
-            ::new(store_) T(std::move(*p));
-            p->~T();
-            other.has_ = false;
-        }
-    }
-
-    template <class U>
-    replacement(replacement<U>&& other)
-        noexcept(std::is_nothrow_constructible<T, U&&>::value) :
-        has_(other.has_)
-    {
-        if (const auto p = other.get()) {
-            ::new(&store_) T(std::move(*p));
-            p->~U();
-            other.has_ = false;
-        }
-    }
-
-    ~replacement()
-    {
-        if (has_) {
-            static_cast<const T*>(static_cast<const void*>(store_))->~T();
-        }
-    }
-
-    const T* get() const noexcept
-    {
-        return has_ ? operator->() : nullptr;
-    }
-
-    T* get() noexcept
-    {
-        return has_ ? operator->() : nullptr;
-    }
-
-    const T& operator*() const
-    {
-        return *operator->();
-    }
-
-    T& operator*()
-    {
-        return *operator->();
-    }
-
-    const T* operator->() const
-    {
-        assert(has_);
-        return static_cast<const T*>(static_cast<const void*>(store_));
-    }
-
-    T* operator->()
-    {
-        assert(has_);
-        return static_cast<T*>(static_cast<void*>(store_));
-    }
-};
-
 namespace detail {
 
 template <class T>
@@ -1001,7 +905,7 @@ public:
         Ch* middle;
         errno = 0;
         const auto r = static_cast<const D*>(this)->engine(begin, &middle);
-        using ret_t = replacement<std::remove_const_t<decltype(r)>>;
+        using ret_t = std::optional<std::remove_const_t<decltype(r)>>;
 
         const auto has_postfix =
             std::find_if<const Ch*>(middle, end, [](Ch c) {
@@ -1193,21 +1097,23 @@ struct conversion_error_facade
 {
     template <class H, class Ch,
         std::enable_if_t<has_simple_invalid_format<H, Ch>::value>* = nullptr>
-    static replacement<T> invalid_format(H& h, const Ch* begin, const Ch* end)
+    static std::optional<T> invalid_format(
+        H& h,const Ch* begin, const Ch* end)
     {
         return h.invalid_format(begin, end);
     }
 
     template <class H, class Ch,
         std::enable_if_t<!has_simple_invalid_format<H, Ch>::value>* = nullptr>
-    static replacement<T> invalid_format(H& h, const Ch* begin, const Ch* end)
+    static std::optional<T> invalid_format(
+        H& h, const Ch* begin, const Ch* end)
     {
         return h.invalid_format(begin, end, static_cast<T*>(nullptr));
     }
 
     template <class H, class Ch,
         std::enable_if_t<has_simple_out_of_range<H, Ch>::value>* = nullptr>
-    static replacement<T> out_of_range(
+    static std::optional<T> out_of_range(
         H& h, const Ch* begin, const Ch* end, int sign)
     {
         return h.out_of_range(begin, end, sign);
@@ -1215,7 +1121,7 @@ struct conversion_error_facade
 
     template <class H, class Ch,
         std::enable_if_t<!has_simple_out_of_range<H, Ch>::value>* = nullptr>
-    static replacement<T> out_of_range(
+    static std::optional<T> out_of_range(
         H& h, const Ch* begin, const Ch* end, int sign)
     {
         return h.out_of_range(begin, end, sign, static_cast<T*>(nullptr));
@@ -1223,14 +1129,14 @@ struct conversion_error_facade
 
     template <class H,
         std::enable_if_t<has_simple_empty<H>::value>* = nullptr>
-    static replacement<T> empty(H& h)
+    static std::optional<T> empty(H& h)
     {
         return h.empty();
     }
 
     template <class H,
         std::enable_if_t<!has_simple_empty<H>::value>* = nullptr>
-    static replacement<T> empty(H& h)
+    static std::optional<T> empty(H& h)
     {
         return h.empty(static_cast<T*>(nullptr));
     }
@@ -1244,20 +1150,21 @@ struct typed_conversion_error_handler :
     using member_like_base<H>::get;
 
     template <class Ch>
-    replacement<T> invalid_format(const Ch* begin, const Ch* end) const
+    std::optional<T> invalid_format(const Ch* begin, const Ch* end) const
     {
         return conversion_error_facade<T>::
             invalid_format(this->get(), begin, end);
     }
 
     template <class Ch>
-    replacement<T> out_of_range(const Ch* begin, const Ch* end, int sign) const
+    std::optional<T> out_of_range(
+        const Ch* begin, const Ch* end, int sign) const
     {
         return conversion_error_facade<T>::
             out_of_range(this->get(), begin, end, sign);
     }
 
-    replacement<T> empty() const
+    std::optional<T> empty() const
     {
         return conversion_error_facade<T>::empty(this->get());
     }
@@ -1296,14 +1203,13 @@ struct restrained_converter :
     using raw_converter<U, H>::get_conversion_error_handler;
 
     template <class Ch>
-    replacement<T> convert(const Ch* begin, const Ch* end)
+    std::optional<T> convert(const Ch* begin, const Ch* end)
     {
         const auto result = this->convert_raw(begin, end);
-        const auto p = result.get();
-        if (!p) {
-            return replacement<T>();
+        if (!result.has_value()) {
+            return std::optional<T>();
         }
-        const auto r = *p;
+        const auto r = *result;
         if (r < std::numeric_limits<T>::lowest()) {
             return conversion_error_facade<T>::out_of_range(
                 this->get_conversion_error_handler(), begin, end, -1);
@@ -1311,7 +1217,7 @@ struct restrained_converter :
             return conversion_error_facade<T>::out_of_range(
                 this->get_conversion_error_handler(), begin, end, 1);
         } else {
-            return replacement<T>(static_cast<T>(r));
+            return std::optional<T>(static_cast<T>(r));
         }
     }
 };
@@ -1325,17 +1231,16 @@ struct restrained_converter<T, H, U,
     using raw_converter<U, H>::get_conversion_error_handler;
 
     template <class Ch>
-    replacement<T> convert(const Ch* begin, const Ch* end)
+    std::optional<T> convert(const Ch* begin, const Ch* end)
     {
         const auto result = this->convert_raw(begin, end);
-        const auto p = result.get();
-        if (!p) {
-            return replacement<T>();
+        if (!result.has_value()) {
+            return std::optional<T>();
         }
-        const auto r = convert_impl(*p,
+        const auto r = convert_impl(*result,
             std::integral_constant<bool, sizeof(T) < sizeof(U)>());
         if (r.second) {
-            return replacement<T>(r.first);
+            return std::optional<T>(r.first);
         } else {
             return conversion_error_facade<T>::out_of_range(
                 this->get_conversion_error_handler(), begin, end, 1);
@@ -1463,7 +1368,7 @@ struct fail_if_skipped
 {
     template <class T>
     [[noreturn]]
-    replacement<T> operator()(T*) const
+    std::optional<T> operator()(T*) const
     {
         throw field_not_found("This field did not appear in this record");
     }
@@ -1516,16 +1421,16 @@ public:
               || !std::is_nothrow_move_constructible<T>::value) = default;
     replace_if_skipped(replace_if_skipped&&) noexcept = default;
 
-    replacement<T> operator()() const
+    std::optional<T> operator()() const
     {
         switch (mode_) {
         case mode::replace:
-            return replacement<T>(*default_value_);
+            return std::optional<T>(*default_value_);
         case mode::fail:
             fail_if_skipped()(static_cast<T*>(nullptr));
             // fall through
         default:
-            return replacement<T>();
+            return std::optional<T>();
         }
     }
 };
@@ -1534,7 +1439,7 @@ struct fail_if_conversion_failed
 {
     template <class T, class Ch>
     [[noreturn]]
-    replacement<T> invalid_format(
+    std::optional<T> invalid_format(
         const Ch* begin, const Ch* end, T* = nullptr) const
     {
         assert(*end == Ch());
@@ -1547,7 +1452,7 @@ struct fail_if_conversion_failed
 
     template <class T, class Ch>
     [[noreturn]]
-    replacement<T> out_of_range(
+    std::optional<T> out_of_range(
         const Ch* begin, const Ch* end, int, T* = nullptr) const
     {
         assert(*end == Ch());
@@ -1560,7 +1465,7 @@ struct fail_if_conversion_failed
 
     template <class T>
     [[noreturn]]
-    replacement<T> empty(T* = nullptr) const
+    std::optional<T> empty(T* = nullptr) const
     {
         std::ostringstream s;
         s << "Cannot convert an empty string";
@@ -1939,7 +1844,7 @@ public:
     ~replace_if_conversion_failed() = default;
 
     template <class Ch>
-    replacement<T> invalid_format(const Ch* begin, const Ch* end) const
+    std::optional<T> invalid_format(const Ch* begin, const Ch* end) const
     {
         return unwrap(store_->get(store::invalid_format),
             [begin, end]() {
@@ -1948,7 +1853,8 @@ public:
     }
 
     template <class Ch>
-    replacement<T> out_of_range(const Ch* begin, const Ch* end, int sign) const
+    std::optional<T> out_of_range(const Ch* begin, const Ch* end, int sign)
+        const
     {
         const auto fail = [begin, end, sign]() {
             fail_if_conversion_failed().out_of_range<T>(begin, end, sign);
@@ -1962,7 +1868,7 @@ public:
         }
     }
 
-    replacement<T> empty() const
+    std::optional<T> empty() const
     {
         return unwrap(store_->get(store::empty),
             []() {
@@ -1976,16 +1882,16 @@ private:
     {
         switch (p.first) {
         case mode::replace:
-            return replacement<T>(*p.second);
+            return std::optional<T>(*p.second);
         case mode::ignore:
-            return replacement<T>();
+            return std::optional<T>();
         case mode::fail:
         default:
             break;
         }
         fail();
         assert(false);
-        return replacement<T>();
+        return std::optional<T>();
     }
 };
 
@@ -2035,11 +1941,11 @@ public:
 #endif
     void field_skipped()
     {
-        T* p;
+        std::optional<T> p;
         if constexpr (std::is_invocable_v<SkippingHandler>) {
-            p = get_skipping_handler()().get();
+            p = get_skipping_handler()();
         } else {
-            p = get_skipping_handler()(static_cast<T*>(nullptr)).get();
+            p = get_skipping_handler()(static_cast<T*>(nullptr));
         }
         if (p) {
             put(std::move(*p));
@@ -2057,7 +1963,7 @@ public:
     }
 
     template <class U>
-    void put(replacement<U>&& value)
+    void put(std::optional<U>&& value)
     {
         do_put(std::move(value), is_output_iterator<Sink>());
     }
@@ -2077,19 +1983,19 @@ private:
     }
 
     template <class U>
-    void do_put(replacement<U>&& value, std::true_type)
+    void do_put(std::optional<U>&& value, std::true_type)
     {
-        if (auto p = value.get()) {
-            *sink_ = std::move(*p);
+        if (value.has_value()) {
+            *sink_ = std::move(*value);
             ++sink_;
         }
     }
 
     template <class U>
-    void do_put(replacement<U>&& value, std::false_type)
+    void do_put(std::optional<U>&& value, std::false_type)
     {
-        if (auto p = value.get()) {
-            sink_(std::move(*p));
+        if (value.has_value()) {
+            sink_(std::move(*value));
         }
     }
 };

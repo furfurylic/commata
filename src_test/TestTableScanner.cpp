@@ -1261,30 +1261,6 @@ TEST_F(TestTableScannerReference, RecordEndScanner)
     ASSERT_EQ(-12345, v[3]);
 }
 
-struct TestReplacement : BaseTest
-{};
-
-TEST_F(TestReplacement, Basics)
-{
-    replacement<std::string> r(std::string("ABCDEFG"));
-    ASSERT_NE(r.get(), nullptr);
-    ASSERT_STREQ("ABCDEFG", r.get()->c_str());
-    ASSERT_STREQ(r.get()->c_str(), r->c_str());
-    ASSERT_EQ(std::string("ABCDEFG"), *r);
-
-    const auto r2(std::move(r));
-    ASSERT_NE(r2.get(), nullptr);
-    ASSERT_STREQ("ABCDEFG", r2.get()->c_str());
-    ASSERT_STREQ(r2.get()->c_str(), r2->c_str());
-    ASSERT_EQ(std::string("ABCDEFG"), *r2);
-}
-
-TEST_F(TestReplacement, None)
-{
-    replacement<std::string> r;
-    ASSERT_EQ(nullptr, r.get());
-}
-
 struct TestReplaceIfConversionFailed : BaseTest
 {};
 
@@ -1303,7 +1279,7 @@ TEST_F(TestReplaceIfConversionFailed, NonArithmeticNoThrowMoveConstructible)
         ASSERT_STREQ("E", r2.empty()->c_str());
         ASSERT_THROW(r2.invalid_format(d, de), field_invalid_format);
         ASSERT_STREQ("U", r2.out_of_range(d, de, 1)->c_str());
-        ASSERT_EQ(nullptr, r2.out_of_range(d, de, -1).get());
+        ASSERT_FALSE(r2.out_of_range(d, de, -1).has_value());
         ASSERT_STREQ("", r2.out_of_range(d, de, 0)->c_str());
     }
 }
@@ -1351,7 +1327,7 @@ TEST_F(TestReplaceIfConversionFailed, NonArithmeticNonNoThrowMoveConstructible)
         ASSERT_EQ('I', (*r2.invalid_format(d, de))());
         ASSERT_THROW(r2.out_of_range(d, de, 1), field_out_of_range);
         ASSERT_EQ('B', (*r2.out_of_range(d, de, -1))());
-        ASSERT_EQ(nullptr, r2.out_of_range(d, de, 0).get());
+        ASSERT_FALSE(r2.out_of_range(d, de, 0).has_value());
     }
 }
 
