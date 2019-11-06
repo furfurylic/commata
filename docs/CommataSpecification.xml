@@ -2045,7 +2045,7 @@ template &lt;class Handler, class... Args>
                        Args&amp;&amp;... args) const&amp; noexcept;
           </code>
           <effects>Equivalent to: <c>return (*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
-          <remark>This operator shall not participate in overload resolution unless a function call expression to <c>std::declval&lt;const csv_source&amp;>()</c> with the arguments being <c>std::declval&lt;reference_handler&lt;Handler>>(), std::declval&lt;Args>()...</c> is well-formed when treated as an unevaluated operand.
+          <remark>This operator shall not participate in overload resolution unless <c>std::is_invocable_v&lt;const csv_source&amp;, reference_handler&lt;Handler>, Args&amp;&amp;...></c> is <c>true</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;CharInput>::value</c>.</remark>
         </code-item>
 
@@ -2056,7 +2056,7 @@ template &lt;class Handler, class... Args>
                        Args&amp;&amp;... args) &amp;&amp; noexcept;
           </code>
           <effects>Equivalent to: <c>return std::move(*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
-          <remark>This operator shall not participate in overload resolution unless a function call expression to <c>std::declval&lt;csv_source>()</c> with the arguments being <c>std::declval&lt;reference_handler&lt;Handler>>(), std::declval&lt;Args>()...</c> is well-formed when treated as an unevaluated operand.
+          <remark>This operator shall not participate in overload resolution unless <c>std::is_invocable_v&lt;csv_source, reference_handler&lt;Handler>, Args&amp;&amp;...></c> is <c>true</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;CharInput>::value</c>.</remark>
         </code-item>
       </section>

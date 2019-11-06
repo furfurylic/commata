@@ -42,12 +42,6 @@ namespace commata {
 
 namespace detail { namespace scanner {
 
-template <class T, class Ch>
-using accepts_range = is_callable<T&, Ch*, Ch*>;
-
-template <class T, class X>
-using accepts_x = is_callable<T&, X>;
-
 struct typable
 {
     virtual ~typable() {}
@@ -154,16 +148,14 @@ class basic_table_scanner
         void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
         {
             field_value_r(
-                typename detail::scanner::accepts_range<
-                    std::remove_reference_t<decltype(scanner())>, Ch>(),
+                std::is_invocable<decltype(scanner()), Ch*, Ch*>(),
                 begin, end, me);
         }
 
         void field_value(string_t&& value, basic_table_scanner& me) override
         {
             field_value_s(
-                typename detail::scanner::accepts_x<
-                    std::remove_reference_t<decltype(scanner())>, string_t>(),
+                std::is_invocable<decltype(scanner()), string_t>(),
                 std::move(value), me);
         }
 
@@ -258,18 +250,17 @@ class basic_table_scanner
 
         template <class U>
         static auto do_end_record(U& u, basic_table_scanner& me)
-         -> std::enable_if_t<
-                detail::is_callable<U&, basic_table_scanner&>::value, bool>
+         -> std::enable_if_t<std::is_invocable_v<U&, basic_table_scanner&>,
+                             bool>
         {
             return do_end_record_no_arg(std::bind(std::ref(u), std::ref(me)));
         }
 
         template <class U>
         static auto do_end_record(U& u, basic_table_scanner&)
-         -> std::enable_if_t<
-                !detail::is_callable<U&, basic_table_scanner&>::value
-             && detail::is_callable<U&>::value,
-                bool>
+         -> std::enable_if_t<!std::is_invocable_v<U&, basic_table_scanner&>
+                          && std::is_invocable_v<U&>,
+                             bool>
         {
             return do_end_record_no_arg(u);
         }
@@ -2467,22 +2458,6 @@ struct is_output_iterator<T,
     std::true_type
 {};
 
-struct has_simple_call_impl
-{
-    template <class F>
-    static auto check(F*) -> decltype(
-        std::declval<F&>()(),
-        std::true_type());
-
-    template <class F>
-    static auto check(...) -> std::false_type;
-};
-
-template <class F>
-struct has_simple_call :
-    decltype(has_simple_call_impl::check<F>(nullptr))
-{};
-
 template <class T, class Sink, class SkippingHandler>
 class translator :
     member_like_base<SkippingHandler>
@@ -2507,24 +2482,26 @@ public:
         return this->get();
     }
 
+#if _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4702)
+#endif
     void field_skipped()
     {
-        if (auto r = call_skipping_handler(
-                has_simple_call<SkippingHandler>())) {
+        replacement<T> r;
+        if constexpr (std::is_invocable_v<SkippingHandler&>) {
+            r = get_skipping_handler()();
+        } else {
+            r = get_skipping_handler()(static_cast<T*>(nullptr));
+        }
+        if (r) {
             put(std::move(*r));
         }
     }
 
-private:
-    auto call_skipping_handler(std::true_type)
-    {
-        return get_skipping_handler()();
-    }
-
-    auto call_skipping_handler(std::false_type)
-    {
-        return get_skipping_handler()(static_cast<T*>(nullptr));
-    }
+#if _MSC_VER
+#pragma warning(pop)
+#endif
 
 public:
     template <class U>
@@ -2939,7 +2916,7 @@ auto make_field_translator(Sink&& sink, Appendices&&... appendices)
         (detail::scanner::is_convertible_numeric_type<T>::value
       || detail::is_std_string<T>::value)
      && (detail::scanner::is_output_iterator<std::decay_t<Sink>>::value
-      || detail::is_callable<std::decay_t<Sink>&, T>::value),
+      || std::is_invocable_v<std::decay_t<Sink>&, T>),
         decltype(detail::scanner::make_field_translator_na<T>(
                     std::forward<Sink>(sink),
                     std::forward<Appendices>(appendices)...))>
@@ -2957,7 +2934,7 @@ auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
         detail::is_std_string<T>::value
      && std::is_same<Allocator, typename T::allocator_type>::value
      && (detail::scanner::is_output_iterator<std::decay_t<Sink>>::value
-      || detail::is_callable<std::decay_t<Sink>&, T>::value),
+      || std::is_invocable_v<std::decay_t<Sink>&, T>),
         decltype(detail::scanner::make_field_translator_na<T>(
                     std::forward<Sink>(sink),
                     std::forward<Appendices>(appendices)...))>

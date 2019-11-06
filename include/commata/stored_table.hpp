@@ -1989,7 +1989,7 @@ private:
     private:
         template <class U>
         static auto on_end_record_impl(U& u, table_type& table)
-         -> std::enable_if_t<detail::is_callable<U&, table_type&>::value, bool>
+         -> std::enable_if_t<std::is_invocable_v<U&, table_type&>, bool>
         {
             return on_end_record_impl_no_arg(
                 std::bind(std::ref(u), std::ref(table)));
@@ -1998,8 +1998,8 @@ private:
         template <class U>
         static auto on_end_record_impl(U& u, table_type&)
          -> std::enable_if_t<
-                !detail::is_callable<U&, table_type&>::value
-             && detail::is_callable<U&>::value,
+                !std::is_invocable_v<U&, table_type&>
+             && std::is_invocable_v<U&>,
                 bool>
         {
             return do_end_record_no_arg(u);

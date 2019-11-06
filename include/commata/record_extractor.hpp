@@ -679,21 +679,8 @@ auto make_string_pred(T&& s, const Allocator&)
     return std::forward<T>(s);
 }
 
-struct is_string_pred_impl
-{
-    template <class T, class Ch>
-    static auto check(T*) ->
-        decltype(
-            std::declval<bool&>() = std::declval<T>()(
-                std::declval<const Ch*>(), std::declval<const Ch*>()),
-            std::true_type());
-
-    template <class T, class Ch>
-    static auto check(...) -> std::false_type;
-};
-
 template <class T, class Ch>
-struct is_string_pred : decltype(is_string_pred_impl::check<T, Ch>(nullptr))
+struct is_string_pred : std::is_invocable_r<bool, T, const Ch*, const Ch*>
 {};
 
 }} // end detail::record_extraction
