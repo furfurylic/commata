@@ -2007,22 +2007,6 @@ struct is_output_iterator<T,
     std::true_type
 {};
 
-struct has_simple_call_impl
-{
-    template <class F>
-    static auto check(F*) -> decltype(
-        std::declval<F&>()(),
-        std::true_type());
-
-    template <class F>
-    static auto check(...) -> std::false_type;
-};
-
-template <class F>
-struct has_simple_call :
-    decltype(has_simple_call_impl::check<F>(nullptr))
-{};
-
 template <class T, class Sink, class SkippingHandler>
 class translator :
     member_like_base<SkippingHandler>
@@ -2045,24 +2029,25 @@ public:
         return this->get();
     }
 
+#if _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4702)
+#endif
     void field_skipped()
     {
-        if (auto p = call_skipping_handler(
-                has_simple_call<SkippingHandler>()).get()) {
+        T* p;
+        if constexpr (std::is_invocable_v<SkippingHandler>) {
+            p = get_skipping_handler()().get();
+        } else {
+            p = get_skipping_handler()(static_cast<T*>(nullptr)).get();
+        }
+        if (p) {
             put(std::move(*p));
         }
     }
-
-private:
-    auto call_skipping_handler(std::true_type)
-    {
-        return get_skipping_handler()();
-    }
-
-    auto call_skipping_handler(std::false_type)
-    {
-        return get_skipping_handler()(static_cast<T*>(nullptr));
-    }
+#if _MSC_VER
+#pragma warning(pop)
+#endif
 
 public:
     template <class U>
@@ -2373,30 +2358,13 @@ string_field_translator<Sink,
         typename T::allocator_type, Appendices...>
     make_field_translator_na(Sink sink, Appendices&&... appendices);
 
-template <class A>
-struct is_callable_impl
-{
-    template <class F>
-    static auto check(F*) -> decltype(
-        std::declval<F>()(std::declval<A>()),
-        std::true_type());
-
-    template <class F>
-    static auto check(...) -> std::false_type;
-};
-
-template <class F, class A>
-struct is_callable :
-    decltype(is_callable_impl<A>::template check<F>(nullptr))
-{};
-
 } // end namespace detail
 
 template <class T, class Sink, class... Appendices>
 auto make_field_translator(Sink sink, Appendices&&... appendices)
  -> std::enable_if_t<
         detail::is_output_iterator<Sink>::value
-     || detail::is_callable<Sink, T>::value,
+     || std::is_invocable_v<Sink, T>,
         decltype(detail::make_field_translator_na<T>(
             std::move(sink), std::forward<Appendices>(appendices)...))>
 {
@@ -2410,7 +2378,7 @@ auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Sink sink, Appendices&&... appendices)
  -> std::enable_if_t<
         detail::is_output_iterator<Sink>::value
-     || detail::is_callable<Sink, T>::value,
+     || std::is_invocable_v<Sink, T>,
         string_field_translator<Sink,
             typename T::value_type, typename T::traits_type,
             Allocator, Appendices...>>
