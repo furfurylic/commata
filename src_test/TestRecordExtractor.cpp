@@ -300,15 +300,13 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
     std::size_t total = 0;
     tracking_allocator<std::allocator<char>> alloc(total);
 
-    // Long names are required to make sure that std::string uses its
-    // allocator
-    const char* s = "instrument_______,type\n"
-                    "castanets________,idiophone\n"
-                    "clarinet_________,woodwind\n";
+    const char* s = "instrument,type\n"
+                    "castanets,idiophone\n"
+                    "clarinet,woodwind\n";
     std::stringbuf out;
 
     auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
-        "instrument_______", "clarinet_________"s);
+        "instrument", "clarinet"s);
     parse_csv(s, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }
@@ -318,14 +316,15 @@ TEST_F(TestRecordExtractorMiscellaneous, Fancy)
     std::size_t total = 0;
     tracking_allocator<fancy_allocator<wchar_t>> alloc(total);
 
-    // ditto
-    const wchar_t* s = L"instrument_______,type\n"
-                       L"castanets________,idiophone\n"
-                       L"clarinet_________,woodwind\n";
+    // Long names are required to make sure that std::string uses its
+    // allocator
+    const wchar_t* s = L"instrument,type\n"
+                       L"castanets,idiophone\n"
+                       L"clarinet,woodwind\n";
     std::wstringbuf out;
 
      auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
-        L"instrument_______", std::wstring(L"clarinet_________"));
+        L"instrument", std::wstring(L"clarinet"));
     parse_csv(s, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }

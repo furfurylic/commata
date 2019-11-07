@@ -19,6 +19,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "allocation_only_allocator.hpp"
 #include "key_chars.hpp"
@@ -197,10 +198,10 @@ class impl
 
     detail::base_member_pair<
         FieldNamePred,
-        std::basic_string<Ch, Tr, alloc_t>/*field_buffer*/> nf_;
+        std::vector<Ch, alloc_t>/*field_buffer*/> nf_;
     detail::base_member_pair<
         FieldValuePred,
-        std::basic_string<Ch, Tr, alloc_t>/*record_buffer*/> vr_;
+        std::vector<Ch, alloc_t>/*record_buffer*/> vr_;
                                 // populated only after the buffer switched in
                                 // a unknown (included or not) record and
                                 // shall not overlap with interval
@@ -254,9 +255,9 @@ private:
         record_num_to_include_(max_record_num),
         target_field_index_(target_field_index), field_index_(0), out_(out),
         nf_(std::forward<FieldNamePredR>(field_name_pred),
-            std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc))),
+            std::vector<Ch, alloc_t>(alloc_t(alloc))),
         vr_(std::forward<FieldValuePredR>(field_value_pred),
-            std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc))),
+            std::vector<Ch, alloc_t>(alloc_t(alloc))),
         header_mode_(has_header ?
                         includes_header ?
                             record_mode::include : record_mode::exclude :
@@ -278,10 +279,6 @@ public:
         header_mode_(other.header_mode_), record_mode_(other.record_mode_)
     {}
 
-    // Move-assignment shall be deleted because basic_string's propagation of
-    // the allocator in C++14 is apocryphal (it does not seem able to be
-    // noexcept unconditionally)
-
     allocator_type get_allocator() const noexcept
     {
         return field_buffer().get_allocator().base();
@@ -299,7 +296,8 @@ public:
             flush_current(buffer_end);
             break;
         case record_mode::unknown:
-            record_buffer().append(current_begin_, buffer_end);
+            record_buffer().insert(
+                record_buffer().cend(), current_begin_, buffer_end);
             break;
         default:
             break;
@@ -318,7 +316,7 @@ public:
     {
         if ((is_in_header() && (target_field_index_ == record_extractor_npos))
          || (field_index_ == target_field_index_)) {
-            field_buffer().append(first, last);
+            field_buffer().insert(field_buffer().cend(), first, last);
         }
     }
 
@@ -376,12 +374,12 @@ public:
     }
 
 private:
-    std::basic_string<Ch, Tr, alloc_t>& field_buffer() noexcept
+    decltype(auto) field_buffer()
     {
         return nf_.member();
     }
 
-    std::basic_string<Ch, Tr, alloc_t>& record_buffer() noexcept
+    decltype(auto) record_buffer()
     {
         return vr_.member();
     }
@@ -393,8 +391,9 @@ private:
         if (b.empty()) {
             return f(std::basic_string_view<Ch, Tr>(first, last - first));
         } else {
-            b.append(first, last);
-            const auto r = f(std::basic_string_view<Ch, Tr>(b));
+            b.insert(b.cend(), first, last);
+            const auto r = f(std::basic_string_view<Ch, Tr>(
+            	                b.data(), b.size()));
             b.clear();
             return r;
         }
