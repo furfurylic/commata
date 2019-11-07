@@ -282,7 +282,7 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
 
     auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
         "instrument_______", std::string("clarinet_________"));
-    parse_csv(s, std::move(ex), 8U);
+    parse_csv(s, std::move(ex));
     ASSERT_GT(total, 0U);
 }
 
