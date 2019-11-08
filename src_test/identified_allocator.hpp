@@ -80,6 +80,7 @@ public:
         std::integral_constant<bool, POCMA>;
     using propagate_on_container_swap =
         std::integral_constant<bool, POCS>;
+    using is_always_equal = std::integral_constant<bool, IAE>;
 
     std::size_t id() const noexcept
     {

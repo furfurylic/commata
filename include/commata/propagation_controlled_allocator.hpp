@@ -118,6 +118,7 @@ public:
     using propagate_on_container_move_assignment =
         std::integral_constant<bool, POCMA>;
     using propagate_on_container_swap = std::integral_constant<bool, POCS>;
+    using is_always_equal = typename base_traits_t::is_always_equal;
 
     decltype(auto) base() noexcept
     {
