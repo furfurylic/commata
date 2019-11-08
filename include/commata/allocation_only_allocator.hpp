@@ -148,6 +148,7 @@ public:
         typename base_traits_t::propagate_on_container_move_assignment;
     using propagate_on_container_swap =
         typename base_traits_t::propagate_on_container_swap;
+    using is_always_equal = typename base_traits_t::is_always_equal;
 
     decltype(auto) base() noexcept
     {

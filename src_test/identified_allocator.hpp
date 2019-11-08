@@ -70,6 +70,7 @@ public:
     using propagate_on_container_copy_assignment = std::bool_constant<Pocca>;
     using propagate_on_container_move_assignment = std::bool_constant<Pocma>;
     using propagate_on_container_swap = std::bool_constant<Pocs>;
+    using is_always_equal = std::bool_constant<Iae>;
 
     std::size_t id() const noexcept
     {

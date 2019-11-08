@@ -167,6 +167,8 @@ public:
         return total_ ? *total_ : static_cast<decltype(*total_ + 0)>(-1);
     }
 
+    using is_always_equal = std::false_type;
+
 private:
     static void* true_addressof(typename base_traits::pointer p) noexcept
     {

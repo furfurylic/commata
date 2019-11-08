@@ -107,6 +107,7 @@ public:
     using propagate_on_container_copy_assignment = std::bool_constant<Pocca>;
     using propagate_on_container_move_assignment = std::bool_constant<Pocma>;
     using propagate_on_container_swap = std::bool_constant<Pocs>;
+    using is_always_equal = typename base_traits_t::is_always_equal;
 
     decltype(auto) base() noexcept
     {
