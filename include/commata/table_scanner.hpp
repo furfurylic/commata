@@ -1466,17 +1466,7 @@ public:
         return *t_;
     }
 
-    T& operator*() noexcept
-    {
-        return *t_;
-    }
-
     const T* operator->() const noexcept
-    {
-        return t_.get();
-    }
-
-    T* operator->() noexcept
     {
         return t_.get();
     }
@@ -1503,17 +1493,7 @@ public:
         return t_;
     }
 
-    T& operator*() noexcept
-    {
-        return t_;
-    }
-
     const T* operator->() const noexcept
-    {
-        return std::addressof(t_);
-    }
-
-    T* operator->() noexcept
     {
         return std::addressof(t_);
     }
@@ -1714,12 +1694,14 @@ class replace_if_conversion_failed
 
     struct store
     {
-        static constexpr unsigned empty = 0;
-        static constexpr unsigned invalid_format = 1;
-        static constexpr unsigned above_upper_limit = 2;
-        static constexpr unsigned below_lower_limit = 3;
-        static constexpr unsigned underflow = 4;
-        static constexpr unsigned n = 5;
+        enum slot : unsigned {
+            empty = 0,
+            invalid_format = 1,
+            above_upper_limit = 2,
+            below_lower_limit = 3,
+            underflow = 4,
+            n = 5
+        };
 
         std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[n];
         std::uint_fast8_t has_;
@@ -1727,6 +1709,13 @@ class replace_if_conversion_failed
 
         store() noexcept : has_(0U), skips_(0U)
         {}
+
+        template <class Head, class... Tails>
+        store(unsigned head_r, Head&& head_v, Tails&&... tails) :
+            store(std::forward<Tails>(tails)...)
+        {
+            init(head_r, std::forward<Head>(head_v));
+        }
 
         store(const store& other)
             noexcept(std::is_trivially_copyable<T>::value) :
@@ -1756,24 +1745,18 @@ class replace_if_conversion_failed
             using f_t = std::conditional_t<
                 std::is_lvalue_reference<Other>::value, const T&, T>;
             for (unsigned r = 0; r < n; ++r) {
-                const auto p = other.get(r);
+                const auto p = get_g(std::addressof(other), r);
                 if (p.first == mode::replace) {
                     init(r, std::forward<f_t>(*p.second));
                 }
             }
         }
 
-    public:
-        ~store()
-        {
-            destroy(std::is_trivially_destructible<T>());
-        }
-
         template <class U, std::enable_if_t<
-                (!std::is_base_of<
-                    replacement_fail_t, std::decay_t<U>>::value)
-             && (!std::is_base_of<
-                    replacement_ignore_t, std::decay_t<U>>::value),
+            (!std::is_base_of<
+                replacement_fail_t, std::decay_t<U>>::value)
+         && (!std::is_base_of<
+                replacement_ignore_t, std::decay_t<U>>::value),
             std::nullptr_t> = nullptr>
         void init(unsigned r, U&& value)
         {
@@ -1797,27 +1780,28 @@ class replace_if_conversion_failed
             skips_ |= 1U << r;
         }
 
+    public:
+        ~store()
+        {
+            destroy(std::is_trivially_destructible<T>());
+        }
+
         std::pair<mode, const T*> get(unsigned r) const noexcept
         {
-            using pair_t = std::pair<mode, const T*>;
-            if (has(r)) {
-                return pair_t(mode::replace,
-                    reinterpret_cast<const T*>(replacements_ + r));
-            } else if (skips(r)) {
-                return pair_t(mode::ignore, nullptr);
-            } else {
-                return pair_t(mode::fail, nullptr);
-            }
+            return get_g(this, r);
         }
 
     private:
-        std::pair<mode, T*> get(unsigned r) noexcept
+        template <class ThisType>
+        static auto get_g(ThisType* me, unsigned r) noexcept
         {
-            using pair_t = std::pair<mode, T*>;
-            if (has(r)) {
+            using t_t = std::conditional_t<
+                std::is_const<ThisType>::value, const T, T>;
+            using pair_t = std::pair<mode, t_t*>;
+            if (me->has(r)) {
                 return pair_t(mode::replace,
-                    reinterpret_cast<T*>(replacements_ + r));
-            } else if (skips(r)) {
+                    reinterpret_cast<t_t*>(me->replacements_ + r));
+            } else if (me->skips(r)) {
                 return pair_t(mode::ignore, nullptr);
             } else {
                 return pair_t(mode::fail, nullptr);
@@ -1862,19 +1846,17 @@ public:
         InvalidFormat&& on_invalid_format = InvalidFormat(),
         AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit(),
         BelowLowerLimit&& on_below_lower_limit = BelowLowerLimit(),
-        Underflow&& on_underflow = Underflow())
-    {
-        store_->init(store::empty,
-            std::forward<Empty>(on_empty));
-        store_->init(store::invalid_format,
-            std::forward<InvalidFormat>(on_invalid_format));
-        store_->init(store::above_upper_limit,
-            std::forward<AboveUpperLimit>(on_above_upper_limit));
-        store_->init(store::below_lower_limit,
-            std::forward<BelowLowerLimit>(on_below_lower_limit));
-        store_->init(store::underflow,
-            std::forward<Underflow>(on_underflow));
-    }
+        Underflow&& on_underflow = Underflow()) :
+        store_(store(
+            store::empty, std::forward<Empty>(on_empty),
+            store::invalid_format,
+                std::forward<InvalidFormat>(on_invalid_format),
+            store::above_upper_limit,
+                std::forward<AboveUpperLimit>(on_above_upper_limit),
+            store::below_lower_limit,
+                std::forward<BelowLowerLimit>(on_below_lower_limit),
+            store::underflow, std::forward<Underflow>(on_underflow)))
+    {}
 
     replace_if_conversion_failed(const replace_if_conversion_failed&)
         = default;
