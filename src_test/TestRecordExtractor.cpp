@@ -105,8 +105,8 @@ TEST_P(TestRecordExtractorLimit, Basics)
                     "ka1,kb3,vb3,vb3\n";
     std::stringbuf in(s);
     std::stringbuf out;
-    const auto result = parse_csv(&in, make_record_extractor(
-        &out, "key_a", "ka1", includes_header, max_record_num), 2);
+    const auto result = parse_csv(&in, make_record_extractor(&out,
+        "key_a", std::string("ka1"), includes_header, max_record_num), 2);
     ASSERT_EQ(max_record_num > 1, result);
     std::string expected;
     if (includes_header) {
@@ -133,8 +133,8 @@ TEST_F(TestRecordExtractorLimit0, IncludeHeader)
                     "ka1,kb1,va1,\"vb1\r";  // Ill-formed line, but not parsed
     std::stringbuf in(s);
     std::stringbuf out;
-    const auto result = parse_csv(&in,
-        make_record_extractor(&out, "key_a", "ka1", true, 0), 64);
+    const auto result = parse_csv(&in, make_record_extractor(
+            &out, std::string("key_a"), "ka1", true, 0), 64);
     ASSERT_FALSE(result);
     std::string expected;
     ASSERT_EQ("key_a,key_b,value_a,value_b\n", out.str());
@@ -147,7 +147,8 @@ TEST_F(TestRecordExtractorLimit0, ExcludeHeaderNoSuchKey)
     std::stringbuf in(s);
     std::stringbuf out;
     try {
-        parse_csv(&in, make_record_extractor(&out, "key_A", "ka1", false, 0), 64);
+        parse_csv(&in, make_record_extractor(
+            &out, "key_A", "ka1", false, 0), 64);
         FAIL();
     } catch (const record_extraction_error& e) {
         ASSERT_NE(e.get_physical_position(), nullptr);
