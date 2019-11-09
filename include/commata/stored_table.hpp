@@ -1833,7 +1833,7 @@ auto nothrow_emigrate(T& from, T& to)
  -> std::enable_if_t<!std::is_nothrow_move_assignable<T>::value>
 {
     assert(!has_non_pocs_allocator_type<T>::value
-        && !have_inequal_allocators(from, to));
+        || !have_inequal_allocators(from, to));
     from.swap(to);
 }
 
