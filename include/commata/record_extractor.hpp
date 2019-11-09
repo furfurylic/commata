@@ -496,6 +496,7 @@ auto make_string_pred(T&& s, const Allocator& a)
         std::basic_string<Ch, Tr, Allocator>(std::forward<T>(s), a));
 }
 
+// Watch out for the return type, which is not string_eq
 template <class Ch, class Tr, class Allocator, class T>
 auto make_string_pred(T&& s, const Allocator&)
  -> std::enable_if_t<
@@ -503,6 +504,8 @@ auto make_string_pred(T&& s, const Allocator&)
      && !std::is_constructible<std::basic_string<Ch, Tr, Allocator>,
             T&&, const Allocator&>::value, T&&>
 {
+    // This "not uses-allocator construction" is intentional because
+    // what we would like to do here is a mere move/copy by forwarding
     return std::forward<T>(s);
 }
 
