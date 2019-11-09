@@ -23,6 +23,16 @@ struct is_std_string<std::basic_string<Args...>> :
     std::true_type
 {};
 
+template <class T, class Ch>
+struct is_std_string_of :
+    std::false_type
+{};
+
+template <class Ch, class... Args>
+struct is_std_string_of<std::basic_string<Ch, Args...>, Ch> :
+    std::true_type
+{};
+
 template <class W>
 struct is_std_reference_wrapper : std::false_type
 {};

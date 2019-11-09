@@ -8,12 +8,17 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include <gtest/gtest.h>
 
 #include <commata/text_error.hpp>
 
+#include "BaseTest.hpp"
+#include "tracking_allocator.hpp"
+
 using namespace commata;
+using namespace commata::test;
 
 static_assert(
     std::is_nothrow_move_constructible<text_error>::value,
@@ -28,7 +33,10 @@ static_assert(
     std::is_nothrow_copy_assignable<text_error>::value,
     "text_error shall be nothrow-copy-assignable");
 
-TEST(TestTextError, Ctors)
+struct TestTextError : BaseTest
+{};
+
+TEST_F(TestTextError, Ctors)
 {
     const char* message = "Some error occurred";
 
@@ -41,7 +49,7 @@ TEST(TestTextError, Ctors)
     ASSERT_STREQ(message, e3.what());
 }
 
-TEST(TestTextError, AssignmentOps)
+TEST_F(TestTextError, AssignmentOps)
 {
     const char* message1 = "Some error occurred";
     const char* message2 = "One more error occurred";
@@ -57,7 +65,7 @@ TEST(TestTextError, AssignmentOps)
     ASSERT_STREQ(message1, e3.what());
 }
 
-TEST(TestTextError, Info)
+TEST_F(TestTextError, Info)
 {
     text_error e("Some error occurred");
     {
@@ -138,4 +146,32 @@ TEST(TestTextError, Info)
     }
     ASSERT_EQ(isw, is4);
     ASSERT_EQ(isw, to_wstring(e.info()));
+}
+
+TEST_F(TestTextError, Allocators)
+{
+    std::vector<std::pair<char*, char*>> allocated;
+    tracking_allocator<std::allocator<char>> a(allocated);
+
+    const char* message = "A certain very lengthy message that tells "
+                          "the details of the text error";
+
+    using traits_t = std::char_traits<char>;
+    using string_t = std::basic_string<char, traits_t, decltype(a)>;
+    text_error e1(string_t(message, a));
+    ASSERT_STREQ(message, e1.what());
+    ASSERT_TRUE(a.tracks(e1.what()));
+
+    auto e2(e1);
+    auto e3(std::move(e1));
+    ASSERT_TRUE(a.tracks(e2.what()));
+    ASSERT_TRUE(a.tracks(e3.what()));
+
+    // Short strings might be stored string's internal structure
+    // so a short-string case seems worthy of a test
+
+    string_t message2("!", a);
+    text_error e4(message2);
+    ASSERT_STREQ(message2.c_str(), e4.what());
+    ASSERT_TRUE(a.tracks(e4.what()));
 }

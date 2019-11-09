@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "formatted_output.hpp"
+#include "typing_aid.hpp"
 
 namespace commata {
 namespace detail {
@@ -67,17 +68,65 @@ public:
 class text_error :
     public std::exception, public detail::npos_impl<std::size_t>
 {
-    std::shared_ptr<std::string> what_;
+    struct what_holder
+    {
+        virtual ~what_holder() {}
+        virtual const char* what() const noexcept = 0;
+    };
+
+    template <class S>
+    class string_holder : public what_holder
+    {
+        S s_;
+
+    public:
+        template <class T,
+            class = std::enable_if_t<std::is_constructible<S, T>::value>>
+        string_holder(T&& s) : s_(std::forward<T>(s))
+        {}
+
+        ~string_holder() = default;
+        string_holder(const string_holder&) = delete;
+
+        const char* what() const noexcept override
+        {
+            return s_.c_str();
+                // std::basic_string<Ch, Tr, Allocator>::c_str is noexcept
+        }
+    };
+
+    std::shared_ptr<what_holder> what_;
     std::pair<std::size_t, std::size_t> physical_position_;
 
 public:
     template <class T,
-        class = std::enable_if_t<std::is_constructible<std::string, T>::value>>
+        std::enable_if_t<
+            detail::is_std_string_of<std::decay_t<T>, char>::value
+         || std::is_constructible<std::string, T>::value,
+            std::nullptr_t> = nullptr>
     explicit text_error(T&& what_arg) :
-        what_(std::make_shared<std::string>(std::forward<T>(what_arg))),
+        what_(create_what(
+            detail::is_std_string_of<std::decay_t<T>, char>(),
+            std::forward<T>(what_arg))),
         physical_position_(npos, npos)
     {}
 
+private:
+    template <class T>
+    static auto create_what(std::true_type, T&& what_arg)
+    {
+        return std::allocate_shared<string_holder<std::decay_t<T>>>(
+            what_arg.get_allocator(), std::forward<T>(what_arg));
+    }
+
+    template <class T>
+    static auto create_what(std::false_type, T&& what_arg)
+    {
+        return std::make_shared<string_holder<std::string>>(
+            std::forward<T>(what_arg));
+    }
+
+public:
     // Copy/move ctors and copy/move assignment ops are explicitly defined
     // so that they are noexcept
 
@@ -115,7 +164,7 @@ public:
 
     const char* what() const noexcept override
     {
-        return what_->c_str(); // std::string::c_str is noexcept
+        return what_->what();
     }
 
     text_error& set_physical_position(

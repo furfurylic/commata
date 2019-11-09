@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-10-04 (UTC)</signature>
+<signature>2019-11-09 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -331,8 +331,12 @@ namespace commata {
 template &lt;class T> explicit text_error(T&amp;&amp; what_arg);
           </code>
           <effects>Constructs an object of <c>text_error</c>.</effects>
-          <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; !get_physical_position()</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg))</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+          <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; !get_physical_position()</c> shall not be <c>false</c>
+                         where <c>w</c> is an object of <c>std::basic_string&lt;char, Tr, Allocator></c> for a certain combination of <c>Tr</c> and <c>Allocator</c>
+                         that would be constructed with <c>std::forward&lt;T>(what_arg)</c>.</postcondition>
+          <remark>This constructor shall not participate in overload resolution unless
+                  <c>std::decay_t&lt;T></c> is the same type as <c>std::basic_string&lt;char, Tr, Allocator></c> for a certain combination of <c>Tr</c> and <c>Allocator</c>, or
+                  <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
         </code-item>
 
         <code-item>
