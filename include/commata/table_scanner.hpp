@@ -986,16 +986,13 @@ private:
     }
 };
 
-template <class...>
-using void_t = void;
-
 template <class T, class H, class = void>
 struct raw_converter;
 
 // For integral types
 template <class T, class H>
 struct raw_converter<T, H, std::enable_if_t<std::is_integral<T>::value,
-        void_t<decltype(numeric_type_traits<T>::strto)>>> :
+        std::void_t<decltype(numeric_type_traits<T>::strto)>>> :
     raw_converter_base<raw_converter<T, H>, H>
 {
     using raw_converter_base<raw_converter<T, H>, H>
@@ -1043,7 +1040,7 @@ private:
 // For floating-point types
 template <class T, class H>
 struct raw_converter<T, H, std::enable_if_t<std::is_floating_point<T>::value,
-        void_t<decltype(numeric_type_traits<T>::strto)>>> :
+        std::void_t<decltype(numeric_type_traits<T>::strto)>>> :
     raw_converter_base<raw_converter<T, H>, H>
 {
     using raw_converter_base<raw_converter<T, H>, H>
@@ -1312,7 +1309,8 @@ struct restrained_converter<T, H, U,
 
 // For types which have corresponding "raw_type"
 template <class T, class H>
-struct converter<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
+struct converter<T, H,
+                 std::void_t<typename numeric_type_traits<T>::raw_type>> :
     restrained_converter<T, typed_conversion_error_handler<T, H>,
         typename numeric_type_traits<T>::raw_type>
 {
