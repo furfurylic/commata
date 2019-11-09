@@ -1997,18 +1997,20 @@ public:
 
     void field_skipped()
     {
-        if (const auto p = call_skipping_handler(
+        if (auto p = call_skipping_handler(
                 has_simple_call<SkippingHandler>()).get()) {
             put(std::move(*p));
         }
     }
 
 private:
-    auto call_skipping_handler(std::true_type) {
+    auto call_skipping_handler(std::true_type)
+    {
         return get_skipping_handler()();
     }
 
-    auto call_skipping_handler(std::false_type) {
+    auto call_skipping_handler(std::false_type)
+    {
         return get_skipping_handler()(static_cast<T*>(nullptr));
     }
 

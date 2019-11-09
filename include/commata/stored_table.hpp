@@ -1982,15 +1982,6 @@ void append_stored_table_content(
     }
 }
 
-template <class T>
-struct is_basic_stored_table : std::false_type
-{};
-
-template <class Content, class Allocator>
-struct is_basic_stored_table<basic_stored_table<Content, Allocator>> :
-    std::true_type
-{};
-
 template <class ContentL, class AllocatorL, class TableR>
 auto plus_stored_table_impl(
     const basic_stored_table<ContentL, AllocatorL>& left, TableR&& right)
