@@ -430,7 +430,7 @@ template &lt;class T> explicit text_error(T&amp;&amp; what_arg);
                          that would be constructed with <c>std::forward&lt;T>(what_arg)</c>.</postcondition>
           <remark>This constructor shall not participate in overload resolution unless
                   <c>std::decay_t&lt;T></c> is the same type as <c>std::basic_string&lt;char, Tr, Allocator></c> for a certain combination of <c>Tr</c> and <c>Allocator</c>, or
-                  <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+                  <c>std::is_constructible_v&lt;std::string, T&amp;&amp;></c> is not <c>false</c>.</remark>
         </code-item>
 
         <code-item>
@@ -636,7 +636,7 @@ template &lt;class T>
         </code>
         <effects>Constructs an object of parse_error.</effects>
         <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-        <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+        <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible_v&lt;std::string, T&amp;&amp;></c> is not <c>false</c>.</remark>
       </code-item>
     </section>
   </section>
@@ -683,7 +683,7 @@ template &lt;class Handler>
                    <li>otherwise, the return type shall be <c>bool</c>, and the return value shall be <c>true</c> if and only if none of the the return values contextually converted to <c>bool</c> of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> is <c>false</c>.</li>
                  </ul></returns>
         <remark>The first overload shall not participate in overload resolution unless <c>std::decay_t&lt;Handler></c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
-                The expression inside <c>noexcept</c> of the first overload is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;Handler>>::value</c>.</remark>
+                The expression inside <c>noexcept</c> of the first overload is equivalent to <c>std::is_nothrow_move_constructible_v&lt;std::decay_t&lt;Handler>></c>.</remark>
       </code-item>
     </section>
   </section>
@@ -978,7 +978,7 @@ namespace commata {
 explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes <c>in</c> with <c>std::move(sb)</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Streambuf>::value</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Streambuf></c>.</remark>
           <note>This constructor can cause a so-called slicing.</note>
         </code-item>
       </section>
@@ -1069,7 +1069,7 @@ namespace commata {
 explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes <c>in</c> with <c>std::move(s)</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;IStream>::value</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;IStream></c>.</remark>
           <note>This constructor can cause a so-called slicing.</note>
         </code-item>
       </section>
@@ -1277,7 +1277,7 @@ namespace commata {
 owned_string_input() noexcept(<nc>see below</nc>);
           </code>
           <effects>Value-initializes <c>s</c> and initializes <c>head</c> with <c>0</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>>::value</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible_v&lt;std::basic_string&lt;Ch, Tr, Allocator>></c>.</remark>
         </code-item>
 
         <code-item>
@@ -1315,7 +1315,7 @@ owned_string_input&amp; operator=(const owned_string_input&amp; other);
 owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) : noexcept(<nc>see below</nc>);
           </code>
           <effects>Assigns <c>std::move(other.s)</c> to <c>s</c> and <c>other.head</c> to <c>head</c>, and then assigns <c>other.size()</c> to <c>other.head</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable&lt;std::basic_string&lt;Ch, Tr, Allocator>>::value</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable_v&lt;std::basic_string&lt;Ch, Tr, Allocator>></c>.</remark>
         </code-item>
       </section>
 
@@ -1380,7 +1380,7 @@ template &lt;class Streambuf>
         </code>
         <returns><c>owned_streambuf_input&lt;Streambuf>(std::move(in))</c>.</returns>
         <remark>This overload shall not participate in overload resolution unless the template parameter <c>Streambuf</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.
-                The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;owned_streambuf_input&lt;Streambuf>, Streambuf&amp;&amp;>::value</c>.</remark>
+                The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;owned_streambuf_input&lt;Streambuf>, Streambuf&amp;&amp;></c>.</remark>
       </code-item>
 
       <code-item>
@@ -1390,7 +1390,7 @@ template &lt;class IStream>
         </code>
         <returns><c>owned_istream_input&lt;IStream>(std::move(in))</c>.</returns>
         <remark>This overload shall not participate in overload resolution unless the template parameter <c>IStream</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.
-                The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;owned_istream_input&lt;IStream>, IStream&amp;&amp;>::value</c>.</remark>
+                The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;owned_istream_input&lt;IStream>, IStream&amp;&amp;></c>.</remark>
       </code-item>
 
       <code-item>
@@ -1525,7 +1525,7 @@ template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept
           <effects>Initializes <c>in</c> with <c>std::forward&lt;Args>(args)...</c>.</effects>
           <remark>This constructor shall not participate in overload resolution if <c>sizeof...(Args)</c> is equal to <c>1</c> and
                   <c>csv_source&lt;CharInput></c> is not a base class of or the same type as the reference-removed and cv-unqualified type of the first type of <c>args</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;CharInput, Args&amp;&amp;...>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CharInput, Args&amp;&amp;...></c>.</remark>
         </code-item>
       </section>
 
@@ -1544,12 +1544,12 @@ template &lt;class HandlerR>
           <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type (hereinafter called <c>P</c>) meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.
                    <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (<c>&amp;</c> ref-qualifier version) or <c>std::move(in)</c> (<c>&amp;&amp;</c> ref-qualifier version) as its tied character input
                    and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler.
-                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
+                   <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;Handler></c> is <c>true</c>.
                    Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied table handler object.
                    <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
           <remark>These member function templates shall not participate in overload resolution unless the reference-removed and cv-unqualified type of <c>HandlerR</c> is not an instance of <c>std::reference_wrapper</c> and has both of <c>get_buffer</c> and <c>release_buffer</c> member functions
                   that have signatures and return types compatible with <c>TableHandler</c> requirements.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value &amp;&amp; std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible_v&lt;Handler></c>.</remark>
         </code-item>
 
         <code-item>
@@ -1571,12 +1571,12 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;Ch>>
                    and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler,
                    and allocates and deallocates character buffers with a copy of <c>alloc</c>.
                    The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
-                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
+                   <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;Handler></c> is <c>true</c>.
                    Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied table handler object and the copy of <c>alloc</c>.
                    <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
           <remark>These member function templates shall not participate in overload resolution unless the reference-removed and cv-unqualified type of <c>HandlerR</c> is not an instance of <c>std::reference_wrapper</c> and does not have both of <c>get_buffer</c> and <c>release_buffer</c> member function
                   that has a signature and a return type compatible with <c>TableHandler</c> requirements.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value &amp;&amp; std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible_v&lt;Handler></c>.</remark>
         </code-item>
 
         <code-item>
@@ -1592,7 +1592,7 @@ template &lt;class Handler, class... Args>
                     except that it need not meet either the <c>MoveConstructible</c> requirement or the <c>Destructible</c> requirements.</requires>
           <effects>Creates an object <c>h</c> whose type <c>H</c> is equal to <c>reference_handler_type&lt;Handler></c> and meets the <c>TableHandler</c> requirements.
                    <c>h</c> wraps <c>handler.get()</c> and forwards calls to <c>handler.get()</c>.
-                   <c>std::is_nothrow_move_constructible&lt;H>::value</c> is <c>true</c>.
+                   <c>std::is_nothrow_move_constructible_v&lt;H></c> is <c>true</c>.
                    Then forwards the call with the arguments being <c>std::move(h), args...</c> to the other <c>operator()</c> member function templates that have the same ref-qualifier.</effects>
           <returns>The return value of the forwarded call above.</returns>
         </code-item>
@@ -1633,7 +1633,7 @@ template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcep
         </code>
         <preface>Let <c>CI</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
         <returns><c>csv_source&lt;CI>(make_char_input(std::forward&lt;Args>(args)...))</c>.</returns>
-        <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(make_char_input(std::forward&lt;Args>(args)...)) &amp;&amp; std::is_nothrow_move_constructible&lt;CI>::value</c>.</remark>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(make_char_input(std::forward&lt;Args>(args)...)) &amp;&amp; std::is_nothrow_move_constructible_v&lt;CI></c>.</remark>
       </code-item>
     </section>
 
@@ -1741,7 +1741,7 @@ template &lt;class T>
         </code>
         <effects>Constructs an object of <c>record_extraction_error</c>.</effects>
         <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-        <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+        <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible_v&lt;std::string, T&amp;&amp;></c> is not <c>false</c>.</remark>
       </code-item>
     </section>
 
@@ -1860,7 +1860,7 @@ template &lt;class FieldNamePredR, class FieldValuePredR>
 record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Move constructs from an rvalue <c>other</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;FieldNamePred>::value &amp;&amp; std::is_nothrow_move_constructible&lt;FieldValuePred>::value</c>.
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;FieldNamePred> &amp;&amp; std::is_nothrow_move_constructible_v&lt;FieldValuePred></c>.
                   When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
         </code-item>
       </section>
@@ -2009,7 +2009,7 @@ record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; ot
                                   noexcept(<nc>see below</nc>);
           </code>
           <effects>Move constructs from an rvalue <c>other</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;FieldValuePred>::value</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;FieldValuePred></c>.</remark>
         </code-item>
       </section>
 
@@ -2047,15 +2047,15 @@ bool is_in_header() const noexcept;
         <li>if <c>P</c> is non-reference and cv-unqualified <c>std::basic_string&lt;Ch, Tr, A></c> for a certain <c>A</c>,
             a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, A></c> object initialized with <c>std::move(p)</c>,
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>
-            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
-        <li>otherwise, if <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, P&amp;&amp;, const Allocator&amp;>>::value</c> is <c>true</c>,
+            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible_v&lt;T> == true</c>,</li>
+        <li>otherwise, if <c>std::is_constructible_v&lt;std::basic_string&lt;Ch, Tr, Allocator>, P&amp;&amp;, const Allocator&amp;>></c> is <c>true</c>,
             a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object initialized with <c>std::forward&lt;P>(p)</c> and <c>alloc</c>,
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>
-            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
+            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible_v&lt;T> == true</c>,</li>
         <li>otherwise, if <c>std::remove_reference_t&lt;P>::const_iterator</c> is a type,
             a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object initialized with <c>std::forward&lt;P>(p).cbegin()</c>, <c>std::forward&lt;P>(p).cend()</c> and <c>alloc</c>,
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>
-            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
+            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible_v&lt;T> == true</c>,</li>
         <li>otherwise, if <c>p</c> is a binary predicate that takes two <c>const Ch*</c> paramters, <c>std::forward&lt;P>(p)</c>.</li>
         <li>otherwise, the program is ill-formed.</li>
       </ul>
@@ -4113,7 +4113,7 @@ template &lt;class HeaderFieldScanner>
                    The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
                    The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
           <postcondition><c>*this</c> has a header field scanner constructed as a copy of <c>s</c> installed and no body field scanners installed.</postcondition>
-          <remark>These constructors shall not participate in overload resolution unless <c>std::is_integral&lt;HeaderFieldScanner>::value</c> is <c>false</c>.</remark>
+          <remark>These constructors shall not participate in overload resolution unless <c>std::is_integral_v&lt;HeaderFieldScanner></c> is <c>false</c>.</remark>
         </code-item>
       </section>
 
@@ -4240,7 +4240,7 @@ template &lt;class T>
           </code>
           <effects>Constructs an object of <c>field_translation_error</c>.</effects>
           <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible_v&lt;std::string, T&amp;&amp;></c> is not <c>false</c>.</remark>
         </code-item>
       </section>
 
@@ -4266,7 +4266,7 @@ template &lt;class T>
           </code>
           <effects>Constructs an object of <c>field_not_found</c>.</effects>
           <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-            <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+            <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible_v&lt;std::string, T&amp;&amp;></c> is not <c>false</c>.</remark>
         </code-item>
       </section>
 
@@ -4292,7 +4292,7 @@ template &lt;class T>
           </code>
           <effects>Constructs an object of <c>field_invalid_format</c>.</effects>
           <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible_v&lt;std::string, T&amp;&amp;></c> is not <c>false</c>.</remark>
         </code-item>
       </section>
 
@@ -4318,7 +4318,7 @@ template &lt;class T>
           </code>
           <effects>Constructs an object of <c>field_empty</c>.</effects>
           <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible_v&lt;std::string, T&amp;&amp;></c> is not <c>false</c>.</remark>
         </code-item>
       </section>
 
@@ -4344,7 +4344,7 @@ template &lt;class T>
           </code>
           <effects>Constructs an object of <c>field_out_of_range</c>.</effects>
           <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible_v&lt;std::string, T&amp;&amp;></c> is not <c>false</c>.</remark>
         </code-item>
       </section>
     </section>
@@ -4434,10 +4434,10 @@ template &lt;class... Args> explicit replace_if_skipped(Args&amp;&amp;... args) 
           </code>
           <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Args>(args)...</c>.</effects>
           <remark>This overload shall not participate in overload resolution unless <c>sizeof...(Args)</c> is not equal to <c>1</c> or
-                  all of <c>std::is_base_of&lt;replace_if_skipped&lt;T>, DF>::value</c>,
-                  <c>std::is_base_of&lt;replacement_fail_t, DF>::value</c> and
-                  <c>std::is_base_of&lt;replacement_ignore_t, DF>::value</c> are <c>false</c> where <c>DF</c> is <c>std::decay_t&lt;F></c> and <c>F</c> is the first type of <c>Args</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value &amp;&amp; std::is_nothrow_constructible&lt;T, Args&amp;&amp;...>::value</c>.</remark>
+                  all of <c>std::is_base_of_v&lt;replace_if_skipped&lt;T>, DF></c>,
+                  <c>std::is_base_of_v&lt;replacement_fail_t, DF></c> and
+                  <c>std::is_base_of_v&lt;replacement_ignore_t, DF></c> are <c>false</c> where <c>DF</c> is <c>std::decay_t&lt;F></c> and <c>F</c> is the first type of <c>Args</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T> &amp;&amp; std::is_nothrow_constructible_v&lt;T, Args&amp;&amp;...></c>.</remark>
         </code-item>
 
         <code-item>
@@ -4459,7 +4459,7 @@ explicit replace_if_skipped(replacement_ignore_t) noexcept;
 replace_if_skipped(const replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <postcondition>Member function <c>operator()</c> behaves the same as <c>other</c>'s.</postcondition>
-          <remark>The expression inside <c>noexcept</c> shall be <c>true</c> if <c>std::is_nothrow_copy_constructible&lt;T>::value</c> is not <c>false</c>.
+          <remark>The expression inside <c>noexcept</c> shall be <c>true</c> if <c>std::is_nothrow_copy_constructible_v&lt;T></c> is not <c>false</c>.
                   Note that this is a mere sufficient condition, that is, when it is not satisfied, the expression inside <c>noexcept</c> is unspecified.</remark>
         </code-item>
 
@@ -4604,13 +4604,13 @@ template &lt;class Empty = T, class InvalidFormat = T, class AboveUpperLimit = T
                                  AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
       noexcept(<nc>see below</nc>);
           </code>
-          <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
-                   Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
+          <effects>If <c>std::is_base_of_v&lt;replace_fail_t, std::decay_t&lt;Empty>></c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
+                   Otherwise, if <c>std::is_base_of_v&lt;replace_ignore_t, std::decay_t&lt;Empty>></c> is not <c>false</c>, configures it to be <c>ignore</c>.
                    Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
                    Does the same with <c>action_on_invalid_format</c> and <c>action_on_above_upper_limit</c>.
                    Configures <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_base_of&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;Empty>>::value</c> is <c>false</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible&lt;T>::value &amp;&amp; std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_base_of_v&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;Empty>></c> is <c>false</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible_v&lt;T> &amp;&amp; std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
         </code-item>
 
         <code-item>
@@ -4621,13 +4621,13 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                                AboveUpperLimit&amp;&amp; on_above_upper_limit,
                                BelowLowerLimit&amp;&amp; on_below_lower_limit) noexcept(<nc>see below</nc>);
           </code>
-          <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
-                   Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
+          <effects>If <c>std::is_base_of_v&lt;replace_fail_t, std::decay_t&lt;Empty>></c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
+                   Otherwise, if <c>std::is_base_of_v&lt;replace_ignore_t, std::decay_t&lt;Empty>></c> is not <c>false</c>, configures it to be <c>ignore</c>.
                    Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
                    Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c>.
                    Configures <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
           <remark>If <c>T</c> is an unsigned integer type, instantiating this overload shall make the program ill-formed.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible&lt;T>::value &amp;&amp; std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible_v&lt;T> &amp;&amp; std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
         </code-item>
 
         <code-item>
@@ -4640,12 +4640,12 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                                BelowLowerLimit&amp;&amp; on_below_lower_limit,
                                Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
           </code>
-          <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
-                   Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
+          <effects>If <c>std::is_base_of_v&lt;replace_fail_t, std::decay_t&lt;Empty>></c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
+                   Otherwise, if <c>std::is_base_of_v&lt;replace_ignore_t, std::decay_t&lt;Empty>></c> is not <c>false</c>, configures it to be <c>ignore</c>.
                    Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
                    Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>.</effects>
           <remark>If <c>T</c> is an integer type, instantiating this overload shall make the program ill-formed.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
         </code-item>
 
         <code-item>
@@ -4653,7 +4653,7 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
 replace_if_conversion_failed(const replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <postcondition>Member functions <c>invalid_format</c>, <c>out_of_range</c> and <c>empty</c> behave the same as those of <c>other</c>.</postcondition>
-          <remark>The expression inside <c>noexcept</c> shall be <c>true</c> if <c>std::is_nothrow_copy_constructible&lt;T>::value</c> is not <c>false</c>.
+          <remark>The expression inside <c>noexcept</c> shall be <c>true</c> if <c>std::is_nothrow_copy_constructible_v&lt;T></c> is not <c>false</c>.
                   Note that this is a mere sufficient condition, that is, when it is not satisfied, the expression inside <c>noexcept</c> is unspecified.</remark>
         </code-item>
 
@@ -4877,7 +4877,7 @@ explicit arithmetic_field_translator(
 arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_move_constructible_v&lt;SkippingHandler> &amp;&amp; std::is_nothrow_move_constructible_v&lt;ConversionErrorHandler></c>.
                     When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
           </code-item>
         </section>
@@ -5091,7 +5091,7 @@ locale_based_arithmetic_field_translator(
   locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_move_constructible_v&lt;SkippingHandler> &amp;&amp; std::is_nothrow_move_constructible_v&lt;ConversionErrorHandler></c>.
                     When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
           </code-item>
         </section>
@@ -5203,7 +5203,7 @@ string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink s
 string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <effects>Initializes an object of <c>string_field_translator</c> that holds an allocator object, a field translator sink object, and a skipping handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value</c>.
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_move_constructible_v&lt;SkippingHandler></c>.
                     When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
           </code-item>
         </section>

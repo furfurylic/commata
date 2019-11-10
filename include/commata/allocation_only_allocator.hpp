@@ -115,8 +115,8 @@ public:
     template <class OtherAllocator>
     allocation_only_allocator& operator=(
         const allocation_only_allocator<OtherAllocator>& other)
-        noexcept(std::is_nothrow_assignable<
-            Allocator&, const OtherAllocator&>::value)
+        noexcept(std::is_nothrow_assignable_v<
+            Allocator&, const OtherAllocator&>)
     {
         base() = other.base();
         return *this;
@@ -126,8 +126,8 @@ public:
     template <class OtherAllocator>
     allocation_only_allocator& operator=(
         allocation_only_allocator<OtherAllocator>&& other)
-        noexcept(std::is_nothrow_assignable<
-            Allocator&, OtherAllocator>::value)
+        noexcept(std::is_nothrow_assignable_v<
+            Allocator&, OtherAllocator>)
     {
         base() = std::move(other.base());
         return *this;

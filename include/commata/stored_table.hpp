@@ -44,9 +44,9 @@ class basic_stored_value
 
 public:
     static_assert(
-        std::is_same<
+        std::is_same_v<
             std::remove_const_t<Ch>,
-            typename Tr::char_type>::value,
+            typename Tr::char_type>,
         "Inconsistent char type and traits type specified "
         "for commata::basic_stored_value");
 
@@ -81,17 +81,20 @@ public:
 
     template <
         class OtherCh,
-        std::enable_if_t<std::is_const<Ch>::value
-                      && std::is_same<Ch, const OtherCh>::value>* = nullptr>
+        // Visual Studio 2019 dislikes "is_const_v && is_same_v" order.
+        // I don't know why.
+        std::enable_if_t<std::is_same_v<Ch, const OtherCh>
+                      && std::is_const_v<Ch>>* = nullptr>
     basic_stored_value(const basic_stored_value<OtherCh, Tr>& other)
         noexcept : basic_stored_value(other.begin(), other.end())
     {}
 
-    template <class OtherCh>
-    auto operator=(const basic_stored_value<OtherCh, Tr>& other) noexcept
-     -> std::enable_if_t<std::is_const<Ch>::value
-                      && std::is_same<Ch, const OtherCh>::value,
-                            basic_stored_value&>
+    template <
+        class OtherCh,
+        std::enable_if_t<std::is_same_v<Ch, const OtherCh>
+                      && std::is_const_v<Ch>>* = nullptr>
+    basic_stored_value& operator=(
+        const basic_stored_value<OtherCh, Tr>& other) noexcept
     {
         return *this = basic_stored_value(other);
     }
@@ -381,9 +384,9 @@ auto operator==(
     const basic_stored_value<ChL, Tr>& left,
     const basic_stored_value<ChR, Tr>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             std::remove_const_t<ChL>,
-            std::remove_const_t<ChR>>::value, bool>
+            std::remove_const_t<ChR>>, bool>
 {
     return detail::string_value_eq(left, right);
 }
@@ -415,9 +418,9 @@ auto operator!=(
     const basic_stored_value<ChL, Tr>& left,
     const basic_stored_value<ChR, Tr>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             std::remove_const_t<ChL>,
-            std::remove_const_t<ChR>>::value, bool>
+            std::remove_const_t<ChR>>, bool>
 {
     return !(left == right);
 }
@@ -450,9 +453,9 @@ auto operator<(
     const basic_stored_value<ChR, Tr>& right)
     noexcept(noexcept(detail::string_value_lt(left, right)))
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             std::remove_const_t<ChL>,
-            std::remove_const_t<ChR>>::value, bool>
+            std::remove_const_t<ChR>>, bool>
 {
     return detail::string_value_lt(left, right);
 }
@@ -484,9 +487,9 @@ auto operator>(
     const basic_stored_value<ChL, Tr>& left,
     const basic_stored_value<ChR, Tr>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             std::remove_const_t<ChL>,
-            std::remove_const_t<ChR>>::value, bool>
+            std::remove_const_t<ChR>>, bool>
 {
     return right < left;
 }
@@ -519,9 +522,9 @@ auto operator<=(
     const basic_stored_value<ChR, Tr>& right)
     noexcept(noexcept(!(right < left)))
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             std::remove_const_t<ChL>,
-            std::remove_const_t<ChR>>::value, bool>
+            std::remove_const_t<ChR>>, bool>
 {
     return !(right < left);
 }
@@ -554,9 +557,9 @@ auto operator>=(
     const basic_stored_value<ChR, Tr>& right)
     noexcept(noexcept(!(left < right)))
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             std::remove_const_t<ChL>,
-            std::remove_const_t<ChR>>::value, bool>
+            std::remove_const_t<ChR>>, bool>
 {
     return !(left < right);
 }
@@ -945,7 +948,7 @@ private:
         const auto r = p->detach();
         typename nat_t::allocator_type na(this->get());
         nat_t::deallocate(na, npt_t::pointer_to(*p), 1U);
-        static_assert(std::is_trivially_destructible<node_type>::value, "");
+        static_assert(std::is_trivially_destructible_v<node_type>, "");
         return std::make_pair(r, next);
     }
 
@@ -1130,7 +1133,7 @@ public:
         "Content shall be a sequence-container-of-sequence-container "
         "type of basic_stored_value");
     static_assert(
-        std::is_same<content_type, typename Allocator::value_type>::value,
+        std::is_same_v<content_type, typename Allocator::value_type>,
         "Allocator shall have value_type which is the same as content_type");
 
 private:
@@ -1330,10 +1333,10 @@ public:
     template <class ForwardIterator>
     auto rewrite_value(value_type& value, ForwardIterator new_value)
      -> std::enable_if_t<
-            std::is_base_of<
+            std::is_base_of_v<
                 std::forward_iterator_tag,
                 typename std::iterator_traits<ForwardIterator>::
-                    iterator_category>::value,
+                    iterator_category>,
             value_type&>
     {
         if constexpr (std::is_same_v<
@@ -1624,7 +1627,7 @@ struct adaptive_manoeuvre;
 
 template <class T>
 struct adaptive_manoeuvre<T,
-    std::enable_if_t<std::is_nothrow_move_assignable<T>::value>>
+    std::enable_if_t<std::is_nothrow_move_assignable_v<T>>>
 {
     template <class Container>
     static void emplace_back(Container& c, T&& t)
@@ -1641,7 +1644,7 @@ struct adaptive_manoeuvre<T,
 template <class T>
 struct adaptive_manoeuvre<T,
     std::enable_if_t<
-        !std::is_nothrow_move_assignable<T>::value
+        !std::is_nothrow_move_assignable_v<T>
      && has_allocator_type<T>::value>>
 {
     template <class Container>
@@ -1664,9 +1667,9 @@ struct adaptive_manoeuvre<T,
 template <class T>
 struct adaptive_manoeuvre<T,
     std::enable_if_t<
-        !std::is_nothrow_move_assignable<T>::value
+        !std::is_nothrow_move_assignable_v<T>
      && !has_allocator_type<T>::value
-     && std::is_nothrow_swappable<T>::value>>
+     && std::is_nothrow_swappable_v<T>>>
 {
     template <class Container>
     static void emplace_back(Container& c, T&& t)
@@ -1684,9 +1687,9 @@ struct adaptive_manoeuvre<T,
 template <class T>
 struct has_adaptive_manoeuvre :
     std::integral_constant<bool,
-        std::is_nothrow_move_assignable<T>::value
+        std::is_nothrow_move_assignable_v<T>
      || has_allocator_type<T>::value
-     || std::is_nothrow_swappable<T>::value>
+     || std::is_nothrow_swappable_v<T>>
 {};
 
 template <class ContentL, class ContentR>
@@ -1727,10 +1730,10 @@ void append_stored_table_content_primitive(
 template <class ContentL, class ContentR>
 void append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
 {
-    static_assert(!std::is_reference<ContentR>::value, "");
+    static_assert(!std::is_reference_v<ContentR>, "");
         // so we'll use move instead of forward
-    static_assert(std::is_same<typename ContentL::value_type,
-        typename ContentR::value_type>::value, "");
+    static_assert(std::is_same_v<typename ContentL::value_type,
+        typename ContentR::value_type>, "");
     static_assert(
         has_adaptive_manoeuvre<typename ContentL::value_type>::value, "");
 
@@ -1768,8 +1771,7 @@ template <class Record, class AllocatorL, class ContentR>
 void append_stored_table_content_adaptive(
     std::list<Record, AllocatorL>& l, ContentR&& r)
 {
-    static_assert(
-        std::is_same<Record, typename ContentR::value_type>::value, "");
+    static_assert(std::is_same_v<Record, typename ContentR::value_type>, "");
     static_assert(has_adaptive_manoeuvre<Record>::value, "");
 
     using manoeuvre = adaptive_manoeuvre<Record>;
@@ -1792,7 +1794,7 @@ void append_stored_table_content_adaptive(
 template <class ContentL, class ContentR>
 void append_stored_table_content(ContentL& l, ContentR&& r)
 {
-    static_assert(!std::is_reference<ContentR>::value, "");
+    static_assert(!std::is_reference_v<ContentR>, "");
         // so we'll use move instead of forward
     if constexpr (std::is_same_v<
                     typename ContentL::value_type,

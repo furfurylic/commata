@@ -63,10 +63,9 @@ class empty_physical_line_aware_handler :
 
 public:
     template <class A,
-        class = std::enable_if_t<
-            std::is_constructible<Handler, A&&>::value>>
+        class = std::enable_if_t<std::is_constructible_v<Handler, A&&>>>
     explicit empty_physical_line_aware_handler(A&& handler)
-        noexcept(std::is_nothrow_constructible<Handler, A&&>::value) :
+        noexcept(std::is_nothrow_constructible_v<Handler, A&&>) :
         handler_(std::forward<A>(handler))
     {}
 
@@ -115,7 +114,7 @@ public:
 
 template <class Handler>
 auto make_empty_physical_line_aware(Handler&& handler)
-    noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
+    noexcept(std::is_nothrow_move_constructible_v<std::decay_t<Handler>>)
  -> std::enable_if_t<
         !detail::is_std_reference_wrapper<Handler>::value,
         detail::empty_physical_line_aware_handler<std::decay_t<Handler>>>

@@ -198,7 +198,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
 
     string_t minn;
     string_t minnMinus1;
-    if constexpr (std::is_signed<value_t>::value) {
+    if constexpr (std::is_signed_v<value_t>) {
         minn = to_string(std::numeric_limits<value_t>::min() + 0);
         minnMinus1 = ch('-') + plus1(minn.substr(1));
     } else {
@@ -242,7 +242,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
 
     string_t minn;
     string_t minnMinus1;
-    if constexpr (std::is_signed<value_t>::value) {
+    if constexpr (std::is_signed_v<value_t>) {
         minn = to_string(std::numeric_limits<value_t>::min() + 0);
         minnMinus1 = ch('-') + plus1(minn.substr(1));
     } else {
@@ -296,7 +296,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     ASSERT_EQ(static_cast<value_t>(42), values1[0]);
     ASSERT_EQ(static_cast<value_t>(3), values1[1]);
     ASSERT_EQ(static_cast<value_t>(1), values2[0]);
-    if constexpr (std::is_signed<value_t>::value) {
+    if constexpr (std::is_signed_v<value_t>) {
         ASSERT_EQ(static_cast<value_t>(0), values2[1]);
     } else {
         ASSERT_EQ(static_cast<value_t>(1), values2[1]);
@@ -486,7 +486,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
 }
 
 static_assert(
-    std::uses_allocator<table_scanner, std::allocator<char>>::value, "");
+    std::uses_allocator_v<table_scanner, std::allocator<char>>, "");
 
 template <class Ch>
 struct TestTableScanner : BaseTest
@@ -1250,7 +1250,7 @@ struct TestReplaceIfConversionFailed : BaseTest
 TEST_F(TestReplaceIfConversionFailed, NonArithmeticNoThrowMoveConstructible)
 {
     using r_t = replace_if_conversion_failed<std::string>;
-    static_assert(std::is_nothrow_move_constructible<r_t>::value, "");
+    static_assert(std::is_nothrow_move_constructible_v<r_t>, "");
 
     r_t r("E", replacement_fail, "U", replacement_ignore);
     std::vector<r_t> rs;
@@ -1296,7 +1296,7 @@ public:
 TEST_F(TestReplaceIfConversionFailed, NonArithmeticNonNoThrowMoveConstructible)
 {
     using r_t = replace_if_conversion_failed<char_holder>;
-    static_assert(std::is_nothrow_move_constructible<r_t>::value, "");
+    static_assert(std::is_nothrow_move_constructible_v<r_t>, "");
 
     r_t r(replacement_fail, char_holder('I'), replacement_fail,
         char_holder('B'), replacement_ignore);

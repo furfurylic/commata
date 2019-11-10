@@ -135,8 +135,7 @@ public:
 
     template <class FieldNamePredR, class FieldValuePredR,
         std::enable_if_t<
-            !std::is_integral<FieldNamePredR>::value,
-            std::nullptr_t> = nullptr>
+            !std::is_integral_v<FieldNamePredR>, std::nullptr_t> = nullptr>
     record_extractor_impl(
             std::allocator_arg_t, const Allocator& alloc,
             std::basic_streambuf<Ch, Tr>* out,
@@ -528,7 +527,7 @@ template <class Ch, class Tr, class Allocator, class T>
 decltype(auto) make_string_pred(T&& s, [[maybe_unused]] const Allocator& a)
 {
     using str_t = std::basic_string<Ch, Tr, Allocator>;
-    if constexpr (std::is_constructible<str_t, T&&, const Allocator&>::value) {
+    if constexpr (std::is_constructible_v<str_t, T&&, const Allocator&>) {
         return string_eq<Ch, Tr, Allocator>(str_t(std::forward<T>(s), a));
     } else if constexpr (
             has_const_iterator<std::remove_reference_t<T>>::value) {

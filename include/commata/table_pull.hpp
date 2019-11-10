@@ -330,12 +330,11 @@ private:
     using handler_at_t = std::allocator_traits<handler_a_t>;
     using handler_p_t = typename handler_at_t::pointer;
 
-    static_assert(std::is_same<
+    static_assert(std::is_same_v<
         decltype(std::declval<const TableSource&>()(
             std::declval<detail::wrapper_handler<handler_t>>())),
         decltype(std::declval<TableSource>()(
-            std::declval<detail::wrapper_handler<handler_t>>()))>::value,
-        "");
+            std::declval<detail::wrapper_handler<handler_t>>()))>, "");
 
     using parser_t = typename TableSource::template parser_type<
         detail::wrapper_handler<handler_t>>;
@@ -358,10 +357,10 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_same<
+            std::is_same_v<
                 TableSource,
                 std::remove_const_t<
-                    std::remove_reference_t<TableSourceR>>>::value,
+                    std::remove_reference_t<TableSourceR>>>,
             std::nullptr_t> = nullptr>
     explicit primitive_table_pull(
         TableSourceR&& in, std::size_t buffer_size = 0) :
@@ -627,10 +626,10 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_same<
+            std::is_same_v<
                 TableSource,
                 std::remove_const_t<
-                    std::remove_reference_t<TableSourceR>>>::value,
+                    std::remove_reference_t<TableSourceR>>>,
             std::nullptr_t> = nullptr>
     explicit table_pull(TableSourceR&& in, std::size_t buffer_size = 0) :
         table_pull(std::allocator_arg, Allocator(),
@@ -1027,12 +1026,12 @@ auto operator==(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return detail::string_value_eq(left, right);
 }
@@ -1067,12 +1066,12 @@ auto operator!=(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return !(left == right);
 }
@@ -1107,12 +1106,12 @@ auto operator<(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return detail::string_value_lt(left, right);
 }
@@ -1147,12 +1146,12 @@ auto operator>(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return right < left;
 }
@@ -1187,12 +1186,12 @@ auto operator<=(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return !(right < left);
 }
@@ -1227,12 +1226,12 @@ auto operator>=(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return !(left < right);
 }

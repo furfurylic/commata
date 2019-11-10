@@ -81,7 +81,7 @@ class text_error :
 
     public:
         template <class T,
-            class = std::enable_if_t<std::is_constructible<S, T>::value>>
+            class = std::enable_if_t<std::is_constructible_v<S, T>>>
         string_holder(T&& s) : s_(std::forward<T>(s))
         {}
 

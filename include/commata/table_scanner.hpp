@@ -309,7 +309,7 @@ public:
 
     template <
         class HeaderFieldScanner,
-        class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
+        class = std::enable_if_t<!std::is_integral_v<HeaderFieldScanner>>>
     explicit basic_table_scanner(
         HeaderFieldScanner s,
         size_type buffer_size = 0U) :
@@ -330,7 +330,7 @@ public:
 
     template <
         class HeaderFieldScanner,
-        class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
+        class = std::enable_if_t<!std::is_integral_v<HeaderFieldScanner>>>
     basic_table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
         HeaderFieldScanner s,
@@ -463,7 +463,7 @@ public:
 private:
     template <class FieldScanner, class ThisType>
     static std::conditional_t<
-        std::is_const<std::remove_reference_t<ThisType>>::value,
+        std::is_const_v<std::remove_reference_t<ThisType>>,
         const FieldScanner, FieldScanner>*
     get_field_scanner_g(ThisType& me, std::size_t j) noexcept
     {
@@ -739,7 +739,7 @@ struct numeric_type_traits<char>
 {
     static constexpr const char* name = "char";
     using raw_type =
-        std::conditional_t<std::is_signed<char>::value, long, unsigned long>;
+        std::conditional_t<std::is_signed_v<char>, long, unsigned long>;
 };
 
 template <>
@@ -908,7 +908,7 @@ struct raw_converter;
 
 // For integral types
 template <class T, class H>
-struct raw_converter<T, H, std::enable_if_t<std::is_integral<T>::value,
+struct raw_converter<T, H, std::enable_if_t<std::is_integral_v<T>,
         std::void_t<decltype(numeric_type_traits<T>::strto)>>> :
     raw_converter_base<raw_converter<T, H>, H>
 {
@@ -949,7 +949,7 @@ struct raw_converter<T, H, std::enable_if_t<std::is_integral<T>::value,
 
 // For floating-point types
 template <class T, class H>
-struct raw_converter<T, H, std::enable_if_t<std::is_floating_point<T>::value,
+struct raw_converter<T, H, std::enable_if_t<std::is_floating_point_v<T>,
         std::void_t<decltype(numeric_type_traits<T>::strto)>>> :
     raw_converter_base<raw_converter<T, H>, H>
 {
@@ -1164,7 +1164,7 @@ struct restrained_converter :
 
 template <class T, class H, class U>
 struct restrained_converter<T, H, U,
-        std::enable_if_t<std::is_unsigned<T>::value>> :
+        std::enable_if_t<std::is_unsigned_v<T>>> :
     private raw_converter<U, H>
 {
     using raw_converter<U, H>::raw_converter;
@@ -1257,7 +1257,7 @@ public:
 
 template <class T>
 class movable_store<T,
-    std::enable_if_t<std::is_nothrow_move_constructible<T>::value>>
+    std::enable_if_t<std::is_nothrow_move_constructible_v<T>>>
 {
     T t_;
 
@@ -1265,17 +1265,17 @@ public:
     template <class... Args,
         std::enable_if_t<
             (sizeof...(Args) != 1)
-         || !std::is_base_of<
+         || !std::is_base_of_v<
                 movable_store,
-                detail::first_t<std::decay_t<Args>...>>::value,
+                detail::first_t<std::decay_t<Args>...>>,
             std::nullptr_t> = nullptr>
     explicit movable_store(Args&&... args)
-        noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
+        noexcept(std::is_nothrow_constructible_v<T, Args&&...>) :
         t_(std::forward<Args>(args)...)
     {}
 
     movable_store(const movable_store&)
-        noexcept(std::is_nothrow_copy_constructible<T>::value) = default;
+        noexcept(std::is_nothrow_copy_constructible_v<T>) = default;
     movable_store(movable_store&&) noexcept = default;
 
     const T& operator*() const noexcept
@@ -1321,19 +1321,16 @@ public:
     template <class... Args,
         std::enable_if_t<
             (sizeof...(Args) != 1)
-         || !(std::is_base_of<
-                replace_if_skipped,
-                detail::first_t<std::decay_t<Args>...>>::value
-           || std::is_base_of<
-                replacement_ignore_t,
-                detail::first_t<std::decay_t<Args>...>>::value
-           || std::is_base_of<
-                replacement_fail_t,
-                detail::first_t<std::decay_t<Args>...>>::value),
+         || !(std::is_base_of_v<
+                replace_if_skipped, detail::first_t<std::decay_t<Args>...>>
+           || std::is_base_of_v<
+                replacement_ignore_t, detail::first_t<std::decay_t<Args>...>>
+           || std::is_base_of_v<
+                replacement_fail_t, detail::first_t<std::decay_t<Args>...>>),
             std::nullptr_t> = nullptr>
     replace_if_skipped(Args&&... args)
-        noexcept(std::is_nothrow_move_constructible<T>::value
-              && std::is_nothrow_constructible<T, Args&&...>::value) :
+        noexcept(std::is_nothrow_move_constructible_v<T>
+              && std::is_nothrow_constructible_v<T, Args&&...>) :
         mode_(mode::replace),
         default_value_(std::forward<Args>(args)...)
     {}
@@ -1347,8 +1344,8 @@ public:
     {}
 
     replace_if_skipped(const replace_if_skipped&)
-        noexcept(std::is_nothrow_copy_constructible<T>::value
-              || !std::is_nothrow_move_constructible<T>::value) = default;
+        noexcept(std::is_nothrow_copy_constructible_v<T>
+              || !std::is_nothrow_move_constructible_v<T>) = default;
     replace_if_skipped(replace_if_skipped&&) noexcept = default;
 
     std::optional<T> operator()() const
@@ -1533,8 +1530,8 @@ class replace_if_conversion_failed
         std::uint_fast8_t skips_;
 
         template <class Head, class... Tails,
-            std::enable_if_t<!std::is_base_of<store,
-                std::decay_t<Head>>::value, std::nullptr_t> = nullptr>
+            std::enable_if_t<!std::is_base_of_v<store,
+                std::decay_t<Head>>, std::nullptr_t> = nullptr>
         store(Head&& head, Tails&&... tails) :
             store(std::integral_constant<std::size_t, 0>(),
                 std::forward<Head>(head), std::forward<Tails>(tails)...)
@@ -1551,8 +1548,8 @@ class replace_if_conversion_failed
         }
 
         template <class Head, class... Tails,
-            std::enable_if_t<!std::is_base_of<store,
-                std::decay_t<Head>>::value, std::nullptr_t> = nullptr>
+            std::enable_if_t<!std::is_base_of_v<store,
+                std::decay_t<Head>>, std::nullptr_t> = nullptr>
         store(std::integral_constant<std::size_t, n>,
                 Head&&, Tails&&...) noexcept :
             store(std::integral_constant<std::size_t, n>())
@@ -1571,12 +1568,12 @@ class replace_if_conversion_failed
 
     public:
         store(const store& other)
-            noexcept(std::is_nothrow_copy_constructible<T>::value) :
+            noexcept(std::is_nothrow_copy_constructible_v<T>) :
             store(other, std::is_trivially_copyable<T>())
         {}
 
         store(store&& other)
-            noexcept(std::is_nothrow_move_constructible<T>::value) :
+            noexcept(std::is_nothrow_move_constructible_v<T>) :
             store(std::move(other), std::is_trivially_copyable<T>())
         {}
 
@@ -1591,13 +1588,13 @@ class replace_if_conversion_failed
         template <class Other>
         store(Other&& other, std::false_type)
             noexcept(std::conditional_t<
-                std::is_lvalue_reference<Other>::value,
+                std::is_lvalue_reference_v<Other>,
                 std::is_nothrow_copy_constructible<T>,
                 std::is_nothrow_move_constructible<T>>::value) :
             has_(other.has_), skips_(other.skips_)
         {
             using f_t = std::conditional_t<
-                std::is_lvalue_reference<Other>::value, const T&, T>;
+                std::is_lvalue_reference_v<Other>, const T&, T>;
             for (unsigned r = 0; r < n; ++r) {
                 auto p = get_g(std::addressof(other), r);
                 if (p.first == mode::replace) {
@@ -1607,10 +1604,8 @@ class replace_if_conversion_failed
         }
 
         template <class U = T, std::enable_if_t<
-            (!std::is_base_of<
-                replacement_fail_t, std::decay_t<U>>::value)
-         && (!std::is_base_of<
-                replacement_ignore_t, std::decay_t<U>>::value),
+            (!std::is_base_of_v<replacement_fail_t, std::decay_t<U>>)
+         && (!std::is_base_of_v<replacement_ignore_t, std::decay_t<U>>),
             std::nullptr_t> = nullptr>
         void init(unsigned r, U&& value = U())
         {
@@ -1667,9 +1662,9 @@ class replace_if_conversion_failed
         static auto get_g(ThisType* me, unsigned r) noexcept
         {
             using t_t = std::conditional_t<
-                std::is_const<ThisType>::value, const T, T>;
+                std::is_const_v<ThisType>, const T, T>;
             using v_t = std::conditional_t<
-                std::is_const<ThisType>::value, const void, void>;
+                std::is_const_v<ThisType>, const void, void>;
             using pair_t = std::pair<mode, t_t*>;
             if (me->has(r)) {
                 return pair_t(mode::replace,
@@ -1699,15 +1694,15 @@ public:
     template <class Empty = T, class InvalidFormat = T,
         class AboveUpperLimit = T,
         std::enable_if_t<
-            !std::is_base_of<
-                replace_if_conversion_failed<T>, std::decay_t<Empty>>::value,
+            !std::is_base_of_v<
+                replace_if_conversion_failed<T>, std::decay_t<Empty>>,
             std::nullptr_t> = nullptr>
     explicit replace_if_conversion_failed(
         Empty&& on_empty = Empty(),
         InvalidFormat&& on_invalid_format = InvalidFormat(),
         AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit())
-            noexcept(std::is_nothrow_default_constructible<T>::value
-                  && std::is_nothrow_move_constructible<T>::value) :
+            noexcept(std::is_nothrow_default_constructible_v<T>
+                  && std::is_nothrow_move_constructible_v<T>) :
         store_(
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
@@ -1721,8 +1716,8 @@ public:
         InvalidFormat&& on_invalid_format,
         AboveUpperLimit&& on_above_upper_limit,
         BelowLowerLimit&& on_below_lower_limit)
-            noexcept(std::is_nothrow_default_constructible<T>::value
-                  && std::is_nothrow_move_constructible<T>::value) :
+            noexcept(std::is_nothrow_default_constructible_v<T>
+                  && std::is_nothrow_move_constructible_v<T>) :
         store_(
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
@@ -1730,7 +1725,7 @@ public:
             std::forward<BelowLowerLimit>(on_below_lower_limit))
     {
         static_assert(
-            !(std::is_integral<T>::value && !std::is_signed<T>::value), "");
+            !(std::is_integral_v<T> && !std::is_signed_v<T>), "");
     }
 
     template <class Empty, class InvalidFormat,
@@ -1742,7 +1737,7 @@ public:
         AboveUpperLimit&& on_above_upper_limit,
         BelowLowerLimit&& on_below_lower_limit,
         Underflow&& on_underflow)
-            noexcept(std::is_nothrow_move_constructible<T>::value) :
+            noexcept(std::is_nothrow_move_constructible_v<T>) :
         store_(
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
@@ -1750,12 +1745,12 @@ public:
             std::forward<BelowLowerLimit>(on_below_lower_limit),
             std::forward<Underflow>(on_underflow))
     {
-        static_assert(!std::is_integral<T>::value, "");
+        static_assert(!std::is_integral_v<T>, "");
     }
 
     replace_if_conversion_failed(const replace_if_conversion_failed&)
-        noexcept(std::is_nothrow_copy_constructible<T>::value
-             || !std::is_nothrow_move_constructible<T>::value) = default;
+        noexcept(std::is_nothrow_copy_constructible_v<T>
+             || !std::is_nothrow_move_constructible_v<T>) = default;
     replace_if_conversion_failed(replace_if_conversion_failed&&) noexcept
         = default;
     ~replace_if_conversion_failed() = default;
@@ -1821,12 +1816,12 @@ struct is_output_iterator : std::false_type
 template <class T>
 struct is_output_iterator<T,
     std::enable_if_t<
-        std::is_base_of<
+        std::is_base_of_v<
             std::output_iterator_tag,
-            typename std::iterator_traits<T>::iterator_category>::value
-     || std::is_base_of<
+            typename std::iterator_traits<T>::iterator_category>
+     || std::is_base_of_v<
             std::forward_iterator_tag,
-            typename std::iterator_traits<T>::iterator_category>::value>> :
+            typename std::iterator_traits<T>::iterator_category>>> :
     std::true_type
 {};
 
@@ -2144,8 +2139,8 @@ namespace detail {
 template <class T, class Sink, class... Appendices,
     std::enable_if_t<
         !detail::is_std_string<T>::value
-     && !std::is_base_of<
-            std::locale, std::decay_t<detail::first_t<Appendices...>>>::value,
+     && !std::is_base_of_v<
+            std::locale, std::decay_t<detail::first_t<Appendices...>>>,
         std::nullptr_t> = nullptr>
 arithmetic_field_translator<T, Sink, Appendices...>
     make_field_translator_na(Sink sink, Appendices&&... appendices);
