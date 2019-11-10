@@ -364,8 +364,8 @@ template <class Input, class Handler>
 class parser
 {
     static_assert(
-        std::is_same<
-            typename Input::char_type, typename Handler::char_type>::value,
+        std::is_same_v<
+            typename Input::char_type, typename Handler::char_type>,
             "Input::char_type and Handler::char_type are inconsistent; "
             "they shall be the same type");
 
@@ -405,11 +405,11 @@ private:
 public:
     template <class InputR, class HandlerR,
         std::enable_if_t<
-            std::is_constructible<Input, InputR&&>::value
-         && std::is_constructible<Handler, HandlerR&&>::value>* = nullptr>
+            std::is_constructible_v<Input, InputR&&>
+         && std::is_constructible_v<Handler, HandlerR&&>>* = nullptr>
     explicit parser(InputR&& in, HandlerR&& f)
-        noexcept(std::is_nothrow_constructible<Input, InputR&&>::value
-              && std::is_nothrow_constructible<Handler, HandlerR&&>::value) :
+        noexcept(std::is_nothrow_constructible_v<Input, InputR&&>
+              && std::is_nothrow_constructible_v<Handler, HandlerR&&>) :
         p_(nullptr), f_(std::forward<HandlerR>(f)),
         physical_line_index_(parse_error::npos),
         physical_line_or_buffer_begin_(nullptr),
@@ -633,14 +633,14 @@ private:
 private:
     template <class F>
     static auto do_or_abort(F f)
-     -> std::enable_if_t<std::is_void<decltype(f())>::value>
+     -> std::enable_if_t<std::is_void_v<decltype(f())>>
     {
         f();
     }
 
     template <class F>
     static auto do_or_abort(F f)
-     -> std::enable_if_t<!std::is_void<decltype(f())>::value>
+     -> std::enable_if_t<!std::is_void_v<decltype(f())>>
     {
         if (!f()) {
             throw parse_aborted();
@@ -692,13 +692,13 @@ public:
 
     template <class... Args,
         std::enable_if_t<
-            std::is_constructible<CharInput, Args&&...>::value
+            std::is_constructible_v<CharInput, Args&&...>
          && ((sizeof...(Args) != 1)
-          || !std::is_base_of<
+          || !std::is_base_of_v<
                 csv_source,
-                std::decay_t<detail::first_t<Args...>>>::value)>* = nullptr>
+                std::decay_t<detail::first_t<Args...>>>)>* = nullptr>
     explicit csv_source(Args&&... args) noexcept(
-            std::is_nothrow_constructible<CharInput, Args&&...>::value) :
+            std::is_nothrow_constructible_v<CharInput, Args&&...>) :
         in_(std::forward<Args>(args)...)
     {}
 
@@ -733,11 +733,11 @@ private:
         static auto invoke(HandlerR&& handler, CharInputR&& in)
         {
             static_assert(
-                std::is_same<handler_t, std::decay_t<HandlerR>>::value, "");
+                std::is_same_v<handler_t, std::decay_t<HandlerR>>, "");
             static_assert(
-                std::is_same<
+                std::is_same_v<
                     typename std::decay_t<Handler>::char_type,
-                    typename traits_type::char_type>::value,
+                    typename traits_type::char_type>,
                 "std::decay_t<Handler>::char_type and traits_type::char_type "
                 "are inconsistent; they shall be the same type");
             using specs_t = without_allocator<Handler>;
@@ -770,16 +770,15 @@ private:
             std::size_t buffer_size, const Allocator& alloc, CharInputR&& in)
         {
             static_assert(
-                std::is_same<
+                std::is_same_v<
                     typename handler_t::char_type,
-                    typename traits_type::char_type>::value,
+                    typename traits_type::char_type>,
                 "std::decay_t<Handler>::char_type and traits_type::char_type "
                 "are inconsistent; they shall be the same type");
             static_assert(
-                std::is_same<
+                std::is_same_v<
                     typename handler_t::char_type,
-                    typename std::allocator_traits<Allocator>::value_type>
-                        ::value,
+                    typename std::allocator_traits<Allocator>::value_type>,
                 "std::decay_t<Handler>::char_type and "
                 "std::allocator_traits<Allocator>::value_type are "
                 "inconsistent; they shall be the same type");
@@ -799,16 +798,15 @@ public:
             typename with_allocator<
                 Handler,
                 std::conditional_t<
-                    std::is_same<Allocator, void>::value,
+                    std::is_same_v<Allocator, void>,
                     std::allocator<char_type>,
                     Allocator>>::ret_t>;
 
     template <class Handler>
     auto operator()(Handler&& handler) const&
         noexcept(
-            std::is_nothrow_constructible<
-                std::decay_t<Handler>, Handler>::value
-         && std::is_nothrow_copy_constructible<CharInput>::value)
+            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler>
+         && std::is_nothrow_copy_constructible_v<CharInput>)
      -> std::enable_if_t<without_allocator<Handler>::enabled,
             parser_type<std::decay_t<Handler>>>
     {
@@ -819,9 +817,8 @@ public:
     template <class Handler>
     auto operator()(Handler&& handler) &&
         noexcept(
-            std::is_nothrow_constructible<
-                std::decay_t<Handler>, Handler>::value
-         && std::is_nothrow_move_constructible<CharInput>::value)
+            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler>
+         && std::is_nothrow_move_constructible_v<CharInput>)
      -> std::enable_if_t<without_allocator<Handler>::enabled,
             parser_type<std::decay_t<Handler>>>
     {
@@ -833,9 +830,8 @@ public:
     auto operator()(Handler&& handler, std::size_t buffer_size = 0,
             const Allocator& alloc = Allocator()) const&
         noexcept(
-            std::is_nothrow_constructible<
-                std::decay_t<Handler>, Handler>::value
-         && std::is_nothrow_copy_constructible<CharInput>::value)
+            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler>
+         && std::is_nothrow_copy_constructible_v<CharInput>)
      -> std::enable_if_t<
             with_allocator<Handler, Allocator>::enabled,
             parser_type<Handler, Allocator>>
@@ -849,9 +845,8 @@ public:
     auto operator()(Handler&& handler,
         std::size_t buffer_size = 0, const Allocator& alloc = Allocator()) &&
         noexcept(
-            std::is_nothrow_constructible<
-                std::decay_t<Handler>, Handler>::value
-         && std::is_nothrow_move_constructible<CharInput>::value)
+            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler>
+         && std::is_nothrow_move_constructible_v<CharInput>)
      -> std::enable_if_t<
             with_allocator<Handler, Allocator>::enabled,
             parser_type<Handler, Allocator>>
@@ -864,7 +859,7 @@ public:
     template <class Handler, class... Args>
     auto operator()(std::reference_wrapper<Handler> handler,
             Args&&... args) const&
-        noexcept(std::is_nothrow_copy_constructible<CharInput>::value)
+        noexcept(std::is_nothrow_copy_constructible_v<CharInput>)
      -> decltype((*this)(reference_handler<Handler>(
             handler.get()), std::forward<Args>(args)...))
     {
@@ -874,7 +869,7 @@ public:
     template <class Handler, class... Args>
     auto operator()(std::reference_wrapper<Handler> handler,
             Args&&... args) &&
-        noexcept(std::is_nothrow_move_constructible<CharInput>::value)
+        noexcept(std::is_nothrow_move_constructible_v<CharInput>)
      -> decltype(std::move(*this)(reference_handler<Handler>(
             handler.get()), std::forward<Args>(args)...))
     {
@@ -899,12 +894,12 @@ void swap(csv_source<CharInput>& left, csv_source<CharInput>& right)
 
 template <class... Args>
 auto make_csv_source(Args&&... args)
-    noexcept(std::is_nothrow_constructible<
-        decltype(make_char_input(std::forward<Args>(args)...))>::value)
+    noexcept(std::is_nothrow_constructible_v<
+        decltype(make_char_input(std::forward<Args>(args)...))>)
  -> std::enable_if_t<
-        std::is_constructible<
+        std::is_constructible_v<
             csv_source<decltype(make_char_input(std::forward<Args>(args)...))>,
-            Args&&...>::value,
+            Args&&...>,
         csv_source<decltype(make_char_input(std::forward<Args>(args)...))>>
 {
     return csv_source<decltype(make_char_input(std::forward<Args>(args)...))>(

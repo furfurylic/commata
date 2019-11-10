@@ -99,9 +99,9 @@ struct is_stream_writable :
 template <class Ch, class T>
 struct is_plain_field_name_pred :
     std::bool_constant<
-        std::is_pointer<T>::value
+        std::is_pointer_v<T>
             // to match with function pointer types
-     || std::is_convertible<T, bool (*)(const Ch*, const Ch*)>::value>
+     || std::is_convertible_v<T, bool (*)(const Ch*, const Ch*)>>
             // to match with no-capture closure types,
             // with gcc 7.3, whose objects are converted to function pointers
             // and again converted to bool values to produce dull "1" outputs
@@ -226,7 +226,7 @@ public:
     using allocator_type = Allocator;
 
     template <class FieldNamePredR, class FieldValuePredR,
-        std::enable_if_t<!std::is_integral<FieldNamePredR>::value>* = nullptr>
+        std::enable_if_t<!std::is_integral_v<FieldNamePredR>>* = nullptr>
     impl(
             std::allocator_arg_t, const Allocator& alloc,
             std::basic_streambuf<Ch, Tr>* out,
@@ -278,8 +278,8 @@ private:
 public:
     impl(impl&& other)
             noexcept(
-                std::is_nothrow_move_constructible<FieldNamePred>::value
-             && std::is_nothrow_move_constructible<FieldValuePred>::value) :
+                std::is_nothrow_move_constructible_v<FieldNamePred>
+             && std::is_nothrow_move_constructible_v<FieldValuePred>) :
         record_num_to_include_(other.record_num_to_include_),
         target_field_index_(other.target_field_index_),
         field_index_(other.field_index_),
@@ -654,8 +654,7 @@ auto make_string_pred(T&& s, const Allocator& a)
  -> std::enable_if_t<
         !detail::is_std_string_of_ch_tr<
             std::remove_const_t<std::remove_reference_t<T>>, Ch, Tr>::value
-     && !std::is_same<
-            std::remove_const_t<std::remove_reference_t<T>>, Ch*>::value
+     && !std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>, Ch*>
      && has_const_iterator<std::remove_reference_t<T>>::value,
         string_eq<Ch, Tr, Allocator>>
 {
@@ -669,8 +668,7 @@ auto make_string_pred(T&& s, const Allocator&)
  -> std::enable_if_t<
         !detail::is_std_string_of_ch_tr<
             std::remove_const_t<std::remove_reference_t<T>>, Ch, Tr>::value
-     && !std::is_same<
-            std::remove_const_t<std::remove_reference_t<T>>, Ch*>::value
+     && !std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>, Ch*>
      && !has_const_iterator<std::remove_reference_t<T>>::value,
         T&&>
 {

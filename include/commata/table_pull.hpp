@@ -372,12 +372,11 @@ private:
     using handler_at_t = std::allocator_traits<handler_a_t>;
     using handler_p_t = typename handler_at_t::pointer;
 
-    static_assert(std::is_same<
+    static_assert(std::is_same_v<
         decltype(std::declval<const TableSource&>()(
             std::declval<reference_handler<handler_t>>())),
         decltype(std::declval<TableSource>()(
-            std::declval<reference_handler<handler_t>>()))>::value,
-        "");
+            std::declval<reference_handler<handler_t>>()))>, "");
 
     using parser_t = typename TableSource::template parser_type<
         reference_handler<handler_t>>;
@@ -400,9 +399,9 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_base_of<TableSource, std::decay_t<TableSourceR>>::value
-         && !std::is_base_of<primitive_table_pull,
-                             std::decay_t<TableSourceR>>::value>* = nullptr>
+            std::is_base_of_v<TableSource, std::decay_t<TableSourceR>>
+         && !std::is_base_of_v<primitive_table_pull,
+                               std::decay_t<TableSourceR>>>* = nullptr>
     explicit primitive_table_pull(
         TableSourceR&& in, std::size_t buffer_size = 0) :
         primitive_table_pull(std::allocator_arg, Allocator(),
@@ -411,7 +410,7 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_base_of<TableSource, std::decay_t<TableSourceR>>::value>*
+            std::is_base_of_v<TableSource, std::decay_t<TableSourceR>>>*
         = nullptr>
     primitive_table_pull(std::allocator_arg_t, const Allocator& alloc,
         TableSourceR&& in, std::size_t buffer_size = 0) :
@@ -686,8 +685,8 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_base_of<TableSource, std::decay_t<TableSourceR>>::value
-         && !std::is_base_of<table_pull, std::decay_t<TableSourceR>>::value>*
+            std::is_base_of_v<TableSource, std::decay_t<TableSourceR>>
+         && !std::is_base_of_v<table_pull, std::decay_t<TableSourceR>>>*
         = nullptr>
     explicit table_pull(TableSourceR&& in, std::size_t buffer_size = 0) :
         table_pull(std::allocator_arg, Allocator(),
@@ -696,7 +695,7 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_base_of<TableSource, std::decay_t<TableSourceR>>::value>*
+            std::is_base_of_v<TableSource, std::decay_t<TableSourceR>>>*
         = nullptr>
     table_pull(std::allocator_arg_t, const Allocator& alloc,
         TableSourceR&& in, std::size_t buffer_size = 0) :
@@ -1063,12 +1062,12 @@ auto operator==(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return detail::string_value_eq(left, right);
 }
@@ -1103,12 +1102,12 @@ auto operator!=(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return !(left == right);
 }
@@ -1143,12 +1142,12 @@ auto operator<(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return detail::string_value_lt(left, right);
 }
@@ -1183,12 +1182,12 @@ auto operator>(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return right < left;
 }
@@ -1223,12 +1222,12 @@ auto operator<=(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return !(right < left);
 }
@@ -1263,12 +1262,12 @@ auto operator>=(
     const table_pull<TableSourceL, AllocatorL>& left,
     const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             typename TableSourceL::char_type,
-            typename TableSourceR::char_type>::value
-     && std::is_same<
+            typename TableSourceR::char_type>
+     && std::is_same_v<
             typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>::value, bool>
+            typename TableSourceR::traits_type>, bool>
 {
     return !(left < right);
 }
@@ -1338,8 +1337,8 @@ std::basic_string<typename TableSource::char_type,
 template <class TableSource, class... Appendices>
 auto make_table_pull(TableSource&& in, Appendices&&... appendices)
  -> std::enable_if_t<
-        std::is_constructible<table_pull<std::decay_t<TableSource>>,
-                              TableSource&&, Appendices&&...>::value,
+        std::is_constructible_v<table_pull<std::decay_t<TableSource>>,
+                                TableSource&&, Appendices&&...>,
         table_pull<std::decay_t<TableSource>>>
 {
     return table_pull<std::decay_t<TableSource>>(
@@ -1351,10 +1350,10 @@ template <class TableSource, class Allocator, class... Appendices>
 auto make_table_pull(std::allocator_arg_t, const Allocator& alloc,
     TableSource&& in, Appendices&&... appendices)
  -> std::enable_if_t<
-        std::is_constructible<
+        std::is_constructible_v<
             table_pull<std::decay_t<TableSource>, Allocator>,
             std::allocator_arg_t, const Allocator&,
-            TableSource&&, Appendices&&...>::value,
+            TableSource&&, Appendices&&...>,
         table_pull<std::decay_t<TableSource>, Allocator>>
 {
     return table_pull<std::decay_t<TableSource>, Allocator>(

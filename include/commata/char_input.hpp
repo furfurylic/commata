@@ -47,7 +47,7 @@ class streambuf_input
     std::basic_streambuf<Ch, Tr>* in_;
 
 public:
-    static_assert(std::is_same<Ch, typename Tr::char_type>::value, "");
+    static_assert(std::is_same_v<Ch, typename Tr::char_type>, "");
 
     using streambuf_type = std::basic_streambuf<Ch, Tr>;
     using char_type = Ch;
@@ -82,11 +82,11 @@ class owned_streambuf_input
 
 public:
     static_assert(
-        std::is_base_of<
+        std::is_base_of_v<
             std::basic_streambuf<
                 typename Streambuf::char_type,
                 typename Streambuf::traits_type>,
-            Streambuf>::value, "");
+            Streambuf>, "");
 
     using streambuf_type = Streambuf;
     using char_type = typename Streambuf::char_type;
@@ -96,7 +96,7 @@ public:
     owned_streambuf_input() = default;
 
     explicit owned_streambuf_input(Streambuf&& in)
-        noexcept(std::is_nothrow_move_constructible<Streambuf>::value) :
+        noexcept(std::is_nothrow_move_constructible_v<Streambuf>) :
         in_(std::move(in))
     {}
 
@@ -132,11 +132,11 @@ class owned_istream_input
 
 public:
     static_assert(
-        std::is_base_of<
+        std::is_base_of_v<
             std::basic_istream<
                 typename IStream::char_type,
                 typename IStream::traits_type>,
-            IStream>::value, "");
+            IStream>, "");
 
     using istream_type = IStream;
     using char_type = typename IStream::char_type;
@@ -146,7 +146,7 @@ public:
     owned_istream_input() = default;
 
     explicit owned_istream_input(IStream&& in)
-        noexcept(std::is_nothrow_move_constructible<IStream>::value) :
+        noexcept(std::is_nothrow_move_constructible_v<IStream>) :
         in_(std::move(in))
     {}
 
@@ -182,7 +182,7 @@ class string_input
     const Ch* end_;
 
 public:
-    static_assert(std::is_same<Ch, typename Tr::char_type>::value, "");
+    static_assert(std::is_same_v<Ch, typename Tr::char_type>, "");
 
     using char_type = Ch;
     using traits_type = Tr;
@@ -236,14 +236,14 @@ private:
     size_type head_;
 
 public:
-    static_assert(std::is_same<Ch, typename Tr::char_type>::value, "");
+    static_assert(std::is_same_v<Ch, typename Tr::char_type>, "");
 
     using char_type = Ch;
     using traits_type = Tr;
 
     owned_string_input()
-        noexcept(std::is_nothrow_default_constructible<
-            std::basic_string<Ch, Tr, Allocator>>::value) :
+        noexcept(std::is_nothrow_default_constructible_v<
+            std::basic_string<Ch, Tr, Allocator>>) :
         s_(), head_(0)
     {}
 
@@ -299,8 +299,8 @@ private:
 
 public:
     owned_string_input& operator=(owned_string_input&& other)
-        noexcept(std::is_nothrow_move_assignable<
-            std::basic_string<Ch, Tr, Allocator>>::value)
+        noexcept(std::is_nothrow_move_assignable_v<
+            std::basic_string<Ch, Tr, Allocator>>)
     {
         s_ = std::move(other.s_);
         head_ = other.head_;
@@ -347,14 +347,14 @@ streambuf_input<Ch, Tr> make_char_input(
 
 template <class Streambuf>
 auto make_char_input(Streambuf&& in)
-    noexcept(std::is_nothrow_move_constructible<Streambuf>::value)
+    noexcept(std::is_nothrow_move_constructible_v<Streambuf>)
  -> std::enable_if_t<
-        !std::is_lvalue_reference<Streambuf>::value
-     && std::is_base_of<
+        !std::is_lvalue_reference_v<Streambuf>
+     && std::is_base_of_v<
             std::basic_streambuf<
                 typename Streambuf::char_type,
                 typename Streambuf::traits_type>,
-            Streambuf>::value,
+            Streambuf>,
         owned_streambuf_input<Streambuf>>
 {
     return owned_streambuf_input<Streambuf>(std::move(in));
@@ -362,14 +362,14 @@ auto make_char_input(Streambuf&& in)
 
 template <class IStream>
 auto make_char_input(IStream&& in)
-    noexcept(std::is_nothrow_move_constructible<IStream>::value)
+    noexcept(std::is_nothrow_move_constructible_v<IStream>)
  -> std::enable_if_t<
-        !std::is_lvalue_reference<IStream>::value
-     && std::is_base_of<
+        !std::is_lvalue_reference_v<IStream>
+     && std::is_base_of_v<
             std::basic_istream<
                 typename IStream::char_type,
                 typename IStream::traits_type>,
-            IStream>::value,
+            IStream>,
         owned_istream_input<IStream>>
 {
     return owned_istream_input<IStream>(std::move(in));
@@ -378,7 +378,7 @@ auto make_char_input(IStream&& in)
 template <class Ch, class Tr = std::char_traits<Ch>>
 auto make_char_input(const Ch* in)
  -> std::enable_if_t<
-        std::is_same<Ch, char>::value || std::is_same<Ch, wchar_t>::value,
+        std::is_same_v<Ch, char> || std::is_same_v<Ch, wchar_t>,
         string_input<Ch, Tr>>
 {
     return string_input<Ch, Tr>(in);
@@ -387,7 +387,7 @@ auto make_char_input(const Ch* in)
 template <class Ch, class Tr = std::char_traits<Ch>>
 auto make_char_input(const Ch* in, std::size_t length)
  -> std::enable_if_t<
-        std::is_same<Ch, char>::value || std::is_same<Ch, wchar_t>::value,
+        std::is_same_v<Ch, char> || std::is_same_v<Ch, wchar_t>,
         string_input<Ch, Tr>>
 {
     return string_input<Ch, Tr>(in, length);

@@ -269,7 +269,7 @@ class basic_table_scanner
         template <class F>
         static auto do_end_record_no_arg(F&& f)
          -> std::enable_if_t<
-                std::is_void<decltype(std::forward<F>(f)())>::value, bool>
+                std::is_void_v<decltype(std::forward<F>(f)())>, bool>
         {
             std::forward<F>(f)();
             return true;
@@ -278,7 +278,7 @@ class basic_table_scanner
         template <class F>
         static auto do_end_record_no_arg(F&& f)
          -> std::enable_if_t<
-                !std::is_void<decltype(std::forward<F>(f)())>::value, bool>
+                !std::is_void_v<decltype(std::forward<F>(f)())>, bool>
         {
             return std::forward<F>(f)();
         }
@@ -324,8 +324,7 @@ public:
     {}
 
     template <class HeaderFieldScanner,
-        std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>*
-            = nullptr>
+        std::enable_if_t<!std::is_integral_v<HeaderFieldScanner>>* = nullptr>
     explicit basic_table_scanner(
         HeaderFieldScanner s,
         size_type buffer_size = 0U) :
@@ -346,8 +345,7 @@ public:
 
     template <class HeaderFieldScanner,
         std::enable_if_t<
-            !std::is_integral<std::decay_t<HeaderFieldScanner>>::value>*
-                = nullptr>
+            !std::is_integral_v<std::decay_t<HeaderFieldScanner>>>* = nullptr>
     basic_table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
         HeaderFieldScanner&& s,
@@ -423,9 +421,7 @@ private:
     template <class FieldScanner>
     auto do_set_field_scanner(std::size_t j, FieldScanner&& s)
      -> std::enable_if_t<
-            !std::is_base_of<
-                std::nullptr_t,
-                std::decay_t<FieldScanner>>::value>
+            !std::is_base_of_v<std::nullptr_t, std::decay_t<FieldScanner>>>
     {
         using scanner_t = typed_body_field_scanner<std::decay_t<FieldScanner>>;
         if (!scanners_) {
@@ -497,7 +493,7 @@ public:
 private:
     template <class FieldScanner, class ThisType>
     static std::conditional_t<
-        std::is_const<std::remove_reference_t<ThisType>>::value,
+        std::is_const_v<std::remove_reference_t<ThisType>>,
         const FieldScanner, FieldScanner>*
     get_field_scanner_g(ThisType& me, std::size_t j) noexcept
     {
@@ -522,9 +518,7 @@ private:
     template <class RecordEndScanner>
     auto do_set_record_end_scanner(RecordEndScanner&& s)
      -> std::enable_if_t<
-            !std::is_base_of<
-                std::nullptr_t,
-                std::decay_t<RecordEndScanner>>::value>
+            !std::is_base_of_v<std::nullptr_t, std::decay_t<RecordEndScanner>>>
     {
         using scanner_t = typed_record_end_scanner<
             std::decay_t<RecordEndScanner>>;
@@ -807,7 +801,7 @@ struct numeric_type_traits<char>
 {
     static constexpr const char* name = "char";
     using raw_type =
-        std::conditional_t<std::is_signed<char>::value, long, unsigned long>;
+        std::conditional_t<std::is_signed_v<char>, long, unsigned long>;
 };
 
 template <>
@@ -991,7 +985,7 @@ struct raw_converter;
 
 // For integral types
 template <class T, class H>
-struct raw_converter<T, H, std::enable_if_t<std::is_integral<T>::value,
+struct raw_converter<T, H, std::enable_if_t<std::is_integral_v<T>,
         std::void_t<decltype(numeric_type_traits<T>::strto)>>> :
     raw_converter_base<raw_converter<T, H>, H>
 {
@@ -1039,7 +1033,7 @@ private:
 
 // For floating-point types
 template <class T, class H>
-struct raw_converter<T, H, std::enable_if_t<std::is_floating_point<T>::value,
+struct raw_converter<T, H, std::enable_if_t<std::is_floating_point_v<T>,
         std::void_t<decltype(numeric_type_traits<T>::strto)>>> :
     raw_converter_base<raw_converter<T, H>, H>
 {
@@ -1209,7 +1203,7 @@ struct converter :
     private raw_converter<T, typed_conversion_error_handler<T, H>>
 {
     template <class K,
-        std::enable_if_t<!std::is_base_of<converter, std::decay_t<K>>::value>*
+        std::enable_if_t<!std::is_base_of_v<converter, std::decay_t<K>>>*
             = nullptr>
     converter(K&& h) :
         raw_converter<T, typed_conversion_error_handler<T, H>>(
@@ -1230,7 +1224,7 @@ template <class T, class H, class U, class = void>
 struct restrained_converter :
     private raw_converter<U, H>
 {
-    static_assert(!std::is_floating_point<T>::value, "");
+    static_assert(!std::is_floating_point_v<T>, "");
 
     using raw_converter<U, H>::raw_converter;
     using raw_converter<U, H>::get_conversion_error_handler;
@@ -1257,10 +1251,10 @@ struct restrained_converter :
 
 template <class T, class H, class U>
 struct restrained_converter<T, H, U,
-        std::enable_if_t<std::is_unsigned<T>::value>> :
+        std::enable_if_t<std::is_unsigned_v<T>>> :
     private raw_converter<U, H>
 {
-    static_assert(!std::is_floating_point<T>::value, "");
+    static_assert(!std::is_floating_point_v<T>, "");
 
     using raw_converter<U, H>::raw_converter;
     using raw_converter<U, H>::get_conversion_error_handler;
@@ -1355,7 +1349,7 @@ class trivial_store
 public:
     template <class... Args>
     trivial_store(generic_args_t, Args&&... args)
-        noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
+        noexcept(std::is_nothrow_constructible_v<T, Args&&...>) :
         mode_(replace_mode::replace)
     {
         emplace(std::forward<Args>(args)...);
@@ -1384,7 +1378,7 @@ protected:
 
     template <class... Args>
     void emplace(Args&&... args)
-        noexcept(std::is_nothrow_constructible<T, Args&&...>::value)
+        noexcept(std::is_nothrow_constructible_v<T, Args&&...>)
     {
         ::new(value_) T(std::forward<Args>(args)...);
     }
@@ -1403,7 +1397,7 @@ public:
     using trivial_store<T>::trivial_store;
 
     nontrivial_store(const nontrivial_store& other)
-        noexcept(std::is_nothrow_copy_constructible<T>::value) :
+        noexcept(std::is_nothrow_copy_constructible_v<T>) :
         trivial_store<T>(other.mode())
     {
         if (this->mode() == replace_mode::replace) {
@@ -1412,7 +1406,7 @@ public:
     }
 
     nontrivial_store(nontrivial_store&& other)
-        noexcept(std::is_nothrow_move_constructible<T>::value) :
+        noexcept(std::is_nothrow_move_constructible_v<T>) :
         trivial_store<T>(other.mode())
     {
         if (this->mode() == replace_mode::replace) {
@@ -1428,16 +1422,16 @@ public:
     }
 
     nontrivial_store& operator=(const nontrivial_store& other)
-        noexcept(std::is_nothrow_copy_constructible<T>::value
-              && std::is_nothrow_copy_assignable<T>::value)
+        noexcept(std::is_nothrow_copy_constructible_v<T>
+              && std::is_nothrow_copy_assignable_v<T>)
     {
         assign(other);
         return *this;
     }
 
     nontrivial_store& operator=(nontrivial_store&& other)
-        noexcept(std::is_nothrow_move_constructible<T>::value
-              && std::is_nothrow_move_assignable<T>::value)
+        noexcept(std::is_nothrow_move_constructible_v<T>
+              && std::is_nothrow_move_assignable_v<T>)
     {
         assign(std::move(other));
         return *this;
@@ -1448,7 +1442,7 @@ private:
     void assign(Other&& other)
     {
         using f_t = std::conditional_t<
-            std::is_lvalue_reference<Other>::value, const T&, T>;
+            std::is_lvalue_reference_v<Other>, const T&, T>;
         if (this->mode() == replace_mode::replace) {
             if (other.mode() == replace_mode::replace) {
                 if (this != std::addressof(other)) {
@@ -1470,7 +1464,7 @@ private:
 public:
     void swap(nontrivial_store& other)
         noexcept(std::is_nothrow_swappable_v<T>
-              && std::is_nothrow_move_constructible<T>::value)
+              && std::is_nothrow_move_constructible_v<T>)
     {
         using std::swap;
         if (this->mode() == replace_mode::replace) {
@@ -1497,7 +1491,7 @@ void swap(nontrivial_store<T>& left, nontrivial_store<T>& right)
 }
 
 template <class T>
-using store_t = std::conditional_t<std::is_trivially_copyable<T>::value,
+using store_t = std::conditional_t<std::is_trivially_copyable_v<T>,
     trivial_store<T>, nontrivial_store<T>>;
 
 }}
@@ -1515,16 +1509,16 @@ class replace_if_skipped
 public:
     template <class... Args,
         std::enable_if_t<
-            std::is_constructible<T, Args...>::value
+            std::is_constructible_v<T, Args...>
          && !((sizeof...(Args) == 1)
-           && (std::is_base_of<replace_if_skipped,
-                detail::first_t<std::decay_t<Args>...>>::value
-            || std::is_base_of<replacement_ignore_t,
-                detail::first_t<std::decay_t<Args>...>>::value
-            || std::is_base_of<replacement_fail_t,
-                detail::first_t<std::decay_t<Args>...>>::value))>* = nullptr>
+           && (std::is_base_of_v<replace_if_skipped,
+                detail::first_t<std::decay_t<Args>...>>
+            || std::is_base_of_v<replacement_ignore_t,
+                detail::first_t<std::decay_t<Args>...>>
+            || std::is_base_of_v<replacement_fail_t,
+                detail::first_t<std::decay_t<Args>...>>))>* = nullptr>
     explicit replace_if_skipped(Args&&... args)
-        noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
+        noexcept(std::is_nothrow_constructible_v<T, Args&&...>) :
         store_(generic_args_t(), std::forward<Args>(args)...)
     {}
 
@@ -1677,11 +1671,11 @@ private:
     {}
 
     template <unsigned Slot, class U, std::enable_if_t<
-        (!std::is_base_of<replacement_fail_t, std::decay_t<U>>::value)
-     && (!std::is_base_of<replacement_ignore_t, std::decay_t<U>>::value)>*
+        (!std::is_base_of_v<replacement_fail_t, std::decay_t<U>>)
+     && (!std::is_base_of_v<replacement_ignore_t, std::decay_t<U>>)>*
         = nullptr>
     void init(U&& value)
-        noexcept(std::is_nothrow_constructible<T, U&&>::value)
+        noexcept(std::is_nothrow_constructible_v<T, U&&>)
     {
         static_assert(Slot < N, "");
         assert(!has(Slot));
@@ -1691,7 +1685,7 @@ private:
     }
 
     template <unsigned Slot>
-    void init() noexcept(std::is_nothrow_default_constructible<T>::value)
+    void init() noexcept(std::is_nothrow_default_constructible_v<T>)
     {
         static_assert(Slot < N, "");
         assert(!has(Slot));
@@ -1727,8 +1721,7 @@ private:
     template <class ThisType>
     static auto get_g(ThisType* me, unsigned r) noexcept
     {
-        using t_t = std::conditional_t<
-            std::is_const<ThisType>::value, const T, T>;
+        using t_t = std::conditional_t<std::is_const_v<ThisType>, const T, T>;
         using pair_t = std::pair<replace_mode, t_t*>;
         if (me->has(r)) {
             return pair_t(replace_mode::replace, std::addressof((*me)[r]));
@@ -1753,7 +1746,7 @@ protected:
 
     template <class... Args>
     void emplace(unsigned r, Args&&... args)
-        noexcept(std::is_nothrow_constructible<T, Args&&...>::value)
+        noexcept(std::is_nothrow_constructible_v<T, Args&&...>)
     {
         ::new(replacements_[r]) T(std::forward<Args>(args)...);
     }
@@ -1803,7 +1796,7 @@ struct nontrivial_store : trivial_store<T, N>
     using trivial_store<T, N>::trivial_store;
 
     nontrivial_store(const nontrivial_store& other)
-        noexcept(std::is_nothrow_copy_constructible<T>::value) :
+        noexcept(std::is_nothrow_copy_constructible_v<T>) :
         trivial_store<T, N>(copy_mode_t(), other)
     {
         for (unsigned r = 0; r < N; ++r) {
@@ -1814,7 +1807,7 @@ struct nontrivial_store : trivial_store<T, N>
     }
 
     nontrivial_store(nontrivial_store&& other)
-        noexcept(std::is_nothrow_move_constructible<T>::value) :
+        noexcept(std::is_nothrow_move_constructible_v<T>) :
         trivial_store<T, N>(copy_mode_t(), other)
     {
         for (unsigned r = 0; r < N; ++r) {
@@ -1834,16 +1827,16 @@ struct nontrivial_store : trivial_store<T, N>
     }
 
     nontrivial_store& operator=(const nontrivial_store& other)
-        noexcept(std::is_nothrow_copy_constructible<T>::value
-              && std::is_nothrow_copy_assignable<T>::value)
+        noexcept(std::is_nothrow_copy_constructible_v<T>
+              && std::is_nothrow_copy_assignable_v<T>)
     {
         assign(other);
         return *this;
     }
 
     nontrivial_store& operator=(nontrivial_store&& other)
-        noexcept(std::is_nothrow_move_constructible<T>::value
-              && std::is_nothrow_move_assignable<T>::value)
+        noexcept(std::is_nothrow_move_constructible_v<T>
+              && std::is_nothrow_move_assignable_v<T>)
     {
         assign(std::move(other));
         return *this;
@@ -1857,7 +1850,7 @@ private:
             return; // see comments in replace_if_skipped
         }
         using f_t = std::conditional_t<
-            std::is_lvalue_reference<Other>::value, const T&, T>;
+            std::is_lvalue_reference_v<Other>, const T&, T>;
         for (unsigned r = 0; r < N; ++r) {
             if (this->has(r)) {
                 if (other.has(r)) {
@@ -1877,7 +1870,7 @@ private:
 public:
     void swap(nontrivial_store& other)
         noexcept(std::is_nothrow_swappable_v<T>
-              && std::is_nothrow_constructible<T>::value)
+              && std::is_nothrow_constructible_v<T>)
     {
         for (unsigned r = 0; r < N; ++r) {
             if (this->has(r)) {
@@ -1918,22 +1911,22 @@ void swap(nontrivial_store<T, N>& left, nontrivial_store<T, N>& right)
 template <class T, class A>
 struct is_acceptable_arg :
     std::bool_constant<
-        std::is_base_of<replacement_fail_t, std::decay_t<A>>::value
-     || std::is_base_of<replacement_ignore_t, std::decay_t<A>>::value
-     || std::is_constructible<T, A>::value>
+        std::is_base_of_v<replacement_fail_t, std::decay_t<A>>
+     || std::is_base_of_v<replacement_ignore_t, std::decay_t<A>>
+     || std::is_constructible_v<T, A>>
 {};
 
 template <class T, class A>
 struct is_nothrow_arg :
     std::bool_constant<
-        std::is_base_of<replacement_fail_t, std::decay_t<A>>::value
-     || std::is_base_of<replacement_ignore_t, std::decay_t<A>>::value
-     || std::is_nothrow_constructible<T, A>::value>
+        std::is_base_of_v<replacement_fail_t, std::decay_t<A>>
+     || std::is_base_of_v<replacement_ignore_t, std::decay_t<A>>
+     || std::is_nothrow_constructible_v<T, A>>
 {};
 
 template <class T>
 constexpr unsigned base_n =
-    std::is_integral<T>::value ? std::is_signed<T>::value ? 4 : 3 : 5;
+    std::is_integral_v<T> ? std::is_signed_v<T> ? 4 : 3 : 5;
 
 template <class T, unsigned N>
 struct base;
@@ -1942,7 +1935,7 @@ template <class T>
 struct base<T, 0>
 {
 protected:
-    using store_t = std::conditional_t<std::is_trivially_copyable<T>::value,
+    using store_t = std::conditional_t<std::is_trivially_copyable_v<T>,
         trivial_store<T, base_n<T>>, nontrivial_store<T, base_n<T>>>;
 
 private:
@@ -1980,7 +1973,7 @@ struct base<T, 3> : base<T, 0>
         Empty&& on_empty = Empty(),
         InvalidFormat&& on_invalid_format = InvalidFormat(),
         AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit())
-            noexcept(std::is_nothrow_default_constructible<T>::value
+            noexcept(std::is_nothrow_default_constructible_v<T>
                   && is_nothrow_arg<T, Empty>::value
                   && is_nothrow_arg<T, InvalidFormat>::value
                   && is_nothrow_arg<T, AboveUpperLimit>::value) :
@@ -2009,7 +2002,7 @@ struct base<T, 4> : base<T, 3>
         InvalidFormat&& on_invalid_format,
         AboveUpperLimit&& on_above_upper_limit,
         BelowLowerLimit&& on_below_lower_limit)
-            noexcept(std::is_nothrow_default_constructible<T>::value
+            noexcept(std::is_nothrow_default_constructible_v<T>
                   && is_nothrow_arg<T, Empty>::value
                   && is_nothrow_arg<T, InvalidFormat>::value
                   && is_nothrow_arg<T, AboveUpperLimit>::value
@@ -2142,7 +2135,7 @@ public:
 
     void swap(replace_if_conversion_failed& other)
         noexcept(std::is_nothrow_swappable_v<T>
-              && std::is_nothrow_constructible<T>::value)
+              && std::is_nothrow_constructible_v<T>)
     {
         using std::swap;
         swap(this->store(), other.store());
@@ -2185,12 +2178,12 @@ struct is_output_iterator : std::false_type
 template <class T>
 struct is_output_iterator<T,
     std::enable_if_t<
-        std::is_base_of<
+        std::is_base_of_v<
             std::output_iterator_tag,
-            typename std::iterator_traits<T>::iterator_category>::value
-     || std::is_base_of<
+            typename std::iterator_traits<T>::iterator_category>
+     || std::is_base_of_v<
             std::forward_iterator_tag,
-            typename std::iterator_traits<T>::iterator_category>::value>> :
+            typename std::iterator_traits<T>::iterator_category>>> :
     std::true_type
 {};
 
@@ -2300,8 +2293,8 @@ public:
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler,
               std::enable_if_t<
-                !std::is_base_of<
-                    arithmetic_field_translator, std::decay_t<SinkR>>::value>*
+                !std::is_base_of_v<
+                    arithmetic_field_translator, std::decay_t<SinkR>>>*
                         = nullptr>
     explicit arithmetic_field_translator(
         SinkR&& sink,
@@ -2373,9 +2366,9 @@ public:
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler,
               std::enable_if_t<
-                !std::is_base_of<
+                !std::is_base_of_v<
                     locale_based_arithmetic_field_translator,
-                    std::decay_t<SinkR>>::value>* = nullptr>
+                    std::decay_t<SinkR>>>* = nullptr>
     locale_based_arithmetic_field_translator(
         SinkR&& sink, const std::locale& loc,
         SkippingHandlerR&& handle_skipping =
@@ -2490,9 +2483,8 @@ public:
 
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
               std::enable_if_t<
-                !std::is_base_of<
-                    string_field_translator, std::decay_t<SinkR>>::value>*
-                        = nullptr>
+                !std::is_base_of_v<
+                    string_field_translator, std::decay_t<SinkR>>>* = nullptr>
     explicit string_field_translator(
         SinkR&& sink,
         SkippingHandlerR&& handle_skipping =
@@ -2565,10 +2557,9 @@ arithmetic_field_translator<T, Sink, fail_if_skipped, As...>
 template <class T, class Sink, class ReplaceIfSkipped, class... As,
     std::enable_if_t<
         !detail::is_std_string<T>::value
-     && !std::is_base_of<std::locale, std::decay_t<ReplaceIfSkipped>>::value
-     && !std::is_base_of<replacement_fail_t,
-                         std::decay_t<ReplaceIfSkipped>>::value
-     && std::is_constructible<replace_if_skipped<T>, ReplaceIfSkipped>::value,
+     && !std::is_base_of_v<std::locale, std::decay_t<ReplaceIfSkipped>>
+     && !std::is_base_of_v<replacement_fail_t,std::decay_t<ReplaceIfSkipped>>
+     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
         std::nullptr_t> = nullptr>
 arithmetic_field_translator<T, Sink, replace_if_skipped<T>, As...>
     make_field_translator_na(Sink, ReplaceIfSkipped&&, As...);
@@ -2577,10 +2568,9 @@ template <class T, class Sink, class... As,
     std::enable_if_t<
         !detail::is_std_string<T>::value
      && ((sizeof...(As) == 0)
-      || !(std::is_base_of<std::locale,
-                           std::decay_t<detail::first_t<As...>>>::value
-        || std::is_constructible<replace_if_skipped<T>,
-                                 detail::first_t<As...>>::value)),
+      || !(std::is_base_of_v<std::locale, std::decay_t<detail::first_t<As...>>>
+        || std::is_constructible_v<replace_if_skipped<T>,
+                                   detail::first_t<As...>>)),
         std::nullptr_t> = nullptr>
 arithmetic_field_translator<T, Sink, std::decay_t<As>...>
     make_field_translator_na(Sink, As&&...);
@@ -2595,9 +2585,8 @@ locale_based_arithmetic_field_translator<T, Sink, fail_if_skipped, As...>
 template <class T, class Sink, class ReplaceIfSkipped, class... As,
     std::enable_if_t<
         !detail::is_std_string<T>::value
-     && !std::is_base_of<replacement_fail_t,
-                         std::decay_t<ReplaceIfSkipped>>::value
-     && std::is_constructible<replace_if_skipped<T>, ReplaceIfSkipped>::value,
+     && !std::is_base_of_v<replacement_fail_t, std::decay_t<ReplaceIfSkipped>>
+     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
         std::nullptr_t> = nullptr>
 locale_based_arithmetic_field_translator<T, Sink, replace_if_skipped<T>, As...>
     make_field_translator_na(Sink, std::locale, ReplaceIfSkipped&&, As...);
@@ -2606,8 +2595,8 @@ template <class T, class Sink, class... As,
     std::enable_if_t<
         !detail::is_std_string<T>::value
      && ((sizeof...(As) == 0)
-      || !std::is_constructible<replace_if_skipped<T>,
-                                detail::first_t<As...>>::value),
+      || !std::is_constructible_v<replace_if_skipped<T>,
+                                  detail::first_t<As...>>),
         std::nullptr_t> = nullptr>
 locale_based_arithmetic_field_translator<T, Sink, std::decay_t<As>...>
     make_field_translator_na(Sink, std::locale, As&&... as);
@@ -2623,9 +2612,8 @@ string_field_translator<Sink,
 template <class T, class Sink, class ReplaceIfSkipped,
     std::enable_if_t<
         detail::is_std_string<T>::value
-     && !std::is_base_of<replacement_fail_t,
-                         std::decay_t<ReplaceIfSkipped>>::value
-     && std::is_constructible<replace_if_skipped<T>, ReplaceIfSkipped>::value,
+     && !std::is_base_of_v<replacement_fail_t, std::decay_t<ReplaceIfSkipped>>
+     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
         std::nullptr_t> = nullptr>
 string_field_translator<Sink,
         typename T::value_type, typename T::traits_type,
@@ -2636,8 +2624,8 @@ template <class T, class Sink, class... As,
     std::enable_if_t<
         detail::is_std_string<T>::value
      && ((sizeof...(As) == 0)
-      || !std::is_constructible<replace_if_skipped<T>,
-                                detail::first_t<As...>>::value),
+      || !std::is_constructible_v<replace_if_skipped<T>,
+                                  detail::first_t<As...>>),
         std::nullptr_t> = nullptr>
 string_field_translator<Sink,
         typename T::value_type, typename T::traits_type,
@@ -2668,7 +2656,7 @@ auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Sink&& sink, Appendices&&... appendices)
  -> std::enable_if_t<
         detail::is_std_string<T>::value
-     && std::is_same<Allocator, typename T::allocator_type>::value
+     && std::is_same_v<Allocator, typename T::allocator_type>
      && (detail::scanner::is_output_iterator<std::decay_t<Sink>>::value
       || std::is_invocable_v<std::decay_t<Sink>&, T>),
         decltype(detail::scanner::make_field_translator_na<T>(

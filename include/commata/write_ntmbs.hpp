@@ -104,10 +104,10 @@ public:
 template <class InputIterator, class InputIteratorEnd>
 auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             std::remove_const_t<
                 typename std::iterator_traits<InputIterator>::value_type>,
-            wchar_t>::value>
+            wchar_t>>
 {
     using namespace ntmbs;
 
@@ -154,10 +154,10 @@ auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
 template <class InputIterator, class InputIteratorEnd>
 auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
  -> std::enable_if_t<
-        std::is_same<
+        std::is_same_v<
             std::remove_const_t<
                 typename std::iterator_traits<InputIterator>::value_type>,
-            char>::value>
+            char>>
 {
     using namespace ntmbs;
 

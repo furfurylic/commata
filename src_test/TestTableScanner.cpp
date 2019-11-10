@@ -244,7 +244,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
 
     string_t minn;
     string_t minnMinus1;
-    if (std::is_signed<value_t>::value) {
+    if (std::is_signed_v<value_t>) {
         minn = to_string(std::numeric_limits<value_t>::min() + 0);
         minnMinus1 = ch('-') + plus1(minn.substr(1));
     } else {
@@ -288,7 +288,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
 
     string_t minn;
     string_t minnMinus1;
-    if (std::is_signed<value_t>::value) {
+    if (std::is_signed_v<value_t>) {
         minn = to_string(std::numeric_limits<value_t>::min() + 0);
         minnMinus1 = ch('-') + plus1(minn.substr(1));
     } else {
@@ -334,7 +334,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     ASSERT_EQ(static_cast<value_t>(42), values1[0]);
     ASSERT_EQ(static_cast<value_t>(3), values1[1]);
     ASSERT_EQ(static_cast<value_t>(1), values2[0]);
-    if (std::is_signed<value_t>::value) {
+    if (std::is_signed_v<value_t>) {
         ASSERT_EQ(static_cast<value_t>(0), values2[1]);
     } else {
         ASSERT_EQ(static_cast<value_t>(1), values2[1]);
@@ -657,8 +657,7 @@ TYPED_TEST(TestLocaleBased, Copy)
     ASSERT_EQ(expected, values);
 }
 
-static_assert(
-    std::uses_allocator<table_scanner, std::allocator<char>>::value, "");
+static_assert(std::uses_allocator_v<table_scanner, std::allocator<char>>, "");
 
 template <class Ch>
 struct TestTableScanner : BaseTest
@@ -1736,16 +1735,16 @@ namespace replace_if_skipped_static_asserts {
 using ri_t = replace_if_skipped<int>;
 using rv_t = replace_if_skipped<std::vector<int>>;
 
-static_assert(std::is_nothrow_copy_constructible<ri_t>::value, "");
-static_assert(std::is_nothrow_move_constructible<ri_t>::value, "");
-static_assert(std::is_nothrow_copy_assignable<ri_t>::value, "");
-static_assert(std::is_nothrow_move_assignable<ri_t>::value, "");
+static_assert(std::is_nothrow_copy_constructible_v<ri_t>, "");
+static_assert(std::is_nothrow_move_constructible_v<ri_t>, "");
+static_assert(std::is_nothrow_copy_assignable_v<ri_t>, "");
+static_assert(std::is_nothrow_move_assignable_v<ri_t>, "");
 static_assert(std::is_nothrow_swappable_v<ri_t>, "");
 
-static_assert(!std::is_nothrow_copy_constructible<rv_t>::value, "");
-static_assert(std::is_nothrow_move_constructible<rv_t>::value, "");
-static_assert(!std::is_nothrow_copy_assignable<rv_t>::value, "");
-static_assert(std::is_nothrow_move_assignable<rv_t>::value, "");
+static_assert(!std::is_nothrow_copy_constructible_v<rv_t>, "");
+static_assert(std::is_nothrow_move_constructible_v<rv_t>, "");
+static_assert(!std::is_nothrow_copy_assignable_v<rv_t>, "");
+static_assert(std::is_nothrow_move_assignable_v<rv_t>, "");
 static_assert(std::is_nothrow_swappable_v<rv_t>, "");
 
 static_assert(std::is_trivially_copyable<ri_t>::value, "");
@@ -2205,16 +2204,16 @@ namespace replace_if_conversion_failed_static_asserts {
 using ri_t = replace_if_conversion_failed<int>;
 using rv_t = replace_if_conversion_failed<std::vector<int>>;
 
-static_assert(std::is_nothrow_copy_constructible<ri_t>::value, "");
-static_assert(std::is_nothrow_move_constructible<ri_t>::value, "");
-static_assert(std::is_nothrow_copy_assignable<ri_t>::value, "");
-static_assert(std::is_nothrow_move_assignable<ri_t>::value, "");
+static_assert(std::is_nothrow_copy_constructible_v<ri_t>, "");
+static_assert(std::is_nothrow_move_constructible_v<ri_t>, "");
+static_assert(std::is_nothrow_copy_assignable_v<ri_t>, "");
+static_assert(std::is_nothrow_move_assignable_v<ri_t>, "");
 static_assert(std::is_nothrow_swappable_v<ri_t>, "");
 
-static_assert(!std::is_nothrow_copy_constructible<rv_t>::value, "");
-static_assert(std::is_nothrow_move_constructible<rv_t>::value, "");
-static_assert(!std::is_nothrow_copy_assignable<rv_t>::value, "");
-static_assert(std::is_nothrow_move_assignable<rv_t>::value, "");
+static_assert(!std::is_nothrow_copy_constructible_v<rv_t>, "");
+static_assert(std::is_nothrow_move_constructible_v<rv_t>, "");
+static_assert(!std::is_nothrow_copy_assignable_v<rv_t>, "");
+static_assert(std::is_nothrow_move_assignable_v<rv_t>, "");
 static_assert(std::is_nothrow_swappable_v<rv_t>, "");
 
 static_assert(std::is_trivially_copyable<ri_t>::value, "");

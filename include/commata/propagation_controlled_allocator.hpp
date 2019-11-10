@@ -38,12 +38,12 @@ public:
     };
 
     propagation_controlled_allocator(const A& alloc)
-        noexcept(std::is_nothrow_copy_constructible<A>::value) :
+        noexcept(std::is_nothrow_copy_constructible_v<A>) :
         member_like_base<A>(alloc)
     {}
 
     propagation_controlled_allocator(A&& alloc)
-        noexcept(std::is_nothrow_move_constructible<A>::value) :
+        noexcept(std::is_nothrow_move_constructible_v<A>) :
         member_like_base<A>(std::move(alloc))
     {}
 
@@ -51,7 +51,7 @@ public:
     template <class B>
     propagation_controlled_allocator(
         const propagation_controlled_allocator<B, Pocca, Pocma, Pocs>& other)
-        noexcept(std::is_nothrow_constructible<A, const B&>::value) :
+        noexcept(std::is_nothrow_constructible_v<A, const B&>) :
         member_like_base<A>(other.base())
     {}
 
@@ -59,7 +59,7 @@ public:
     template <class B>
     propagation_controlled_allocator(
         propagation_controlled_allocator<B, Pocca, Pocma, Pocs>&& other)
-        noexcept(std::is_nothrow_constructible<A, B&&>::value) :
+        noexcept(std::is_nothrow_constructible_v<A, B&&>) :
         member_like_base<A>(std::move(other.base()))
     {}
 

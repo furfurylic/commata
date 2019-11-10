@@ -16,7 +16,7 @@ namespace commata::detail {
 template <class Ch, class Tr, class T>
 struct is_comparable_with_string_value :
     std::bool_constant<
-        std::is_convertible<T, const Ch*>::value
+        std::is_convertible_v<T, const Ch*>
      || detail::is_std_string_of_ch_tr<T, Ch, Tr>::value>
 {};
 
@@ -28,8 +28,8 @@ bool string_value_eq(
         noexcept(left.size()) && noexcept(right.size())
      && noexcept(left.data()) && noexcept(right.data()))
 {
-    static_assert(std::is_same<typename T::traits_type,
-                               typename U::traits_type>::value, "");
+    static_assert(std::is_same_v<typename T::traits_type,
+                                 typename U::traits_type>, "");
     using tr_t = typename T::traits_type;
     return (left.size() == right.size())
         && (tr_t::compare(left.data(), right.data(), left.size()) == 0);
@@ -73,8 +73,8 @@ bool string_value_lt(
         noexcept(left.size()) && noexcept(right.size())
      && noexcept(left.data()) && noexcept(right.data()))
 {
-    static_assert(std::is_same<typename T::traits_type,
-                               typename U::traits_type>::value, "");
+    static_assert(std::is_same_v<typename T::traits_type,
+                                 typename U::traits_type>, "");
     using tr_t = typename T::traits_type;
     if (left.size() < right.size()) {
         return tr_t::compare(left.data(), right.data(), left.size()) <= 0;

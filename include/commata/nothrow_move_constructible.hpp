@@ -109,7 +109,7 @@ public:
 
 template <class T>
 class nothrow_move_constructible<T,
-    std::enable_if_t<std::is_nothrow_move_constructible<T>::value>>
+    std::enable_if_t<std::is_nothrow_move_constructible_v<T>>>
 {
     T t_;
 

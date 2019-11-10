@@ -77,13 +77,13 @@ public:
 
     // To make wrappers
     explicit allocation_only_allocator(const A& other)
-            noexcept(std::is_nothrow_copy_constructible<A>::value):
+            noexcept(std::is_nothrow_copy_constructible_v<A>):
         member_like_base<A>(other)
     {}
 
     // ditto
     explicit allocation_only_allocator(A&& other)
-            noexcept(std::is_nothrow_move_constructible<A>::value) :
+            noexcept(std::is_nothrow_move_constructible_v<A>) :
         member_like_base<A>(std::move(other))
     {}
 
@@ -91,7 +91,7 @@ public:
     template <class B>
     explicit allocation_only_allocator(
         const allocation_only_allocator<B>& other)
-            noexcept(std::is_nothrow_constructible<A, const B&>::value) :
+            noexcept(std::is_nothrow_constructible_v<A, const B&>) :
         member_like_base<A>(other.base())
     {}
 
@@ -99,7 +99,7 @@ public:
     template <class B>
     explicit allocation_only_allocator(
         allocation_only_allocator<B>&& other)
-            noexcept(std::is_nothrow_constructible<A, B&&>::value) :
+            noexcept(std::is_nothrow_constructible_v<A, B&&>) :
         member_like_base<A>(std::move(other.base()))
     {}
 

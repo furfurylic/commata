@@ -38,11 +38,11 @@
 using namespace commata;
 using namespace commata::test;
 
-static_assert(std::is_nothrow_copy_constructible<stored_value>::value, "");
-static_assert(std::is_nothrow_copy_assignable<stored_value>::value, "");
-static_assert(std::is_trivially_copyable<stored_value>::value, "");
-static_assert(std::is_trivially_copy_assignable<stored_value>::value, "");
-static_assert(std::is_trivially_destructible<stored_value>::value, "");
+static_assert(std::is_nothrow_copy_constructible_v<stored_value>, "");
+static_assert(std::is_nothrow_copy_assignable_v<stored_value>, "");
+static_assert(std::is_trivially_copyable_v<stored_value>, "");
+static_assert(std::is_trivially_copy_assignable_v<stored_value>, "");
+static_assert(std::is_trivially_destructible_v<stored_value>, "");
 static_assert(noexcept(std::declval<stored_value&>().begin()), "");
 static_assert(noexcept(std::declval<stored_value&>().end()), "");
 static_assert(noexcept(std::declval<stored_value&>().rbegin()), "");
@@ -608,8 +608,9 @@ namespace privy {
 
 using store_t = detail::stored::table_store<char, std::allocator<char>>;
 
-static_assert(std::is_default_constructible<store_t>::value, "");
-static_assert(std::is_nothrow_move_constructible<store_t>::value, "");
+static_assert(std::is_default_constructible_v<store_t>, "");
+static_assert(std::is_nothrow_move_constructible_v<store_t>, "");
+static_assert(std::is_nothrow_move_assignable_v<store_t>, "");
 static_assert(noexcept(std::declval<store_t&>().secure_any(0)), "");
 static_assert(noexcept(std::declval<store_t&>().clear()), "");
 
@@ -712,8 +713,8 @@ TEST_F(TestTableStore, Swap)
     ASSERT_EQ(expected2, store2.get_security());
 }
 
-static_assert(std::is_default_constructible<stored_table>::value, "");
-static_assert(std::is_nothrow_move_constructible<stored_table>::value, "");
+static_assert(std::is_default_constructible_v<stored_table>, "");
+static_assert(std::is_nothrow_move_constructible_v<stored_table>, "");
 
 struct TestStoredTable : BaseTest
 {};
@@ -1423,16 +1424,16 @@ TYPED_TEST(TestStoredTableAllocatorPropagation, GenericMoveCtor)
 }
 
 static_assert(
-    std::is_nothrow_move_constructible<
+    std::is_nothrow_move_constructible_v<
         stored_table_builder<
             wstored_table::content_type,
-            wstored_table::allocator_type>>::value, "");
+            wstored_table::allocator_type>>, "");
 static_assert(
-    std::is_nothrow_move_constructible<
+    std::is_nothrow_move_constructible_v<
         stored_table_builder<
             stored_table::content_type,
             stored_table::allocator_type,
-            stored_table_builder_option_transpose>>::value, "");
+            stored_table_builder_option_transpose>>, "");
 
 struct TestStoredTableReusingBuffer : BaseTest
 {
@@ -1860,7 +1861,7 @@ TEST_F(TestStoredTableConst, Table)
 {
     cwstored_table table;
     static_assert(
-        std::is_same<decltype(table)::char_type, wchar_t>::value, "");
+        std::is_same_v<decltype(table)::char_type, wchar_t>, "");
     auto value = table.import_value(L"alpha-beta-gamma");
     const auto b = value.begin();
     table.rewrite_value(value, L"alpha-beta-delta");

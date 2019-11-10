@@ -72,11 +72,11 @@ public:
     template <class... Args,
         std::enable_if_t<
             (sizeof...(Args) != 1)
-         || !std::is_base_of<
+         || !std::is_base_of_v<
                 empty_physical_line_aware_handler,
-                detail::first_t<Args...>>::value>* = nullptr>
+                detail::first_t<Args...>>>* = nullptr>
     explicit empty_physical_line_aware_handler(Args&&... args)
-        noexcept(std::is_nothrow_constructible<Handler, Args&&...>::value) :
+        noexcept(std::is_nothrow_constructible_v<Handler, Args&&...>) :
         handler_(std::forward<Args>(args)...)
     {}
 
@@ -108,8 +108,8 @@ public:
     {
         return empty_physical_line_impl(where,
             std::bool_constant<
-                std::is_void<decltype(this->start_record(where))>::value
-             && std::is_void<decltype(this->end_record(where))>::value>());
+                std::is_void_v<decltype(this->start_record(where))>
+             && std::is_void_v<decltype(this->end_record(where))>>());
     }
 
     void swap(empty_physical_line_aware_handler& other)
@@ -142,7 +142,7 @@ private:
 
     template <class F>
     static auto essay(F f) noexcept(noexcept(f()))
-     -> std::enable_if_t<std::is_void<decltype(f())>::value, bool>
+     -> std::enable_if_t<std::is_void_v<decltype(f())>, bool>
     {
         f();
         return true;
@@ -150,7 +150,7 @@ private:
 
     template <class F>
     static auto essay(F f) noexcept(noexcept(f()))
-     -> std::enable_if_t<!std::is_void<decltype(f())>::value, bool>
+     -> std::enable_if_t<!std::is_void_v<decltype(f())>, bool>
     {
         return f();
     }
@@ -169,7 +169,7 @@ namespace detail::empty_physical_line_aware {
 
 template <class Handler>
 auto make(Handler&& h)
-    noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
+    noexcept(std::is_nothrow_move_constructible_v<std::decay_t<Handler>>)
  -> std::enable_if_t<
         !has_empty_physical_line<std::decay_t<Handler>>::value,
         empty_physical_line_aware_handler<std::decay_t<Handler>>>
@@ -192,7 +192,7 @@ auto make(Handler&& h) noexcept
 template <class Handler>
 auto make_empty_physical_line_aware(Handler&& handler)
     noexcept(
-        std::is_nothrow_constructible<std::decay_t<Handler>, Handler>::value)
+        std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler>)
  -> std::enable_if_t<
         !detail::is_std_reference_wrapper<std::decay_t<Handler>>::value,
         std::conditional_t<

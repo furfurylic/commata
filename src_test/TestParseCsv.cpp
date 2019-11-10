@@ -157,16 +157,14 @@ check_handler<Ch, F> make_check_handler(F f)
 static_assert(
     std::is_nothrow_swappable_v<reference_handler<test_collector<char>>>, "");
 static_assert(
-    std::is_trivially_copyable<reference_handler<test_collector<char>>>::value,
-    "");
+    std::is_trivially_copyable_v<reference_handler<test_collector<char>>>, "");
 
 static_assert(
-    std::is_same<
+    std::is_same_v<
         typename csv_source<string_input<char>>::template
             parser_type<test_collector<char>>,
         typename csv_source<string_input<char>>::template
-            parser_type<test_collector<char>, std::allocator<char>>>::value,
-    "");
+            parser_type<test_collector<char>, std::allocator<char>>>, "");
 
 struct TestParseCsvBasics :
     commata::test::BaseTestWithParam<std::size_t>
@@ -294,13 +292,13 @@ TEST_F(TestParseCsvReference, AlreadyEmptyPhysicalLineAware)
     ASSERT_STREQ("ABC", field_values[1][0].c_str());
 }
 
-static_assert(std::is_same<
+static_assert(std::is_same_v<
     decltype(
         std::declval<const csv_source<string_input<wchar_t>>&>()(
             std::declval<std::reference_wrapper<test_collector2<wchar_t>>>())),
     typename csv_source<string_input<wchar_t>>::template parser_type<
         reference_handler<test_collector2<wchar_t>>,
-        std::allocator<wchar_t>>>::value, "");
+        std::allocator<wchar_t>>>, "");
 
 template <class Ch>
 struct TestParseCsvFancy : BaseTest
@@ -420,11 +418,9 @@ TEST_F(TestCsvSource, DefaultConstructAndAssign)
     auto abc = make_csv_source("ABC");
     auto xyz = decltype(abc)();
 
-    static_assert(std::is_nothrow_default_constructible<decltype(abc)>::value,
-        "");
-    static_assert(std::is_nothrow_move_constructible<decltype(abc)>::value,
-        "");
-    static_assert(std::is_nothrow_move_assignable<decltype(abc)>::value, "");
+    static_assert(std::is_nothrow_default_constructible_v<decltype(abc)>, "");
+    static_assert(std::is_nothrow_move_constructible_v<decltype(abc)>, "");
+    static_assert(std::is_nothrow_move_assignable_v<decltype(abc)>, "");
 
     xyz = std::move(abc);
 

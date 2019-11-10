@@ -97,8 +97,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
                   "<<[ cell10 ][][cell\r\n12][cell\"13\"][]>>@2,36"),
               s);
 
-    static_assert(std::is_nothrow_move_constructible<decltype(pull)>::value,
-        "");
+    static_assert(std::is_nothrow_move_constructible_v<decltype(pull)>, "");
 }
 
 TYPED_TEST_P(TestTablePull, PrimitiveMove)
@@ -295,7 +294,7 @@ TYPED_TEST_P(TestTablePull, Basics)
         ASSERT_EQ(i, pull.get_position().first) << e;
 
         static_assert(
-            std::is_nothrow_move_constructible<decltype(pull)>::value, "");
+            std::is_nothrow_move_constructible_v<decltype(pull)>, "");
     }
 }
 

@@ -107,7 +107,7 @@ template <class Handler, class BufferControl>
 class full_fledged_handler :
     BufferControl
 {
-    static_assert(!std::is_reference<Handler>::value, "");
+    static_assert(!std::is_reference_v<Handler>, "");
     static_assert(!is_full_fledged<Handler>::value, "");
 
     Handler handler_;
@@ -117,13 +117,13 @@ public:
 
     template <class HandlerR, class BufferControlR = BufferControl,
         std::enable_if_t<
-            std::is_constructible<Handler, HandlerR&&>::value
-         && std::is_constructible<BufferControl, BufferControlR&&>::value
-         && !std::is_base_of<full_fledged_handler,
-                             std::decay_t<HandlerR>>::value>* = nullptr>
+            std::is_constructible_v<Handler, HandlerR&&>
+         && std::is_constructible_v<BufferControl, BufferControlR&&>
+         && !std::is_base_of_v<full_fledged_handler,
+                               std::decay_t<HandlerR>>>* = nullptr>
     explicit full_fledged_handler(HandlerR&& handler,
         BufferControlR&& buffer_engine = BufferControl())
-        noexcept(std::is_nothrow_constructible<Handler, HandlerR>::value) :
+        noexcept(std::is_nothrow_constructible_v<Handler, HandlerR>) :
         BufferControl(std::forward<BufferControlR>(buffer_engine)),
         handler_(std::forward<HandlerR>(handler))
     {}
