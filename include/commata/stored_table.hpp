@@ -45,7 +45,8 @@ public:
         std::is_same<
             std::remove_const_t<Ch>,
             typename Tr::char_type>::value,
-        "");
+        "Inconsistent char type and traits type specified "
+        "for commata::basic_stored_value");
 
     using value_type      = Ch;
     using reference       = Ch&;
