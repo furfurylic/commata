@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-11-09 (UTC)</signature>
+<signature>2019-11-14 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -645,6 +645,7 @@ template &lt;class Tr, class Handler,
                  std::size_t buffer_size = 0, const Allocator&amp; alloc = Allocator());
       </code>
       <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>).
+                <c>Handler::char_type</c> and <c>std::allocator_traits&lt;Allocator>::value_type</c> shall denote the same type.
                 In the first overload <c>in</c> shall be a valid pointer.</requires>
       <effects>Creates a parser for the CSV text format (<xref id="definitions.csv_text"/>) and make it parse the whole character streams of <c>in</c>.
                The parsing events are sent to a copy of <c>handler</c>.

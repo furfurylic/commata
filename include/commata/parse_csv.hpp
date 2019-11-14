@@ -518,9 +518,12 @@ auto make_full_fledged(Handler&& handler,
 {
     static_assert(!std::is_reference<Handler>::value, "");
     static_assert(without_buffer_control<Handler>::value, "");
-    static_assert(std::is_same<
-        typename Handler::char_type,
-        typename std::allocator_traits<Allocator>::value_type>::value, "");
+    static_assert(
+        std::is_same<
+            typename Handler::char_type,
+            typename std::allocator_traits<Allocator>::value_type>::value,
+        "Handler::char_type and std::allocator_traits<Allocator>::value_type "
+        "are inconsistent; they shall be the same type");
     return full_fledged_handler<Handler, default_buffer_control<Allocator>>(
         std::forward<Handler>(handler),
         default_buffer_control<Allocator>(buffer_size, alloc));
