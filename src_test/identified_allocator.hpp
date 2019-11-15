@@ -74,13 +74,10 @@ public:
         return !(*this == other);
     }
 
-    using propagate_on_container_copy_assignment =
-        std::integral_constant<bool, POCCA>;
-    using propagate_on_container_move_assignment =
-        std::integral_constant<bool, POCMA>;
-    using propagate_on_container_swap =
-        std::integral_constant<bool, POCS>;
-    using is_always_equal = std::integral_constant<bool, IAE>;
+    using propagate_on_container_copy_assignment = std::bool_constant<POCCA>;
+    using propagate_on_container_move_assignment = std::bool_constant<POCMA>;
+    using propagate_on_container_swap = std::bool_constant<POCS>;
+    using is_always_equal = std::bool_constant<IAE>;
 
     std::size_t id() const noexcept
     {
