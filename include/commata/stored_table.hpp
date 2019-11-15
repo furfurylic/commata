@@ -85,12 +85,11 @@ public:
         noexcept : basic_stored_value(other.begin(), other.end())
     {}
 
-    template <
-        class OtherCh,
-        std::enable_if_t<std::is_const<Ch>::value
-                      && std::is_same<Ch, const OtherCh>::value>* = nullptr>
-    basic_stored_value& operator=(
-        const basic_stored_value<OtherCh, Tr>& other) noexcept
+    template <class OtherCh>
+    auto operator=(const basic_stored_value<OtherCh, Tr>& other) noexcept
+     -> std::enable_if_t<std::is_const<Ch>::value
+                      && std::is_same<Ch, const OtherCh>::value,
+                            basic_stored_value&>
     {
         return *this = basic_stored_value(other);
     }
