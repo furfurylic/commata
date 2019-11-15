@@ -18,13 +18,13 @@ namespace commata::detail {
 
 template <class T>
 struct is_with_buffer_control :
-    std::integral_constant<bool,
+    std::bool_constant<
         has_get_buffer<T>::value && has_release_buffer<T>::value>
 {};
 
 template <class T>
 struct is_without_buffer_control :
-    std::integral_constant<bool,
+    std::bool_constant<
         (!has_get_buffer<T>::value) && (!has_release_buffer<T>::value)>
 {};
 
@@ -93,7 +93,7 @@ struct thru_buffer_control
 
 template <class Handler>
 struct is_full_fledged :
-    std::integral_constant<bool,
+    std::bool_constant<
         is_with_buffer_control<Handler>::value
      && has_start_buffer<Handler>::value && has_end_buffer<Handler>::value
      && has_empty_physical_line<Handler>::value>

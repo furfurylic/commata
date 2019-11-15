@@ -15,7 +15,7 @@ namespace commata::detail {
 
 template <class Ch, class Tr, class T>
 struct is_comparable_with_string_value :
-    std::integral_constant<bool,
+    std::bool_constant<
         std::is_convertible<T, const Ch*>::value
      || detail::is_std_string_of_ch_tr<T, Ch, Tr>::value>
 {};

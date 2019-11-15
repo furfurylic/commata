@@ -162,7 +162,7 @@ public:
     void start_buffer(const Ch* buffer_begin, const Ch* buffer_end)
     {
         start_buffer(buffer_begin, buffer_end,
-            std::integral_constant<bool,
+            std::bool_constant<
                 (Handle & primitive_table_pull_handle_start_buffer) != 0>());
     }
 
@@ -186,7 +186,7 @@ public:
     void end_buffer(const Ch* buffer_end)
     {
         end_buffer(buffer_end,
-            std::integral_constant<bool,
+            std::bool_constant<
                 (Handle & primitive_table_pull_handle_end_buffer) != 0>());
     }
 
@@ -208,7 +208,7 @@ public:
     void start_record(const char_type* record_begin)
     {
         start_record(record_begin,
-            std::integral_constant<bool,
+            std::bool_constant<
                 (Handle & primitive_table_pull_handle_start_record) != 0>());
     }
 
@@ -230,7 +230,7 @@ public:
     void update(const char_type* first, const char_type* last)
     {
         update(first, last,
-            std::integral_constant<bool,
+            std::bool_constant<
                 (Handle & primitive_table_pull_handle_update) != 0>());
     }
 
@@ -254,7 +254,7 @@ public:
     void finalize(const char_type* first, const char_type* last)
     {
         finalize(first, last,
-            std::integral_constant<bool,
+            std::bool_constant<
                 (Handle & primitive_table_pull_handle_finalize) != 0>());
     }
 
@@ -278,7 +278,7 @@ public:
     void end_record(const char_type* record_end)
     {
         end_record(record_end,
-            std::integral_constant<bool,
+            std::bool_constant<
                 (Handle & primitive_table_pull_handle_end_record) != 0>());
     }
 
@@ -300,7 +300,7 @@ public:
     void empty_physical_line(const char_type* where)
     {
         empty_physical_line(where,
-            std::integral_constant<bool,
+            std::bool_constant<
                 (Handle
                & primitive_table_pull_handle_empty_physical_line) != 0>());
     }

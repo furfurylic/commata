@@ -107,7 +107,7 @@ public:
                             end_record(where)))
     {
         return empty_physical_line_impl(where,
-            std::integral_constant<bool,
+            std::bool_constant<
                 std::is_void<decltype(this->start_record(where))>::value
              && std::is_void<decltype(this->end_record(where))>::value>());
     }

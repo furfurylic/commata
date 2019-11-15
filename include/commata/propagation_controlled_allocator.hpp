@@ -104,11 +104,9 @@ public:
             base().select_on_container_copy_construction());
     }
 
-    using propagate_on_container_copy_assignment =
-        std::integral_constant<bool, Pocca>;
-    using propagate_on_container_move_assignment =
-        std::integral_constant<bool, Pocma>;
-    using propagate_on_container_swap = std::integral_constant<bool, Pocs>;
+    using propagate_on_container_copy_assignment = std::bool_constant<Pocca>;
+    using propagate_on_container_move_assignment = std::bool_constant<Pocma>;
+    using propagate_on_container_swap = std::bool_constant<Pocs>;
 
     decltype(auto) base() noexcept
     {

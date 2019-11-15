@@ -98,7 +98,7 @@ struct is_stream_writable :
 
 template <class Ch, class T>
 struct is_plain_field_name_pred :
-    std::integral_constant<bool,
+    std::bool_constant<
         std::is_pointer<T>::value
             // to match with function pointer types
      || std::is_convertible<T, bool (*)(const Ch*, const Ch*)>::value>

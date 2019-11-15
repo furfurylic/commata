@@ -229,8 +229,7 @@ bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch* s, std::size_t n)
 {
     constexpr bool size_t_larger =
         std::numeric_limits<std::size_t>::max() > unmax;
-    return sputn_impl(std::integral_constant<bool, size_t_larger>(),
-        sb, s, n);
+    return sputn_impl(std::bool_constant<size_t_larger>(), sb, s, n);
 }
 
 template <class Ch, class Tr, std::size_t N>

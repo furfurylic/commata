@@ -1273,7 +1273,7 @@ struct restrained_converter<T, H, U,
             return std::optional<T>();
         }
         const auto r = convert_impl(*result,
-            std::integral_constant<bool, sizeof(T) < sizeof(U)>());
+            std::bool_constant<sizeof(T) < sizeof(U)>());
         if (r.second) {
             return std::optional<T>(r.first);
         } else {
@@ -1917,7 +1917,7 @@ void swap(nontrivial_store<T, N>& left, nontrivial_store<T, N>& right)
 
 template <class T, class A>
 struct is_acceptable_arg :
-    std::integral_constant<bool,
+    std::bool_constant<
         std::is_base_of<replacement_fail_t, std::decay_t<A>>::value
      || std::is_base_of<replacement_ignore_t, std::decay_t<A>>::value
      || std::is_constructible<T, A>::value>
@@ -1925,7 +1925,7 @@ struct is_acceptable_arg :
 
 template <class T, class A>
 struct is_nothrow_arg :
-    std::integral_constant<bool,
+    std::bool_constant<
         std::is_base_of<replacement_fail_t, std::decay_t<A>>::value
      || std::is_base_of<replacement_ignore_t, std::decay_t<A>>::value
      || std::is_nothrow_constructible<T, A>::value>
