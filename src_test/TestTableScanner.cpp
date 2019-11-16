@@ -257,7 +257,8 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     h.set_field_scanner(2, make_field_translator(values2,
         fail_if_skipped(),
         replace_if_conversion_failed<value_t>(
-            replacement_fail, replacement_fail, static_cast<value_t>(1), static_cast<value_t>(0))));
+            replacement_fail, replacement_fail,
+            static_cast<value_t>(1), static_cast<value_t>(0))));
 
     stringstream_t s;
     s << "-5,x," << maxxPlus1 << '\n'
@@ -898,7 +899,8 @@ TYPED_TEST(TestTableScanner, IsInHeader)
                  "Ukraine,Hryvnia\r"
                  "Estonia,Euro\r");
     std::basic_stringbuf<TypeParam> buf(s);
-    parse_csv(&buf, basic_table_scanner_wrapper<TypeParam>(std::move(scanner)));
+    parse_csv(&buf,
+        basic_table_scanner_wrapper<TypeParam>(std::move(scanner)));
 
     ASSERT_EQ(2U, currency_map.size());
     ASSERT_EQ(str("Hryvnia"), currency_map[str("Ukraine")]);
@@ -1251,7 +1253,8 @@ TEST_F(TestReplaceIfConversionFailed, NonArithmeticNonNoThrowMoveConstructible)
     using r_t = replace_if_conversion_failed<char_holder>;
     static_assert(std::is_nothrow_move_constructible<r_t>::value, "");
 
-    r_t r(replacement_fail, char_holder('I'), replacement_fail, char_holder('B'), replacement_fail);
+    r_t r(replacement_fail, char_holder('I'), replacement_fail,
+        char_holder('B'), replacement_fail);
     std::vector<r_t> rs;
     rs.push_back(r);
     rs.push_back(std::move(r));
@@ -1291,11 +1294,12 @@ public:
 
 TEST_F(TestReplaceIfConversionFailed, Ignored)
 {
-    replace_if_conversion_failed<int> r(replacement_ignore, replacement_ignore);
+    replace_if_conversion_failed<int> r(
+        replacement_ignore, replacement_ignore);
     calc_average<int> a;
     table_scanner scanner;
-    scanner.set_field_scanner(0,
-        make_field_translator<int>(std::ref(a), fail_if_skipped(), std::move(r)));
+    scanner.set_field_scanner(0, make_field_translator<int>(
+        std::ref(a), fail_if_skipped(), std::move(r)));
 
     try {
         std::stringbuf buf("100\nn/a\n\n200");
