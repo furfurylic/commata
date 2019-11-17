@@ -64,22 +64,22 @@ static_assert(noexcept(
     swap(std::declval<stored_value&>(), std::declval<stored_value&>())), "");
 
 template <class Ch>
-struct TestStoredValue : BaseTest
+struct TestStoredValueNoModification : BaseTest
 {};
 
-typedef testing::Types<char, wchar_t> Chs;
+typedef testing::Types<char, wchar_t, const char, const wchar_t> ChsAlsoConst;
 
-TYPED_TEST_SUITE(TestStoredValue, Chs);
+TYPED_TEST_SUITE(TestStoredValueNoModification, ChsAlsoConst);
 
-TYPED_TEST(TestStoredValue, Iterators)
+TYPED_TEST(TestStoredValueNoModification, Iterators)
 {
     using char_t = TypeParam;
-    using string_t = std::basic_string<char_t>;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using string_t = std::basic_string<decayed_char_t>;
     using value_t = basic_stored_value<char_t>;
 
-    const auto ch = char_helper<char_t>::ch;
-    const auto str = char_helper<char_t>::str;
-    const auto str0 = char_helper<char_t>::str0;
+    const auto str = char_helper<decayed_char_t>::str;
+    const auto str0 = char_helper<decayed_char_t>::str0;
 
     auto s = str0("strings");   // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
@@ -95,28 +95,24 @@ TYPED_TEST(TestStoredValue, Iterators)
         ASSERT_EQ(str("sgnirts"), copied);
     }
 
-    // Write through non-const iterators
-    v.begin()[3] = ch('a');
-    v.rbegin()[0] = ch('e');
-    ASSERT_EQ(str0("strange"), s);
-
     // Read from implicitly-const iterators
     {
         string_t copied(cv.begin(), cv.end());
-        ASSERT_EQ(str("strange"), copied);
+        ASSERT_EQ(str("strings"), copied);
     }
     {
         string_t copied(cv.rbegin(), cv.rend());
-        ASSERT_EQ(str("egnarts"), copied);
+        ASSERT_EQ(str("sgnirts"), copied);
     }
 }
 
-TYPED_TEST(TestStoredValue, Empty)
+TYPED_TEST(TestStoredValueNoModification, Empty)
 {
     using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
     using value_t = basic_stored_value<char_t>;
 
-    const auto str0 = char_helper<char_t>::str0;
+    const auto str0 = char_helper<decayed_char_t>::str0;
 
     auto s1 = str0("");     // s1.front()|s1.back() == '\0'
     value_t v(&s1[0], &s1[0]);
@@ -133,19 +129,19 @@ TYPED_TEST(TestStoredValue, Empty)
     ASSERT_TRUE(cv.rbegin() == cv.rend());
 }
 
-TYPED_TEST(TestStoredValue, Relations)
+TYPED_TEST(TestStoredValueNoModification, Relations)
 {
     using char_t = TypeParam;
-    using string_t = std::basic_string<char_t>;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using string_t = std::basic_string<decayed_char_t>;
     using value_t = basic_stored_value<char_t>;
 
-    const auto str = char_helper<char_t>::str;
+    const auto str = char_helper<decayed_char_t>::str;
 
     std::vector<std::pair<const char*, const char*>> pairs = {
         { "plastic", "elastic" },       // same length, differ at front
         { "Maria", "Mario" },           // same length, differ at back
         { "galactic", "galactica" },    // have same prefix, lengths differ
-        { "running", "run" },           // have same prefix, lengths differ
         { "identical", "identical" },   // identical
         { "", "empty" }                 // empty
     };
@@ -158,8 +154,11 @@ TYPED_TEST(TestStoredValue, Relations)
         value_t v1(&s01[0], &s01[s01.size() - 1]);
         value_t v2(&s02[0], &s02[s02.size() - 1]);
 
+        // stored_value vs stored_value
         ASSERT_EQ(s1 == s2, v1 == v2) << s1 << " == " << s2;
         ASSERT_EQ(s1 != s2, v1 != v2) << s1 << " != " << s2;
+        ASSERT_EQ(s2 == s1, v2 == v1) << s2 << " == " << s1;
+        ASSERT_EQ(s2 != s1, v2 != v1) << s2 << " != " << s1;
         ASSERT_EQ(s1 < s2, v1 < v2) << s1 << " < " << s2;
         ASSERT_EQ(s1 > s2, v1 > v2) << s1 << " > " << s2;
         ASSERT_EQ(s1 <= s2, v1 <= v2) << s1 << " <= " << s2;
@@ -169,8 +168,11 @@ TYPED_TEST(TestStoredValue, Relations)
         ASSERT_EQ(s2 <= s1, v2 <= v1) << s2 << " <= " << s1;
         ASSERT_EQ(s2 >= s1, v2 >= v1) << s2 << " >= " << s1;
 
+        // stored_value vs string
         ASSERT_EQ(s1 == s2, v1 == s2) << s1 << " == " << s2;
         ASSERT_EQ(s1 != s2, v1 != s2) << s1 << " != " << s2;
+        ASSERT_EQ(s2 == s1, v2 == s1) << s2 << " == " << s1;
+        ASSERT_EQ(s2 != s1, v2 != s1) << s2 << " != " << s1;
         ASSERT_EQ(s1 < s2, v1 < s2) << s1 << " < " << s2;
         ASSERT_EQ(s1 > s2, v1 > s2) << s1 << " > " << s2;
         ASSERT_EQ(s1 <= s2, v1 <= s2) << s1 << " <= " << s2;
@@ -180,8 +182,11 @@ TYPED_TEST(TestStoredValue, Relations)
         ASSERT_EQ(s2 <= s1, v2 <= s1) << s2 << " <= " << s1;
         ASSERT_EQ(s2 >= s1, v2 >= s1) << s2 << " >= " << s1;
 
+        // string vs stored_value
         ASSERT_EQ(s1 == s2, s1 == v2) << s1 << " == " << s2;
         ASSERT_EQ(s1 != s2, s1 != v2) << s1 << " != " << s2;
+        ASSERT_EQ(s2 == s1, s2 == v1) << s2 << " == " << s1;
+        ASSERT_EQ(s2 != s1, s2 != v1) << s2 << " != " << s1;
         ASSERT_EQ(s1 < s2, s1 < v2) << s1 << " < " << s2;
         ASSERT_EQ(s1 > s2, s1 > v2) << s1 << " > " << s2;
         ASSERT_EQ(s1 <= s2, s1 <= v2) << s1 << " <= " << s2;
@@ -191,8 +196,11 @@ TYPED_TEST(TestStoredValue, Relations)
         ASSERT_EQ(s2 <= s1, s2 <= v1) << s2 << " <= " << s1;
         ASSERT_EQ(s2 >= s1, s2 >= v1) << s2 << " >= " << s1;
 
+        // stored_value vs NTBS
         ASSERT_EQ(s1 == s2, v1 == s2.c_str()) << s1 << " == " << s2;
         ASSERT_EQ(s1 != s2, v1 != s2.c_str()) << s1 << " != " << s2;
+        ASSERT_EQ(s2 == s1, v2 == s1.c_str()) << s2 << " == " << s1;
+        ASSERT_EQ(s2 != s1, v2 != s1.c_str()) << s2 << " != " << s1;
         ASSERT_EQ(s1 < s2, v1 < s2.c_str()) << s1 << " < " << s2;
         ASSERT_EQ(s1 > s2, v1 > s2.c_str()) << s1 << " > " << s2;
         ASSERT_EQ(s1 <= s2, v1 <= s2.c_str()) << s1 << " <= " << s2;
@@ -202,8 +210,11 @@ TYPED_TEST(TestStoredValue, Relations)
         ASSERT_EQ(s2 <= s1, v2 <= s1.c_str()) << s2 << " <= " << s1;
         ASSERT_EQ(s2 >= s1, v2 >= s1.c_str()) << s2 << " >= " << s1;
 
+        // NTBS vs stored_value
         ASSERT_EQ(s1 == s2, s1.c_str() == v2) << s1 << " == " << s2;
         ASSERT_EQ(s1 != s2, s1.c_str() != v2) << s1 << " != " << s2;
+        ASSERT_EQ(s2 == s1, s2.c_str() == v1) << s2 << " == " << s1;
+        ASSERT_EQ(s2 != s1, s2.c_str() != v1) << s2 << " != " << s1;
         ASSERT_EQ(s1 < s2, s1.c_str() < v2) << s1 << " < " << s2;
         ASSERT_EQ(s1 > s2, s1.c_str() > v2) << s1 << " > " << s2;
         ASSERT_EQ(s1 <= s2, s1.c_str() <= v2) << s1 << " <= " << s2;
@@ -215,30 +226,33 @@ TYPED_TEST(TestStoredValue, Relations)
     }
 }
 
-TYPED_TEST(TestStoredValue, Strings)
+TYPED_TEST(TestStoredValueNoModification, Strings)
 {
     using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using string_t =std::basic_string<decayed_char_t>;
     using value_t = basic_stored_value<char_t>;
 
-    const auto str0 = char_helper<char_t>::str0;
+    const auto str0 = char_helper<decayed_char_t>::str0;
 
     auto s = str0("x-ray");   // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
     const auto& cv = v;
 
-    std::basic_string<char_t> str(cv);
+    string_t str(cv);
     ASSERT_EQ(str, v);
 
-    std::basic_string<char_t> str2 = to_string(cv);
+    string_t str2 = to_string(cv);
     ASSERT_EQ(str2, v);
 }
 
-TYPED_TEST(TestStoredValue, Sizes)
+TYPED_TEST(TestStoredValueNoModification, Sizes)
 {
     using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
     using value_t = basic_stored_value<char_t>;
 
-    const auto str0 = char_helper<char_t>::str0;
+    const auto str0 = char_helper<decayed_char_t>::str0;
 
     auto s = str0("obscura");   // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
@@ -249,13 +263,14 @@ TYPED_TEST(TestStoredValue, Sizes)
     ASSERT_FALSE(cv.empty());
 }
 
-TYPED_TEST(TestStoredValue, RelationsSpecial)
+TYPED_TEST(TestStoredValueNoModification, RelationsSpecial)
 {
     using char_t = TypeParam;
-    using string_t = std::basic_string<char_t>;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using string_t = std::basic_string<decayed_char_t>;
     using value_t = basic_stored_value<char_t>;
 
-    const auto ch = char_helper<char_t>::ch;
+    const auto ch = char_helper<decayed_char_t>::ch;
 
     string_t s0 = { ch('a'), ch('b'), ch('c'), ch('\0'),
                     ch('d'), ch('e'), ch('f') };
@@ -269,32 +284,180 @@ TYPED_TEST(TestStoredValue, RelationsSpecial)
     ASSERT_TRUE(v > s0.c_str());    // ditto
 }
 
-TYPED_TEST(TestStoredValue, FrontBack)
+TYPED_TEST(TestStoredValueNoModification, FrontBack)
 {
     using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
     using value_t = basic_stored_value<char_t>;
 
-    const auto ch = char_helper<char_t>::ch;
-    const auto str = char_helper<char_t>::str;
-    const auto str0 = char_helper<char_t>::str0;
+    const auto ch = char_helper<decayed_char_t>::ch;
+    const auto str0 = char_helper<decayed_char_t>::str0;
 
     auto s = str0("mars");  // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
     const auto& cv = v;
 
-    ASSERT_EQ(s.size() - 1, cv.size());
-    ASSERT_EQ(s.length() - 1, cv.size());
-    ASSERT_FALSE(cv.empty());
-
     ASSERT_EQ(ch('m'), v.front());
     ASSERT_EQ(ch('m'), cv.front());
     ASSERT_EQ(ch('s'), v.back());
     ASSERT_EQ(ch('s'), cv.back());
+}
+
+TYPED_TEST(TestStoredValueNoModification, IndexAccess)
+{
+    using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using value_t = basic_stored_value<char_t>;
+
+    const auto ch = char_helper<decayed_char_t>::ch;
+    const auto str0 = char_helper<decayed_char_t>::str0;
+
+    auto s = str0("string");    // s.back() == '\0'
+    value_t v(&s[0], &s[s.size() - 1]);
+    const auto& cv = v;
+
+    ASSERT_EQ(ch('s'), v[0]);
+    ASSERT_EQ(ch('t'), cv[1]);
+    ASSERT_EQ(ch('\0'), cv[v.size()]);  // OK
+}
+
+TYPED_TEST(TestStoredValueNoModification, At)
+{
+    using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using value_t = basic_stored_value<char_t>;
+
+    const auto ch = char_helper<decayed_char_t>::ch;
+    const auto str0 = char_helper<decayed_char_t>::str0;
+
+    auto s = str0("strings");   // s.back() == '\0'
+    value_t v(&s[0], &s[s.size() - 1]);
+    const auto& cv = v;
+
+    ASSERT_EQ(ch('s'), v.at(0));
+    ASSERT_EQ(ch('t'), cv.at(1));
+    ASSERT_EQ(ch('s'), cv.at(v.size() - 1));
+    ASSERT_THROW(v.at(v.size()), std::out_of_range);
+    ASSERT_THROW(
+        cv.at(static_cast<typename value_t::size_type>(-1)),
+        std::out_of_range);
+}
+
+TYPED_TEST(TestStoredValueNoModification, Data)
+{
+    using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using value_t = basic_stored_value<char_t>;
+
+    const auto str0 = char_helper<decayed_char_t>::str0;
+
+    auto s = str0("string");    // s.back() == '\0'
+    value_t v(&s[0], &s[s.size() - 1]);
+    const auto& cv = v;
+
+    ASSERT_EQ(v.begin(), v.c_str());
+    ASSERT_EQ(v.begin(), v.data());
+    ASSERT_EQ(cv.begin(), cv.c_str());
+    ASSERT_EQ(cv.begin(), cv.data());
+}
+
+TYPED_TEST(TestStoredValueNoModification, Swap)
+{
+    using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using value_t = basic_stored_value<decayed_char_t>;
+
+    const auto str0 = char_helper<decayed_char_t>::str0;
+
+    auto s1 = str0("swap");
+    auto s2 = str0("wasp");
+    value_t v1(&s1[0], &s1[s1.size() - 1]);
+    value_t v2(&s2[0], &s2[s2.size() - 1]);
+
+    const auto b1 = v1.cbegin();
+    const auto b2 = v2.cbegin();
+
+    v1.swap(v2);
+    ASSERT_EQ(b1, v2.cbegin());
+    ASSERT_EQ(b2, v1.cbegin());
+
+    swap(v1, v2);
+    ASSERT_EQ(b1, v1.cbegin());
+    ASSERT_EQ(b2, v2.cbegin());
+}
+
+TYPED_TEST(TestStoredValueNoModification, Write)
+{
+    using namespace std;
+    using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using value_t = basic_stored_value<char_t>;
+    using string_t = basic_string<decayed_char_t>;
+    using stream_t = basic_stringstream<decayed_char_t>;
+
+    const auto ch = char_helper<decayed_char_t>::ch;
+    const auto str = char_helper<decayed_char_t>::str;
+
+    string_t s = str("write");
+    string_t s0 = s + char_t();
+    const value_t v(&s0[0], &s0[s0.size() - 1]);
+
+    stream_t o1;
+    o1 << setfill(ch('_')) << setw(10) << s
+       << setfill(ch('*')) << left << setw(8) << s
+       << setfill(ch('+')) << setw(4) << s
+       << 10;
+    stream_t o2;
+    o2 << setfill(ch('_')) << setw(10) << v
+       << setfill(ch('*')) << left << setw(8) << v
+       << setfill(ch('+')) << setw(4) << v
+       << 10;
+    ASSERT_EQ(o1.str(), o2.str());
+}
+
+template <class Ch>
+struct TestStoredValue : BaseTest
+{};
+
+typedef testing::Types<char, wchar_t> Chs;
+
+TYPED_TEST_SUITE(TestStoredValue, Chs);
+
+TYPED_TEST(TestStoredValue, Iterators)
+{
+    using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using string_t = std::basic_string<decayed_char_t>;
+    using value_t = basic_stored_value<char_t>;
+
+    const auto ch = char_helper<decayed_char_t>::ch;
+    const auto str = char_helper<decayed_char_t>::str;
+    const auto str0 = char_helper<decayed_char_t>::str0;
+
+    auto s = str0("strings");   // s.back() == '\0'
+    value_t v(&s[0], &s[s.size() - 1]);
+
+    // Write through non-const iterators
+    v.begin()[3] = ch('a');
+    v.rbegin()[0] = ch('e');
+    ASSERT_EQ(str("strange"), v);
+}
+
+TYPED_TEST(TestStoredValue, FrontBack)
+{
+    using char_t = TypeParam;
+    using value_t = basic_stored_value<char_t>;
+
+    const auto str = char_helper<char_t>::str;
+    const auto str0 = char_helper<char_t>::str0;
+
+    auto s = str0("mars");  // s.back() == '\0'
+    value_t v(&s[0], &s[s.size() - 1]);
 
     v.front() = 'c';
     v.back() = 'e';
 
-    ASSERT_EQ(str("care"), cv);
+    ASSERT_EQ(str("care"), v);
 }
 
 TYPED_TEST(TestStoredValue, Pop)
@@ -388,14 +551,9 @@ TYPED_TEST(TestStoredValue, IndexAccess)
 
     auto s = str0("string");    // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
-    const auto& cv = v;
-
-    ASSERT_EQ(ch('s'), v[0]);
-    ASSERT_EQ(ch('t'), cv[1]);
-    ASSERT_EQ(ch('\0'), cv[v.size()]);  // OK
 
     v.at(3) = ch('o');
-    ASSERT_EQ(str("strong"), cv);
+    ASSERT_EQ(str("strong"), v);
 }
 
 TYPED_TEST(TestStoredValue, At)
@@ -409,19 +567,10 @@ TYPED_TEST(TestStoredValue, At)
 
     auto s = str0("strings");   // s.back() == '\0'
     value_t v(&s[0], &s[s.size() - 1]);
-    const auto& cv = v;
-
-    ASSERT_EQ(ch('s'), v.at(0));
-    ASSERT_EQ(ch('t'), cv.at(1));
-    ASSERT_EQ(ch('s'), cv.at(v.size() - 1));
-    ASSERT_THROW(v.at(v.size()), std::out_of_range);
-    ASSERT_THROW(
-        cv.at(static_cast<typename value_t::size_type>(-1)),
-        std::out_of_range);
 
     v.at(3) = ch('a');
     v.at(6) = ch('e');
-    ASSERT_EQ(str("strange"), cv);
+    ASSERT_EQ(str("strange"), v);
 }
 
 TYPED_TEST(TestStoredValue, Data)
@@ -436,66 +585,12 @@ TYPED_TEST(TestStoredValue, Data)
     value_t v(&s[0], &s[s.size() - 1]);
     const auto& cv = v;
 
-    ASSERT_EQ(cv.begin(), cv.c_str());
     v.c_str()[3] = 'o';
     ASSERT_EQ(str("strong"), cv);
 
-    ASSERT_EQ(cv.begin(), cv.data());
     v.data()[1] = 'w';
     v.pop_front();
     ASSERT_EQ(str("wrong"), cv);
-}
-
-TYPED_TEST(TestStoredValue, Swap)
-{
-    using char_t = TypeParam;
-    using value_t = basic_stored_value<char_t>;
-
-    const auto str0 = char_helper<char_t>::str0;
-
-    auto s1 = str0("swap");
-    auto s2 = str0("wasp");
-    value_t v1(&s1[0], &s1[s1.size() - 1]);
-    value_t v2(&s2[0], &s2[s2.size() - 1]);
-
-    const auto b1 = v1.cbegin();
-    const auto b2 = v2.cbegin();
-
-    v1.swap(v2);
-    ASSERT_EQ(b1, v2.cbegin());
-    ASSERT_EQ(b2, v1.cbegin());
-
-    swap(v1, v2);
-    ASSERT_EQ(b1, v1.cbegin());
-    ASSERT_EQ(b2, v2.cbegin());
-}
-
-TYPED_TEST(TestStoredValue, Write)
-{
-    using namespace std;
-    using char_t = TypeParam;
-    using value_t = basic_stored_value<char_t>;
-    using string_t = basic_string<char_t>;
-    using stream_t = basic_stringstream<char_t>;
-
-    const auto ch = char_helper<char_t>::ch;
-    const auto str = char_helper<char_t>::str;
-
-    string_t s = str("write");
-    string_t s0 = s + char_t();
-    const value_t v(&s0[0], &s0[s0.size() - 1]);
-
-    stream_t o1;
-    o1 << setfill(ch('_')) << setw(10) << s
-       << setfill(ch('*')) << left << setw(8) << s
-       << setfill(ch('+')) << setw(4) << s
-       << 10;
-    stream_t o2;
-    o2 << setfill(ch('_')) << setw(10) << v
-       << setfill(ch('*')) << left << setw(8) << v
-       << setfill(ch('+')) << setw(4) << v
-       << 10;
-    ASSERT_EQ(o1.str(), o2.str());
 }
 
 namespace privy {
