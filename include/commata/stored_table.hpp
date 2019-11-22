@@ -887,8 +887,9 @@ public:
             std::move(other))
     {}
 
+    // Requires allocators to be equal and throws nothing.
     table_store(std::allocator_arg_t, const Allocator& alloc,
-        table_store&& other) noexcept :
+        table_store&& other) :
         member_like_base<Allocator>(alloc),
         buffers_(other.buffers_), buffers_back_(other.buffers_back_),
         buffers_size_(other.buffers_size_),
@@ -923,8 +924,10 @@ public:
         }
     }
 
-    table_store& operator=(table_store&& other) noexcept
+    // Requires allocators to be equal and throws nothing.
+    table_store& operator=(table_store&& other)
     {
+        assert(get_allocator() == other.get_allocator());
         table_store(
             std::allocator_arg,
             select_allocator(*this, other,
@@ -1064,7 +1067,8 @@ public:
 #pragma warning(pop)
 #endif
 
-    void swap(table_store& other) noexcept
+    void swap(table_store& other)
+        noexcept(at_t::propagate_on_container_swap::value)
     {
         assert(at_t::propagate_on_container_swap::value
             || (this->get() == other.get()));
@@ -1078,15 +1082,16 @@ public:
         swap_data(other);
     }
 
-    table_store& merge(table_store&& other) noexcept
+    // Requires allocators to be equal and throws nothing.
+    table_store& merge(table_store&& other)
     {
-        assert(this->get() == other.get());
+        assert(get_allocator() == other.get_allocator());
 
         if (buffers_back_) {
             assert(!buffers_back_->next);
             buffers_back_->next = other.buffers_;
         } else {
-            assert(!buffers_);
+            assert(!buffers_);  // because buffers_back_ != nullptr
             buffers_ = other.buffers_;
         }
         buffers_back_ = other.buffers_back_;
@@ -1165,7 +1170,8 @@ private:
 template <class Ch, class Allocator>
 void swap(
     table_store<Ch, Allocator>& left,
-    table_store<Ch, Allocator>& right) noexcept
+    table_store<Ch, Allocator>& right) noexcept(
+        std::allocator_traits<Allocator>::propagate_on_container_swap::value)
 {
     left.swap(right);
 }
@@ -1582,7 +1588,8 @@ public:
         basic_stored_table(*this).swap(*this);     // throw
     }
 
-    void swap(basic_stored_table& other) noexcept
+    void swap(basic_stored_table& other)
+        noexcept(cat_t::propagate_on_container_swap::value)
     {
         assert((cat_t::propagate_on_container_swap::value
              || (get_allocator() == other.get_allocator())) &&
@@ -1731,124 +1738,98 @@ private:
 template <class Content, class Allocator>
 void swap(
     basic_stored_table<Content, Allocator>& left,
-    basic_stored_table<Content, Allocator>& right) noexcept
+    basic_stored_table<Content, Allocator>& right) noexcept(
+        std::allocator_traits<Allocator>::propagate_on_container_swap::value)
 {
     left.swap(right);
 }
 
 namespace detail {
 
-#ifndef NDEBUG
-
 template <class T, class = void>
-struct has_non_pocs_allocator_type :
+struct has_allocator_type :
     std::false_type
 {};
 
 template <class T>
-struct has_non_pocs_allocator_type<T,
-        std::enable_if_t<
-            !T::allocator_type::propagate_on_container_swap::value>> :
-    std::true_type
-{};
-
-struct is_allocator_aware_impl
-{
-    template <class T>
-    static std::true_type check(typename T::allocator_type* = nullptr);
-
-    template <class T>
-    static std::false_type check(...);
-};
-
-template <class T>
-struct is_allocator_aware :
-    decltype(is_allocator_aware_impl::check<T>(nullptr))
-{};
-
-template <class T>
-auto have_inequal_allocators(const T& l, const T& r)
- -> std::enable_if_t<is_allocator_aware<T>::value, bool>
-{
-    return l.get_allocator() != r.get_allocator();
-}
-
-template <class T>
-auto have_inequal_allocators(const T& l, const T& r)
- -> std::enable_if_t<!is_allocator_aware<T>::value, bool>
-{
-    return false;
-}
-
-#endif
-
-template <class T>
-struct is_std_vector :
-    std::false_type
-{};
-
-template <class... Args>
-struct is_std_vector<std::vector<Args...>> :
-    std::true_type
-{};
-
-template <class T>
-struct is_std_deque :
-    std::false_type
-{};
-
-template <class... Args>
-struct is_std_deque<std::deque<Args...>> :
-    std::true_type
-{};
-
-template <class T>
-struct is_std_list :
-    std::false_type
-{};
-
-template <class... Args>
-struct is_std_list<std::list<Args...>> :
+struct has_allocator_type<T, typename T::allocator_type*> :
     std::true_type
 {};
 
 template <class T>
 struct is_nothrow_swappable :
     std::integral_constant<bool,
-        // According to C++14 23.2.1 (11), STL containers throw no exceptions
-        // with their swap()
-        is_std_vector<T>::value
-     || is_std_deque<T>::value
-     || is_std_list<T>::value
-     || noexcept(std::declval<T&>().swap(std::declval<T&>()))>
-        // We would like to declare using std::swap; and test swap(a, b),
-        // but freaking VS2015 dislikes it
-        // (in fact we shouldn't care since all containers shall have member
-        // function swap).
-        // With C++17, we should rely on std::is_nothrow_swappable.
+        noexcept(std::declval<T&>().swap(std::declval<T&>()))>
+    // With C++17, we should rely on std::is_throw_swappable.
 {};
 
-template <class T>
-auto nothrow_emigrate(T& from, T& to)
- -> std::enable_if_t<!std::is_nothrow_move_assignable<T>::value>
-{
-    assert(!has_non_pocs_allocator_type<T>::value
-        || !have_inequal_allocators(from, to));
-    from.swap(to);
-}
+template <class T, class = void>
+struct adaptive_manoeuvre;
 
 template <class T>
-auto nothrow_emigrate(T& from, T& to)
- -> std::enable_if_t<std::is_nothrow_move_assignable<T>::value>
+struct adaptive_manoeuvre<T,
+    std::enable_if_t<std::is_nothrow_move_assignable<T>::value>>
 {
-    to = std::move(from);
-}
+    template <class Container>
+    static void emplace_back(Container& c, T&& t)
+    {
+        c.emplace(c.cend(), std::move(t));
+    }
+
+    static void emigrate(T&& from, T& to) noexcept
+    {
+        to = std::move(from);
+    }
+};
 
 template <class T>
-using is_nothrow_emigratable =
+struct adaptive_manoeuvre<T,
+    std::enable_if_t<
+        !std::is_nothrow_move_assignable<T>::value
+     && has_allocator_type<T>::value>>
+{
+    template <class Container>
+    static void emplace_back(Container& c, T&& t)
+    {
+        c.emplace(c.cend(), c.get_allocator());
+        c.end().swap(t);
+    }
+
+    // Requires allocators to be equal and throws nothing.
+    static void emigrate(T&& from, T& to)
+    {
+        assert(from.get_allocator() == to.get_allocator());
+        to.swap(from);
+    }
+};
+
+template <class T>
+struct adaptive_manoeuvre<T,
+    std::enable_if_t<
+        !std::is_nothrow_move_assignable<T>::value
+     && !has_allocator_type<T>::value
+     && is_nothrow_swappable<T>::value>>
+{
+    template <class Container>
+    static void emplace_back(Container& c, T&& t)
+    {
+        c.emplace(c.cend());
+        c.end().swap(t);
+    }
+
+    static void emigrate(T&& from, T& to) noexcept
+    {
+        to.swap(from);
+    }
+};
+
+template <class T>
+struct has_adaptive_manoeuvre :
     std::integral_constant<bool,
         std::is_nothrow_move_assignable<T>::value
-     || is_nothrow_swappable<T>::value>;
+     || has_allocator_type<T>::value
+     || is_nothrow_swappable<T>::value>
+{};
 
 template <class ContentL, class ContentR>
 void append_stored_table_content_primitive(ContentL& l, ContentR&& r)
@@ -1886,31 +1867,33 @@ void append_stored_table_content_primitive(
 }
 
 template <class ContentL, class ContentR>
-auto append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
- -> std::enable_if_t<
-        is_nothrow_emigratable<typename ContentL::value_type>::value>
+void append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
 {
     static_assert(std::is_same<typename ContentL::value_type,
         typename ContentR::value_type>::value, "");
+    static_assert(
+        has_adaptive_manoeuvre<typename ContentL::value_type>::value, "");
 
     // We require:
     // - if an exception is thrown by ContentL's emplace() at the end,
     //   there are no effects on the before-end elements.
     // - ContentL's erase() at the end does not throw an exception.
     // - ContentR's erase() at the end does not throw an exception.
+    // - if ContentL::value_type has allocator_type member type, it shall be
+    //   allocator aware and ContentL::value_type::swap on objects which have
+    //   equal allocators shall not exit via an exception.
+
+    using manoeuvre = adaptive_manoeuvre<typename ContentL::value_type>;
 
     const auto left_original_size = l.size();    // ?
     try {
-        // We do move-emplace instead of emplace-and-swap because it seems
-        // unlikely that default-construct-then-swap is less exception-prone
-        // than move-construct
         for (auto& rr : r) {
-            l.emplace(l.cend(), std::move(rr));         // throw
+            manoeuvre::emplace_back(l, std::move(rr));  // throw
         }
     } catch (...) {
         const auto le = std::next(l.begin(), left_original_size);
         for (auto i = le, ie = l.end(), j = r.begin(); i != ie; ++i, ++j) {
-            nothrow_emigrate(*i, *j);
+            manoeuvre::emigrate(std::move(*i), *j);
         }
         l.erase(le, l.cend());
         throw;
@@ -1922,25 +1905,24 @@ auto append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
 }
 
 template <class Record, class AllocatorL, class ContentR>
-auto append_stored_table_content_adaptive(
+void append_stored_table_content_adaptive(
     std::list<Record, AllocatorL>& l, ContentR&& r)
- -> std::enable_if_t<is_nothrow_emigratable<Record>::value>
 {
     static_assert(
         std::is_same<Record, typename ContentR::value_type>::value, "");
+    static_assert(has_adaptive_manoeuvre<Record>::value, "");
+
+    using manoeuvre = adaptive_manoeuvre<Record>;
 
     std::list<Record, AllocatorL> r2(l.get_allocator());    // throw
     try {
-        // We do move-emplace instead of emplace-and-swap because it seems
-        // unlikely that default-construct-then-swap is less exception-prone
-        // than move-construct
         for (auto& rr : r) {
-            r2.push_back(std::move(rr));                    // throw
+            manoeuvre::emplace_back(r2, std::move(rr));     // throw
         }
     } catch (...) {
         for (auto i = r2.begin(), ie = r2.end(), j = r.begin();
                 i != ie; ++i, ++j) {
-            nothrow_emigrate(*i, *j);
+            manoeuvre::emigrate(std::move(*i), *j);
         }
         throw;
     }
@@ -1948,27 +1930,27 @@ auto append_stored_table_content_adaptive(
 }
 
 template <class ContentL, class ContentR>
-auto append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
+auto append_stored_table_content(ContentL& l, ContentR&& r)
  -> std::enable_if_t<
-        !is_nothrow_emigratable<typename ContentL::value_type>::value>
-{
-    append_stored_table_content_primitive(l, r);
-}
-
-template <class ContentL, class ContentR>
-auto append_stored_table_content(ContentL& l, ContentR&& r)
- -> std::enable_if_t<!std::is_same<
-        typename ContentL::value_type, typename ContentR::value_type>::value>
-{
-    append_stored_table_content_primitive(l, r);
-}
-
-template <class ContentL, class ContentR>
-auto append_stored_table_content(ContentL& l, ContentR&& r)
- -> std::enable_if_t<std::is_same<
-        typename ContentL::value_type, typename ContentR::value_type>::value>
+        std::is_same<
+            typename ContentL::value_type,
+            typename ContentR::value_type>::value
+     && has_adaptive_manoeuvre<
+            typename ContentL::value_type>::value>
 {
     append_stored_table_content_adaptive(l, std::move(r));
+}
+
+template <class ContentL, class ContentR>
+auto append_stored_table_content(ContentL& l, ContentR&& r)
+ -> std::enable_if_t<
+        !std::is_same<
+            typename ContentL::value_type,
+            typename ContentR::value_type>::value
+     || !has_adaptive_manoeuvre<
+            typename ContentL::value_type>::value>
+{
+    append_stored_table_content_primitive(l, r);
 }
 
 template <class Record, class Allocator>

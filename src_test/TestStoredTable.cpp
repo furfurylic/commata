@@ -599,15 +599,8 @@ using store_t = detail::table_store<char, std::allocator<char>>;
 
 static_assert(std::is_default_constructible<store_t>::value, "");
 static_assert(std::is_nothrow_move_constructible<store_t>::value, "");
-static_assert(std::is_nothrow_move_assignable<store_t>::value, "");
 static_assert(noexcept(std::declval<store_t&>().secure_any(0)), "");
 static_assert(noexcept(std::declval<store_t&>().clear()), "");
-static_assert(noexcept(
-    std::declval<store_t&>().merge(std::declval<store_t>())), "");
-static_assert(noexcept(
-    std::declval<store_t&>().swap(std::declval<store_t&>())), "");
-static_assert(noexcept(
-    swap(std::declval<store_t&>(), std::declval<store_t&>())), "");
 
 }
 
@@ -706,13 +699,6 @@ TEST_F(TestTableStore, Swap)
     ASSERT_EQ(expected1, store1.get_security());
     ASSERT_EQ(expected2, store2.get_security());
 }
-
-static_assert(detail::is_std_vector<std::vector<int>>::value, "");
-static_assert(!detail::is_std_vector<std::deque<int>>::value, "");
-static_assert(detail::is_std_deque<std::deque<std::string>>::value, "");
-static_assert(!detail::is_std_deque<std::list<std::vector<int>>>::value, "");
-static_assert(detail::is_std_list<std::list<double>>::value, "");
-static_assert(!detail::is_std_list<std::vector<std::deque<int>>>::value, "");
 
 static_assert(std::is_default_constructible<stored_table>::value, "");
 static_assert(std::is_nothrow_move_constructible<stored_table>::value, "");
