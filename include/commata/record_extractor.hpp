@@ -393,6 +393,13 @@ class record_extractor :
     public detail::record_extractor_impl<
         FieldNamePred, FieldValuePred, Ch, Tr, Allocator>
 {
+    static_assert(
+        std::is_invocable_r_v<bool, FieldNamePred, const Ch*, const Ch*>,
+        "FieldNamePred of record_extractor is not a valid invocable type");
+    static_assert(
+        std::is_invocable_r_v<bool, FieldValuePred, const Ch*, const Ch*>,
+        "FieldValuePred of record_extractor is not a valid invocable type");
+
     using base = detail::record_extractor_impl<
         FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
 
@@ -425,12 +432,30 @@ public:
     ~record_extractor() = default;
 };
 
+template <class FieldNamePred, class FieldValuePred, class Ch, class Tr,
+          class... Args>
+record_extractor(std::basic_streambuf<Ch, Tr>*, FieldNamePred, FieldValuePred,
+                 Args...)
+ -> record_extractor<FieldNamePred, FieldValuePred, Ch, Tr,
+                     std::allocator<Ch>>;
+
+template <class FieldNamePred, class FieldValuePred, class Ch, class Tr,
+          class Allocator, class... Args>
+record_extractor(std::allocator_arg_t, Allocator,
+    std::basic_streambuf<Ch, Tr>*, FieldNamePred, FieldValuePred, Args...)
+ -> record_extractor<FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
+
 template <class FieldValuePred, class Ch,
     class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>>
 class record_extractor_with_indexed_key :
     public detail::record_extractor_impl<
         detail::hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr, Allocator>
 {
+    static_assert(
+        std::is_invocable_r_v<bool, FieldValuePred, const Ch*, const Ch*>,
+        "FieldValuePred of record_extractor_with_indexed_key "
+        "is not a valid invocable type");
+
     using base = detail::record_extractor_impl<
         detail::hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr, Allocator>;
 
@@ -462,6 +487,18 @@ public:
         record_extractor_with_indexed_key&&) = default;
     ~record_extractor_with_indexed_key() = default;
 };
+
+template <class FieldValuePred, class Ch, class Tr, class... Args>
+record_extractor_with_indexed_key(std::basic_streambuf<Ch, Tr>*, std::size_t,
+    FieldValuePred, Args...)
+ -> record_extractor_with_indexed_key<FieldValuePred, Ch, Tr,
+                                      std::allocator<Ch>>;
+
+template <class FieldValuePred, class Ch, class Tr, class Allocator,
+          class... Args>
+record_extractor_with_indexed_key(std::allocator_arg_t, Allocator,
+    std::basic_streambuf<Ch, Tr>*, std::size_t, FieldValuePred, Args...)
+ -> record_extractor_with_indexed_key<FieldValuePred, Ch, Tr, Allocator>;
 
 namespace detail {
 
@@ -518,8 +555,7 @@ template <class Ch, class Tr, class Allocator>
 auto make_string_pred(
     std::basic_string<Ch, Tr, Allocator>&& s, const Allocator&) noexcept
 {
-    return string_eq<Ch, Tr, Allocator>(
-        std::basic_string<Ch, Tr, Allocator>(std::move(s)));
+    return string_eq(std::basic_string(std::move(s)));
 }
 
 template <class Ch, class Tr, class Allocator, class T>
@@ -527,9 +563,9 @@ decltype(auto) make_string_pred(T&& s, [[maybe_unused]] const Allocator& a)
 {
     using str_t = std::basic_string<Ch, Tr, Allocator>;
     if constexpr (std::is_constructible_v<str_t, T&&, const Allocator&>) {
-        return string_eq<Ch, Tr, Allocator>(str_t(std::forward<T>(s), a));
+        return string_eq(str_t(std::forward<T>(s), a));
     } else if constexpr (has_const_iterator_v<std::remove_reference_t<T>>) {
-        return string_eq<Ch, Tr, Allocator>(
+        return string_eq(
             str_t(std::forward<T>(s).cbegin(), std::forward<T>(s).cend(), a));
     } else {
         // Watch out for the return type, which is not string_eq.
@@ -552,16 +588,14 @@ auto make_record_extractor(
     auto fvp = detail::make_string_pred<Ch, Tr, Allocator>(
         std::forward<FieldValuePred>(field_value_pred), alloc);
     if constexpr (std::is_integral_v<std::decay_t<FieldNamePred>>) {
-        return record_extractor_with_indexed_key<
-                decltype(fvp), Ch, Tr, Allocator>(
+        return record_extractor_with_indexed_key(
             std::allocator_arg, alloc, out,
             static_cast<std::size_t>(field_name_pred), std::move(fvp),
             std::forward<Appendices>(appendices)...);
     } else {
         auto fnp = detail::make_string_pred<Ch, Tr, Allocator>(
             std::forward<FieldNamePred>(field_name_pred), alloc);
-        return record_extractor<
-                decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
+        return record_extractor(
             std::allocator_arg, alloc, out,
             std::move(fnp), std::move(fvp),
             std::forward<Appendices>(appendices)...);
