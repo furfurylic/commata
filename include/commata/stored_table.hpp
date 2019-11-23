@@ -758,7 +758,7 @@ public:
 
     // Requires allocators to be equal. Throws nothing.
     table_store(std::allocator_arg_t, const Allocator& alloc,
-        table_store&& other) :
+        table_store&& other) noexcept(at_t::is_always_equal::value) :
         member_like_base<Allocator>(alloc),
         buffers_             (std::exchange(other.buffers_, nullptr)),
         buffers_back_        (std::exchange(other.buffers_back_, nullptr)),
@@ -789,8 +789,8 @@ public:
     }
 
     table_store& operator=(table_store&& other)
-        noexcept(std::allocator_traits<Allocator>::
-            propagate_on_container_move_assignment::value)
+        noexcept(at_t::propagate_on_container_move_assignment::value
+              || at_t::is_always_equal::value)
     {
         assert(at_t::propagate_on_container_move_assignment::value
             || (get_allocator() == other.get_allocator()));
@@ -942,10 +942,11 @@ public:
 #endif
 
     void swap(table_store& other)
-        noexcept(at_t::propagate_on_container_swap::value)
+        noexcept(at_t::propagate_on_container_swap::value
+              || at_t::is_always_equal::value)
     {
         assert(at_t::propagate_on_container_swap::value
-            || (this->get() == other.get()));
+            || (get_allocator() == other.get_allocator()));
         swap_alloc(other, typename at_t::propagate_on_container_swap());
         swap_data(other);
     }
@@ -958,6 +959,7 @@ public:
 
     // Requires allocators to be equal and throws nothing.
     table_store& merge(table_store&& other)
+        noexcept(at_t::is_always_equal::value)
     {
         assert(get_allocator() == other.get_allocator());
 
@@ -1032,7 +1034,8 @@ template <class Ch, class Allocator>
 void swap(
     table_store<Ch, Allocator>& left,
     table_store<Ch, Allocator>& right) noexcept(
-        std::allocator_traits<Allocator>::propagate_on_container_swap::value)
+        std::allocator_traits<Allocator>::propagate_on_container_swap::value
+     || std::allocator_traits<Allocator>::is_always_equal::value)
 {
     left.swap(right);
 }
@@ -1191,21 +1194,23 @@ public:
 
     // Throws nothing if alloc == other.get_allocator().
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
-        basic_stored_table&& other) :
+        basic_stored_table&& other) noexcept(at_t::is_always_equal::value) :
         store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
         buffer_size_(std::min(cat_t::max_size(ca_t(store_.get_allocator())),
             other.buffer_size_))
     {
-        if (alloc == other.get_allocator()) {
-            store_type s(std::allocator_arg,
-                store_.get_allocator(), std::move(other.store_));
-            store_.swap_force(s);
-            using std::swap;
-            swap(records_/*nullptr*/, other.records_);
-        } else {
-            basic_stored_table(std::allocator_arg, alloc, other).
-                swap_force(*this);  // throw
+        if constexpr (!at_t::is_always_equal::value) {
+            if (alloc != other.get_allocator()) {
+                basic_stored_table(std::allocator_arg, alloc, other).
+                    swap_force(*this);  // throw
+                return;
+            }
         }
+        store_type s(std::allocator_arg,
+            store_.get_allocator(), std::move(other.store_));
+        store_.swap_force(s);
+        using std::swap;
+        swap(records_/*nullptr*/, other.records_);
     }
 
     ~basic_stored_table()
@@ -1257,7 +1262,8 @@ public:
     }
 
     basic_stored_table& operator=(basic_stored_table&& other)
-        noexcept(at_t::propagate_on_container_move_assignment::value)
+        noexcept(at_t::propagate_on_container_move_assignment::value
+              || at_t::is_always_equal::value)
     {
         basic_stored_table(
             std::allocator_arg,
@@ -1526,7 +1532,8 @@ public:
     }
 
     void swap(basic_stored_table& other)
-        noexcept(cat_t::propagate_on_container_swap::value)
+        noexcept(cat_t::propagate_on_container_swap::value
+              || cat_t::is_always_equal::value)
     {
         assert((cat_t::propagate_on_container_swap::value
              || (get_allocator() == other.get_allocator())) &&
@@ -1795,13 +1802,15 @@ void append_stored_table_content(
     std::list<Record, Allocator>& l, std::list<Record, Allocator>&& r)
 {
     // stores' allocator equality does not necessarily mean contents' one
-    if (l.get_allocator() == r.get_allocator()) {
-        l.splice(l.cend(), r);
-    } else {
-        std::list<Record, Allocator> r2(l.get_allocator());     // throw
-        emigrate(std::move(r), r2);                             // throw
-        l.splice(l.cend(), r2);
+    if constexpr (!std::allocator_traits<Allocator>::is_always_equal::value) {
+        if (l.get_allocator() != r.get_allocator()) {
+            std::list<Record, Allocator> r2(l.get_allocator());     // throw
+            emigrate(std::move(r), r2);                             // throw
+            l.splice(l.cend(), r2);
+            return;
+        }
     }
+    l.splice(l.cend(), r);
 }
 
 template <class ContentL, class AllocatorL, class TableR>
@@ -1828,13 +1837,15 @@ template <class OtherContent>
 void basic_stored_table<Content, Allocator>::append_no_singular(
     basic_stored_table<OtherContent, Allocator>&& other)
 {
-    if (store_.get_allocator() == other.store_.get_allocator()) {
-        detail::stored::append_stored_table_content(
-            content(), std::move(other.content()));     // throw
-        store_.merge(std::move(other.store_));
-    } else {
-        append_no_singular(other);                      // throw
+    if constexpr (!std::allocator_traits<Allocator>::is_always_equal::value) {
+        if (store_.get_allocator() != other.store_.get_allocator()) {
+            append_no_singular(other);              // throw
+            return;
+        }
     }
+    detail::stored::append_stored_table_content(
+        content(), std::move(other.content()));     // throw
+    store_.merge(std::move(other.store_));
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>

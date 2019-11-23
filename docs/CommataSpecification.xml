@@ -3467,11 +3467,13 @@ namespace commata {
     basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                        const basic_stored_table&amp;  other);
     basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
-                             basic_stored_table&amp;&amp; other);
+                             basic_stored_table&amp;&amp; other)
+      noexcept(std::allocator_traits&lt;Allocator>::is_always_equal::value);
    ~basic_stored_table();
     basic_stored_table&amp; operator=(const basic_stored_table&amp;  other);
     basic_stored_table&amp; operator=(      basic_stored_table&amp;&amp; other)
-      noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment::value);
+      noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment::value
+            || std::allocator_traits&lt;Allocator>::is_always_equal::value);
 
     <c>// <n><xref id="basic_stored_table.constituents"/>, access to the constituents:</n></c>
     allocator_type get_allocator() const noexcept;
@@ -3514,7 +3516,8 @@ namespace commata {
       basic_stored_table&amp; operator+=(
               basic_stored_table&lt;OtherContent, Allocator>&amp;&amp;     other);
     void swap(basic_stored_table&amp; other)
-      noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value);
+      noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value
+            || std::allocator_traits&lt;Allocator>::is_always_equal::value);
   
   private:
     <c>// <nc>exposition only</nc></c>
@@ -3654,7 +3657,8 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
         <code-item>
           <code>
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
-                   basic_stored_table&amp;&amp; other);
+                   basic_stored_table&amp;&amp; other)
+  noexcept(std::allocator_traits&lt;Allocator>::is_always_equal::value);
           </code>
           <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(alloc))</c> and <c>other.get_buffer_size()</c>.
                          If not undefined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
@@ -3680,7 +3684,8 @@ basic_stored_table&amp; operator=(const basic_stored_table&amp; other);
         <code-item>
           <code>
 basic_stored_table&amp; operator=(basic_stored_table&amp;&amp; other)
-  noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment::value);
+  noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment::value
+        || std::allocator_traits&lt;Allocator>::is_always_equal::value);
           </code>
           <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and the value of <c>other.get_buffer_size()</c> before this assignment.
                          If not undefined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this assignment.</postcondition>
@@ -3936,7 +3941,8 @@ template &lt;class OtherContent>
         <code-item>
           <code>
 void swap(basic_stored_table&amp; other)
-  noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value);
+  noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value
+        || std::allocator_traits&lt;Allocator>::is_always_equal::value);
           </code>
           <requires>If <c>std::allocator_traits&lt;allocator_type>::propagate_on_container_swap::value</c> is <c>false</c>, <c>get_allocator() == other.get_allocator()</c> shall be <c>true</c>.</requires>
           <effects>Exchanges the contents of <c>*this</c> and <c>other</c>.</effects>
