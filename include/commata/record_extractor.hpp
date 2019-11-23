@@ -205,8 +205,8 @@ public:
         using namespace std::placeholders;
         if (is_in_header()) {
             if ((target_field_index_ == npos)
-             && with_field_buffer_appended(first, last,
-                    std::bind(std::ref(nf_.base()), _1, _2))) {
+             && with_field_buffer_appended(
+                    first, last, std::ref(nf_.base()))) {
                 target_field_index_ = field_index_;
             }
             ++field_index_;
@@ -216,8 +216,8 @@ public:
         } else {
             if ((record_mode_ == record_mode::unknown)
              && (field_index_ == target_field_index_)) {
-                if (with_field_buffer_appended(first, last,
-                        std::bind(std::ref(vr_.base()), _1, _2))) {
+                if (with_field_buffer_appended(
+                        first, last, std::ref(vr_.base()))) {
                     include();
                 } else {
                     exclude();
