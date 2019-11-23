@@ -60,10 +60,7 @@ static_assert(noexcept(std::declval<stored_value&>().size()), "");
 static_assert(noexcept(std::declval<stored_value&>().length()), "");
 static_assert(noexcept(std::declval<stored_value&>().empty()), "");
 static_assert(noexcept(std::declval<stored_value&>().clear()), "");
-static_assert(noexcept(
-    std::declval<stored_value&>().swap(std::declval<stored_value&>())), "");
-static_assert(noexcept(
-    swap(std::declval<stored_value&>(), std::declval<stored_value&>())), "");
+static_assert(std::is_nothrow_swappable_v<stored_value>);
 
 template <class Ch>
 struct TestStoredValueNoModification : BaseTest

@@ -1647,13 +1647,6 @@ struct has_allocator_type<T, typename T::allocator_type*> :
     std::true_type
 {};
 
-template <class T>
-struct is_nothrow_swappable :
-    std::integral_constant<bool,
-        noexcept(std::declval<T&>().swap(std::declval<T&>()))>
-    // With C++17, we should rely on std::is_throw_swappable.
-{};
-
 template <class T, class = void>
 struct adaptive_manoeuvre;
 
@@ -1699,7 +1692,7 @@ struct adaptive_manoeuvre<T,
     std::enable_if_t<
         !std::is_nothrow_move_assignable<T>::value
      && !has_allocator_type<T>::value
-     && is_nothrow_swappable<T>::value>>
+     && std::is_nothrow_swappable<T>::value>>
 {
     template <class Container>
     static void emplace_back(Container& c, T&& t)
@@ -1719,7 +1712,7 @@ struct has_adaptive_manoeuvre :
     std::integral_constant<bool,
         std::is_nothrow_move_assignable<T>::value
      || has_allocator_type<T>::value
-     || is_nothrow_swappable<T>::value>
+     || std::is_nothrow_swappable<T>::value>
 {};
 
 template <class ContentL, class ContentR>
