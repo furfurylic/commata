@@ -670,6 +670,7 @@ static_assert(std::is_default_constructible<store_t>::value, "");
 static_assert(std::is_nothrow_move_constructible<store_t>::value, "");
 static_assert(noexcept(std::declval<store_t&>().secure_any(0)), "");
 static_assert(noexcept(std::declval<store_t&>().clear()), "");
+static_assert(std::is_nothrow_swappable_v<store_t>, "");
 
 }
 
