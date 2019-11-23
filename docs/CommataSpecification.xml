@@ -1471,7 +1471,7 @@ void swap(owned_streambuf_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;Streambuf&amp;>(), std::declval&lt;Streambuf&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;Streambuf></c>.</remark>
         </code-item>
       </section>
 
@@ -1565,7 +1565,7 @@ void swap(owned_istream_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;IStream&amp;>(), std::declval&lt;IStream&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;IStream></c>.</remark>
         </code-item>
       </section>
 
@@ -1781,7 +1781,7 @@ return rlen;</code>
 void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Exchanges <c>s</c> and <c>other.s</c>, and, <c>head</c> and <c>other.head</c>, respectively.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;std::basic_string&lt;Ch, Tr, Allocator>&amp;>(), std::declval&lt;std::basic_string&lt;Ch, Tr, Allocator>&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;std::basic_string&lt;Ch, Tr, Allocator>></c>.</remark>
         </code-item>
       </section>
 
@@ -2070,7 +2070,7 @@ void swap(csv_source&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;CharInput&amp;>(), std::declval&lt;CharInput&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;CharInput></c>.</remark>
         </code-item>
       </section>
 

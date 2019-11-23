@@ -154,9 +154,8 @@ check_handler<Ch, F> make_check_handler(F f)
 
 } // unnamed
 
-static_assert(noexcept(std::swap( 
-    std::declval<reference_handler<test_collector<char>>&>(),
-    std::declval<reference_handler<test_collector<char>>&>())), "");
+static_assert(
+    std::is_nothrow_swappable_v<reference_handler<test_collector<char>>>, "");
 static_assert(
     std::is_trivially_copyable<reference_handler<test_collector<char>>>::value,
     "");

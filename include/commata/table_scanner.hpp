@@ -1471,7 +1471,7 @@ private:
 
 public:
     void swap(nontrivial_store& other)
-        noexcept(detail::is_nothrow_swappable<T>()
+        noexcept(std::is_nothrow_swappable_v<T>
               && std::is_nothrow_move_constructible<T>::value)
     {
         using std::swap;
@@ -1558,7 +1558,7 @@ public:
     }
 
     void swap(replace_if_skipped& other)
-        noexcept(detail::is_nothrow_swappable<store_t>())
+        noexcept(std::is_nothrow_swappable_v<store_t>)
     {
         using std::swap;
         swap(store_, other.store_);
@@ -1878,7 +1878,7 @@ private:
 
 public:
     void swap(nontrivial_store& other)
-        noexcept(detail::is_nothrow_swappable<T>()
+        noexcept(std::is_nothrow_swappable_v<T>
               && std::is_nothrow_constructible<T>::value)
     {
         for (unsigned r = 0; r < N; ++r) {
@@ -2143,7 +2143,7 @@ public:
     }
 
     void swap(replace_if_conversion_failed& other)
-        noexcept(detail::is_nothrow_swappable<T>()
+        noexcept(std::is_nothrow_swappable_v<T>
               && std::is_nothrow_constructible<T>::value)
     {
         using std::swap;

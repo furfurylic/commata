@@ -1733,28 +1733,20 @@ TEST_F(TestReplaceIfSkipped, Swap)
 
 namespace replace_if_skipped_static_asserts {
 
-struct a_t : std::allocator<int>
-{
-    using propagate_on_container_swap = std::true_type;
-};
-
 using ri_t = replace_if_skipped<int>;
-using rv_t = replace_if_skipped<std::vector<int, a_t>>;
-using std::swap;
+using rv_t = replace_if_skipped<std::vector<int>>;
 
 static_assert(std::is_nothrow_copy_constructible<ri_t>::value, "");
 static_assert(std::is_nothrow_move_constructible<ri_t>::value, "");
 static_assert(std::is_nothrow_copy_assignable<ri_t>::value, "");
 static_assert(std::is_nothrow_move_assignable<ri_t>::value, "");
-static_assert(noexcept(
-    swap(std::declval<ri_t&>(), std::declval<ri_t&>())), "");
+static_assert(std::is_nothrow_swappable_v<ri_t>, "");
 
 static_assert(!std::is_nothrow_copy_constructible<rv_t>::value, "");
 static_assert(std::is_nothrow_move_constructible<rv_t>::value, "");
 static_assert(!std::is_nothrow_copy_assignable<rv_t>::value, "");
 static_assert(std::is_nothrow_move_assignable<rv_t>::value, "");
-static_assert(noexcept(
-    swap(std::declval<rv_t&>(), std::declval<rv_t&>())), "");
+static_assert(std::is_nothrow_swappable_v<rv_t>, "");
 
 static_assert(std::is_trivially_copyable<ri_t>::value, "");
 
@@ -2210,28 +2202,20 @@ TYPED_TEST(TestReplaceIfConversionFailed, Swap)
 
 namespace replace_if_conversion_failed_static_asserts {
 
-struct a_t : std::allocator<int>
-{
-    using propagate_on_container_swap = std::true_type;
-};
-
 using ri_t = replace_if_conversion_failed<int>;
-using rv_t = replace_if_conversion_failed<std::vector<int, a_t>>;
-using std::swap;
+using rv_t = replace_if_conversion_failed<std::vector<int>>;
 
 static_assert(std::is_nothrow_copy_constructible<ri_t>::value, "");
 static_assert(std::is_nothrow_move_constructible<ri_t>::value, "");
 static_assert(std::is_nothrow_copy_assignable<ri_t>::value, "");
 static_assert(std::is_nothrow_move_assignable<ri_t>::value, "");
-static_assert(noexcept(
-    swap(std::declval<ri_t&>(), std::declval<ri_t&>())), "");
+static_assert(std::is_nothrow_swappable_v<ri_t>, "");
 
 static_assert(!std::is_nothrow_copy_constructible<rv_t>::value, "");
 static_assert(std::is_nothrow_move_constructible<rv_t>::value, "");
 static_assert(!std::is_nothrow_copy_assignable<rv_t>::value, "");
 static_assert(std::is_nothrow_move_assignable<rv_t>::value, "");
-static_assert(noexcept(
-    swap(std::declval<rv_t&>(), std::declval<rv_t&>())), "");
+static_assert(std::is_nothrow_swappable_v<rv_t>, "");
 
 static_assert(std::is_trivially_copyable<ri_t>::value, "");
 

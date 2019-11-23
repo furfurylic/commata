@@ -9,7 +9,6 @@
 #include <functional>
 #include <string>
 #include <type_traits>
-#include <utility>
 
 namespace commata::detail {
 
@@ -68,13 +67,6 @@ struct first<Head, Tail...>
 
 template <class... Ts>
 using first_t = typename first<Ts...>::type;
-
-template <class T>
-constexpr bool is_nothrow_swappable()
-{
-    using std::swap;
-    return noexcept(swap(std::declval<T&>(), std::declval<T&>()));
-}
 
 }
 

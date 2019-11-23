@@ -16,8 +16,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "typing_aid.hpp"
-
 namespace commata {
 
 namespace detail { namespace input {
@@ -112,7 +110,7 @@ public:
     }
 
     void swap(owned_streambuf_input& other)
-        noexcept(detail::is_nothrow_swappable<Streambuf>())
+        noexcept(std::is_nothrow_swappable_v<Streambuf>)
     {
         using std::swap;
         swap(in_, other.in_);
@@ -162,7 +160,7 @@ public:
     }
 
     void swap(owned_istream_input& other)
-        noexcept(detail::is_nothrow_swappable<IStream>())
+        noexcept(std::is_nothrow_swappable_v<IStream>)
     {
         using std::swap;
         swap(in_, other.in_);
@@ -318,7 +316,7 @@ public:
     }
 
     void swap(owned_string_input& other) noexcept(
-        detail::is_nothrow_swappable<std::basic_string<Ch, Tr, Allocator>>())
+        std::is_nothrow_swappable_v<std::basic_string<Ch, Tr, Allocator>>)
     {
         using std::swap;
         swap(s_, other.s_);

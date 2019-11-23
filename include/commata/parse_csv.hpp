@@ -883,7 +883,7 @@ public:
     }
 
     void swap(csv_source& other)
-        noexcept(detail::is_nothrow_swappable<CharInput>())
+        noexcept(std::is_nothrow_swappable_v<CharInput>)
     {
         using std::swap;
         swap(in_, other.in_);
