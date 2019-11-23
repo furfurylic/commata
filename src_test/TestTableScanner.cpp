@@ -1244,6 +1244,24 @@ TEST_F(TestTableScannerReference, RecordEndScanner)
     ASSERT_EQ(-12345, v[3]);
 }
 
+struct TestReplaceIfSkipped : BaseTest
+{};
+
+TEST_F(TestReplaceIfSkipped, DeductionGuides)
+{
+    replace_if_skipped r1(10);
+    static_assert(std::is_same_v<replace_if_skipped<int>, decltype(r1)>);
+    ASSERT_TRUE(r1().has_value());
+    ASSERT_EQ(10, *r1());
+
+    const std::string s("skipped");
+    replace_if_skipped r2(s);
+    static_assert(
+        std::is_same_v<replace_if_skipped<std::string>, decltype(r2)>);
+    ASSERT_TRUE(r2().has_value());
+    ASSERT_STREQ("skipped", r2()->c_str());
+}
+
 struct TestReplaceIfConversionFailed : BaseTest
 {};
 
@@ -1353,4 +1371,30 @@ TEST_F(TestReplaceIfConversionFailed, Ignored)
     }
 
     ASSERT_EQ(150, a.yield());
+}
+
+TEST_F(TestReplaceIfConversionFailed, DeductionGuides)
+{
+    const char s[] = "";
+
+    replace_if_conversion_failed r1(10);
+    static_assert(
+        std::is_same_v<replace_if_conversion_failed<int>, decltype(r1)>);
+    ASSERT_TRUE(r1.empty().has_value());
+    ASSERT_EQ(10, *r1.empty());
+    ASSERT_TRUE(r1.invalid_format(s, s).has_value());
+    ASSERT_EQ(int(), *r1.invalid_format(s, s));
+
+    replace_if_conversion_failed r2(
+        replacement_fail, replacement_fail, replacement_ignore,
+        std::wstring(L"below lower limit"), L"underflow");
+    static_assert(
+        std::is_same_v<replace_if_conversion_failed<std::wstring>,
+                       decltype(r2)>);
+    ASSERT_THROW(r2.empty(), field_empty);
+    ASSERT_THROW(r2.invalid_format(s, s), field_invalid_format);
+    ASSERT_FALSE(r2.out_of_range(s, s, 1).has_value());
+    ASSERT_TRUE(r2.out_of_range(s, s, -1).has_value());
+    ASSERT_STREQ(L"below lower limit", r2.out_of_range(s, s, -1)->c_str());
+    ASSERT_STREQ(L"underflow", r2.out_of_range(s, s, 0)->c_str());
 }

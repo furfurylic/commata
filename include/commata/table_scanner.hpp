@@ -1362,6 +1362,42 @@ public:
     }
 };
 
+namespace detail {
+
+struct replaced_type_not_found_t
+{};
+
+template <class... Ts>
+struct replaced_type_from;
+
+template <class... Ts>
+using replaced_type_from_t = typename replaced_type_from<Ts...>::type;
+
+template <>
+struct replaced_type_from<>
+{
+    using type = replaced_type_not_found_t;
+};
+
+template <class Head, class... Tails>
+struct replaced_type_from<Head, Tails...>
+{
+    using type = std::conditional_t<
+        std::is_base_of_v<replacement_fail_t, Head>
+     || std::is_base_of_v<replacement_ignore_t, Head>,
+        replaced_type_from_t<Tails...>, Head>;
+};
+
+}
+
+template <class T,
+    std::enable_if_t<
+        !std::is_same_v<
+            detail::replaced_type_not_found_t,
+            detail::replaced_type_from_t<T>>,
+        std::nullptr_t> = nullptr>
+replace_if_skipped(T) -> replace_if_skipped<detail::replaced_type_from_t<T>>;
+
 struct fail_if_conversion_failed
 {
     template <class T, class Ch>
@@ -1805,6 +1841,15 @@ private:
         return std::optional<T>();
     }
 };
+
+template <class... Ts,
+    std::enable_if_t<
+        !std::is_same_v<
+            detail::replaced_type_not_found_t,
+            detail::replaced_type_from_t<Ts...>>,
+        std::nullptr_t> = nullptr>
+replace_if_conversion_failed(Ts...)
+ -> replace_if_conversion_failed<detail::replaced_type_from_t<Ts...>>;
 
 namespace detail {
 

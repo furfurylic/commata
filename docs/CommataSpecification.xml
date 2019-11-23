@@ -16,7 +16,7 @@
 
     <p>The normativity of the specifications on this document is the same as the normativity of the description of the ISO C++17 standard for its conforming standard library implementations except that:</p>
     <ul>
-      <li>class templates and function templates shall not have any additional template parameters no matter whether they have their default template arguments,</li>
+      <li>class templates and function templates shall not have any additional template parameters no matter whether they have their default template arguments, except that deduction guides can have ones with their default template arguments, </li>
       <li>member templates shall not have any additional template parameters no matter whether they have their default template arguments, except that constructor templates can have ones with their default template arguments, and</li>
       <li>member function templates shall not have any additional parameters no matter whether they have their default arguments.</li>
     </ul>
@@ -3013,6 +3013,7 @@ namespace commata {
 
     <c>// <n><xref id="basic_stored_table.constituents"/>, access to the constituents:</n></c>
     allocator_type get_allocator() const noexcept;
+
     std::size_t get_buffer_size() const noexcept;
     content_type&amp;       content();
     const content_type&amp; content() const;
@@ -3981,11 +3982,16 @@ namespace commata {
 
   <c>// <n><xref id="scanner.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
   struct fail_if_skipped;
+
   template &lt;class T> class replace_if_skipped;
+  template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
 
   <c>// <n><xref id="scanner.builtin.conversion_error_handlers"/>, default conversion error handler classes:</n></c>
   struct fail_if_conversion_failed;
+
   template &lt;class T> class replace_if_conversion_failed;
+  template &lt;class... Ts>
+    replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
 
   <c>// <n><xref id="arithmetic_field_translator"/>, arithmetic_field_translator:</n></c>
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
@@ -4390,6 +4396,8 @@ namespace commata {
 
     std::optional&lt;T> operator()() const;
   };
+
+  template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
 }
         </codeblock>
 
@@ -4468,6 +4476,13 @@ replace_if_skipped(const replace_if_skipped&amp; other) noexcept(<nc>see below</
 replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept;
           </code>
           <postcondition>Member function <c>operator()</c> behaves like <c>other</c> would do before the call.</postcondition>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
+          </code>
+          <remark>This deduction guide participates in overload resolution only if <c>T</c> is not the same type as or a derived class of <c>replace_fail_t</c> or <c>replace_ignore_t</c>.</remark>
         </code-item>
 
         <code-item>
@@ -4586,6 +4601,9 @@ namespace commata {
     template &lt;class Ch> std::optional&lt;T> out_of_range(const Ch*, const Ch*, int sign) const;
                         std::optional&lt;T> empty() const;
   };
+
+  template &lt;class... Ts>
+    replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
 }
         </codeblock>
 
@@ -4662,6 +4680,15 @@ replace_if_conversion_failed(const replace_if_conversion_failed&amp; other) noex
 replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept;
           </code>
           <postcondition>Member functions <c>invalid_format</c>, <c>out_of_range</c> and <c>empty</c> behave like <c>other</c> would do before the call.</postcondition>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class... Ts>
+  replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
+          </code>
+          <remark>This deduction guide participates in overload resolution only if there is a type in <c>Ts...</c> which is not the same type as or a base type of <c>replace_fail_t</c> or <c>replace_ignore_t</c>.
+                  In that case, the deduced type is <c>replace_if_conversion_failed&lt;T></c> where <c>T</c> is the first (that is, the leftmost) type in <c>Ts...</c> which is not the same type as or a derived class of <c>replace_fail_t</c> or <c>replace_ignore_t</c>.</remark>
         </code-item>
 
         <code-item>
