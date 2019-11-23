@@ -2069,9 +2069,10 @@ template &lt;class OtherContent, class OtherAllocator>
   basic_stored_table(
     const basic_stored_table&lt;OtherContent, OtherAllocator>&amp; other);
           </code>
-          <requires><c>OtherContent::char_type</c> and <c>OtherContent::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.</requires>
+          <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.
+                    <c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.</requires>
           <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and <c>other.get_buffer_size()</c>.
-                         <c>get_allocator() == other.get_allocator()</c> shall not be equal to <c>false</c>.
+                         <c>get_allocator() == Allocator()</c> shall not be equal to <c>false</c>.
                          The values of <c>size()</c> and <c>other.size()</c> shall be identical.
                          For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the values of <c>*ti</c> and <c>record_type(oi->cbegin(), oi->cend())</c> shall be equal.
                          <c>*this</c> may be singular only if <c>other</c> is singular.</postcondition>
@@ -2083,9 +2084,10 @@ template &lt;class OtherContent, class OtherAllocator>
   basic_stored_table(
     basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
           </code>
-          <requires><c>OtherContent::char_type</c> and <c>OtherContent::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.</requires>
+          <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.
+                    <c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.</requires>
           <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and <c>other.get_buffer_size()</c>.
-                         <c>get_allocator() == a</c> shall not be equal to <c>false</c> where <c>a</c> is the value of <c>other.get_allocator()</c> returned before the call.
+                         <c>get_allocator() == Allocator()</c> shall not be equal to <c>false</c>.
                          The values of <c>size()</c> and the value that <c>other.size()</c> had before this construction shall be identical.
                          For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the value of <c>*ti</c> shall be equal to the value that <c>record_type(oi->cbegin(), oi->cend())</c> had before this construction.
                          <c>*this</c> may be singular only if <c>other</c> was singular before the construction.</postcondition>

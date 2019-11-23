@@ -1270,7 +1270,7 @@ public:
     template <class OtherContent, class OtherAllocator>
     basic_stored_table(
         const basic_stored_table<OtherContent, OtherAllocator>& other) :
-        basic_stored_table(std::allocator_arg, other.get_allocator(), other)
+        basic_stored_table(std::allocator_arg, Allocator(), other)
     {}
 
     template <class OtherContent, class OtherAllocator>
@@ -1308,8 +1308,7 @@ public:
     template <class OtherContent, class OtherAllocator>
     basic_stored_table(
         basic_stored_table<OtherContent, OtherAllocator>&& other) :
-        basic_stored_table(std::allocator_arg, other.get_allocator(),
-            std::move(other))
+        basic_stored_table(std::allocator_arg, Allocator(), std::move(other))
     {}
 
     template <class OtherContent, class OtherAllocator>
