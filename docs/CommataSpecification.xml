@@ -2170,9 +2170,28 @@ namespace commata {
   template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class Allocator>
     class record_extractor;
 
+  template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class... Args>
+    record_extractor(std::basic_streambuf&lt;Ch, Tr>*, FieldNamePred, FieldValuePred, Args...)
+      -> record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, std::allocator&lt;Ch>>;
+  template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr,class Allocator,
+            class... Args>
+    record_extractor(std::allocator_arg_t, Allocator, std::basic_streambuf&lt;Ch, Tr>*,
+                     FieldNamePred, FieldValuePred, Args...)
+      -> record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
+
   <c>// <n><xref id="record_extractor_with_indexed_key"/>, record_extractor_with_indexed_key:</n></c>
   template &lt;class FieldValuePred, class Ch, class Tr, class Allocator>
     class record_extractor_with_indexed_key;
+
+  template &lt;class FieldValuePred, class Ch, class Tr, class... Args>
+    record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>*, std::size_t, FieldValuePred,
+                                      Args...)
+      -> record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, std::allocator&lt;Ch>>;
+  template &lt;class FieldValuePred, class Ch, class Tr,class Allocator, class... Args>
+    record_extractor_with_indexed_key(std::allocator_arg_t, Allocator,
+                                      std::basic_streambuf&lt;Ch, Tr>*, std::size_t, FieldValuePred,
+                                      Args...)
+      -> record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, Allocator>;
 
   <c>// <n><xref id="record_extractor.creation"/>, creation functions:</n></c>
   template &lt;class FieldNamePred, class FieldValuePred,
@@ -2262,6 +2281,15 @@ namespace commata {
     <c>// <n><xref id="record_extractor.processing_state"/>, processing state:</n></c>
     bool is_in_header() const noexcept;
   };
+
+  template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class... Args>
+    record_extractor(std::basic_streambuf&lt;Ch, Tr>*, FieldNamePred, FieldValuePred, Args...)
+      -> record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, std::allocator&lt;Ch>>;
+  template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr,class Allocator,
+            class... Args>
+    record_extractor(std::allocator_arg_t, Allocator, std::basic_streambuf&lt;Ch, Tr>*,
+                     FieldNamePred, FieldValuePred, Args...)
+      -> record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
 }
       </codeblock>
 
@@ -2415,6 +2443,16 @@ namespace commata {
     <c>// <n><xref id="record_extractor_with_indexed_key.processing_state"/>, processing state:</n></c>
     bool is_in_header() const noexcept;
   };
+
+  template &lt;class FieldValuePred, class Ch, class Tr, class... Args>
+    record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>*, std::size_t, FieldValuePred,
+                                      Args...)
+      -> record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, std::allocator&lt;Ch>>;
+  template &lt;class FieldValuePred, class Ch, class Tr,class Allocator, class... Args>
+    record_extractor_with_indexed_key(std::allocator_arg_t, Allocator,
+                                      std::basic_streambuf&lt;Ch, Tr>*, std::size_t, FieldValuePred,
+                                      Args...)
+      -> record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, Allocator>;
 }
       </codeblock>
 

@@ -432,3 +432,104 @@ TEST_F(TestRecordExtractorMiscellaneous, IsInHeaderIndexed)
     ASSERT_STREQ("[instrument],[type]\n"
                  "clarinet,woodwind\n", std::move(out).str().c_str());
 }
+
+TEST_F(TestRecordExtractorMiscellaneous, DeductionGuide)
+{
+    const char* s = "instrument,type\n"
+                    "castanets,idiophone\n"
+                    "clarinet,woodwind\n"
+                    "triangle,idiophone\n";
+
+    const auto is_type =
+        [](std::string_view s) {
+            return s == "type";
+        };
+    const auto is_woodwind =
+        [](std::string_view s) {
+            return s == "woodwind";
+        };
+
+    {
+        std::stringbuf out;
+        parse_csv(s, record_extractor(&out, is_type, is_woodwind));
+        ASSERT_STREQ("instrument,type\n"
+                     "clarinet,woodwind\n", out.str().c_str());
+    }
+
+    {
+        std::stringbuf out;
+        parse_csv(s, record_extractor(&out,
+            is_type, std::not_fn(is_woodwind), header_forwarding::no, 1));
+        ASSERT_STREQ("castanets,idiophone\n", out.str().c_str());
+    }
+
+    {
+        std::size_t total = 0;
+        tracking_allocator<std::allocator<char>> a(total);
+        std::stringbuf out;
+        parse_csv(s, record_extractor(std::allocator_arg, a,
+            &out, is_type, is_woodwind), 5);
+        ASSERT_STREQ("instrument,type\n"
+                     "clarinet,woodwind\n", out.str().c_str());
+        ASSERT_GT(total, 0U);
+    }
+
+    {
+        std::size_t total = 0;
+        tracking_allocator<std::allocator<char>> a(total);
+        std::stringbuf out;
+        parse_csv(s, record_extractor(std::allocator_arg, a, &out,
+            is_type, std::not_fn(is_woodwind), header_forwarding::no, 1), 5);
+        ASSERT_STREQ("castanets,idiophone\n", out.str().c_str());
+        ASSERT_GT(total, 0U);
+    }
+}
+
+TEST_F(TestRecordExtractorMiscellaneous, DeductionGuideIndexed)
+{
+    const char* s = "instrument,type\n"
+                    "castanets,idiophone\n"
+                    "clarinet,woodwind\n"
+                    "triangle,idiophone\n";
+
+    const auto is_woodwind =
+        [](std::string_view s) {
+            return s == "woodwind";
+        };
+
+    {
+        std::stringbuf out;
+        parse_csv(s, record_extractor_with_indexed_key(
+            &out, 1, is_woodwind));
+        ASSERT_STREQ("instrument,type\n"
+                     "clarinet,woodwind\n", out.str().c_str());
+    }
+
+    {
+        std::stringbuf out;
+        parse_csv(s, record_extractor_with_indexed_key(
+            &out, 1, std::not_fn(is_woodwind), header_forwarding::no, 1));
+        ASSERT_STREQ("castanets,idiophone\n", out.str().c_str());
+    }
+
+    {
+        std::size_t total = 0;
+        tracking_allocator<std::allocator<char>> a(total);
+        std::stringbuf out;
+        parse_csv(s, record_extractor_with_indexed_key(std::allocator_arg, a,
+            &out, 1, is_woodwind), 5);
+        ASSERT_STREQ("instrument,type\n"
+                     "clarinet,woodwind\n", out.str().c_str());
+        ASSERT_GT(total, 0U);
+    }
+
+    {
+        std::size_t total = 0;
+        tracking_allocator<std::allocator<char>> a(total);
+        std::stringbuf out;
+        parse_csv(s, record_extractor_with_indexed_key(std::allocator_arg, a,
+            &out, 1, std::not_fn(is_woodwind), header_forwarding::no, 1), 5);
+        ASSERT_STREQ("castanets,idiophone\n", out.str().c_str());
+        ASSERT_GT(total, 0U);
+    }
+}
