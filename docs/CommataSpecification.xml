@@ -16,7 +16,7 @@
 
     <p>The normativity of the specifications on this document is the same as the normativity of the description of the ISO C++17 standard for its conforming standard library implementations except that:</p>
     <ul>
-      <li>class templates and function templates shall not have any additional template parameters no matter whether they have their default template arguments,</li>
+      <li>class templates and function templates shall not have any additional template parameters no matter whether they have their default template arguments, except that deduction guides can have ones with their default template arguments, </li>
       <li>member templates shall not have any additional template parameters no matter whether they have their default template arguments, except that constructor templates can have ones with their default template arguments, and</li>
       <li>member function templates shall not have any additional parameters no matter whether they have their default arguments.</li>
     </ul>
@@ -4505,13 +4505,18 @@ namespace commata {
 
   <c>// <n><xref id="scan.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
   struct fail_if_skipped;
+
   template &lt;class T> class replace_if_skipped;
+  template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
   template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
                                replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
 
   <c>// <n><xref id="scan.builtin.conversion_error_handlers"/>, default conversion error handler classes:</n></c>
   struct fail_if_conversion_failed;
+
   template &lt;class T> class replace_if_conversion_failed;
+  template &lt;class... Ts>
+    replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
   template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
                                replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
 
@@ -4875,6 +4880,8 @@ namespace commata {
     void swap(replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
   };
 
+  template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
+
   <c>// <n><xref id="replace_if_skipped.special"/>, specialized algorithms:</n></c>
   template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
                                replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
@@ -4963,6 +4970,13 @@ replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</n
             </code>
             <effects>Configures the replacement action to be what <c>other</c> had as its replacement action before the call.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
+            </code>
+            <remark>This deduction guide participates in overload resolution only if <c>T</c> is not the same type as or a derived class of <c>replacement_fail_t</c> or <c>replacement_ignore_t</c>.</remark>
           </code-item>
 
           <code-item>
@@ -5159,6 +5173,9 @@ namespace commata {
     void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
   };
 
+  template &lt;class... Ts>
+    replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
+
   <c>// <n><xref id="replace_if_conversion_failed.special"/>, specialized algorithms:</n></c>
   template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
                                replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
@@ -5261,6 +5278,15 @@ replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexc
             <effects>Configures all the replacement actions to be what <c>other</c> had as its replacement actions before the call.</effects>
             <remark>If an exception is thrown, <c>other</c> may be left in a valid but unspecified state.
                     The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class... Ts>
+  replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
+            </code>
+            <remark>This deduction guide participates in overload resolution if and only if <c>std::common_type_t&lt;Us...></c> is defined where <c>Us</c> denotes types in <c>Ts...</c> excluding types which imply neither a fail action nor a ignore action.
+                    In that case, the deduced type is <c>std::common_type_t&lt;Us...></c> above.</remark>
           </code-item>
 
           <code-item>

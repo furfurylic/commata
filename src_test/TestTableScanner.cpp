@@ -1712,6 +1712,21 @@ TEST_F(TestReplaceIfSkipped, Swap)
     ASSERT_THROW(rs[2](), field_not_found);
 }
 
+TEST_F(TestReplaceIfSkipped, DeductionGuides)
+{
+    replace_if_skipped r1(10);
+    static_assert(std::is_same_v<replace_if_skipped<int>, decltype(r1)>);
+    ASSERT_TRUE(r1().has_value());
+    ASSERT_EQ(10, *r1());
+
+    const std::string s("skipped");
+    replace_if_skipped r2(s);
+    static_assert(
+        std::is_same_v<replace_if_skipped<std::string>, decltype(r2)>);
+    ASSERT_TRUE(r2().has_value());
+    ASSERT_STREQ("skipped", r2()->c_str());
+}
+
 namespace replace_if_skipped_static_asserts {
 
 using ri_t = replace_if_skipped<int>;
@@ -2179,6 +2194,40 @@ TYPED_TEST(TestReplaceIfConversionFailed, Swap)
     ASSERT_THROW(rs[2](out_of_range_t(), d, de, 1), field_out_of_range);
     ASSERT_THROW(rs[2](out_of_range_t(), d, de, -1), field_out_of_range);
     ASSERT_THROW(rs[2](out_of_range_t(), d, de, 0), field_out_of_range);
+}
+
+TYPED_TEST(TestReplaceIfConversionFailed, DeductionGuides)
+{
+    const auto from_str = [](const char* s) {
+        std::stringstream str;
+        str << s;
+        TypeParam num;
+        str >> num;
+        return num;
+    };
+
+    TypeParam num_1 = from_str("10");
+    TypeParam num_2 = from_str("-0.5");
+
+    const char s[] = "";
+
+    replace_if_conversion_failed r(num_1, TypeParam(),
+            replacement_fail, replacement_ignore, num_2);
+    static_assert(
+        std::is_same_v<replace_if_conversion_failed<TypeParam>, decltype(r)>);
+    ASSERT_EQ(num_1, *r(empty_t()));
+    ASSERT_EQ(TypeParam(), *r(invalid_format_t(), s, s));
+    ASSERT_THROW(r(out_of_range_t(), s, s, 1), field_out_of_range);
+    ASSERT_TRUE(!r(out_of_range_t(), s, s, -1));
+    ASSERT_EQ(num_2, *r(out_of_range_t(), s, s, 0));
+
+    replace_if_conversion_failed r2(replacement_fail, 0, 10l,
+                                    replacement_ignore);
+    static_assert(std::is_same_v<replace_if_conversion_failed<long>,
+                  decltype(r2)>);
+
+    // The code below should not compile by a "no viable deduction guide" error
+    // replace_if_conversion_failed r3(replacement_fail, 0, std::string("XY"));
 }
 
 namespace replace_if_conversion_failed_static_asserts {
