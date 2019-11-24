@@ -141,7 +141,8 @@ public:
         const tracking_allocator<OtherBaseAllocator>& other) const noexcept
     {
         return (static_cast<const BaseAllocator&>(*this) == other)
-            && (allocated_ == other.allocated_);
+            && (allocated_ == other.allocated_)
+            && (total_ == other.total_);
     }
 
     bool tracks(const void* p) const noexcept
