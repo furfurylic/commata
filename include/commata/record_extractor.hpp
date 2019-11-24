@@ -35,7 +35,7 @@ class field_name_of_impl
     const T* t_;
 
 public:
-    field_name_of_impl(const char* prefix, const T& t) :
+    field_name_of_impl(const char* prefix, const T& t) noexcept :
         prefix_(prefix), t_(std::addressof(t))
     {}
 
@@ -47,14 +47,14 @@ public:
 };
 
 template <class... Args>
-auto field_name_of(Args...)
+auto field_name_of(Args...) noexcept
 {
     return "";
 }
 
 template <class T>
 auto field_name_of(const char* prefix, const T& t,
-    decltype(&(std::declval<std::ostream&>() << t)) = nullptr)
+    decltype(&(std::declval<std::ostream&>() << t)) = nullptr) noexcept
 {
     return field_name_of_impl<T>(prefix, t);
 }
@@ -62,7 +62,7 @@ auto field_name_of(const char* prefix, const T& t,
 template <class Ch>
 struct hollow_field_name_pred
 {
-    bool operator()(const Ch*, const Ch*) const
+    bool operator()(const Ch*, const Ch*) const noexcept
     {
         return true;
     }
@@ -429,7 +429,7 @@ class string_eq
     std::basic_string<Ch, Tr, Allocator> s_;
 
 public:
-    explicit string_eq(std::basic_string<Ch, Tr, Allocator>&& s) :
+    explicit string_eq(std::basic_string<Ch, Tr, Allocator>&& s) noexcept :
         s_(std::move(s))
     {}
 
