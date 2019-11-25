@@ -2168,13 +2168,17 @@ public:
 
     void field_value(std::basic_string<Ch, Tr, Allocator>&& value)
     {
-        // std::basic_string which comes with gcc 7.3.1 does not seem to have
-        // "move-with-specified-allocator" ctor
-        if (value.get_allocator() == get_allocator()) {
-            at_.member().put(std::move(value));
-        } else {
-            field_value(value.data(), value.data() + value.size());
+        if constexpr (
+                !std::allocator_traits<Allocator>::is_always_equal::value) {
+            if (value.get_allocator() != get_allocator()) {
+                // We don't try to construct string with move(value) and
+                // get_allocator() because some standard libs lack that ctor
+                // and to do so doesn't seem necessarily cheap
+                field_value(value.data(), value.data() + value.size());
+                return;
+            }
         }
+        at_.member().put(std::move(value));
     }
 };
 
