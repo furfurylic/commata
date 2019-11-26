@@ -3,15 +3,15 @@
  * http://unlicense.org
  */
 
-#ifndef FURFURYLIC_324DC0E6_2E5C_4359_8AE3_8CFF2626E941
-#define FURFURYLIC_324DC0E6_2E5C_4359_8AE3_8CFF2626E941
+#ifndef COMMATA_GUARD_324DC0E6_2E5C_4359_8AE3_8CFF2626E941
+#define COMMATA_GUARD_324DC0E6_2E5C_4359_8AE3_8CFF2626E941
 
 #include <locale>
 #include <sstream>
 #include <string>
 
 #if defined(_MSC_VER) && defined(_DEBUG)
-#define FURFURYLIC_TEST_MEMORY_LEAK_CHECK
+#define COMMATA_TEST_MEMORY_LEAK_CHECK
 #include <crtdbg.h>
 #endif
 
@@ -21,28 +21,30 @@ namespace commata { namespace test {
 
 class MemoryLeakCheck
 {
-#ifdef FURFURYLIC_TEST_MEMORY_LEAK_CHECK
+#ifdef COMMATA_TEST_MEMORY_LEAK_CHECK
     _CrtMemState state1;
 #endif
 
 public:
-    void init()
+    void Init()
     {
-#ifdef FURFURYLIC_TEST_MEMORY_LEAK_CHECK
+#ifdef COMMATA_TEST_MEMORY_LEAK_CHECK
         _CrtMemCheckpoint(&state1);
 #endif
     }
 
-    void check()
+    void Check()
     {
-#ifdef FURFURYLIC_TEST_MEMORY_LEAK_CHECK
+#ifdef COMMATA_TEST_MEMORY_LEAK_CHECK
         if (!testing::Test::HasFatalFailure()) {
             _CrtMemState state2;
             _CrtMemCheckpoint(&state2);
             _CrtMemState state3;
             if (_CrtMemDifference(&state3, &state1, &state2)) {
-                const auto oldReportMode = _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG | _CRTDBG_MODE_FILE);
-                const auto oldReportFile = _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+                const auto oldReportMode = _CrtSetReportMode(
+                    _CRT_WARN, _CRTDBG_MODE_DEBUG | _CRTDBG_MODE_FILE);
+                const auto oldReportFile = _CrtSetReportFile(
+                    _CRT_WARN, _CRTDBG_FILE_STDERR);
                 _CrtMemDumpStatistics(&state3);
                 _CrtMemDumpAllObjectsSince(&state1);
                 _CrtSetReportMode(_CRT_WARN, oldReportMode);
@@ -61,12 +63,12 @@ class BaseTest : public testing::Test
 public:
     void SetUp() override
     {
-        check_.init();
+        check_.Init();
     }
 
     void TearDown() override
     {
-        check_.check();
+        check_.Check();
     }
 };
 
@@ -78,12 +80,12 @@ class BaseTestWithParam : public testing::TestWithParam<T>
 public:
     void SetUp() override
     {
-        check_.init();
+        check_.Init();
     }
 
     void TearDown() override
     {
-        check_.check();
+        check_.Check();
     }
 };
 
