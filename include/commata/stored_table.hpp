@@ -1500,12 +1500,29 @@ private:
         return rewrite_value_n_secure(value, new_value_begin, new_value_size);
     }
 
+    static void move_chs(
+        const char_type* begin1, std::size_t size, char_type* begin2)
+    {
+        traits_type::move(begin2, begin1, size);
+    }
+
+    template <class InputIterator>
+    static void move_chs(
+        InputIterator begin1, std::size_t size, char_type* begin2)
+    {
+        for (std::size_t i = 0; i < size; ++i) {
+            traits_type::assign(*begin2, *begin1);
+            ++begin1;
+            ++begin2;
+        }
+    }
+
     template <class InputIterator>
     value_type& rewrite_value_n_impl(std::false_type, value_type& value,
         InputIterator new_value_begin, std::size_t new_value_size)
     {
         if (new_value_size <= value.size()) {
-            traits_type::move(value.begin(), new_value_begin, new_value_size);
+            move_chs(new_value_begin, new_value_size, value.begin());
             value.erase(value.cbegin() + new_value_size, value.cend());
             return value;
         }
@@ -1526,7 +1543,7 @@ private:
             // thrown by add_buffer because add_buffer consumes secured
             secure_current_upto(secured + new_value_size + 1);
         }
-        traits_type::move(secured, new_value_begin, new_value_size);
+        move_chs(new_value_begin, new_value_size, secured);
         traits_type::assign(secured[new_value_size], char_type());
         value = value_type(secured, secured + new_value_size);
         return value;

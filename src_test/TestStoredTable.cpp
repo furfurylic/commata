@@ -706,7 +706,7 @@ static_assert(std::is_nothrow_move_constructible<stored_table>::value, "");
 struct TestStoredTable : BaseTest
 {};
 
-TEST_F(TestStoredTable, RewriteValue)
+TEST_F(TestStoredTable, RewriteValueBasics)
 {
     wstored_table table(10U);
 
@@ -738,6 +738,18 @@ TEST_F(TestStoredTable, RewriteValue)
     ASSERT_TRUE(
         (table[0][0].cend() < v.cbegin())
      || (v.cend() <= table[0][0].cbegin()));
+}
+
+TEST_F(TestStoredTable, RewriteValueWithNonPointerIterator)
+{
+    stored_table table;
+    table.content().emplace_back();
+    table.content().back().emplace_back();
+
+    std::vector<char> v = { '\0', 'C', 'B', 'A' };
+
+    table.rewrite_value(table.content().back().back(), v.crbegin());
+    ASSERT_EQ("ABC", table.content().back().back());
 }
 
 TEST_F(TestStoredTable, Copy)
