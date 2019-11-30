@@ -752,6 +752,40 @@ TEST_F(TestStoredTable, RewriteValueWithNonPointerIterator)
     ASSERT_EQ("ABC", table.content().back().back());
 }
 
+namespace {
+
+struct d_end
+{};
+
+bool operator!=(const wchar_t* left, d_end)
+{
+    return *left != L'd';
+}
+
+}
+
+TEST_F(TestStoredTable, RewriteValueWithPointerAndSentinel)
+{
+    wstored_table table;
+    table.content().emplace_back();
+    table.content().back().emplace_back();
+
+    table.rewrite_value(table.content().back().back(), L"abcdefg", d_end());
+    ASSERT_EQ(L"abc", table.content().back().back());
+}
+
+TEST_F(TestStoredTable, RewriteValueWithNonPointerIteratorAndSentinel)
+{
+    wstored_table table;
+    table.content().emplace_back();
+    table.content().back().emplace_back();
+
+    std::list<wchar_t> v = { L'A', L'B', L'C', L'\0' };
+
+    table.rewrite_value(table.content().back().back(), v.cbegin());
+    ASSERT_EQ(L"ABC", table.content().back().back());
+}
+
 TEST_F(TestStoredTable, Copy)
 {
     stored_table table1(10U);

@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-11-26 (UTC)</signature>
+<signature>2019-11-30 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1935,10 +1935,10 @@ namespace commata {
     void shrink_to_fit();
 
     <c>// <n><xref id="basic_stored_table.rewrite"/>, store operations:</n></c>
-    template &lt;class ForwardIterator>
+    template &lt;class ForwardIterator, class ForwardIteratorEnd>
       value_type&amp;
         rewrite_value(value_type&amp; value,
-                      ForwardIterator new_value_begin, ForwardIterator new_value_end);
+                      ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end);
     template &lt;class ForwardIterator>
       value_type&amp; rewrite_value(value_type&amp; value, ForwardIterator new_value);
     template &lt;class OtherValue>
@@ -1961,6 +1961,14 @@ namespace commata {
               basic_stored_table&lt;OtherContent, Allocator>&amp;&amp;     other);
     void swap(basic_stored_table&amp; other)
       noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value);
+  
+  private:
+    <c>// <nc>exposition only</nc></c>
+    struct ntbs_end {
+      template &lt;class Iterator> friend bool operator!=(InputIterator left, ntbs_end) {
+        return !traits_type::eq(*left, char_type());
+      }
+    }
   };
 }
         </codeblock>
@@ -2262,15 +2270,20 @@ void shrink_to_fit();
 
         <code-item>
           <code>
-template &lt;class ForwardIterator>
+template &lt;class ForwardIterator, class ForwardIteratorEnd>
   value_type&amp;
     rewrite_value(value_type&amp; value,
-                  ForwardIterator new_value_begin, ForwardIterator new_value_end);
+                  ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end);
           </code>
-          <requires><c>value</c> shall be backed by <c>*this</c>.
-                    The template parameter <c>ForwardIterator</c> shall meet the <c>ForwardIterator</c> requirements for <c>char_type</c>.
-                    [<c>new_value_begin</c>, <c>new_value_end</c>) shall be a valid range.</requires>
-          <effects>Modifies the store and <c>value</c> so that <c>value</c> will be unchangedly backed by <c>*this</c> and <c>std::equal(value.cbegin(), value.cend(), new_value_begin, new_value_end, p)</c> will be <c>true</c> where <c>p</c> is an equivalent predicate to <c>traits_type::eq</c>.</effects>
+          <requires>The template parameter <c>ForwardIterator</c> shall meet the <c>ForwardIterator</c> requirements for <c>char_type</c>.
+                    The template parameter <c>ForwardIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
+                    <c>std::declval&lt;const ForwardIterator&amp;>() != std::declval&lt;const ForwardIteratorEnd&amp;>()</c> shall be a valid expression whose value can be contextually converted to <c>bool</c>.
+                    <c>value</c> shall be backed by <c>*this</c>.
+                    <c>new_value_begin</c> shall point an element in, or be a past-the-end iterator of, a valid range.</requires>
+          <postcondition><c>value</c> shall be unchangedly backed by <c>*this</c>.
+                         Let <c>n</c> is the smallest non-negative integer which makes the value of <c>std::next(new_value_begin, n) != new_value_end</c> contextually converted to <c>bool</c> be <c>false</c>.
+                         Then <c>std::equal(value.cbegin(), value.cend(), new_value_begin, std::next(new_value_begin, n), p)</c> shall not be <c>false</c>
+                         where <c>p</c> is an equivalent predicate to <c>traits_type::eq</c>.</postcondition>
           <returns><c>value</c>.</returns>
         </code-item>
 
@@ -2279,12 +2292,13 @@ template &lt;class ForwardIterator>
 template &lt;class ForwardIterator>
   value_type&amp; rewrite_value(value_type&amp; value, ForwardIterator new_value);
           </code>
-          <requires><c>value</c> shall be backed by <c>*this</c>.
-                    The template parameter <c>ForwardIterator</c> shall meet the <c>ForwardIterator</c> requirements for <c>char_type</c>.
+          <requires>The template parameter <c>ForwardIterator</c> shall meet the <c>ForwardIterator</c> requirements for <c>char_type</c>.
+                    <c>value</c> shall be backed by <c>*this</c>.
                     <c>new_value</c> shall point the first element of a valid null-terminated string of <c>char_type</c>.</requires>
-          <effects>Determines the length <c>n</c>, whose value is the smallest nonnegative integer that satisfies <c>traits_type::eq(*std::next(new_value, n), char_type())</c>.
-                   Then calls <c>rewrite_value(value, new_value, std::next(new_value, n))</c>.</effects>
+          <effects>Calls <c>rewrite_value(value, new_value, ntbs_end())</c>.</effects>
           <returns><c>value</c>.</returns>
+          <remark>This overload shall not participate in overload resolution unless <c>std::iterator_traits&lt;ForwardIterator>::iterator_category</c> is a type
+                  which is equal to or a derived class of <c>std::forward_iterator_tag</c>.</remark>
         </code-item>
 
         <code-item>

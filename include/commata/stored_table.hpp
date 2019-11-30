@@ -1186,6 +1186,17 @@ struct is_basic_stored_value<basic_stored_value<Args...>> :
     std::true_type
 {};
 
+// Placed here to avoid bloat
+template <class Tr>
+struct ntbs_end
+{
+    template <class InputIterator>
+    friend bool operator!=(InputIterator left, ntbs_end)
+    {
+        return !Tr::eq(*left, typename Tr::char_type());
+    }
+};
+
 } // end namespace detail
 
 template <class Content, class Allocator = std::allocator<Content>>
@@ -1440,19 +1451,11 @@ public:
         return content()[record_index];
     }
 
-    template <class ForwardIterator>
-    auto rewrite_value(value_type& value,
-        ForwardIterator new_value_begin, ForwardIterator new_value_end)
-     -> std::enable_if_t<
-            std::is_base_of<
-                std::forward_iterator_tag,
-                typename std::iterator_traits<ForwardIterator>::
-                    iterator_category>::value,
-            value_type&>
+    template <class ForwardIterator, class ForwardIteratorEnd>
+    value_type& rewrite_value(value_type& value,
+        ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end)
     {
-        return rewrite_value_n(value, new_value_begin,
-            static_cast<std::size_t>(
-                std::distance(new_value_begin, new_value_end)));
+        return rewrite_value_impl(value, new_value_begin, new_value_end);
     }
 
     template <class ForwardIterator>
@@ -1464,24 +1467,44 @@ public:
                     iterator_category>::value,
             value_type&>
     {
-        return rewrite_value_n(value, new_value, length_to_null(new_value));
+        return rewrite_value_impl(value, new_value);
     }
 
 private:
-    template <class InputIterator>
-    std::size_t length_to_null(InputIterator i)
+    template <class ForwardIterator>
+    value_type& rewrite_value_impl(value_type& value,
+        ForwardIterator new_value_begin, ForwardIterator new_value_end)
     {
+        return rewrite_value_n(value, new_value_begin,
+            static_cast<std::size_t>(
+                std::distance(new_value_begin, new_value_end)));
+    }
+
+    template <class ForwardIterator, class ForwardIteratorEnd>
+    value_type& rewrite_value_impl(value_type& value,
+        ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end)
+    {
+        ForwardIterator i = new_value_begin;
         std::size_t length = 0;
-        while (!traits_type::eq(*i, char_type())) {
+        while (i != new_value_end) {
             ++i;
             ++length;
         }
-        return length;
+        return rewrite_value_n(value, new_value_begin, length);
     }
 
-    std::size_t length_to_null(const char_type* p)
+    template <class ForwardIterator>
+    value_type& rewrite_value_impl(value_type& value,
+        ForwardIterator new_value)
     {
-        return traits_type::length(p);
+        return rewrite_value_impl(value,
+            new_value, detail::ntbs_end<traits_type>());
+    }
+
+    value_type& rewrite_value_impl(value_type& value, const char* new_value)
+    {
+        return rewrite_value_n(value,
+            new_value, traits_type::length(new_value));
     }
 
     template <class InputIterator>
