@@ -560,7 +560,7 @@ template &lt;class Handler>
         <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements, except that in the second overload it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
         <returns>An object of an unspecified type whose type meets the <c>TextHandler</c> requirements and that holds an object <c>h</c> where <c>h</c> is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
                  It forwards calls of its member functions to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
-                 it first calls <c>h.start_record(where)</c>, and if its contexually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
+                 it first calls <c>h.start_record(where)</c>, and if its contextually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
                  Its return type and the return value are as follows:
                  <ul>
                    <li>if both of the return types of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>,</li>
