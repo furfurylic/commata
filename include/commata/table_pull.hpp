@@ -592,7 +592,7 @@ private:
 
     table_pull_state last_state_;
     view_type last_;
-    std::basic_string<char_type, traits_type, Allocator> value_;
+    std::vector<char_type, Allocator> value_;
 
     std::size_t i_;
     std::size_t j_;
@@ -771,7 +771,8 @@ private:
                     return;
                 case primitive_table_pull_state::end_buffer:
                     if (!last_.empty()) {
-                        value_.append(last_);                       // throw
+                        value_.insert(value_.cend(),
+                            last_.cbegin(), last_.cend());          // throw
                         last_ = view_type();
                     }
                     break;
@@ -870,7 +871,7 @@ private:
     void do_update(char_type* first, char_type* last)
     {
         if (!value_.empty()) {
-            value_.append(first, last);                             // throw
+            value_.insert(value_.cend(), first, last);              // throw
         } else if (!last_.empty()) {
             traits_type::move(
                 const_cast<char_type*>(last_.data() + last_.size()),
