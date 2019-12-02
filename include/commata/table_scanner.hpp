@@ -1769,8 +1769,7 @@ class replace_if_conversion_failed
         {}
 
     private:
-        store(const store& other, std::true_type)
-            noexcept :
+        store(const store& other, std::true_type) noexcept :
             has_(other.has_), skips_(other.skips_)
         {
             std::memcpy(&replacements_, &other.replacements_,
@@ -1778,15 +1777,16 @@ class replace_if_conversion_failed
         }
 
         template <class Other>
-        store(Other&& other, std::false_type) :
-            has_(0U), skips_(0U)
+        store(Other&& other, std::false_type)
+            noexcept(std::is_nothrow_move_constructible<T>::value) :
+            has_(other.has_), skips_(other.skips_)
         {
             using f_t = std::conditional_t<
                 std::is_lvalue_reference<Other>::value, const T&, T>;
             for (unsigned r = 0; r < n; ++r) {
-                const auto p = get_g(std::addressof(other), r);
+                auto p = get_g(std::addressof(other), r);
                 if (p.first == mode::replace) {
-                    init(r, std::forward<f_t>(*p.second));
+                    place_copy(r, std::forward<f_t>(*p.second));
                 }
             }
         }
@@ -1801,7 +1801,7 @@ class replace_if_conversion_failed
         {
             assert(!has(r));
             assert(!skips(r));
-            ::new(replacements_ + r) T(std::forward<U>(value));
+            place_copy(r, std::forward<U>(value));
             has_ |= 1U << r;
         }
 
@@ -1817,6 +1817,12 @@ class replace_if_conversion_failed
             assert(!has(r));
             assert(!skips(r));
             skips_ |= 1U << r;
+        }
+
+        template <class U>
+        void  place_copy(unsigned r, U&& value)
+        {
+            ::new(replacements_ + r) T(std::forward<U>(value));
         }
 
     public:

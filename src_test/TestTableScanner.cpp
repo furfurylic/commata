@@ -1207,7 +1207,7 @@ TEST_F(TestReplaceIfConversionFailed, NonArithmeticNoThrowMoveConstructible)
     using r_t = replace_if_conversion_failed<std::string>;
     static_assert(std::is_nothrow_move_constructible<r_t>::value, "");
 
-    r_t r("E", replacement_fail, "U", replacement_fail, "X");
+    r_t r("E", replacement_fail, "U", replacement_ignore);
     std::vector<r_t> rs;
     rs.push_back(r);
     rs.push_back(std::move(r));
@@ -1217,8 +1217,8 @@ TEST_F(TestReplaceIfConversionFailed, NonArithmeticNoThrowMoveConstructible)
         ASSERT_STREQ("E", r2.empty()->c_str());
         ASSERT_THROW(r2.invalid_format(d, de), field_invalid_format);
         ASSERT_STREQ("U", r2.out_of_range(d, de, 1)->c_str());
-        ASSERT_THROW(r2.out_of_range(d, de, -1), field_out_of_range);
-        ASSERT_STREQ("X", r2.out_of_range(d, de, 0)->c_str());
+        ASSERT_EQ(nullptr, r2.out_of_range(d, de, -1).get());
+        ASSERT_STREQ("", r2.out_of_range(d, de, 0)->c_str());
     }
 }
 
@@ -1254,7 +1254,7 @@ TEST_F(TestReplaceIfConversionFailed, NonArithmeticNonNoThrowMoveConstructible)
     static_assert(std::is_nothrow_move_constructible<r_t>::value, "");
 
     r_t r(replacement_fail, char_holder('I'), replacement_fail,
-        char_holder('B'), replacement_fail);
+        char_holder('B'), replacement_ignore);
     std::vector<r_t> rs;
     rs.push_back(r);
     rs.push_back(std::move(r));
@@ -1265,7 +1265,7 @@ TEST_F(TestReplaceIfConversionFailed, NonArithmeticNonNoThrowMoveConstructible)
         ASSERT_EQ('I', (*r2.invalid_format(d, de))());
         ASSERT_THROW(r2.out_of_range(d, de, 1), field_out_of_range);
         ASSERT_EQ('B', (*r2.out_of_range(d, de, -1))());
-        ASSERT_THROW(r2.out_of_range(d, de, 0), field_out_of_range);
+        ASSERT_EQ(nullptr, r2.out_of_range(d, de, 0).get());
     }
 }
 
