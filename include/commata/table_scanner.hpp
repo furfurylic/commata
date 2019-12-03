@@ -113,7 +113,7 @@ class basic_table_scanner
 
         void field_value(string_t&& value, basic_table_scanner& me) override
         {
-            field_value(&value[0], &value[0] + value.size(), me);
+            field_value(value.data(), value.data() + value.size(), me);
         }
 
         void so_much_for_header(basic_table_scanner& me) override
@@ -161,7 +161,7 @@ class basic_table_scanner
             if constexpr (std::is_invocable_v<decltype(scanner()), string_t>) {
                 scanner()(std::move(value));
             } else {
-                scanner()(&*value.begin(), &*value.begin() + value.size());
+                scanner()(value.data(), value.data() + value.size());
             }
         }
 

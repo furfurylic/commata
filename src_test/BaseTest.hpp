@@ -131,7 +131,7 @@ public:
     {
         const std::string s(std::forward<Args>(args)...);
         std::basic_string<Ch> ws(s.size(), 'x');
-        facet_.widen(s.c_str(), s.c_str() + s.size(), &ws[0]);
+        facet_.widen(s.data(), s.data() + s.size(), ws.data());
         return ws;
     }
 };

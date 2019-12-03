@@ -127,7 +127,7 @@ std::basic_string<Ch, Tr, Allocator>& string_value_plus_assign(
         left.erase(left.begin() + ln, left.end());
         throw;
     }
-    T::traits_type::copy(&*left.begin() + ln, right.data(), right.size());
+    T::traits_type::copy(left.data() + ln, right.data(), right.size());
     return left;
 }
 
