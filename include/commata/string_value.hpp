@@ -155,7 +155,7 @@ std::basic_string<Ch, Tr, Allocator>& string_value_plus_assign(
         left.erase(left.begin() + ln, left.end());
         throw;
     }
-    T::traits_type::copy(&*left.begin() + ln, right.data(), right.size());
+    T::traits_type::copy(left.data() + ln, right.data(), right.size());
     return left;
 }
 
@@ -184,8 +184,8 @@ std::basic_string<Ch, Tr, Allocator> string_value_plus(
         throw;
     }
     using tr_t = typename T::traits_type;
-    tr_t::move(&*right.begin() + left.size(), right.data(), rn);
-    tr_t::copy(&*right.begin(), left.data(), left.size());
+    tr_t::move(right.data() + left.size(), right.data(), rn);
+    tr_t::copy(right.data(), left.data(), left.size());
     return std::move(right);
 }
 

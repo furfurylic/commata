@@ -203,7 +203,7 @@ class basic_table_scanner
                 scanner().field_value(std::move(value));
             } else {
                 scanner().field_value(
-                    &*value.begin(), &*value.begin() + value.size());
+                    value.data(), value.data() + value.size());
             }
         }
 
