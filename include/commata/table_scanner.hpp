@@ -114,6 +114,8 @@ public:
         return t_ != nullptr;
     }
 
+    // Requires the passed allocator is equal to the one passed on construction
+    // of *this; throws nothing
     template <class AnyAllocator>
     void kill(const AnyAllocator& any_alloc)
     {
@@ -153,9 +155,11 @@ public:
         return t_;
     }
 
+    // Requires the passed allocator is equal to the one passed on construction
+    // of *this and other; throws nothing
     template <class AnyAllocator>
     void assign(const AnyAllocator& any_alloc,
-        nothrow_move_constructible&& other) noexcept
+        nothrow_move_constructible&& other)
     {
         kill(any_alloc);
         t_ = other.t_;
@@ -167,27 +171,21 @@ template <class T>
 class nothrow_move_constructible<T,
     std::enable_if_t<std::is_nothrow_move_constructible<T>::value>>
 {
-    std::aligned_storage_t<sizeof(T), alignof(T)> t_;
+    T t_;
 
 public:
     template <class AnyAllocator, class... Args>
     explicit nothrow_move_constructible(
-        std::allocator_arg_t, const AnyAllocator&, Args&&... args)
-    {
-        ::new(&*(*this)) T(std::forward<Args>(args)...);
-    }
+        std::allocator_arg_t, const AnyAllocator&, Args&&... args) :
+        t_(std::forward<Args>(args)...)
+    {}
 
     nothrow_move_constructible(nothrow_move_constructible&& other) noexcept :
-        t_(std::move(other.t_))
-    {
-        ::new(&*(*this)) T(std::move(*other));
-        other->clear(); // inhibit overkill
-    }
+        t_(std::move(*other))
+    {}
 
     ~nothrow_move_constructible()
-    {
-        (*this)->~T();
-    }
+    {}
 
     constexpr explicit operator bool() const
     {
@@ -200,31 +198,30 @@ public:
 
     T& operator*()
     {
-        return *reinterpret_cast<T*>(&t_);
+        return t_;
     }
 
     const T& operator*() const
     {
-        return *reinterpret_cast<const T*>(&t_);
+        return t_;
     }
 
     T* operator->()
     {
-        return &*(*this);
+        return std::addressof(t_);
     }
 
     const T* operator->() const
     {
-        return &*(*this);
+        return std::addressof(t_);
     }
 
+    // "assign" shall be called only when operator bool returns false,
+    // which would not happen with this specialization
     template <class AnyAllocator>
-    void assign(const AnyAllocator&,
-        nothrow_move_constructible&& other) noexcept
+    void assign(const AnyAllocator&, nothrow_move_constructible&&)
     {
-        (*this)->~T();
-        ::new(&*(*this)) T(std::move(*other));
-        other->clear(); // inhibit overkill
+        assert(false);
     }
 };
 
