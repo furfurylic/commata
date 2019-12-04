@@ -2169,15 +2169,18 @@ private:
     char_type* current_buffer_;
     std::size_t current_buffer_size_;
 
+    std::size_t remaining_record_num_;
     char_type* field_begin_;
     char_type* field_end_;
 
     table_type* table_;
 
 public:
-    explicit stored_table_builder(table_type& table) :
+    explicit stored_table_builder(table_type& table,
+                                  std::size_t max_record_num = 0) :
         detail::arrange<Content, Options>(table.content()),
         current_buffer_holder_(nullptr), current_buffer_(nullptr),
+        remaining_record_num_(max_record_num),
         field_begin_(nullptr), table_(std::addressof(table))
     {}
 
@@ -2186,6 +2189,7 @@ public:
         current_buffer_holder_(other.current_buffer_holder_),
         current_buffer_(other.current_buffer_),
         current_buffer_size_(other.current_buffer_size_),
+        remaining_record_num_(other.remaining_record_num_),
         field_begin_(other.field_begin_), field_end_(other.field_end_),
         table_(other.table_)
     {
@@ -2237,8 +2241,18 @@ public:
         field_begin_ = nullptr;
     }
 
-    void end_record(const char_type* /*record_end*/)
-    {}
+    bool end_record(const char_type* /*record_end*/)
+    {
+        switch (remaining_record_num_) {
+        case 0:
+            return true;
+        case 1:
+            return false;
+        default:
+            --remaining_record_num_;
+            return true;
+        }
+    }
 
     std::pair<char_type*, std::size_t> get_buffer()
     {
@@ -2306,18 +2320,21 @@ public:
     {}
 };
 
-template <class Content, class Allocator>
-auto make_stored_table_builder(basic_stored_table<Content, Allocator>& table)
+template <class Content, class Allocator, class... Args>
+auto make_stored_table_builder(
+    basic_stored_table<Content, Allocator>& table, Args... args)
 {
-    return stored_table_builder<Content, Allocator>(table);
+    return stored_table_builder<Content, Allocator>(
+        table, std::forward<Args>(args)...);
 }
 
-template <class Content, class Allocator>
+template <class Content, class Allocator, class... Args>
 auto make_transposed_stored_table_builder(
-    basic_stored_table<Content, Allocator>& table)
+    basic_stored_table<Content, Allocator>& table, Args... args)
 {
     return stored_table_builder<Content, Allocator,
-        stored_table_builder_option_transpose>(table);
+        stored_table_builder_option_transpose>(
+            table, std::forward<Args>(args)...);
 }
 
 }

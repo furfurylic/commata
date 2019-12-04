@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-11-30 (UTC)</signature>
+<signature>2019-12-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1290,10 +1290,12 @@ namespace commata {
     class stored_table_builder;
 
   <c>// <n><xref id="stored_table_builder.creation"/>, stored_table_builder creation functions:</n></c>
-  template &lt;class Content, class Allocator>
-    <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table);
-  template &lt;class Content, class Allocator>
-    <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table);
+  template &lt;class Content, class Allocator, class... Args>
+    <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
+                                        Args... args);
+  template &lt;class Content, class Allocator, class... Args>
+    <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
+                                                   Args... args);
 }
 
 namespace std {
@@ -2504,7 +2506,7 @@ namespace commata {
     using char_type = typename table_type::char_type;
 
     <c>// <n><xref id="stored_table_builder.cons"/>, construct/copy/destroy:</n></c>
-    explicit stored_table_builder(table_type&amp; table);
+    explicit stored_table_builder(table_type&amp; table, std::size_t max_record_num = 0);
     stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
    ~stored_table_builder();
 
@@ -2513,7 +2515,7 @@ namespace commata {
     std::pair&lt;char_type*, std::size_t> get_buffer();
     void release_buffer(const char_type* buffer) noexcept;
     void start_record(const char_type* record_begin);
-    void end_record(const char_type* record_end);
+    bool end_record(const char_type* record_end);
     void update(const char_type* first, const char_type* last);
     void finalize(const char_type* first, const char_type* last);
   };
@@ -2560,10 +2562,11 @@ namespace commata {
         <name><c>stored_table_builder</c> construct/copy/destroy</name>
         <code-item>
           <code>
-explicit stored_table_builder(table_type&amp; table);
+explicit stored_table_builder(table_type&amp; table, std::size_t max_record_num = 0);
           </code>
           <requires><c>table</c> shall not be singular.</requires>
-          <effects>Initializes an object of <c>stored_table_builder&lt;Content, Allocator, Options></c> that holds a reference to the targeted object <c>table</c>.</effects>
+          <effects>Initializes an object of <c>stored_table_builder&lt;Content, Allocator, Options></c> that holds a reference to the targeted object <c>table</c>.
+                   If <c>max_record_num</c> is not <c>0</c>, the returned object make the parser after the first <c>max_record_num</c> records are processed.</effects>
           <remark><c>table.empty()</c> may be <c>false</c>. This constructor does nothing on the targeted object.</remark>
         </code-item>
 
@@ -2588,18 +2591,20 @@ stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
 
         <code-item>
           <code>
-template &lt;class Content, class Allocator>
-  <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table);
+template &lt;class Content, class Allocator, class... Args>
+  <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
+                                      Args... args);
           </code>
-          <returns><c>stored_table_builder&lt;Content, Allocator>(table)</c>.</returns>
+          <returns><c>stored_table_builder&lt;Content, Allocator>(table, std::forward&lt;Args>(args)...)</c>.</returns>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class Content, class Allocator>
-  <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table);
+template &lt;class Content, class Allocator, class... Args>
+  <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
+                                                 Args... args);
           </code>
-          <returns><c>stored_table_builder&lt;Content, Allocator, stored_table_builder_option_transpose>(table)</c>.</returns>
+          <returns><c>stored_table_builder&lt;Content, Allocator, stored_table_builder_option_transpose>(table, std::forward&lt;Args>(args)...))</c>.</returns>
         </code-item>
       </section>
     </section>

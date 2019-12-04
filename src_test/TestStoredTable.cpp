@@ -1450,6 +1450,45 @@ TEST_P(TestStoredTableBuilder, Basics)
     ASSERT_EQ("vb\n3",    table[3][2]);
 }
 
+TEST_P(TestStoredTableBuilder, MaxRecordNum)
+{
+    const char* s1 = "\"key_a\",key_b,value_a,value_b\n"
+                     "ka1,\"kb\"\"01\"\"\",va1,\n";
+    std::stringbuf in(s1);
+    stored_table table(GetParam());
+    try {
+        parse_csv(&in, make_stored_table_builder(table, 1U));
+    } catch (const text_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(1U, table.size());
+    ASSERT_EQ(4U, table[0].size());
+    ASSERT_EQ("key_a",   table[0][0]);
+    ASSERT_EQ("key_b",   table[0][1]);
+    ASSERT_EQ("value_a", table[0][2]);
+    ASSERT_EQ("value_b", table[0][3]);
+}
+
+TEST_P(TestStoredTableBuilder, MaxRecordNumPathological)
+{
+    const char* s1 = "\r\n\n\"key_a\",key_b,value_a,value_b";
+    std::stringbuf in(s1);
+    stored_table table(GetParam());
+    try {
+        parse_csv(&in, make_stored_table_builder(table, 5U));
+    } catch (const text_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(1U, table.size());
+    ASSERT_EQ(4U, table[0].size());
+    ASSERT_EQ("key_a",   table[0][0]);
+    ASSERT_EQ("key_b",   table[0][1]);
+    ASSERT_EQ("value_a", table[0][2]);
+    ASSERT_EQ("value_b", table[0][3]);
+}
+
 TEST_P(TestStoredTableBuilder, EmptyLineAware)
 {
     const char* s = "\r1,2,3,4\na,b\r\n\nx,y,z\r\n\"\"";
