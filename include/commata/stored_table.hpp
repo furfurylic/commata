@@ -2258,8 +2258,7 @@ template <class Content, class Allocator, class... Args>
 auto make_stored_table_builder(
     basic_stored_table<Content, Allocator>& table, Args&&... args)
 {
-    return stored_table_builder<Content, Allocator>(
-        table, std::forward<Args>(args)...);
+    return stored_table_builder(table, std::forward<Args>(args)...);
 }
 
 template <class Content, class Allocator, class... Args>
