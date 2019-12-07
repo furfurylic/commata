@@ -310,3 +310,35 @@ INSTANTIATE_TEST_SUITE_P(, TestParseCsvErrors,
         std::make_pair("\"col1", std::make_pair(0, 5)),
         std::make_pair("\"col1\",\"", std::make_pair(0, 8)),
         std::make_pair("col1\r\n\n\"col2\"a", std::make_pair(2, 6))));
+
+namespace {
+
+template <class Ch>
+struct full_fledged
+{
+    Ch c;
+
+    using char_type = Ch;
+    std::pair<Ch*, std::size_t> get_buffer()
+        { return std::make_pair(&c, 1); }
+    void release_buffer(const Ch*) {}
+    void start_buffer(const Ch*, const Ch*) {}
+    void end_buffer(const Ch*) {}
+    void start_record(const Ch*) {}
+    void end_record(const Ch*) {}
+    void empty_physical_line(const Ch*) {}
+    void update(const Ch*, const Ch*) {}
+    void finalize(const Ch*, const Ch*) {}
+};
+
+// We'd like to confirm only that this function compiles
+TEST(TestCsvSource, AcceptFullFledged)
+{
+    std::basic_stringbuf<char> in1("abc");
+    make_csv_source(&in1)(full_fledged<char>())();
+    
+    std::basic_stringbuf<wchar_t> in2(L"def");
+    make_csv_source(&in2)(full_fledged<wchar_t>())();
+}
+
+}

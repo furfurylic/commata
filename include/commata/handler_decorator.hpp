@@ -172,11 +172,73 @@ struct empty_physical_line_t<Handler, D,
     }
 };
 
+struct has_yield_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<bool&>() =
+            std::declval<T&>().yield(std::declval<std::size_t>()),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+struct has_yield :
+    decltype(has_yield_impl::check<T>(nullptr))
+{};
+
+template <class Handler, class D, class = void>
+struct yield_t
+{};
+
+template <class Handler, class D>
+struct yield_t<Handler, D, std::enable_if_t<has_yield<Handler>::value>>
+{
+    auto yield(std::size_t p)
+    {
+        return static_cast<D*>(this)->base().yield(p);
+    }
+};
+
+struct has_yield_location_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<std::size_t&>() =
+            std::declval<const T&>().yield_location(),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+struct has_yield_location :
+    decltype(has_yield_location_impl::check<T>(nullptr))
+{};
+
+template <class Handler, class D, class = void>
+struct yield_location_t
+{};
+
+template <class Handler, class D>
+struct yield_location_t<Handler, D,
+    std::enable_if_t<has_yield_location<Handler>::value>>
+{
+    auto yield_location() const
+    {
+        return static_cast<const D*>(this)->base().yield_location();
+    }
+};
+
 template <class Handler, class D>
 struct handler_decorator :
     get_buffer_t<Handler, D>, release_buffer_t<Handler, D>,
     start_buffer_t<Handler, D>, end_buffer_t<Handler, D>,
-    empty_physical_line_t<Handler, D>
+    empty_physical_line_t<Handler, D>,
+    yield_t<Handler, D>, yield_location_t<Handler, D>
 {
     using char_type = typename Handler::char_type;
 

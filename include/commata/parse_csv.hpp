@@ -27,6 +27,34 @@ namespace commata {
 namespace detail {
 namespace csv {
 
+template <class T>
+auto do_yield(T& f, std::size_t location)
+ -> std::enable_if_t<has_yield<T>::value, bool>
+{
+    return f.yield(location);
+}
+
+template <class T>
+auto do_yield(T&, std::size_t)
+ -> std::enable_if_t<!has_yield<T>::value, bool>
+{
+    return false;
+}
+
+template <class T>
+auto do_yield_location(T& f)
+ -> std::enable_if_t<has_yield_location<T>::value, std::size_t>
+{
+    return f.yield_location();
+}
+
+template <class T>
+auto do_yield_location(T&)
+ -> std::enable_if_t<!has_yield_location<T>::value, std::size_t>
+{
+    return 0;
+}
+
 enum class state : std::int_fast8_t
 {
     after_comma,
@@ -423,7 +451,8 @@ class full_fledged_handler :
 public:
     using char_type = typename Handler::char_type;
 
-    full_fledged_handler(Handler&& handler, BufferControl&& buffer_engine)
+    explicit full_fledged_handler(Handler&& handler,
+        BufferControl&& buffer_engine = BufferControl())
         noexcept(std::is_nothrow_move_constructible<Handler>::value) :
         BufferControl(std::move(buffer_engine)),
         handler_(std::move(handler))
@@ -502,51 +531,19 @@ private:
     {}
 };
 
-template <class Handler,
-    std::enable_if_t<!is_full_fledged<Handler>::value, std::nullptr_t>
-        = nullptr>
-auto make_full_fledged(Handler&& handler)
-    noexcept(std::is_nothrow_move_constructible<Handler>::value)
-{
-    static_assert(!std::is_reference<Handler>::value, "");
-    static_assert(is_with_buffer_control<Handler>::value, "");
-    return full_fledged_handler<Handler, thru_buffer_control>(
-        std::forward<Handler>(handler), thru_buffer_control());
-}
-
-template <class Handler,
-    std::enable_if_t<is_full_fledged<Handler>::value, std::nullptr_t>
-        = nullptr>
-decltype(auto) make_full_fledged(Handler&& handler) noexcept
-{
-    static_assert(!std::is_reference<Handler>::value, "");
-    return std::forward<Handler>(handler);
-}
-
-template <class Handler, class Allocator>
-auto make_full_fledged(Handler&& handler,
-    std::size_t buffer_size, const Allocator& alloc)
-    noexcept(std::is_nothrow_move_constructible<Handler>::value)
-{
-    static_assert(!std::is_reference<Handler>::value, "");
-    static_assert(is_without_buffer_control<Handler>::value, "");
-    static_assert(
-        std::is_same<
-            typename Handler::char_type,
-            typename std::allocator_traits<Allocator>::value_type>::value,
-        "Handler::char_type and std::allocator_traits<Allocator>::value_type "
-        "are inconsistent; they shall be the same type");
-    return full_fledged_handler<Handler, default_buffer_control<Allocator>>(
-        std::forward<Handler>(handler),
-        default_buffer_control<Allocator>(buffer_size, alloc));
-}
-
 namespace csv {
 
-template <class Handler>
-class primitive_parser
+template <class Handler, class Tr>
+class parser
 {
+    static_assert(
+        std::is_same<
+            typename Handler::char_type, typename Tr::char_type>::value,
+            "Handler::char_type and Tr::char_type are inconsistent; "
+            "they shall be the same type");
+
     using char_type = typename Handler::char_type;
+    using handler_type = Handler;
 
 private:
     // Reading position
@@ -564,6 +561,11 @@ private:
     // Number of chars of this line before physical_line_or_buffer_begin_
     std::size_t physical_line_chars_passed_away_;
 
+    std::basic_streambuf<char_type, Tr>* in_;
+    bool eof_reached_;
+    char_type* buffer_;
+    char_type* buffer_last_;
+
 private:
     template <state>
     friend struct parse_step;
@@ -573,92 +575,121 @@ private:
     {};
 
 public:
-    explicit primitive_parser(Handler&& f)
+    explicit parser(
+        std::basic_streambuf<typename Handler::char_type, Tr>* in,
+        Handler&& f)
         noexcept(std::is_nothrow_move_constructible<Handler>::value) :
         f_(std::move(f)),
         record_started_(false), s_(state::after_lf),
         physical_line_index_(parse_error::npos),
-        physical_line_chars_passed_away_(0)
+        physical_line_chars_passed_away_(0),
+        in_(in), eof_reached_(false), buffer_(nullptr)
     {}
 
-    primitive_parser(primitive_parser&&) = default;
+    parser(parser&&)
+        noexcept(std::is_nothrow_move_constructible<Handler>::value) = default;
 
-    template <class Tr>
-    bool parse_csv(std::basic_streambuf<char_type, Tr>* in)
+    ~parser()
     {
-        auto release = [f = std::addressof(f_)](const char_type* buffer) {
-            f->release_buffer(buffer);
-        };
-
-        bool eof_reached = false;
-        do {
-            std::unique_ptr<char_type, decltype(release)> buffer(
-                nullptr, release);
-            std::size_t buffer_size;
-            {
-                auto allocated = f_.get_buffer();   // throw
-                buffer.reset(allocated.first);
-                buffer_size = allocated.second;
-                if (buffer_size < 1) {
-                    throw std::out_of_range(
-                        "Specified buffer length is shorter than one");
-                }
-            }
-
-            std::streamsize loaded_size = 0;
-            do {
-                const auto length = in->sgetn(buffer.get() + loaded_size,
-                    buffer_size - loaded_size);
-                if (length == 0) {
-                    eof_reached = true;
-                    break;
-                }
-                loaded_size += length;
-            } while (buffer_size - loaded_size > 0);
-
-            f_.start_buffer(buffer.get(), buffer.get() + buffer_size);
-            if (!parse_partial(buffer.get(),
-                    buffer.get() + loaded_size, eof_reached)) {
-                return false;
-            }
-            f_.end_buffer(buffer.get() + loaded_size);
-        } while (!eof_reached);
-
-        return true;
+        if (buffer_) {
+            f_.release_buffer(buffer_);
+        }
     }
 
-private:
-    bool parse_partial(const char_type* begin, const char_type* end,
-        bool eof_reached)
-    {
-        try {
-            p_ = begin;
-            physical_line_or_buffer_begin_ = begin;
+    bool operator()()
+    try {
+        switch (do_yield_location(f_)) {
+        case 0:
+            break;
+        case 1:
+            goto yield_1;
+        case 2:
+            goto yield_2;
+        case static_cast<std::size_t>(-1):
+            goto yield_end;
+        default:
+            assert(!"Invalid yield location");
+            break;
+        }
+
+        do {
+            {
+                const auto sizes = arrange_buffer();
+                p_ = buffer_;
+                physical_line_or_buffer_begin_ = buffer_;
+                buffer_last_ = buffer_ + sizes.second;
+                f_.start_buffer(buffer_, buffer_ + sizes.first);
+            }
+
             set_first_last();
-            while (p_ < end) {
-                step([this, end](const auto& h) { h.normal(*this, p_, end); });
+
+
+            while (p_ < buffer_last_) {
+                step([this](const auto& h) {
+                    h.normal(*this, p_, buffer_last_);
+                });
+
+                if (do_yield(f_, 1)) {
+                    return true;
+                }
+yield_1:
                 ++p_;
             }
             step([this](const auto& h) { h.underflow(*this); });
-            if (eof_reached) {
+            if (eof_reached_) {
                 set_first_last();
                 step([this](const auto& h) { h.eof(*this); });
                 if (record_started_) {
                     end_record();
                 }
             }
+
+            f_.end_buffer(buffer_last_);
+            if (do_yield(f_, 2)) {
+                return true;
+            }
+yield_2:
+            f_.release_buffer(buffer_);
+            buffer_ = nullptr;
             physical_line_chars_passed_away_ +=
                 p_ - physical_line_or_buffer_begin_;
-            return true;
-        } catch (text_error& e) {
-            e.set_physical_position(
-                physical_line_index_,
-                (p_ - physical_line_or_buffer_begin_)
-                    + physical_line_chars_passed_away_);
-            throw;
-        } catch (const parse_aborted&) {
-            return false;
+        } while (!eof_reached_);
+
+        do_yield(f_, static_cast<std::size_t>(-1));
+yield_end:
+        return true;
+    } catch (text_error& e) {
+        e.set_physical_position(
+            physical_line_index_,
+            (p_ - physical_line_or_buffer_begin_)
+                + physical_line_chars_passed_away_);
+        throw;
+    } catch (const parse_aborted&) {
+        return false;
+    }
+
+private:
+    std::pair<std::size_t, std::streamsize> arrange_buffer()
+    {
+        std::size_t buffer_size;
+        std::tie(buffer_, buffer_size) = f_.get_buffer();   // throw
+        if (buffer_size < 1) {
+            throw std::out_of_range(
+                "Specified buffer length is shorter than one");
         }
+
+        std::streamsize loaded_size = 0;
+        do {
+            const auto length = in_->sgetn(buffer_ + loaded_size,
+                buffer_size - loaded_size);
+            if (length == 0) {
+                eof_reached_ = true;
+                break;
+            }
+            loaded_size += length;
+        } while (buffer_size - loaded_size > 0);
+
+        return { buffer_size, loaded_size };
     }
 
 private:
@@ -790,63 +821,114 @@ private:
     }
 };
 
-template <class Handler>
-primitive_parser<Handler> make_primitive_parser(Handler&& handler)
-    noexcept(std::is_nothrow_constructible<
-        primitive_parser<Handler>, Handler&&>::value)
-{
-    static_assert(!std::is_reference<Handler>::value, "");
-    return primitive_parser<Handler>(std::move(handler));
-}
-
 }} // end namespace detail
 
-template <class Tr, class Handler>
-auto parse_csv(std::basic_streambuf<typename Handler::char_type, Tr>* in,
-    Handler handler)
- -> std::enable_if_t<detail::is_with_buffer_control<Handler>::value, bool>
+template <class Ch, class Tr>
+class csv_source
 {
-    return detail::csv::make_primitive_parser(
-        detail::make_full_fledged(std::move(handler))).parse_csv(in);
+    std::basic_streambuf<Ch, Tr>* in_;
+
+public:
+    using char_type = Ch;
+    using traits_type = Tr;
+
+    explicit csv_source(std::basic_streambuf<Ch, Tr>* in) :
+        in_(in) {}
+    explicit csv_source(std::basic_istream<Ch, Tr>& in) noexcept :
+        in_(in.rdbuf()) {}
+    csv_source(const csv_source&) noexcept = default;
+    ~csv_source() = default;
+
+    template <class Handler>
+    auto operator()(Handler handler)
+        noexcept(std::is_nothrow_move_constructible<Handler>::value)
+     -> std::enable_if_t<
+            !detail::is_std_reference_wrapper<Handler>::value
+         && detail::is_with_buffer_control<Handler>::value,
+            detail::csv::parser<
+                std::conditional_t<
+                    detail::is_full_fledged<
+                        std::remove_reference_t<Handler>>::value,
+                    Handler,
+                    detail::full_fledged_handler<
+                        std::remove_reference_t<Handler>,
+                        detail::thru_buffer_control>>, Tr>>
+    {
+        using handler_t = std::remove_reference_t<Handler>;
+        static_assert(
+            std::is_same<
+                typename handler_t::char_type,
+                typename traits_type::char_type>::value,
+            "Handler::char_type and traits_type::char_type are "
+            "inconsistent; they shall be the same type");
+        using full_fledged_handler_t = std::conditional_t<
+            detail::is_full_fledged<handler_t>::value,
+            Handler,
+            detail::full_fledged_handler<
+                handler_t,
+                detail::thru_buffer_control>>;
+        return detail::csv::parser<full_fledged_handler_t, Tr>(
+            in_, full_fledged_handler_t(std::move(handler)));
+    }
+
+    template <class Handler, class Allocator = std::allocator<Ch>>
+    auto operator()(Handler handler,
+        std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
+        noexcept(std::is_nothrow_move_constructible<Handler>::value)
+     -> std::enable_if_t<
+            !detail::is_std_reference_wrapper<Handler>::value
+         && detail::is_without_buffer_control<Handler>::value,
+            detail::csv::parser<
+                detail::full_fledged_handler<std::remove_reference_t<Handler>,
+                detail::default_buffer_control<Allocator>>, Tr>>
+    {
+        using handler_t = std::remove_reference_t<Handler>;
+        static_assert(
+            std::is_same<
+                typename handler_t::char_type,
+                typename traits_type::char_type>::value,
+            "Handler::char_type and traits_type::char_type are "
+            "inconsistent; they shall be the same type");
+        static_assert(
+            std::is_same<
+                typename handler_t::char_type,
+                typename std::allocator_traits<Allocator>::value_type>::value,
+            "Handler::char_type and std::allocator_traits<Allocator>::"
+            "value_type are inconsistent; they shall be the same type");
+        using buffer_engine_t = detail::default_buffer_control<Allocator>;
+        using full_fledged_handler_t =
+            detail::full_fledged_handler<handler_t, buffer_engine_t>;
+        return detail::csv::parser<full_fledged_handler_t, Tr>(in_,
+            full_fledged_handler_t(
+                std::move(handler), buffer_engine_t(buffer_size, alloc)));
+    }
+
+    template <class Handler, class... Args>
+    auto operator()(const std::reference_wrapper<Handler>& handler,
+        Args&&... args) noexcept
+    {
+        return (*this)(detail::wrapper_handler<Handler>(
+            handler.get()), std::forward<Args>(args)...);
+    }
+};
+
+template <class Ch, class Tr>
+csv_source<Ch, Tr> make_csv_source(std::basic_streambuf<Ch, Tr>* in)
+{
+    return csv_source<Ch, Tr>(in);
 }
 
-template <class Tr, class Handler>
-auto parse_csv(std::basic_istream<typename Handler::char_type, Tr>& in,
-    Handler handler)
- -> std::enable_if_t<detail::is_with_buffer_control<Handler>::value, bool>
+template <class Ch, class Tr>
+csv_source<Ch, Tr> make_csv_source(std::basic_istream<Ch, Tr>& in) noexcept
 {
-    return parse_csv(in.rdbuf(), std::move(handler));
+    return csv_source<Ch, Tr>(in);
 }
 
-template <class Tr, class Handler,
-    class Allocator = std::allocator<typename Handler::char_type>>
-auto parse_csv(std::basic_streambuf<typename Handler::char_type, Tr>* in,
-    Handler handler,
-    std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
- -> std::enable_if_t<detail::is_without_buffer_control<Handler>::value, bool>
+template <class Input, class... Args>
+bool parse_csv(Input&& in, Args&&... args)
 {
-    return detail::csv::make_primitive_parser(
-        detail::make_full_fledged(
-            std::move(handler), buffer_size, alloc)).parse_csv(in);
-}
-
-template <class Tr, class Handler,
-    class Allocator = std::allocator<typename Handler::char_type>>
-auto parse_csv(std::basic_istream<typename Handler::char_type, Tr>& in,
-    Handler handler,
-    std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
- -> std::enable_if_t<detail::is_without_buffer_control<Handler>::value, bool>
-{
-    return parse_csv(in.rdbuf(), std::move(handler), buffer_size, alloc);
-}
-
-template <class Input, class Handler, class... Args>
-auto parse_csv(Input&& in,
-    const std::reference_wrapper<Handler>& handler, Args&&... args)
-{
-    return parse_csv(std::forward<Input>(in),
-        detail::wrapper_handler<Handler>(handler.get()),
-        std::forward<Args>(args)...);
+    return make_csv_source(std::forward<Input>(in))
+        (std::forward<Args>(args)...)();
 }
 
 }

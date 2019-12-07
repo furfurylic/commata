@@ -27,6 +27,7 @@ endif()
 set(COMMATA_HEADERS
     ../include/commata/allocation_only_allocator.hpp
     ../include/commata/empty_physical_line_aware_handler.hpp
+    ../include/commata/empty_string.hpp
     ../include/commata/formatted_output.hpp
     ../include/commata/handler_decorator.hpp
     ../include/commata/key_chars.hpp
@@ -38,6 +39,7 @@ set(COMMATA_HEADERS
     ../include/commata/stored_table.hpp
     ../include/commata/table_scanner.hpp
     ../include/commata/text_error.hpp
+    ../include/commata/text_pull.hpp
     ../include/commata/typing_aid.hpp
 )
 
@@ -47,6 +49,7 @@ set(TEST_COMMATA_SOURCES
     TestStoredTable.cpp
     TestTableScanner.cpp
     TestTextError.cpp
+    TestTextPull.cpp
 )
 
 set(TEST_COMMATA_HEADERS

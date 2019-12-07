@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "empty_string.hpp"
 #include "formatted_output.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
@@ -37,8 +38,6 @@ class basic_stored_value
 {
     Ch* begin_;
     Ch* end_;   // must point the terminating zero
-
-    static Ch empty_value[];
 
 public:
     static_assert(
@@ -65,7 +64,7 @@ public:
     static constexpr size_type npos = static_cast<size_type>(-1);
 
     basic_stored_value() noexcept :
-        basic_stored_value(empty_value, empty_value)
+        basic_stored_value(&detail::nul<Ch>::value, &detail::nul<Ch>::value)
     {}
 
     basic_stored_value(Ch* begin, Ch* end) :
@@ -337,9 +336,6 @@ private:
 template <class Ch, class Tr>
 constexpr typename basic_stored_value<Ch, Tr>::size_type
     basic_stored_value<Ch, Tr>::npos;
-
-template <class Ch, class Tr>
-Ch basic_stored_value<Ch, Tr>::empty_value[] = { Ch() };
 
 template <class Ch, class Tr,
     class Allocator = std::allocator<std::remove_const_t<Ch>>>

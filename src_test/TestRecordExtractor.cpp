@@ -236,12 +236,9 @@ TEST_F(TestRecordExtractorMiscellaneous, Reference)
         return (value == "brass") || (value == "woodwind");
     };
 
-    // Freaking VS2015 picks up parse_csv's overload for reference_wrappers
-    // and complain about ambiguity, so we squelch it by force with explicit
-    // template arguments
     auto ex = make_record_extractor(
         &out, std::ref(key_pred), std::ref(value_pred));
-    parse_csv<std::char_traits<char>, decltype(ex)>(&in, std::move(ex));
+    parse_csv(&in, std::move(ex));
     ASSERT_EQ("instrument,type\n"
               "tuba,brass\n"
               "clarinet,woodwind\n",
@@ -261,10 +258,9 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
     std::stringbuf in(s);
     std::stringbuf out;
 
-    // ditto
     auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
         "instrument_______", std::string("clarinet_________"));
-    parse_csv<std::char_traits<char>, decltype(ex)>(&in, std::move(ex), 8U);
+    parse_csv(&in, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }
 
@@ -273,18 +269,16 @@ TEST_F(TestRecordExtractorMiscellaneous, Fancy)
     std::size_t total = 0;
     tracking_allocator<fancy_allocator<wchar_t>> alloc(total);
 
-    // Long names are required to make sure that std::string uses its
-    // allocator
+    // ditto
     const wchar_t* s = L"instrument_______,type\n"
                        L"castanets________,idiophone\n"
                        L"clarinet_________,woodwind\n";
     std::wstringbuf in(s);
     std::wstringbuf out;
 
-    // ditto
-    auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
+     auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
         L"instrument_______", std::wstring(L"clarinet_________"));
-    parse_csv<std::char_traits<wchar_t>, decltype(ex)>(&in, std::move(ex), 8U);
+    parse_csv(&in, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }
 
