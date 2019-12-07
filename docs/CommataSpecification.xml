@@ -270,7 +270,7 @@
 #include &lt;string>
 
 namespace commata {
-  class text_error;   <c>// <n>forward declation</n></c>
+  class text_error;   <c>// <n>forward declaration</n></c>
 
   <c>// <n><xref id="text_error_info"/>, class text_error_info:</n></c>
   class text_error_info;
@@ -4303,4 +4303,3 @@ template &lt;class Allocator, class Container, class... Appendices>
 </section>
 
 </document>
-
