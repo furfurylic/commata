@@ -34,26 +34,6 @@ namespace commata {
 
 namespace detail::csv {
 
-template <class T>
-bool do_yield([[maybe_unused]] T& f, [[maybe_unused]] std::size_t location)
-{
-    if constexpr (has_yield_v<T>) {
-        return f.yield(location);
-    } else {
-        return false;
-    }
-}
-
-template <class T>
-std::size_t do_yield_location([[maybe_unused]] T& f)
-{
-    if constexpr (has_yield_location_v<T>) {
-        return f.yield_location();
-    } else {
-        return 0;
-    }
-}
-
 enum class state : std::int_fast8_t
 {
     after_comma,
@@ -432,20 +412,29 @@ public:
         }
     }
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4102)
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-label"
+#endif
     bool operator()()
     try {
-        switch (do_yield_location(f_)) {
-        case 0:
-            break;
-        case 1:
-            goto yield_1;
-        case 2:
-            goto yield_2;
-        case static_cast<std::size_t>(-1):
-            goto yield_end;
-        default:
-            assert(!"Invalid yield location");
-            break;
+        if constexpr (has_yield_location_v<Handler>) {
+            switch (f_.yield_location()) {
+            case 0:
+                break;
+            case 1:
+                goto yield_1;
+            case 2:
+                goto yield_2;
+            case static_cast<std::size_t>(-1):
+                goto yield_end;
+            default:
+                assert(!"Invalid yield location");
+                break;
+            }
         }
 
         do {
@@ -464,8 +453,10 @@ public:
                     h.normal(*this, p_, buffer_last_);
                 });
 
-                if (do_yield(f_, 1)) {
-                    return true;
+                if constexpr (has_yield_v<Handler>) {
+                    if (f_.yield(1)) {
+                        return true;
+                    }
                 }
 yield_1:
                 ++p_;
@@ -480,8 +471,10 @@ yield_1:
             }
 
             f_.end_buffer(buffer_last_);
-            if (do_yield(f_, 2)) {
-                return true;
+            if constexpr (has_yield_v<Handler>) {
+                if (f_.yield(2)) {
+                    return true;
+                }
             }
 yield_2:
             f_.release_buffer(buffer_);
@@ -490,7 +483,9 @@ yield_2:
                 p_ - physical_line_or_buffer_begin_;
         } while (!eof_reached_);
 
-        do_yield(f_, static_cast<std::size_t>(-1));
+        if constexpr (has_yield_v<Handler>) {
+            f_.yield(static_cast<std::size_t>(-1));
+        }
 yield_end:
         return true;
     } catch (text_error& e) {
@@ -500,6 +495,11 @@ yield_end:
     } catch (const parse_aborted&) {
         return false;
     }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
     std::pair<std::size_t, std::size_t> get_physical_position() const noexcept
     {
