@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-12-04 (UTC)</signature>
+<signature>2019-12-07 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -123,7 +123,7 @@
 
     <table id="table.text_handler.requirements">
       <caption>TextHandler requirements</caption>
-      <col width="1"/><col width="4"/><col width="5"/><col width="10"/><col width="4"/>
+      <col width="2"/><col width="9"/><col width="9"/><col width="20"/><col width="8"/>
 
       <tr>
         <th>#</th>
@@ -187,10 +187,11 @@
 
       <tr>
         <td>(6)</td>
-        <td><c>t.empty_physical_line()</c></td>
+        <td><c>t.empty_physical_line(w)</c></td>
         <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
         <td><p>Called when the parser finds an empty line outside any record.
                Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
+            <p><c>w</c> points the last line break character and resides in [<c>bb</c>, <c>gb.first + gb.second</c>) where <c>bb</c> is the argument of the latest call of (4) and gb is the return value of the latest call of (2).</p>
             <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
         <td>Does nothing.</td>
       </tr>
