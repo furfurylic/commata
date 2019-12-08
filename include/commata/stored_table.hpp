@@ -207,11 +207,12 @@ public:
         return begin_;
     }
 
-    template <class Allocator>
+    template <class OtherTr = std::char_traits<std::remove_const_t<Ch>>,
+        class Allocator = std::allocator<std::remove_const_t<Ch>>>
     explicit operator
-        std::basic_string<std::remove_const_t<Ch>, Tr, Allocator>() const
+    std::basic_string<std::remove_const_t<Ch>, OtherTr, Allocator>() const
     {
-        return std::basic_string<std::remove_const_t<Ch>, Tr, Allocator>(
+        return std::basic_string<std::remove_const_t<Ch>, OtherTr, Allocator>(
             cbegin(), cend());
     }
 
@@ -342,12 +343,14 @@ Ch basic_stored_value<Ch, Tr>::empty_value[] = { Ch() };
 
 template <class Ch, class Tr,
     class Allocator = std::allocator<std::remove_const_t<Ch>>>
-std::basic_string<std::remove_const_t<Ch>, Tr, Allocator>
+std::basic_string<std::remove_const_t<Ch>,
+        std::char_traits<std::remove_const_t<Ch>>, Allocator>
     to_string(const basic_stored_value<Ch, Tr>& v,
         const Allocator& alloc = Allocator())
 {
-    return std::basic_string<std::remove_const_t<Ch>, Tr, Allocator>(
-        v.cbegin(), v.cend(), alloc);
+    return std::basic_string<std::remove_const_t<Ch>,
+            std::char_traits<std::remove_const_t<Ch>>, Allocator>(
+                v.cbegin(), v.cend(), alloc);
 }
 
 template <class Ch, class Tr>
