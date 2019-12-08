@@ -5624,6 +5624,9 @@ namespace commata {
       operator+=(std::basic_string&lt;typename TableSource::char_type,
                                    typename TableSource::traits_type, OtherAllocator>&amp; left,
                  const table_pull&lt;TableSource, Allocator>&amp; right);
+  template &lt;class TableSource, class Allocator>
+    std::basic_string_view&lt;typename TableSource::char_type>
+      to_string_view(const table_pull&lt;TableSource, Allocator>&amp; p) noexcept;
   template &lt;class TableSource, class Allocator,
             class OtherAllocator = std::allocator&lt;typename TableSource::char_type>>
     std::basic_string&lt;typename TableSource::char_type,
@@ -6048,6 +6051,8 @@ namespace commata {
     size_type max_size() const noexcept;
     bool empty() const noexcept;
 
+    template &lt;class OtherTr = std::char_traits&lt;char_type>>
+      operator std::basic_string_view&lt;char_type, OtherTr>() const noexcept;
     template &lt;class OtherTr = std::char_traits&lt;char_type>,
       class OtherAllocator = std::allocator&lt;char_type>>
         explicit operator std::basic_string&lt;char_type, OtherTr, OtherAllocator>() const;
@@ -6159,6 +6164,10 @@ namespace commata {
       operator+=(std::basic_string&lt;typename TableSource::char_type,
                                    typename TableSource::traits_type, OtherAllocator>&amp; left,
                  const table_pull&lt;TableSource, Allocator>&amp; right);
+
+  template &lt;class TableSource, class Allocator>
+    std::basic_string_view&lt;typename TableSource::char_type>
+      to_string_view(const table_pull&lt;TableSource, Allocator>&amp; p) noexcept;
 
   template &lt;class TableSource, class Allocator,
             class OtherAllocator = std::allocator&lt;typename TableSource::char_type>>
@@ -6506,6 +6515,14 @@ bool empty() const noexcept;
 
         <code-item>
           <code>
+template &lt;class OtherTr = std::char_traits&lt;char_type>>
+  operator std::basic_string_view&lt;char_type, OtherTr>() const noexcept;
+          </code>
+          <returns><c>std::basic_string_view&lt;char_type, OtherTr>(data(), size())</c>.</returns>
+        </code-item>
+
+        <code-item>
+          <code>
 template &lt;class OtherTr = std::char_traits&lt;char_type>,
   class OtherAllocator = std::allocator&lt;char_type>>
     explicit operator std::basic_string&lt;char_type, OtherTr, OtherAllocator>() const;
@@ -6675,9 +6692,7 @@ template &lt;class TableSource, class Allocator>
                                   typename TableSource::traits_type>&amp; os,
                 const table_pull&lt;TableSource, Allocator>&amp; o);
           </code>
-          <effects>Behaves as a formatted output function of <c>os</c>.
-                   Forms a character sequence <c>seq</c>, initially consisting of the elements defined by the range [<c>o.cbegin()</c>, <c>o.cend()</c>).
-                   Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c>, where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>; then calls <c>os.width(0)</c>.</effects>
+          <effects>Calls <c>os &lt;&lt; static_cast&lt;std::basic_string_view&lt;typename TableSource::char_type, Tr>>(o)</c>.</effects>
           <returns><c>os</c>.</returns>
         </code-item>
       </section>
@@ -6729,6 +6744,15 @@ template &lt;class TableSource, class Allocator, class OtherAllocator>
           <effects>Equivalent to call <c>left.append(right.cbegin(), right.cend())</c>.</effects>
           <returns><c>left</c>.</returns>
           <remark>If an exception is thrown by an instance of these function templates, the invocation shall have no effect.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class TableSource, class Allocator>
+  std::basic_string_view&lt;typename TableSource::char_type>
+    to_string_view(const table_pull&lt;TableSource, Allocator>&amp; p) noexcept;
+          </code>
+          <returns><c>std::basic_string_view&lt;typename TableSource::char_type, std::char_traits&lt;typename TableSource::char_type>>(o.data(), o.size())</c>.</returns>
         </code-item>
 
         <code-item>

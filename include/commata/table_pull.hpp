@@ -15,6 +15,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -23,7 +24,6 @@
 #include "allocation_only_allocator.hpp"
 #include "buffer_size.hpp"
 #include "empty_string.hpp"
-#include "formatted_output.hpp"
 #include "handler_decorator.hpp"
 #include "member_like_base.hpp"
 #include "string_value.hpp"
@@ -1033,6 +1033,12 @@ public:
         return std::numeric_limits<size_type>::max();
     }
 
+    template <class OtherTr = std::char_traits<char_type>>
+    operator std::basic_string_view<char_type, OtherTr>() const noexcept
+    {
+        return { cbegin(), size() };
+    }
+
     template <class OtherTr = std::char_traits<char_type>,
         class OtherAllocator = std::allocator<char_type>>
     explicit operator
@@ -1071,6 +1077,13 @@ private:
             &detail::nul<char_type>::value, &detail::nul<char_type>::value);
     }
 };
+ 
+template <class TableSource, class Allocator>
+std::basic_string_view<typename TableSource::char_type> to_string_view(
+    const table_pull<TableSource, Allocator>& p) noexcept
+{
+    return { p.data(), p.size() };
+}
 
 template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
@@ -1369,14 +1382,7 @@ auto operator<<(
     const table_pull<TableSource, Allocator>& p)
  -> decltype(os)
 {
-    // In C++17, this function will be able to be implemented in terms of
-    // string_view's operator<<
-    const auto n = static_cast<std::streamsize>(p.size());
-    return detail::formatted_output(
-        os, n,
-        [b = p.cbegin(), n](auto* sb) {
-            return sb->sputn(b, n) == n;
-        });
+    return os << to_string_view(p);
 }
 
 template <class TableSource, class Allocator,
