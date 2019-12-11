@@ -20,13 +20,45 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(EXECUTABLE_OUTPUT_PATH ..)
 
-add_executable(test_commata
+set(COMMATA_HEADERS
+    ../include/commata/allocation_only_allocator.hpp
+    ../include/commata/empty_physical_line_aware_handler.hpp
+    ../include/commata/formatted_output.hpp
+    ../include/commata/handler_decorator.hpp
+    ../include/commata/key_chars.hpp
+    ../include/commata/member_like_base.hpp
+    ../include/commata/parse_csv.hpp
+    ../include/commata/parse_error.hpp
+    ../include/commata/propagation_controlled_allocator.hpp
+    ../include/commata/record_extractor.hpp
+    ../include/commata/stored_table.hpp
+    ../include/commata/table_scanner.hpp
+    ../include/commata/text_error.hpp
+    ../include/commata/typing_aid.hpp
+)
+
+set(TEST_COMMATA_SOURCES
     TestParseCsv.cpp
     TestRecordExtractor.cpp
     TestStoredTable.cpp
     TestTableScanner.cpp
     TestTextError.cpp
 )
+
+set(TEST_COMMATA_HEADERS
+    identified_allocator.hpp
+    tracking_allocator.hpp
+    BaseTest.hpp
+)
+
+add_executable(test_commata
+    ${COMMATA_HEADERS}
+    ${TEST_COMMATA_SOURCES}
+    ${TEST_COMMATA_HEADERS}
+)
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+source_group("Commata Headers" FILES ${COMMATA_HEADERS})
 
 if(MSVC)
     target_compile_options(test_commata PUBLIC /W4 /bigobj)
