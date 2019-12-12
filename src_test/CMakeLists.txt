@@ -46,6 +46,7 @@ set(TEST_COMMATA_SOURCES
 )
 
 set(TEST_COMMATA_HEADERS
+    fancy_allocator.hpp
     identified_allocator.hpp
     tracking_allocator.hpp
     BaseTest.hpp

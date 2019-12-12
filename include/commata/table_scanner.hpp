@@ -839,13 +839,14 @@ private:
         return p;
     }
 
-    template <class T>
-    void destroy_deallocate(T* p)
+    template <class P>
+    void destroy_deallocate(P p)
     {
         assert(p);
-        using t_at_t = typename at_t::template rebind_traits<T>;
+        using v_t = typename std::pointer_traits<P>::element_type;
+        using t_at_t = typename at_t::template rebind_traits<v_t>;
         typename t_at_t::allocator_type a(get_allocator());
-        std::addressof(*p)->~T();
+        std::addressof(*p)->~v_t();
         t_at_t::deallocate(a, p, 1);
     }
 

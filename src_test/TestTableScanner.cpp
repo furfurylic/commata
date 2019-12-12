@@ -4,6 +4,7 @@
  */
 
 #ifdef _MSC_VER
+#pragma warning(disable:4494)
 #pragma warning(disable:4996)
 #endif
 
@@ -32,6 +33,7 @@
 #include <commata/table_scanner.hpp>
 
 #include "BaseTest.hpp"
+#include "fancy_allocator.hpp"
 #include "tracking_allocator.hpp"
 
 using namespace commata;
@@ -1077,6 +1079,56 @@ TYPED_TEST(TestTableScanner, MovedFromState)
     ASSERT_EQ(nullptr, h1.template get_field_scanner<decltype(t)>(0));
 
     ASSERT_NE(nullptr, h2.template get_field_scanner<decltype(t)>(0));
+}
+
+namespace {
+
+template <class Ch, class F>
+class check_scanner
+{
+    F f_;
+
+public:
+    explicit check_scanner(F f) : f_(f) {}
+
+    void field_value(Ch* b, Ch* e) { f_(b); f_(e - 1); }
+
+    void field_skipped() {}
+};
+
+template <class Ch, class F>
+check_scanner<Ch, F> make_check_scanner(F f)
+{
+    return check_scanner<Ch, F>(f);
+}
+
+}
+
+TYPED_TEST(TestTableScanner, Fancy)
+{
+    const auto str = char_helper<TypeParam>::str;
+
+    std::vector<std::pair<char*, char*>> allocated;
+    tracking_allocator<fancy_allocator<TypeParam>> a(allocated);
+
+    auto f = [&a](TypeParam* p) {
+        if (!a.tracks(p)) {
+            throw text_error("Not tracked");
+        }
+    };
+
+    basic_table_scanner<TypeParam, std::char_traits<TypeParam>, decltype(a)>
+        scanner(std::allocator_arg, a);
+    auto g = make_check_scanner<TypeParam>(f);
+    auto h = [] {};
+    scanner.set_field_scanner(0, std::move(g));
+    scanner.set_record_end_scanner(std::move(h));
+    ASSERT_TRUE(a.tracks(scanner.template get_field_scanner<decltype(g)>(0)));
+    ASSERT_TRUE(a.tracks(scanner.template
+        get_record_end_scanner<decltype(h)>()));
+
+    std::basic_stringbuf<TypeParam> buf(str("abc"));
+    ASSERT_NO_THROW(parse_csv(&buf, std::move(scanner)));
 }
 
 namespace {
