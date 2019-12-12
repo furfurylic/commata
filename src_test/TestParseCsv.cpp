@@ -3,6 +3,10 @@
  * http://unlicense.org
  */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4494)
+#endif
+
 #include <algorithm>
 #include <iterator>
 #include <sstream>
@@ -16,8 +20,11 @@
 #include <commata/parse_csv.hpp>
 
 #include "BaseTest.hpp"
+#include "fancy_allocator.hpp"
+#include "tracking_allocator.hpp"
 
 using namespace commata;
+using namespace commata::test;
 
 namespace {
 
@@ -98,6 +105,34 @@ public:
         return field_values_;
     }
 };
+
+template <class Ch, class F>
+class check_handler
+{
+    F f_;
+
+public:
+    using char_type = Ch;
+
+    explicit check_handler(F f) : f_(f) {}
+
+    void start_buffer(const Ch* buffer_begin, const Ch* buffer_end)
+    {
+        f_(buffer_begin);
+        f_(buffer_end - 1);
+    }
+
+    void start_record(const Ch*) {}
+    void update(const Ch*, const Ch*) {}
+    void finalize(const Ch*, const Ch*) {}
+    void end_record(const Ch*) {}
+};
+
+template <class Ch, class F>
+check_handler<Ch, F> make_check_handler(F f)
+{
+    return check_handler<Ch, F>(f);
+}
 
 }
 
@@ -194,6 +229,32 @@ TEST_F(TestParseCsvReference, EmptyLineAware)
     ASSERT_EQ(2U, collector.field_values()[2].size());
     ASSERT_EQ("C", collector.field_values()[2][0]);
     ASSERT_EQ("D", collector.field_values()[2][1]);
+}
+
+template <class Ch>
+struct TestParseCsvFancy : BaseTest
+{};
+
+using Chs = testing::Types<char, wchar_t>;
+TYPED_TEST_SUITE(TestParseCsvFancy, Chs);
+
+TYPED_TEST(TestParseCsvFancy, Basics)
+{
+    using char_t = TypeParam;
+    using string_t = std::basic_string<char_t>;
+
+    const auto str = char_helper<char_t>::str;
+    const auto s = str("ABC,DEF,GHI,JKL\n123,456,789,0ab");
+    std::basic_stringbuf<char_t> in(s);
+
+    std::vector<std::pair<char*, char*>> allocated;
+    tracking_allocator<fancy_allocator<char_t>> a(allocated);
+    const auto f = [&a](const char_t* p) {
+        if (!a.tracks(p)) {
+            throw text_error("Not tracked");
+        }
+    };
+    ASSERT_NO_THROW(parse_csv(&in, make_check_handler<char_t>(f), 0, a));
 }
 
 struct TestParseCsvEndsWithoutLF :
