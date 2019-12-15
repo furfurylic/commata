@@ -61,7 +61,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 source_group("Commata Headers" FILES ${COMMATA_HEADERS})
 
 if(MSVC)
-    target_compile_options(test_commata PUBLIC /W4 /bigobj)
+    target_compile_options(test_commata PUBLIC /MP /W4 /bigobj)
     target_compile_options(test_commata PUBLIC
         $<$<CONFIG:MinSizeRel>:/wd4702>
         $<$<CONFIG:Release>:/wd4702>
