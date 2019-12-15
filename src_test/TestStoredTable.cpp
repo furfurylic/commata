@@ -4,6 +4,7 @@
  */
 
 #ifdef _MSC_VER
+#pragma warning(disable:4494)
 #pragma warning(disable:4503)
 #pragma warning(disable:4996)
 #endif
@@ -30,6 +31,7 @@
 #include <commata/parse_csv.hpp>
 
 #include "BaseTest.hpp"
+#include "fancy_allocator.hpp"
 #include "identified_allocator.hpp"
 #include "tracking_allocator.hpp"
 
@@ -1569,6 +1571,30 @@ TEST_P(TestStoredTableBuilder, Transpose)
     ASSERT_EQ(4U, table[1].size());
     ASSERT_EQ("BBb", table[1][3]);
     ASSERT_EQ(3U, table[2].size());
+}
+
+TEST_P(TestStoredTableBuilder, Fancy)
+{
+    using content_t = std::vector<std::vector<wstored_value>>;
+    using alloc_t = tracking_allocator<fancy_allocator<content_t>>;
+
+    std::vector<std::pair<char*, char*>> allocated;
+    alloc_t a(allocated);
+
+    const wchar_t* s = L"Col1,Col2\n"
+                       L"aaa,bbb,ccc\n"
+                       L"AAA,BBB,CCC\n";
+    std::wstringbuf in(s);
+    basic_stored_table<content_t, alloc_t> table(
+        std::allocator_arg, a, GetParam());
+    try {
+        parse_csv(&in, make_stored_table_builder(table));
+    } catch (const text_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_TRUE(a.tracks(table[0][0].cbegin()));
+    ASSERT_TRUE(a.tracks(table.content().back().back().cend()));
 }
 
 INSTANTIATE_TEST_SUITE_P(,
