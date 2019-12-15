@@ -3,6 +3,10 @@
  * http://unlicense.org
  */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4494)
+#endif
+
 #include <limits>
 #include <sstream>
 #include <string>
@@ -14,6 +18,7 @@
 #include <commata/record_extractor.hpp>
 
 #include "BaseTest.hpp"
+#include "fancy_allocator.hpp"
 #include "tracking_allocator.hpp"
 
 using namespace commata;
@@ -260,6 +265,26 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
     auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
         "instrument_______", std::string("clarinet_________"));
     parse_csv<std::char_traits<char>, decltype(ex)>(&in, std::move(ex), 8U);
+    ASSERT_GT(total, 0U);
+}
+
+TEST_F(TestRecordExtractorMiscellaneous, Fancy)
+{
+    std::size_t total = 0;
+    tracking_allocator<fancy_allocator<wchar_t>> alloc(total);
+
+    // Long names are required to make sure that std::string uses its
+    // allocator
+    const wchar_t* s = L"instrument_______,type\n"
+                       L"castanets________,idiophone\n"
+                       L"clarinet_________,woodwind\n";
+    std::wstringbuf in(s);
+    std::wstringbuf out;
+
+    // ditto
+    auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
+        L"instrument_______", std::wstring(L"clarinet_________"));
+    parse_csv<std::char_traits<wchar_t>, decltype(ex)>(&in, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }
 
