@@ -150,6 +150,9 @@ TEST_F(TestTextError, Info)
 
 TEST_F(TestTextError, Allocators)
 {
+    // std::allocate_shared which comes with Visual Studio 2015 does not seem
+    // to support fancy pointers, so we do not test the fancy cases
+
     std::vector<std::pair<char*, char*>> allocated;
     tracking_allocator<std::allocator<char>> a(allocated);
 
