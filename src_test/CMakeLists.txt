@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.14)
 
+enable_language(CXX)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+project(test_commata)
+enable_testing()
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -15,10 +23,6 @@ if(NOT googletest_POPULATED)
                      ${googletest_BINARY_DIR}
                      EXCLUDE_FROM_ALL)
 endif()
-
-set(CMAKE_CXX_STANDARD 14)
-
-set(EXECUTABLE_OUTPUT_PATH ..)
 
 set(COMMATA_HEADERS
     ../include/commata/allocation_only_allocator.hpp
@@ -61,22 +65,23 @@ add_executable(test_commata
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 source_group("Commata Headers" FILES ${COMMATA_HEADERS})
 
-if(MSVC)
-    target_compile_options(test_commata PUBLIC /MP /W4 /bigobj)
-    target_compile_options(test_commata PUBLIC
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(test_commata PRIVATE /MP /W4 /bigobj)
+    target_compile_options(test_commata PRIVATE
         $<$<CONFIG:MinSizeRel>:/wd4702>
         $<$<CONFIG:Release>:/wd4702>
         $<$<CONFIG:RelWithDebInfo>:/wd4702>
     )
-else(MSVC)
-    target_compile_definitions(test_commata PUBLIC
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_definitions(test_commata PRIVATE
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
     )
-    target_compile_options(test_commata PUBLIC
+    target_compile_options(test_commata PRIVATE -Wall -Wextra -pedantic-errors -Werror=pedantic)
+    target_compile_options(test_commata PRIVATE
         $<$<CONFIG:Debug>:-O0 -g3>
         $<$<CONFIG:RelWithDebInfo>:-O2 -g3>
     )
-endif(MSVC)
+endif()
 
 include_directories(../include)
 
