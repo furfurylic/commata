@@ -241,7 +241,6 @@ TYPED_TEST_SUITE(TestParseCsvFancy, Chs);
 TYPED_TEST(TestParseCsvFancy, Basics)
 {
     using char_t = TypeParam;
-    using string_t = std::basic_string<char_t>;
 
     const auto str = char_helper<char_t>::str;
     const auto s = str("ABC,DEF,GHI,JKL\n123,456,789,0ab");

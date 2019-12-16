@@ -429,7 +429,6 @@ TYPED_TEST(TestStoredValue, Iterators)
 {
     using char_t = TypeParam;
     using decayed_char_t = std::remove_const_t<char_t>;
-    using string_t = std::basic_string<decayed_char_t>;
     using value_t = basic_stored_value<char_t>;
 
     const auto ch = char_helper<decayed_char_t>::ch;
