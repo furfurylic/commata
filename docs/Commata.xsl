@@ -28,7 +28,7 @@
         #signature { text-align: right; margin-bottom: 2em }
 
         span.name { font-style: italic }
-        code { color: #32308a; font-family: Courier, monospace }
+        code { color: #32308a; font-family: Courier, monospace; font-variant-ligatures: none }
         code a:link, pre a:visited, pre a:hover, pre a:active { color: inherit; text-decoration: none }
         code a:hover, pre a:active { text-decoration: underline }
         code span.not-a-code { font-style: italic }
