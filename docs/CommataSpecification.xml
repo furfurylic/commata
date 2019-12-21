@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-12-17 (UTC)</signature>
+<signature>2019-12-21 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -112,7 +112,7 @@
     <p>A type <c>T</c> meets the <c>TextHandler</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
     <ul>
       <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-      <li>the expressions shown in <xref id="table.text_handler.requirements"/> are valid and have the indidated semantics.</li>
+      <li>the expressions shown in <xref id="table.text_handler.requirements"/> are valid and have the indicated semantics.</li>
     </ul>
 
     <p>In <xref id="table.text_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>.</p>
@@ -2635,7 +2635,7 @@ template &lt;class Content, class Allocator, class... Args>
         <p>A type <c>S</c> meets the <c>BodyFieldScanner</c> requirements for <c>Ch</c> that is a char-like type, <c>Tr</c> that is a character traits type of <c>Ch</c>, and <c>Allocator</c> that is an allocator type of <c>Ch</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-          <li>the expressions shown in <xref id="table.field_scanner.requirements"/> are valid and have the indidated semantics.</li>
+          <li>the expressions shown in <xref id="table.field_scanner.requirements"/> are valid and have the indicated semantics.</li>
         </ul>
 
         <p>In <xref id="table.field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
@@ -2689,7 +2689,7 @@ template &lt;class Content, class Allocator, class... Args>
         <p>A type <c>S</c> meets the <c>RecordEndScanner</c> requirements if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-          <li>the expression shown in <xref id="table.record_end_scanner.requirements"/> is valid and have the indidated semantics.</li>
+          <li>the expression shown in <xref id="table.record_end_scanner.requirements"/> is valid and have the indicated semantics.</li>
         </ul>
 
         <p>In <xref id="table.record_end_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.</p>
@@ -2720,7 +2720,7 @@ template &lt;class Content, class Allocator, class... Args>
         <p>A type <c>S</c> meets the <c>HeaderFieldScanner</c> requirements for a char-like type <c>Ch</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-          <li>the expression shown in <xref id="table.header_field_scanner.requirements"/> is valid and have the indidated semantics.</li>
+          <li>the expression shown in <xref id="table.header_field_scanner.requirements"/> is valid and have the indicated semantics.</li>
         </ul>
 
         <p>In <xref id="table.header_field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
@@ -2789,7 +2789,7 @@ template &lt;class Content, class Allocator, class... Args>
         <p>A type <c>H</c> meets the <c>SkippingHandler</c> requirements for the target type <c>T</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-          <li>the expression shown in <xref id="table.skipping_handler.requirements"/> is valid and have the indidated semantics.</li>
+          <li>the expression shown in <xref id="table.skipping_handler.requirements"/> is valid and have the indicated semantics.</li>
         </ul>
 
         <p><xref id="table.skipping_handler.requirements"/> shows two expressions per row.
@@ -2830,7 +2830,7 @@ template &lt;class Content, class Allocator, class... Args>
         <p>A type <c>H</c> meets the <c>ConversionErrorHandler</c> requirements for a char-like type <c>Ch</c> and the target type <c>T</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-          <li>the expressions shown in <xref id="table.conversion_error_handler.requirements"/> are valid and have the indidated semantics.</li>
+          <li>the expressions shown in <xref id="table.conversion_error_handler.requirements"/> are valid and have the indicated semantics.</li>
         </ul>
 
         <p><xref id="table.conversion_error_handler.requirements"/> shows two expressions per row.
@@ -3873,7 +3873,7 @@ explicit arithmetic_field_translator(
          Sink sink, SkippingHandler handle_skipping = SkippingHandler(),
          ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
           </code>
-          <effects>Initializes a object of <c>arithmetic_field_translator</c> that holds copies of <c>sink</c>, <c>handle_skipping</c> and <c>handle_conversion_error</c>
+          <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds copies of <c>sink</c>, <c>handle_skipping</c> and <c>handle_conversion_error</c>
                    as the field translator sink object, the skipping handler object and the conversion error handler object respectively.</effects>
           </code-item>
 
@@ -3881,7 +3881,7 @@ explicit arithmetic_field_translator(
             <code>
 arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
             </code>
-            <effects>Initializes a object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
+            <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
                     When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
           </code-item>
@@ -4070,7 +4070,7 @@ explicit locale_based_arithmetic_field_translator(
          SkippingHandler handle_skipping = SkippingHandler(),
          ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
             </code>
-            <effects>Initializes a object of <c>locale_based_arithmetic_field_translator</c> that holds copies of <c>sink</c>, <c>loc</c>, <c>handle_skipping</c> and <c>handle_conversion_error</c>
+            <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds copies of <c>sink</c>, <c>loc</c>, <c>handle_skipping</c> and <c>handle_conversion_error</c>
                     as the field translator sink object, the locale object, the skipping handler object and the conversion error handler object respectively.</effects>
           </code-item>
 
@@ -4079,7 +4079,7 @@ explicit locale_based_arithmetic_field_translator(
 locale_based_arithmetic_field_translator(
   locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
             </code>
-            <effects>Initializes a object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
+            <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
                     When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
           </code-item>
@@ -4178,7 +4178,7 @@ explicit string_field_translator(Sink sink,
                                  SkippingHandler handle_skipping = SkippingHandler());
             </code>
             <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
-            <effects>Initializes a object of <c>string_field_translator</c> that holds a default constructed <c>Allocator</c> object as its allocator, and copies of <c>sink</c> and <c>handle_skipping</c>
+            <effects>Initializes an object of <c>string_field_translator</c> that holds a default constructed <c>Allocator</c> object as its allocator, and copies of <c>sink</c> and <c>handle_skipping</c>
                     as the field translator sink object and the skipping handler object respectively.</effects>
           </code-item>
 
@@ -4187,7 +4187,7 @@ explicit string_field_translator(Sink sink,
 string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink sink,
                         SkippingHandler handle_skipping = SkippingHandler());
             </code>
-            <effects>Initializes a object of <c>string_field_translator</c> that holds copies of <c>alloc</c>, <c>sink</c> and <c>handle_skipping</c>
+            <effects>Initializes an object of <c>string_field_translator</c> that holds copies of <c>alloc</c>, <c>sink</c> and <c>handle_skipping</c>
                     as the allocator object, the field translator sink object and the skipping handler object respectively.</effects>
           </code-item>
 
@@ -4195,7 +4195,7 @@ string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink s
             <code>
 string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
             </code>
-            <effects>Initializes a object of <c>string_field_translator</c> that holds an allocator object, a field translator sink object, and a skipping handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
+            <effects>Initializes an object of <c>string_field_translator</c> that holds an allocator object, a field translator sink object, and a skipping handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value</c>.
                     When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
           </code-item>
