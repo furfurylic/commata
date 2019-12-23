@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-12-21 (UTC)</signature>
+<signature>2019-12-23 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1969,8 +1969,8 @@ namespace commata {
   
   private:
     <c>// <nc>exposition only</nc></c>
-    struct ntbs_end {
-      template &lt;class Iterator> friend bool operator!=(InputIterator left, ntbs_end) {
+    struct null_termination {
+      template &lt;class Iterator> friend bool operator!=(InputIterator left, null_termination) {
         return !traits_type::eq(*left, char_type());
       }
     }
@@ -2299,8 +2299,8 @@ template &lt;class ForwardIterator>
           </code>
           <requires>The template parameter <c>ForwardIterator</c> shall meet the <c>ForwardIterator</c> requirements for <c>char_type</c>.
                     <c>value</c> shall be backed by <c>*this</c>.
-                    <c>new_value</c> shall point the first element of a valid null-terminated string of <c>char_type</c>.</requires>
-          <effects>Calls <c>rewrite_value(value, new_value, ntbs_end())</c>.</effects>
+                    <c>new_value</c> shall point the first element of a valid null-terminated sequence of <c>char_type</c>.</requires>
+          <effects>Calls <c>rewrite_value(value, new_value, null_termination())</c>.</effects>
           <returns><c>value</c>.</returns>
           <remark>This overload shall not participate in overload resolution unless <c>std::iterator_traits&lt;ForwardIterator>::iterator_category</c> is a type
                   which is equal to or a derived class of <c>std::forward_iterator_tag</c>.</remark>

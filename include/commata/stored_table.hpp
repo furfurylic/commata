@@ -1191,10 +1191,10 @@ struct is_basic_stored_value<basic_stored_value<Args...>> :
 
 // Placed here to avoid bloat
 template <class Tr>
-struct ntbs_end
+struct null_termination
 {
     template <class InputIterator>
-    friend bool operator!=(InputIterator left, ntbs_end)
+    friend bool operator!=(InputIterator left, null_termination)
     {
         return !Tr::eq(*left, typename Tr::char_type());
     }
@@ -1501,7 +1501,7 @@ private:
         ForwardIterator new_value)
     {
         return rewrite_value_impl(value,
-            new_value, detail::ntbs_end<traits_type>());
+            new_value, detail::null_termination<traits_type>());
     }
 
     value_type& rewrite_value_impl(value_type& value, const char* new_value)
