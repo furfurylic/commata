@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-12-24 (UTC)</signature>
+<signature>2019-12-26 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1396,8 +1396,8 @@ namespace commata {
     void swap(basic_stored_value&amp; other) noexcept;
 
   private:
-    Ch* b;    <c>// <nc>exposition only</nc></c>
-    Ch* e;    <c>// <nc>exposition only</nc></c>
+    Ch* b;    <c>// <n>exposition only</n></c>
+    Ch* e;    <c>// <n>exposition only</n></c>
   };
 }
       </codeblock>
