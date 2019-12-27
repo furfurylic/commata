@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2019-12-26 (UTC)</signature>
+<signature>2019-12-27 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -579,7 +579,7 @@ template &lt;class Handler>
 
   <section id="parser.general">
     <name>General</name>
-    <p>This clause describes components several functions to utilize the parser (<xref id="concepts"/>) of the CSV text format (<xref id="definitions.csv_text"/>) and some classes and functions to report parse errors and to make some wrappers of the text handlers (<xref id="concepts"/>).</p>
+    <p>This clause describes facilities to utilize the parser (<xref id="concepts"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
   </section>
 
   <section id="header_parse_csv_hpp">
