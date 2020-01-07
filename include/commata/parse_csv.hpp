@@ -45,9 +45,9 @@ template <>
 struct parse_step<state::after_comma>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type c) const
+    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
     {
-        switch (c) {
+        switch (*p) {
         case key_chars<typename Parser::char_type>::COMMA:
             parser.set_first_last();
             parser.finalize();
@@ -90,30 +90,35 @@ template <>
 struct parse_step<state::in_value>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type c) const
+    void normal(Parser& parser, const typename Parser::char_type*& p,
+        const typename Parser::char_type* pe) const
     {
-        switch (c) {
-        case key_chars<typename Parser::char_type>::COMMA:
-            parser.finalize();
-            parser.change_state(state::after_comma);
-            break;
-        case key_chars<typename Parser::char_type>::DQUOTE:
-            throw parse_error(
-                "A quotation mark found in a non-escaped value");
-        case key_chars<typename Parser::char_type>::CR:
-            parser.finalize();
-            parser.end_record();
-            parser.change_state(state::after_cr);
-            break;
-        case key_chars<typename Parser::char_type>::LF:
-            parser.finalize();
-            parser.end_record();
-            parser.change_state(state::after_lf);
-            break;
-        default:
-            parser.update_last();
-            break;
+        while (p < pe) {
+            switch (*p) {
+            case key_chars<typename Parser::char_type>::COMMA:
+                parser.finalize();
+                parser.change_state(state::after_comma);
+                return;
+            case key_chars<typename Parser::char_type>::DQUOTE:
+                throw parse_error(
+                    "A quotation mark found in a non-escaped value");
+            case key_chars<typename Parser::char_type>::CR:
+                parser.finalize();
+                parser.end_record();
+                parser.change_state(state::after_cr);
+                return;
+            case key_chars<typename Parser::char_type>::LF:
+                parser.finalize();
+                parser.end_record();
+                parser.change_state(state::after_lf);
+                return;
+            default:
+                parser.update_last();
+                ++p;
+                break;
+            }
         }
+        --p;
     }
 
     template <class Parser>
@@ -133,10 +138,10 @@ template <>
 struct parse_step<state::right_of_open_quote>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type c) const
+    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
     {
         parser.set_first_last();
-        if (c == key_chars<typename Parser::char_type>::DQUOTE) {
+        if (*p == key_chars<typename Parser::char_type>::DQUOTE) {
             parser.change_state(state::in_quoted_value_after_quote);
         } else {
             parser.update_last();
@@ -159,15 +164,21 @@ template <>
 struct parse_step<state::in_quoted_value>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type c) const
+    void normal(Parser& parser, const typename Parser::char_type*& p,
+        const typename Parser::char_type* pe) const
     {
-        if (c == key_chars<typename Parser::char_type>::DQUOTE) {
-            parser.update();
-            parser.set_first_last();
-            parser.change_state(state::in_quoted_value_after_quote);
-        } else {
-            parser.update_last();
+        while (p < pe) {
+            if (*p == key_chars<typename Parser::char_type>::DQUOTE) {
+                parser.update();
+                parser.set_first_last();
+                parser.change_state(state::in_quoted_value_after_quote);
+                return;
+            } else {
+                parser.update_last();
+                ++p;
+            }
         }
+        --p;
     }
 
     template <class Parser>
@@ -187,9 +198,9 @@ template <>
 struct parse_step<state::in_quoted_value_after_quote>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type c) const
+    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
     {
-        switch (c) {
+        switch (*p) {
         case key_chars<typename Parser::char_type>::COMMA:
             parser.finalize();
             parser.change_state(state::after_comma);
@@ -230,9 +241,9 @@ template <>
 struct parse_step<state::after_cr>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type c) const
+    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
     {
-        switch (c) {
+        switch (*p) {
         case key_chars<typename Parser::char_type>::COMMA:
             parser.new_physical_line();
             parser.set_first_last();
@@ -273,9 +284,9 @@ template <>
 struct parse_step<state::after_lf>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type c) const
+    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
     {
-        switch (c) {
+        switch (*p) {
         case key_chars<typename Parser::char_type>::COMMA:
             parser.new_physical_line();
             parser.set_first_last();
@@ -622,7 +633,7 @@ private:
             physical_line_or_buffer_begin_ = begin;
             set_first_last();
             while (p_ < end) {
-                step([this](const auto& h) { h.normal(*this, *p_); });
+                step([this, end](const auto& h) { h.normal(*this, p_, end); });
                 ++p_;
             }
             step([this](const auto& h) { h.underflow(*this); });
