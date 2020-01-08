@@ -13,8 +13,8 @@
 #include <ios>
 #include <istream>
 #include <memory>
-#include <string>
 #include <streambuf>
+#include <string>
 #include <utility>
 
 #include "handler_decorator.hpp"
@@ -25,6 +25,7 @@
 
 namespace commata {
 namespace detail {
+namespace csv {
 
 enum class state : std::int_fast8_t
 {
@@ -69,7 +70,7 @@ struct parse_step<state::after_comma>
             break;
         default:
             parser.set_first_last();
-            parser.update_last();
+            parser.renew_last();
             parser.change_state(state::in_value);
             break;
         }
@@ -113,7 +114,7 @@ struct parse_step<state::in_value>
                 parser.change_state(state::after_lf);
                 return;
             default:
-                parser.update_last();
+                parser.renew_last();
                 ++p;
                 break;
             }
@@ -144,7 +145,7 @@ struct parse_step<state::right_of_open_quote>
         if (*p == key_chars<typename Parser::char_type>::DQUOTE) {
             parser.change_state(state::in_quoted_value_after_quote);
         } else {
-            parser.update_last();
+            parser.renew_last();
             parser.change_state(state::in_quoted_value);
         }
     }
@@ -174,7 +175,7 @@ struct parse_step<state::in_quoted_value>
                 parser.change_state(state::in_quoted_value_after_quote);
                 return;
             } else {
-                parser.update_last();
+                parser.renew_last();
                 ++p;
             }
         }
@@ -207,7 +208,7 @@ struct parse_step<state::in_quoted_value_after_quote>
             break;
         case key_chars<typename Parser::char_type>::DQUOTE:
             parser.set_first_last();
-            parser.update_last();
+            parser.renew_last();
             parser.change_state(state::in_quoted_value);
             break;
         case key_chars<typename Parser::char_type>::CR:
@@ -265,7 +266,7 @@ struct parse_step<state::after_cr>
         default:
             parser.new_physical_line();
             parser.set_first_last();
-            parser.update_last();
+            parser.renew_last();
             parser.change_state(state::in_value);
             break;
         }
@@ -310,7 +311,7 @@ struct parse_step<state::after_lf>
         default:
             parser.new_physical_line();
             parser.set_first_last();
-            parser.update_last();
+            parser.renew_last();
             parser.change_state(state::in_value);
             break;
         }
@@ -325,14 +326,16 @@ struct parse_step<state::after_lf>
     {}
 };
 
+}
+
 template <class T>
-struct with_buffer_control :
+struct is_with_buffer_control :
     std::integral_constant<bool,
         has_get_buffer<T>::value && has_release_buffer<T>::value>
 {};
 
 template <class T>
-struct without_buffer_control :
+struct is_without_buffer_control :
     std::integral_constant<bool,
         (!has_get_buffer<T>::value) && (!has_release_buffer<T>::value)>
 {};
@@ -403,7 +406,7 @@ struct thru_buffer_control
 template <class Handler>
 struct is_full_fledged :
     std::integral_constant<bool,
-        with_buffer_control<Handler>::value
+        is_with_buffer_control<Handler>::value
      && has_start_buffer<Handler>::value && has_end_buffer<Handler>::value
      && has_empty_physical_line<Handler>::value>
 {};
@@ -508,7 +511,7 @@ auto make_full_fledged(Handler&& handler)
     noexcept(std::is_nothrow_move_constructible<Handler>::value)
 {
     static_assert(!std::is_reference<Handler>::value, "");
-    static_assert(with_buffer_control<Handler>::value, "");
+    static_assert(is_with_buffer_control<Handler>::value, "");
     return full_fledged_handler<Handler, thru_buffer_control>(
         std::forward<Handler>(handler), thru_buffer_control());
 }
@@ -528,7 +531,7 @@ auto make_full_fledged(Handler&& handler,
     noexcept(std::is_nothrow_move_constructible<Handler>::value)
 {
     static_assert(!std::is_reference<Handler>::value, "");
-    static_assert(without_buffer_control<Handler>::value, "");
+    static_assert(is_without_buffer_control<Handler>::value, "");
     static_assert(
         std::is_same<
             typename Handler::char_type,
@@ -539,6 +542,8 @@ auto make_full_fledged(Handler&& handler,
         std::forward<Handler>(handler),
         default_buffer_control<Allocator>(buffer_size, alloc));
 }
+
+namespace csv {
 
 template <class Handler>
 class primitive_parser
@@ -681,7 +686,7 @@ private:
         last_ = p_;
     }
 
-    void update_last() noexcept
+    void renew_last() noexcept
     {
         last_ = p_ + 1;
     }
@@ -796,21 +801,21 @@ primitive_parser<Handler> make_primitive_parser(Handler&& handler)
     return primitive_parser<Handler>(std::move(handler));
 }
 
-} // end namespace detail
+}} // end namespace detail
 
 template <class Tr, class Handler>
 auto parse_csv(std::basic_streambuf<typename Handler::char_type, Tr>* in,
     Handler handler)
- -> std::enable_if_t<detail::with_buffer_control<Handler>::value, bool>
+ -> std::enable_if_t<detail::is_with_buffer_control<Handler>::value, bool>
 {
-    return detail::make_primitive_parser(
+    return detail::csv::make_primitive_parser(
         detail::make_full_fledged(std::move(handler))).parse_csv(in);
 }
 
 template <class Tr, class Handler>
 auto parse_csv(std::basic_istream<typename Handler::char_type, Tr>& in,
     Handler handler)
- -> std::enable_if_t<detail::with_buffer_control<Handler>::value, bool>
+ -> std::enable_if_t<detail::is_with_buffer_control<Handler>::value, bool>
 {
     return parse_csv(in.rdbuf(), std::move(handler));
 }
@@ -820,9 +825,9 @@ template <class Tr, class Handler,
 auto parse_csv(std::basic_streambuf<typename Handler::char_type, Tr>* in,
     Handler handler,
     std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
- -> std::enable_if_t<detail::without_buffer_control<Handler>::value, bool>
+ -> std::enable_if_t<detail::is_without_buffer_control<Handler>::value, bool>
 {
-    return detail::make_primitive_parser(
+    return detail::csv::make_primitive_parser(
         detail::make_full_fledged(
             std::move(handler), buffer_size, alloc)).parse_csv(in);
 }
@@ -832,7 +837,7 @@ template <class Tr, class Handler,
 auto parse_csv(std::basic_istream<typename Handler::char_type, Tr>& in,
     Handler handler,
     std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
- -> std::enable_if_t<detail::without_buffer_control<Handler>::value, bool>
+ -> std::enable_if_t<detail::is_without_buffer_control<Handler>::value, bool>
 {
     return parse_csv(in.rdbuf(), std::move(handler), buffer_size, alloc);
 }
