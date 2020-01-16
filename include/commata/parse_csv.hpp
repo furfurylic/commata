@@ -498,10 +498,8 @@ private:
         return handler_.empty_physical_line(where);
     }
 
-    auto empty_physical_line(std::false_type, ...)
-    {
-        return true;
-    }
+    void empty_physical_line(std::false_type, ...)
+    {}
 };
 
 template <class Handler,
