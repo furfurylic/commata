@@ -579,9 +579,10 @@ public:
         std::basic_streambuf<typename Handler::char_type, Tr>* in,
         Handler&& f)
         noexcept(std::is_nothrow_move_constructible<Handler>::value) :
-        f_(std::move(f)),
+        p_(nullptr), f_(std::move(f)),
         record_started_(false), s_(state::after_lf),
         physical_line_index_(parse_error::npos),
+        physical_line_or_buffer_begin_(nullptr),
         physical_line_chars_passed_away_(0),
         in_(in), eof_reached_(false), buffer_(nullptr)
     {}
@@ -660,15 +661,24 @@ yield_end:
         return true;
     } catch (text_error& e) {
         e.set_physical_position(
-            physical_line_index_,
-            (p_ - physical_line_or_buffer_begin_)
-                + physical_line_chars_passed_away_);
+            physical_line_index_, get_physical_column_index());
         throw;
     } catch (const parse_aborted&) {
         return false;
     }
 
+    std::pair<std::size_t, std::size_t> get_physical_position() const noexcept
+    {
+        return { physical_line_index_, get_physical_column_index() };
+    }
+
 private:
+    std::size_t get_physical_column_index() const noexcept
+    {
+        return (p_ - physical_line_or_buffer_begin_)
+                    + physical_line_chars_passed_away_;
+    }
+
     std::pair<std::size_t, std::streamsize> arrange_buffer()
     {
         std::size_t buffer_size;

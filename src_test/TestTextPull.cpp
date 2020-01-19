@@ -60,6 +60,13 @@ TYPED_TEST_P(TestTextPull, PrimitiveBasics)
             break;
         case primitive_text_pull_state::end_record:
             s.append(str(">>"));
+            {
+                const auto pos = pull.get_physical_position();
+                s.push_back('@');
+                s += str(std::to_string(pos.first).c_str());
+                s.push_back(',');
+                s += str(std::to_string(pos.second).c_str());
+            }
             break;
         case primitive_text_pull_state::empty_physical_line:
             s.append(str("--"));
@@ -68,9 +75,9 @@ TYPED_TEST_P(TestTextPull, PrimitiveBasics)
             break;
         }
     }
-    ASSERT_EQ(str("<<[][col1][ col2 ][col3][]>>"
+    ASSERT_EQ(str("<<[][col1][ col2 ][col3][]>>@0,20"
                   "--"
-                  "<<[ cell10 ][][cell\r\n12][cell\"13\"][]>>"),
+                  "<<[ cell10 ][][cell\r\n12][cell\"13\"][]>>@2,36"),
               s);
 
     static_assert(std::is_nothrow_move_constructible<decltype(pull)>::value,
@@ -119,6 +126,7 @@ TYPED_TEST_P(TestTextPull, Basics)
 {
     using char_t = typename TypeParam::first_type;
     using string_t = std::basic_string<char_t>;
+    using pos_t = std::pair<std::size_t, std::size_t>;
 
     const auto str = char_helper<char_t>::str;
    
@@ -144,6 +152,7 @@ TYPED_TEST_P(TestTextPull, Basics)
         ASSERT_EQ(text_pull_state::field, pull.state()) << e;
         ASSERT_EQ(str(""), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(0, 0), pull.get_physical_position()) << e;
         ASSERT_EQ(str(""), to_string(pull)) << e;
         ++j;
 
@@ -151,6 +160,7 @@ TYPED_TEST_P(TestTextPull, Basics)
         ASSERT_EQ(text_pull_state::field, pull.state()) << e;
         ASSERT_EQ(str("col1"), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(0, 7), pull.get_physical_position()) << e;
         ASSERT_FALSE(pull.empty());
         ASSERT_EQ(4U, pull.size());
         ASSERT_EQ('\0', pull.cbegin()[4]);
@@ -160,6 +170,7 @@ TYPED_TEST_P(TestTextPull, Basics)
         ASSERT_EQ(text_pull_state::field, pull.state()) << e;
         ASSERT_EQ(str(" col2 "), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(0, 14), pull.get_physical_position()) << e;
         ASSERT_EQ(str(" col2 "), to_string(pull)) << e;
         ++j;
 
@@ -167,6 +178,7 @@ TYPED_TEST_P(TestTextPull, Basics)
         ASSERT_EQ(text_pull_state::field, pull.state()) << e;
         ASSERT_EQ(str("col3"), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(0, 19), pull.get_physical_position()) << e;
         std::basic_ostringstream<char_t> o1;
         o1 << pull;
         ASSERT_EQ(str("col3"), o1.str()) << e;
@@ -176,6 +188,7 @@ TYPED_TEST_P(TestTextPull, Basics)
         ASSERT_EQ(text_pull_state::field, pull.state()) << e;
         ASSERT_EQ(str(""), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(0, 20), pull.get_physical_position()) << e;
         std::basic_ostringstream<char_t> o2;
         o2 << pull;
         ASSERT_EQ(str(""), o2.str()) << e;
@@ -185,6 +198,7 @@ TYPED_TEST_P(TestTextPull, Basics)
         ASSERT_EQ(text_pull_state::record_end, pull.state()) << e;
         ASSERT_EQ(str(""), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(0, 20), pull.get_physical_position()) << e;
         ASSERT_EQ(str(""), static_cast<string_t>(pull));
         ++i;
         j = 0;
@@ -194,6 +208,7 @@ TYPED_TEST_P(TestTextPull, Basics)
             ASSERT_EQ(text_pull_state::record_end, pull.state()) << e;
             ASSERT_EQ(str(""), string_t(pull.cbegin(), pull.cend())) << e;
             ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+            ASSERT_EQ(pos_t(1, 0), pull.get_physical_position()) << e;
             ++i;
         }
 
@@ -201,6 +216,7 @@ TYPED_TEST_P(TestTextPull, Basics)
         ASSERT_EQ(text_pull_state::field, pull.state()) << e;
         ASSERT_EQ(str(" cell10 "), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(2, 8), pull.get_physical_position()) << e;
         ASSERT_EQ(str(" cell10 "), static_cast<string_t>(pull));
         ++j;
 
@@ -208,6 +224,7 @@ TYPED_TEST_P(TestTextPull, Basics)
         ASSERT_EQ(text_pull_state::field, pull.state()) << e;
         ASSERT_EQ(str(""), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(2, 9), pull.get_physical_position()) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
@@ -215,6 +232,7 @@ TYPED_TEST_P(TestTextPull, Basics)
         ASSERT_EQ(str("cell\r\n12"),
             string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(2, 20), pull.get_physical_position()) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
@@ -222,18 +240,21 @@ TYPED_TEST_P(TestTextPull, Basics)
         ASSERT_EQ(str("cell\"13\""),
             string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(2, 33), pull.get_physical_position()) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(text_pull_state::field, pull.state()) << e;
         ASSERT_EQ(str(""), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(2, 36), pull.get_physical_position()) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(text_pull_state::record_end, pull.state()) << e;
         ASSERT_EQ(str(""), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
+        ASSERT_EQ(pos_t(2, 36), pull.get_physical_position()) << e;
         ++i;
         j = 0;
 

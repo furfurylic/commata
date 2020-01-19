@@ -55,6 +55,23 @@ enum primitive_text_pull_handle : std::uint_fast8_t
 
 namespace detail {
 
+struct has_get_physical_position_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<std::pair<std::size_t, std::size_t>&>() =
+            std::declval<const T&>().get_physical_position(),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+struct has_get_physical_position :
+    decltype(has_get_physical_position_impl::check<T>(nullptr))
+{};
+
 template <class Ch, class Allocator, class StateQueue, class DataQueue,
     std::underlying_type_t<primitive_text_pull_handle> Handle>
 class pull_handler
@@ -303,6 +320,11 @@ private:
     detail::base_member_pair<allocator_type, parser_t> ap_;
 
 public:
+    static constexpr bool physical_position_available =
+        detail::has_get_physical_position<parser_t>::value;
+
+    static constexpr std::size_t npos = static_cast<std::size_t>(-1);
+
     explicit primitive_text_pull(TextSource in,
         std::size_t buffer_size = 0) :
         primitive_text_pull(std::allocator_arg, Allocator(),
@@ -424,6 +446,15 @@ public:
         return 0;
     }
 
+    std::pair<std::size_t, std::size_t> get_physical_position() const
+        noexcept((!detail::has_get_physical_position<parser_t>::value)
+              || noexcept(std::declval<const parser_t&>()
+                            .get_physical_position()))
+    {
+        return get_physical_position_impl(
+            detail::has_get_physical_position<parser_t>());
+    }
+
 private:
     template <class Q, class... Args>
     static auto create_queue(const Allocator& alloc, Args&&... args)
@@ -447,6 +478,19 @@ private:
         q_a_t a(p->get_allocator());
         p->~deque();
         q_at_t::deallocate(a, p, 1);
+    }
+
+    std::pair<std::size_t, std::size_t> get_physical_position_impl(
+        std::true_type) const noexcept(
+            noexcept(std::declval<const parser_t&>().get_physical_position()))
+    {
+        return ap_.member().get_physical_position();
+    }
+
+    std::pair<std::size_t, std::size_t> get_physical_position_impl(
+        std::false_type) const noexcept
+    {
+        return { npos, npos };
     }
 };
 
@@ -497,6 +541,11 @@ public:
     using difference_type = std::ptrdiff_t;
     using iterator = value_type*;
     using const_iterator = iterator;
+
+    static constexpr bool physical_position_available =
+        decltype(p_)::physical_position_available;
+
+    static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
     explicit text_pull(TextSource in,
         std::size_t buffer_size = 0) :
@@ -573,6 +622,12 @@ public:
     std::pair<std::size_t, std::size_t> get_position() const noexcept
     {
         return std::make_pair(i_, j_);
+    }
+
+    std::pair<std::size_t, std::size_t> get_physical_position() const
+        noexcept(noexcept(p_.get_physical_position()))
+    {
+        return p_.get_physical_position();
     }
 
     text_pull& operator()(std::size_t n = 0)
