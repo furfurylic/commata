@@ -9,7 +9,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <deque>
 #include <exception>
 #include <iosfwd>
 #include <memory>
@@ -293,30 +292,29 @@ private:
 
     using state_a_t = detail::allocation_only_allocator<
         typename at_t::template rebind_alloc<primitive_text_pull_state>>;
-    using state_queue_t = std::deque<primitive_text_pull_state, state_a_t>;
+    using state_queue_t = std::vector<primitive_text_pull_state, state_a_t>;
     using state_queue_at_t = typename std::allocator_traits<state_a_t>::
         template rebind_traits<state_queue_t>;
     using state_queue_a_t = typename state_queue_at_t::allocator_type;
     using state_queue_p_t = typename state_queue_at_t::pointer;
-    // std::queue does not have get_allocator, so we gave it up
 
     using data_a_t = detail::allocation_only_allocator<
         typename at_t::template rebind_alloc<char_type*>>;
-    using data_queue_t = std::deque<char_type*, data_a_t>;
+    using data_queue_t = std::vector<char_type*, data_a_t>;
     using data_queue_at_t = typename std::allocator_traits<data_a_t>::
         template rebind_traits<data_queue_t>;
     using data_queue_a_t = typename data_queue_at_t::allocator_type;
     using data_queue_p_t = typename data_queue_at_t::pointer;
-    // ditto
-
+ 
     using handler_t = detail::pull_handler<
         char_type, Allocator, state_queue_t, data_queue_t, Handle>;
     using parser_t =
         decltype(std::declval<TextSource>()(std::declval<handler_t>()));
 
-    state_queue_p_t sq_;    // std::deque is not nothrow-move-constructible,
-                            // so we bring it through a pointer
-    data_queue_p_t dq_;     // ditto
+    state_queue_p_t sq_;
+    std::size_t i_sq_;
+    data_queue_p_t dq_;
+    std::size_t i_dq_;
     detail::base_member_pair<allocator_type, parser_t> ap_;
 
 public:
@@ -333,8 +331,8 @@ public:
 
     primitive_text_pull(std::allocator_arg_t, const Allocator& alloc,
         TextSource in, std::size_t buffer_size = 0) :
-        sq_(create_queue<state_queue_t>(alloc, state_a_t(alloc))),
-        dq_(create_queue<data_queue_t >(alloc, data_a_t (alloc))),
+        sq_(create_queue<state_queue_t>(alloc, state_a_t(alloc))), i_sq_(0),
+        dq_(create_queue<data_queue_t >(alloc, data_a_t (alloc))), i_dq_(0),
         ap_(alloc,
             in(handler_t(std::allocator_arg, alloc, buffer_size, *sq_, *dq_)))
     {
@@ -343,7 +341,9 @@ public:
 
     primitive_text_pull(primitive_text_pull&& other)
         noexcept(std::is_nothrow_move_constructible<parser_t>::value) :
-        sq_(other.sq_), dq_(other.dq_), ap_(std::move(other.ap_))
+        sq_(other.sq_), i_sq_(other.i_sq_),
+        dq_(other.dq_), i_dq_(other.i_dq_),
+        ap_(std::move(other.ap_))
     {
         other.sq_ = nullptr;
         other.dq_ = nullptr;
@@ -364,12 +364,14 @@ public:
 
     primitive_text_pull_state state() const noexcept
     {
-        return sq_ ? sq_->front() : primitive_text_pull_state::moved;
+        assert((!sq_) || sq_->size() > i_sq_);
+        return sq_ ? (*sq_)[i_sq_] : primitive_text_pull_state::moved;
     }
 
     explicit operator bool() const noexcept
     {
-        return sq_ && (sq_->front() != primitive_text_pull_state::eof);
+        assert((!sq_) || sq_->size() > i_sq_);
+        return sq_ && ((*sq_)[i_sq_] != primitive_text_pull_state::eof);
     }
 
     primitive_text_pull& operator()()
@@ -379,18 +381,28 @@ public:
         }
 
         assert(!sq_->empty());
-        switch (sq_->front()) {
+        switch ((*sq_)[i_sq_]) {
         case primitive_text_pull_state::start_buffer:
         case primitive_text_pull_state::update:
         case primitive_text_pull_state::finalize:
-            dq_->pop_front();
-            // fall through
+            if (i_dq_ == dq_->size() - 2) {
+                dq_->clear();
+                i_dq_ = 0;
+            } else {
+                i_dq_ += 2;
+            }
+            break;
         case primitive_text_pull_state::end_buffer:
         case primitive_text_pull_state::start_record:
         case primitive_text_pull_state::end_record:
         case primitive_text_pull_state::empty_physical_line:
-            dq_->pop_front();
-            // fall through
+            if (i_dq_ == dq_->size() - 1) {
+                dq_->clear();
+                i_dq_ = 0;
+            } else {
+                ++i_dq_;
+            }
+            break;
         case primitive_text_pull_state::before_parse:
             break;
         case primitive_text_pull_state::eof:
@@ -399,7 +411,12 @@ public:
             assert(false);
             break;
         }
-        sq_->pop_front();
+        if (i_sq_ == sq_->size() - 1) {
+            sq_->clear();
+            i_sq_ = 0;
+        } else {
+            ++i_sq_;
+        }
 
         if (sq_->empty()) {
             ap_.member()();
@@ -413,19 +430,19 @@ public:
     char_type* operator[](size_type i)
     {
         assert(i < data_size());
-        return (*dq_)[i];
+        return (*dq_)[i_dq_ + i];
     }
 
     const char_type* operator[](size_type i) const
     {
         assert(i < data_size());
-        return (*dq_)[i];
+        return (*dq_)[i_dq_ + i];
     }
 
     size_type data_size() const noexcept
     {
         if (sq_) {
-            switch (sq_->front()) {
+            switch ((*sq_)[i_sq_]) {
             case primitive_text_pull_state::start_buffer:
             case primitive_text_pull_state::update:
             case primitive_text_pull_state::finalize:
@@ -476,7 +493,7 @@ private:
             typename q_t::allocator_type>::template rebind_alloc<q_t>;
         using q_at_t = std::allocator_traits<q_a_t>;
         q_a_t a(p->get_allocator());
-        p->~deque();
+        p->~vector();
         q_at_t::deallocate(a, p, 1);
     }
 
