@@ -564,7 +564,7 @@ template &lt;class Tr>
                                               const text_error_info&amp; i);
           </code>
           <effects>Behaves as a formatted output function of <c>os</c>.
-                   Forms a character sequence <c>seq</c> of an unspecified concise character representation of <c>i.error()</c> from <c>i.error().what()</c> and <c>i.error().get_physical_position()</c>, in which the line number and the column number are <c>b</c>-based.
+                   Forms a character sequence <c>seq</c> of an unspecified concise character representation of <c>i.error()</c> from <c>i.error().what()</c> and <c>i.error().get_physical_position()</c>, in which the line number and the column number are <c>i.base()</c>-based.
                  Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c> where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>. Then calls <c>os.width(0)</c>.</effects>
           <returns><c>os</c>.</returns>
           <remark>The second function template shall widen each character <c>c</c> in the null-terminated byte string pointed by <c>i.error().what()</c> with <c>os.widen(c)</c>.</remark>
@@ -586,6 +586,7 @@ std::wstring to_wstring(const text_error_info&amp; i);
 #include "text_error.hpp"
 
 namespace commata {
+  <c>// <n><xref id="parse_error"/>, parse_error:</n></c>
   class parse_error;
 }
       </codeblock>
@@ -1224,13 +1225,13 @@ bool is_in_header() const noexcept;
       <p>In this subclause, a function template <c>template &lt;class Ch, class Tr, class P, class Allocator> <nc>unspecified</nc> STRING_PRED(P&amp;&amp; p, const Allocator&amp; alloc)</c> is introduced for ease of explanation.
          Its return value is as following:</p>
       <ul>
-        <li>if <c>std::decay_t&lt;P></c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c> and
+        <li>if <c>P</c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c> and
             <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp;, const Allocator&amp;>>::value</c> is not <c>false</c>
             (which shall not be <c>false</c> according to ISO C++14 standard),
-            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::forward&lt;P>(p)</c> and <c>alloc</c>,
+            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::move(p)</c> and <c>alloc</c>,
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
-        <li>otherwise, if <c>std::decay_t&lt;P></c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c>,
-            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::forward&lt;P>(p)</c>,
+        <li>otherwise, if <c>P</c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c>,
+            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::move(p)</c>,
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
         <li>otherwise, if <c>std::decay_t&lt;P></c> is <c>std::basic_string&lt;Ch, Tr, A></c> for a certain <c>A</c>,
             a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with arguments being <c>p.cbegin()</c>, <c>p.cend()</c> and <c>alloc</c>,
@@ -2150,7 +2151,7 @@ namespace commata {
       template &lt;class Iterator> friend bool operator!=(InputIterator left, null_termination) {
         return !traits_type::eq(*left, char_type());
       }
-    }
+    };
   };
 }
         </codeblock>
@@ -2190,15 +2191,15 @@ namespace commata {
             <li>the range [<c>v.cbegin()</c>, <c>v.cend()</c>] resides in a buffer in the store of <c>t</c>, and <c>*v.cend()</c> is equal to <c>Ch()</c>.</li>
           </ul>
           <p>An object of an instance of <c>basic_stored_table</c> is called <n>complete</n> if none of its contained values is not backed by it.
-             Note that a singular object of an instance of <c>basic_stored_table</c> is also complete because it has no contained values.</p>
+             Note that also a singular object of an instance of <c>basic_stored_table</c> is complete because it has no contained values.</p>
         </section>
 
         <section id="basic_stored_table.conds">
           <name>General requirements and postconditions</name>
 
           <p>The consequence of accessing to the content of a singular <c>basic_stored_table</c> object is undefined.
-             A singular object can be assigned, destroyed, copied from or moved from.
-             A singular object has a store, an allocator, and a buffer size similarly to non-singular objects.</p>
+             A singular object can be assigned, destroyed, copied from, or moved from.
+             Also a singular object has a store, an allocator, and a buffer size similarly to non-singular objects.</p>
 
           <p>All member functions of <c>basic_stored_table</c> and all non-member functions declared in this header (<xref id="stored_table_hpp"/>) that take at least one parameter whose reference-removed and cv-unqualified type is an instance of <c>basic_stored_table</c> require that the following conditions meet:</p>
           <ul>
@@ -2524,7 +2525,7 @@ std::pair&lt;char_type*, std::size_t> generate_buffer(std::size_t min_size);
           <effects>Optionally finds a buffer in the store whose length is not less than <c>min_size</c> and whose absence does not have any effects on the completeness of the table.
                    If a suitable buffer is found, then makes the store release the ownership of it.
                    Otherwise, makes a rebound copy of a return value of <c>get_allocator</c> to <c>char_type</c> and allocates a buffer for <c>min_size</c> <c>char_type</c> objects with it.</effects>
-          <returns>A pair object of a pointer to the first element of a buffer and its length.</returns>
+          <returns>A pair object of a pointer to the first element of a buffer and its length, which is the value passed to the allocator to obtain the memory.</returns>
           <remark>This function does not change the current buffer mark.</remark>
         </code-item>
 
@@ -2532,7 +2533,7 @@ std::pair&lt;char_type*, std::size_t> generate_buffer(std::size_t min_size);
           <code>
 void consume_buffer(char_type* buffer, std::size_t size);
           </code>
-          <requires><c>p</c> shall point the first element of a buffer allocated by a rebound copy of a return value of <c>get_allocator()</c> to <c>char_type</c>.
+          <requires><c>buffer</c> shall point the first element of a buffer allocated by a rebound copy of a return value of <c>get_allocator()</c> to <c>char_type</c>.
                     <c>size</c> shall match the value passed to the allocator to obtain this memory.
                     The range [<c>buffer</c>, <c>buffer + size</c>) shall not overlap with any buffers in the store of <c>*this</c>.</requires>
           <effects>Makes the store take over the ownership of the buffer whose first element is pointed by <c>buffer</c> and whose length is <c>size</c>.
@@ -2545,7 +2546,7 @@ void consume_buffer(char_type* buffer, std::size_t size);
           <code>
 void add_buffer(char_type* buffer, std::size_t size);
           </code>
-          <requires><c>p</c> shall point the first element of a buffer allocated by a rebound copy of a return value of <c>get_allocator()</c> to <c>char_type</c>.
+          <requires><c>buffer</c> shall point the first element of a buffer allocated by a rebound copy of a return value of <c>get_allocator()</c> to <c>char_type</c>.
                     <c>size</c> shall match the value passed to the allocator to obtain this memory.
                     The range [<c>buffer</c>, <c>buffer + size</c>) shall not overlap with any buffers in the store of <c>*this</c>.</requires>
           <effects>Adds the range [<c>buffer</c>, <c>buffer + size</c>) to the store as a buffer and marks it as the current buffer.</effects>
@@ -4684,7 +4685,7 @@ namespace commata {
         <li>a <n>event queue</n>, which is a queue of the parsing events, and which is enqueued by the text handler on the back and dequeued by the user on the front.</li>
       </ul>
       <p>The user of this class template can configure the text handler object to ignore some parsing event with the template parameter <c>Handle</c>.
-         If <c>(Handle &amp; primitive_text_pull_handle_start_buffer == 0)</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
+         If <c>(Handle &amp; primitive_text_pull_handle_start_buffer) == 0</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
          All other enumerators but <c>primitive_text_pull_handle_all</c> shall work similarly.
          <c>primitive_text_pull_handle_all</c> has a representation of all one bits and is intended to be used to express 'ignore none.'</p>
 
