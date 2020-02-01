@@ -1679,10 +1679,13 @@ private:
     basic_stored_table& operator_plus_assign_impl(OtherTable&& other)
     {
         if (is_singular()) {
-            basic_stored_table t(
-                std::allocator_arg, get_allocator());               // throw
-            t.append_no_singular(std::forward<OtherTable>(other));  // throw
-            swap(t);
+            if (!other.is_singular()) {
+                basic_stored_table t(
+                    std::allocator_arg, get_allocator());           // throw
+                t.append_no_singular(
+                    std::forward<OtherTable>(other));               // throw
+                swap(t);
+            }
         } else if (!other.is_singular()) {
             append_no_singular(std::forward<OtherTable>(other));    // throw
         }

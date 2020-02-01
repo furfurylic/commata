@@ -1045,6 +1045,24 @@ TYPED_TEST(TestStoredTableMerge, WithSingular)
     }
 }
 
+TYPED_TEST(TestStoredTableMerge, WithSingulars)
+{
+    using t1_t = basic_stored_table<typename TypeParam::first_type>;
+    using t2_t = basic_stored_table<typename TypeParam::second_type>;
+
+    t1_t table1;
+    t2_t table2;
+
+    {
+        t1_t a(std::move(table1));
+        t2_t b(std::move(table2));
+        a += b; // dummy
+    }
+
+    table1 += table2;
+    ASSERT_TRUE(table1.empty());
+}
+
 struct TestStoredTableAllocator : BaseTest
 {};
 
