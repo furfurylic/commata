@@ -1910,6 +1910,8 @@ void append_stored_table_content_primitive(
 template <class ContentL, class ContentR>
 void append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
 {
+    static_assert(!std::is_reference<ContentR>::value, "");
+        // so we'll use move instead of forward
     static_assert(std::is_same<typename ContentL::value_type,
         typename ContentR::value_type>::value, "");
     static_assert(
@@ -1979,6 +1981,8 @@ auto append_stored_table_content(ContentL& l, ContentR&& r)
      && has_adaptive_manoeuvre<
             typename ContentL::value_type>::value>
 {
+    static_assert(!std::is_reference<ContentR>::value, "");
+        // so we'll use move instead of forward
     append_stored_table_content_adaptive(l, std::move(r));
 }
 
@@ -2019,7 +2023,7 @@ auto plus_stored_table_impl(
     basic_stored_table<ContentL, AllocatorL>&& left, TableR&& right)
 {
     left += std::forward<TableR>(right);    // throw
-    return std::move(left);
+    return std::move(left); // move is right for no copy elision would occur
 }
 
 } // end namespace detail
