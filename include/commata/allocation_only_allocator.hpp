@@ -40,6 +40,18 @@ struct const_reference_forwarded<A, typename A::const_reference>
 };
 
 template <class Allocator>
+class allocation_only_allocator;
+
+template <class T>
+class is_allocation_only_allocator : std::false_type
+{};
+
+template <class Allocator>
+class is_allocation_only_allocator<allocation_only_allocator<Allocator>> :
+    std::true_type
+{};
+
+template <class Allocator>
 class allocation_only_allocator :
     member_like_base<Allocator>
 {
@@ -91,6 +103,26 @@ public:
     explicit allocation_only_allocator(
         const allocation_only_allocator<Allocator2>& other) noexcept :
         member_like_base<Allocator>(Allocator(other.get()))
+    {}
+
+    // ditto
+    template <class Allocator2,
+        std::enable_if_t<
+            !is_allocation_only_allocator<Allocator2>::value_type>>
+    explicit allocation_only_allocator(const Allocator2& other) noexcept :
+        member_like_base<Allocator>(
+            typename std::allocator_traits<Allocator2>::template
+                rebind_alloc<value_type>(other))
+    {}
+
+    // ditto
+    template <class Allocator2,
+        std::enable_if_t<
+            !is_allocation_only_allocator<Allocator2>::value_type>>
+    explicit allocation_only_allocator(Allocator2&& other) noexcept :
+        member_like_base<Allocator>(
+            typename std::allocator_traits<Allocator2>::template
+                rebind_alloc<value_type>(std::move(other)))
     {}
 
     // C++14 standard does not require this
