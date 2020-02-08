@@ -72,27 +72,37 @@ struct has_get_physical_position :
     decltype(has_get_physical_position_impl::check<T>(nullptr))
 {};
 
-template <class Ch, class Allocator, class StateQueue, class DataQueue,
+template <class Ch, class Allocator,
     std::underlying_type_t<primitive_text_pull_handle> Handle>
 class pull_handler
 {
     using at_t = std::allocator_traits<Allocator>;
 
-    base_member_pair<Allocator, std::size_t> alloc_;
-    typename at_t::pointer buffer_;
-    StateQueue* sq_;
-    DataQueue* dq_;
-    std::size_t yield_location_;
+    using state_queue_a_t = allocation_only_allocator<
+        typename at_t::template rebind_alloc<primitive_text_pull_state>>;
+    using data_queue_a_t = allocation_only_allocator<
+        typename at_t::template rebind_alloc<Ch*>>;
 
 public:
     using char_type = Ch;
+    using state_queue_type =
+        std::vector<primitive_text_pull_state, state_queue_a_t>;
+    using data_queue_type = std::vector<Ch*, data_queue_a_t>;
 
+private:
+    base_member_pair<Allocator, std::size_t> alloc_;
+    typename at_t::pointer buffer_;
+    state_queue_type sq_;
+    data_queue_type dq_;
+    std::size_t yield_location_;
+
+public:
     explicit pull_handler(
         std::allocator_arg_t, const Allocator& alloc,
-        std::size_t buffer_size, StateQueue& sq, DataQueue& dq) :
+        std::size_t buffer_size) :
         alloc_(alloc,
             (buffer_size < 1) ? 8192 : (buffer_size < 2) ? 2 : buffer_size),
-        buffer_(nullptr), sq_(&sq), dq_(&dq), yield_location_(0)
+        buffer_(nullptr), yield_location_(0)
     {}
 
     pull_handler(const pull_handler& other) = delete;
@@ -102,6 +112,26 @@ public:
         if (buffer_) {
             at_t::deallocate(alloc_.base(), buffer_, alloc_.member());
         }
+    }
+
+    const state_queue_type& state_queue() const noexcept
+    {
+        return sq_;
+    }
+
+    state_queue_type& state_queue() noexcept
+    {
+        return sq_;
+    }
+
+    const data_queue_type& data_queue() const noexcept
+    {
+        return dq_;
+    }
+
+    data_queue_type& data_queue() noexcept
+    {
+        return dq_;
     }
 
     std::pair<char_type*, std::size_t> get_buffer()
@@ -126,9 +156,9 @@ private:
     void start_buffer(const Ch* buffer_begin, const Ch* buffer_end,
         std::true_type)
     {
-        sq_->push_back(primitive_text_pull_state::start_buffer);
-        dq_->push_back(uc(buffer_begin));
-        dq_->push_back(uc(buffer_end));
+        sq_.push_back(primitive_text_pull_state::start_buffer);
+        dq_.push_back(uc(buffer_begin));
+        dq_.push_back(uc(buffer_end));
     }
 
     void start_buffer(const Ch*, const Ch*, std::false_type) noexcept
@@ -145,8 +175,8 @@ public:
 private:
     void end_buffer(const Ch* buffer_end, std::true_type)
     {
-        sq_->push_back(primitive_text_pull_state::end_buffer);
-        dq_->push_back(uc(buffer_end));
+        sq_.push_back(primitive_text_pull_state::end_buffer);
+        dq_.push_back(uc(buffer_end));
     }
 
     void end_buffer(const Ch*, std::false_type) noexcept
@@ -163,8 +193,8 @@ public:
 private:
     void start_record(const char_type* record_begin, std::true_type)
     {
-        sq_->push_back(primitive_text_pull_state::start_record);
-        dq_->push_back(uc(record_begin));
+        sq_.push_back(primitive_text_pull_state::start_record);
+        dq_.push_back(uc(record_begin));
     }
 
     void start_record(const char_type*, std::false_type)
@@ -182,9 +212,9 @@ private:
     void update(const char_type* first, const char_type* last,
         std::true_type)
     {
-        sq_->push_back(primitive_text_pull_state::update);
-        dq_->push_back(uc(first));
-        dq_->push_back(uc(last));
+        sq_.push_back(primitive_text_pull_state::update);
+        dq_.push_back(uc(first));
+        dq_.push_back(uc(last));
     }
 
     void update(const char_type*, const char_type*, std::false_type)
@@ -202,9 +232,9 @@ private:
     void finalize(const char_type* first, const char_type* last,
         std::true_type)
     {
-        sq_->push_back(primitive_text_pull_state::finalize);
-        dq_->push_back(uc(first));
-        dq_->push_back(uc(last));
+        sq_.push_back(primitive_text_pull_state::finalize);
+        dq_.push_back(uc(first));
+        dq_.push_back(uc(last));
     }
 
     void finalize(const char_type*, const char_type*, std::false_type)
@@ -221,8 +251,8 @@ public:
 private:
     void end_record(const char_type* record_end, std::true_type)
     {
-        sq_->push_back(primitive_text_pull_state::end_record);
-        dq_->push_back(uc(record_end));
+        sq_.push_back(primitive_text_pull_state::end_record);
+        dq_.push_back(uc(record_end));
     }
 
     void end_record(const char_type*, std::false_type)
@@ -240,8 +270,8 @@ public:
 private:
     void empty_physical_line(const char_type* where, std::true_type)
     {
-        sq_->push_back(primitive_text_pull_state::empty_physical_line);
-        dq_->push_back(uc(where));
+        sq_.push_back(primitive_text_pull_state::empty_physical_line);
+        dq_.push_back(uc(where));
     }
 
     void empty_physical_line(const char_type*, std::false_type)
@@ -250,7 +280,7 @@ private:
 public:
     bool yield(std::size_t location) noexcept
     {
-        if ((location != static_cast<std::size_t>(-1)) && sq_->empty()) {
+        if ((location != static_cast<std::size_t>(-1)) && sq_.empty()) {
             return false;
         } else {
             yield_location_ = location;
@@ -286,24 +316,7 @@ public:
 private:
     using at_t = std::allocator_traits<Allocator>;
 
-    using state_a_t = detail::allocation_only_allocator<
-        typename at_t::template rebind_alloc<primitive_text_pull_state>>;
-    using state_queue_t = std::vector<primitive_text_pull_state, state_a_t>;
-    using state_queue_at_t = typename std::allocator_traits<state_a_t>::
-        template rebind_traits<state_queue_t>;
-    using state_queue_a_t = typename state_queue_at_t::allocator_type;
-    using state_queue_p_t = typename state_queue_at_t::pointer;
-
-    using data_a_t = detail::allocation_only_allocator<
-        typename at_t::template rebind_alloc<char_type*>>;
-    using data_queue_t = std::vector<char_type*, data_a_t>;
-    using data_queue_at_t = typename std::allocator_traits<data_a_t>::
-        template rebind_traits<data_queue_t>;
-    using data_queue_a_t = typename data_queue_at_t::allocator_type;
-    using data_queue_p_t = typename data_queue_at_t::pointer;
- 
-    using handler_t = detail::pull_handler<
-        char_type, Allocator, state_queue_t, data_queue_t, Handle>;
+    using handler_t = detail::pull_handler<char_type, Allocator, Handle>;
     using handler_a_t = detail::allocation_only_allocator<
         typename at_t::template rebind_alloc<handler_t>>;
     using handler_at_t = std::allocator_traits<handler_a_t>;
@@ -313,9 +326,7 @@ private:
         decltype(std::declval<TextSource&>()(
             std::declval<detail::wrapper_handler<handler_t>>()));
 
-    state_queue_p_t sq_;
     std::size_t i_sq_;
-    data_queue_p_t dq_;
     std::size_t i_dq_;
     handler_p_t handler_;
     detail::base_member_pair<allocator_type, parser_t> ap_;
@@ -326,40 +337,31 @@ public:
 
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
-    explicit primitive_text_pull(TextSource in,
-        std::size_t buffer_size = 0) :
+    explicit primitive_text_pull(TextSource in, std::size_t buffer_size = 0) :
         primitive_text_pull(std::allocator_arg, Allocator(),
             std::move(in), buffer_size)
     {}
 
     primitive_text_pull(std::allocator_arg_t, const Allocator& alloc,
         TextSource in, std::size_t buffer_size = 0) :
-        sq_(create_queue<state_queue_t>(alloc, state_a_t(alloc))), i_sq_(0),
-        dq_(create_queue<data_queue_t >(alloc, data_a_t (alloc))), i_dq_(0),
+        i_sq_(0), i_dq_(0),
         handler_(create_handler(alloc,
-            std::allocator_arg, alloc, buffer_size, *sq_, *dq_)),
+            std::allocator_arg, alloc, buffer_size)),
         ap_(alloc, in(detail::wrapper_handler<handler_t>(*handler_)))
     {
-        sq_->push_back(primitive_text_pull_state::before_parse);
+        handler_->state_queue().push_back(
+            primitive_text_pull_state::before_parse);
     }
 
     primitive_text_pull(primitive_text_pull&& other) noexcept :
-        sq_(other.sq_), i_sq_(other.i_sq_),
-        dq_(other.dq_), i_dq_(other.i_dq_),
-        handler_(other.handler_),
-        ap_(std::move(other.ap_))
+        i_sq_(other.i_sq_), i_dq_(other.i_dq_),
+        handler_(other.handler_), ap_(std::move(other.ap_))
     {
-        other.sq_ = nullptr;
-        other.dq_ = nullptr;
         other.handler_ = nullptr;
     }
 
     ~primitive_text_pull()
     {
-        if (sq_) {
-            destroy_queue(sq_);
-            destroy_queue(dq_);
-        }
         if (handler_) {
             destroy_handler(handler_);
         }
@@ -372,29 +374,42 @@ public:
 
     primitive_text_pull_state state() const noexcept
     {
-        assert((!sq_) || sq_->size() > i_sq_);
-        return sq_ ? (*sq_)[i_sq_] : primitive_text_pull_state::moved;
+        if (handler_) {
+            const auto& sq = handler_->state_queue();
+            assert(sq.size() > i_sq_);    
+            return sq[i_sq_];
+        } else {
+            return primitive_text_pull_state::moved;
+        }
     }
 
     explicit operator bool() const noexcept
     {
-        assert((!sq_) || sq_->size() > i_sq_);
-        return sq_ && ((*sq_)[i_sq_] != primitive_text_pull_state::eof);
+        if (handler_) {
+            const auto& sq = handler_->state_queue();
+            assert(sq.size() > i_sq_);    
+            return (sq[i_sq_] != primitive_text_pull_state::eof);
+        } else {
+            return false;
+        }
     }
 
     primitive_text_pull& operator()()
     {
-        if (!sq_) { // means 'moved'
+        if (!handler_) { // means 'moved'
             return *this;
         }
 
-        assert(!sq_->empty());
-        switch ((*sq_)[i_sq_]) {
+        auto& sq = handler_->state_queue();
+        auto& dq = handler_->data_queue();
+
+        assert(!sq.empty());
+        switch (sq[i_sq_]) {
         case primitive_text_pull_state::start_buffer:
         case primitive_text_pull_state::update:
         case primitive_text_pull_state::finalize:
-            if (i_dq_ == dq_->size() - 2) {
-                dq_->clear();
+            if (i_dq_ == dq.size() - 2) {
+                dq.clear();
                 i_dq_ = 0;
             } else {
                 i_dq_ += 2;
@@ -404,8 +419,8 @@ public:
         case primitive_text_pull_state::start_record:
         case primitive_text_pull_state::end_record:
         case primitive_text_pull_state::empty_physical_line:
-            if (i_dq_ == dq_->size() - 1) {
-                dq_->clear();
+            if (i_dq_ == dq.size() - 1) {
+                dq.clear();
                 i_dq_ = 0;
             } else {
                 ++i_dq_;
@@ -419,18 +434,18 @@ public:
             assert(false);
             break;
         }
-        if (i_sq_ == sq_->size() - 1) {
-            sq_->clear();
+        if (i_sq_ == sq.size() - 1) {
+            sq.clear();
             i_sq_ = 0;
         } else {
             ++i_sq_;
         }
 
-        if (sq_->empty()) {
+        if (sq.empty()) {
             ap_.member()();
         }
-        if (sq_->empty()) {
-            sq_->push_back(primitive_text_pull_state::eof);
+        if (sq.empty()) {
+            sq.push_back(primitive_text_pull_state::eof);
         }
         return *this;
     }
@@ -438,19 +453,19 @@ public:
     char_type* operator[](size_type i)
     {
         assert(i < data_size());
-        return (*dq_)[i_dq_ + i];
+        return handler_->data_queue()[i_dq_ + i];
     }
 
     const char_type* operator[](size_type i) const
     {
         assert(i < data_size());
-        return (*dq_)[i_dq_ + i];
+        return handler_->data_queue()[i_dq_ + i];
     }
 
     size_type data_size() const noexcept
     {
-        if (sq_) {
-            switch ((*sq_)[i_sq_]) {
+        if (handler_) {
+            switch (handler_->state_queue()[i_sq_]) {
             case primitive_text_pull_state::start_buffer:
             case primitive_text_pull_state::update:
             case primitive_text_pull_state::finalize:
@@ -481,31 +496,7 @@ public:
     }
 
 private:
-    template <class Q, class... Args>
-    static auto create_queue(const Allocator& alloc, Args&&... args)
-    {
-        using q_a_t = typename std::allocator_traits<
-            typename Q::allocator_type>::template rebind_alloc<Q>;
-        using q_at_t = std::allocator_traits<q_a_t>;
-        q_a_t a(alloc);
-        const auto p = q_at_t::allocate(a, 1);
-        ::new(std::addressof(*p)) Q(std::forward<Args>(args)...);
-        return p;
-    }
-
-    template <class P>
-    static void destroy_queue(P p) noexcept
-    {
-        using q_t = typename std::pointer_traits<P>::element_type;
-        using q_a_t = typename std::allocator_traits<
-            typename q_t::allocator_type>::template rebind_alloc<q_t>;
-        using q_at_t = std::allocator_traits<q_a_t>;
-        q_a_t a(p->get_allocator());
-        p->~vector();
-        q_at_t::deallocate(a, p, 1);
-    }
-
-    template <class... Args>
+     template <class... Args>
     static auto create_handler(const Allocator& alloc, Args&&... args)
     {
         handler_a_t a(alloc);
