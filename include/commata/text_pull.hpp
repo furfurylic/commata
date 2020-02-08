@@ -76,18 +76,23 @@ template <class Ch, class Allocator,
     std::underlying_type_t<primitive_text_pull_handle> Handle>
 class pull_handler
 {
+public:
+    using char_type = Ch;
+    using state_queue_element_type =
+        std::pair<primitive_text_pull_state, std::uint_fast8_t>;
+
+private:
     using at_t = std::allocator_traits<Allocator>;
 
     using state_queue_a_t = allocation_only_allocator<
-        typename at_t::template rebind_alloc<primitive_text_pull_state>>;
+        typename at_t::template rebind_alloc<state_queue_element_type>>;
     using data_queue_a_t = allocation_only_allocator<
-        typename at_t::template rebind_alloc<Ch*>>;
+        typename at_t::template rebind_alloc<char_type*>>;
 
 public:
-    using char_type = Ch;
     using state_queue_type =
-        std::vector<primitive_text_pull_state, state_queue_a_t>;
-    using data_queue_type = std::vector<Ch*, data_queue_a_t>;
+        std::vector<state_queue_element_type, state_queue_a_t>;
+    using data_queue_type = std::vector<char_type*, data_queue_a_t>;
 
 private:
     base_member_pair<Allocator, std::size_t> alloc_;
@@ -156,7 +161,7 @@ private:
     void start_buffer(const Ch* buffer_begin, const Ch* buffer_end,
         std::true_type)
     {
-        sq_.push_back(primitive_text_pull_state::start_buffer);
+        sq_.emplace_back(primitive_text_pull_state::start_buffer, dn(2));
         dq_.push_back(uc(buffer_begin));
         dq_.push_back(uc(buffer_end));
     }
@@ -175,7 +180,7 @@ public:
 private:
     void end_buffer(const Ch* buffer_end, std::true_type)
     {
-        sq_.push_back(primitive_text_pull_state::end_buffer);
+        sq_.emplace_back(primitive_text_pull_state::end_buffer, dn(1));
         dq_.push_back(uc(buffer_end));
     }
 
@@ -193,7 +198,7 @@ public:
 private:
     void start_record(const char_type* record_begin, std::true_type)
     {
-        sq_.push_back(primitive_text_pull_state::start_record);
+        sq_.emplace_back(primitive_text_pull_state::start_record, dn(1));
         dq_.push_back(uc(record_begin));
     }
 
@@ -212,7 +217,7 @@ private:
     void update(const char_type* first, const char_type* last,
         std::true_type)
     {
-        sq_.push_back(primitive_text_pull_state::update);
+        sq_.emplace_back(primitive_text_pull_state::update, dn(2));
         dq_.push_back(uc(first));
         dq_.push_back(uc(last));
     }
@@ -232,7 +237,7 @@ private:
     void finalize(const char_type* first, const char_type* last,
         std::true_type)
     {
-        sq_.push_back(primitive_text_pull_state::finalize);
+        sq_.emplace_back(primitive_text_pull_state::finalize, dn(2));
         dq_.push_back(uc(first));
         dq_.push_back(uc(last));
     }
@@ -251,7 +256,7 @@ public:
 private:
     void end_record(const char_type* record_end, std::true_type)
     {
-        sq_.push_back(primitive_text_pull_state::end_record);
+        sq_.emplace_back(primitive_text_pull_state::end_record, dn(1));
         dq_.push_back(uc(record_end));
     }
 
@@ -270,7 +275,8 @@ public:
 private:
     void empty_physical_line(const char_type* where, std::true_type)
     {
-        sq_.push_back(primitive_text_pull_state::empty_physical_line);
+        sq_.emplace_back(primitive_text_pull_state::empty_physical_line,
+            dn(1));
         dq_.push_back(uc(where));
     }
 
@@ -297,6 +303,12 @@ private:
     char_type* uc(const char_type* s) const noexcept
     {
         return buffer_ + (s - buffer_);
+    }
+
+    template <class N>
+    static auto dn(N n)
+    {
+        return static_cast<typename state_queue_element_type::second_type>(n);
     }
 };
 
@@ -349,8 +361,10 @@ public:
             std::allocator_arg, alloc, buffer_size)),
         ap_(alloc, in(detail::wrapper_handler<handler_t>(*handler_)))
     {
-        handler_->state_queue().push_back(
-            primitive_text_pull_state::before_parse);
+        handler_->state_queue().emplace_back(
+            primitive_text_pull_state::before_parse,
+            static_cast<typename std::decay_t<decltype(*handler_)>::
+                    state_queue_element_type::second_type>(0));
     }
 
     primitive_text_pull(primitive_text_pull&& other) noexcept :
@@ -377,7 +391,7 @@ public:
         if (handler_) {
             const auto& sq = handler_->state_queue();
             assert(sq.size() > i_sq_);    
-            return sq[i_sq_];
+            return sq[i_sq_].first;
         } else {
             return primitive_text_pull_state::moved;
         }
@@ -388,7 +402,7 @@ public:
         if (handler_) {
             const auto& sq = handler_->state_queue();
             assert(sq.size() > i_sq_);    
-            return (sq[i_sq_] != primitive_text_pull_state::eof);
+            return (sq[i_sq_].first != primitive_text_pull_state::eof);
         } else {
             return false;
         }
@@ -404,35 +418,14 @@ public:
         auto& dq = handler_->data_queue();
 
         assert(!sq.empty());
-        switch (sq[i_sq_]) {
-        case primitive_text_pull_state::start_buffer:
-        case primitive_text_pull_state::update:
-        case primitive_text_pull_state::finalize:
-            if (i_dq_ == dq.size() - 2) {
+        const auto s = sq[i_sq_];
+        if (s.second > 0) {
+            if (i_dq_ == dq.size() - s.second) {
                 dq.clear();
                 i_dq_ = 0;
             } else {
-                i_dq_ += 2;
+                i_dq_ += s.second;
             }
-            break;
-        case primitive_text_pull_state::end_buffer:
-        case primitive_text_pull_state::start_record:
-        case primitive_text_pull_state::end_record:
-        case primitive_text_pull_state::empty_physical_line:
-            if (i_dq_ == dq.size() - 1) {
-                dq.clear();
-                i_dq_ = 0;
-            } else {
-                ++i_dq_;
-            }
-            break;
-        case primitive_text_pull_state::before_parse:
-            break;
-        case primitive_text_pull_state::eof:
-            return *this;
-        default:
-            assert(false);
-            break;
         }
         if (i_sq_ == sq.size() - 1) {
             sq.clear();
@@ -445,7 +438,10 @@ public:
             ap_.member()();
         }
         if (sq.empty()) {
-            sq.push_back(primitive_text_pull_state::eof);
+            sq.emplace_back(
+                primitive_text_pull_state::eof,
+                static_cast<typename std::decay_t<decltype(*handler_)>::
+                    state_queue_element_type::second_type>(0));
         }
         return *this;
     }
@@ -464,26 +460,7 @@ public:
 
     size_type data_size() const noexcept
     {
-        if (handler_) {
-            switch (handler_->state_queue()[i_sq_]) {
-            case primitive_text_pull_state::start_buffer:
-            case primitive_text_pull_state::update:
-            case primitive_text_pull_state::finalize:
-                return 2;
-            case primitive_text_pull_state::end_buffer:
-            case primitive_text_pull_state::start_record:
-            case primitive_text_pull_state::end_record:
-            case primitive_text_pull_state::empty_physical_line:
-                return 1;
-            case primitive_text_pull_state::before_parse:
-            case primitive_text_pull_state::eof:
-                break;
-            default:
-                assert(false);
-                break;
-            }
-        }
-        return 0;
+        return handler_? handler_->state_queue()[i_sq_].second : 0;
     }
 
     std::pair<std::size_t, std::size_t> get_physical_position() const
