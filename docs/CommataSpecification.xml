@@ -4659,6 +4659,10 @@ namespace commata {
     <c>// <n><xref id="primitive_text_pull.allocator"/>, allocator access:</n></c>
     allocator_type get_allocator() const noexcept;
 
+    <c>// <n><xref id="primitive_text_pull.tweaks"/>, tweaks:</n></c>
+    bool discards_data() const noexcept;
+    primitive_text_pull&amp; set_discards_data(bool b = true) noexcept;
+
     <c>// <n><xref id="primitive_text_pull.inv"/>, invocation:</n></c>
     primitive_text_pull&amp; operator()();
 
@@ -4713,6 +4717,7 @@ explicit primitive_text_pull(TextSource in,
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
                    Makes the text handler object <c>h</c> configured to enqueue events into the event queue above ant to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the text parser object with <c>in(h)</c>.</effects>
+          <postcondition><c>discards_data()</c> shall return <c>false</c>.</postcondition>
           <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</remark>
         </code-item>
 
@@ -4725,7 +4730,7 @@ primitive_text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSource
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
                    Makes the text handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the text parser object with <c>in(h)</c>.</effects>
-          <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</remark>
+          <postcondition><c>discards_data()</c> shall return <c>false</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -4744,6 +4749,26 @@ primitive_text_pull(primitive_text_pull&amp;&amp; other) noexcept;
 allocator_type get_allocator() const noexcept;
           </code>
           <returns>A copy of the allocator object used by <c>*this</c>.</returns>
+        </code-item>
+      </section>
+
+      <section id="primitive_text_pull.tweaks">
+        <name><c>primitive_text_pull</c> tweaks</name>
+
+        <code-item>
+          <code>
+bool discards_data() const noexcept;
+          </code>
+          <returns>Whether <c>*this</c> collects data of events and makes them accessible with <c>operator[]</c> (<c>false</c>) or not (otherwise).</returns>
+        </code-item>
+
+        <code-item>
+          <code>
+primitive_text_pull&amp; set_discards_data(bool b = true) noexcept;
+          </code>
+          <effects>Sets whether <c>*this</c> collects data of events and makes them accessible with <c>operator[]</c> (if <c>b</c> is <c>false</c>) or not (otherwise).</effects>
+          <returns><c>*this</c>.</returns>
+          <note>Setting this to <c>true</c> purely reduces the functionality of <c>*this</c>, but might improve performance.</note>
         </code-item>
       </section>
 
@@ -4772,7 +4797,8 @@ primitive_text_pull&amp; operator()();
 primitive_text_pull_state state() const noexcept;
           </code>
           <returns>A value of <c>primitive_text_pull_state</c> that tells the current status of <c>*this</c> as shown in <xref id="table.primitive_text_pull.state"/>.
-                   In <xref id="table.primitive_text_pull.state"/>, <c>h</c> denotes the text handler object held by <c>*this</c>.</returns>
+                   In <xref id="table.primitive_text_pull.state"/>, <c>h</c> denotes the text handler object held by <c>*this</c>.
+                   &#x2018;Maximum data size&#x2019; column shows the return value of <c>data_size()</c> if the current event was queued while <c>discards_data()</c> was <c>false</c>.</returns>
 
           <table id="table.primitive_text_pull.state">
             <caption>The meanings of the values <c>state()</c> returns</caption>
@@ -4782,7 +4808,7 @@ primitive_text_pull_state state() const noexcept;
               <th>#</th>
               <th>Value</th>
               <th>The current status of <c>*this</c></th>
-              <th><c>data_size()</c></th>
+              <th>Maximum data size</th>
             </tr>
 
             <tr>
@@ -4810,7 +4836,8 @@ primitive_text_pull_state state() const noexcept;
               <td><c>(4)</c></td>
               <td><c>start_buffer</c></td>
               <td>The front of the event queue is the invocation of <c>start_buffer</c> on <c>h</c>.
-                  The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order.</td>
+                  The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
+                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
               <td>2</td>
             </tr>
 
@@ -4818,7 +4845,8 @@ primitive_text_pull_state state() const noexcept;
               <td><c>(5)</c></td>
               <td><c>end_buffer</c></td>
               <td>The front of the event queue is the invocation of <c>end_buffer</c> on <c>h</c>.
-                  The argument of the invocation is available as <c>(*this)[0]</c>.
+                  The argument of the invocation is available as <c>(*this)[0]</c>
+                  if and only if the event was queued while <c>discards_data()</c> is <c>false</c>.
                   All pointers that have been returned by <c>operator[]</c> will be invalidated with the next call of <c>operator()</c>.</td>
               <td>1</td>
             </tr>
@@ -4827,7 +4855,8 @@ primitive_text_pull_state state() const noexcept;
               <td><c>(6)</c></td>
               <td><c>empty_physical_line</c></td>
               <td>The front of the event queue is the invocation of <c>empty_physical_line</c> on <c>h</c>.
-                  The argument of the invocation is available as <c>(*this)[0]</c>.</td>
+                  The argument of the invocation is available as <c>(*this)[0]</c>
+                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
               <td>1</td>
             </tr>
 
@@ -4835,7 +4864,8 @@ primitive_text_pull_state state() const noexcept;
               <td><c>(7)</c></td>
               <td><c>start_record</c></td>
               <td>The front of the event queue is the invocation of <c>start_record</c> on <c>h</c>.
-                  The argument of the invocation is available as <c>(*this)[0]</c>.</td>
+                  The argument of the invocation is available as <c>(*this)[0]</c>
+                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
               <td>1</td>
             </tr>
 
@@ -4843,7 +4873,8 @@ primitive_text_pull_state state() const noexcept;
               <td><c>(8)</c></td>
               <td><c>end_record</c></td>
               <td>The front of the event queue is the invocation of <c>end_record</c> on <c>h</c>.
-                  The argument of the invocation is available as <c>(*this)[0]</c>.</td>
+                  The argument of the invocation is available as <c>(*this)[0]</c>
+                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
               <td>1</td>
             </tr>
 
@@ -4851,7 +4882,8 @@ primitive_text_pull_state state() const noexcept;
               <td><c>(9)</c></td>
               <td><c>update</c></td>
               <td>The front of the event queue is the invocation of <c>update</c> on <c>h</c>.
-                  The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order.</td>
+                  The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
+                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
               <td>2</td>
             </tr>
 
@@ -4859,7 +4891,8 @@ primitive_text_pull_state state() const noexcept;
               <td><c>(10)</c></td>
               <td><c>finalize</c></td>
               <td>The front of the event queue is the invocation of <c>finalize</c> on <c>h</c>.
-                  The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order.</td>
+                  The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
+                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
               <td>2</td>
             </tr>
           </table>

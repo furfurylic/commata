@@ -100,6 +100,7 @@ private:
     state_queue_type sq_;
     data_queue_type dq_;
     std::size_t yield_location_;
+    bool collects_data_;
 
 public:
     explicit pull_handler(
@@ -107,7 +108,7 @@ public:
         std::size_t buffer_size) :
         alloc_(alloc,
             (buffer_size < 1) ? 8192 : (buffer_size < 2) ? 2 : buffer_size),
-        buffer_(nullptr), yield_location_(0)
+        buffer_(nullptr), yield_location_(0), collects_data_(true)
     {}
 
     pull_handler(const pull_handler& other) = delete;
@@ -139,6 +140,17 @@ public:
         return dq_;
     }
 
+    bool discards_data() const noexcept
+    {
+        return !collects_data_;
+    }
+
+    pull_handler& set_discards_data(bool b = true) noexcept
+    {
+        collects_data_ = !b;
+        return *this;
+    }
+
     std::pair<char_type*, std::size_t> get_buffer()
     {
         if (!buffer_) {
@@ -161,9 +173,13 @@ private:
     void start_buffer(const Ch* buffer_begin, const Ch* buffer_end,
         std::true_type)
     {
-        sq_.emplace_back(primitive_text_pull_state::start_buffer, dn(2));
-        dq_.push_back(uc(buffer_begin));
-        dq_.push_back(uc(buffer_end));
+        if (collects_data_) {
+            sq_.emplace_back(primitive_text_pull_state::start_buffer, dn(2));
+            dq_.push_back(uc(buffer_begin));
+            dq_.push_back(uc(buffer_end));
+        } else {
+            sq_.emplace_back(primitive_text_pull_state::start_buffer, dn(0));
+        }
     }
 
     void start_buffer(const Ch*, const Ch*, std::false_type) noexcept
@@ -180,8 +196,12 @@ public:
 private:
     void end_buffer(const Ch* buffer_end, std::true_type)
     {
-        sq_.emplace_back(primitive_text_pull_state::end_buffer, dn(1));
-        dq_.push_back(uc(buffer_end));
+        if (collects_data_) {
+            sq_.emplace_back(primitive_text_pull_state::end_buffer, dn(1));
+            dq_.push_back(uc(buffer_end));
+        } else {
+            sq_.emplace_back(primitive_text_pull_state::end_buffer, dn(0));
+        }
     }
 
     void end_buffer(const Ch*, std::false_type) noexcept
@@ -198,8 +218,12 @@ public:
 private:
     void start_record(const char_type* record_begin, std::true_type)
     {
-        sq_.emplace_back(primitive_text_pull_state::start_record, dn(1));
-        dq_.push_back(uc(record_begin));
+        if (collects_data_) {
+            sq_.emplace_back(primitive_text_pull_state::start_record, dn(1));
+            dq_.push_back(uc(record_begin));
+        } else {
+            sq_.emplace_back(primitive_text_pull_state::start_record, dn(0));
+        }
     }
 
     void start_record(const char_type*, std::false_type)
@@ -217,9 +241,13 @@ private:
     void update(const char_type* first, const char_type* last,
         std::true_type)
     {
-        sq_.emplace_back(primitive_text_pull_state::update, dn(2));
-        dq_.push_back(uc(first));
-        dq_.push_back(uc(last));
+        if (collects_data_) {
+            sq_.emplace_back(primitive_text_pull_state::update, dn(2));
+            dq_.push_back(uc(first));
+            dq_.push_back(uc(last));
+        } else {
+            sq_.emplace_back(primitive_text_pull_state::update, dn(0));
+        }
     }
 
     void update(const char_type*, const char_type*, std::false_type)
@@ -237,9 +265,13 @@ private:
     void finalize(const char_type* first, const char_type* last,
         std::true_type)
     {
-        sq_.emplace_back(primitive_text_pull_state::finalize, dn(2));
-        dq_.push_back(uc(first));
-        dq_.push_back(uc(last));
+        if (collects_data_) {
+            sq_.emplace_back(primitive_text_pull_state::finalize, dn(2));
+            dq_.push_back(uc(first));
+            dq_.push_back(uc(last));
+        } else {
+            sq_.emplace_back(primitive_text_pull_state::finalize, dn(0));
+        }
     }
 
     void finalize(const char_type*, const char_type*, std::false_type)
@@ -256,8 +288,12 @@ public:
 private:
     void end_record(const char_type* record_end, std::true_type)
     {
-        sq_.emplace_back(primitive_text_pull_state::end_record, dn(1));
-        dq_.push_back(uc(record_end));
+        if (collects_data_) {
+            sq_.emplace_back(primitive_text_pull_state::end_record, dn(1));
+            dq_.push_back(uc(record_end));
+        } else {
+            sq_.emplace_back(primitive_text_pull_state::end_record, dn(0));
+        }
     }
 
     void end_record(const char_type*, std::false_type)
@@ -275,9 +311,14 @@ public:
 private:
     void empty_physical_line(const char_type* where, std::true_type)
     {
-        sq_.emplace_back(primitive_text_pull_state::empty_physical_line,
-            dn(1));
-        dq_.push_back(uc(where));
+        if (collects_data_) {
+            sq_.emplace_back(
+                primitive_text_pull_state::empty_physical_line, dn(1));
+            dq_.push_back(uc(where));
+        } else {
+            sq_.emplace_back(
+                primitive_text_pull_state::empty_physical_line, dn(0));
+        }
     }
 
     void empty_physical_line(const char_type*, std::false_type)
@@ -384,6 +425,17 @@ public:
     allocator_type get_allocator() const noexcept
     {
         return ap_.base();
+    }
+
+    bool discards_data() const noexcept
+    {
+        return handler_->discards_data();
+    }
+
+    primitive_text_pull& set_discards_data(bool b = true) noexcept
+    {
+        handler_->set_discards_data(b);
+        return *this;
     }
 
     primitive_text_pull_state state() const noexcept
@@ -512,6 +564,37 @@ enum class text_pull_state : std::uint_fast8_t
     field,
     record_end
 };
+
+namespace detail {
+
+template <class PrimitiveTextPull>
+class temporarily_discard
+{
+    PrimitiveTextPull* p_;
+
+public:
+    explicit temporarily_discard(PrimitiveTextPull& p) noexcept : p_(&p)
+    {
+        p_->set_discards_data();
+    }
+
+    temporarily_discard(const temporarily_discard&) = delete;
+
+    ~temporarily_discard()
+    {
+        if (p_) {
+            p_->set_discards_data(false);
+        }
+    }
+
+    void reset() noexcept
+    {
+        p_->set_discards_data(false);
+        p_ = nullptr;
+    }
+};
+
+}
 
 template <class TextSource,
     class Allocator = std::allocator<typename TextSource::char_type>>
@@ -648,6 +731,7 @@ public:
         }
         last_ = empty_string();
         value_.clear();
+        detail::temporarily_discard<decltype(p_)> d(p_);
         for (;;) {
             if (value_expiring_) {
                 ++j_;
@@ -673,6 +757,7 @@ public:
                 set_state(text_pull_state::field);
                 value_expiring_ = true;
                 if (n == 1) {
+                    d.reset();
                     return next_field();
                 }
                 --n;
@@ -767,6 +852,7 @@ public:
         }
         last_ = empty_string();
         value_.clear();
+        detail::temporarily_discard<decltype(p_)> d(p_);
         for (;;) {
             if (value_expiring_) {
                 ++j_;
