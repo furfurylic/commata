@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace commata { namespace test {
+namespace commata::test {
 
 template <class BaseAllocator>
 class tracking_allocator :
@@ -182,6 +182,6 @@ bool operator!=(
     return !(left == right);
 }
 
-}}
+}
 
 #endif

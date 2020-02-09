@@ -41,7 +41,7 @@
 
 namespace commata {
 
-namespace detail { namespace scanner {
+namespace detail::scanner {
 
 struct typable
 {
@@ -67,7 +67,7 @@ private:
     virtual void* get_target_v() = 0;
 };
 
-}} // end detail::scanner
+} // end detail::scanner
 
 template <class Ch, class Tr = std::char_traits<Ch>,
           class Allocator = std::allocator<Ch>>
@@ -797,7 +797,7 @@ struct invalid_format_t {};
 struct out_of_range_t {};
 struct empty_t {};
 
-namespace detail { namespace scanner {
+namespace detail::scanner {
 
 template <class T>
 struct numeric_type_traits;
@@ -1320,7 +1320,7 @@ struct converter<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
         typename numeric_type_traits<T>::raw_type>::restrained_converter;
 };
 
-}} // end detail::scanner
+} // end detail::scanner
 
 struct fail_if_skipped
 {
@@ -1335,7 +1335,7 @@ struct fail_if_skipped
     }
 };
 
-namespace detail { namespace scanner { 
+namespace detail::scanner { 
 
 enum class replace_mode
 {
@@ -1502,7 +1502,7 @@ template <class T>
 using store_t = std::conditional_t<std::is_trivially_copyable<T>::value,
     trivial_store<T>, nontrivial_store<T>>;
 
-}}}
+}}
 
 template <class T>
 class replace_if_skipped
@@ -1625,8 +1625,7 @@ private:
     }
 };
 
-namespace detail { namespace scanner {
-namespace replace_if_conversion_failed_impl {
+namespace detail::scanner::replace_if_conversion_failed_impl {
 
 enum slot : unsigned {
     slot_empty = 0,
@@ -2064,7 +2063,7 @@ struct base<T, 5> : base<T, std::is_default_constructible<T>::value ? 4 : 0>
 template <class T>
 using base_t = base<T, base_n<T>>;
 
-}}}
+}
 
 template <class T>
 class replace_if_conversion_failed :
@@ -2179,7 +2178,7 @@ void swap(
     left.swap(right);
 }
 
-namespace detail { namespace scanner {
+namespace detail::scanner {
 
 template <class T, class = void>
 struct is_output_iterator : std::false_type
@@ -2287,7 +2286,7 @@ private:
     }
 };
 
-}} // end detail::scanner
+} // end detail::scanner
 
 template <class T, class Sink,
     class SkippingHandler = fail_if_skipped,
@@ -2556,7 +2555,7 @@ public:
     }
 };
 
-namespace detail { namespace scanner {
+namespace detail::scanner {
 
 template <class T, class Sink, class... As,
     std::enable_if_t<
@@ -2647,7 +2646,7 @@ string_field_translator<Sink,
         typename T::allocator_type, std::decay_t<As>...>
     make_field_translator_na(Sink, As&&...);
 
-}} // end detail::scanner
+} // end detail::scanner
 
 template <class T, class Sink, class... Appendices>
 auto make_field_translator(Sink&& sink, Appendices&&... appendices)
@@ -2684,7 +2683,7 @@ auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
         std::forward<Sink>(sink), std::forward<Appendices>(appendices)...);
 }
 
-namespace detail { namespace scanner {
+namespace detail::scanner {
 
 struct is_back_insertable_impl
 {
@@ -2751,7 +2750,7 @@ struct back_insert_iterator<Container,
 template <class Container>
 using back_insert_iterator_t = typename back_insert_iterator<Container>::type;
 
-}} // end detail::scanner
+} // end detail::scanner
 
 template <class Container, class... Appendices>
 auto make_field_translator(Container& values, Appendices&&... appendices)

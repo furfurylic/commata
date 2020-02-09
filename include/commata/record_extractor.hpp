@@ -27,7 +27,7 @@
 #include "write_ntmbs.hpp"
 
 namespace commata {
-namespace detail { namespace record_extraction {
+namespace detail::record_extraction {
 
 template <class Ch, class Tr = std::char_traits<Ch>>
 class range_eq
@@ -172,7 +172,7 @@ struct hollow_field_name_pred
     }
 };
 
-}} // end detail::record_extraction
+} // end detail::record_extraction
 
 class record_extraction_error :
     public text_error
@@ -183,7 +183,7 @@ public:
 
 constexpr std::size_t record_extractor_npos = static_cast<std::size_t>(-1);
 
-namespace detail { namespace record_extraction {
+namespace detail::record_extraction {
 
 template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr, class Allocator>
@@ -485,7 +485,7 @@ private:
     }
 };
 
-}} // end detail::record_extraction
+} // end detail::record_extraction
 
 enum header_forwarding : unsigned
 {
@@ -604,7 +604,7 @@ private:
     }
 };
 
-namespace detail { namespace record_extraction {
+namespace detail::record_extraction {
 
 struct has_const_iterator_impl
 {
@@ -683,7 +683,7 @@ template <class T, class Ch>
 struct is_string_pred : std::is_invocable_r<bool, T, const Ch*, const Ch*>
 {};
 
-}} // end detail::record_extraction
+} // end detail::record_extraction
 
 template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr, class Allocator, class... Appendices>

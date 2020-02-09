@@ -11,7 +11,7 @@
 #include <memory>
 #include <type_traits>
 
-namespace commata { namespace test {
+namespace commata::test {
 
 template <class T>
 class fancy_ptr
@@ -200,6 +200,6 @@ struct fancy_allocator
     using propagate_on_container_swap = std::true_type;
 };
 
-}}
+}
 
 #endif

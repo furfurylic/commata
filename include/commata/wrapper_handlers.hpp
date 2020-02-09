@@ -165,7 +165,7 @@ void swap(
     return left.swap(right);
 }
 
-namespace detail { namespace empty_physical_line_aware {
+namespace detail::empty_physical_line_aware {
 
 template <class Handler>
 auto make(Handler&& h)
@@ -187,7 +187,7 @@ auto make(Handler&& h) noexcept
     return std::forward<Handler>(h);
 }
 
-}} // end detail::empty_physical_line_aware
+} // end detail::empty_physical_line_aware
 
 template <class Handler>
 auto make_empty_physical_line_aware(Handler&& handler)

@@ -17,7 +17,7 @@
 #include <string>
 #include <type_traits>
 
-namespace commata { namespace detail {
+namespace commata::detail {
 
 namespace ntmbs {
 
@@ -178,6 +178,6 @@ auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
     }
 }
 
-}}
+}
 
 #endif

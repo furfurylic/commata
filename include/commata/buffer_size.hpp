@@ -11,7 +11,7 @@
 #include <memory>
 #include <limits>
 
-namespace commata { namespace detail {
+namespace commata::detail {
 
 template <class Allocator>
 std::size_t sanitize_buffer_size(
@@ -28,6 +28,6 @@ std::size_t sanitize_buffer_size(
     return std::min(buffer_size, max_alloc);
 }
 
-}}
+}
 
 #endif

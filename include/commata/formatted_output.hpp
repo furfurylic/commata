@@ -10,8 +10,7 @@
 #include <ostream>
 #include <streambuf>
 
-namespace commata {
-namespace detail {
+namespace commata::detail {
 
 template <class Ch, class Tr, class F>
 std::basic_ostream<Ch, Tr>& formatted_output(
@@ -66,6 +65,6 @@ std::basic_ostream<Ch, Tr>& formatted_output(
     return os;
 }
 
-}}
+}
 
 #endif

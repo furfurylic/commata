@@ -611,7 +611,7 @@ struct hash<commata::basic_stored_value<Ch, Tr>>
 
 namespace commata {
 
-namespace detail { namespace stored {
+namespace detail::stored {
 
 template <class T>
 auto select_allocator(const T&, const T& r, std::true_type)
@@ -1100,7 +1100,7 @@ std::size_t length(const char* begin)
     return Tr::length(begin);
 }
 
-}} // end detail::stored
+} // end detail::stored
 
 template <class Content, class Allocator = std::allocator<Content>>
 class basic_stored_table
@@ -1881,7 +1881,7 @@ enum stored_table_builder_option : std::uint_fast8_t
     stored_table_builder_option_transpose = 1
 };
 
-namespace detail { namespace stored {
+namespace detail::stored {
 
 template <class Content>
 struct arrange_as_is
@@ -1952,7 +1952,7 @@ using arrange = std::conditional_t<
     (Options & stored_table_builder_option_transpose) != 0U,
     arrange_transposing<Content>, arrange_as_is<Content>>;
 
-}} // end detail::stored
+} // end detail::stored
 
 template <class Content, class Allocator,
     std::underlying_type_t<stored_table_builder_option> Options = 0U>

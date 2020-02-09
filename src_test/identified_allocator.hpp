@@ -9,7 +9,7 @@
 #include <cstddef>
 #include <type_traits>
 
-namespace commata { namespace test {
+namespace commata::test {
 
 template <class T, bool Pocca, bool Pocma, bool Pocs, bool Iae = false>
 class identified_allocator
@@ -95,6 +95,6 @@ private:
     }
 };
 
-}}
+}
 
 #endif

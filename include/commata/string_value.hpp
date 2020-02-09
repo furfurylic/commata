@@ -11,7 +11,7 @@
 
 #include "typing_aid.hpp"
 
-namespace commata { namespace detail {
+namespace commata::detail {
 
 template <class Ch, class Tr, class T>
 struct is_comparable_with_string_value :
@@ -136,6 +136,6 @@ std::basic_string<Ch, Tr, Allocator>& string_value_plus_assign(
     return left;
 }
 
-}}
+}
 
 #endif

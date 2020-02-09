@@ -12,8 +12,7 @@
 
 #include "member_like_base.hpp"
 
-namespace commata {
-namespace detail {
+namespace commata::detail {
 
 namespace allocation_only {
 
@@ -231,6 +230,7 @@ bool operator!=(
 {
     return left != right.base();
 }
-}}
+
+}
 
 #endif

@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 
-namespace commata { namespace test {
+namespace commata::test {
 
 class MemoryLeakCheck
 {
@@ -140,6 +140,6 @@ template <class Ch>
 const std::ctype<Ch>& char_helper<Ch>::facet_ =
     std::use_facet<std::ctype<Ch>>(std::locale::classic());
 
-}}
+}
 
 #endif

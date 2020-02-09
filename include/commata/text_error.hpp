@@ -25,7 +25,8 @@
 #include "typing_aid.hpp"
 
 namespace commata {
-namespace detail { namespace ex {
+
+namespace detail::ex {
 
 template <class T>
 struct npos_impl
@@ -37,7 +38,7 @@ struct npos_impl
 template <class T>
 constexpr T npos_impl<T>::npos;
 
-}} // end detail::ex
+} // end detail::ex
 
 class text_error_info;
 
@@ -170,7 +171,7 @@ inline text_error_info text_error::info(std::size_t base) const noexcept
     return text_error_info(*this, base);
 }
 
-namespace detail { namespace ex {
+namespace detail::ex {
 
 using length_t = std::common_type_t<std::make_unsigned_t<std::streamsize>,
                                     std::size_t>;
@@ -261,7 +262,7 @@ std::pair<T, bool> add(T a, T b, Ts... cs)
     }
 }
 
-}} // end detail::ex
+} // end detail::ex
 
 template <class Tr>
 std::basic_ostream<char, Tr>& operator<<(

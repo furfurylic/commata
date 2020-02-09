@@ -54,7 +54,7 @@ enum primitive_table_pull_handle : std::uint_fast8_t
     primitive_table_pull_handle_all = static_cast<std::uint_fast8_t>(-1)
 };
 
-namespace detail { namespace pull {
+namespace detail::pull {
 
 struct has_get_physical_position_impl
 {
@@ -350,7 +350,7 @@ private:
     }
 };
 
-}} // end detail::pull
+} // end detail::pull
 
 template <class TableSource,
     class Allocator = std::allocator<typename TableSource::char_type>,

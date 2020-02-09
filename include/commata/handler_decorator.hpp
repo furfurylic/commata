@@ -11,8 +11,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace commata {
-namespace detail {
+namespace commata::detail {
 
 namespace handler_decoration {
 
@@ -292,6 +291,6 @@ struct handler_decorator :
     }
 };
 
-}}
+}
 
 #endif

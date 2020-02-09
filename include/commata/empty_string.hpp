@@ -6,7 +6,7 @@
 #ifndef COMMATA_GUARD_89204D85_0074_4F42_A210_A47FB5BD0B7C
 #define COMMATA_GUARD_89204D85_0074_4F42_A210_A47FB5BD0B7C
 
-namespace commata { namespace detail {
+namespace commata::detail {
 
 template <class Ch>
 struct nul
@@ -17,6 +17,6 @@ struct nul
 template <class Ch>
 Ch nul<Ch>::value = Ch();
 
-}}
+}
 
 #endif

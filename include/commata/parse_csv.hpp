@@ -30,8 +30,8 @@
 #include "wrapper_handlers.hpp"
 
 namespace commata {
-namespace detail {
-namespace csv {
+
+namespace detail::csv {
 
 template <class T>
 auto do_yield(T& f, std::size_t location)
@@ -679,7 +679,7 @@ private:
     }
 };
 
-}} // end namespace detail
+} // end detail::csv
 
 template <class CharInput>
 class csv_source
@@ -911,7 +911,7 @@ auto make_csv_source(Args&&... args)
         std::forward<Args>(args)...);
 }
 
-namespace detail { namespace csv {
+namespace detail::csv {
 
 struct are_make_csv_source_args1_impl
 {
@@ -961,7 +961,7 @@ auto parse(Arg1&& arg1, Arg2&& arg2, Args&&... args)
         (std::forward<Arg2>(arg2), std::forward<Args>(args)...)();
 }
 
-}} // detail::csv
+} // detail::csv
 
 template <class Arg1, class Arg2, class... OtherArgs>
 auto parse_csv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)

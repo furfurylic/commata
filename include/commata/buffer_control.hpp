@@ -14,7 +14,7 @@
 #include "handler_decorator.hpp"
 #include "member_like_base.hpp"
 
-namespace commata { namespace detail {
+namespace commata::detail {
 
 template <class T>
 struct is_with_buffer_control :
@@ -201,6 +201,6 @@ private:
     {}
 };
 
-}}
+}
 
 #endif

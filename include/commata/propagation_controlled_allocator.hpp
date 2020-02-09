@@ -12,8 +12,7 @@
 
 #include "member_like_base.hpp"
 
-namespace commata {
-namespace detail {
+namespace commata::detail {
 
 template <class A, bool Pocca, bool Pocma, bool Pocs>
 class propagation_controlled_allocator :
@@ -198,6 +197,6 @@ bool operator!=(
     return left != right.base();
 }
 
-}}
+}
 
 #endif
