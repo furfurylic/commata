@@ -9,8 +9,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace commata {
-namespace detail {
+namespace commata::detail {
 
 template <class F, class = void>
 class member_like_base;
@@ -132,6 +131,6 @@ public:
     }
 };
 
-}}
+}
 
 #endif

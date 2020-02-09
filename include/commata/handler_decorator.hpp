@@ -11,8 +11,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace commata {
-namespace detail {
+namespace commata::detail {
 
 struct has_get_buffer_impl
 {
@@ -284,6 +283,6 @@ public:
     }
 };
 
-}}
+}
 
 #endif

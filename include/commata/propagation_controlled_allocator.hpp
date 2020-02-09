@@ -12,8 +12,7 @@
 
 #include "member_like_base.hpp"
 
-namespace commata {
-namespace detail {
+namespace commata::detail {
 
 template <class A, bool POCCA, bool POCMA, bool POCS>
 class propagation_controlled_allocator :
@@ -129,6 +128,6 @@ public:
     }
 };
 
-}}
+}
 
 #endif

@@ -12,8 +12,7 @@
 
 #include "member_like_base.hpp"
 
-namespace commata {
-namespace detail {
+namespace commata::detail {
 
 template <class A, class = void>
 struct reference_forwarded
@@ -207,6 +206,6 @@ inline bool operator!=(
     return left.base() != right.base();
 }
 
-}}
+}
 
 #endif

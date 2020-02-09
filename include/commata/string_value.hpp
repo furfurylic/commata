@@ -9,7 +9,7 @@
 #include <string_view>
 #include <type_traits>
 
-namespace commata { namespace detail {
+namespace commata::detail {
 
 template <class Ch, class Tr, class T>
 constexpr bool is_comparable_with_string_value_v =
@@ -208,6 +208,6 @@ std::basic_string<Ch, Tr, Allocator> string_value_plus(
     return std::move(string_value_plus_assign(left, right));
 }
 
-}}
+}
 
 #endif

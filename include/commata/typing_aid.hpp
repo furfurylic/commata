@@ -10,8 +10,7 @@
 #include <string>
 #include <type_traits>
 
-namespace commata {
-namespace detail {
+namespace commata::detail {
 
 template <class T>
 constexpr bool is_std_string_v = false;
@@ -49,6 +48,6 @@ struct first<Head, Tail...>
 template <class... Ts>
 using first_t = typename first<Ts...>::type;
 
-}}
+}
 
 #endif

@@ -1046,7 +1046,7 @@ auto make_csv_source(Args&&... args)
         make_char_input(std::forward<Args>(args)...));
 }
 
-namespace detail { namespace csv {
+namespace detail::csv {
 
 struct are_make_csv_source_args_impl
 {
@@ -1063,7 +1063,7 @@ template <class Arg1, class Arg2>
 constexpr bool are_make_csv_source_args_v =
     decltype(are_make_csv_source_args_impl::check<Arg1, Arg2>(nullptr))();
 
-}}
+}
 
 template <class Arg1, class Arg2, class... OtherArgs>
 bool parse_csv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)
