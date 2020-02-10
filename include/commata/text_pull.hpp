@@ -11,7 +11,9 @@
 #include <cstdint>
 #include <exception>
 #include <iosfwd>
+#include <iterator>
 #include <memory>
+#include <stdexcept>
 #include <streambuf>
 #include <string>
 #include <tuple>
@@ -633,6 +635,8 @@ public:
     using difference_type = std::ptrdiff_t;
     using iterator = value_type*;
     using const_iterator = iterator;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     static constexpr bool physical_position_available =
         decltype(p_)::physical_position_available;
@@ -927,6 +931,56 @@ public:
     const_iterator cend() const noexcept
     {
         return last_.second;
+    }
+
+    const_reverse_iterator rbegin() const noexcept
+    {
+        return crbegin();
+    }
+
+    const_reverse_iterator rend() const noexcept
+    {
+        return crend();
+    }
+
+    const_reverse_iterator crbegin() const noexcept
+    {
+        return const_reverse_iterator(cend());
+    }
+
+    const_reverse_iterator crend() const noexcept
+    {
+        return const_reverse_iterator(cbegin());
+    }
+
+    const_reference operator[](size_type pos) const
+    {
+        // pos == size() is OK, IAW std::basic_string
+        return cbegin()[pos];
+    }
+
+    const_reference at(size_type pos) const
+    {
+        // pos == size() is NG, IAW std::basic_string
+        if (pos >= size()) {
+            std::ostringstream s;
+            s << pos << " is too large for the current string value, "
+                        "whose size is " << size();
+            throw std::out_of_range(s.str());
+        }
+        return (*this)[pos];
+    }
+
+    const_reference front() const
+    {
+        assert(!empty());
+        return *cbegin();
+    }
+
+    const_reference back() const
+    {
+        assert(!empty());
+        return *(cend() - 1);
     }
 
     const_pointer c_str() const noexcept

@@ -4538,8 +4538,10 @@ template &lt;class Allocator, class Container, class... Appendices>
       <name>Header <c>"text_pull.hpp"</c> synopsis</name>
 
       <codeblock>
+#include &lt;iterator>
 #include &lt;memory>
 #include &lt;ostream>
+#include &lt;stdexcept>
 #include &lt;string>
 #include &lt;type_traits>
 
@@ -4955,6 +4957,8 @@ namespace commata {
     using difference_type = std::ptrdiff_t;
     using iterator        = value_type*;
     using const_iterator  = iterator;
+    using reverse_iterator       = std::reverse_iterator&lt;iterator>;
+    using const_reverse_iterator = std::reverse_iterator&lt;const_iterator>;
 
     <c>// <n><xref id="text_pull.physical_position_available"/>, physical position availability:</n></c>
     static constexpr bool physical_position_available = <nc>see below</nc>;
@@ -4989,6 +4993,14 @@ namespace commata {
     const_iterator cbegin() const noexcept;
     const_iterator end()  const noexcept;
     const_iterator cend() const noexcept;
+    const_reverse_iterator rbegin()  const noexcept;
+    const_reverse_iterator crbegin() const noexcept;
+    const_reverse_iterator rend()  const noexcept;
+    const_reverse_iterator crend() const noexcept;
+    const_reference operator[](size_type pos) const;
+    const_reference at(size_type pos) const;
+    const_reference front() const;
+    const_reference back() const;
     const_pointer c_str() const noexcept;
     const_pointer data()  const noexcept;
     size_type size() const noexcept;
@@ -5290,6 +5302,55 @@ const_iterator end()  const noexcept;
 const_iterator cend() const noexcept;
           </code>
           <returns>A pointer that points the terminating zero character element of a null-terminated sequence of the current string value.</returns>
+        </code-item>
+
+        <code-item>
+          <code>
+const_reverse_iterator rbegin()  const noexcept;
+const_reverse_iterator crbegin() const noexcept;
+          </code>
+          <returns><c>reverse_iterator(cend())</c>.</returns>
+        </code-item>
+
+        <code-item>
+          <code>
+const_reverse_iterator rend()  const noexcept;
+const_reverse_iterator crend() const noexcept;
+          </code>
+          <returns><c>reverse_iterator(cbegin())</c>.</returns>
+        </code-item>
+
+
+        <code-item>
+          <code>
+const_reference operator[](size_type pos) const;
+          </code>
+          <requires><c>pos &lt;= size()</c>.</requires>
+          <returns><c>*(cbegin() + pos)</c>.</returns>
+        </code-item>
+
+        <code-item>
+          <code>
+const_reference at(size_type pos) const;
+          </code>
+          <returns><c>*(cbegin() + pos)</c>.</returns>
+          <throws><c>std::out_of_range</c> if <c>pos >= size()</c>.</throws>
+        </code-item>
+
+        <code-item>
+          <code>
+const_reference front() const;
+          </code>
+          <requires><c>!empty()</c>.</requires>
+          <returns><c>*cbegin()</c>.</returns>
+        </code-item>
+
+        <code-item>
+          <code>
+const_reference back() const;
+          </code>
+          <requires><c>!empty()</c>.</requires>
+          <returns><c>*(cend() - 1)</c>.</returns>
         </code-item>
 
         <code-item>

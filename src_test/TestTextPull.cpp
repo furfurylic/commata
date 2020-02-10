@@ -128,6 +128,7 @@ TYPED_TEST_P(TestTextPull, Basics)
     using string_t = std::basic_string<char_t>;
     using pos_t = std::pair<std::size_t, std::size_t>;
 
+    const auto ch = char_helper<char_t>::ch;
     const auto str = char_helper<char_t>::str;
    
     const auto csv = str(",\"col1\", col2 ,col3,\r\n\n"
@@ -164,11 +165,15 @@ TYPED_TEST_P(TestTextPull, Basics)
         ASSERT_FALSE(pull.empty());
         ASSERT_EQ(4U, pull.size());
         ASSERT_EQ('\0', pull.cbegin()[4]);
+        ASSERT_EQ(ch('o'), pull[1]);
+        ASSERT_EQ(ch('\0'), pull[4]);
+        ASSERT_EQ(ch('l'), pull.at(2));
+        ASSERT_THROW(pull.at(4), std::out_of_range);
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(text_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str(" col2 "), string_t(pull.cbegin(), pull.cend())) << e;
+        ASSERT_EQ(str(" 2loc "), string_t(pull.crbegin(), pull.crend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(0, 14), pull.get_physical_position()) << e;
         ASSERT_EQ(str(" col2 "), to_string(pull)) << e;
@@ -176,7 +181,7 @@ TYPED_TEST_P(TestTextPull, Basics)
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(text_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str("col3"), string_t(pull.cbegin(), pull.cend())) << e;
+        ASSERT_EQ(str("col3"), string_t(pull.begin(), pull.end())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(0, 19), pull.get_physical_position()) << e;
         std::basic_ostringstream<char_t> o1;
@@ -214,7 +219,7 @@ TYPED_TEST_P(TestTextPull, Basics)
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(text_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str(" cell10 "), string_t(pull.cbegin(), pull.cend())) << e;
+        ASSERT_EQ(str(" 01llec "), string_t(pull.rbegin(), pull.rend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(2, 8), pull.get_physical_position()) << e;
         ASSERT_EQ(str(" cell10 "), static_cast<string_t>(pull));
