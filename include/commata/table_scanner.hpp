@@ -579,14 +579,19 @@ private:
         if (!scanners_) {
             scanners_.assign(get_allocator(), make_scanners());     // throw
         }
-        const auto p = allocate_construct<scanner_t>(std::move(s)); // throw
         const auto it = std::lower_bound(
             scanners_->begin(), scanners_->end(), j, scanner_less());
+        const auto p = allocate_construct<scanner_t>(std::move(s)); // throw
         if ((it != scanners_->end()) && (it->second == j)) {
             destroy_deallocate(it->first);
             it->first = p;
         } else {
-            scanners_->emplace(it, p, j);
+            try {
+                scanners_->emplace(it, p, j);                       // throw
+            } catch (...) {
+                destroy_deallocate(p);
+                throw;
+            }
         }
     }
 
@@ -844,9 +849,9 @@ private:
     {
         assert(p);
         using v_t = typename std::pointer_traits<P>::element_type;
+        p->~v_t();
         using t_at_t = typename at_t::template rebind_traits<v_t>;
         typename t_at_t::allocator_type a(get_allocator());
-        std::addressof(*p)->~v_t();
         t_at_t::deallocate(a, p, 1);
     }
 
