@@ -22,6 +22,7 @@
 #include "allocation_only_allocator.hpp"
 #include "empty_string.hpp"
 #include "formatted_output.hpp"
+#include "handler_decorator.hpp"
 #include "member_like_base.hpp"
 
 namespace commata {
@@ -94,12 +95,7 @@ public:
         buffer_(nullptr), sq_(&sq), dq_(&dq), yield_location_(0)
     {}
 
-    pull_handler(pull_handler&& other) noexcept :
-        alloc_(std::move(other.alloc_)), buffer_(other.buffer_),
-        sq_(other.sq_), dq_(other.dq_), yield_location_(other.yield_location_)
-    {
-        other.buffer_ = nullptr;
-    }
+    pull_handler(const pull_handler& other) = delete;
 
     ~pull_handler()
     {
@@ -308,13 +304,20 @@ private:
  
     using handler_t = detail::pull_handler<
         char_type, Allocator, state_queue_t, data_queue_t, Handle>;
+    using handler_a_t = detail::allocation_only_allocator<
+        typename at_t::template rebind_alloc<handler_t>>;
+    using handler_at_t = std::allocator_traits<handler_a_t>;
+    using handler_p_t = typename handler_at_t::pointer;
+
     using parser_t =
-        decltype(std::declval<TextSource>()(std::declval<handler_t>()));
+        decltype(std::declval<TextSource&>()(
+            std::declval<detail::wrapper_handler<handler_t>>()));
 
     state_queue_p_t sq_;
     std::size_t i_sq_;
     data_queue_p_t dq_;
     std::size_t i_dq_;
+    handler_p_t handler_;
     detail::base_member_pair<allocator_type, parser_t> ap_;
 
 public:
@@ -333,20 +336,22 @@ public:
         TextSource in, std::size_t buffer_size = 0) :
         sq_(create_queue<state_queue_t>(alloc, state_a_t(alloc))), i_sq_(0),
         dq_(create_queue<data_queue_t >(alloc, data_a_t (alloc))), i_dq_(0),
-        ap_(alloc,
-            in(handler_t(std::allocator_arg, alloc, buffer_size, *sq_, *dq_)))
+        handler_(create_handler(alloc,
+            std::allocator_arg, alloc, buffer_size, *sq_, *dq_)),
+        ap_(alloc, in(detail::wrapper_handler<handler_t>(*handler_)))
     {
         sq_->push_back(primitive_text_pull_state::before_parse);
     }
 
-    primitive_text_pull(primitive_text_pull&& other)
-        noexcept(std::is_nothrow_move_constructible<parser_t>::value) :
+    primitive_text_pull(primitive_text_pull&& other) noexcept :
         sq_(other.sq_), i_sq_(other.i_sq_),
         dq_(other.dq_), i_dq_(other.i_dq_),
+        handler_(other.handler_),
         ap_(std::move(other.ap_))
     {
         other.sq_ = nullptr;
         other.dq_ = nullptr;
+        other.handler_ = nullptr;
     }
 
     ~primitive_text_pull()
@@ -354,6 +359,9 @@ public:
         if (sq_) {
             destroy_queue(sq_);
             destroy_queue(dq_);
+        }
+        if (handler_) {
+            destroy_handler(handler_);
         }
     }
 
@@ -497,6 +505,22 @@ private:
         q_at_t::deallocate(a, p, 1);
     }
 
+    template <class... Args>
+    static auto create_handler(const Allocator& alloc, Args&&... args)
+    {
+        handler_a_t a(alloc);
+        const auto p = handler_at_t::allocate(a, 1);
+        ::new(std::addressof(*p)) handler_t(std::forward<Args>(args)...);
+        return p;
+    }
+
+    void destroy_handler(const handler_p_t p)
+    {
+        p->~handler_t();
+        handler_a_t a(get_allocator());
+        handler_at_t::deallocate(a, p, 1);
+    }
+
     std::pair<std::size_t, std::size_t> get_physical_position_impl(
         std::true_type) const noexcept(
             noexcept(std::declval<const parser_t&>().get_physical_position()))
@@ -578,8 +602,7 @@ public:
         value_(alloc), value_expiring_(false), i_(0), j_(0)
     {}
 
-    text_pull(text_pull&& other)
-        noexcept(std::is_nothrow_move_constructible<decltype(p_)>::value) :
+    text_pull(text_pull&& other) noexcept :
         p_(std::move(other.p_)),
         empty_physical_line_aware_(other.empty_physical_line_aware_),
         suppresses_error_(other.suppresses_error_),

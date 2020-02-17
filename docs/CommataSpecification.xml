@@ -4653,7 +4653,7 @@ namespace commata {
                                  std::size_t buffer_size = 0);
     primitive_text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSource in,
                         std::size_t buffer_size = 0);
-    primitive_text_pull(primitive_text_pull&amp;&amp; other) noexcept(<nc>see below</nc>);
+    primitive_text_pull(primitive_text_pull&amp;&amp; other) noexcept;
    ~primitive_text_pull();
 
     <c>// <n><xref id="primitive_text_pull.allocator"/>, allocator access:</n></c>
@@ -4730,11 +4730,9 @@ primitive_text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSource
 
         <code-item>
           <code>
-primitive_text_pull(primitive_text_pull&amp;&amp; other) noexcept(<nc>see below</nc>);
+primitive_text_pull(primitive_text_pull&amp;&amp; other) noexcept;
           </code>
           <effects>Initializes an object of <c>primitive_text_pull</c> that takes over all the internal state of <c>other</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;decltype(std::declval&lt;TextSource&amp;>()(std::declval&lt;H>()))>::value</c>
-                  where <c>H</c> is a certain text handler type that satisfies <c>std::is_nothrow_move_constructible&lt;H>::value</c>.</remark>
         </code-item>
       </section>
 
@@ -4933,7 +4931,7 @@ namespace commata {
     explicit text_pull(TextSource in, std::size_t buffer_size = 0);
     text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSource in,
               std::size_t buffer_size = 0);
-    text_pull(text_pull&amp;&amp; other) noexcept(<nc>see below</nc>);
+    text_pull(text_pull&amp;&amp; other) noexcept;
    ~text_pull();
 
     <c>// <n><xref id="text_pull.allocator"/>, allocator access:</n></c>
@@ -5018,11 +5016,9 @@ text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSource in,
 
         <code-item>
           <code>
-text_pull(text_pull&amp;&amp; other) noexcept(<nc>see below</nc>);
+text_pull(text_pull&amp;&amp; other) noexcept;
           </code>
           <effects>Initializes an object of <c>text_pull</c> that takes over all the internal state of <c>other</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;decltype(std::declval&lt;TextSource&amp;>()(std::declval&lt;H>()))>::value</c>
-                  where <c>H</c> is a certain text handler type that satisfies <c>std::is_nothrow_move_constructible&lt;H>::value</c>.</remark>
         </code-item>
       </section>
 
