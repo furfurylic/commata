@@ -995,15 +995,13 @@ public:
     }
 
     void consume_buffer(Ch* p, std::size_t size)
-    {
-        try {
-            buffers_cleared_ = hello(p, size, buffers_cleared_);    // throw
-            if (!buffers_cleared_back_) {
-                buffers_cleared_back_ = buffers_cleared_;
-            }
-        } catch (...) {
-            at_t::deallocate(this->get(), pt_t::pointer_to(*p), size);
+    try {
+        buffers_cleared_ = hello(p, size, buffers_cleared_);        // throw
+        if (!buffers_cleared_back_) {
+            buffers_cleared_back_ = buffers_cleared_;
         }
+    } catch (...) {
+        at_t::deallocate(this->get(), pt_t::pointer_to(*p), size);
     }
 
 private:
