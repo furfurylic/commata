@@ -3599,8 +3599,8 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The struct <c>fail_if_skipped</c> is a type that meets the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>).
-           An object of them makes the parsing process fail when the corresponding field is not found in a record.</p>
+        <p>The struct <c>fail_if_skipped</c> is a type that meets the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for any target types.
+           An object of it makes the parsing process fail when the corresponding field is not found in a record.</p>
 
         <code-item>
           <code>
@@ -3629,10 +3629,10 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The class template <c>replace_if_skipped</c> offers types that meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>).
+        <p>The class template <c>replace_if_skipped</c> offers types that meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) whose target type is the template parameter <c>T</c>.
            An object of them supplements the corresponding field that is not found in a record with a fixed value.</p>
         <p><c>T</c> shall be <c>CopyConstructible</c>.</p>
-        <p>An object of <c>replace_if_skipped</c> has a <n>replacement action</n>.
+        <p>An object of an instance of <c>replace_if_skipped</c> has a <n>replacement action</n>.
            A replacement action can be configured to be either of the three types illustrated in <xref id="table.replace_if_skipped.replacement_actions"/>.</p>
 
         <table id="table.replace_if_skipped.replacement_actions">
@@ -3758,7 +3758,8 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The struct <c>fail_if_conversion_failed</c> is a type that meets the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>). An object of them makes the parsing process fail on any conversion errors.</p>
+        <p>The struct <c>fail_if_conversion_failed</c> is a type that meets the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for any target types.
+           An object of it makes the parsing process fail on any conversion errors.</p>
 
         <code-item>
           <code>
@@ -3809,10 +3810,10 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The class template <c>replace_if_conversion_failed</c> offers types that meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>).
+        <p>The class template <c>replace_if_conversion_failed</c> offers types that meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) whose target type is the template parameter <c>T</c>.
            On a conversion error, an object of them can make the parsing process fail or offer a substitution of the field value, depending on the category of the error.</p>
         <p><c>T</c> shall be <c>CopyConstructible</c>.</p>
-        <p>An object of <c>replace_if_conversion_failed</c> has five replacement actions similarly to an object of <c>replace_if_skipped</c> (<xref id="replace_if_skipped"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
+        <p>An object of an instance of <c>replace_if_conversion_failed</c> has five replacement actions similarly to an object of <c>replace_if_skipped</c> (<xref id="replace_if_skipped"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
            Each of these replacement actions can be configured to be either of the three types illustrated in <xref id="table.replace_if_skipped.replacement_actions"/> independently on one object of <c>replace_if_conversion_failed</c>.</p>
 
         <code-item>
@@ -4037,7 +4038,7 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>).</p>
+        <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
         <p><c>T</c> is the target type (<xref id="scanner.builtin_body_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, <c>double</c>, or <c>long double</c>.
            <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
            The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
@@ -4232,7 +4233,7 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
+        <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) whose target type is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
           The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C-language locale.</p>
         <p><c>T</c> is the target type (<xref id="scanner.builtin_body_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, or <c>double</c>.
           <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
@@ -4343,7 +4344,7 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>).
+        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) whose target type is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.
           Its target type (<xref id="scanner.builtin_body_field_scanners.general"/>) is <c>std::basic_string&lt;Ch, Tr, Alloc></c>.</p>
         <p><c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for <c>std::basic_string&lt;Ch, Tr, Alloc></c> (<xref id="field_translator_sink.requirements"/>).
           The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>std::basic_string&lt;Ch, Tr, Alloc></c> (<xref id="skipping_handler.requirements"/>).</p>
