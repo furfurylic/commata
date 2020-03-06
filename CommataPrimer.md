@@ -293,8 +293,9 @@ void one_pass_scanning_sample3()
      table_scanner& scanner) mutable {
       if (field_value) {
         // The value of field_index-th (zero-based) header field is notified,
-        // whose value is [field_value.first, field_value.end), and
-        // field_value.end is dereferenceable and points the terminating zero
+        // whose value is [field_value.first, field_value.second), and
+        // field_value.second is dereferenceable and points the terminating
+        // zero
         if (std::strcmp(field_value->first, "Name") == 0) {
           scanner.set_field_scanner(
             field_index, make_field_translator(names));
