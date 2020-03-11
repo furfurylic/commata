@@ -5013,6 +5013,7 @@ namespace commata {
     const_pointer c_str() const noexcept;
     const_pointer data()  const noexcept;
     size_type size() const noexcept;
+    size_type max_size() const noexcept;
     bool empty() const noexcept;
 
     template &lt;class OtherTr = std::char_traits&lt;char_type>,
@@ -5375,6 +5376,13 @@ const_pointer data()  const noexcept;
 size_type size() const noexcept;
           </code>
           <returns><c>cend() - cbegin()</c>.</returns>
+        </code-item>
+
+        <code-item>
+          <code>
+size_type max_size() const noexcept;
+          </code>
+          <returns>The largest possible number that the member function <c>size</c> returns.</returns>
         </code-item>
 
         <code-item>

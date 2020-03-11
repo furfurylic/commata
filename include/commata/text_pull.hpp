@@ -12,6 +12,7 @@
 #include <exception>
 #include <iosfwd>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <streambuf>
@@ -1013,6 +1014,11 @@ public:
     size_type size() const noexcept
     {
         return cend() - cbegin();
+    }
+
+    size_type max_size() const noexcept
+    {
+        return std::numeric_limits<size_type>::max();
     }
 
     template <class OtherTr = std::char_traits<char_type>,
