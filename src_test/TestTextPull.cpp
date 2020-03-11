@@ -36,6 +36,7 @@ TYPED_TEST_P(TestTextPull, PrimitiveBasics)
     auto source = make_csv_source(&buf);
     primitive_text_pull<decltype(source)> pull(
         std::move(source), TypeParam::second_type::value);
+    ASSERT_EQ(2, pull.max_data_size());
     std::basic_string<char_t> s;
     bool in_value = false;
     while (pull()) {

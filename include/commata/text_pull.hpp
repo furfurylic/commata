@@ -517,6 +517,18 @@ public:
         return handler_? handler_->state_queue()[i_sq_].second : 0;
     }
 
+    size_type max_data_size() const noexcept
+    {
+        return ((Handle & (primitive_text_pull_handle_start_buffer
+                         | primitive_text_pull_handle_update
+                         | primitive_text_pull_handle_finalize)) != 0) ?  2 :
+               ((Handle & (primitive_text_pull_handle_end_buffer
+                         | primitive_text_pull_handle_empty_physical_line
+                         | primitive_text_pull_handle_start_record
+                         | primitive_text_pull_handle_end_record)) != 0) ? 1 :
+               0;
+    }
+
     std::pair<std::size_t, std::size_t> get_physical_position() const
         noexcept((!detail::has_get_physical_position<parser_t>::value)
               || noexcept(std::declval<const parser_t&>()

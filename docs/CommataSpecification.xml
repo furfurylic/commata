@@ -4676,6 +4676,7 @@ namespace commata {
     char_type*       operator[](size_type i);
     const char_type* operator[](size_type i) const;
     size_type data_size() const noexcept;
+    size_type max_data_size() const noexcept;
   };
 }
       </codeblock>
@@ -4933,6 +4934,13 @@ const char_type* operator[](size_type i) const;
 size_type data_size() const noexcept;
           </code>
           <returns>An integer value smaller by one than the maximum value that can be passed to <c>operator[]</c>.</returns>
+        </code-item>
+
+        <code-item>
+          <code>
+size_type max_data_size() const noexcept;
+          </code>
+          <returns>The largest possible number that the member function <c>data_size</c> returns.</returns>
         </code-item>
       </section>
     </section>
