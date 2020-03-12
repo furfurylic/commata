@@ -388,6 +388,30 @@ TYPED_TEST(TestStoredValueNoModification, Swap)
     ASSERT_EQ(b2, v2.cbegin());
 }
 
+TYPED_TEST(TestStoredValueNoModification, Plus)
+{
+    using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using value_t = basic_stored_value<char_t>;
+
+    const auto str = char_helper<decayed_char_t>::str;
+
+    auto s1 = str("abc");
+    auto s2 = str("xyz");
+    auto s3 = str("012");
+    auto s4 = str("789");
+
+    ASSERT_EQ(str("abcxyz"), s1 + value_t(&s2[0], &s2[0] + s2.size()));
+    ASSERT_EQ(str("abcxyz"), value_t(&s1[0], &s1[0] + s1.size()) + s2);
+
+    ASSERT_EQ(str("abcxyz"),
+        std::move(s1) + value_t(&s2[0], &s2[0] + s2.size()));
+    ASSERT_EQ(str("xyz012"),
+        value_t(&s2[0], &s2[0] + s2.size()) + std::move(s3));
+
+    ASSERT_EQ(str("xyz789"), s2 += value_t(&s4[0], &s4[0] + s4.size()));
+}
+
 TYPED_TEST(TestStoredValueNoModification, Write)
 {
     using namespace std;

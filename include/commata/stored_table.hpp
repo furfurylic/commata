@@ -701,6 +701,69 @@ auto operator>=(
     return !(left < right);
 }
 
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator+(
+    const basic_stored_value<ChC, Tr>& left,
+    const std::basic_string<Ch, Tr, Allocator>& right)
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value,
+                     std::basic_string<Ch, Tr, Allocator>>
+{
+    std::basic_string<Ch, Tr, Allocator> s;
+    s.reserve(left.size() + right.size());  // throw
+    s.append(left.cbegin(), left.cend()).append(right.cbegin(), right.cend());
+    return s;
+}
+
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator+(
+    const basic_stored_value<ChC, Tr>& left,
+    std::basic_string<Ch, Tr, Allocator>&& right)
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value,
+                     std::basic_string<Ch, Tr, Allocator>>
+{
+    right.reserve(left.size() + right.size());  // throw
+    // gcc 6.3 dislikes the first argument to be 'right.cbegin()'
+    right.insert(right.begin(), left.cbegin(), left.cend()); 
+    return std::move(right);
+}
+
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator+(
+    const std::basic_string<Ch, Tr, Allocator>& left,
+    const basic_stored_value<ChC, Tr>& right)
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value,
+                     std::basic_string<Ch, Tr, Allocator>>
+{
+    std::basic_string<Ch, Tr, Allocator> s;
+    s.reserve(left.size() + right.size());  // throw
+    s.append(left.cbegin(), left.cend()).append(right.cbegin(), right.cend());
+    return s;
+}
+
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator+(
+    std::basic_string<Ch, Tr, Allocator>&& left,
+    const basic_stored_value<ChC, Tr>& right)
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value,
+                     std::basic_string<Ch, Tr, Allocator>>
+{
+    left.reserve(left.size() + right.size());   // throw
+    left.append(right.cbegin(), right.cend());
+    return std::move(left);
+}
+
+template <class Ch, class ChC, class Tr, class Allocator>
+auto operator+=(
+    std::basic_string<Ch, Tr, Allocator>& left,
+    const basic_stored_value<ChC, Tr>& right)
+ -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value,
+                     std::basic_string<Ch, Tr, Allocator>&>
+{
+    left.reserve(left.size() + right.size());   // throw
+    left.append(right.cbegin(), right.cend());
+    return left;
+}
+
 template <class Ch, class ChC, class Tr>
 auto operator<<(
     std::basic_ostream<Ch, Tr>& os, const basic_stored_value<ChC, Tr>& o)
