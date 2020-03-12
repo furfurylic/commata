@@ -367,7 +367,7 @@ TYPED_TEST(TestStoredValueNoModification, Swap)
 {
     using char_t = TypeParam;
     using decayed_char_t = std::remove_const_t<char_t>;
-    using value_t = basic_stored_value<decayed_char_t>;
+    using value_t = basic_stored_value<char_t>;
 
     const auto str0 = char_helper<decayed_char_t>::str0;
 
