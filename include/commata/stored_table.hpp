@@ -21,6 +21,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -208,6 +209,14 @@ public:
         return begin_;
     }
 
+    template <class OtherTr = std::char_traits<std::remove_const_t<Ch>>>
+    operator std::basic_string_view<std::remove_const_t<Ch>, Tr>() const
+        noexcept
+    {
+        return std::basic_string_view<std::remove_const_t<Ch>, OtherTr>(
+            cbegin(), size());
+    }
+
     template <class OtherTr = std::char_traits<std::remove_const_t<Ch>>,
         class Allocator = std::allocator<std::remove_const_t<Ch>>>
     explicit operator
@@ -338,6 +347,15 @@ private:
 template <class Ch, class Tr>
 constexpr typename basic_stored_value<Ch, Tr>::size_type
     basic_stored_value<Ch, Tr>::npos;
+
+template <class Ch, class Tr>
+std::basic_string_view<std::remove_const_t<Ch>,
+        std::char_traits<std::remove_const_t<Ch>>>
+    to_string_view(const basic_stored_value<Ch, Tr>& v) noexcept
+{
+    return std::basic_string_view<std::remove_const_t<Ch>,
+            std::char_traits<std::remove_const_t<Ch>>>(v.data(), v.size());
+}
 
 template <class Ch, class Tr,
     class Allocator = std::allocator<std::remove_const_t<Ch>>>
