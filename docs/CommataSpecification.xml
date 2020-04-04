@@ -4639,6 +4639,38 @@ namespace commata {
                  const text_pull&lt;TextSource, Allocator>&amp; o);
 
   <c>// <n><xref id="text_pull.conversion"/>, text_pull conversion:</n></c>
+  template &lt;class TextSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TextSource::char_type,
+                      typename TextSource::traits_type, OtherAllocator>
+      operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
+                const std::basic_string&lt;typename TextSource::char_type,
+                                        typename TextSource::traits_type, OtherAllocator>&amp; right);
+  template &lt;class TextSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TextSource::char_type,
+                      typename TextSource::traits_type, OtherAllocator>
+      operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
+                std::basic_string&lt;typename TextSource::char_type,
+                                  typename TextSource::traits_type, OtherAllocator>&amp;&amp; right);
+  template &lt;class TextSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TextSource::char_type,
+                      typename TextSource::traits_type, OtherAllocator>
+      operator+(const std::basic_string&lt;typename TextSource::char_type,
+                                        typename TextSource::traits_type, OtherAllocator>&amp; left,
+                const text_pull&lt;TextSource, Allocator>&amp; right);
+  template &lt;class TextSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TextSource::char_type,
+                      typename TextSource::traits_type, OtherAllocator>
+      operator+(std::basic_string&lt;typename TextSource::char_type,
+                                  typename TextSource::traits_type, OtherAllocator>&amp;&amp; left,
+                const text_pull&lt;TextSource, Allocator>&amp; right);
+
+  template &lt;class TextSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TextSource::char_type,
+                      typename TextSource::traits_type, OtherAllocator>&amp;
+      operator+=(std::basic_string&lt;typename TextSource::char_type,
+                                   typename TextSource::traits_type, OtherAllocator>&amp; left,
+                const text_pull&lt;TextSource, Allocator>&amp; right);
+
   template &lt;class TextSource, class Allocator,
             class OtherAllocator = std::allocator&lt;typename TextSource::char_type>>
     std::basic_string&lt;typename TextSource::char_type,
@@ -5625,6 +5657,51 @@ template &lt;class Tr, class TextSource, class Allocator>
 
       <section id="text_pull.conversion">
         <name><c>text_pull</c> conversion</name>
+
+        <code-item>
+          <code>
+template &lt;class TextSource, class Allocator, class OtherAllocator>
+  std::basic_string&lt;typename TextSource::char_type,
+                    typename TextSource::traits_type, OtherAllocator>
+    operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
+              const std::basic_string&lt;typename TextSource::char_type,
+                                      typename TextSource::traits_type, OtherAllocator>&amp; right);
+template &lt;class TextSource, class Allocator, class OtherAllocator>
+  std::basic_string&lt;typename TextSource::char_type,
+                    typename TextSource::traits_type, OtherAllocator>
+    operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
+              std::basic_string&lt;typename TextSource::char_type,
+                                typename TextSource::traits_type, OtherAllocator>&amp;&amp; right);
+template &lt;class TextSource, class Allocator, class OtherAllocator>
+  std::basic_string&lt;typename TextSource::char_type,
+                    typename TextSource::traits_type, OtherAllocator>
+    operator+(const std::basic_string&lt;typename TextSource::char_type,
+                                      typename TextSource::traits_type, OtherAllocator>&amp; left,
+              const text_pull&lt;TextSource, Allocator>&amp; right);
+template &lt;class TextSource, class Allocator, class OtherAllocator>
+  std::basic_string&lt;typename TextSource::char_type,
+                    typename TextSource::traits_type, OtherAllocator>
+    operator+(std::basic_string&lt;typename TextSource::char_type,
+                                typename TextSource::traits_type, OtherAllocator>&amp;&amp; left,
+              const text_pull&lt;TextSource, Allocator>&amp; right);
+          </code>
+          <returns>A string object whose content is [<c>l.cbegin()</c>, <c>l.cend()</c>) and [<c>r.cbegin()</c>, <c>r.cend()</c>) concatenated
+                    where <c>l</c> and <c>r</c> are the values of <c>left</c> and <c>right</c> before the call respectively.</returns>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class TextSource, class Allocator, class OtherAllocator>
+  std::basic_string&lt;typename TextSource::char_type,
+                    typename TextSource::traits_type, OtherAllocator>&amp;
+    operator+=(std::basic_string&lt;typename TextSource::char_type,
+                                  typename TextSource::traits_type, OtherAllocator>&amp; left,
+              const text_pull&lt;TextSource, Allocator>&amp; right);
+          </code>
+          <effects>Calls <c>left.append(right.cbegin(), right.cend())</c>.</effects>
+          <returns><c>left</c>.</returns>
+        </code-item>
+
         <code-item>
           <code>
 template &lt;class TextSource, class Allocator,

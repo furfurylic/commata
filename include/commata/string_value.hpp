@@ -121,6 +121,59 @@ bool string_value_lt(
     return false;   // at least left == right
 }
 
+template <class T, class Ch, class Tr, class Allocator>
+std::basic_string<Ch, Tr, Allocator> string_value_plus(
+    const T& left,
+    const std::basic_string<Ch, Tr, Allocator>& right)
+{
+    std::basic_string<Ch, Tr, Allocator> s;
+    s.reserve(left.size() + right.size());  // throw
+    s.append(left.cbegin(), left.cend()).append(right.cbegin(), right.cend());
+    return s;
+}
+
+template <class T, class Ch, class Tr, class Allocator>
+std::basic_string<Ch, Tr, Allocator> string_value_plus(
+    const T& left,
+    std::basic_string<Ch, Tr, Allocator>&& right)
+{
+    right.reserve(left.size() + right.size());  // throw
+    // gcc 6.3 dislikes the first argument to be 'right.cbegin()'
+    right.insert(right.begin(), left.cbegin(), left.cend()); 
+    return std::move(right);
+}
+
+template <class T, class Ch, class Tr, class Allocator>
+std::basic_string<Ch, Tr, Allocator> string_value_plus(
+    const std::basic_string<Ch, Tr, Allocator>& left,
+    const T& right)
+{
+    std::basic_string<Ch, Tr, Allocator> s;
+    s.reserve(left.size() + right.size());  // throw
+    s.append(left.cbegin(), left.cend()).append(right.cbegin(), right.cend());
+    return s;
+}
+
+template <class T, class Ch, class Tr, class Allocator>
+std::basic_string<Ch, Tr, Allocator> string_value_plus(
+    std::basic_string<Ch, Tr, Allocator>&& left,
+    const T& right)
+{
+    left.reserve(left.size() + right.size());   // throw
+    left.append(right.cbegin(), right.cend());
+    return std::move(left);
+}
+
+template <class T, class Ch, class Tr, class Allocator>
+std::basic_string<Ch, Tr, Allocator>& string_value_plus_assign(
+    std::basic_string<Ch, Tr, Allocator>& left,
+    const T& right)
+{
+    left.reserve(left.size() + right.size());   // throw
+    left.append(right.cbegin(), right.cend());
+    return left;
+}
+
 }}
 
 #endif

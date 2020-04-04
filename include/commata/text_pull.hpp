@@ -1290,6 +1290,56 @@ auto operator>=(
     return !(left < right);
 }
 
+template <class TextSource, class Allocator, class OtherAllocator>
+auto operator+(
+    const text_pull<TextSource, Allocator>& left,
+    const std::basic_string<typename TextSource::char_type,
+        typename TextSource::traits_type, OtherAllocator>& right)
+ -> std::decay_t<decltype(right)>
+{
+    return detail::string_value_plus(left, right);
+}
+
+template <class TextSource, class Allocator, class OtherAllocator>
+auto operator+(
+    const text_pull<TextSource, Allocator>& left,
+    std::basic_string<typename TextSource::char_type,
+        typename TextSource::traits_type, OtherAllocator>&& right)
+ -> std::decay_t<decltype(right)>
+{
+    return detail::string_value_plus(left, std::move(right));
+}
+
+template <class TextSource, class Allocator, class OtherAllocator>
+auto operator+(
+    const std::basic_string<typename TextSource::char_type,
+        typename TextSource::traits_type, OtherAllocator>& left,
+    const text_pull<TextSource, Allocator>& right)
+ -> std::decay_t<decltype(left)>
+{
+    return detail::string_value_plus(left, right);
+}
+
+template <class TextSource, class Allocator, class OtherAllocator>
+auto operator+(
+    std::basic_string<typename TextSource::char_type,
+        typename TextSource::traits_type, OtherAllocator>&& left,
+    const text_pull<TextSource, Allocator>& right)
+ -> std::decay_t<decltype(left)>
+{
+    return detail::string_value_plus(std::move(left), right);
+}
+
+template <class TextSource, class Allocator, class OtherAllocator>
+auto operator+=(
+    std::basic_string<typename TextSource::char_type,
+        typename TextSource::traits_type, OtherAllocator>& left,
+    const text_pull<TextSource, Allocator>& right)
+ -> decltype(left)
+{
+    return detail::string_value_plus_assign(left, right);
+}
+
 template <class Tr, class TextSource, class Allocator>
 std::basic_ostream<typename TextSource::char_type, Tr>& operator<<(
     std::basic_ostream<typename TextSource::char_type, Tr>& os,

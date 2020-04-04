@@ -480,9 +480,34 @@ TYPED_TEST_P(TestTextPull, Relations)
     }
 }
 
+TYPED_TEST_P(TestTextPull, Plus)
+{
+    using char_t = typename TypeParam::first_type;
+    using string_t = std::basic_string<char_t>;
+    using stream_t = std::basic_stringstream<char_t>;
+
+    const auto str = char_helper<char_t>::str;
+
+    stream_t in(str("XYZ"));
+    auto pull = make_text_pull(make_csv_source(in),
+        TypeParam::second_type::value);
+    pull();
+
+    string_t s1 = str("xyz");
+
+    ASSERT_EQ(str("xyzXYZ"), s1 + pull);
+    ASSERT_EQ(str("XYZxyz"), pull + s1);
+
+    ASSERT_EQ(str("xyzXYZ"), std::move(s1) + pull);
+    ASSERT_EQ(str("XYZ123"), pull + str("123"));
+
+    string_t s2 = str("abc");
+    ASSERT_EQ(str("abcXYZ"), s2 += pull);
+}
+
 REGISTER_TYPED_TEST_SUITE_P(TestTextPull,
     PrimitiveBasics, PrimitiveMove,
-    Basics, SkipRecord, SkipField, SuppressedError, Relations);
+    Basics, SkipRecord, SkipField, SuppressedError, Relations, Plus);
 
 typedef testing::Types<
     std::pair<char, std::integral_constant<std::size_t, 2>>,

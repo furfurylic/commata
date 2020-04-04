@@ -556,10 +556,7 @@ auto operator+(
     const std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>& right)
  -> std::decay_t<decltype(right)>
 {
-    std::basic_string<std::remove_const_t<ChC>, Tr, Allocator> s;
-    s.reserve(left.size() + right.size());  // throw
-    s.append(left.cbegin(), left.cend()).append(right.cbegin(), right.cend());
-    return s;
+    return detail::string_value_plus(left, right);
 }
 
 template <class ChC, class Tr, class Allocator>
@@ -568,10 +565,7 @@ auto operator+(
     std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>&& right)
  -> std::decay_t<decltype(right)>
 {
-    right.reserve(left.size() + right.size());  // throw
-    // gcc 6.3 dislikes the first argument to be 'right.cbegin()'
-    right.insert(right.begin(), left.cbegin(), left.cend()); 
-    return std::move(right);
+    return detail::string_value_plus(left, std::move(right));
 }
 
 template <class ChC, class Tr, class Allocator>
@@ -580,10 +574,7 @@ auto operator+(
     const basic_stored_value<ChC, Tr>& right)
  -> std::decay_t<decltype(left)>
 {
-    std::basic_string<std::remove_const_t<ChC>, Tr, Allocator> s;
-    s.reserve(left.size() + right.size());  // throw
-    s.append(left.cbegin(), left.cend()).append(right.cbegin(), right.cend());
-    return s;
+    return detail::string_value_plus(left, right);
 }
 
 template <class ChC, class Tr, class Allocator>
@@ -592,9 +583,7 @@ auto operator+(
     const basic_stored_value<ChC, Tr>& right)
  -> std::decay_t<decltype(left)>
 {
-    left.reserve(left.size() + right.size());   // throw
-    left.append(right.cbegin(), right.cend());
-    return std::move(left);
+    return detail::string_value_plus(std::move(left), right);
 }
 
 template <class ChC, class Tr, class Allocator>
@@ -603,9 +592,7 @@ auto operator+=(
     const basic_stored_value<ChC, Tr>& right)
  -> decltype(left)
 {
-    left.reserve(left.size() + right.size());   // throw
-    left.append(right.cbegin(), right.cend());
-    return left;
+    return detail::string_value_plus_assign(left, right);
 }
 
 template <class Ch, class ChC, class Tr>
