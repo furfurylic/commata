@@ -30,6 +30,7 @@
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
 #include "propagation_controlled_allocator.hpp"
+#include "string_value.hpp"
 
 namespace commata {
 
@@ -357,133 +358,6 @@ void swap(
     return left.swap(right);
 }
 
-namespace detail {
-
-template <class Left, class Right>
-bool stored_value_eq(const Left& left, const Right& right) noexcept
-{
-    static_assert(std::is_same<typename Left::traits_type,
-                               typename Right::traits_type>::value, "");
-    using tr_t = typename Left::traits_type;
-    return (left.size() == right.size())
-        && (tr_t::compare(left.data(), right.data(), left.size()) == 0);
-}
-
-template <class Left, class Right>
-bool stored_value_lt(const Left& left, const Right& right) noexcept
-{
-    static_assert(std::is_same<typename Left::traits_type,
-                               typename Right::traits_type>::value, "");
-    using tr_t = typename Left::traits_type;
-    if (left.size() < right.size()) {
-        return tr_t::compare(left.data(), right.data(), left.size()) <= 0;
-    } else {
-        return tr_t::compare(left.data(), right.data(), right.size()) < 0;
-    }
-}
-
-template <class Ch, class Tr, class T>
-struct is_comparable_with_basic_stored_value :
-    std::integral_constant<bool,
-        std::is_convertible<T, const Ch*>::value
-     || detail::is_std_string_of2<T, Ch, Tr>::value>
-{};
-
-template <class Ch, class ChC, class Tr>
-bool basic_stored_value_equal(
-    const basic_stored_value<ChC, Tr>& left,
-    const Ch* right) noexcept
-{
-    // If left is "abc\0def" and right is "abc" followed by '\0'
-    // then left == right shall be false
-    // and any overrun on right must not occur
-    auto i = left.cbegin();
-    while (!Tr::eq(*right, Ch())) {
-        if (!Tr::eq(*i, *right)) {
-            return false;
-        }
-        ++i;
-        ++right;
-    }
-    return i == left.cend();
-}
-
-template <class Ch, class ChC, class Tr, class Allocator>
-bool basic_stored_value_equal(
-    const basic_stored_value<ChC, Tr>& left,
-    const std::basic_string<Ch, Tr, Allocator>& right) noexcept
-{
-    return detail::stored_value_eq(left, right);
-}
-
-template <class Ch, class ChC, class Tr>
-bool basic_stored_value_equal(
-    const Ch* left,
-    const basic_stored_value<ChC, Tr>& right) noexcept
-{
-    return basic_stored_value_equal(right, left);
-}
-
-template <class Ch, class ChC, class Tr, class Allocator>
-bool basic_stored_value_equal(
-    const std::basic_string<Ch, Tr, Allocator>& left,
-    const basic_stored_value<ChC, Tr>& right) noexcept
-{
-    return basic_stored_value_equal(right, left);
-}
-
-template <class Ch, class ChC, class Tr>
-bool basic_stored_value_less(
-    const basic_stored_value<ChC, Tr>& left,
-    const Ch* right) noexcept
-{
-    for (auto l : left) {
-        const auto r = *right;
-        if (Tr::eq(r, Ch()) || Tr::lt(r, l)) {
-            return false;
-        } else if (Tr::lt(l, r)) {
-            return true;
-        }
-        ++right;
-    }
-    return !Tr::eq(*right, Ch());
-}
-
-template <class Ch, class ChC, class Tr, class Allocator>
-bool basic_stored_value_less(
-    const basic_stored_value<ChC, Tr>& left,
-    const std::basic_string<Ch, Tr, Allocator>& right) noexcept
-{
-    return detail::stored_value_lt(left, right);
-}
-
-template <class Ch, class ChC, class Tr>
-bool basic_stored_value_less(
-    const Ch* left,
-    const basic_stored_value<ChC, Tr>& right) noexcept
-{
-    for (auto r : right) {
-        const auto l = *left;
-        if (Tr::eq(l, Ch()) || Tr::lt(l, r)) {
-            return true;
-        } else if (Tr::lt(r, l)) {
-            return false;
-        }
-        ++left;
-    }
-    return false;   // at least left == right
-}
-
-template <class Ch, class ChC, class Tr, class Allocator>
-bool basic_stored_value_less(
-    const std::basic_string<Ch, Tr, Allocator>& left,
-    const basic_stored_value<ChC, Tr>& right) noexcept
-{
-    return detail::stored_value_lt(left, right);
-}
-
-} // end namespace detail
-
 template <class ChL, class ChR, class Tr>
 auto operator==(
     const basic_stored_value<ChL, Tr>& left,
@@ -493,27 +367,27 @@ auto operator==(
             std::remove_const_t<ChL>,
             std::remove_const_t<ChR>>::value, bool>
 {
-    return detail::stored_value_eq(left, right);
+    return detail::string_value_eq(left, right);
 }
 
 template <class ChC, class Tr, class Right>
 auto operator==(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
-    return detail::basic_stored_value_equal(left, right);
+    return detail::string_value_eq(left, right);
 }
 
 template <class ChC, class Tr, class Left>
 auto operator==(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {
-    return detail::basic_stored_value_equal(left, right);
+    return detail::string_value_eq(left, right);
 }
 
 template <class ChL, class ChR, class Tr>
@@ -532,7 +406,7 @@ template <class ChC, class Tr, class Right>
 auto operator!=(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
     return !(left == right);
@@ -542,7 +416,7 @@ template <class ChC, class Tr, class Left>
 auto operator!=(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {
     return !(left == right);
@@ -557,27 +431,27 @@ auto operator<(
             std::remove_const_t<ChL>,
             std::remove_const_t<ChR>>::value, bool>
 {
-    return detail::stored_value_lt(left, right);
+    return detail::string_value_lt(left, right);
 }
 
 template <class ChC, class Tr, class Right>
 auto operator<(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
-    return detail::basic_stored_value_less(left, right);
+    return detail::string_value_lt(left, right);
 }
 
 template <class ChC, class Tr, class Left>
 auto operator<(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {
-    return detail::basic_stored_value_less(left, right);
+    return detail::string_value_lt(left, right);
 }
 
 template <class ChL, class ChR, class Tr>
@@ -596,7 +470,7 @@ template <class ChC, class Tr, class Right>
 auto operator>(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
     return right < left;
@@ -606,7 +480,7 @@ template <class ChC, class Tr, class Left>
 auto operator>(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {
     return right < left;
@@ -628,7 +502,7 @@ template <class ChC, class Tr, class Right>
 auto operator<=(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
     return !(right < left);
@@ -638,7 +512,7 @@ template <class ChC, class Tr, class Left>
 auto operator<=(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {
     return !(right < left);
@@ -660,7 +534,7 @@ template <class ChC, class Tr, class Right>
 auto operator>=(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
     return !(left < right);
@@ -670,7 +544,7 @@ template <class ChC, class Tr, class Left>
 auto operator>=(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right) noexcept
- -> std::enable_if_t<detail::is_comparable_with_basic_stored_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {
     return !(left < right);

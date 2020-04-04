@@ -33,16 +33,6 @@ struct is_std_string_of<std::basic_string<Ch, Args...>, Ch> :
     std::true_type
 {};
 
-template <class T, class Ch, class Tr>
-struct is_std_string_of2 :
-    std::false_type
-{};
-
-template <class Ch, class Tr, class... Args>
-struct is_std_string_of2<std::basic_string<Ch, Tr, Args...>, Ch, Tr> :
-    std::true_type
-{};
-
 template <class W>
 struct is_std_reference_wrapper : std::false_type
 {};

@@ -37,6 +37,7 @@ set(COMMATA_HEADERS
     ../include/commata/propagation_controlled_allocator.hpp
     ../include/commata/record_extractor.hpp
     ../include/commata/stored_table.hpp
+    ../include/commata/string_value.hpp
     ../include/commata/table_scanner.hpp
     ../include/commata/text_error.hpp
     ../include/commata/text_pull.hpp
