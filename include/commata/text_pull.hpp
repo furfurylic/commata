@@ -1340,10 +1340,12 @@ auto operator+=(
     return detail::string_value_plus_assign(left, right);
 }
 
-template <class Tr, class TextSource, class Allocator>
-std::basic_ostream<typename TextSource::char_type, Tr>& operator<<(
-    std::basic_ostream<typename TextSource::char_type, Tr>& os,
+template <class TextSource, class Allocator>
+auto operator<<(
+    std::basic_ostream<typename TextSource::char_type,
+                       typename TextSource::traits_type>& os,
     const text_pull<TextSource, Allocator>& p)
+ -> decltype(os)
 {
     // In C++17, this function will be able to be implemented in terms of
     // string_view's operator<<

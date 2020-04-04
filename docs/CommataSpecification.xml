@@ -4632,9 +4632,10 @@ namespace commata {
                     const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
 
   <c>// <n><xref id="text_pull.io"/>, <c>text_pull</c> inserters:</n></c>
-  template &lt;class Tr, class TextSource, class Allocator>
-    std::basic_ostream&lt;typename TextSource::char_type, Tr>&amp;
-      operator&lt;&lt;(std::basic_ostream&lt;typename TextSource::char_type, Tr>&amp; os,
+  template &lt;class TextSource, class Allocator>
+    std::basic_ostream&lt;typename TextSource::char_type, typename TextSource::traits_type>&amp;
+      operator&lt;&lt;(std::basic_ostream&lt;typename TextSource::char_type,
+                                    typename TextSource::traits_type>&amp; os,
                  const text_pull&lt;TextSource, Allocator>&amp; o);
 
   <c>// <n><xref id="text_pull.conversion"/>, text_pull conversion:</n></c>
@@ -5642,10 +5643,11 @@ template &lt;class TextSource, class Allocator, class Other>
         <name><c>text_pull</c> inserters</name>
         <code-item>
           <code>
-template &lt;class Tr, class TextSource, class Allocator>
-  std::basic_ostream&lt;typename TextSource::char_type, Tr>&amp;
-    operator&lt;&lt;(std::basic_ostream&lt;typename TextSource::char_type, Tr>&amp; os,
-               const text_pull&lt;TextSource, Allocator>&amp; o);
+template &lt;class TextSource, class Allocator>
+  std::basic_ostream&lt;typename TextSource::char_type, typename TextSource::traits_type>&amp;
+    operator&lt;&lt;(std::basic_ostream&lt;typename TextSource::char_type,
+                                  typename TextSource::traits_type>&amp; os,
+                const text_pull&lt;TextSource, Allocator>&amp; o);
           </code>
           <effects>Behaves as a formatted output function of <c>os</c>.
                    Forms a character sequence <c>seq</c>, initially consisting of the elements defined by the range [<c>o.cbegin()</c>, <c>o.cend()</c>).
