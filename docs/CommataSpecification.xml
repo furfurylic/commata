@@ -1375,9 +1375,9 @@ namespace commata {
                     const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept;
 
   <c>// <n><xref id="basic_stored_value.inserter"/>, basic_stored_value inserters:</n></c>
-  template &lt;class Ch, class ChC, class Tr>
-    std::basic_ostream&lt;Ch, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;Ch, Tr>&amp; os,
-                                           const basic_stored_value&lt;ChC, Tr>&amp; o);
+  template &lt;class ChC, class Tr>
+    std::basic_ostream&lt;std::remove_const_t&lt;ChC>, Tr>&amp; operator&lt;&lt;(
+      std::basic_ostream&lt;ChC, Tr>&amp; os, const basic_stored_value&lt;ChC, Tr>&amp; o);
 
   <c>// <n><xref id="basic_stored_value.conversion"/>, basic_stored_value conversion:</n></c>
   template &lt;class ChC, class Tr, class Allocator>
@@ -1952,15 +1952,14 @@ template &lt;class ChC, class Tr, class Other>
 
         <code-item>
           <code>
-template &lt;class Ch, class ChC, class Tr>
-  std::basic_ostream&lt;Ch, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;Ch, Tr>&amp; os,
-                                         const basic_stored_value&lt;ChC, Tr>&amp; o);
+template &lt;class ChC, class Tr>
+  std::basic_ostream&lt;std::remove_const_t&lt;ChC>, Tr>&amp; operator&lt;&lt;(
+    std::basic_ostream&lt;ChC, Tr>&amp; os, const basic_stored_value&lt;ChC, Tr>&amp; o);
           </code>
           <effects>Behaves as a formatted output function of <c>os</c>.
                     Forms a character sequence <c>seq</c>, initially consisting of the elements defined by the range [<c>o.cbegin()</c>, <c>o.cend()</c>).
                     Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c>, where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>; then calls <c>os.width(0)</c>.</effects>
           <returns><c>os</c>.</returns>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>std::remove_const_t&lt;ChC></c> are the same type.</remark>
         </code-item>
       </section>
 

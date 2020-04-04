@@ -595,12 +595,11 @@ auto operator+=(
     return detail::string_value_plus_assign(left, right);
 }
 
-template <class Ch, class ChC, class Tr>
+template <class ChC, class Tr>
 auto operator<<(
-    std::basic_ostream<Ch, Tr>& os, const basic_stored_value<ChC, Tr>& o)
- -> std::enable_if_t<
-        std::is_same<std::remove_const_t<ChC>, Ch>::value,
-        std::basic_ostream<Ch, Tr>&>
+    std::basic_ostream<std::remove_const_t<ChC>, Tr>& os,
+    const basic_stored_value<ChC, Tr>& o)
+ -> decltype(os)
 {
     // In C++17, this function will be able to be implemented in terms of
     // string_view's operator<<
