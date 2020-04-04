@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-03-13 (UTC)</signature>
+<signature>2020-04-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1410,27 +1410,27 @@ namespace commata {
     bool operator>=(const Ch*                                    left,
                     const basic_stored_value&lt;ChC, Tr>&amp;           right) noexcept;
 
-  template &lt;class Ch, class ChC, class Tr, class Allocator>
-    std::basic_string&lt;Ch, Tr, Allocator> operator+(
-      const basic_stored_value&lt;ChC, Tr>&amp;          left,
-      const std::basic_string&lt;Ch, Tr, Allocator>&amp; right);
-  template &lt;class Ch, class ChC, class Tr, class Allocator>
-    std::basic_string&lt;Ch, Tr, Allocator> operator+(
-      const basic_stored_value&lt;ChC, Tr>&amp;          left,
-      std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp;      right);
-  template &lt;class Ch, class ChC, class Tr, class Allocator>
-    std::basic_string&lt;Ch, Tr, Allocator> operator+(
-      const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-      const basic_stored_value&lt;ChC, Tr>&amp;          right);
-  template &lt;class Ch, class ChC, class Tr, class Allocator>
-    std::basic_string&lt;Ch, Tr, Allocator> operator+(
-      std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp;      left,
-      const basic_stored_value&lt;ChC, Tr>&amp;          right);
+  template &lt;class ChC, class Tr, class Allocator>
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+      const basic_stored_value&lt;ChC, Tr>&amp;                                left,
+      const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; right);
+  template &lt;class ChC, class Tr, class Allocator>
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+      const basic_stored_value&lt;ChC, Tr>&amp;                                left,
+      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      right);
+  template &lt;class ChC, class Tr, class Allocator>
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+      const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; left,
+      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
+  template &lt;class ChC, class Tr, class Allocator>
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      left,
+      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
 
-  template &lt;class Ch, class ChC, class Tr, class Allocator>
-    std::basic_string&lt;Ch, Tr, Allocator>&amp; operator+=(
-      std::basic_string&lt;Ch, Tr, Allocator>&amp;       left,
-      const basic_stored_value&lt;ChC, Tr>&amp;          right);
+  template &lt;class ChC, class Tr, class Allocator>
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; operator+=(
+      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;       left,
+      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
 
   template &lt;class Ch, class ChC, class Tr>
     std::basic_ostream&lt;Ch, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;Ch, Tr>&amp; os,
@@ -2028,22 +2028,22 @@ template &lt;class Ch, class ChC, class Tr>
           <name><c>operator+</c></name>
           <code-item>
             <code>
-template &lt;class Ch, class ChC, class Tr, class Allocator>
-  std::basic_string&lt;Ch, Tr, Allocator> operator+(
-    const basic_stored_value&lt;ChC, Tr>&amp;          left,
-    const std::basic_string&lt;Ch, Tr, Allocator>&amp; right);
-template &lt;class Ch, class ChC, class Tr, class Allocator>
-  std::basic_string&lt;Ch, Tr, Allocator> operator+(
-    const basic_stored_value&lt;ChC, Tr>&amp;          left,
-    std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp;      right);
-template &lt;class Ch, class ChC, class Tr, class Allocator>
-  std::basic_string&lt;Ch, Tr, Allocator> operator+(
-    const std::basic_string&lt;Ch, Tr, Allocator>&amp; left,
-    const basic_stored_value&lt;ChC, Tr>&amp;          right);
-template &lt;class Ch, class ChC, class Tr, class Allocator>
-  std::basic_string&lt;Ch, Tr, Allocator> operator+(
-    std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp;      left,
-    const basic_stored_value&lt;ChC, Tr>&amp;          right);
+template &lt;class ChC, class Tr, class Allocator>
+  std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+    const basic_stored_value&lt;ChC, Tr>&amp;                                left,
+    const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; right);
+template &lt;class ChC, class Tr, class Allocator>
+  std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+    const basic_stored_value&lt;ChC, Tr>&amp;                                left,
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      right);
+template &lt;class ChC, class Tr, class Allocator>
+  std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+    const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; left,
+    const basic_stored_value&lt;ChC, Tr>&amp;                                right);
+template &lt;class ChC, class Tr, class Allocator>
+  std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      left,
+    const basic_stored_value&lt;ChC, Tr>&amp;                                right);
             </code>
             <returns>A string object whose content is [<c>l.cbegin()</c>, <c>l.cend()</c>) and [<c>r.cbegin()</c>, <c>r.cend()</c>) concatenated
                      where <c>l</c> and <c>r</c> are the values of <c>left</c> and <c>right</c> before the call respectively.</returns>
@@ -2054,10 +2054,10 @@ template &lt;class Ch, class ChC, class Tr, class Allocator>
           <name><c>operator+=</c></name>
           <code-item>
             <code>
-template &lt;class Ch, class ChC, class Tr, class Allocator>
-  std::basic_string&lt;Ch, Tr, Allocator>&amp; operator+=(
-    std::basic_string&lt;Ch, Tr, Allocator>&amp;       left,
-    const basic_stored_value&lt;ChC, Tr>&amp;          right);
+template &lt;class ChC, class Tr, class Allocator>
+  std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; operator+=(
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;       left,
+    const basic_stored_value&lt;ChC, Tr>&amp;                                right);
             </code>
             <effects>Calls <c>left.append(right.cbegin(), right.cend())</c>.</effects>
             <returns><c>left</c>.</returns>

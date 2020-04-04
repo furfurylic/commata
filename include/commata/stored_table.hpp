@@ -701,25 +701,23 @@ auto operator>=(
     return !(left < right);
 }
 
-template <class Ch, class ChC, class Tr, class Allocator>
+template <class ChC, class Tr, class Allocator>
 auto operator+(
     const basic_stored_value<ChC, Tr>& left,
-    const std::basic_string<Ch, Tr, Allocator>& right)
- -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value,
-                     std::basic_string<Ch, Tr, Allocator>>
+    const std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>& right)
+ -> std::decay_t<decltype(right)>
 {
-    std::basic_string<Ch, Tr, Allocator> s;
+    std::basic_string<std::remove_const_t<ChC>, Tr, Allocator> s;
     s.reserve(left.size() + right.size());  // throw
     s.append(left.cbegin(), left.cend()).append(right.cbegin(), right.cend());
     return s;
 }
 
-template <class Ch, class ChC, class Tr, class Allocator>
+template <class ChC, class Tr, class Allocator>
 auto operator+(
     const basic_stored_value<ChC, Tr>& left,
-    std::basic_string<Ch, Tr, Allocator>&& right)
- -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value,
-                     std::basic_string<Ch, Tr, Allocator>>
+    std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>&& right)
+ -> std::decay_t<decltype(right)>
 {
     right.reserve(left.size() + right.size());  // throw
     // gcc 6.3 dislikes the first argument to be 'right.cbegin()'
@@ -727,37 +725,34 @@ auto operator+(
     return std::move(right);
 }
 
-template <class Ch, class ChC, class Tr, class Allocator>
+template <class ChC, class Tr, class Allocator>
 auto operator+(
-    const std::basic_string<Ch, Tr, Allocator>& left,
+    const std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>& left,
     const basic_stored_value<ChC, Tr>& right)
- -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value,
-                     std::basic_string<Ch, Tr, Allocator>>
+ -> std::decay_t<decltype(left)>
 {
-    std::basic_string<Ch, Tr, Allocator> s;
+    std::basic_string<std::remove_const_t<ChC>, Tr, Allocator> s;
     s.reserve(left.size() + right.size());  // throw
     s.append(left.cbegin(), left.cend()).append(right.cbegin(), right.cend());
     return s;
 }
 
-template <class Ch, class ChC, class Tr, class Allocator>
+template <class ChC, class Tr, class Allocator>
 auto operator+(
-    std::basic_string<Ch, Tr, Allocator>&& left,
+    std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>&& left,
     const basic_stored_value<ChC, Tr>& right)
- -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value,
-                     std::basic_string<Ch, Tr, Allocator>>
+ -> std::decay_t<decltype(left)>
 {
     left.reserve(left.size() + right.size());   // throw
     left.append(right.cbegin(), right.cend());
     return std::move(left);
 }
 
-template <class Ch, class ChC, class Tr, class Allocator>
+template <class ChC, class Tr, class Allocator>
 auto operator+=(
-    std::basic_string<Ch, Tr, Allocator>& left,
+    std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>& left,
     const basic_stored_value<ChC, Tr>& right)
- -> std::enable_if_t<std::is_same<std::remove_const_t<ChC>, Ch>::value,
-                     std::basic_string<Ch, Tr, Allocator>&>
+ -> decltype(left)
 {
     left.reserve(left.size() + right.size());   // throw
     left.append(right.cbegin(), right.cend());
