@@ -136,6 +136,7 @@ TYPED_TEST(TestStoredValueNoModification, Relations)
     using char_t = TypeParam;
     using decayed_char_t = std::remove_const_t<char_t>;
     using string_t = std::basic_string<decayed_char_t>;
+    using string_view_t = std::basic_string_view<decayed_char_t>;
     using value_t = basic_stored_value<char_t>;
 
     const auto str = char_helper<decayed_char_t>::str;
@@ -155,6 +156,8 @@ TYPED_TEST(TestStoredValueNoModification, Relations)
         string_t s02 = s2 + char_t();
         value_t v1(&s01[0], &s01[s01.size() - 1]);
         value_t v2(&s02[0], &s02[s02.size() - 1]);
+        string_view_t sv1 = s1;
+        string_view_t sv2 = s2;
 
         // stored_value vs stored_value
         ASSERT_EQ(s1 == s2, v1 == v2) << s1 << " == " << s2;
@@ -184,6 +187,18 @@ TYPED_TEST(TestStoredValueNoModification, Relations)
         ASSERT_EQ(s2 <= s1, v2 <= s1) << s2 << " <= " << s1;
         ASSERT_EQ(s2 >= s1, v2 >= s1) << s2 << " >= " << s1;
 
+        // stored_value vs string_view
+        ASSERT_EQ(s1 == s2, v1 == sv2) << s1 << " == " << s2;
+        ASSERT_EQ(s1 != s2, v1 != sv2) << s1 << " != " << s2;
+        ASSERT_EQ(s1 < s2, v1 < sv2) << s1 << " < " << s2;
+        ASSERT_EQ(s1 > s2, v1 > sv2) << s1 << " > " << s2;
+        ASSERT_EQ(s1 <= s2, v1 <= sv2) << s1 << " <= " << s2;
+        ASSERT_EQ(s1 >= s2, v1 >= sv2) << s1 << " >= " << s2;
+        ASSERT_EQ(s2 < s1, v2 < sv1) << s2 << " < " << s1;
+        ASSERT_EQ(s2 > s1, v2 > sv1) << s2 << " > " << s1;
+        ASSERT_EQ(s2 <= s1, v2 <= sv1) << s2 << " <= " << s1;
+        ASSERT_EQ(s2 >= s1, v2 >= sv1) << s2 << " >= " << s1;
+
         // string vs stored_value
         ASSERT_EQ(s1 == s2, s1 == v2) << s1 << " == " << s2;
         ASSERT_EQ(s1 != s2, s1 != v2) << s1 << " != " << s2;
@@ -197,6 +212,18 @@ TYPED_TEST(TestStoredValueNoModification, Relations)
         ASSERT_EQ(s2 > s1, s2 > v1) << s2 << " > " << s1;
         ASSERT_EQ(s2 <= s1, s2 <= v1) << s2 << " <= " << s1;
         ASSERT_EQ(s2 >= s1, s2 >= v1) << s2 << " >= " << s1;
+
+        // string_view vs stored_value
+        ASSERT_EQ(s1 == s2, sv1 == v2) << s1 << " == " << s2;
+        ASSERT_EQ(s1 != s2, sv1 != v2) << s1 << " != " << s2;
+        ASSERT_EQ(s1 < s2, sv1 < v2) << s1 << " < " << s2;
+        ASSERT_EQ(s1 > s2, sv1 > v2) << s1 << " > " << s2;
+        ASSERT_EQ(s1 <= s2, sv1 <= v2) << s1 << " <= " << s2;
+        ASSERT_EQ(s1 >= s2, sv1 >= v2) << s1 << " >= " << s2;
+        ASSERT_EQ(s2 < s1, sv2 < v1) << s2 << " < " << s1;
+        ASSERT_EQ(s2 > s1, sv2 > v1) << s2 << " > " << s1;
+        ASSERT_EQ(s2 <= s1, sv2 <= v1) << s2 << " <= " << s1;
+        ASSERT_EQ(s2 >= s1, sv2 >= v1) << s2 << " >= " << s1;
 
         // stored_value vs NTBS
         ASSERT_EQ(s1 == s2, v1 == s2.c_str()) << s1 << " == " << s2;

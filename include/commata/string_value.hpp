@@ -6,7 +6,7 @@
 #ifndef COMMATA_GUARD_2501F2DC_A59A_46EC_ABF7_C898072C318D
 #define COMMATA_GUARD_2501F2DC_A59A_46EC_ABF7_C898072C318D
 
-#include <string>
+#include <string_view>
 #include <type_traits>
 
 namespace commata::detail {
@@ -16,40 +16,52 @@ constexpr bool is_comparable_with_string_value_v =
     std::is_convertible_v<T, std::basic_string_view<Ch, Tr>>;
 
 template <class T, class U>
-bool string_value_eq(
+auto string_value_eq(
     const T& left,
     const U& right)
-    noexcept(
-        noexcept(left.size()) && noexcept(right.size())
-     && noexcept(left.data()) && noexcept(right.data()))
+    noexcept(noexcept(static_cast<std::basic_string_view<
+                std::remove_const_t<typename T::value_type>>>(left))
+          && noexcept(static_cast<std::basic_string_view<
+                std::remove_const_t<typename U::value_type>>>(right)))
+ -> std::enable_if_t<
+        std::is_convertible_v<const T&, std::basic_string_view<
+            std::remove_const_t<typename T::value_type>>>
+     && std::is_convertible_v<const U&, std::basic_string_view<
+            std::remove_const_t<typename T::value_type>>>, bool>
 {
-    static_assert(std::is_same_v<typename T::traits_type,
-                                 typename U::traits_type>);
-    using tr_t = typename T::traits_type;
-    return (left.size() == right.size())
-        && (tr_t::compare(left.data(), right.data(), left.size()) == 0);
+    return static_cast<std::basic_string_view<
+                std::remove_const_t<typename T::value_type>,
+                typename T::traits_type>>(left)
+        == static_cast<std::basic_string_view<
+                std::remove_const_t<typename U::value_type>,
+                typename U::traits_type>>(right);
 }
 
 template <class T>
-bool string_value_eq(
+auto string_value_eq(
     const T& left,
     const typename T::value_type* right)
+ -> std::enable_if_t<
+        std::is_convertible_v<const T&, std::basic_string_view<
+            std::remove_const_t<typename T::value_type>>>, bool>
 {
-    const auto le = left.cend();
+    std::basic_string_view<std::remove_const_t<typename T::value_type>>
+        lv = left;
+    const auto lve = lv.cend();
 
     // If left is "abc\0def" and right is "abc" followed by '\0'
     // then left == right shall be false
     // and any overrun on right must not occur
     using tr_t = typename T::traits_type;
-    auto i = left.cbegin();
+    auto i = lv.cbegin();
     while (!tr_t::eq(*right, typename T::value_type())) {
-        if ((i == le) || !tr_t::eq(*i, *right)) {
+        if ((i == lve) || !tr_t::eq(*i, *right)) {
             return false;
         }
         ++i;
         ++right;
     }
-    return i == le;
+    return i == lve;
 }
 
 template <class T>
@@ -61,30 +73,40 @@ bool string_value_eq(
 }
 
 template <class T, class U>
-bool string_value_lt(
+auto string_value_lt(
     const T& left,
     const U& right)
-    noexcept(
-        noexcept(left.size()) && noexcept(right.size())
-     && noexcept(left.data()) && noexcept(right.data()))
+    noexcept(noexcept(static_cast<std::basic_string_view<
+                std::remove_const_t<typename T::value_type>>>(left))
+          && noexcept(static_cast<std::basic_string_view<
+                std::remove_const_t<typename U::value_type>>>(right)))
+ -> std::enable_if_t<
+        std::is_convertible_v<const T&, std::basic_string_view<
+            std::remove_const_t<typename T::value_type>>>
+     && std::is_convertible_v<const U&, std::basic_string_view<
+            std::remove_const_t<typename T::value_type>>>, bool>
 {
-    static_assert(std::is_same_v<typename T::traits_type,
-                                 typename U::traits_type>);
-    using tr_t = typename T::traits_type;
-    if (left.size() < right.size()) {
-        return tr_t::compare(left.data(), right.data(), left.size()) <= 0;
-    } else {
-        return tr_t::compare(left.data(), right.data(), right.size()) < 0;
-    }
+    return static_cast<std::basic_string_view<
+                std::remove_const_t<typename T::value_type>,
+                typename T::traits_type>>(left)
+         < static_cast<std::basic_string_view<
+                std::remove_const_t<typename U::value_type>,
+                typename U::traits_type>>(right);
 }
 
 template <class T>
-bool string_value_lt(
+auto string_value_lt(
     const T& left,
     const typename T::value_type* right)
+ -> std::enable_if_t<
+        std::is_convertible_v<const T&, std::basic_string_view<
+            std::remove_const_t<typename T::value_type>>>, bool>
 {
+    std::basic_string_view<std::remove_const_t<typename T::value_type>>
+        lv = left;
+
     using tr_t = typename T::traits_type;
-    for (auto l : left) {
+    for (auto l : lv) {
         const auto r = *right;
         if (tr_t::eq(r, typename T::value_type()) || tr_t::lt(r, l)) {
             return false;
@@ -97,12 +119,18 @@ bool string_value_lt(
 }
 
 template <class T>
-bool string_value_lt(
+auto string_value_lt(
     const typename T::value_type* left,
     const T& right)
+ -> std::enable_if_t<
+        std::is_convertible_v<const T&, std::basic_string_view<
+            std::remove_const_t<typename T::value_type>>>, bool>
 {
+    std::basic_string_view<std::remove_const_t<typename T::value_type>>
+        rv = right;
+
     using tr_t = typename T::traits_type;
-    for (auto r : right) {
+    for (auto r : rv) {
         const auto l = *left;
         if (tr_t::eq(l, typename T::value_type()) || tr_t::lt(l, r)) {
             return true;
@@ -111,7 +139,7 @@ bool string_value_lt(
         }
         ++left;
     }
-    return false;   // at least left == right
+    return false;   // at least left == rv
 }
 
 }

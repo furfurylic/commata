@@ -3251,7 +3251,7 @@ void pop_back();
         <name><c>basic_stored_value</c> comparison functions</name>
 
         <p>Function templates described in this subclause that take template parameters <c>ChL</c> and <c>ChR</c> shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type.</p>
-        <p>Function templates described in this subclause that take template parameters <c>ChC</c> and <c>Other</c> shall not participate in overload resolution unless <c>std::is_convertible_v&lt;Other, const std::remove_const_t&lt;ChC>*></c> is not <c>false</c> or <c>Other</c> is the same type as <c>std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator></c> for a certain type <c>Allocator</c>.</p>
+        <p>Function templates described in this subclause that take template parameters <c>ChC</c> and <c>Other</c> shall not participate in overload resolution unless <c>std::is_convertible_v&lt;Other, std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr></c> is not <c>false</c>.</p>
 
         <section id="basic_stored_value.opeq">
           <name><c>operator==</c></name>
@@ -3261,7 +3261,7 @@ template &lt;class ChL, class ChR, class Tr>
   bool operator==(const basic_stored_value&lt;ChL, Tr>&amp; l,
                   const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
             </code>
-            <returns><c>l.size() == r.size() &amp;&amp; Tr::compare(l.data(), r.data(), l.size()) == 0</c>.</returns>
+            <returns><c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChL>, Tr>>(l) == static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChR>, Tr>>(r)</c>.</returns>
           </code-item>
 
           <code-item>
@@ -3273,9 +3273,8 @@ template &lt;class ChC, class Tr, class Other>
   bool operator==(const Other&amp;                       o,
                   const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
             </code>
-            <returns>If <c>std::is_convertible_v&lt;Other, const std::remove_const_t&lt;ChC>*></c> is <c>false</c>, <c>v.size() == o.size() &amp;&amp; Tr::compare(v.data(), o.data(), v.size()) == 0</c>.
-                     Otherwise, <c>v.size() == Tr::length(o) &amp;&amp; Tr::compare(v.data(), o, v.size()) == 0</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> are <c>true</c> if <c>std::is_convertible_v&lt;Other, const std::remove_const_t&lt;ChC>*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <returns><c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(v) == static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> are <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -3294,7 +3293,7 @@ template &lt;class ChC, class Tr, class Other>
                   const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(l == r)</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible_v&lt;Other, const std::remove_const_t&lt;ChC>*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -3306,7 +3305,7 @@ template &lt;class ChL, class ChR, class Tr>
   bool operator&lt; (const basic_stored_value&lt;ChL, Tr>&amp; l,
                   const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
             </code>
-            <returns><c>c &lt; 0 || (c == 0 &amp;&amp; l.size() &lt; r.size())</c> where <c>c</c> is the return value of <c>Tr::compare(l.data(), r.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>l.size()</c> and <c>r.size()</c>.</returns>
+            <returns><c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChL>, Tr>>(l) &lt; static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChR>, Tr>>(r)</c>.</returns>
           </code-item>
 
           <code-item>
@@ -3315,10 +3314,8 @@ template &lt;class ChC, class Tr, class Other>
   bool operator&lt; (const basic_stored_value&lt;ChC, Tr>&amp; v,
                   const Other&amp;                       o) noexcept(<nc>see below</nc>);
             </code>
-            <returns>If <c>std::is_convertible_v&lt;Other, const std::remove_const_t&lt;ChC>*></c> is <c>false</c>,
-                     <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; o.size()</c> where <c>c</c> is the return value of <c>Tr::compare(v.data(), o.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>o.size()</c>.
-                     Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; Tr::length(o)</c> where <c>c</c> is the return value of <c>Tr::compare(v.data(), o, rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>Tr::length(o)</c>.</returns>
-            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible_v&lt;Other, const std::remove_const_t&lt;ChC>*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <returns><c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(v) &lt; static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c>.</returns>
+            <remark>The expression inside <c>noexcept</c> is <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
           </code-item>
 
           <code-item>
@@ -3327,10 +3324,8 @@ template &lt;class ChC, class Tr, class Other>
   bool operator&lt; (const Other&amp;                       o,
                   const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
             </code>
-            <returns>If <c>std::is_convertible_v&lt;Other, const std::remove_const_t&lt;ChC>*></c> is <c>false</c>,
-                     <c>c &lt; 0 || (c == 0 &amp;&amp; o.size() &lt; v.size()</c> where <c>c</c> is the return value of <c>Tr::compare(o.data(), v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>o.size()</c> and <c>v.size()</c>.
-                     Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; Tr::length(o) &lt; v.size()</c> where <c>c</c> is the return value of <c>Tr::compare(o, v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>Tr::length(o)</c> and <c>v.size()</c>.</returns>
-            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible_v&lt;Other, const std::remove_const_t&lt;ChC>*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <returns><c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o) &lt; static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(v)</c>.</returns>
+            <remark>The expression inside <c>noexcept</c> is <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -3349,7 +3344,7 @@ template &lt;class ChC, class Tr, class Other>
                   const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>r &lt; l</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible_v&lt;Other, const std::remove_const_t&lt;ChC>*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -3368,7 +3363,7 @@ template &lt;class ChC, class Tr, class Other>
                   const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(r &lt; l)</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible_v&lt;Other, const std::remove_const_t&lt;ChC>*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -3387,7 +3382,7 @@ template &lt;class ChC, class Tr, class Other>
                   const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(l &lt; r)</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible_v&lt;Other, const std::remove_const_t&lt;ChC>*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
       </section>
