@@ -4565,6 +4565,73 @@ namespace commata {
             class Allocator = std::allocator&lt;typename TextSource::char_type>>
     class text_pull;
 
+  <c>// <n><xref id="text_pull.comparison"/>, text_pull comparison functions:</n></c>
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator==(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator==(const text_pull&lt;TextSource, Allocator>&amp;   v,
+                    const Other&amp;                              o) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator==(const Other&amp;                              o,
+                    const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept;
+
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator!=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator!=(const text_pull&lt;TextSource, Allocator>&amp;   l,
+                    const Other&amp;                              r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator!=(const Other&amp;                              l,
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator&lt; (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator&lt; (const text_pull&lt;TextSource, Allocator>&amp;   l,
+                    const Other&amp;                              r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator&lt; (const Other&amp;                              l,
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator> (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator> (const text_pull&lt;TextSource, Allocator>&amp;   l,
+                    const Other&amp;                              r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator> (const Other&amp;                              l,
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator&lt;=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator&lt;=(const text_pull&lt;TextSource, Allocator>&amp;   l,
+                    const Other&amp;                              r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator&lt;=(const Other&amp;                              l,
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator>=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator>=(const text_pull&lt;TextSource, Allocator>&amp;   l,
+                    const Other&amp;                              r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator>=(const Other&amp;                              l,
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+
   <c>// <n><xref id="text_pull.io"/>, <c>text_pull</c> inserters:</n></c>
   template &lt;class Tr, class TextSource, class Allocator>
     std::basic_ostream&lt;typename TextSource::char_type, Tr>&amp;
@@ -4935,6 +5002,7 @@ namespace commata {
     class text_pull {
   public:
     using char_type      = typename TextSource::char_type;
+    using traits_type    = typename TextSource::traits_type;
     using allocator_type = Allocator;
 
     using value_type      = const char_type;
@@ -5393,6 +5461,150 @@ void rethrow_suppressed();
                    Otherwise, does nothing.</effects>
           <remark>The return values of <c>state</c> shall be the same between before and after invoking this function.</remark>
         </code-item>
+      </section>
+
+      <section id="text_pull.comparison">
+        <name><c>text_pull</c> comparison functions</name>
+
+        <p>Function templates described in this subclause that take template parameters <c>TextSourceL</c> and <c>TextSourceR</c> shall not participate in overload resolution unless <c>TextSourceL::char_type</c> and <c>TextSourceL::traits_type</c> are the same types as <c>TextSourceR::char_type</c> and <c>TextSourceR::traits_type</c> respectively.</p>
+        <p>Function templates described in this subclause that take template parameters <c>TextSource</c> and <c>Other</c> shall not participate in overload resolution unless <c>std::is_convertible&lt;Other, typename TextSource::char_type*>::value</c> is not <c>false</c> or <c>Other</c> is the same type as <c>std::basic_string&lt;typename TextSource::char_type, typename TextSource::traits_type, Allocator></c> for a certain type <c>Allocator</c>.</p>
+
+        <section id="text_pull.comparison.eq">
+          <name><c>operator==</c></name>
+          <code-item>
+            <code>
+template &lt;class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+  bool operator==(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+            </code>
+            <returns><c>l.size() == r.size() &amp;&amp; TextSourceL::traits_type::compare(l.data(), r.data(), l.size()) == 0</c>.</returns>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator==(const text_pull&lt;TextSource, Allocator>&amp;   v,
+                  const Other&amp;                              o) noexcept;
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator==(const Other&amp;                              o,
+                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept;
+            </code>
+            <returns>If <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c>, <c>v.size() == o.size() &amp;&amp; Tr::compare(v.data(), o.data(), v.size()) == 0</c>.
+                     Otherwise, <c>v.size() == TextSource::traits_type::length(o) &amp;&amp; TextSource::traits_type::compare(v.data(), o, v.size()) == 0</c>.</returns>
+          </code-item>
+        </section>
+
+        <section id="text_pull.comparison.ne">
+          <name><c>operator!=</c></name>
+          <code-item>
+            <code>
+template &lt;class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+  bool operator!=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator!=(const text_pull&lt;TextSource, Allocator>&amp;   v,
+                  const Other&amp;                              o) noexcept;
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator!=(const Other&amp;                              o,
+                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept;
+            </code>
+            <returns><c>left != right</c>.</returns>
+          </code-item>
+        </section>
+
+        <section id="text_pull.comparison.lt">
+          <name><c>operator&lt;</c></name>
+          <code-item>
+            <code>
+template &lt;class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+  bool operator&lt; (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+            </code>
+            <returns><c>c &lt; 0 || (c == 0 &amp;&amp; l.size() &lt; r.size())</c> where <c>c</c> is the return value of <c>TextSourceL::traits_type::compare(l.data(), r.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>l.size()</c> and <c>r.size()</c>.</returns>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator&lt; (const text_pull&lt;TextSource, Allocator>&amp;   v,
+                  const Other&amp;                              o) noexcept;
+            </code>
+            <returns>If <c>std::is_convertible&lt;Other, typename TextSource::char_type*>::value</c> is <c>false</c>,
+                     <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; o.size()</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(v.data(), o.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>o.size()</c>.
+                     Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; TextSource::traits_type::length(o)</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(v.data(), o, rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>Tr::length(o)</c>.</returns>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator&lt; (const Other&amp;                              o,
+                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept;
+            </code>
+            <returns>If <c>std::is_convertible&lt;Other, typename TextSource::char_type*>::value</c> is <c>false</c>,
+                     <c>c &lt; 0 || (c == 0 &amp;&amp; o.size() &lt; v.size()</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(o.data(), v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>o.size()</c> and <c>v.size()</c>.
+                     Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; TextSource::traits_type::length(o) &lt; v.size()</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(o, v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>Tr::length(o)</c> and <c>v.size()</c>.</returns>
+          </code-item>
+        </section>
+
+        <section id="text_pull.comparison.gt">
+          <name><c>operator></c></name>
+          <code-item>
+            <code>
+template &lt;class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+  bool operator> (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator> (const text_pull&lt;TextSource, Allocator>&amp;   l,
+                  const Other&amp;                              r) noexcept;
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator> (const Other&amp;                              l,
+                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+            </code>
+            <returns><c>r &lt; l</c>.</returns>
+          </code-item>
+        </section>
+
+        <section id="text_pull.comparison.le">
+          <name><c>operator&lt;=</c></name>
+          <code-item>
+            <code>
+template &lt;class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+  bool operator&lt;=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator&lt;=(const text_pull&lt;TextSource, Allocator>&amp;   l,
+                  const Other&amp;                              r) noexcept;
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator&lt;=(const Other&amp;                              l,
+                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+            </code>
+            <returns><c>!(r &lt; l)</c>.</returns>
+          </code-item>
+        </section>
+
+        <section id="text_pull.comparison.ge">
+          <name><c>operator>=</c></name>
+          <code-item>
+            <code>
+template &lt;class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+  bool operator>=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator>=(const text_pull&lt;TextSource, Allocator>&amp;   l,
+                  const Other&amp;                              r) noexcept;
+template &lt;class TextSource, class Allocator, class Other>
+  bool operator>=(const Other&amp;                              l,
+                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+            </code>
+            <returns><c>!(l &lt; r)</c>.</returns>
+          </code-item>
+        </section>
       </section>
 
       <section id="text_pull.io">

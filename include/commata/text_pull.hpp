@@ -27,6 +27,7 @@
 #include "formatted_output.hpp"
 #include "handler_decorator.hpp"
 #include "member_like_base.hpp"
+#include "string_value.hpp"
 
 namespace commata {
 
@@ -617,6 +618,7 @@ class text_pull
 {
 public:
     using char_type = typename TextSource::char_type;
+    using traits_type = typename TextSource::traits_type;
     using allocator_type = Allocator;
 
 private:
@@ -1060,15 +1062,232 @@ private:
     }
 };
 
-template <class TextSource, class Allocator,
-    class OtherAllocator = std::allocator<typename TextSource::char_type>>
-std::basic_string<typename TextSource::char_type,
-                  std::char_traits<typename TextSource::char_type>,
-                  OtherAllocator> to_string(
-    const text_pull<TextSource, Allocator>& p,
-    const OtherAllocator& alloc = Allocator())
+template <class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+auto operator==(
+    const text_pull<TextSourceL, AllocatorL>& left,
+    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            typename TextSourceL::char_type,
+            typename TextSourceR::char_type>::value
+     && std::is_same<
+            typename TextSourceL::traits_type,
+            typename TextSourceR::traits_type>::value, bool>
 {
-    return { p.cbegin(), p.cend(), alloc };
+    return detail::string_value_eq(left, right);
+}
+
+template <class TextSource, class Allocator, class Right>
+auto operator==(
+    const text_pull<TextSource, Allocator>& left,
+    const Right& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Right>::value, bool>
+{
+    return detail::string_value_eq(left, right);
+}
+
+template <class TextSource, class Allocator, class Left>
+auto operator==(
+    const Left& left,
+    const text_pull<TextSource, Allocator>& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Left>::value, bool>
+{
+    return detail::string_value_eq(left, right);
+}
+
+template <class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+auto operator!=(
+    const text_pull<TextSourceL, AllocatorL>& left,
+    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            typename TextSourceL::char_type,
+            typename TextSourceR::char_type>::value
+     && std::is_same<
+            typename TextSourceL::traits_type,
+            typename TextSourceR::traits_type>::value, bool>
+{
+    return !(left == right);
+}
+
+template <class TextSource, class Allocator, class Right>
+auto operator!=(
+    const text_pull<TextSource, Allocator>& left,
+    const Right& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Right>::value, bool>
+{
+    return !(left == right);
+}
+
+template <class TextSource, class Allocator, class Left>
+auto operator!=(
+    const Left& left,
+    const text_pull<TextSource, Allocator>& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Left>::value, bool>
+{
+    return !(left == right);
+}
+
+template <class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+auto operator<(
+    const text_pull<TextSourceL, AllocatorL>& left,
+    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            typename TextSourceL::char_type,
+            typename TextSourceR::char_type>::value
+     && std::is_same<
+            typename TextSourceL::traits_type,
+            typename TextSourceR::traits_type>::value, bool>
+{
+    return detail::string_value_lt(left, right);
+}
+
+template <class TextSource, class Allocator, class Right>
+auto operator<(
+    const text_pull<TextSource, Allocator>& left,
+    const Right& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Right>::value, bool>
+{
+    return detail::string_value_lt(left, right);
+}
+
+template <class TextSource, class Allocator, class Left>
+auto operator<(
+    const Left& left,
+    const text_pull<TextSource, Allocator>& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Left>::value, bool>
+{
+    return detail::string_value_lt(left, right);
+}
+
+template <class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+auto operator>(
+    const text_pull<TextSourceL, AllocatorL>& left,
+    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            typename TextSourceL::char_type,
+            typename TextSourceR::char_type>::value
+     && std::is_same<
+            typename TextSourceL::traits_type,
+            typename TextSourceR::traits_type>::value, bool>
+{
+    return right < left;
+}
+
+template <class TextSource, class Allocator, class Right>
+auto operator>(
+    const text_pull<TextSource, Allocator>& left,
+    const Right& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Right>::value, bool>
+{
+    return right < left;
+}
+
+template <class TextSource, class Allocator, class Left>
+auto operator>(
+    const Left& left,
+    const text_pull<TextSource, Allocator>& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Left>::value, bool>
+{
+    return right < left;
+}
+
+template <class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+auto operator<=(
+    const text_pull<TextSourceL, AllocatorL>& left,
+    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            typename TextSourceL::char_type,
+            typename TextSourceR::char_type>::value
+     && std::is_same<
+            typename TextSourceL::traits_type,
+            typename TextSourceR::traits_type>::value, bool>
+{
+    return !(right < left);
+}
+
+template <class TextSource, class Allocator, class Right>
+auto operator<=(
+    const text_pull<TextSource, Allocator>& left,
+    const Right& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Right>::value, bool>
+{
+    return !(right < left);
+}
+
+template <class TextSource, class Allocator, class Left>
+auto operator<=(
+    const Left& left,
+    const text_pull<TextSource, Allocator>& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Left>::value, bool>
+{
+    return !(right < left);
+}
+
+template <class TextSourceL, class TextSourceR,
+          class AllocatorL, class AllocatorR>
+auto operator>=(
+    const text_pull<TextSourceL, AllocatorL>& left,
+    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+ -> std::enable_if_t<
+        std::is_same<
+            typename TextSourceL::char_type,
+            typename TextSourceR::char_type>::value
+     && std::is_same<
+            typename TextSourceL::traits_type,
+            typename TextSourceR::traits_type>::value, bool>
+{
+    return !(left < right);
+}
+
+template <class TextSource, class Allocator, class Right>
+auto operator>=(
+    const text_pull<TextSource, Allocator>& left,
+    const Right& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Right>::value, bool>
+{
+    return !(left < right);
+}
+
+template <class TextSource, class Allocator, class Left>
+auto operator>=(
+    const Left& left,
+    const text_pull<TextSource, Allocator>& right) noexcept
+ -> std::enable_if_t<detail::is_comparable_with_string_value<
+        typename TextSource::char_type,
+        typename TextSource::traits_type, Left>::value, bool>
+{
+    return !(left < right);
 }
 
 template <class Tr, class TextSource, class Allocator>
@@ -1084,6 +1303,17 @@ std::basic_ostream<typename TextSource::char_type, Tr>& operator<<(
         [b = p.cbegin(), n](auto* sb) {
             return sb->sputn(b, n) == n;
         });
+}
+
+template <class TextSource, class Allocator,
+    class OtherAllocator = std::allocator<typename TextSource::char_type>>
+std::basic_string<typename TextSource::char_type,
+                  std::char_traits<typename TextSource::char_type>,
+                  OtherAllocator> to_string(
+    const text_pull<TextSource, Allocator>& p,
+    const OtherAllocator& alloc = Allocator())
+{
+    return { p.cbegin(), p.cend(), alloc };
 }
 
 template <class TextSource, class... Appendices>

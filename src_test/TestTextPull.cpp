@@ -377,9 +377,112 @@ TYPED_TEST_P(TestTextPull, SuppressedError)
     ASSERT_EQ(text_pull_state::error, pull.state());
 }
 
+TYPED_TEST_P(TestTextPull, Relations)
+{
+    using char_t = typename TypeParam::first_type;
+    using string_t = std::basic_string<char_t>;
+    using stream_t = std::basic_stringstream<char_t>;
+
+    const auto str = char_helper<char_t>::str;
+
+    std::vector<std::pair<const char*, const char*>> pairs = {
+        { "plastic", "elastic" },       // same length, differ at front
+        { "Maria", "Mario" },           // same length, differ at back
+        { "galactic", "galactica" },    // have same prefix, lengths differ
+        { "identical", "identical" },   // identical
+        { "", "empty" }                 // empty
+    };
+
+    for (const auto& p : pairs) {
+        string_t s1 = str(p.first);
+        string_t s2 = str(p.second);
+        string_t s01 = s1 + char_t();
+        string_t s02 = s2 + char_t();
+
+        stream_t stream1(s1);
+        stream_t stream2(s2);
+        auto p1 = make_text_pull(make_csv_source(stream1),
+            TypeParam::second_type::value);
+        auto p2 = make_text_pull(make_csv_source(stream2),
+            TypeParam::second_type::value);
+        p1();
+        p2();
+
+        // stored_value vs stored_value
+        ASSERT_EQ(s1 == s2, p1 == p2) << s1 << " == " << s2;
+        ASSERT_EQ(s1 != s2, p1 != p2) << s1 << " != " << s2;
+        ASSERT_EQ(s2 == s1, p2 == p1) << s2 << " == " << s1;
+        ASSERT_EQ(s2 != s1, p2 != p1) << s2 << " != " << s1;
+        ASSERT_EQ(s1 < s2, p1 < p2) << s1 << " < " << s2;
+        ASSERT_EQ(s1 > s2, p1 > p2) << s1 << " > " << s2;
+        ASSERT_EQ(s1 <= s2, p1 <= p2) << s1 << " <= " << s2;
+        ASSERT_EQ(s1 >= s2, p1 >= p2) << s1 << " >= " << s2;
+        ASSERT_EQ(s2 < s1, p2 < p1) << s2 << " < " << s1;
+        ASSERT_EQ(s2 > s1, p2 > p1) << s2 << " > " << s1;
+        ASSERT_EQ(s2 <= s1, p2 <= p1) << s2 << " <= " << s1;
+        ASSERT_EQ(s2 >= s1, p2 >= p1) << s2 << " >= " << s1;
+
+        // stored_value vs string
+        ASSERT_EQ(s1 == s2, p1 == s2) << s1 << " == " << s2;
+        ASSERT_EQ(s1 != s2, p1 != s2) << s1 << " != " << s2;
+        ASSERT_EQ(s2 == s1, p2 == s1) << s2 << " == " << s1;
+        ASSERT_EQ(s2 != s1, p2 != s1) << s2 << " != " << s1;
+        ASSERT_EQ(s1 < s2, p1 < s2) << s1 << " < " << s2;
+        ASSERT_EQ(s1 > s2, p1 > s2) << s1 << " > " << s2;
+        ASSERT_EQ(s1 <= s2, p1 <= s2) << s1 << " <= " << s2;
+        ASSERT_EQ(s1 >= s2, p1 >= s2) << s1 << " >= " << s2;
+        ASSERT_EQ(s2 < s1, p2 < s1) << s2 << " < " << s1;
+        ASSERT_EQ(s2 > s1, p2 > s1) << s2 << " > " << s1;
+        ASSERT_EQ(s2 <= s1, p2 <= s1) << s2 << " <= " << s1;
+        ASSERT_EQ(s2 >= s1, p2 >= s1) << s2 << " >= " << s1;
+
+        // string vs stored_value
+        ASSERT_EQ(s1 == s2, s1 == p2) << s1 << " == " << s2;
+        ASSERT_EQ(s1 != s2, s1 != p2) << s1 << " != " << s2;
+        ASSERT_EQ(s2 == s1, s2 == p1) << s2 << " == " << s1;
+        ASSERT_EQ(s2 != s1, s2 != p1) << s2 << " != " << s1;
+        ASSERT_EQ(s1 < s2, s1 < p2) << s1 << " < " << s2;
+        ASSERT_EQ(s1 > s2, s1 > p2) << s1 << " > " << s2;
+        ASSERT_EQ(s1 <= s2, s1 <= p2) << s1 << " <= " << s2;
+        ASSERT_EQ(s1 >= s2, s1 >= p2) << s1 << " >= " << s2;
+        ASSERT_EQ(s2 < s1, s2 < p1) << s2 << " < " << s1;
+        ASSERT_EQ(s2 > s1, s2 > p1) << s2 << " > " << s1;
+        ASSERT_EQ(s2 <= s1, s2 <= p1) << s2 << " <= " << s1;
+        ASSERT_EQ(s2 >= s1, s2 >= p1) << s2 << " >= " << s1;
+
+        // stored_value vs NTBS
+        ASSERT_EQ(s1 == s2, p1 == s2.c_str()) << s1 << " == " << s2;
+        ASSERT_EQ(s1 != s2, p1 != s2.c_str()) << s1 << " != " << s2;
+        ASSERT_EQ(s2 == s1, p2 == s1.c_str()) << s2 << " == " << s1;
+        ASSERT_EQ(s2 != s1, p2 != s1.c_str()) << s2 << " != " << s1;
+        ASSERT_EQ(s1 < s2, p1 < s2.c_str()) << s1 << " < " << s2;
+        ASSERT_EQ(s1 > s2, p1 > s2.c_str()) << s1 << " > " << s2;
+        ASSERT_EQ(s1 <= s2, p1 <= s2.c_str()) << s1 << " <= " << s2;
+        ASSERT_EQ(s1 >= s2, p1 >= s2.c_str()) << s1 << " >= " << s2;
+        ASSERT_EQ(s2 < s1, p2 < s1.c_str()) << s2 << " < " << s1;
+        ASSERT_EQ(s2 > s1, p2 > s1.c_str()) << s2 << " > " << s1;
+        ASSERT_EQ(s2 <= s1, p2 <= s1.c_str()) << s2 << " <= " << s1;
+        ASSERT_EQ(s2 >= s1, p2 >= s1.c_str()) << s2 << " >= " << s1;
+
+        // NTBS vs stored_value
+        ASSERT_EQ(s1 == s2, s1.c_str() == p2) << s1 << " == " << s2;
+        ASSERT_EQ(s1 != s2, s1.c_str() != p2) << s1 << " != " << s2;
+        ASSERT_EQ(s2 == s1, s2.c_str() == p1) << s2 << " == " << s1;
+        ASSERT_EQ(s2 != s1, s2.c_str() != p1) << s2 << " != " << s1;
+        ASSERT_EQ(s1 < s2, s1.c_str() < p2) << s1 << " < " << s2;
+        ASSERT_EQ(s1 > s2, s1.c_str() > p2) << s1 << " > " << s2;
+        ASSERT_EQ(s1 <= s2, s1.c_str() <= p2) << s1 << " <= " << s2;
+        ASSERT_EQ(s1 >= s2, s1.c_str() >= p2) << s1 << " >= " << s2;
+        ASSERT_EQ(s2 < s1, s2.c_str() < p1) << s2 << " < " << s1;
+        ASSERT_EQ(s2 > s1, s2.c_str() > p1) << s2 << " > " << s1;
+        ASSERT_EQ(s2 <= s1, s2.c_str() <= p1) << s2 << " <= " << s1;
+        ASSERT_EQ(s2 >= s1, s2.c_str() >= p1) << s2 << " >= " << s1;
+    }
+}
+
 REGISTER_TYPED_TEST_SUITE_P(TestTextPull,
     PrimitiveBasics, PrimitiveMove,
-    Basics, SkipRecord, SkipField, SuppressedError);
+    Basics, SkipRecord, SkipField, SuppressedError, Relations);
 
 typedef testing::Types<
     std::pair<char, std::integral_constant<std::size_t, 2>>,
