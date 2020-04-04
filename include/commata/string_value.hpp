@@ -114,23 +114,6 @@ bool string_value_lt(
     return false;   // at least left == right
 }
 
-template <class T, class Ch, class Tr, class Allocator>
-std::basic_string<Ch, Tr, Allocator>& string_value_plus_assign(
-    std::basic_string<Ch, Tr, Allocator>& left,
-    const T& right)
-{
-    const auto ln = left.size();
-    try {
-        left.append(right.size(), typename T::value_type());    // throw 
-    } catch (...) {
-        // gcc 7.3.1 dislikes const_iterator here
-        left.erase(left.begin() + ln, left.end());
-        throw;
-    }
-    T::traits_type::copy(left.data() + ln, right.data(), right.size());
-    return left;
-}
-
 }
 
 #endif

@@ -2653,6 +2653,7 @@ template &lt;class Ch, class Tr, class... Appendices>
 #include &lt;memory>
 #include &lt;ostream>
 #include &lt;string>
+#include &lt;string_view>
 #include &lt;type_traits>
 #include &lt;vector>
 
@@ -2720,10 +2721,9 @@ namespace commata {
     std::basic_ostream&lt;std::remove_const_t&lt;ChC>, Tr>&amp; operator&lt;&lt;(
       std::basic_ostream&lt;ChC, Tr>&amp; os, const basic_stored_value&lt;ChC, Tr>&amp; o);
 
-  template &lt;class ChC, class Tr, class Allocator>
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; operator+=(
-      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;       left,
-      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
+  template &lt;class Ch, class Tr>
+    std::basic_string&lt;std::remove_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>>
+      to_string_view(basic_stored_value&lt;Ch, Tr>&amp; o) noexcept;
   template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove_const&lt;Ch>>>
     std::basic_string&lt;std::remove_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>, Allocator>
       to_string(basic_stored_value&lt;Ch, Tr>&amp; o, const Allocator&amp; alloc = Allocator());
@@ -2861,6 +2861,8 @@ namespace commata {
     pointer       data()        noexcept;
     const_pointer data()  const noexcept;
 
+    template &lt;class OtherTr = std::char_traits&lt;std::remove_const_t&lt;Ch>>>
+      operator std::basic_string_view&lt;std::remove_const_t&lt;Ch>, OtherTr>() const noexcept;
     template &lt;class OtherTr = std::char_traits&lt;std::remove_const_t&lt;Ch>>,
               class Allocator = std::allocator&lt;std::remove_const_t&lt;Ch>>>
       explicit operator std::basic_string&lt;std::remove_const_t&lt;Ch>, OtherTr, Allocator>() const;
@@ -2945,10 +2947,9 @@ namespace commata {
       std::basic_ostream&lt;ChC, Tr>&amp; os, const basic_stored_value&lt;ChC, Tr>&amp; o);
 
   <c>// <n><xref id="basic_stored_value.conversion"/>, conversion:</n></c>
-  template &lt;class ChC, class Tr, class Allocator>
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; operator+=(
-      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;       left,
-      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
+  template &lt;class Ch, class Tr>
+    std::basic_string_view&lt;std::remove_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>>
+      to_string_view(basic_stored_value&lt;Ch, Tr>&amp; o) noexcept;
 
   template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove_const&lt;Ch>>>
     std::basic_string&lt;std::remove_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>, Allocator>
@@ -3172,6 +3173,14 @@ const_pointer data()  const noexcept;
           </code>
           <returns><c>b</c>.</returns>
           <remark>The range [<c>r</c>, <c>r + size()</c>] is readable and the range [<c>r</c>, <c>r + size()</c>) is writable where <c>r</c> is the returned value.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class OtherTr = std::char_traits&lt;std::remove_const_t&lt;Ch>>>
+  operator std::basic_string_view&lt;std::remove_const_t&lt;Ch>, OtherTr>() const noexcept;
+          </code>
+          <returns><c>std::basic_string_view&lt;std::remove_const_t&lt;Ch>, OtherTr>(cbegin(), size())</c>.</returns>
         </code-item>
 
         <code-item>
@@ -3404,14 +3413,11 @@ template &lt;class ChC, class Tr>
 
         <code-item>
           <code>
-template &lt;class ChC, class Tr, class Allocator>
-  std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; operator+=(
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;       left,
-    const basic_stored_value&lt;ChC, Tr>&amp;                                right);
+template &lt;class Ch, class Tr>
+  std::basic_string_view&lt;std::remove_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>>
+    to_string_view(basic_stored_value&lt;Ch, Tr>&amp; o) noexcept;
           </code>
-          <effects>Calls <c>left.append(right.cbegin(), right.cend())</c>.</effects>
-          <returns><c>left</c>.</returns>
-          <remark>If an exception is thrown by an instance of these function templates, the invocation shall have no effect.</remark>
+          <returns><c>std::basic_string_view&lt;std::remote_const&lt;Ch>, Tr>(o.data(), o.size())</c>.</returns>
         </code-item>
 
         <code-item>
