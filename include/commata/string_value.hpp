@@ -122,6 +122,23 @@ bool string_value_lt(
 }
 
 template <class T, class Ch, class Tr, class Allocator>
+std::basic_string<Ch, Tr, Allocator>& string_value_plus_assign(
+    std::basic_string<Ch, Tr, Allocator>& left,
+    const T& right)
+{
+    const auto ln = left.size();
+    try {
+        left.append(right.size(), typename T::value_type());    // throw 
+    } catch (...) {
+        // gcc 6.3 dislikes const_iterator here
+        left.erase(left.begin() + ln, left.end());
+        throw;
+    }
+    T::traits_type::copy(&*left.begin() + ln, right.data(), right.size());
+    return left;
+}
+
+template <class T, class Ch, class Tr, class Allocator>
 std::basic_string<Ch, Tr, Allocator> string_value_plus(
     const T& left,
     const std::basic_string<Ch, Tr, Allocator>& right)
@@ -137,9 +154,17 @@ std::basic_string<Ch, Tr, Allocator> string_value_plus(
     const T& left,
     std::basic_string<Ch, Tr, Allocator>&& right)
 {
-    right.reserve(left.size() + right.size());  // throw
-    // gcc 6.3 dislikes the first argument to be 'right.cbegin()'
-    right.insert(right.begin(), left.cbegin(), left.cend()); 
+    const auto rn = right.size();
+    try {
+        right.append(left.size(), typename T::value_type());    // throw
+    } catch (...) {
+        // gcc 6.3 dislikes const_iterator here
+        right.erase(right.begin() + rn, right.end());
+        throw;
+    }
+    using tr_t = typename T::traits_type;
+    tr_t::move(&*right.begin() + left.size(), right.data(), rn);
+    tr_t::copy(&*right.begin(), left.data(), left.size());
     return std::move(right);
 }
 
@@ -159,19 +184,7 @@ std::basic_string<Ch, Tr, Allocator> string_value_plus(
     std::basic_string<Ch, Tr, Allocator>&& left,
     const T& right)
 {
-    left.reserve(left.size() + right.size());   // throw
-    left.append(right.cbegin(), right.cend());
-    return std::move(left);
-}
-
-template <class T, class Ch, class Tr, class Allocator>
-std::basic_string<Ch, Tr, Allocator>& string_value_plus_assign(
-    std::basic_string<Ch, Tr, Allocator>& left,
-    const T& right)
-{
-    left.reserve(left.size() + right.size());   // throw
-    left.append(right.cbegin(), right.cend());
-    return left;
+    return std::move(string_value_plus_assign(left, right));
 }
 
 }}

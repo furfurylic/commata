@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-04-04 (UTC)</signature>
+<signature>2020-04-05 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1987,6 +1987,7 @@ template &lt;class ChC, class Tr, class Allocator>
           </code>
           <returns>A string object whose content is [<c>l.cbegin()</c>, <c>l.cend()</c>) and [<c>r.cbegin()</c>, <c>r.cend()</c>) concatenated
                    where <c>l</c> and <c>r</c> are the values of <c>left</c> and <c>right</c> before the call respectively.</returns>
+          <remark>If an exception is thrown by an instance of these function templates, the invocation shall have no effect.</remark>
         </code-item>
 
         <code-item>
@@ -1996,8 +1997,9 @@ template &lt;class ChC, class Tr, class Allocator>
     std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;       left,
     const basic_stored_value&lt;ChC, Tr>&amp;                                right);
           </code>
-          <effects>Calls <c>left.append(right.cbegin(), right.cend())</c>.</effects>
+          <effects>Equivalent to call <c>left.append(right.cbegin(), right.cend())</c>.</effects>
           <returns><c>left</c>.</returns>
+          <remark>If an exception is thrown by an instance of these function templates, the invocation shall have no effect.</remark>
         </code-item>
 
         <code-item>
@@ -5688,6 +5690,7 @@ template &lt;class TextSource, class Allocator, class OtherAllocator>
           </code>
           <returns>A string object whose content is [<c>l.cbegin()</c>, <c>l.cend()</c>) and [<c>r.cbegin()</c>, <c>r.cend()</c>) concatenated
                     where <c>l</c> and <c>r</c> are the values of <c>left</c> and <c>right</c> before the call respectively.</returns>
+          <remark>If an exception is thrown by an instance of these function templates, the invocation shall have no effect.</remark>
         </code-item>
 
         <code-item>
@@ -5699,8 +5702,9 @@ template &lt;class TextSource, class Allocator, class OtherAllocator>
                                   typename TextSource::traits_type, OtherAllocator>&amp; left,
               const text_pull&lt;TextSource, Allocator>&amp; right);
           </code>
-          <effects>Calls <c>left.append(right.cbegin(), right.cend())</c>.</effects>
+          <effects>Equivalent to call <c>left.append(right.cbegin(), right.cend())</c>.</effects>
           <returns><c>left</c>.</returns>
+          <remark>If an exception is thrown by an instance of these function templates, the invocation shall have no effect.</remark>
         </code-item>
 
         <code-item>
