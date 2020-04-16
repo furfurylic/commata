@@ -55,20 +55,20 @@ template <class Allocator>
 class allocation_only_allocator :
     member_like_base<Allocator>
 {
-    using base_traits = typename std::allocator_traits<Allocator>;
+    using base_traits_t = typename std::allocator_traits<Allocator>;
 
     // To rebind
-    template <class Allocator2>
+    template <class OtherAllocator>
     friend class allocation_only_allocator;
 
 public:
-    using pointer = typename base_traits::pointer;
-    using const_pointer = typename base_traits::const_pointer;
-    using void_pointer = typename base_traits::void_pointer;
-    using const_void_pointer = typename base_traits::const_void_pointer;
-    using value_type = typename base_traits::value_type;
-    using size_type = typename base_traits::size_type;
-    using difference_type = typename base_traits::difference_type;
+    using pointer = typename base_traits_t::pointer;
+    using const_pointer = typename base_traits_t::const_pointer;
+    using void_pointer = typename base_traits_t::void_pointer;
+    using const_void_pointer = typename base_traits_t::const_void_pointer;
+    using value_type = typename base_traits_t::value_type;
+    using size_type = typename base_traits_t::size_type;
+    using difference_type = typename base_traits_t::difference_type;
 
     // These types are not required by the C++14 standard, but
     // std::basic_string which comes with gcc 7.3.1 seems to do
@@ -80,13 +80,12 @@ public:
     struct rebind
     {
         using other = allocation_only_allocator<
-            typename base_traits::template rebind_alloc<U>>;
+            typename base_traits_t::template rebind_alloc<U>>;
     };
 
     // Default-constructibility of an allocator is not mandated by the C++14
     // standard, but std::basic_string which comes with gcc 7.3.1 requires it
-    allocation_only_allocator() noexcept
-    {}
+    allocation_only_allocator() = default;
 
     // To make wrappers
     explicit allocation_only_allocator(const Allocator& other) noexcept :
@@ -99,30 +98,17 @@ public:
     {}
 
     // To make rebound copies
-    template <class Allocator2>
+    template <class OtherAllocator>
     explicit allocation_only_allocator(
-        const allocation_only_allocator<Allocator2>& other) noexcept :
-        member_like_base<Allocator>(Allocator(other.get()))
+        const allocation_only_allocator<OtherAllocator>& other) noexcept :
+        member_like_base<Allocator>(Allocator(other.base()))
     {}
 
     // ditto
-    template <class Allocator2,
-        std::enable_if_t<
-            !is_allocation_only_allocator<Allocator2>::value_type>>
-    explicit allocation_only_allocator(const Allocator2& other) noexcept :
-        member_like_base<Allocator>(
-            typename std::allocator_traits<Allocator2>::template
-                rebind_alloc<value_type>(other))
-    {}
-
-    // ditto
-    template <class Allocator2,
-        std::enable_if_t<
-            !is_allocation_only_allocator<Allocator2>::value_type>>
-    explicit allocation_only_allocator(Allocator2&& other) noexcept :
-        member_like_base<Allocator>(
-            typename std::allocator_traits<Allocator2>::template
-                rebind_alloc<value_type>(std::move(other)))
+    template <class OtherAllocator>
+    explicit allocation_only_allocator(
+        allocation_only_allocator<OtherAllocator>&& other) noexcept :
+        member_like_base<Allocator>(Allocator(std::move(other.base())))
     {}
 
     // C++14 standard does not require this
@@ -132,7 +118,7 @@ public:
         noexcept(std::is_nothrow_assignable<
             Allocator&, const OtherAllocator&>::value)
     {
-        static_cast<Allocator&>(*this) = other;
+        base() = other.base();
         return *this;
     }
 
@@ -143,25 +129,26 @@ public:
         noexcept(std::is_nothrow_assignable<
             Allocator&, OtherAllocator>::value)
     {
-        static_cast<Allocator&>(*this) = std::move(other);
+        base() = std::move(other.base());
         return *this;
     }
 
     template <class... Args>
     auto allocate(size_type n, Args&&... args)
     {
-        return base_traits::allocate(base(),
+        return base_traits_t::allocate(base(),
             n, std::forward<Args>(args)...);
     }
 
     auto deallocate(pointer p, size_type n) noexcept
     {
-        return base_traits::deallocate(base(), p, n);
+        return base_traits_t::deallocate(base(), p, n);
     }
 
-    auto max_size() noexcept
+    auto max_size() noexcept(noexcept(
+        base_traits_t::max_size(std::declval<const Allocator&>())))
     {
-        return base_traits::max_size(base());
+        return base_traits_t::max_size(base());
     }
 
     template <class T, class... Args>
@@ -176,17 +163,19 @@ public:
         destroy(p, std::is_trivially_destructible<T>());
     }
 
-    auto select_on_container_copy_construction() noexcept
+    auto select_on_container_copy_construction() const noexcept(noexcept(
+        base_traits_t::select_on_container_copy_construction(
+            std::declval<const Allocator&>())))
     {
-        return base_traits::select_on_container_copy_construction(base());
+        return base_traits_t::select_on_container_copy_construction(base());
     }
 
     using propagate_on_container_copy_assignment =
-        typename base_traits::propagate_on_container_copy_assignment;
+        typename base_traits_t::propagate_on_container_copy_assignment;
     using propagate_on_container_move_assignment =
-        typename base_traits::propagate_on_container_move_assignment;
+        typename base_traits_t::propagate_on_container_move_assignment;
     using propagate_on_container_swap =
-        typename base_traits::propagate_on_container_swap;
+        typename base_traits_t::propagate_on_container_swap;
 
     decltype(auto) base() noexcept
     {
@@ -210,20 +199,20 @@ private:
     }
 };
 
-template <class Allocator1, class Allocator2>
+template <class AllocatorL, class AllocatorR>
 inline bool operator==(
-    const allocation_only_allocator<Allocator1>& left,
-    const allocation_only_allocator<Allocator2>& right) noexcept
+    const allocation_only_allocator<AllocatorL>& left,
+    const allocation_only_allocator<AllocatorR>& right) noexcept
 {
     return left.base() == right.base();
 }
 
-template <class Allocator1, class Allocator2>
+template <class AllocatorL, class AllocatorR>
 inline bool operator!=(
-    const allocation_only_allocator<Allocator1>& left,
-    const allocation_only_allocator<Allocator2>& right) noexcept
+    const allocation_only_allocator<AllocatorL>& left,
+    const allocation_only_allocator<AllocatorR>& right) noexcept
 {
-    return !(left == right);
+    return left.base() != right.base();
 }
 
 }}
