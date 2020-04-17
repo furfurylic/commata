@@ -38,60 +38,58 @@ public:
             POCCA, POCMA, POCS>;
     };
 
-    explicit propagation_controlled_allocator(const A& alloc) :
-          member_like_base<A>(alloc)
+    explicit propagation_controlled_allocator(const A& alloc) noexcept :
+        member_like_base<A>(alloc)
     {}
 
+    // To make rebound copies
     template <class U>
     explicit propagation_controlled_allocator(
-        const propagation_controlled_allocator<U, POCCA, POCMA, POCS>& other) :
+        const propagation_controlled_allocator<U, POCCA, POCMA, POCS>& other)
+            noexcept :
         member_like_base<A>(A(other.base()))
     {}
 
+    // ditto
     template <class U>
     explicit propagation_controlled_allocator(
-        propagation_controlled_allocator<U, POCCA, POCMA, POCS>&& other) :
+        propagation_controlled_allocator<U, POCCA, POCMA, POCS>&& other)
+            noexcept :
         member_like_base<A>(A(std::move(other.base())))
     {}
 
-    // copy/move ctor/assignment op are defaulted
+    // copy/move ctor/assignment ops are defaulted
 
     template <class... Args>
     auto allocate(Args... args)
     {
-        return this->get().allocate(std::forward<Args>(args)...);
+        return base().allocate(std::forward<Args>(args)...);
     }
 
     template <class... Args>
-    auto deallocate(Args... args)
+    auto deallocate(Args... args) noexcept
     {
-        return this->get().deallocate(std::forward<Args>(args)...);
+        return base().deallocate(std::forward<Args>(args)...);
     }
 
-    size_type max_size()
+    size_type max_size() noexcept(noexcept(
+        base_traits_t::max_size(std::declval<const A&>())))
     {
-        return this->get().max_size();
-    }
-
-    bool operator==(const propagation_controlled_allocator& other) const
-    {
-        return this->get() == other.get();
+        return base().max_size();
     }
 
     template <class U>
     bool operator==(const propagation_controlled_allocator<
-        U, POCCA, POCMA, POCS>& other) const
+        U, POCCA, POCMA, POCS>& other) const noexcept
     {
-        return *this ==
-            typename propagation_controlled_allocator<U, POCCA, POCMA, POCS>::
-                rebind::other(other);
+        return base() == other.base();
     }
 
     template <class U>
     bool operator!=(const propagation_controlled_allocator<
-        U, POCCA, POCMA, POCS>& other) const
+        U, POCCA, POCMA, POCS>& other) const noexcept
     {
-        return !(*this == other);
+        return base() != other.base();
     }
 
     template <class T, class... Args>
@@ -107,10 +105,12 @@ public:
     }
 
     propagation_controlled_allocator select_on_container_copy_construction()
-        const
+        const noexcept(noexcept(
+            base_traits_t::select_on_container_copy_construction(
+                std::declval<const A&>())))
     {
         return propagation_controlled_allocator(
-            this->get().select_on_container_copy_construction());
+            base().select_on_container_copy_construction());
     }
 
     using propagate_on_container_copy_assignment =
@@ -119,12 +119,12 @@ public:
         std::integral_constant<bool, POCMA>;
     using propagate_on_container_swap = std::integral_constant<bool, POCS>;
 
-    decltype(auto) base()
+    decltype(auto) base() noexcept
     {
         return this->get();
     }
 
-    decltype(auto) base() const
+    decltype(auto) base() const noexcept
     {
         return this->get();
     }
