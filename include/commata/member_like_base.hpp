@@ -87,16 +87,30 @@ class base_member_pair
     {
         M m;
 
-        pair(B base, M member) :
-            member_like_base<B>(std::move(base)), m(std::move(member))
+        template <class BR, class MR,
+            class = std::enable_if_t<
+                std::is_constructible<B, BR&&>::value
+             && std::is_constructible<M, MR&&>::value>>
+        pair(BR&& base, MR&& member)
+            noexcept(std::is_nothrow_constructible<B, BR&&>::value
+                  && std::is_nothrow_constructible<M, MR&&>::value) :
+            member_like_base<B>(std::forward<BR>(base)),
+            m(std::forward<MR>(member))
         {}
     };
 
     pair p_;
 
 public:
-    base_member_pair(B first, M second) :
-        p_(std::move(first), std::move(second))
+    template <class BR, class MR,
+        std::enable_if_t<
+            std::is_constructible<B, BR&&>::value
+         && std::is_constructible<M, MR&&>::value,
+            std::nullptr_t> = nullptr>
+    base_member_pair(BR&& first, MR&& second)
+        noexcept(std::is_nothrow_constructible<B, BR&&>::value
+              && std::is_nothrow_constructible<M, MR&&>::value) :
+        p_(std::forward<BR>(first), std::forward<MR>(second))
     {}
 
     B& base() noexcept
