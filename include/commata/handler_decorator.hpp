@@ -40,6 +40,7 @@ struct get_buffer_t<Handler, D,
     std::enable_if_t<has_get_buffer<Handler>::value>>
 {
     std::pair<typename Handler::char_type*, std::size_t> get_buffer()
+        noexcept(noexcept(std::declval<Handler&>().get_buffer()))
     {
         return static_cast<D*>(this)->base().get_buffer();
     }
@@ -70,7 +71,8 @@ template <class Handler, class D>
 struct release_buffer_t<Handler, D,
     std::enable_if_t<has_release_buffer<Handler>::value>>
 {
-    void release_buffer(const typename Handler::char_type* buffer) noexcept
+    void release_buffer(const typename Handler::char_type* buffer)
+        noexcept(noexcept(std::declval<Handler&>().release_buffer(buffer)))
     {
         static_cast<D*>(this)->base().release_buffer(buffer);
     }
@@ -105,6 +107,8 @@ struct start_buffer_t<Handler, D,
     void start_buffer(
         const typename Handler::char_type* buffer_begin,
         const typename Handler::char_type* buffer_end)
+        noexcept(noexcept(
+            std::declval<Handler&>().start_buffer(buffer_begin, buffer_end)))
     {
         static_cast<D*>(this)->base().start_buffer(buffer_begin, buffer_end);
     }
@@ -136,6 +140,7 @@ struct end_buffer_t<Handler, D,
     std::enable_if_t<has_end_buffer<Handler>::value>>
 {
     void end_buffer(const typename Handler::char_type* buffer_end)
+        noexcept(noexcept(std::declval<Handler&>().end_buffer(buffer_end)))
     {
         static_cast<D*>(this)->base().end_buffer(buffer_end);
     }
@@ -167,6 +172,7 @@ struct empty_physical_line_t<Handler, D,
     std::enable_if_t<has_empty_physical_line<Handler>::value>>
 {
     auto empty_physical_line(const typename Handler::char_type* where)
+        noexcept(noexcept(std::declval<Handler&>().empty_physical_line(where)))
     {
         return static_cast<D*>(this)->base().empty_physical_line(where);
     }
@@ -197,6 +203,7 @@ template <class Handler, class D>
 struct yield_t<Handler, D, std::enable_if_t<has_yield<Handler>::value>>
 {
     auto yield(std::size_t p)
+        noexcept(noexcept(std::declval<Handler&>().yield(p)))
     {
         return static_cast<D*>(this)->base().yield(p);
     }
@@ -228,6 +235,7 @@ struct yield_location_t<Handler, D,
     std::enable_if_t<has_yield_location<Handler>::value>>
 {
     auto yield_location() const
+        noexcept(noexcept(std::declval<Handler&>().yield_location()))
     {
         return static_cast<const D*>(this)->base().yield_location();
     }
@@ -243,21 +251,25 @@ struct handler_decorator :
     using char_type = typename Handler::char_type;
 
     auto start_record(const char_type* record_begin)
+        noexcept(noexcept(std::declval<Handler&>().start_record(record_begin)))
     {
         return static_cast<D*>(this)->base().start_record(record_begin);
     }
 
     auto update(const char_type* first, const char_type* last)
+        noexcept(noexcept(std::declval<Handler&>().update(first, last)))
     {
         return static_cast<D*>(this)->base().update(first, last);
     }
 
     auto finalize(const char_type* first, const char_type* last)
+        noexcept(noexcept(std::declval<Handler&>().finalize(first, last)))
     {
         return static_cast<D*>(this)->base().finalize(first, last);
     }
 
     auto end_record(const char_type* end)
+        noexcept(noexcept(std::declval<Handler&>().end_record(end)))
     {
         return static_cast<D*>(this)->base().end_record(end);
     }

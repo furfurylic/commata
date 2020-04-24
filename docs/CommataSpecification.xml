@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-04-23 (UTC)</signature>
+<signature>2020-04-24 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -652,7 +652,7 @@ template &lt;class Handler>
     make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
         </code>
         <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements, except that in the second overload it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
-        <returns>An object of an unspecified type whose type meets the <c>TextHandler</c> requirements and that holds an object <c>h</c> where <c>h</c> is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
+        <returns>An object of an unspecified type whose type meets the <c>TextHandler</c> requirements and that holds an object <c>h</c> that is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
                  It forwards calls of its member functions to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
                  it first calls <c>h.start_record(where)</c>, and if its contextually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
                  Its return type and the return value are as follows:

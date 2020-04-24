@@ -19,27 +19,29 @@ namespace detail {
 template <class D, class Ch>
 class empty_physical_line_aware_handler_base
 {
-    D* d()
+    D* d() noexcept
     {
         return static_cast<D*>(this);
     }
 
-    void empty_physical_line(const Ch* where,
-        std::true_type)
+    void empty_physical_line(const Ch* where, std::true_type)
+        noexcept(noexcept(std::declval<D&>().start_record(where))
+              && noexcept(std::declval<D&>().end_record(where)))
     {
         d()->start_record(where);
         d()->end_record(where);
     }
 
-    auto empty_physical_line(const Ch* where,
-        std::false_type)
+    auto empty_physical_line(const Ch* where, std::false_type)
+        noexcept(noexcept(std::declval<D&>().start_record(where))
+              && noexcept(std::declval<D&>().end_record(where)))
     {
         return essay([t = d(), where] { return t->start_record(where); })
             && essay([t = d(), where] { return t->end_record(where); });
     }
 
     template <class F>
-    static auto essay(F f)
+    static auto essay(F f) noexcept(noexcept(f()))
      -> std::enable_if_t<std::is_void<decltype(f())>::value, bool>
     {
         f();
@@ -47,7 +49,7 @@ class empty_physical_line_aware_handler_base
     }
 
     template <class F>
-    static auto essay(F f)
+    static auto essay(F f) noexcept(noexcept(f()))
      -> std::enable_if_t<!std::is_void<decltype(f())>::value, bool>
     {
         return f();
@@ -55,6 +57,8 @@ class empty_physical_line_aware_handler_base
 
 public:
     auto empty_physical_line(const Ch* where)
+        noexcept(noexcept(std::declval<D&>().start_record(where))
+              && noexcept(std::declval<D&>().end_record(where)))
     {
         return empty_physical_line(where,
             std::integral_constant<bool,
@@ -74,14 +78,22 @@ class empty_physical_line_aware_handler :
     Handler handler_;
 
 public:
-    explicit empty_physical_line_aware_handler(Handler handler)
-        noexcept(std::is_nothrow_move_constructible<Handler>::value) :
-        handler_(std::move(handler))
+    template <class A,
+        class = std::enable_if_t<
+            std::is_constructible<Handler, A&&>::value>>
+    explicit empty_physical_line_aware_handler(A&& handler)
+        noexcept(std::is_nothrow_constructible<Handler, A&&>::value) :
+        handler_(std::forward<A>(handler))
     {}
 
     // Defaulted move ctor is all right
 
     Handler& base() noexcept
+    {
+        return handler_;
+    }
+
+    const Handler& base() const noexcept
     {
         return handler_;
     }
@@ -104,7 +116,12 @@ public:
 
     // Defaulted move ctor is all right
 
-    Handler& base() const noexcept
+    Handler& base() noexcept
+    {
+        return *handler_;
+    }
+
+    const Handler& base() const noexcept
     {
         return *handler_;
     }
