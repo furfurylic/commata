@@ -386,7 +386,7 @@ public:
     {}
 
     default_buffer_control(default_buffer_control&& other) noexcept :
-        detail::member_like_base<Allocator>(other.get()),
+        detail::member_like_base<Allocator>(std::move(other.get())),
         buffer_size_(other.buffer_size_),
         buffer_(other.buffer_)
     {
@@ -425,7 +425,7 @@ struct thru_buffer_control
 
     template <class Handler>
     void do_release_buffer(
-        const typename Handler::char_type* buffer, Handler* f) noexcept
+        const typename Handler::char_type* buffer, Handler* f)
     {
         return f->release_buffer(buffer);
     }
@@ -439,6 +439,10 @@ struct is_full_fledged :
      && has_empty_physical_line<Handler>::value>
 {};
 
+// noexcept-ness of the member functions except the ctor and the dtor does not
+// count because they are invoked as parts of a willingly-throwing operation,
+// so we do not specify "noexcept" to the member functions except the ctor and
+// the dtor
 template <class Handler, class BufferControl>
 class full_fledged_handler :
     BufferControl
@@ -463,7 +467,7 @@ public:
         return this->do_get_buffer(std::addressof(handler_));
     }
 
-    void release_buffer(const char_type* buffer) noexcept
+    void release_buffer(const char_type* buffer)
     {
         this->do_release_buffer(buffer, std::addressof(handler_));
     }
@@ -587,8 +591,7 @@ public:
         in_(in), eof_reached_(false), buffer_(nullptr)
     {}
 
-    parser(parser&&)
-        noexcept(std::is_nothrow_move_constructible<Handler>::value) = default;
+    parser(parser&&) = default;
 
     ~parser()
     {
