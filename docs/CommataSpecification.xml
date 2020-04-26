@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-04-24 (UTC)</signature>
+<signature>2020-04-26 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -957,13 +957,15 @@ namespace commata {
     using allocator_type = Allocator;
 
     <c>// <n><xref id="record_extractor.cons"/>, construct/copy/destroy:</n></c>
-    record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
-                     FieldNamePred field_name_pred, FieldValuePred field_value_pred,
-                     bool includes_header = true, std::size_t max_record_num = npos);
-    record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                     std::basic_streambuf&lt;Ch, Tr>* out,
-                     FieldNamePred field_name_pred, FieldValuePred field_value_pred,
-                     bool includes_header = true, std::size_t max_record_num = npos);
+    template &lt;class FieldNamePredR, class FieldValuePredR>
+      record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
+                       FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
+                       bool includes_header = true, std::size_t max_record_num = npos);
+    template &lt;class FieldNamePredR, class FieldValuePredR>
+      record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                       std::basic_streambuf&lt;Ch, Tr>* out,
+                       FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
+                       bool includes_header = true, std::size_t max_record_num = npos);
     record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~record_extractor();
 
@@ -989,23 +991,28 @@ namespace commata {
       <p>An object of it first scans the header record to decide the target field index,
          and then scan the all non-header records to decide whether the record is forwarded to the stream in terms of their values of the field at the target field index.</p>
       <p>When the target field index is left undecided after the scanning of the header record finished, an exception shall be thrown.</p>
-      <p><c>FieldNamePred</c> and <c>FieldValuePred</c> shall be binary predicate types for two <c>const char*</c> parameters.</p>
+      <p><c>FieldNamePred</c> and <c>FieldValuePred</c> shall be binary predicate types for two <c>const Ch*</c> parameters.
+         <c>Ch</c> shall be a char-like type.
+         <c>Tr</c> shall be a character traits type of <c>std::remove_const_t&lt;Ch></c>.
+         <c>Allocator</c> shall meet the <c>Allocator</c> requirements.</p>
 
       <section id="record_extractor.cons">
         <name><c>record_extractor</c> constructors and assignment operators</name>
 
         <code-item>
           <code>
-record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
-                 FieldNamePred field_name_pred, FieldValuePred field_value_pred,
-                 bool includes_header = true, std::size_t max_record_num = npos);
-record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                 std::basic_streambuf&lt;Ch, Tr>* out,
-                 FieldNamePred field_name_pred, FieldValuePred field_value_pred,
-                 bool includes_header = true, std::size_t max_record_num = npos);
+template &lt;class FieldNamePredR, class FieldValuePredR>
+  record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
+                   FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
+                   bool includes_header = true, std::size_t max_record_num = npos);
+template &lt;class FieldNamePredR, class FieldValuePredR>
+  record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                   std::basic_streambuf&lt;Ch, Tr>* out,
+                   FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
+                   bool includes_header = true, std::size_t max_record_num = npos);
           </code>
           <requires><c>out</c> shall be a valid pointer. For the first overload, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
-          <effects>Constructs an object that holds the copies of the parameters and behaves as <xref id="table.record_extractor.cons"/> shows.
+          <effects>Constructs an object <c>record_extractor</c>. The parameters work as <xref id="table.record_extractor.cons"/> shows.
                    An object constructed by the first overload uses a default constructed <c>Allocator</c> object to allocate memory.
                    One constructed by the second overload uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
 
@@ -1022,13 +1029,13 @@ record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
             </tr>
             <tr>
               <td><c>field_name_pred</c></td>
-              <td>Copied into the constructed object, which is called for every field in the header record.
+              <td>Forwarded as an argument to a constructor of <c>FieldNamePred</c> to make a predicate object called for every field in the header record.
                   The call parameters are <c>f</c> and <c>l</c> where the field value is the range [<c>f</c>, <c>l</c>).
                   If returns a non-<c>false</c> value, then the field index becomes the target field index.</td>
             </tr>
             <tr>
               <td><c>field_value_pred</c></td>
-              <td>Copied into the constructed object, which is called for every field at the target field index of non-header records.
+              <td>Forwarded as an argument to a constructor of <c>FieldNamePred</c> to make a predicate object called for every field at the target field index of non-header records.
                   The call parameters are <c>f</c> and <c>l</c> where the field value is the range [<c>f</c>, <c>l</c>).
                   If returns a non-<c>false</c> value, then the record is qualified to be forwarded to <c>out</c>.</td>
             </tr>
@@ -1094,17 +1101,19 @@ namespace commata {
     using allocator_type = Allocator;
 
     <c>// <n><xref id="record_extractor_with_indexed_key.cons"/>, construct/copy/destroy:</n></c>
-    record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
-                                      std::size_t target_field_index,
-                                      FieldValuePred field_value_pred,
-                                      bool includes_header = true,
-                                      std::size_t max_record_num = npos);
-    record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
-                                      std::basic_streambuf&lt;Ch, Tr>* out,
-                                      std::size_t target_field_index,
-                                      FieldValuePred field_value_pred,
-                                      bool includes_header = true,
-                                      std::size_t max_record_num = npos);
+    template &lt;class FieldValuePredR>
+      record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
+                                        std::size_t target_field_index,
+                                        FieldValuePredR&amp;&amp; field_value_pred,
+                                        bool includes_header = true,
+                                        std::size_t max_record_num = npos);
+    template &lt;class FieldValuePredR>
+      record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
+                                        std::basic_streambuf&lt;Ch, Tr>* out,
+                                        std::size_t target_field_index,
+                                        FieldValuePredR&amp;&amp; field_value_pred,
+                                        bool includes_header = true,
+                                        std::size_t max_record_num = npos);
     record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; other)
                                       noexcept(<nc>see below</nc>);
    ~record_extractor_with_indexed_key();
@@ -1129,31 +1138,36 @@ namespace commata {
 
       <p>An instance of <c>record_extractor_with_indexed_key</c> is a type that meets <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
       <p>It scans the all non-header records to decide whether the record is forwarded to the stream in terms of their values of the field at the target field index instructed with a parameter of its constructor explicitly.</p>
-      <p><c>FieldValuePred</c> shall be a binary predicate type for two <c>const char*</c> parameters.</p>
+      <p><c>FieldValuePred</c> shall be a binary predicate type for two <c>const Ch*</c> parameters.
+         <c>Ch</c> shall be a char-like type.
+         <c>Tr</c> shall be a character traits type of <c>std::remove_const_t&lt;Ch></c>.
+         <c>Allocator</c> shall meet the <c>Allocator</c> requirements.</p>
 
       <section id="record_extractor_with_indexed_key.cons">
         <name><c>record_extractor_with_indexed_key</c> constructors and assignment operators</name>
 
         <code-item>
           <code>
-record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
-                                  std::size_t target_field_index,
-                                  FieldValuePred field_value_pred,
-                                  bool includes_header = true,
-                                  std::size_t max_record_num = npos);
-record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
-                                  std::basic_streambuf&lt;Ch, Tr>* out,
-                                  std::size_t target_field_index,
-                                  FieldValuePred field_value_pred,
-                                  bool includes_header = true,
-                                  std::size_t max_record_num = npos);
+template &lt;class FieldValuePredR>
+  record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
+                                    std::size_t target_field_index,
+                                    FieldValuePredR&amp;&amp; field_value_pred,
+                                    bool includes_header = true,
+                                    std::size_t max_record_num = npos);
+template &lt;class FieldValuePredR>
+  record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
+                                    std::basic_streambuf&lt;Ch, Tr>* out,
+                                    std::size_t target_field_index,
+                                    FieldValuePredR&amp;&amp; field_value_pred,
+                                    bool includes_header = true,
+                                    std::size_t max_record_num = npos);
           </code>
           <requires><c>out</c> shall be a valid pointer. For the first overload, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
-          <effects>Constructs an object that holds the copies of the parameters and behaves as <xref id="table.record_extractor_with_indexed_key.cons"/> shows.
+          <effects>Constructs an object <c>record_extractor_with_indexed_key</c>. The parameters work as <xref id="table.record_extractor_with_indexed_key.cons"/> shows.
                    An object constructed by the first overload uses a default constructed <c>Allocator</c> object to allocate memory.
                    One constructed by the second overload uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
 
-          <table id="table.record_extractor_with_indexed_key.ctor">
+          <table id="table.record_extractor_with_indexed_key.cons">
             <caption>Principal parameters of the constructors of <c>record_extractor_with_indexed_key</c> and the behaviour of the constructed object</caption>
             <col width="2"/><col width="12"/>
             <tr>
@@ -1170,7 +1184,7 @@ record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; all
             </tr>
             <tr>
               <td><c>field_value_pred</c></td>
-              <td>Called for every field at the target field index of non-header records.
+              <td>Forwarded as an argument to a constructor of <c>FieldNamePred</c> to make a predicate object called for every field at the target field index of non-header records.
                   The parameters are <c>f</c> and <c>l</c> where the field value is the range [<c>f</c>, <c>l</c>).
                   If returns a non-<c>false</c> value, then the record is qualified to be forwarded to <c>out</c>.</td>
             </tr>
