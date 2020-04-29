@@ -688,7 +688,8 @@ public:
 
     store_buffer(const store_buffer&) = delete;
 
-    void attach(Ch* buffer, std::size_t size) noexcept
+    // Throws nothing.
+    void attach(Ch* buffer, std::size_t size)
     {
         assert(!buffer_);
         buffer_ = buffer;
@@ -696,7 +697,8 @@ public:
         end_ = buffer_ + size;
     }
 
-    std::pair<Ch*, std::size_t> detach() noexcept
+    // Throws nothing.
+    std::pair<Ch*, std::size_t> detach()
     {
         assert(buffer_);
         std::pair<Ch*, std::size_t> p(buffer_, end_ - buffer_);
@@ -782,7 +784,7 @@ public:
 
     explicit table_store(
         std::allocator_arg_t = std::allocator_arg,
-        const Allocator& alloc = Allocator()) :
+        const Allocator& alloc = Allocator()) noexcept :
         member_like_base<Allocator>(alloc),
         buffers_(nullptr), buffers_back_(nullptr), buffers_size_(0),
         buffers_cleared_(nullptr), buffers_cleared_back_(nullptr)
@@ -793,7 +795,7 @@ public:
             std::move(other))
     {}
 
-    // Requires allocators to be equal and throws nothing.
+    // Requires allocators to be equal. Throws nothing.
     table_store(std::allocator_arg_t, const Allocator& alloc,
         table_store&& other) :
         member_like_base<Allocator>(alloc),
@@ -830,10 +832,12 @@ public:
         }
     }
 
-    // Requires allocators to be equal and throws nothing.
     table_store& operator=(table_store&& other)
+        noexcept(std::allocator_traits<Allocator>::
+            propagate_on_container_move_assignment::value)
     {
-        assert(get_allocator() == other.get_allocator());
+        assert(at_t::propagate_on_container_move_assignment::value
+            || (get_allocator() == other.get_allocator()));
         table_store(
             std::allocator_arg,
             select_allocator(*this, other,
@@ -901,7 +905,7 @@ public:
             min_size);
     }
 
-    void consume_buffer(Ch* p, std::size_t size)
+    void consume_buffer(Ch* p, std::size_t size) noexcept
     try {
         buffers_cleared_ = hello(p, size, buffers_cleared_);        // throw
         if (!buffers_cleared_back_) {
@@ -1202,6 +1206,7 @@ public:
         other.records_ = nullptr;
     }
 
+    // Throws nothing if alloc == other.get_allocator().
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
         basic_stored_table&& other) :
         store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
@@ -1262,7 +1267,7 @@ private:
         std::min<std::size_t>(std::numeric_limits<std::size_t>::max(), 8192U);
 
     static std::size_t sanitize_buffer_size(
-        std::size_t buffer_size, const Allocator& alloc)
+        std::size_t buffer_size, const Allocator& alloc) noexcept
     {
         if (buffer_size == 0U) {
             buffer_size = default_buffer_size;
@@ -1287,7 +1292,7 @@ private:
     }
 
     static void destroy_deallocate_content(
-        Allocator a, typename at_t::pointer records)
+        Allocator a, typename at_t::pointer records) noexcept
     {
         if (records) {
             at_t::destroy(a, std::addressof(*records));
