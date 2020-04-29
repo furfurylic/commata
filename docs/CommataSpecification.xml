@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-04-26 (UTC)</signature>
+<signature>2020-04-29 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1333,60 +1333,60 @@ namespace commata {
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
   template &lt;class ChC, class Tr, class Other>
     bool operator==(const basic_stored_value&lt;ChC, Tr>&amp; v,
-                    const Other&amp;                       o) noexcept;
+                    const Other&amp;                       o) noexcept(<nc>see below</nc>);
   template &lt;class ChC, class Tr, class Other>
     bool operator==(const Other&amp;                       o,
-                    const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept;
+                    const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
 
   template &lt;class ChL, class ChR, class Tr>
     bool operator!=(const basic_stored_value&lt;ChL, Tr>&amp; l,
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
   template &lt;class ChC, class Tr, class Other>
     bool operator!=(const basic_stored_value&lt;ChC, Tr>&amp; v,
-                    const Other&amp;                       o) noexcept;
+                    const Other&amp;                       o) noexcept(<nc>see below</nc>);
   template &lt;class ChC, class Tr, class Other>
     bool operator!=(const Other&amp;                       o,
-                    const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept;
+                    const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
 
   template &lt;class ChL, class ChR, class Tr>
     bool operator&lt; (const basic_stored_value&lt;ChL, Tr>&amp; l,
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
   template &lt;class ChC, class Tr, class Other>
     bool operator&lt; (const basic_stored_value&lt;ChC, Tr>&amp; v,
-                    const Other&amp;                       o) noexcept;
+                    const Other&amp;                       o) noexcept(<nc>see below</nc>);
   template &lt;class ChC, class Tr, class Other>
     bool operator&lt; (const Other&amp;                       o,
-                    const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept;
+                    const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
 
   template &lt;class ChL, class ChR, class Tr>
     bool operator> (const basic_stored_value&lt;ChL, Tr>&amp; l,
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
   template &lt;class ChC, class Tr, class Other>
     bool operator> (const basic_stored_value&lt;ChC, Tr>&amp; l,
-                    const Other&amp;                       r) noexcept;
+                    const Other&amp;                       r) noexcept(<nc>see below</nc>);
   template &lt;class ChC, class Tr, class Other>
     bool operator> (const Other&amp;                       l,
-                    const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept;
+                    const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
 
   template &lt;class ChL, class ChR, class Tr>
     bool operator&lt;=(const basic_stored_value&lt;ChL, Tr>&amp; l,
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
   template &lt;class ChC, class Tr, class Other>
     bool operator&lt;=(const basic_stored_value&lt;ChC, Tr>&amp; l,
-                    const Other&amp;                       r) noexcept;
+                    const Other&amp;                       r) noexcept(<nc>see below</nc>);
   template &lt;class ChC, class Tr, class Other>
     bool operator&lt;=(const Other&amp;                       l,
-                    const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept;
+                    const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
 
   template &lt;class ChL, class ChR, class Tr>
     bool operator>=(const basic_stored_value&lt;ChL, Tr>&amp; l,
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
   template &lt;class ChC, class Tr, class Other>
     bool operator>=(const basic_stored_value&lt;ChC, Tr>&amp; l,
-                    const Other&amp;                       r) noexcept;
+                    const Other&amp;                       r) noexcept(<nc>see below</nc>);
   template &lt;class ChC, class Tr, class Other>
     bool operator>=(const Other&amp;                       l,
-                    const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept;
+                    const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
 
   <c>// <n><xref id="basic_stored_value.inserter"/>, basic_stored_value inserters:</n></c>
   template &lt;class ChC, class Tr>
@@ -1844,13 +1844,14 @@ template &lt;class ChL, class ChR, class Tr>
             <code>
 template &lt;class ChC, class Tr, class Other>
   bool operator==(const basic_stored_value&lt;ChC, Tr>&amp; v,
-                  const Other&amp;                       o) noexcept;
+                  const Other&amp;                       o) noexcept(<nc>see below</nc>);
 template &lt;class ChC, class Tr, class Other>
   bool operator==(const Other&amp;                       o,
-                  const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
             </code>
             <returns>If <c>std::is_convertible&lt;Other, const std::remove_const_t&lt;ChC>*>::value</c> is <c>false</c>, <c>v.size() == o.size() &amp;&amp; Tr::compare(v.data(), o.data(), v.size()) == 0</c>.
                      Otherwise, <c>v.size() == Tr::length(o) &amp;&amp; Tr::compare(v.data(), o, v.size()) == 0</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> are <c>true</c> if <c>std::is_convertible&lt;Other, const std::remove_const_t&lt;ChC>*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -1863,12 +1864,13 @@ template &lt;class ChL, class ChR, class Tr>
                   const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
 template &lt;class ChC, class Tr, class Other>
   bool operator!=(const basic_stored_value&lt;ChC, Tr>&amp; l,
-                  const Other&amp;                       r) noexcept;
+                  const Other&amp;                       r) noexcept(<nc>see below</nc>);
 template &lt;class ChC, class Tr, class Other>
   bool operator!=(const Other&amp;                       l,
-                  const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(l == r)</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const std::remove_const_t&lt;ChC>*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -1887,22 +1889,24 @@ template &lt;class ChL, class ChR, class Tr>
             <code>
 template &lt;class ChC, class Tr, class Other>
   bool operator&lt; (const basic_stored_value&lt;ChC, Tr>&amp; v,
-                  const Other&amp;                       o) noexcept;
+                  const Other&amp;                       o) noexcept(<nc>see below</nc>);
             </code>
             <returns>If <c>std::is_convertible&lt;Other, const std::remove_const_t&lt;ChC>*>::value</c> is <c>false</c>,
                      <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; o.size()</c> where <c>c</c> is the return value of <c>Tr::compare(v.data(), o.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>o.size()</c>.
                      Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; Tr::length(o)</c> where <c>c</c> is the return value of <c>Tr::compare(v.data(), o, rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>Tr::length(o)</c>.</returns>
+            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible&lt;Other, const std::remove_const_t&lt;ChC>*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
 
           <code-item>
             <code>
 template &lt;class ChC, class Tr, class Other>
   bool operator&lt; (const Other&amp;                       o,
-                  const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
             </code>
             <returns>If <c>std::is_convertible&lt;Other, const std::remove_const_t&lt;ChC>*>::value</c> is <c>false</c>,
                      <c>c &lt; 0 || (c == 0 &amp;&amp; o.size() &lt; v.size()</c> where <c>c</c> is the return value of <c>Tr::compare(o.data(), v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>o.size()</c> and <c>v.size()</c>.
                      Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; Tr::length(o) &lt; v.size()</c> where <c>c</c> is the return value of <c>Tr::compare(o, v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>Tr::length(o)</c> and <c>v.size()</c>.</returns>
+            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible&lt;Other, const std::remove_const_t&lt;ChC>*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -1915,12 +1919,13 @@ template &lt;class ChL, class ChR, class Tr>
                   const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
 template &lt;class ChC, class Tr, class Other>
   bool operator> (const basic_stored_value&lt;ChC, Tr>&amp; l,
-                  const Other&amp;                       r) noexcept;
+                  const Other&amp;                       r) noexcept(<nc>see below</nc>);
 template &lt;class ChC, class Tr, class Other>
   bool operator> (const Other&amp;                       l,
-                  const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>r &lt; l</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const std::remove_const_t&lt;ChC>*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -1933,12 +1938,13 @@ template &lt;class ChL, class ChR, class Tr>
                   const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
 template &lt;class ChC, class Tr, class Other>
   bool operator&lt;=(const basic_stored_value&lt;ChC, Tr>&amp; l,
-                  const Other&amp;                       r) noexcept;
+                  const Other&amp;                       r) noexcept(<nc>see below</nc>);
 template &lt;class ChC, class Tr, class Other>
   bool operator&lt;=(const Other&amp;                       l,
-                  const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(r &lt; l)</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const std::remove_const_t&lt;ChC>*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -1951,12 +1957,13 @@ template &lt;class ChL, class ChR, class Tr>
                   const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
 template &lt;class ChC, class Tr, class Other>
   bool operator>=(const basic_stored_value&lt;ChC, Tr>&amp; l,
-                  const Other&amp;                       r) noexcept;
+                  const Other&amp;                       r) noexcept(<nc>see below</nc>);
 template &lt;class ChC, class Tr, class Other>
   bool operator>=(const Other&amp;                       l,
-                  const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept;
+                  const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(l &lt; r)</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const std::remove_const_t&lt;ChC>*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
       </section>
@@ -4587,10 +4594,10 @@ namespace commata {
                     const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
   template &lt;class TextSource, class Allocator, class Other>
     bool operator==(const text_pull&lt;TextSource, Allocator>&amp;   v,
-                    const Other&amp;                              o) noexcept;
+                    const Other&amp;                              o) noexcept(<nc>see below</nc>);
   template &lt;class TextSource, class Allocator, class Other>
     bool operator==(const Other&amp;                              o,
-                    const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept;
+                    const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
 
   template &lt;class TextSourceL, class TextSourceR,
             class AllocatorL, class AllocatorR>
@@ -4598,10 +4605,10 @@ namespace commata {
                     const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
   template &lt;class TextSource, class Allocator, class Other>
     bool operator!=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept;
+                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
   template &lt;class TextSource, class Allocator, class Other>
     bool operator!=(const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
   template &lt;class TextSourceL, class TextSourceR,
             class AllocatorL, class AllocatorR>
@@ -4609,10 +4616,10 @@ namespace commata {
                     const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
   template &lt;class TextSource, class Allocator, class Other>
     bool operator&lt; (const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept;
+                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
   template &lt;class TextSource, class Allocator, class Other>
     bool operator&lt; (const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
   template &lt;class TextSourceL, class TextSourceR,
             class AllocatorL, class AllocatorR>
@@ -4620,10 +4627,10 @@ namespace commata {
                     const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
   template &lt;class TextSource, class Allocator, class Other>
     bool operator> (const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept;
+                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
   template &lt;class TextSource, class Allocator, class Other>
     bool operator> (const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
   template &lt;class TextSourceL, class TextSourceR,
             class AllocatorL, class AllocatorR>
@@ -4631,10 +4638,10 @@ namespace commata {
                     const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
   template &lt;class TextSource, class Allocator, class Other>
     bool operator&lt;=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept;
+                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
   template &lt;class TextSource, class Allocator, class Other>
     bool operator&lt;=(const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
   template &lt;class TextSourceL, class TextSourceR,
             class AllocatorL, class AllocatorR>
@@ -4642,10 +4649,10 @@ namespace commata {
                     const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
   template &lt;class TextSource, class Allocator, class Other>
     bool operator>=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept;
+                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
   template &lt;class TextSource, class Allocator, class Other>
     bool operator>=(const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
   <c>// <n><xref id="text_pull.io"/>, <c>text_pull</c> inserters:</n></c>
   template &lt;class TextSource, class Allocator>
@@ -5533,13 +5540,14 @@ template &lt;class TextSourceL, class TextSourceR,
             <code>
 template &lt;class TextSource, class Allocator, class Other>
   bool operator==(const text_pull&lt;TextSource, Allocator>&amp;   v,
-                  const Other&amp;                              o) noexcept;
+                  const Other&amp;                              o) noexcept(<nc>see below</nc>);
 template &lt;class TextSource, class Allocator, class Other>
   bool operator==(const Other&amp;                              o,
-                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept;
+                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
             </code>
             <returns>If <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c>, <c>v.size() == o.size() &amp;&amp; Tr::compare(v.data(), o.data(), v.size()) == 0</c>.
                      Otherwise, <c>v.size() == TextSource::traits_type::length(o) &amp;&amp; TextSource::traits_type::compare(v.data(), o, v.size()) == 0</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -5553,12 +5561,13 @@ template &lt;class TextSourceL, class TextSourceR,
                   const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
 template &lt;class TextSource, class Allocator, class Other>
   bool operator!=(const text_pull&lt;TextSource, Allocator>&amp;   v,
-                  const Other&amp;                              o) noexcept;
+                  const Other&amp;                              o) noexcept(<nc>see below</nc>);
 template &lt;class TextSource, class Allocator, class Other>
   bool operator!=(const Other&amp;                              o,
-                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept;
+                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>left != right</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -5578,22 +5587,24 @@ template &lt;class TextSourceL, class TextSourceR,
             <code>
 template &lt;class TextSource, class Allocator, class Other>
   bool operator&lt; (const text_pull&lt;TextSource, Allocator>&amp;   v,
-                  const Other&amp;                              o) noexcept;
+                  const Other&amp;                              o) noexcept(<nc>see below</nc>);
             </code>
             <returns>If <c>std::is_convertible&lt;Other, typename TextSource::char_type*>::value</c> is <c>false</c>,
                      <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; o.size()</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(v.data(), o.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>o.size()</c>.
                      Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; TextSource::traits_type::length(o)</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(v.data(), o, rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>Tr::length(o)</c>.</returns>
+            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
 
           <code-item>
             <code>
 template &lt;class TextSource, class Allocator, class Other>
   bool operator&lt; (const Other&amp;                              o,
-                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept;
+                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
             </code>
             <returns>If <c>std::is_convertible&lt;Other, typename TextSource::char_type*>::value</c> is <c>false</c>,
                      <c>c &lt; 0 || (c == 0 &amp;&amp; o.size() &lt; v.size()</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(o.data(), v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>o.size()</c> and <c>v.size()</c>.
                      Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; TextSource::traits_type::length(o) &lt; v.size()</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(o, v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>Tr::length(o)</c> and <c>v.size()</c>.</returns>
+            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -5607,12 +5618,13 @@ template &lt;class TextSourceL, class TextSourceR,
                   const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
 template &lt;class TextSource, class Allocator, class Other>
   bool operator> (const text_pull&lt;TextSource, Allocator>&amp;   l,
-                  const Other&amp;                              r) noexcept;
+                  const Other&amp;                              r) noexcept(<nc>see below</nc>);
 template &lt;class TextSource, class Allocator, class Other>
   bool operator> (const Other&amp;                              l,
-                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>r &lt; l</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -5626,12 +5638,13 @@ template &lt;class TextSourceL, class TextSourceR,
                   const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
 template &lt;class TextSource, class Allocator, class Other>
   bool operator&lt;=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                  const Other&amp;                              r) noexcept;
+                  const Other&amp;                              r) noexcept(<nc>see below</nc>);
 template &lt;class TextSource, class Allocator, class Other>
   bool operator&lt;=(const Other&amp;                              l,
-                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(r &lt; l)</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -5645,12 +5658,13 @@ template &lt;class TextSourceL, class TextSourceR,
                   const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
 template &lt;class TextSource, class Allocator, class Other>
   bool operator>=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                  const Other&amp;                              r) noexcept;
+                  const Other&amp;                              r) noexcept(<nc>see below</nc>);
 template &lt;class TextSource, class Allocator, class Other>
   bool operator>=(const Other&amp;                              l,
-                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept;
+                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(l &lt; r)</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
       </section>

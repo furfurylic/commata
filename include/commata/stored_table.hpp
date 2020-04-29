@@ -74,9 +74,8 @@ public:
         assert(*end_ == Ch());
     }
 
-    basic_stored_value(const basic_stored_value& other) noexcept = default;
-    basic_stored_value& operator=(const basic_stored_value& other) noexcept
-        = default;
+    basic_stored_value(const basic_stored_value& other) = default;
+    basic_stored_value& operator=(const basic_stored_value& other) = default;
 
     template <
         class OtherCh,
@@ -373,7 +372,8 @@ auto operator==(
 template <class ChC, class Tr, class Right>
 auto operator==(
     const basic_stored_value<ChC, Tr>& left,
-    const Right& right) noexcept
+    const Right& right)
+    noexcept(noexcept(detail::string_value_eq(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
@@ -383,7 +383,8 @@ auto operator==(
 template <class ChC, class Tr, class Left>
 auto operator==(
     const Left& left,
-    const basic_stored_value<ChC, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right)
+    noexcept(noexcept(detail::string_value_eq(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {
@@ -405,7 +406,8 @@ auto operator!=(
 template <class ChC, class Tr, class Right>
 auto operator!=(
     const basic_stored_value<ChC, Tr>& left,
-    const Right& right) noexcept
+    const Right& right)
+    noexcept(noexcept(!(left == right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
@@ -415,7 +417,8 @@ auto operator!=(
 template <class ChC, class Tr, class Left>
 auto operator!=(
     const Left& left,
-    const basic_stored_value<ChC, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right)
+    noexcept(noexcept(!(left == right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {
@@ -425,7 +428,8 @@ auto operator!=(
 template <class ChL, class ChR, class Tr>
 auto operator<(
     const basic_stored_value<ChL, Tr>& left,
-    const basic_stored_value<ChR, Tr>& right) noexcept
+    const basic_stored_value<ChR, Tr>& right)
+    noexcept(noexcept(detail::string_value_lt(left, right)))
  -> std::enable_if_t<
         std::is_same<
             std::remove_const_t<ChL>,
@@ -437,7 +441,8 @@ auto operator<(
 template <class ChC, class Tr, class Right>
 auto operator<(
     const basic_stored_value<ChC, Tr>& left,
-    const Right& right) noexcept
+    const Right& right)
+    noexcept(noexcept(detail::string_value_lt(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
@@ -447,7 +452,8 @@ auto operator<(
 template <class ChC, class Tr, class Left>
 auto operator<(
     const Left& left,
-    const basic_stored_value<ChC, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right)
+    noexcept(noexcept(detail::string_value_lt(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {
@@ -469,7 +475,8 @@ auto operator>(
 template <class ChC, class Tr, class Right>
 auto operator>(
     const basic_stored_value<ChC, Tr>& left,
-    const Right& right) noexcept
+    const Right& right)
+    noexcept(noexcept(right < left))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
@@ -479,7 +486,8 @@ auto operator>(
 template <class ChC, class Tr, class Left>
 auto operator>(
     const Left& left,
-    const basic_stored_value<ChC, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right)
+    noexcept(noexcept(right < left))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {
@@ -489,7 +497,8 @@ auto operator>(
 template <class ChL, class ChR, class Tr>
 auto operator<=(
     const basic_stored_value<ChL, Tr>& left,
-    const basic_stored_value<ChR, Tr>& right) noexcept
+    const basic_stored_value<ChR, Tr>& right)
+    noexcept(noexcept(!(right < left)))
  -> std::enable_if_t<
         std::is_same<
             std::remove_const_t<ChL>,
@@ -501,7 +510,8 @@ auto operator<=(
 template <class ChC, class Tr, class Right>
 auto operator<=(
     const basic_stored_value<ChC, Tr>& left,
-    const Right& right) noexcept
+    const Right& right)
+    noexcept(noexcept(!(right < left)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
@@ -511,7 +521,8 @@ auto operator<=(
 template <class ChC, class Tr, class Left>
 auto operator<=(
     const Left& left,
-    const basic_stored_value<ChC, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right)
+    noexcept(noexcept(!(right < left)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {
@@ -521,7 +532,8 @@ auto operator<=(
 template <class ChL, class ChR, class Tr>
 auto operator>=(
     const basic_stored_value<ChL, Tr>& left,
-    const basic_stored_value<ChR, Tr>& right) noexcept
+    const basic_stored_value<ChR, Tr>& right)
+    noexcept(noexcept(!(left < right)))
  -> std::enable_if_t<
         std::is_same<
             std::remove_const_t<ChL>,
@@ -533,7 +545,8 @@ auto operator>=(
 template <class ChC, class Tr, class Right>
 auto operator>=(
     const basic_stored_value<ChC, Tr>& left,
-    const Right& right) noexcept
+    const Right& right)
+    noexcept(noexcept(!(left < right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Right>::value, bool>
 {
@@ -543,7 +556,8 @@ auto operator>=(
 template <class ChC, class Tr, class Left>
 auto operator>=(
     const Left& left,
-    const basic_stored_value<ChC, Tr>& right) noexcept
+    const basic_stored_value<ChC, Tr>& right)
+    noexcept(noexcept(!(left < right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         std::remove_const_t<ChC>, Tr, Left>::value, bool>
 {

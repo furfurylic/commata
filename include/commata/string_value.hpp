@@ -31,7 +31,10 @@ struct is_comparable_with_string_value :
 template <class T, class U>
 bool string_value_eq(
     const T& left,
-    const U& right) noexcept
+    const U& right)
+    noexcept(
+        noexcept(left.size()) && noexcept(right.size())
+     && noexcept(left.data()) && noexcept(right.data()))
 {
     static_assert(std::is_same<typename T::traits_type,
                                typename U::traits_type>::value, "");
@@ -43,7 +46,7 @@ bool string_value_eq(
 template <class T>
 bool string_value_eq(
     const T& left,
-    const typename T::value_type* right) noexcept
+    const typename T::value_type* right)
 {
     const auto le = left.cend();
 
@@ -65,7 +68,7 @@ bool string_value_eq(
 template <class T>
 bool string_value_eq(
     const typename T::value_type* left,
-    const T& right) noexcept
+    const T& right)
 {
     return string_value_eq(right, left);
 }
@@ -73,7 +76,10 @@ bool string_value_eq(
 template <class T, class U>
 bool string_value_lt(
     const T& left,
-    const U& right) noexcept
+    const U& right)
+    noexcept(
+        noexcept(left.size()) && noexcept(right.size())
+     && noexcept(left.data()) && noexcept(right.data()))
 {
     static_assert(std::is_same<typename T::traits_type,
                                typename U::traits_type>::value, "");
@@ -88,7 +94,7 @@ bool string_value_lt(
 template <class T>
 bool string_value_lt(
     const T& left,
-    const typename T::value_type* right) noexcept
+    const typename T::value_type* right)
 {
     using tr_t = typename T::traits_type;
     for (auto l : left) {
@@ -106,7 +112,7 @@ bool string_value_lt(
 template <class T>
 bool string_value_lt(
     const typename T::value_type* left,
-    const T& right) noexcept
+    const T& right)
 {
     using tr_t = typename T::traits_type;
     for (auto r : right) {

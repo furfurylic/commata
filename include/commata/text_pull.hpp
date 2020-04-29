@@ -1081,7 +1081,8 @@ auto operator==(
 template <class TextSource, class Allocator, class Right>
 auto operator==(
     const text_pull<TextSource, Allocator>& left,
-    const Right& right) noexcept
+    const Right& right)
+    noexcept(noexcept(detail::string_value_eq(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Right>::value, bool>
@@ -1092,7 +1093,8 @@ auto operator==(
 template <class TextSource, class Allocator, class Left>
 auto operator==(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right) noexcept
+    const text_pull<TextSource, Allocator>& right)
+    noexcept(noexcept(detail::string_value_eq(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Left>::value, bool>
@@ -1119,7 +1121,8 @@ auto operator!=(
 template <class TextSource, class Allocator, class Right>
 auto operator!=(
     const text_pull<TextSource, Allocator>& left,
-    const Right& right) noexcept
+    const Right& right)
+    noexcept(noexcept(!(left == right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Right>::value, bool>
@@ -1130,7 +1133,8 @@ auto operator!=(
 template <class TextSource, class Allocator, class Left>
 auto operator!=(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right) noexcept
+    const text_pull<TextSource, Allocator>& right)
+    noexcept(noexcept(!(left == right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Left>::value, bool>
@@ -1157,7 +1161,8 @@ auto operator<(
 template <class TextSource, class Allocator, class Right>
 auto operator<(
     const text_pull<TextSource, Allocator>& left,
-    const Right& right) noexcept
+    const Right& right)
+    noexcept(noexcept(detail::string_value_lt(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Right>::value, bool>
@@ -1168,7 +1173,8 @@ auto operator<(
 template <class TextSource, class Allocator, class Left>
 auto operator<(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right) noexcept
+    const text_pull<TextSource, Allocator>& right)
+    noexcept(noexcept(detail::string_value_lt(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Left>::value, bool>
@@ -1195,7 +1201,8 @@ auto operator>(
 template <class TextSource, class Allocator, class Right>
 auto operator>(
     const text_pull<TextSource, Allocator>& left,
-    const Right& right) noexcept
+    const Right& right)
+    noexcept(noexcept(right < left))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Right>::value, bool>
@@ -1206,7 +1213,8 @@ auto operator>(
 template <class TextSource, class Allocator, class Left>
 auto operator>(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right) noexcept
+    const text_pull<TextSource, Allocator>& right)
+    noexcept(noexcept(right < left))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Left>::value, bool>
@@ -1233,7 +1241,8 @@ auto operator<=(
 template <class TextSource, class Allocator, class Right>
 auto operator<=(
     const text_pull<TextSource, Allocator>& left,
-    const Right& right) noexcept
+    const Right& right) 
+    noexcept(noexcept(!(right < left)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Right>::value, bool>
@@ -1244,7 +1253,8 @@ auto operator<=(
 template <class TextSource, class Allocator, class Left>
 auto operator<=(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right) noexcept
+    const text_pull<TextSource, Allocator>& right)
+    noexcept(noexcept(!(right < left)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Left>::value, bool>
@@ -1271,7 +1281,8 @@ auto operator>=(
 template <class TextSource, class Allocator, class Right>
 auto operator>=(
     const text_pull<TextSource, Allocator>& left,
-    const Right& right) noexcept
+    const Right& right)
+    noexcept(noexcept(!(left < right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Right>::value, bool>
@@ -1282,7 +1293,8 @@ auto operator>=(
 template <class TextSource, class Allocator, class Left>
 auto operator>=(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right) noexcept
+    const text_pull<TextSource, Allocator>& right)
+    noexcept(noexcept(!(left < right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TextSource::char_type,
         typename TextSource::traits_type, Left>::value, bool>
