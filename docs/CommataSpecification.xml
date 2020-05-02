@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-04-29 (UTC)</signature>
+<signature>2020-06-25 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -658,7 +658,7 @@ template &lt;class Handler>
                  Its return type and the return value are as follows:
                  <ul>
                    <li>if both of the return types of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>,</li>
-                   <li>otherwise, the return type shall be <c>bool</c>, and the return type shall be <c>true</c> if and only if none of the the return values contextually converted to <c>bool</c> of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> is <c>false</c>.</li>
+                   <li>otherwise, the return type shall be <c>bool</c>, and the return value shall be <c>true</c> if and only if none of the the return values contextually converted to <c>bool</c> of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> is <c>false</c>.</li>
                  </ul></returns>
         <remark>The first overload shall not participate in overload resolution unless <c>std::decay_t&lt;Handler></c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
                 The expression inside <c>noexcept</c> of the first overload is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;Handler>>::value</c>.</remark>
@@ -1267,7 +1267,7 @@ template &lt;class FieldNamePred, class FieldValuePred,
                                     FieldValuePred&amp;&amp; field_value_pred,
                                     Appendices&amp;&amp;... appendices);
         </code>
-        <effects>First makes a non-reference and cv-unqualified type variable <c>fvp</c> initialized with <c>STRING_PRED&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred), alloc)</c>.
+        <effects>First makes a non-reference and cv-unqualified type variable <c>fvp</c> initialized with <c>STRING_PRED&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred), alloc)</c>.
                  Then if the reference-removed type of <c>FieldNamePred</c> is an integral type, returns <c>record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(std::allocator_arg, alloc, out, field_name_pred, std::move(fvp), std::forward&lt;Appendices>(appendices)...)</c>.
                  Otherwise, makes one more non-reference and cv-unqualified type variable <c>fnp</c> initialized with <c>STRING_PRED&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred), alloc)</c>,
                  and then returns <c>record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(std::allocator_arg, alloc, out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...)</c>.</effects>
@@ -1749,7 +1749,7 @@ pointer       data()        noexcept;
 const_pointer data()  const noexcept;
           </code>
           <returns><c>b</c>.</returns>
-          <remark>The range [<c>r</c>, <c>r + size()</c>] is readable and the range [<c>r</c>, <c>r + size() - 1</c>) is writable where <c>r</c> is the returned value.</remark>
+          <remark>The range [<c>r</c>, <c>r + size()</c>] is readable and the range [<c>r</c>, <c>r + size()</c>) is writable where <c>r</c> is the returned value.</remark>
         </code-item>
 
         <code-item>
@@ -1774,7 +1774,7 @@ iterator erase(const_iterator first, const_iterator last);
           <postcondition>Suppose that <c>prefix</c> is the string of [<c>cbegin()</c>, <c>first</c>) and <c>postfix</c> is of [<c>last</c>, <c>cend()</c>) before the call.
                          Then the string of [<c>b</c>, <c>e</c>) shall be equal to <c>prefix</c> and <c>postfix</c> concatenated.
                          <c>*e</c> shall be <c>0</c>.</postcondition>
-          <returns><c>begin() + off</c> where <c>off</c> is the value of <c>first - bb</c> and <c>bb</c> is the value of <c>cbegin()</c> before the call.</returns>
+          <returns><c>begin() + off</c> where <c>off</c> is the value of <c>first - cbegin()</c> before the call.</returns>
           <remark>Calling this function invalidates all references, pointers, and iterators to the objects in the before-call range [<c>begin()</c>, <c>end()</c>].</remark>
         </code-item>
 
@@ -1784,8 +1784,8 @@ iterator erase(const_iterator position);
           </code>
           <requires><c>position</c> shall point an object in [<c>cbegin()</c>, <c>cend()</c>).</requires>
           <throws>Nothing.</throws>
-          <effects><c>erase(position, position + 1)</c>.</effects>
-          <returns><c>begin() + off</c> where <c>off</c> is the value of <c>position - bb</c> and <c>bb</c> is the value of <c>cbegin()</c> before the call.</returns>
+          <effects>Equivalent to call <c>erase(position, position + 1)</c>.</effects>
+          <returns><c>begin() + off</c> where <c>off</c> is the value of <c>position - cbegin()</c> before the call.</returns>
         </code-item>
 
         <code-item>
@@ -1793,7 +1793,7 @@ iterator erase(const_iterator position);
 basic_stored_value&amp; erase(size_type pos = 0, size_type n = npos);
           </code>
           <throws><c>std::out_of_range</c> if <c>pos > size()</c>.</throws>
-          <effects>Calls <c>erase(cbegin() + pos, cbegin() + pos + xlen)</c> where <c>xlen</c> is the smaller of <c>n</c> and <c>size() - pos</c>.</effects>
+          <effects>Equivalent to call <c>erase(cbegin() + pos, cbegin() + pos + xlen)</c> where <c>xlen</c> is the smaller of <c>n</c> and <c>size() - pos</c>.</effects>
           <returns><c>*this</c>.</returns>
         </code-item>
 
@@ -1803,7 +1803,7 @@ void pop_front();
           </code>
           <requires><c>empty()</c> shall not be <c>false</c>.</requires>
           <throws>Nothing.</throws>
-          <effects><c>erase(cbegin())</c>.</effects>
+          <effects>Equivalent to call <c>erase(cbegin())</c>.</effects>
         </code-item>
 
         <code-item>
@@ -1812,7 +1812,7 @@ void pop_back();
           </code>
           <requires><c>empty()</c> shall not be <c>false</c>.</requires>
           <throws>Nothing.</throws>
-          <effects><c>erase(cend() - 1)</c>.</effects>
+          <effects>Equivalent to call <c>erase(cend() - 1)</c>.</effects>
         </code-item>
 
         <code-item>
@@ -2150,7 +2150,7 @@ namespace commata {
   private:
     <c>// <nc>exposition only</nc></c>
     struct null_termination {
-      template &lt;class Iterator> friend bool operator!=(InputIterator left, null_termination) {
+      template &lt;class InputIterator> friend bool operator!=(InputIterator left, null_termination) {
         return !traits_type::eq(*left, char_type());
       }
     };
@@ -2300,7 +2300,7 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
         <code-item>
           <code>
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
-                   const basic_stored_table&amp;  other);
+                   const basic_stored_table&amp; other);
           </code>
           <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(alloc)</c> and <c>other.get_buffer_size()</c>.
                          If not singular, <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
@@ -2822,7 +2822,7 @@ template &lt;class Content, class Allocator, class... Args>
            <c>b</c> and <c>e</c> are rvalues of <c>Ch*</c>.
            <c>rv</c> is an rvalue of <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
 
-        <p>Requirements shown as (1) and (2) in <xref id="table.field_scanner.requirements"/> are optional, but at least one of (1) and (2) shall be satisfied without falling back to the default behaviors, because they are defined in a cross-referencing manner.</p>
+        <p>Requirements shown as (1) and (2) in <xref id="table.field_scanner.requirements"/> are optional, but at least one of (1) and (2) shall be satisfied without falling back to the default behaviours, because they are defined in a cross-referencing manner.</p>
 
         <table id="table.field_scanner.requirements">
           <caption><c>BodyFieldScanner</c> requirements</caption>
@@ -3685,9 +3685,9 @@ explicit replace_if_skipped(replacement_ignore_t) noexcept;
 template &lt;class U = T> explicit replace_if_skipped(U&amp;&amp; default_value = U());
           </code>
           <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;U>(default_value)</c>.</effects>
-          <remark>This overload shall not participate in overload resolution unless all of <c>std::is_base_of&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;U>>::value</c>,
-                  <c>std::is_base_of&lt;replacement_fail_t>, std::decay_t&lt;U>>::value</c> and
-                  <c>std::is_base_of&lt;replacement_ignore_t>, std::decay_t&lt;U>>::value</c> are <c>false</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless all of <c>std::is_base_of&lt;replace_if_skipped&lt;T>, std::decay_t&lt;U>>::value</c>,
+                  <c>std::is_base_of&lt;replacement_fail_t, std::decay_t&lt;U>>::value</c> and
+                  <c>std::is_base_of&lt;replacement_ignore_t, std::decay_t&lt;U>>::value</c> are <c>false</c>.</remark>
         </code-item>
 
         <code-item>
@@ -4094,7 +4094,7 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
 template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
             </code>
             <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
-            <effects>First calls a parsing function indicated in <xref id="table.arithmetic_field_translator.parsing_functions"/> for <c>T</c> and <c>Ch</c> to get a arithmetic value <c>v</c> of the range [<c>begin</c>, <c>end</c>).
+            <effects>First calls a parsing function indicated in <xref id="table.arithmetic_field_translator.parsing_functions"/> for <c>T</c> and <c>Ch</c> to get an arithmetic value <c>v</c> of the range [<c>begin</c>, <c>end</c>).
                      Then does an action indicated in <xref id="table.arithmetic_field_translator.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
                      In <xref id="table.arithmetic_field_translator.branching"/>, <c>ceh</c> is the conversion error handler, <c>n</c> is a null pointer of type <c>T*</c>, and <c>g</c> is a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, zero otherwise.</effects>
 
