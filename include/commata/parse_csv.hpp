@@ -15,12 +15,14 @@
 #include <memory>
 #include <streambuf>
 #include <string>
+#include <tuple>
 #include <utility>
 
 #include "handler_decorator.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
 #include "parse_error.hpp"
+#include "text_input.hpp"
 #include "typing_aid.hpp"
 
 namespace commata {
@@ -537,13 +539,13 @@ private:
 
 namespace csv {
 
-template <class Handler, class Tr>
+template <class Input, class Handler>
 class parser
 {
     static_assert(
         std::is_same<
-            typename Handler::char_type, typename Tr::char_type>::value,
-            "Handler::char_type and Tr::char_type are inconsistent; "
+            typename Input::char_type, typename Handler::char_type>::value,
+            "Input::char_type and Handler::char_type are inconsistent; "
             "they shall be the same type");
 
     using char_type = typename Handler::char_type;
@@ -565,7 +567,7 @@ private:
     // Number of chars of this line before physical_line_or_buffer_begin_
     std::size_t physical_line_chars_passed_away_;
 
-    std::basic_streambuf<char_type, Tr>* in_;
+    Input in_;
     bool eof_reached_;
     char_type* buffer_;
     char_type* buffer_last_;
@@ -579,16 +581,14 @@ private:
     {};
 
 public:
-    explicit parser(
-        std::basic_streambuf<typename Handler::char_type, Tr>* in,
-        Handler&& f)
+    explicit parser(Input in, Handler&& f)
         noexcept(std::is_nothrow_move_constructible<Handler>::value) :
         p_(nullptr), f_(std::move(f)),
         record_started_(false), s_(state::after_lf),
         physical_line_index_(parse_error::npos),
         physical_line_or_buffer_begin_(nullptr),
         physical_line_chars_passed_away_(0),
-        in_(in), eof_reached_(false), buffer_(nullptr)
+        in_(std::move(in)), eof_reached_(false), buffer_(nullptr)
     {}
 
     parser(parser&&) = default;
@@ -693,7 +693,7 @@ private:
 
         std::streamsize loaded_size = 0;
         do {
-            const auto length = in_->sgetn(buffer_ + loaded_size,
+            const auto length = in_(buffer_ + loaded_size,
                 buffer_size - loaded_size);
             if (length == 0) {
                 eof_reached_ = true;
@@ -836,55 +836,63 @@ private:
 
 }} // end namespace detail
 
-template <class Ch, class Tr>
+template <class TextInput>
 class csv_source
 {
-    std::basic_streambuf<Ch, Tr>* in_;
+    TextInput in_;
 
 public:
-    using char_type = Ch;
-    using traits_type = Tr;
+    using char_type = typename TextInput::char_type;
+    using traits_type = typename TextInput::traits_type;
 
-    explicit csv_source(std::basic_streambuf<Ch, Tr>* in) :
-        in_(in) {}
-    explicit csv_source(std::basic_istream<Ch, Tr>& in) noexcept :
-        in_(in.rdbuf()) {}
-    csv_source(const csv_source&) noexcept = default;
+    template <class... Args,
+        std::enable_if_t<
+            !std::is_same<
+                std::tuple<std::decay_t<Args>...>,
+                std::tuple<csv_source>>::value,
+            std::nullptr_t> = nullptr>
+    explicit csv_source(Args&&... args) noexcept(
+            std::is_nothrow_constructible<TextInput, Args&&...>::value) :
+        in_(std::forward<Args>(args)...)
+    {}
+
+    csv_source(const csv_source&) = default;
+    csv_source(csv_source&&) = default;
     ~csv_source() = default;
 
-    template <class Handler>
-    auto operator()(Handler handler)
-        noexcept(std::is_nothrow_move_constructible<Handler>::value)
+    template <class HandlerR>
+    auto operator()(HandlerR&& handler)
+        noexcept(
+            std::is_nothrow_move_constructible<std::decay_t<HandlerR>>::value)
      -> std::enable_if_t<
-            !detail::is_std_reference_wrapper<Handler>::value
-         && detail::is_with_buffer_control<Handler>::value,
+            !detail::is_std_reference_wrapper<std::decay_t<HandlerR>>::value
+         && detail::is_with_buffer_control<std::decay_t<HandlerR>>::value,
             detail::csv::parser<
+                TextInput,
                 std::conditional_t<
-                    detail::is_full_fledged<
-                        std::remove_reference_t<Handler>>::value,
-                    Handler,
+                    detail::is_full_fledged<std::decay_t<HandlerR>>::value,
+                    std::decay_t<HandlerR>,
                     detail::full_fledged_handler<
-                        std::remove_reference_t<Handler>,
-                        detail::thru_buffer_control>>, Tr>>
+                        std::decay_t<HandlerR>, detail::thru_buffer_control>>>>
     {
-        using handler_t = std::remove_reference_t<Handler>;
+        using handler_t = std::decay_t<HandlerR>;
         static_assert(
             std::is_same<
                 typename handler_t::char_type,
                 typename traits_type::char_type>::value,
-            "Handler::char_type and traits_type::char_type are "
+            "std::decay_t<HandlerR>::char_type and traits_type::char_type are "
             "inconsistent; they shall be the same type");
         using full_fledged_handler_t = std::conditional_t<
             detail::is_full_fledged<handler_t>::value,
-            Handler,
+            handler_t,
             detail::full_fledged_handler<
-                handler_t,
-                detail::thru_buffer_control>>;
-        return detail::csv::parser<full_fledged_handler_t, Tr>(
-            in_, full_fledged_handler_t(std::move(handler)));
+                handler_t, detail::thru_buffer_control>>;
+        return detail::csv::parser<TextInput, full_fledged_handler_t>(
+                std::move(in_),
+                full_fledged_handler_t(std::forward<HandlerR>(handler)));
     }
 
-    template <class Handler, class Allocator = std::allocator<Ch>>
+    template <class Handler, class Allocator = std::allocator<char_type>>
     auto operator()(Handler handler,
         std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
         noexcept(std::is_nothrow_move_constructible<Handler>::value)
@@ -892,8 +900,9 @@ public:
             !detail::is_std_reference_wrapper<Handler>::value
          && detail::is_without_buffer_control<Handler>::value,
             detail::csv::parser<
+                TextInput,
                 detail::full_fledged_handler<std::remove_reference_t<Handler>,
-                detail::default_buffer_control<Allocator>>, Tr>>
+                detail::default_buffer_control<Allocator>>>>
     {
         using handler_t = std::remove_reference_t<Handler>;
         static_assert(
@@ -911,9 +920,10 @@ public:
         using buffer_engine_t = detail::default_buffer_control<Allocator>;
         using full_fledged_handler_t =
             detail::full_fledged_handler<handler_t, buffer_engine_t>;
-        return detail::csv::parser<full_fledged_handler_t, Tr>(in_,
-            full_fledged_handler_t(
-                std::move(handler), buffer_engine_t(buffer_size, alloc)));
+        return detail::csv::parser<TextInput, full_fledged_handler_t>(
+                std::move(in_),
+                full_fledged_handler_t(
+                    std::move(handler), buffer_engine_t(buffer_size, alloc)));
     }
 
     template <class Handler, class... Args>
@@ -926,22 +936,86 @@ public:
 };
 
 template <class Ch, class Tr>
-csv_source<Ch, Tr> make_csv_source(std::basic_streambuf<Ch, Tr>* in)
+csv_source<streambuf_input<Ch, Tr>> make_csv_source(
+    std::basic_streambuf<Ch, Tr>* in)
 {
-    return csv_source<Ch, Tr>(in);
+    return csv_source<streambuf_input<Ch, Tr>>(in);
 }
 
 template <class Ch, class Tr>
-csv_source<Ch, Tr> make_csv_source(std::basic_istream<Ch, Tr>& in) noexcept
+csv_source<streambuf_input<Ch, Tr>> make_csv_source(
+    std::basic_istream<Ch, Tr>& in) noexcept
 {
-    return csv_source<Ch, Tr>(in);
+    return csv_source<streambuf_input<Ch, Tr>>(in);
 }
 
-template <class Input, class... Args>
-bool parse_csv(Input&& in, Args&&... args)
+template <class Ch, class Tr = std::char_traits<Ch>>
+auto make_csv_source(const Ch* in)
+ -> std::enable_if_t<
+        std::is_same<Ch, char>::value || std::is_same<Ch, wchar_t>::value,
+        csv_source<string_input<Ch, Tr>>>
 {
-    return make_csv_source(std::forward<Input>(in))
+    return csv_source<string_input<Ch, Tr>>(in);
+}
+
+template <class Ch, class Tr = std::char_traits<Ch>>
+auto make_csv_source(const Ch* in, std::size_t length)
+ -> std::enable_if_t<
+        std::is_same<Ch, char>::value || std::is_same<Ch, wchar_t>::value,
+        csv_source<string_input<Ch, Tr>>>
+{
+    return csv_source<string_input<Ch, Tr>>(in, length);
+}
+
+template <class Ch, class Tr, class Allocator>
+csv_source<string_input<Ch, Tr>> make_csv_source(
+    const std::basic_string<Ch, Tr, Allocator>& in) noexcept
+{
+    return csv_source<string_input<Ch, Tr>>(in);
+}
+
+namespace detail { namespace csv {
+
+struct are_make_csv_source_args_impl
+{
+    template <class Arg1, class Arg2>
+    static auto check(std::decay_t<Arg1>*) -> decltype(
+        make_csv_source(std::declval<Arg1>(), std::declval<Arg2>()),
+        std::true_type());
+
+    template <class Arg1, class Arg2>
+    static auto check(...) -> std::false_type;
+};
+
+template <class Arg1, class Arg2>
+struct are_make_csv_source_args :
+    decltype(are_make_csv_source_args_impl::check<Arg1, Arg2>(nullptr))
+{};
+
+template <class Arg1, class Arg2, class... Args>
+auto parse(Arg1&& arg1, Arg2&& arg2, Args&&... args)
+ -> std::enable_if_t<are_make_csv_source_args<Arg1, Arg2>::value, bool>
+{
+    return make_csv_source(std::forward<Arg1>(arg1), std::forward<Arg2>(arg2))
         (std::forward<Args>(args)...)();
+}
+
+template <class Arg1, class Arg2, class... Args>
+auto parse(Arg1&& arg1, Arg2&& arg2, Args&&... args)
+ -> std::enable_if_t<!are_make_csv_source_args<Arg1, Arg2>::value, bool>
+{
+    return make_csv_source(std::forward<Arg1>(arg1))
+        (std::forward<Arg2>(arg2), std::forward<Args>(args)...)();
+}
+
+}}
+
+template <class Arg1, class Arg2, class... OtherArgs>
+bool parse_csv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)
+{
+    return detail::csv::parse(
+        std::forward<Arg1>(arg1), std::forward<Arg2>(arg2),
+        std::forward<OtherArgs>(other_args)...);
 }
 
 }

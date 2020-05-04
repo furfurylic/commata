@@ -40,6 +40,7 @@ set(COMMATA_HEADERS
     ../include/commata/string_value.hpp
     ../include/commata/table_scanner.hpp
     ../include/commata/text_error.hpp
+    ../include/commata/text_input.hpp
     ../include/commata/text_pull.hpp
     ../include/commata/typing_aid.hpp
 )

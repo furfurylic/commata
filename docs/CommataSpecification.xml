@@ -670,6 +670,246 @@ template &lt;class Handler>
 <section id="parser">
   <name>Default text parsers</name>
 
+  <section id="parser.input">
+    <name>Input texts of parsing</name>
+
+    <section id="parser.input.general">
+      <name>General</name>
+
+      <p>This subclause describes the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>), which is an abstraction of text inputs to be parsed, and its built-in implementations.</p>
+    </section>
+
+    <section id="text_input.requirements">
+      <name><c>TextInput</c> requirements</name>
+
+      <p>A type <c>T</c> meets the <c>TextInput</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
+      <ul>
+        <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+        <li>the expressions shown in <xref id="table.text_input.requirements"/> are valid and have the indicated semantics.</li>
+      </ul>
+
+       <p>In <xref id="table.text_input.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>d</c> is a rvalue of <c>Ch*</c>. <c>n</c> is a rvalue of <c>T::size_type</c>.</p>
+
+      <table id="table.text_input.requirements">
+        <caption>TextInput requirements</caption>
+        <col width="3"/><col width="10"/><col width="10"/><col width="60"/>
+
+        <tr>
+          <th>#</th>
+          <th>Expression</th>
+          <th>Return type</th>
+          <th>Remark</th>
+        </tr>
+
+        <tr>
+          <td>(1)</td>
+          <td><c>T::char_type</c></td>
+          <td/>
+          <td>Shall be identical to <c>Ch</c>.</td>
+        </tr>
+
+        <tr>
+          <td>(2)</td>
+          <td><c>T::traits_type</c></td>
+          <td/>
+          <td>Shall be a character traits type for <c>Ch</c>.</td>
+        </tr>
+
+        <tr>
+          <td>(3)</td>
+          <td><c>T::size_type</c></td>
+          <td/>
+          <td>Shall be an unsigned integer type.</td>
+        </tr>
+
+        <tr>
+          <td>(4)</td>
+          <td><c>t(d, n)</c></td>
+          <td><c>T::size_type</c></td>
+          <td>Assigns at most <c>n</c> characters to <c>[d, d + m)</c> where <c>m</c> denotes the number of characters actually assigned.
+              Then returns <c>m</c>.</td>
+        </tr>
+      </table>
+    </section>
+
+    <section id="header_text_input_hpp">
+      <name>Header <c>"text_input.hpp"</c> synopsis</name>
+      <codeblock>
+#include &lt;cstddef>
+#include &lt;streambuf>
+#include &lt;string>
+#include &lt;type_traits>
+
+namespace commata {
+  <c>// <n><xref id="streambuf_input"/>, streambuf_input:</n></c>
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class streambuf_input;
+
+  <c>// <n><xref id="string_input"/>, string_input:</n></c>
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class string_input;
+}
+      </codeblock>
+
+      <p>The header <c>"text_input.hpp"</c> defines some class templates whose instances meet the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>).</p>
+    </section>
+
+    <section id="streambuf_input">
+      <name>Class template <c>streambuf_input</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class streambuf_input {
+  public:
+    using char_type = Ch;
+    using traits_type = Tr;
+    using size_type = std::make_unsigned&lt;std::streamsize>;
+
+    <c>// <n><xref id="streambuf_input.cons"/>, construct/copy/destroy:</n></c>
+    explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>* sb);
+    explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
+    streambuf_input(const streambuf_input&amp; other) noexcept;
+   ~streambuf_input();
+
+    <c>// <n><xref id="streambuf_input.inv"/>, invocation:</n></c>
+    size_type operator()(Ch* out, size_type n);
+
+  private:
+    std::basic_streambuf&lt;Ch, Tr>* in;  <c>// <n>exposition only</n></c>
+  };
+}
+      </codeblock>
+
+      <p>The class template <c>streambuf_input</c> describes thin wrappers of stream buffers without any ownership of them.</p>
+      <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
+      <p>An instance of <c>streambuf_input</c> meets the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Ch</c>.</p>
+
+      <section id="streambuf_input.cons">
+        <name><c>streambuf_input</c> costruct/copy/destroy</name>
+
+        <code-item>
+          <code>
+explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>* sb);
+          </code>
+          <requires><c>sb</c> shall point a valid stream buffer object.</requires>
+          <effects>Initializes <c>in</c> with <c>sb</c>.</effects>
+          <throws>Nothing.</throws>
+        </code-item>
+
+        <code-item>
+          <code>
+explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
+          </code>
+          <effects>Initializes <c>in</c> with <c>s.rdbuf()</c>.</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+streambuf_input(const streambuf_input&amp; other) noexcept;
+          </code>
+          <effects>Initializes <c>in</c> with <c>other.in</c>.</effects>
+        </code-item>
+      </section>
+
+      <section id="streambuf_input.inv">
+        <name><c>streambuf_input</c> invocation</name>
+
+        <code-item>
+          <code>
+size_type operator()(Ch* out, size_type n);
+          </code>
+          <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
+          <effects>Assigns up to <c>n</c> characters obtained from <c>*in</c> to successive elements of the array whose first element is designated by <c>out</c>.</effects>
+          <returns>The number of characters assigned.</returns>
+        </code-item>
+      </section>
+    </section>
+
+    <section id="string_input">
+      <name>Class template <c>string_input</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class string_input {
+  public:
+    using char_type = Ch;
+    using traits_type = Tr;
+    using size_type = std::size_t;
+
+    <c>// <n><xref id="string_input.cons"/>, construct/copy/destroy:</n></c>
+    explicit string_input(const Ch* str);
+    string_input(const Ch* data, std::size_t length);
+    template &lt;class Allocator>
+      explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
+    string_input(const string_input&amp; other) noexcept;
+   ~string_input();
+
+    <c>// <n><xref id="string_input.inv"/>, invocation:</n></c>
+    size_type operator()(Ch* out, size_type n);
+
+  private:
+    const Ch* begin;  <c>// <n>exposition only</n></c>
+    const Ch* end;    <c>// <n>exposition only</n></c>
+  };
+}
+      </codeblock>
+
+      <p>The class template <c>string_input</c> describes thin wrappers of on-memory character sequences without any ownership of them.</p>
+      <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
+      <p>An instance of <c>string_input</c> meets the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Ch</c>.</p>
+
+      <section id="string_input.cons">
+        <name><c>string_input</c> costruct/copy/destroy</name>
+
+        <code-item>
+          <code>
+explicit string_input(const Ch* str);
+          </code>
+          <requires><c>str</c> shall be a valid pointer to an element in a null terminated sequence.</requires>
+          <effects>Initializes <c>begin</c> with <c>str</c> and <c>end</c> with <c>str + Tr::length(in)</c>.</effects>
+          <throws>Nothing.</throws>
+        </code-item>
+
+        <code-item>
+          <code>
+string_input(const Ch* data, std::size_t length);
+          </code>
+          <requires>[<c>data</c>, <c>data + length</c>) shall be a valid range.</requires>
+          <effects>Initializes <c>begin</c> with <c>data</c> and <c>end</c> with <c>data + length</c>.</effects>
+          <throws>Nothing.</throws>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class Allocator>
+  explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
+          </code>
+          <effects>Initializes <c>begin</c> with <c>str.data()</c> and <c>end</c> with <c>str.data() + str.size()</c>.</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+string_input(const string_input&amp; other) noexcept;
+          </code>
+          <effects>Initializes <c>begin</c> with <c>other.begin</c> and <c>end</c> with <c>other.end</c>.</effects>
+        </code-item>
+      </section>
+
+      <section id="string_input.inv">
+        <name><c>string_input</c> invocation</name>
+
+        <code-item>
+          <code>
+size_type operator()(Ch* out, size_type n);
+          </code>
+          <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
+          <effects>If <c>begin &lt; end</c> is <c>true</c>, determines the effective lenth <c>rlen</c> as the smaller of <c>n</c> and <c>end - begin</c>, calls <c>Tr::copy(out, begin, rlen)</c>, and then evaluates <c>begin += rlen</c>.
+                   Otherwise, does nothing.</effects>
+          <returns>If <c>begin &lt; end</c> is <c>true</c>, <c>rlen</c> above. Otherwise, <c>0</c>.</returns>
+          <throws>Nothing.</throws>
+        </code-item>
+      </section>
+    </section>
+  </section>
+
   <section id="parser.csv">
     <name>Parsing CSV format texts</name>
 
@@ -688,6 +928,7 @@ template &lt;class Handler>
 #include &lt;streambuf>
 
 #include "parse_error.hpp"
+#include "text_input.hpp"
 
 namespace commata {
   <c>// <n><xref id="csv_source"/>, csv_source:</n></c>
@@ -695,9 +936,16 @@ namespace commata {
 
   <c>// <n><xref id="csv_source.creation"/>, csv_source creation functions:</n></c>
   template &lt;class Ch, class Tr>
-    csv_source&lt;Ch, Tr> make_csv_source(std::basic_streambuf&lt;Ch, Tr>* in);
+    csv_source&lt;streambuf_input&lt;Ch, Tr>> make_csv_source(std::basic_streambuf&lt;Ch, Tr>* in);
   template &lt;class Ch, class Tr>
-    csv_source&lt;Ch, Tr> make_csv_source(std::basic_istream&lt;Ch, Tr>&amp; in);
+    csv_source&lt;streambuf_input&lt;Ch, Tr>> make_csv_source(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
+    csv_source&lt;string_input&lt;Ch, Tr>> make_csv_source(const Ch* in);
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
+    csv_source&lt;string_input&lt;Ch, Tr>> make_csv_source(const Ch* in, std::size_t length);
+  template &lt;class Ch, class Tr, class Allocator>
+    csv_source&lt;string_input&lt;Ch, Tr>>
+      make_csv_source(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
 
   <c>// <n><xref id="parse_csv"/>, functions that utilize the CSV parser:</n></c>
   template &lt;class Input, class... Args> bool parse_csv(Input&amp;&amp; in, Args&amp;&amp;... args);
@@ -710,36 +958,35 @@ namespace commata {
 
       <codeblock>
 namespace commata {
-  template &lt;class Ch, class Tr> class csv_source {
+  template &lt;class TextInput> class csv_source {
   public:
-    using char_type   = Ch;
-    using traits_type = Tr;
+    using char_type = typename TextInput::char_type;
+    using traits_type = typename TextInput::traits_type;
   
     <c>// <n><xref id="csv_source.cons"/>, construct/copy/destroy:</n></c>
-    explicit csv_source(std::basic_streambuf&lt;Ch, Tr>* source);
-    explicit csv_source(std::basic_istream&lt;Ch, Tr>&amp; source) noexcept;
-    csv_source(const csv_source&amp; other) noexcept;
+    template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+    csv_source(const csv_source&amp; other) noexcept(<nc>see below</nc>);
+    csv_source(csv_source&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~csv_source();
 
     <c>// <n><xref id="csv_source.inv"/>, invocation:</n></c>
-    template &lt;class Handler>
-      <nc>unspecified</nc> operator()(Handler handler) noexcept(<nc>see below</nc>);
-    template &lt;class Handler, class Allocator = std::allocator&lt;Ch>>
-      <nc>unspecified</nc> operator()(Handler handler, std::size_t buffer_size = 0,
+    template &lt;class HandlerR>
+      <nc>unspecified</nc> operator()(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
+    template &lt;class HandlerR, class Allocator = std::allocator&lt;Ch>>
+      <nc>unspecified</nc> operator()(Handler&amp;&amp; handler, std::size_t buffer_size = 0,
                              const Allocator&amp; alloc = Allocator()) noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
       <nc>unspecified</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
                              Args&amp;&amp;... args) noexcept;
 
   private:
-    std::basic_streambuf&lt;Ch, Tr>* in;   <c>// <n>exposition only</n></c>
+    TextInput in;   <c>// <n>exposition only</n></c>
   };
 }
       </codeblock>
 
       <p>The class template <c>csv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TextParser</c> objects (<xref id="text_parser.requirements"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
-      <p>The template parameter <c>Ch</c> shall be a cv-unqualified char-like type.
-         The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
+      <p>The template parameter <c>TextInput</c> shall meet the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Ch</c>.</p>
       <p>An instance of <c>csv_source</c> shall meet the <c>TextSource</c> requirements (<xref id="text_source.requirements"/>) for <c>Ch</c>.</p>
 
       <section id="csv_source.cons">
@@ -747,24 +994,28 @@ namespace commata {
 
         <code-item>
           <code>
-explicit csv_source(std::basic_streambuf&lt;Ch, Tr>* source);
+template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
           </code>
-          <requires><c>in</c> shall be a valid pointer.</requires>
-          <effects>Initializes <c>in</c> with <c>source</c>.</effects>
+          <effects>Initializes <c>in</c> with <c>std::forward&lt;Args>(args)...</c>.</effects>
+          <remark>This constructor shall not participate in overload resolution unless <c>sizeof...(Args)</c> is equal to <c>1</c> and
+                  the reference-removed and cv-unqualified type of the first type of <c>args</c> is the same type as <c>csv_source&lt;TextInput></c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;TextInput, Args&amp;&amp;...>::value</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-explicit csv_source(std::basic_istream&lt;Ch, Tr>&amp; source) noexcept;
+csv_source(const csv_source&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Initializes <c>in</c> with <c>source.rdbuf()</c>.</effects>
+          <effects>Initializes <c>in</c> with <c>other.in</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;TextInput>::value</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-csv_source(const csv_source&amp; other) noexcept;
+csv_source(csv_source&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Initializes <c>in</c> with <c>other.in()</c>.</effects>
+          <effects>Initializes <c>in</c> with <c>std::move(other.in)</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;TextInput>::value</c>.</remark>
         </code-item>
       </section>
 
@@ -773,38 +1024,38 @@ csv_source(const csv_source&amp; other) noexcept;
 
         <code-item>
           <code>
-template &lt;class Handler>
-  <nc>unspecified</nc> operator()(Handler handler) noexcept(<nc>see below</nc>);
+template &lt;class HandlerR>
+  <nc>unspecified</nc> operator()(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
           </code>
-          <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</requires>
+          <requires><c>std::decay_t&lt;HandlerR></c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</requires>
           <returns>A text parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.
-                   <c>p</c> holds <c>in</c> as its tied text source and a copy of <c>handler</c> as its tied text handler.
-                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
-                   Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the copy of <c>handler</c>.
+                   <c>p</c> holds <c>in</c> as its tied text source and an object of <c>std::decay_t&lt;HandlerR></c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler.
+                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;std::decay_t&lt;HandlerR>>::value</c> is <c>true</c>.
+                   Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied text handler object.
                    <c>P</c> implements the optional <c>TextParser</c> operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
-          <remark>This member function template shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and has both of <c>get_buffer</c> and <c>release_buffer</c> member functions
+          <remark>This member function template shall not participate in overload resolution unless <c>std::decay_t&lt;HandlerR></c> is not an instance of <c>std::reference_wrapper</c> and has both of <c>get_buffer</c> and <c>release_buffer</c> member functions
                   that have signatures and return types compatible with <c>TextHandler</c> requirements.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;HandlerR>>::value</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class Handler, class Allocator = std::allocator&lt;Ch>>
-  <nc>unspecified</nc> operator()(Handler handler, std::size_t buffer_size = 0,
+template &lt;class HandlerR, class Allocator = std::allocator&lt;Ch>>
+  <nc>unspecified</nc> operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
                          const Allocator&amp; alloc = Allocator()) noexcept(<nc>see below</nc>);
           </code>
-          <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.
+          <requires><c>std::decay_t&lt;HandlerR></c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.
                     <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>Ch</c>.</requires>
           <returns>A text parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.
-                   <c>p</c> holds <c>in</c> as its tied text source and a copy of <c>handler</c> as its tied text handler,
+                   <c>p</c> holds <c>in</c> as its tied text source and an object of <c>std::decay_t&lt;HandlerR></c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler,
                    and allocates and deallocates character buffers with a copy of <c>alloc</c>.
                    The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
-                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
-                   Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the copies of <c>handler</c> and <c>alloc</c>.
+                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;std::decay_t&lt;HandlerR>>::value</c> is <c>true</c>.
+                   Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied text handler object and the copy of <c>alloc</c>.
                    <c>P</c> implements the optional <c>TextParser</c> operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
-          <remark>This member function template shall not participate in overload resolution if <c>Handler</c> is an instance of <c>std::reference_wrapper</c> or has either of <c>get_buffer</c> or <c>release_buffer</c> member function
+          <remark>This member function template shall not participate in overload resolution if <c>std::decay_t&lt;HandlerR></c> is an instance of <c>std::reference_wrapper</c> or has either of <c>get_buffer</c> or <c>release_buffer</c> member function
                   that has a signature and a return type compatible with <c>TextHandler</c> requirements.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;HandlerR>>::value</c>.</remark>
         </code-item>
 
         <code-item>
@@ -822,21 +1073,38 @@ template &lt;class Handler, class... Args>
           <returns>The return value of the forwarded call above.</returns>
         </code-item>
       </section>
+    </section>
 
-      <section id="csv_source.creation">
-        <name><c>csv_source</c> creation functions</name>
+    <section id="csv_source.creation">
+      <name><c>csv_source</c> creation functions</name>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 template &lt;class Ch, class Tr>
-  csv_source&lt;Ch, Tr> make_csv_source(std::basic_streambuf&lt;Ch, Tr>* in);
+  csv_source&lt;streambuf_input&lt;Ch, Tr>> make_csv_source(std::basic_streambuf&lt;Ch, Tr>* in);
 template &lt;class Ch, class Tr>
-  csv_source&lt;Ch, Tr> make_csv_source(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
-          </code>
-          <requires>In the first overload <c>in</c> shall be a valid pointer.</requires>
-          <returns><c>csv_source&lt;Ch, Tr>(in)</c>.</returns>
-        </code-item>
-      </section>
+  csv_source&lt;streambuf_input&lt;Ch, Tr>> make_csv_source(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+        </code>
+        <requires>In the first form, <c>in</c> shall be a valid pointer to a stream buffer object.</requires>
+        <returns><c>csv_source&lt;streambuf_input&lt;Ch, Tr>>(in)</c>.</returns>
+        <throws>Nothing.</throws>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
+  csv_source&lt;string_input&lt;Ch, Tr>> make_csv_source(const Ch* in);
+template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
+  csv_source&lt;string_input&lt;Ch, Tr>> make_csv_source(const Ch* in, std::size_t length);
+template &lt;class Ch, class Tr, class Allocator>
+  csv_source&lt;string_input&lt;Ch, Tr>>
+    make_csv_source(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
+        </code>
+        <requires>In the first form, <c>in</c> shall be a valid pointer to an element in a null terminated sequence.
+                  In the second form, [<c>in</c>, <c>in + length</c>) shall be a valid range.</requires>
+        <returns><c>csv_source&lt;string_input&lt;Ch, Tr>>(in)</c> or <c>csv_source&lt;string_input&lt;Ch, Tr>>(in, length)</c>.</returns>
+        <throws>Nothing.</throws>
+      </code-item>
     </section>
 
     <section id="parse_csv">
@@ -844,9 +1112,14 @@ template &lt;class Ch, class Tr>
 
       <code-item>
         <code>
-template &lt;class Input, class... Args> bool parse_csv(Input&amp;&amp; in, Args&amp;&amp;... args);
+template &lt;class Arg1, class Arg2, class... OtherArgs>
+  bool parse_csv(Arg1&amp;&amp; arg1, Arg2&amp;&amp; arg2, OtherArgs&amp;&amp;... other_args);
         </code>
-        <returns><c>make_csv_source(std::forward&lt;Input>(in))(std::forward&lt;Args>(args)...)()</c>.</returns>
+        <requires><c>sizeof...(args) > 1</c>.</requires>
+        <effects>If <c>make_csv_source(std::forward&lt;Arg1>(arg1), std::forward&lt;Arg2>(arg2))</c> is a valid expression,
+                 calls <c>make_csv_source(std::forward&lt;Arg1>(arg1), std::forward&lt;Arg2>(arg2))(std::forward&lt;OtherArgs>(other_args)...)()</c>.
+                 Otherwise, calls <c>make_csv_source(std::forward&lt;Arg1>(arg1))(std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs)>(other_args)...)()</c>.</effects>
+        <returns>The return value of the call above.</returns>
       </code-item>
     </section>
   </section>

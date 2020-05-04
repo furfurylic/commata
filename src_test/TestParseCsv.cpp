@@ -180,9 +180,8 @@ TEST_P(TestParseCsvBasics, EmptyLineAware)
                      L"x1,x2\r"
                      L"\"\"\r\n"    // not an empty line
                      L"y1,y2\n";
-    std::wstringbuf buf(s);
     std::vector<std::vector<std::wstring>> field_values;
-    ASSERT_TRUE(parse_csv(&buf, make_empty_physical_line_aware(
+    ASSERT_TRUE(parse_csv(s, make_empty_physical_line_aware(
         test_collector<wchar_t>(field_values)), GetParam()));
     ASSERT_EQ(6U, field_values.size());
     ASSERT_TRUE(field_values[0].empty());
@@ -204,10 +203,9 @@ struct TestParseCsvReference : commata::test::BaseTest
 
 TEST_F(TestParseCsvReference, Reference)
 {
-    std::string s = "A,B\n\n";
-    std::stringbuf buf(s);
+    const char s[] = "A,B\n\nZ";
     test_collector2<char> collector;
-    ASSERT_TRUE(parse_csv(&buf, std::ref(collector)));
+    ASSERT_TRUE(parse_csv(s, (sizeof s) - 2, std::ref(collector)));
     ASSERT_EQ(1U, collector.field_values().size());
     ASSERT_EQ(2U, collector.field_values()[0].size());
     ASSERT_EQ("A", collector.field_values()[0][0]);
@@ -337,8 +335,7 @@ TEST(TestCsvSource, AcceptFullFledged)
     std::basic_stringbuf<char> in1("abc");
     make_csv_source(&in1)(full_fledged<char>())();
     
-    std::basic_stringbuf<wchar_t> in2(L"def");
-    make_csv_source(&in2)(full_fledged<wchar_t>())();
+    make_csv_source(L"def")(full_fledged<wchar_t>())();
 }
 
 }
