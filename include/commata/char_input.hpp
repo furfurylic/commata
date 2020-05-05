@@ -228,6 +228,10 @@ public:
         string_input(str.data(), str.size())
     {}
 
+    explicit string_input(std::basic_string_view<Ch, Tr> str) noexcept :
+        string_input(str.data(), str.size())
+    {}
+
     string_input(const string_input& other) = default;
 
     string_input(string_input&& other) noexcept :
@@ -439,6 +443,13 @@ auto make_char_input(const Ch* in, std::size_t length)
 template <class Ch, class Tr, class Allocator>
 string_input<Ch, Tr> make_char_input(
     const std::basic_string<Ch, Tr, Allocator>& in) noexcept
+{
+    return string_input<Ch, Tr>(in);
+}
+
+template <class Ch, class Tr>
+string_input<Ch, Tr> make_char_input(
+    std::basic_string_view<Ch, Tr> in) noexcept
 {
     return string_input<Ch, Tr>(in);
 }
