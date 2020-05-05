@@ -974,6 +974,13 @@ csv_source<string_input<Ch, Tr>> make_csv_source(
     return csv_source<string_input<Ch, Tr>>(in);
 }
 
+template <class Ch, class Tr, class Allocator>
+csv_source<owned_string_input<Ch, Tr>> make_csv_source(
+    std::basic_string<Ch, Tr, Allocator>&& in) noexcept
+{
+    return csv_source<owned_string_input<Ch, Tr>>(std::move(in));
+}
+
 namespace detail { namespace csv {
 
 struct are_make_csv_source_args_impl

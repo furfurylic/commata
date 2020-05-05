@@ -99,6 +99,44 @@ public:
     }
 };
 
+template <class Ch, class Tr = std::char_traits<Ch>,
+    class Allocator = std::allocator<Ch>>
+class owned_string_input
+{
+public:
+    using size_type = typename std::basic_string<Ch, Tr, Allocator>::size_type;
+
+private:
+    std::basic_string<Ch, Tr, Allocator> s_;
+    size_type head_;
+
+public:
+    static_assert(std::is_same<Ch, typename Tr::char_type>::value, "");
+
+    using char_type = Ch;
+    using traits_type = Tr;
+
+    explicit owned_string_input(std::basic_string<Ch, Tr, Allocator>&& str)
+        noexcept :
+        s_(std::move(str)), head_(0)
+    {}
+
+    owned_string_input(owned_string_input&&) = default;
+    ~owned_string_input() = default;
+
+    size_type operator()(Ch* out, size_type n)
+    {
+        if (head_ < s_.size()) {
+            const auto length = std::min(n, s_.size() - head_);
+            Tr::copy(out, s_.data() + head_, length);
+            head_ += length;
+            return length;
+        } else {
+            return 0;
+        }
+    }
+};
+
 }
 
 #endif

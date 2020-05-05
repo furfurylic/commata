@@ -161,10 +161,9 @@ TEST_P(TestParseCsvBasics, Wide)
 {
     std::wstring s = L"\n\r\rheader1,header2\r\r\n"
                      L"value1,value2\n";
-    std::wstringbuf buf(s);
     std::vector<std::vector<std::wstring>> field_values;
     test_collector<wchar_t> collector(field_values);
-    ASSERT_TRUE(parse_csv(&buf, collector, GetParam()));
+    ASSERT_TRUE(parse_csv(std::move(s), collector, GetParam()));
     ASSERT_EQ(2U, field_values.size());
     std::vector<std::wstring> expected_row0 = { L"header1", L"header2" };
     ASSERT_EQ(expected_row0, field_values[0]);

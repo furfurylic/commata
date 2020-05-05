@@ -746,6 +746,10 @@ namespace commata {
 
   <c>// <n><xref id="string_input"/>, string_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class string_input;
+
+  <c>// <n><xref id="owned_string_input"/>, owned_string_input:</n></c>
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
+    class owned_string_input;
 }
       </codeblock>
 
@@ -908,6 +912,71 @@ size_type operator()(Ch* out, size_type n);
         </code-item>
       </section>
     </section>
+
+    <section id="owned_string_input">
+      <name>Class template <c>owned_string_input</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
+    class owned_string_input {
+  public:
+    using char_type = Ch;
+    using traits_type = Tr;
+    using size_type = typename std::basic_string&lt;Ch, Tr, Allocator>::size_type;
+
+    <c>// <n><xref id="owned_string_input.cons"/>, construct/copy/destroy:</n></c>
+    explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; str) noexcept;
+    owned_string_input(owned_string_input&amp;&amp; other) noexcept;
+   ~owned_string_input();
+
+    <c>// <n><xref id="owned_string_input.inv"/>, invocation:</n></c>
+    size_type operator()(Ch* out, size_type n);
+
+  private:
+    std::basic_string&lt;Ch, Tr, Allocator> s;     <c>// <n>exposition only</n></c>
+    size_type head;                             <c>// <n>exposition only</n></c>
+  };
+}
+      </codeblock>
+
+      <p>The class template <c>owned_string_input</c> describes thin wrappers of an object of an instance of <c>std::basic_string</c> with the ownership of it.</p>
+      <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
+      <p>An instance of <c>owned_string_input</c> meets the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Ch</c>.</p>
+
+      <section id="owned_string_input.cons">
+        <name><c>owned_string_input</c> costruct/copy/destroy</name>
+
+        <code-item>
+          <code>
+explicit owned_string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
+          </code>
+          <effects>Initializes <c>s</c> with <c>std::move(str)</c> and <c>head</c> with <c>0</c>.</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+owned_string_input(owned_string_input&amp;&amp; other) noexcept;
+          </code>
+          <effects>Initializes <c>s</c> with <c>std::move(other.s)</c> and <c>head</c> with <c>other.head</c>.</effects>
+        </code-item>
+      </section>
+
+      <section id="owned_string_input.inv">
+        <name><c>owned_string_input</c> invocation</name>
+
+        <code-item>
+          <code>
+size_type operator()(Ch* out, size_type n);
+          </code>
+          <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
+          <effects>If <c>head &lt; s.size()</c> is <c>true</c>, determines the effective lenth <c>rlen</c> as the smaller of <c>n</c> and <c>s.size() - head</c>, calls <c>Tr::copy(out, s.data() + head, rlen)</c>, and then evaluates <c>head += rlen</c>.
+                   Otherwise, does nothing.</effects>
+          <returns>If <c>head &lt; s.size()</c> is <c>true</c>, <c>rlen</c> above. Otherwise, <c>0</c>.</returns>
+          <throws>Nothing.</throws>
+        </code-item>
+      </section>
+    </section>
   </section>
 
   <section id="parser.csv">
@@ -946,6 +1015,9 @@ namespace commata {
   template &lt;class Ch, class Tr, class Allocator>
     csv_source&lt;string_input&lt;Ch, Tr>>
       make_csv_source(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    csv_source&lt;owned_string_input&lt;Ch, Tr>>
+      make_csv_source(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
 
   <c>// <n><xref id="parse_csv"/>, functions that utilize the CSV parser:</n></c>
   template &lt;class Input, class... Args> bool parse_csv(Input&amp;&amp; in, Args&amp;&amp;... args);
@@ -1104,6 +1176,15 @@ template &lt;class Ch, class Tr, class Allocator>
                   In the second form, [<c>in</c>, <c>in + length</c>) shall be a valid range.</requires>
         <returns><c>csv_source&lt;string_input&lt;Ch, Tr>>(in)</c> or <c>csv_source&lt;string_input&lt;Ch, Tr>>(in, length)</c>.</returns>
         <throws>Nothing.</throws>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class Ch, class Tr, class Allocator>
+  csv_source&lt;owned_string_input&lt;Ch, Tr>>
+    make_csv_source(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
+        </code>
+        <returns><c>csv_source&lt;owned_string_input&lt;Ch, Tr>>(std::move(in))</c>.</returns>
       </code-item>
     </section>
 
