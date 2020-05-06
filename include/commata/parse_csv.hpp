@@ -942,6 +942,36 @@ csv_source<streambuf_input<Ch, Tr>> make_csv_source(
     return csv_source<streambuf_input<Ch, Tr>>(in);
 }
 
+template <class Streambuf>
+auto make_csv_source(Streambuf&& in) noexcept
+ -> std::enable_if_t<
+        !std::is_lvalue_reference<Streambuf>::value
+     && std::is_base_of<
+            std::basic_streambuf<
+                typename Streambuf::char_type,
+                typename Streambuf::traits_type>,
+            Streambuf>::value,
+        csv_source<owned_streambuf_input<Streambuf>>>
+{
+    return csv_source<owned_streambuf_input<Streambuf>>(
+        std::forward<Streambuf>(in));
+}
+
+template <class IStream>
+auto make_csv_source(IStream&& in) noexcept
+ -> std::enable_if_t<
+        !std::is_lvalue_reference<IStream>::value
+     && std::is_base_of<
+            std::basic_istream<
+                typename IStream::char_type,
+                typename IStream::traits_type>,
+            IStream>::value,
+        csv_source<owned_istream_input<IStream>>>
+{
+    return csv_source<owned_istream_input<IStream>>(
+        std::forward<IStream>(in));
+}
+
 template <class Ch, class Tr>
 csv_source<streambuf_input<Ch, Tr>> make_csv_source(
     std::basic_istream<Ch, Tr>& in) noexcept
@@ -975,10 +1005,10 @@ csv_source<string_input<Ch, Tr>> make_csv_source(
 }
 
 template <class Ch, class Tr, class Allocator>
-csv_source<owned_string_input<Ch, Tr>> make_csv_source(
+csv_source<owned_string_input<Ch, Tr, Allocator>> make_csv_source(
     std::basic_string<Ch, Tr, Allocator>&& in) noexcept
 {
-    return csv_source<owned_string_input<Ch, Tr>>(std::move(in));
+    return csv_source<owned_string_input<Ch, Tr, Allocator>>(std::move(in));
 }
 
 namespace detail { namespace csv {

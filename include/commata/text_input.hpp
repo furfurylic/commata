@@ -15,8 +15,36 @@
 
 namespace commata {
 
+namespace detail {
+
+template <class D>
+struct streambuf_input_base
+{
+    using size_type = std::make_unsigned_t<std::streamsize>;
+
+    template <class Ch>
+    size_type operator()(Ch* out, size_type n)
+    {
+        constexpr size_type nmax = std::numeric_limits<std::streamsize>::max();
+        size_type m = 0;
+        while (n > nmax) {
+            const auto mm = static_cast<D*>(this)->in()->sgetn(out, nmax);
+            if (mm == 0) {
+                return m;
+            }
+            m += mm;
+            n -= mm;
+        }
+        m += static_cast<D*>(this)->in()->sgetn(out, n);
+        return m;
+    }
+};
+
+}
+
 template <class Ch, class Tr = std::char_traits<Ch>>
-class streambuf_input
+class streambuf_input :
+    public detail::streambuf_input_base<streambuf_input<Ch, Tr>>
 {
     std::basic_streambuf<Ch, Tr>* in_;
 
@@ -38,20 +66,71 @@ public:
     streambuf_input(const streambuf_input&) = default;
     ~streambuf_input() = default;
 
-    size_type operator()(Ch* out, size_type n)
+    std::basic_streambuf<Ch, Tr>* in() noexcept
     {
-        constexpr size_type nmax = std::numeric_limits<std::streamsize>::max();
-        size_type m = 0;
-        while (n > nmax) {
-            const auto mm = in_->sgetn(out, nmax);
-            if (mm == 0) {
-                return m;
-            }
-            m += mm;
-            n -= mm;
-        }
-        m += in_->sgetn(out, n);
-        return m;
+        return in_;
+    }
+};
+
+template <class Streambuf>
+class owned_streambuf_input :
+    public detail::streambuf_input_base<owned_streambuf_input<Streambuf>>
+{
+    Streambuf in_;
+
+public:
+    static_assert(
+        std::is_base_of<
+            std::basic_streambuf<
+                typename Streambuf::char_type,
+                typename Streambuf::traits_type>,
+            Streambuf>::value, "");
+
+    using char_type = typename Streambuf::char_type;
+    using traits_type = typename Streambuf::traits_type;
+    using size_type = std::make_unsigned_t<std::streamsize>;
+
+    explicit owned_streambuf_input(Streambuf&& in) noexcept :
+        in_(std::move(in))
+    {}
+
+    owned_streambuf_input(owned_streambuf_input&&) = default;
+    ~owned_streambuf_input() = default;
+
+    std::basic_streambuf<char_type, traits_type>* in() noexcept
+    {
+        return &in_;
+    }
+};
+
+template <class IStream>
+class owned_istream_input :
+    public detail::streambuf_input_base<owned_istream_input<IStream>>
+{
+    IStream in_;
+
+public:
+    static_assert(
+        std::is_base_of<
+            std::basic_istream<
+                typename IStream::char_type,
+                typename IStream::traits_type>,
+            IStream>::value, "");
+
+    using char_type = typename IStream::char_type;
+    using traits_type = typename IStream::traits_type;
+    using size_type = std::make_unsigned_t<std::streamsize>;
+
+    explicit owned_istream_input(IStream&& in) noexcept :
+        in_(std::move(in))
+    {}
+
+    owned_istream_input(owned_istream_input&&) = default;
+    ~owned_istream_input() = default;
+
+    std::basic_streambuf<char_type, traits_type>* in() noexcept
+    {
+        return in_.rdbuf();
     }
 };
 

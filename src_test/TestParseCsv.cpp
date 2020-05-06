@@ -163,7 +163,7 @@ TEST_P(TestParseCsvBasics, Wide)
                      L"value1,value2\n";
     std::vector<std::vector<std::wstring>> field_values;
     test_collector<wchar_t> collector(field_values);
-    ASSERT_TRUE(parse_csv(std::move(s), collector, GetParam()));
+    ASSERT_TRUE(parse_csv(std::wstringbuf(s), collector, GetParam()));
     ASSERT_EQ(2U, field_values.size());
     std::vector<std::wstring> expected_row0 = { L"header1", L"header2" };
     ASSERT_EQ(expected_row0, field_values[0]);
@@ -214,10 +214,9 @@ TEST_F(TestParseCsvReference, Reference)
 TEST_F(TestParseCsvReference, EmptyLineAware)
 {
     std::string s = "A,B\r\rC,D";
-    std::stringbuf buf(s);
     test_collector2<char> collector;
     auto sink = make_empty_physical_line_aware(std::ref(collector));
-    ASSERT_TRUE(parse_csv(&buf, std::move(sink)));
+    ASSERT_TRUE(parse_csv(std::istringstream(s), std::move(sink)));
     ASSERT_EQ(3U, collector.field_values().size());
     ASSERT_EQ(2U, collector.field_values()[0].size());
     ASSERT_EQ("A", collector.field_values()[0][0]);

@@ -744,6 +744,12 @@ namespace commata {
   <c>// <n><xref id="streambuf_input"/>, streambuf_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class streambuf_input;
 
+  <c>// <n><xref id="owned_streambuf_input"/>, owned_streambuf_input:</n></c>
+  template &lt;class Streambuf> class owned_streambuf_input;
+
+  <c>// <n><xref id="owned_istream_input"/>, owned_istream_input:</n></c>
+  template &lt;class IStream> class owned_istream_input;
+
   <c>// <n><xref id="string_input"/>, string_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class string_input;
 
@@ -822,6 +828,130 @@ size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
           <effects>Assigns up to <c>n</c> characters obtained from <c>*in</c> to successive elements of the array whose first element is designated by <c>out</c>.</effects>
+          <returns>The number of characters assigned.</returns>
+        </code-item>
+      </section>
+    </section>
+
+    <section id="owned_streambuf_input">
+      <name>Class template <c>owned_streambuf_input</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class Streambuf> class owned_streambuf_input {
+  public:
+    using char_type   = typename Streambuf::char_type;
+    using traits_type = typename Streambuf::traits_type;
+    using size_type   = std::make_unsigned_t&lt;std::streamsize>;
+
+    <c>// <n><xref id="owned_streambuf_input.cons"/>, construct/copy/destroy:</n></c>
+    explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept;
+    owned_streambuf_input(owned_streambuf_input&amp;&amp; other) noexcept;
+   ~owned_streambuf_input();
+
+    <c>// <n><xref id="owned_streambuf_input.inv"/>, invocation:</n></c>
+    size_type operator()(Ch* out, size_type n);
+
+  private:
+    Streambuf in;   <c>// <n>exposition only</n></c>
+  };
+}
+      </codeblock>
+
+      <p>The class template <c>owned_streambuf_input</c> describes thin wrappers of an object of an derived type of an instance of <c>std::basic_streambuf</c> with the ownership of it.</p>
+      <p>The template parameter <c>Streambuf</c> shall be the same type as, or be a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</p>
+      <p>An instance of <c>owned_streambuf_input</c> meets the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
+
+      <section id="owned_streambuf_input.cons">
+        <name><c>owned_streambuf_input</c> costruct/copy/destroy</name>
+
+        <code-item>
+          <code>
+explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept;
+          </code>
+          <effects>Initializes <c>in</c> with <c>std::move(sb)</c>.</effects>
+          <note>This constructor can cause a so-called slicing.</note>
+        </code-item>
+
+        <code-item>
+          <code>
+owned_streambuf_input(owned_streambuf_input&amp;&amp; other) noexcept;
+          </code>
+          <effects>Initializes <c>in</c> with <c>std::move(other.in)</c>.</effects>
+        </code-item>
+      </section>
+
+      <section id="owned_streambuf_input.inv">
+        <name><c>owned_streambuf_input</c> invocation</name>
+
+        <code-item>
+          <code>
+size_type operator()(Ch* out, size_type n);
+          </code>
+          <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
+          <effects>Assigns up to <c>n</c> characters obtained from <c>in</c> to successive elements of the array whose first element is designated by <c>out</c>.</effects>
+          <returns>The number of characters assigned.</returns>
+        </code-item>
+      </section>
+    </section>
+
+    <section id="owned_istream_input">
+      <name>Class template <c>owned_istream_input</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class IStream> class owned_istream_input {
+  public:
+    using char_type   = typename IStream::char_type;
+    using traits_type = typename IStream::traits_type;
+    using size_type   = std::make_unsigned_t&lt;std::streamsize>;
+
+    <c>// <n><xref id="owned_istream_input.cons"/>, construct/copy/destroy:</n></c>
+    explicit owned_istream_input(IStream&amp;&amp; s) noexcept;
+    owned_istream_input(owned_istream_input&amp;&amp; other) noexcept;
+   ~owned_istream_input();
+
+    <c>// <n><xref id="owned_istream_input.inv"/>, invocation:</n></c>
+    size_type operator()(Ch* out, size_type n);
+
+  private:
+    IStream in;     <c>// <n>exposition only</n></c>
+  };
+}
+      </codeblock>
+
+      <p>The class template <c>owned_istream_input</c> describes thin wrappers of an object of an derived type of an instance of <c>std::basic_istream</c> with the ownership of it.</p>
+      <p>The template parameter <c>IStream</c> shall be the same type as, or be a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</p>
+      <p>An instance of <c>owned_istream_input</c> meets the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
+
+      <section id="owned_istream_input.cons">
+        <name><c>owned_istream_input</c> costruct/copy/destroy</name>
+
+        <code-item>
+          <code>
+explicit owned_istream_input(IStream&amp;&amp; s) noexcept;
+          </code>
+          <effects>Initializes <c>in</c> with <c>std::move(s)</c>.</effects>
+          <note>This constructor can cause a so-called slicing.</note>
+        </code-item>
+
+        <code-item>
+          <code>
+owned_istream_input(owned_istream_input&amp;&amp; other) noexcept;
+          </code>
+          <effects>Initializes <c>in</c> with <c>std::move(other.in)</c>.</effects>
+        </code-item>
+      </section>
+
+      <section id="owned_istream_input.inv">
+        <name><c>owned_istream_input</c> invocation</name>
+
+        <code-item>
+          <code>
+size_type operator()(Ch* out, size_type n);
+          </code>
+          <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
+          <effects>Assigns up to <c>n</c> characters obtained from <c>*in.rdbuf()</c> to successive elements of the array whose first element is designated by <c>out</c>.</effects>
           <returns>The number of characters assigned.</returns>
         </code-item>
       </section>
@@ -1008,6 +1138,10 @@ namespace commata {
     csv_source&lt;streambuf_input&lt;Ch, Tr>> make_csv_source(std::basic_streambuf&lt;Ch, Tr>* in);
   template &lt;class Ch, class Tr>
     csv_source&lt;streambuf_input&lt;Ch, Tr>> make_csv_source(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+  template &lt;class Streambuf>
+    csv_source&lt;owned_streambuf_input&lt;Streambuf>>make_csv_source(Streambuf&amp;&amp; in) noexcept;
+  template &lt;class IStream>
+    csv_source&lt;owned_istream_input&lt;IStream>>make_csv_source(IStream&amp;&amp; in) noexcept;
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
     csv_source&lt;string_input&lt;Ch, Tr>> make_csv_source(const Ch* in);
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
@@ -1016,7 +1150,7 @@ namespace commata {
     csv_source&lt;string_input&lt;Ch, Tr>>
       make_csv_source(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
   template &lt;class Ch, class Tr, class Allocator>
-    csv_source&lt;owned_string_input&lt;Ch, Tr>>
+    csv_source&lt;owned_string_input&lt;Ch, Tr, Allocator>>
       make_csv_source(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
 
   <c>// <n><xref id="parse_csv"/>, functions that utilize the CSV parser:</n></c>
@@ -1164,6 +1298,24 @@ template &lt;class Ch, class Tr>
 
       <code-item>
         <code>
+template &lt;class Streambuf>
+  csv_source&lt;owned_streambuf_input&lt;Streambuf>> make_csv_source(Streambuf&amp;&amp; in) noexcept;
+        </code>
+        <returns><c>csv_source&lt;owned_streambuf_input&lt;Streambuf>>(std::move(in))</c>.</returns>
+        <remark>This overload shall not participate in overload resolution unless the template parameter <c>Streambuf</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class IStream>
+  csv_source&lt;owned_istream_input&lt;IStream>>make_csv_source(IStream&amp;&amp; in) noexcept;
+        </code>
+        <returns><c>csv_source&lt;owned_istream_input&lt;IStream>>(std::move(in))</c>.</returns>
+        <remark>This overload shall not participate in overload resolution unless the template parameter <c>IStream</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
 template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
   csv_source&lt;string_input&lt;Ch, Tr>> make_csv_source(const Ch* in);
 template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
@@ -1181,10 +1333,10 @@ template &lt;class Ch, class Tr, class Allocator>
       <code-item>
         <code>
 template &lt;class Ch, class Tr, class Allocator>
-  csv_source&lt;owned_string_input&lt;Ch, Tr>>
+  csv_source&lt;owned_string_input&lt;Ch, Tr, Allocator>>
     make_csv_source(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
         </code>
-        <returns><c>csv_source&lt;owned_string_input&lt;Ch, Tr>>(std::move(in))</c>.</returns>
+        <returns><c>csv_source&lt;owned_string_input&lt;Ch, Tr, Allocator>>(std::move(in))</c>.</returns>
       </code-item>
     </section>
 
