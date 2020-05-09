@@ -1355,7 +1355,7 @@ public:
             return std::optional<T>(*default_value_);
         case mode::fail:
             fail_if_skipped()(static_cast<T*>(nullptr));
-            // fall through
+            [[fallthrough]];
         default:
             return std::optional<T>();
         }

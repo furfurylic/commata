@@ -736,7 +736,7 @@ public:
                 if (!empty_physical_line_aware_) {
                     break;
                 }
-                // fall through
+                [[fallthrough]];
             case primitive_table_pull_state::end_record:
                 if (last_state_ == table_pull_state::field) {
                     value_expiring_ = true;
@@ -793,7 +793,7 @@ private:
                 if (!empty_physical_line_aware_) {
                     break;
                 }
-                // fall through
+                [[fallthrough]];
             case primitive_table_pull_state::end_record:
                 set_state(table_pull_state::record_end);
                 last_ = empty_string();
@@ -847,7 +847,7 @@ public:
                 if (!empty_physical_line_aware_) {
                     break;
                 }
-                // fall through
+                [[fallthrough]];
             case primitive_table_pull_state::end_record:
                 if (n == 0) {
                     if (last_state_ == table_pull_state::field) {
