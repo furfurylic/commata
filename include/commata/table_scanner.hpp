@@ -1543,7 +1543,7 @@ public:
             return std::optional<T>(store_.value());
         case replace_mode::fail:
             fail_if_skipped().operator()<T>();
-            // fall through
+            [[fallthrough]];
         default:
             return std::optional<T>();
         }
