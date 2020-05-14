@@ -29,34 +29,33 @@ namespace commata {
 namespace detail {
 
 template <class T>
-class field_name_of_impl
+class format_field_name_of_impl
 {
     const char* prefix_;
     const T* t_;
 
 public:
-    field_name_of_impl(const char* prefix, const T& t) noexcept :
+    format_field_name_of_impl(const char* prefix, const T& t) noexcept :
         prefix_(prefix), t_(std::addressof(t))
     {}
 
-    friend std::ostream& operator<<(
-        std::ostream& o, const field_name_of_impl& t)
+    void operator()(std::ostream& o) const
     {
-        return o << t.prefix_ << *t.t_;
+        o << prefix_ << *t_;
     }
 };
 
 template <class... Args>
-auto field_name_of(Args...) noexcept
+auto format_field_name_of(Args...) noexcept
 {
-    return "";
+    return [](std::ostream&) {};
 }
 
 template <class T>
-auto field_name_of(const char* prefix, const T& t,
+auto format_field_name_of(const char* prefix, const T& t,
     decltype(&(std::declval<std::ostream&>() << t)) = nullptr) noexcept
 {
-    return field_name_of_impl<T>(prefix, t);
+    return format_field_name_of_impl<T>(prefix, t);
 }
 
 template <class Ch>
@@ -283,8 +282,8 @@ private:
     record_extraction_error no_matching_field() const
     {
         std::ostringstream what;
-        what << "No matching field"
-             << field_name_of(" for ", nf_.base());
+        what << "No matching field";
+        format_field_name_of(" for ", nf_.base())(what);
         return record_extraction_error(what.str());
     }
 
