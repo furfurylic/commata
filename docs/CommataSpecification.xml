@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-04-05 (UTC)</signature>
+<signature>2020-04-23 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -402,7 +402,7 @@ namespace commata {
     const char* what() const noexcept override;
 
     <c>// <n><xref id="text_error.physical_position"/>, physical postion information:</n></c>
-    text_error&amp; set_physical_position(std::size_t row = npos, std::size_t col = npos);
+    text_error&amp; set_physical_position(std::size_t row = npos, std::size_t col = npos) noexcept;
     const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noexcept;
 
     text_error_info info(std::size_t base = 1) const noexcept {
@@ -472,7 +472,7 @@ text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
 
         <code-item>
           <code>
-text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col = npos);
+text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col = npos) noexcept;
           </code>
           <effects>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, removes the position information if it exists. Otherwise, sets the position information whose line number and column number are <c>line</c> and <c>col</c> respectively.</effects>
           <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>get_physical_position() == nullptr</c> shall not be <c>false</c>. Otherwise, <c>*get_physical_position() == std::make_pair(line, col)</c> shall not be <c>false</c>.</postcondition>

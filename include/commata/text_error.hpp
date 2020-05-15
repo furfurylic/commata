@@ -51,8 +51,8 @@ public:
         ex_(std::addressof(ex)), base_(base)
     {}
 
-    text_error_info(const text_error_info& ex) noexcept = default;
-    text_error_info& operator=(const text_error_info& ex) noexcept = default;
+    text_error_info(const text_error_info& ex) = default;
+    text_error_info& operator=(const text_error_info& ex) = default;
 
     const text_error& error() const noexcept
     {
@@ -127,29 +127,16 @@ private:
     }
 
 public:
-    // Copy/move ctors and copy/move assignment ops are explicitly defined
-    // so that they are noexcept
-
-    text_error(const text_error& other) noexcept :
-        std::exception(other),
-        what_(other.what_),
-        physical_position_(other.physical_position_)
-        // According to C++14 20.3.2 (1), pair's copy ctor is noexcept
-    {}
-
-    text_error(text_error&& other) noexcept :
-        std::exception(std::move(other)),
-        what_(std::move(other.what_)),
-        physical_position_(other.physical_position_)
-        // ditto
-    {}
+    text_error(const text_error& other) = default;
+    text_error(text_error&& other) = default;
 
     text_error& operator=(const text_error& other) noexcept
     {
         std::exception::operator=(other);
         what_ = other.what_;
         physical_position_ = other.physical_position_;
-        // According to C++14 20.3.2 (1), pair's assignments are noexcept
+        // According to C++14 20.3.2 (1), pair's assignments do not throw
+        // but are not declared as noexcept
         return *this;
     }
 
@@ -168,7 +155,7 @@ public:
     }
 
     text_error& set_physical_position(
-        std::size_t line = npos, std::size_t col = npos)
+        std::size_t line = npos, std::size_t col = npos) noexcept
     {
         physical_position_ = std::make_pair(line, col);
         return *this;
@@ -177,7 +164,6 @@ public:
     const std::pair<std::size_t, std::size_t>* get_physical_position() const
         noexcept
     {
-        // std::make_pair<std::size_t, std::size_t> shall not throw exceptions
         return (physical_position_ != std::make_pair(npos, npos)) ?
             &physical_position_ : nullptr;
     }

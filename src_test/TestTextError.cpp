@@ -21,6 +21,19 @@ using namespace commata;
 using namespace commata::test;
 
 static_assert(
+    std::is_nothrow_move_constructible<text_error_info>::value,
+    "text_error_info shall be nothrow-move-constructible");
+static_assert(
+    std::is_nothrow_copy_constructible<text_error_info>::value,
+    "text_error_info shall be nothrow-copy-constructible");
+static_assert(
+    std::is_nothrow_move_assignable<text_error_info>::value,
+    "text_error_info shall be nothrow-move-assignable");
+static_assert(
+    std::is_nothrow_copy_assignable<text_error_info>::value,
+    "text_error_info shall be nothrow-copy-assignable");
+
+static_assert(
     std::is_nothrow_move_constructible<text_error>::value,
     "text_error shall be nothrow-move-constructible");
 static_assert(
