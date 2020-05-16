@@ -17,8 +17,10 @@ template <class Ch, class Tr, class F>
 std::basic_ostream<Ch, Tr>& formatted_output(
     std::basic_ostream<Ch, Tr>& os, std::streamsize n, F put_obj)
 {
-    const auto pad = [&os, n] {
-        const std::streamsize w = os.width();
+    const typename std::basic_ostream<Ch, Tr>::sentry s(os);        // throw
+    auto w = os.width(0);
+
+    const auto pad = [&os, n, w] {
         if (w > n) {
             const auto sb = os.rdbuf();
             const auto f = os.fill();
@@ -35,19 +37,12 @@ std::basic_ostream<Ch, Tr>& formatted_output(
         return put_obj(os.rdbuf());
     };
 
-    const typename std::basic_ostream<Ch, Tr>::sentry s(os);        // throw
-    if (!s) {
-        os.setstate(std::ios_base::failbit);                        // throw
-    } else {
-        try {
-            const auto right = (os.flags() & std::ios_base::adjustfield)
-                != std::ios_base::left;
-            if (!(right ? (pad() && put()) : (put() && pad()))) {   // throw
-                // Chars might be written partially, so the integrity of the
-                // stream should be regarded as compromised
-                os.setstate(std::ios_base::badbit);                 // throw
-            }
-            os.width(0);
+    bool failed = true;
+    if (s) {
+        try  {
+            failed = !(((os.flags() & std::ios_base::adjustfield)
+                    == std::ios_base::left) ?
+                put() && pad() : pad() && put());                   // throw
         } catch (...) {
             if (os.bad()) {
                 throw;                                              // throw
@@ -60,8 +55,12 @@ std::basic_ostream<Ch, Tr>& formatted_output(
                 if ((os.exceptions() & std::ios_base::badbit) != 0) {
                     throw;                                          // throw
                 }
+                failed = false;
             }
         }
+    }
+    if (failed) {
+        os.setstate(std::ios_base::failbit);                        // throw
     }
     return os;
 }
