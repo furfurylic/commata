@@ -71,20 +71,6 @@ public:
         allocated_(other.allocated_), total_(other.total_)
     {}
 
-    // C++14 standard does not seem to mandate copy-assignability but
-    // Visual Studo 2015's scoped_allocator_adaptor seems to need it
-    template <class OtherBaseAllocator>
-    tracking_allocator& operator=(
-        const tracking_allocator<OtherBaseAllocator>& other)
-        noexcept(std::is_nothrow_assignable<
-            BaseAllocator&, const OtherBaseAllocator&>::value)
-    {
-        static_cast<BaseAllocator&>(*this) = other;
-        allocated_ = other.allocated_;
-        total_ = other.total_;
-        return *this;
-    }
-
     // To achieve symmetry
     template <class OtherBaseAllocator>
     tracking_allocator& operator=(

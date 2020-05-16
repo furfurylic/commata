@@ -16,7 +16,6 @@
 #include <streambuf>
 #include <string>
 #include <type_traits>
-#include <utility>
 
 namespace commata { namespace detail {
 
@@ -56,23 +55,16 @@ public:
     }
 };
 
-template <class UCh>
-constexpr std::pair<UCh, std::size_t> shift(std::pair<UCh, std::size_t> n)
-{
-    static_assert(std::is_unsigned<UCh>::value, "");
-    return (n.first > 0U) ?
-        shift(std::make_pair(static_cast<UCh>(n.first >> 1), n.second + 1)) :
-        n;
-}
-
 template <class Ch>
 constexpr std::size_t nchar()
 {
-    // Visual Studio 2015 does not allow local variables in constexpr
-    // functions even in C++14, so we use a recursive implementation
-    return (shift(std::make_pair(
-        static_cast<std::make_unsigned_t<Ch>>(-1),
-        static_cast<std::size_t             >( 0))).second + 7) / 8 * 2;
+    auto n = std::numeric_limits<std::make_unsigned_t<Ch>>::max();
+    std::size_t i = 0;
+    do {
+        n >>= 1;
+        ++i;
+    } while (n > 0U);
+    return (i + 7) / 8 * 2;
 }
 
 inline std::ostream& set_hex(std::ostream& os)

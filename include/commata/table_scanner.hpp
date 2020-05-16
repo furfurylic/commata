@@ -1672,19 +1672,7 @@ template <class T>
 class nontrivial_store : public trivial_store<T>
 {
 public:
-    // VS2015 dislikes:
-    // using trivial_store<T>::trivial_store;
-    // and raises an internal compiler error (C1001)
-
-    template <class... Args>
-    nontrivial_store(generic_args_t, Args&&... args)
-        noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
-        trivial_store<T>(generic_args_t(), std::forward<Args>(args)...)
-    {}
-
-    explicit nontrivial_store(replace_mode mode) noexcept :
-        trivial_store<T>(mode)
-    {}
+    using trivial_store<T>::trivial_store;
 
     nontrivial_store(const nontrivial_store& other)
         noexcept(std::is_nothrow_copy_constructible<T>::value) :
@@ -2085,10 +2073,7 @@ protected:
 template <class T, unsigned N>
 struct nontrivial_store : trivial_store<T, N>
 {
-    template <class... Args>
-    nontrivial_store(generic_args_t, Args&&... args) :
-        trivial_store<T, N>(generic_args_t(), std::forward<Args>(args)...)
-    {}
+    using trivial_store<T, N>::trivial_store;
 
     nontrivial_store(const nontrivial_store& other)
         noexcept(std::is_nothrow_copy_constructible<T>::value) :
