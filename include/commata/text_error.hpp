@@ -107,19 +107,12 @@ public:
         std::exception::operator=(other);
         what_ = other.what_;
         pos_ = other.pos_;
-        // According to C++14 20.3.2 (1), pair's assignments do not throw
-        // but are not declared as noexcept
+        // According to C++17 23.4.2 (1), pair's copy assignment does not throw
+        // but are not marked as noexcept
         return *this;
     }
 
-    text_error& operator=(text_error&& other) noexcept
-    {
-        std::exception::operator=(std::move(other));
-        what_ = std::move(other.what_);
-        pos_ = other.pos_;
-        // ditto
-        return *this;
-    }
+    text_error& operator=(text_error&& other) = default;
 
     const char* what() const noexcept override
     {
