@@ -2035,12 +2035,6 @@ public:
         sink_(std::move(sink))
     {}
 
-    // VS2015 needs this ctor. I don't know why.
-    translator(translator&& other) :
-        member_like_base<SkippingHandler>(std::move(other.get())),
-        sink_(std::move(other.sink_))
-    {}
-
     const SkippingHandler& get_skipping_handler() const noexcept
     {
         return this->get();
