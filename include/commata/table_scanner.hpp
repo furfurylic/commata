@@ -2157,10 +2157,12 @@ class locale_based_arithmetic_field_translator
     std::locale loc_;
 
     // These are initialized after parsing has started
-    wchar_t thousands_sep_;     // of specified loc in the ctor
     wchar_t decimal_point_;     // of specified loc in the ctor
+    wchar_t thousands_sep_;     // ditto
     wchar_t decimal_point_c_;   // of C's global
                                 // to mimic std::strtol and its comrades
+    wchar_t thousands_sep_c_;   // ditto
+    bool mimics_;
 
 public:
     locale_based_arithmetic_field_translator(
@@ -2170,7 +2172,7 @@ public:
             = ConversionErrorHandler()) :
         out_(std::move(sink), std::move(handle_skipping),
             std::move(handle_conversion_error)),
-        loc_(loc), decimal_point_c_()
+        loc_(loc), decimal_point_c_(), mimics_()
     {}
 
     locale_based_arithmetic_field_translator(
@@ -2207,31 +2209,41 @@ public:
     {
         if (decimal_point_c_ == wchar_t()) {
             decimal_point_c_ = widen(*std::localeconv()->decimal_point, Ch());
+            thousands_sep_c_ = widen(*std::localeconv()->thousands_sep, Ch());
 
             const auto& facet = std::use_facet<std::numpunct<Ch>>(loc_);
             thousands_sep_ = facet.grouping().empty() ?
                 Ch() : facet.thousands_sep();
             decimal_point_ = facet.decimal_point();
+
+            mimics_ = (decimal_point_ != decimal_point_)
+                   || ((thousands_sep_ != Ch()) // means needs to take care of
+                                                // separators in field values
+                    && (thousands_sep_ != thousands_sep_c_));
         }
         assert(*end == Ch());   // shall be null-terminated
-        bool decimal_point_appeared = false;
-        Ch* head = begin;
-        for (Ch* b = begin; b != end; ++b) {
-            Ch c = *b;
-            assert(c != Ch());
-            if (c == static_cast<Ch>(decimal_point_)) {
-                if (!decimal_point_appeared) {
-                    c = static_cast<Ch>(decimal_point_c_);
-                    decimal_point_appeared = true;
+        if (mimics_) {
+            bool decimal_point_appeared = false;
+            Ch* head = begin;
+            for (Ch* b = begin; b != end; ++b) {
+                Ch c = *b;
+                assert(c != Ch());
+                if (c == static_cast<Ch>(decimal_point_)) {
+                    if (!decimal_point_appeared) {
+                        c = static_cast<Ch>(decimal_point_c_);
+                        decimal_point_appeared = true;
+                    }
+                } else if (c == static_cast<Ch>(thousands_sep_)) {
+                    continue;
                 }
-            } else if (c == static_cast<Ch>(thousands_sep_)) {
-                continue;
+                *head = c;
+                ++head;
             }
-            *head = c;
-            ++head;
+            *head = Ch();
+            out_.field_value(begin, head);
+        } else {
+            out_.field_value(begin, end);
         }
-        *head = Ch();
-        out_.field_value(begin, head);
     }
 
 private:
