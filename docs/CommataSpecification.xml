@@ -5210,11 +5210,12 @@ namespace commata {
 
   <c>// <n><xref id="text_pull.creation"/>, text_pull creation functions:</n></c>
   template &lt;class TextSource, class... Appendices>
-    text_pull&lt;TextSource> make_text_pull(TextSource in, Appendices... appendices);
+    text_pull&lt;std::decay_t&lt;TextSource>>
+      make_text_pull(TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
   template &lt;class TextSource, class Allocator, class... Appendices>
-    text_pull&lt;TextSource, Allocator>
+    text_pull&lt;std::decay_t&lt;TextSource>, Allocator>
       make_text_pull(std::allocator_arg_t, const Allocator&amp; alloc,
-                     TextSource in, Appendices... appendices);
+                     TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
       </codeblock>
     </section>
 
@@ -6260,19 +6261,20 @@ template &lt;class TextSource, class Allocator,
         <code-item>
           <code>
 template &lt;class TextSource, class... Appendices>
-  text_pull&lt;TextSource> make_text_pull(TextSource in, Appendices... appendices);
+  text_pull&lt;std::decay_t&lt;TextSource>>
+    make_text_pull(TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
           </code>
-          <returns><c>text_pull&lt;TextSource>(std::move(in), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
+          <returns><c>text_pull&lt;std::decay_t&lt;TextSource>>(std::forward&lt;TextSource>(in), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
         </code-item>
 
         <code-item>
           <code>
 template &lt;class TextSource, class Allocator, class... Appendices>
-  text_pull&lt;TextSource, Allocator>
+  text_pull&lt;std::decay_t&lt;TextSource>, Allocator>
     make_text_pull(std::allocator_arg_t, const Allocator&amp; alloc,
-                   TextSource in, Appendices... appendices);
+                   TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
           </code>
-          <returns><c>text_pull&lt;TextSource, std::allocator&lt;typename TextSource::char_type>>(std::allocator_arg, alloc, std::move(in), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
+          <returns><c>text_pull&lt;std::decay_t&lt;TextSource>, Allocator>(std::allocator_arg, alloc, std::forward&lt;TextSource>(in), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
         </code-item>
       </section>
     </section>

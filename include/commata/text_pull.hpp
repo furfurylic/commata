@@ -1381,19 +1381,22 @@ std::basic_string<typename TextSource::char_type,
 }
 
 template <class TextSource, class... Appendices>
-text_pull<TextSource> make_text_pull(TextSource in, Appendices... appendices)
+text_pull<std::decay_t<TextSource>> make_text_pull(
+    TextSource&& in, Appendices&&... appendices)
 {
-    return text_pull<TextSource>(
-        std::move(in), std::forward<Appendices>(appendices)...);
+    return text_pull<std::decay_t<TextSource>>(
+        std::forward<TextSource>(in),
+        std::forward<Appendices>(appendices)...);
 }
 
 template <class TextSource, class Allocator, class... Appendices>
-text_pull<TextSource, Allocator> make_text_pull(
+text_pull<std::decay_t<TextSource>, Allocator> make_text_pull(
     std::allocator_arg_t, const Allocator& alloc,
-    TextSource in, Appendices... appendices)
+    TextSource&& in, Appendices&&... appendices)
 {
-    return text_pull<TextSource, Allocator>(std::allocator_arg,
-        alloc, std::move(in), std::forward<Appendices>(appendices)...);
+    return text_pull<std::decay_t<TextSource>, Allocator>(
+        std::allocator_arg, alloc, std::forward<TextSource>(in),
+        std::forward<Appendices>(appendices)...);
 }
 
 }
