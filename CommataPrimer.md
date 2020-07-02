@@ -32,8 +32,8 @@ Cygnus,Fawaris,2.89,51
 ## Loading the CSV file into memory
 
 Commata offers the type `commata::stored_table`, which serves as a type of
-loaded images of CSV texts. Here is an sample code to load the contents of
-`stars.csv` into an `stored_table` object:
+loaded images of CSV texts. Here is a sample code to load the contents of
+`stars.csv` into a `stored_table` object:
 
 ```C++
 #include <commata/parse_csv.hpp>
@@ -214,7 +214,7 @@ The argument of it can be either of:
  - an lvalue to a non-const container object at the right position or the back
    of which the translated field value is inserted,
  - an output iterator object which receives the translated field value, or
- - an function object which receives the translated field value as its one and
+ - a function object which receives the translated field value as its one and
    only parameter.
 
 In the last two cases, the type to which the field values are translated
@@ -467,7 +467,7 @@ void one_pass_scanning_error_sample()
 }
 ```
 
-But when you call this function, it will exit with an `text_error` exception
+But when you call this function, it will exit with a `text_error` exception
 object whose `info()` is likely to tell:
 
 ```
