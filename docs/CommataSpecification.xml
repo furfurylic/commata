@@ -1277,6 +1277,7 @@ template &lt;class Handler>
 #include &lt;istream>
 #include &lt;streambuf>
 #include &lt;string>
+#include &lt;string_view>
 #include &lt;type_traits>
 
 namespace commata {
@@ -1321,6 +1322,8 @@ namespace commata {
   template &lt;class Ch, class Tr, class Allocator>
     string_input&lt;Ch, Tr>
       make_char_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
+  template &lt;class Ch, class Tr>
+    string_input&lt;Ch, Tr> make_char_input(std::basic_string_view&lt;Ch, Tr> in) noexcept;
   template &lt;class Ch, class Tr, class Allocator>
     owned_string_input&lt;Ch, Tr, Allocator>
       make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
@@ -1596,11 +1599,12 @@ namespace commata {
     using size_type   = std::size_t;
 
     <c>// <n><xref id="string_input.cons"/>, construct/copy/destroy:</n></c>
-    string_input() noexcept : begin(nullptr), end(nullptr) {}
+    string_input() noexcept {}
     explicit string_input(const Ch* str);
-    string_input(const Ch* data, std::size_t length);
     template &lt;class Allocator>
       explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
+    explicit string_input(std::basic_string_view&lt;Ch, Tr> str) noexcept;
+    string_input(const Ch* data, std::size_t length);
     string_input(const string_input&amp; other) = default;
     string_input&amp; operator=(const string_input&amp; other) = default;
 
@@ -1608,8 +1612,7 @@ namespace commata {
     size_type operator()(Ch* out, size_type n);
 
   private:
-    const Ch* begin;  <c>// <n>exposition only</n></c>
-    const Ch* end;    <c>// <n>exposition only</n></c>
+    std::basic_string_view&lt;Ch, Tr> v;   <c>// <n>exposition only</n></c>
   };
 }
       </codeblock>
@@ -1624,9 +1627,12 @@ namespace commata {
         <code-item>
           <code>
 explicit string_input(const Ch* str);
+template &lt;class Allocator>
+  explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
+explicit string_input(std::basic_string_view&lt;Ch, Tr> str) noexcept;
           </code>
-          <requires><c>str</c> shall be a valid pointer to an element in a null terminated sequence.</requires>
-          <effects>Initializes <c>begin</c> and <c>end_</c> with <c>str</c> and <c>str + Tr::length(in)</c> respectively.</effects>
+          <requires>In the first form, <c>str</c> shall be a valid pointer to an element in a null terminated sequence.</requires>
+          <effects>Initializes <c>v</c> with <c>str</c>.</effects>
           <throws>Nothing.</throws>
         </code-item>
 
@@ -1635,16 +1641,8 @@ explicit string_input(const Ch* str);
 string_input(const Ch* data, std::size_t length);
           </code>
           <requires>[<c>data</c>, <c>data + length</c>) shall be a valid range.</requires>
-          <effects>Initializes <c>begin</c> with <c>data</c> and <c>end</c> with <c>data + length</c>.</effects>
+          <effects>Initializes <c>v</c> with <c>data</c> and <c>length</c>.</effects>
           <throws>Nothing.</throws>
-        </code-item>
-
-        <code-item>
-          <code>
-template &lt;class Allocator>
-  explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
-          </code>
-          <effects>Initializes <c>begin</c> with <c>str.data()</c> and <c>end</c> with <c>str.data() + str.size()</c>.</effects>
         </code-item>
       </section>
 
@@ -1655,11 +1653,11 @@ template &lt;class Allocator>
           <code>
 size_type operator()(Ch* out, size_type n);
           </code>
-          <preface>Let <c>rlen</c> be the smaller of <c>n</c> and <c>end - begin</c>.</preface>
-          <requires>[<c>out</c>, <c>out + rlen</c>) shall be a valid range for output.</requires>
-          <effects>Calls <c>Tr::copy(out, begin, rlen)</c>, and then evaluates <c>begin += rlen</c>.</effects>
-          <returns><c>rlen</c>.</returns>
-          <throws>Nothing.</throws>
+          <effects><p>Equivalent to:</p>
+                   <code>size_type rlen = v.copy(out, n);
+v.remove_prefix(rlen);
+return rlen;</code>
+          </effects>
         </code-item>
       </section>
     </section>
@@ -1844,6 +1842,8 @@ template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
 template &lt;class Ch, class Tr, class Allocator>
   string_input&lt;Ch, Tr>
     make_char_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
+template &lt;class Ch, class Tr>
+  string_input&lt;Ch, Tr> make_char_input(std::basic_string_view&lt;Ch, Tr> in) noexcept;
         </code>
         <requires>In the first form, <c>in</c> shall be a valid pointer to an element in a null terminated sequence.
                   In the second form, [<c>in</c>, <c>in + length</c>) shall be a valid range.</requires>

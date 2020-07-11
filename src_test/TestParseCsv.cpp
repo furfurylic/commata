@@ -12,6 +12,7 @@
 #include <iterator>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -331,10 +332,10 @@ struct TestParseCsvEndsWithoutLF :
 
 TEST_P(TestParseCsvEndsWithoutLF, All)
 {
-    std::stringbuf buf(GetParam().first);
     std::vector<std::vector<std::string>> field_values;
     test_collector<char> collector(field_values);
-    ASSERT_TRUE(parse_csv(&buf, collector, 1024));
+    ASSERT_TRUE(
+        parse_csv(std::string_view(GetParam().first), collector, 1024));
     ASSERT_EQ(1U, field_values.size());
     std::ostringstream s;
     std::copy(field_values[0].cbegin(), field_values[0].cend(),

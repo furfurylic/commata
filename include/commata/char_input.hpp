@@ -13,6 +13,7 @@
 #include <memory>
 #include <streambuf>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -178,8 +179,7 @@ void swap(owned_istream_input<IStream>& left,
 template <class Ch, class Tr = std::char_traits<Ch>>
 class string_input
 {
-    const Ch* begin_;
-    const Ch* end_;
+    std::basic_string_view<Ch, Tr> v_;
 
 public:
     static_assert(std::is_same_v<Ch, typename Tr::char_type>, "");
@@ -189,21 +189,25 @@ public:
     using size_type = std::size_t;
 
     string_input() noexcept :
-        begin_(nullptr), end_(nullptr)
+        v_()
     {}
 
     explicit string_input(const Ch* str) :
-        string_input(str, Tr::length(str))
+        v_(str)
     {}
 
     string_input(const Ch* data, std::size_t length) :
-        begin_(data), end_(data + length)
+        v_(data, length)
     {}
 
     template <class Allocator>
     explicit string_input(const std::basic_string<Ch, Tr, Allocator>& str)
         noexcept :
-        string_input(str.data(), str.size())
+        v_(str)
+    {}
+
+    explicit string_input(std::basic_string_view<Ch, Tr> str) noexcept :
+        v_(str)
     {}
 
     string_input(const string_input& other) = default;
@@ -211,15 +215,9 @@ public:
 
     size_type operator()(Ch* out, size_type n)
     {
-        if (begin_ < end_) {
-            const auto length = std::min(
-                n, static_cast<size_type>(end_ - begin_));
-            Tr::copy(out, begin_, length);
-            begin_ += length;
-            return length;
-        } else {
-            return 0;
-        }
+        const auto len = v_.copy(out, n);
+        v_.remove_prefix(len);
+        return len;
     }
 };
 
@@ -396,6 +394,13 @@ auto make_char_input(const Ch* in, std::size_t length)
 template <class Ch, class Tr, class Allocator>
 string_input<Ch, Tr> make_char_input(
     const std::basic_string<Ch, Tr, Allocator>& in) noexcept
+{
+    return string_input<Ch, Tr>(in);
+}
+
+template <class Ch, class Tr>
+string_input<Ch, Tr> make_char_input(
+    std::basic_string_view<Ch, Tr> in) noexcept
 {
     return string_input<Ch, Tr>(in);
 }
