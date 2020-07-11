@@ -682,7 +682,7 @@ private:
                     + physical_line_chars_passed_away_;
     }
 
-    std::pair<std::size_t, std::streamsize> arrange_buffer()
+    std::pair<std::size_t, std::size_t> arrange_buffer()
     {
         std::size_t buffer_size;
         std::tie(buffer_, buffer_size) = f_.get_buffer();   // throw
@@ -691,16 +691,18 @@ private:
                 "Specified buffer length is shorter than one");
         }
 
-        std::streamsize loaded_size = 0;
+        std::size_t loaded_size = 0;
         do {
             const auto length = in_(buffer_ + loaded_size,
-                buffer_size - loaded_size);
+                std::min(
+                    buffer_size - loaded_size,
+                    std::numeric_limits<typename Input::size_type>::max()));
             if (length == 0) {
                 eof_reached_ = true;
                 break;
             }
             loaded_size += length;
-        } while (buffer_size - loaded_size > 0);
+        } while (buffer_size > loaded_size);
 
         return { buffer_size, loaded_size };
     }
