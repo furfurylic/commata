@@ -16,6 +16,7 @@
 #include <limits>
 #include <list>
 #include <memory>
+#include <new>
 #include <numeric>
 #include <sstream>
 #include <stdexcept>
@@ -2224,10 +2225,20 @@ public:
     }
 
 private:
-    std::size_t get_next_buffer_size(std::size_t occupied) const noexcept
+    std::size_t get_next_buffer_size(std::size_t occupied) const
     {
+        constexpr std::size_t max = std::numeric_limits<std::size_t>::max();
         std::size_t next = table_->get_buffer_size();
-        for (; occupied >= next / 2; next *= 2);
+        for (; occupied >= next / 2; next *= 2) {
+            if (next >= max / 2 + 1) {  // if max==100, next>=51;
+                                        // if max==101, next>=51
+                if (occupied <= max - 2) {  // must have 2 more elements
+                    return max;
+                } else {
+                    throw std::bad_alloc();
+                }
+            }
+        }
         return next;
     }
 
