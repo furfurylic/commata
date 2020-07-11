@@ -205,14 +205,9 @@ public:
 
     size_type operator()(Ch* out, size_type n)
     {
-        if (head_ < s_.size()) {
-            const auto length = std::min(n, s_.size() - head_);
-            Tr::copy(out, s_.data() + head_, length);
-            head_ += length;
-            return length;
-        } else {
-            return 0;
-        }
+        const auto len = s_.copy(out, n, head_);
+        head_ += len;
+        return len;
     }
 };
 

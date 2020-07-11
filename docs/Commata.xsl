@@ -171,6 +171,9 @@
   <div class="code-item">
     <pre><code><xsl:apply-templates select="code" mode="code"/></code></pre>
     <div class="code-item-desc">
+      <xsl:for-each select="preface">
+        <p><xsl:apply-templates/></p>
+      </xsl:for-each>
       <xsl:for-each select="effects|postcondition|requires|returns|remark|note|throws">
         <p><span class="code-item-heading"><xsl:value-of select="local-name(.)"/>: </span><xsl:apply-templates/></p>
       </xsl:for-each>

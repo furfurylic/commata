@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-06-25 (UTC)</signature>
+<signature>2020-07-11 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1034,10 +1034,10 @@ string_input(const string_input&amp; other) noexcept;
           <code>
 size_type operator()(Ch* out, size_type n);
           </code>
-          <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>If <c>begin &lt; end</c> is <c>true</c>, determines the effective lenth <c>rlen</c> as the smaller of <c>n</c> and <c>end - begin</c>, calls <c>Tr::copy(out, begin, rlen)</c>, and then evaluates <c>begin += rlen</c>.
-                   Otherwise, does nothing.</effects>
-          <returns>If <c>begin &lt; end</c> is <c>true</c>, <c>rlen</c> above. Otherwise, <c>0</c>.</returns>
+          <preface>Let <c>rlen</c> be the smaller of <c>n</c> and <c>end - begin</c>.</preface>
+          <requires>[<c>out</c>, <c>out + rlen</c>) shall be a valid range for output.</requires>
+          <effects>Calls <c>Tr::copy(out, begin, rlen)</c>, and then evaluates <c>begin += rlen</c>.</effects>
+          <returns><c>rlen</c>.</returns>
           <throws>Nothing.</throws>
         </code-item>
       </section>
@@ -1099,10 +1099,8 @@ owned_string_input(owned_string_input&amp;&amp; other) noexcept;
           <code>
 size_type operator()(Ch* out, size_type n);
           </code>
-          <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>If <c>head &lt; s.size()</c> is <c>true</c>, determines the effective lenth <c>rlen</c> as the smaller of <c>n</c> and <c>s.size() - head</c>, calls <c>Tr::copy(out, s.data() + head, rlen)</c>, and then evaluates <c>head += rlen</c>.
-                   Otherwise, does nothing.</effects>
-          <returns>If <c>head &lt; s.size()</c> is <c>true</c>, <c>rlen</c> above. Otherwise, <c>0</c>.</returns>
+          <effects>Calls <c>s.copy(out, n)</c> and let <c>rlen</c> be the return value, and then evaluates <c>head += rlen</c>.</effects>
+          <returns><c>rlen</c> above.</returns>
           <throws>Nothing.</throws>
         </code-item>
       </section>

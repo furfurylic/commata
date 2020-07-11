@@ -5,6 +5,7 @@
 
 #ifdef _MSC_VER
 #pragma warning(disable:4494)
+#pragma warning(disable:4996)
 #endif
 
 #include <algorithm>
@@ -283,14 +284,13 @@ struct TestParseCsvErrors :
 TEST_P(TestParseCsvErrors, Errors)
 {
     std::string s = GetParam().first;
-    std::stringbuf buf(s);
     std::vector<std::vector<std::string>> field_values;
 
     test_collector<char> collector(field_values);
 
     try {
         // the buffer is shorter than one line
-        parse_csv(&buf, collector, 4);
+        parse_csv(std::move(s), collector, 4);
         FAIL();
     } catch (const parse_error& e) {
         const auto pos = e.get_physical_position();
