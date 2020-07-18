@@ -383,7 +383,7 @@ public:
     default_buffer_control(
         std::size_t buffer_size, const Allocator& alloc) noexcept :
         detail::member_like_base<Allocator>(alloc),
-        buffer_size_((buffer_size < 1) ? 8192 : buffer_size),
+        buffer_size_(sanitize_buffer_size(buffer_size)),
         buffer_()
     {}
 
@@ -414,6 +414,22 @@ public:
 
     void do_release_buffer(...) noexcept
     {}
+
+private:
+    std::size_t sanitize_buffer_size(std::size_t buffer_size) noexcept
+    {
+        constexpr std::size_t buffer_size_max =
+            std::numeric_limits<std::size_t>::max();
+        constexpr std::size_t default_buffer_size =
+            std::min(buffer_size_max, static_cast<std::size_t>(8192U));
+        if (buffer_size == 0U) {
+            buffer_size = default_buffer_size;
+        }
+        const auto max_alloc0 = alloc_traits_t::max_size(this->get());
+        const auto max_alloc = (max_alloc0 > buffer_size_max) ?
+            buffer_size_max : static_cast<std::size_t>(max_alloc0);
+        return std::min(buffer_size, max_alloc);
+    }
 };
 
 struct thru_buffer_control

@@ -110,11 +110,30 @@ public:
     explicit pull_handler(
         std::allocator_arg_t, const Allocator& alloc,
         std::size_t buffer_size) :
-        alloc_(alloc,
-            (buffer_size < 1) ? 8192 : (buffer_size < 2) ? 2 : buffer_size),
+        alloc_(alloc, sanitize_buffer_size(buffer_size, alloc)),
         buffer_(nullptr), yield_location_(0), collects_data_(true)
     {}
 
+private:
+    static std::size_t sanitize_buffer_size(
+        std::size_t buffer_size, const Allocator& alloc) noexcept
+    {
+        constexpr std::size_t buffer_size_max =
+            std::numeric_limits<std::size_t>::max();
+        constexpr std::size_t default_buffer_size =
+            std::min(buffer_size_max, static_cast<std::size_t>(8192U));
+        if (buffer_size == 0U) {
+            buffer_size = default_buffer_size;
+        }
+        const auto max_alloc0 = at_t::max_size(alloc);
+        const auto max_alloc = (max_alloc0 > buffer_size_max) ?
+            static_cast<std::size_t>(buffer_size_max) : max_alloc0;
+        return std::min(
+            std::max(buffer_size, static_cast<std::size_t>(2U)),
+            max_alloc);
+    }
+
+public:
     pull_handler(const pull_handler& other) = delete;
 
     ~pull_handler()

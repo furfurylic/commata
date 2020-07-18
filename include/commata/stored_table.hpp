@@ -1264,18 +1264,22 @@ public:
     }
 
 private:
-    static constexpr std::size_t default_buffer_size =
-        std::min<std::size_t>(std::numeric_limits<std::size_t>::max(), 8192U);
-
     static std::size_t sanitize_buffer_size(
         std::size_t buffer_size, const Allocator& alloc) noexcept
     {
+        constexpr std::size_t buffer_size_max =
+            std::numeric_limits<std::size_t>::max();
+        constexpr std::size_t default_buffer_size =
+            std::min(buffer_size_max, static_cast<std::size_t>(8192U));
         if (buffer_size == 0U) {
             buffer_size = default_buffer_size;
         }
+        const auto max_alloc0 = at_t::max_size(alloc);
+        const auto max_alloc = (max_alloc0 > buffer_size_max) ?
+            buffer_size_max : static_cast<std::size_t>(max_alloc0);
         return std::min(
             std::max(buffer_size, static_cast<std::size_t>(2U)),
-            at_t::max_size(alloc));
+            max_alloc);
     }
 
     template <class... Args>
