@@ -1178,9 +1178,9 @@ public:
             assert(is_singular());
             return;
         }
-        records_ = allocate_create_content(alloc);  // throw
+        records_ = allocate_create_content(alloc);      // throw
         try {
-            copy_from(other.content());             // throw
+            import_leaky(other.content(), content());   // throw
         } catch (...) {
             destroy_deallocate_content(alloc, records_);
             throw;
@@ -1619,9 +1619,9 @@ private:
 
         to.guard_rewrite([c = std::addressof(content())](auto& t) {
             auto& tc = t.content();
-            const auto original_size = tc.size();       // ?
+            const auto original_size = tc.size();   // ?
             try {
-                t.copy_from(*c);                        // throw
+                t.import_leaky(*c, tc);             // throw
             } catch (...) {
                 tc.erase(std::next(tc.cbegin(), original_size), tc.cend());
                 throw;
@@ -1636,19 +1636,13 @@ private:
         std::list<RecordTo, AllocatorRTo> r2(
             to.content().get_allocator());              // throw
         to.guard_rewrite([&r2, c = std::addressof(content())](auto& t) {
-            t.copy_from(*c, r2);                        // throw
+            t.import_leaky(*c, r2);                     // throw
         });
         to.content().splice(to.content().cend(), r2);
     }
 
     template <class OtherContent>
-    void copy_from(const OtherContent& other)
-    {
-        copy_from(other, content());                            // throw
-    }
-
-    template <class OtherContent>
-    void copy_from(const OtherContent& other, content_type& records)
+    void import_leaky(const OtherContent& other, content_type& records)
     {
         reserve(records, records.size() + other.size());        // throw
         for (const auto& r : other) {
