@@ -1495,11 +1495,11 @@ public:
     }
 
     template <class F>
-    void guard_rewrite(F f)
+    auto guard_rewrite(F f) -> decltype(f(*this))
     {
         const auto security = store_.get_security();    // throw
         try {
-            f(*this);                                   // throw
+            return f(*this);                            // throw
         } catch (...) {
             store_.set_security(security);
             throw;

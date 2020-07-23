@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-07-11 (UTC)</signature>
+<signature>2020-07-23 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2633,7 +2633,7 @@ namespace commata {
     template &lt;class OtherValue>
       value_type&amp; rewrite_value(value_type&amp; value, const OtherValue&amp; new_value);
     template &lt;class... Args> value_type import_value(Args&amp;&amp;... args);
-    template &lt;class F> void guard_rewrite(F f);
+    template &lt;class F> auto guard_rewrite(F f) -> decltype(f(*this));
 
     <c>// <n><xref id="basic_stored_table.primitives"/>, primitive store operations:</n></c>
     std::pair&lt;char_type*, std::size_t> generate_buffer(std::size_t min_size);
@@ -3012,10 +3012,11 @@ template &lt;class... Args> value_type import_value(Args&amp;&amp;... args);
 
         <code-item>
           <code>
-template &lt;class F> void guard_rewrite(F f);
+template &lt;class F> auto guard_rewrite(F f) -> decltype(f(*this));
           </code>
           <requires><c>f</c> shall possibly call functions that do not change the state of <c>*this</c> except <c>rewrite_value</c>, <c>import_value</c>, <c>generate_buffer</c>, <c>consume_buffer</c>, <c>add_buffer</c> and <c>secure_current_upto</c>.</requires>
-          <effects>Calls <c>f()</c>.</effects>
+          <effects>Calls <c>f(*this)</c>.</effects>
+          <returns>The return value of the call above.</returns>
           <remark>If an exception is thrown, all objects returned by the calls of <c>rewrite_value</c> and therefore <c>import_value</c> during the call of <c>f()</c> are invalidated
                   and the current buffer mark and its reservation marks (<xref id="basic_stored_table.primitives"/>) are restored.</remark>
         </code-item>
