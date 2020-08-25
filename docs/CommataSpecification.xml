@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-07-23 (UTC)</signature>
+<signature>2020-08-25 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4601,7 +4601,8 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
             <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
             <effects>First calls a parsing function indicated in <xref id="table.arithmetic_field_translator.parsing_functions"/> for <c>T</c> and <c>Ch</c> to get an arithmetic value <c>v</c> of the range [<c>begin</c>, <c>end</c>).
                      Then does an action indicated in <xref id="table.arithmetic_field_translator.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
-                     In <xref id="table.arithmetic_field_translator.branching"/>, <c>ceh</c> is the conversion error handler, <c>n</c> is a null pointer of type <c>T*</c>, and <c>g</c> is a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, zero otherwise.</effects>
+                     In <xref id="table.arithmetic_field_translator.branching"/>, <c>ceh</c> is the conversion error handler, <c>n</c> is a null pointer of type <c>T*</c>,
+                     and <c>g</c> is a positive value if the field value should be translated into a value above any finite values in the domain of <c>T</c>, a negative value if the field value should be translated into a value below any finite values in the domain of <c>T</c>, zero otherwise.</effects>
 
             <table id="table.arithmetic_field_translator.parsing_functions">
               <caption>The parsing functions used by <c>arithmetic_field_translator</c></caption>

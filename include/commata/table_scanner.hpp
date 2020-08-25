@@ -11,6 +11,7 @@
 #include <cctype>
 #include <cerrno>
 #include <clocale>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -1114,6 +1115,7 @@ struct numeric_type_traits<float>
     static constexpr const char* name = "float";
     static constexpr const auto strto = std::strtof;
     static constexpr const auto wcsto = std::wcstof;
+    static constexpr const float huge = HUGE_VALF;
 };
 
 template <>
@@ -1122,6 +1124,7 @@ struct numeric_type_traits<double>
     static constexpr const char* name = "double";
     static constexpr const auto strto = std::strtod;
     static constexpr const auto wcsto = std::wcstod;
+    static constexpr const double huge = HUGE_VAL;
 };
 
 template <>
@@ -1130,6 +1133,7 @@ struct numeric_type_traits<long double>
     static constexpr const char* name = "long double";
     static constexpr const auto strto = std::strtold;
     static constexpr const auto wcsto = std::wcstold;
+    static constexpr const long double huge = HUGE_VALL;
 };
 
 // D must derive from raw_converter_base<D, H> (CRTP)
@@ -1160,11 +1164,8 @@ public:
             // whitespace only
             return ret_t(this->get().empty());
         } else if (errno == ERANGE) {
-            using limits_t =
-                std::numeric_limits<std::remove_const_t<decltype(r)>>;
-            const int s = (r == limits_t::max()) ? 1 :
-                          (r == limits_t::lowest()) ? -1 : 0;
-            return ret_t(this->get().out_of_range(begin, end, s));
+            return ret_t(this->get().out_of_range(begin, end,
+                static_cast<const D*>(this)->erange(r)));
         } else {
             return ret_t(r);
         }
@@ -1221,6 +1222,32 @@ struct raw_converter<T, H, std::enable_if_t<std::is_integral<T>::value,
     {
         return numeric_type_traits<T>::wcsto(s, e, 10);
     }
+
+    int erange(T v) const
+    {
+        return erange_impl(v, std::is_signed<T>());
+    }
+
+private:
+    int erange_impl(T v, std::true_type) const
+    {
+        if (v == std::numeric_limits<T>::max()) {
+            return 1;
+        } else if (v == std::numeric_limits<T>::min()) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
+    int erange_impl(T v, std::false_type) const
+    {
+        if (v == std::numeric_limits<T>::max()) {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
 };
 
 // For floating-point types
@@ -1242,6 +1269,17 @@ struct raw_converter<T, H, std::enable_if_t<std::is_floating_point<T>::value,
     auto engine(const wchar_t* s, wchar_t** e) const
     {
         return numeric_type_traits<T>::wcsto(s, e);
+    }
+
+    int erange(T v) const
+    {
+        if (v == numeric_type_traits<T>::huge) {
+            return 1;
+        } else if (v == -numeric_type_traits<T>::huge) {
+            return -1;
+        } else {
+            return 0;
+        }
     }
 };
 
