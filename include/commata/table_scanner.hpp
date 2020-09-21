@@ -1482,18 +1482,38 @@ struct restrained_converter<T, H, U,
         if (!p) {
             return replacement<T>();
         }
-        const auto r = *p;
-        if (r <= std::numeric_limits<T>::max()) {
-            return replacement<T>(static_cast<T>(r));
+        const auto r = convert_impl(*p,
+            std::integral_constant<bool, sizeof(T) < sizeof(U)>());
+        if (r.second) {
+            return replacement<T>(r.first);
+        } else {
+            return conversion_error_facade<T>::out_of_range(
+                this->get_conversion_error_handler(), begin, end, 1);
+        }
+    }
+
+    std::pair<T, bool> convert_impl(U r, std::true_type)
+    {
+        constexpr auto t_max = std::numeric_limits<T>::max();
+        if (r <= t_max) {
+            return { static_cast<T>(r), true };
         } else {
             const auto s = static_cast<std::make_signed_t<U>>(r);
-            if ((s < 0)
-             && (static_cast<U>(-s) <= std::numeric_limits<T>::max())) {
-                return replacement<T>(static_cast<T>(s));
+            if (s < 0) {
+                // -t_max is the lowest number that can be wrapped around
+                // and then returned
+                const auto s_wrapped_around = s + t_max + 1;
+                if (s_wrapped_around > 0) {
+                    return { static_cast<T>(s_wrapped_around), true };
+                }
             }
         }
-        return conversion_error_facade<T>::out_of_range(
-            this->get_conversion_error_handler(), begin, end, 1);
+        return { static_cast<T>(0U), false };
+    }
+
+    std::pair<T, bool> convert_impl(U r, std::false_type)
+    {
+        return { static_cast<T>(r), true };
     }
 };
 
