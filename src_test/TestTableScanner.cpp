@@ -291,8 +291,8 @@ struct TestFieldTranslatorForIntegralRestriction : BaseTest
 
 TEST_F(TestFieldTranslatorForIntegralRestriction, Unsigned)
 {
-    // If unsigned short is the same type as unsigned long,
-    // this test will be a somewhat absurd one, but it does not seem likely
+    // If unsigned short is as long as unsigned long,
+    // this test will be somewhat absurd, but it does not seem likely
 
     std::string max = std::to_string(
         std::numeric_limits<unsigned short>::max());
