@@ -286,32 +286,45 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     }
 }
 
-struct TestFieldTranslatorForChar : BaseTest
+struct TestFieldTranslatorForIntegralRestriction : BaseTest
 {};
 
-TEST_F(TestFieldTranslatorForChar, Correct)
+TEST_F(TestFieldTranslatorForIntegralRestriction, Unsigned)
 {
-    std::vector<int_least8_t> values0;      // maybe signed char
-    std::vector<uint_least8_t> values1;     // maybe unsigned char
-    std::deque<char> values2;
+    // If unsigned short is the same type as unsigned long,
+    // this test will be a somewhat absurd one, but it does not seem likely
+
+    std::string max = std::to_string(
+        std::numeric_limits<unsigned short>::max());
+    std::string maxp1 = plus1(max);
+
+    std::stringstream s;
+    s << max   << '\n'
+      << maxp1 << '\n'
+      << '-' << max   << '\n'
+      << '-' << maxp1 << '\n';
+
+    std::vector<unsigned short> values;
 
     basic_table_scanner<char> h;
-    h.set_field_scanner(0, make_field_translator(values0));
-    h.set_field_scanner(1, make_field_translator(values1));
-    h.set_field_scanner(2, make_field_translator(values2));
+    h.set_field_scanner(0, make_field_translator(values, fail_if_skipped(),
+        replace_if_conversion_failed<unsigned short>(
+            static_cast<unsigned short>(3),     // empty
+            static_cast<unsigned short>(4),     // invalid
+            static_cast<unsigned short>(2),     // above max
+            static_cast<unsigned short>(5),     // below min
+            static_cast<unsigned short>(0))));  // underflow
 
-    std::basic_stringbuf<char> buf("-120,250,-5");
     try {
-        parse_csv(&buf, std::move(h));
+        parse_csv(s, std::move(h));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
-    ASSERT_EQ(1U, values0.size());
-    ASSERT_EQ(1U, values1.size());
-    ASSERT_EQ(1U, values2.size());
-    ASSERT_EQ(-120, values0.front());
-    ASSERT_EQ(250U, values1.front());
-    ASSERT_EQ(static_cast<char>(-5), values2.front());
+
+    ASSERT_EQ(std::numeric_limits<unsigned short>::max(), values[0]);
+    ASSERT_EQ(2, values[1]);
+    ASSERT_EQ(1, values[2]);    // wrapped around
+    ASSERT_EQ(2, values[3]);
 }
 
 template <class ChNum>
