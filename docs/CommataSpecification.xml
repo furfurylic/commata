@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-10-02 (UTC)</signature>
+<signature>2020-10-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4299,13 +4299,23 @@ template &lt;class T> [[noreturn]] replacement&lt;T> empty(T* = nullptr) const;
 namespace commata {
   template &lt;class T> class replace_if_conversion_failed {
     template &lt;class Empty = T, class InvalidFormat = T,
-              class AboveUpperLimit = T, class BelowLowerLimit = T, class Underflow = T>
+              class AboveUpperLimit = T>
       explicit
         replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
                                      InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
-                                     AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit(),
-                                     BelowLowerLimit&amp;&amp; on_below_lower_limit = BelowLowerLimit(),
-                                     Underflow&amp;&amp;       on_underflow         = Underflow());
+                                     AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit());
+    template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit>
+      replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
+                                   InvalidFormat&amp;&amp;   on_invalid_format,
+                                   AboveUpperLimit&amp;&amp; on_above_upper_limit,
+                                   BelowLowerLimit&amp;&amp; on_below_lower_limit);
+    template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit,
+              class Underflow>
+      replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
+                                   InvalidFormat&amp;&amp;   on_invalid_format,
+                                   AboveUpperLimit&amp;&amp; on_above_upper_limit,
+                                   BelowLowerLimit&amp;&amp; on_below_lower_limit,
+                                   Underflow&amp;&amp;       on_underflow);
     replace_if_conversion_failed(const replace_if_conversion_failed&amp; other);
     replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept;
    ~replace_if_conversion_failed();
@@ -4325,20 +4335,51 @@ namespace commata {
 
         <code-item>
           <code>
-template &lt;class Empty = T, class InvalidFormat = T,
-          class AboveUpperLimit = T, class BelowLowerLimit = T, class Underflow = T>
+template &lt;class Empty = T, class InvalidFormat = T, class AboveUpperLimit = T>
   explicit
     replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
                                  InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
-                                 AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit(),
-                                 BelowLowerLimit&amp;&amp; on_below_lower_limit = BelowLowerLimit(),
-                                 Underflow&amp;&amp;       on_underflow         = Underflow());
+                                 AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit());
+          </code>
+          <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
+                   Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
+                   Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
+                   Does the same with <c>action_on_invalid_format</c> and <c>action_on_above_upper_limit</c>.
+                   Configures <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_base_of&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;Empty>>::value</c> is <c>false</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit>
+  replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
+                               InvalidFormat&amp;&amp;   on_invalid_format,
+                               AboveUpperLimit&amp;&amp; on_above_upper_limit,
+                               BelowLowerLimit&amp;&amp; on_below_lower_limit);
+          </code>
+          <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
+                   Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
+                   Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
+                   Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c>.
+                   Configures <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
+          <remark>If <c>T</c> is an unsigned integer type, instantiating this overload shall make the program ill-formed.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit,
+          class Underflow>
+  replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
+                               InvalidFormat&amp;&amp;   on_invalid_format,
+                               AboveUpperLimit&amp;&amp; on_above_upper_limit,
+                               BelowLowerLimit&amp;&amp; on_below_lower_limit,
+                               Underflow&amp;&amp;       on_underflow);
           </code>
           <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
                    Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
                    Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
                    Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>.</effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_base_of&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;Empty>>::value</c> is <c>false</c>.</remark>
+          <remark>If <c>T</c> is an integer type, instantiating this overload shall make the program ill-formed.</remark>
         </code-item>
 
         <code-item>

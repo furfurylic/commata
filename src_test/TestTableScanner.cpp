@@ -116,7 +116,32 @@ typedef testing::Types<
 
 template <class ChNum>
 struct TestFieldTranslatorForIntegralTypes : BaseTest
-{};
+{
+protected:
+    template <class T, class... Args>
+    auto make_replace_if_conversion_failed_adding_0(Args&&... args)
+    {
+        return this->template
+            make_replace_if_conversion_failed_adding_0_impl<T>(
+                std::is_signed<T>(), std::forward<Args>(args)...);
+    }
+
+private:
+    template <class T, class... Args>
+    auto make_replace_if_conversion_failed_adding_0_impl(
+        std::true_type, Args&&... args)
+    {
+        return replace_if_conversion_failed<T>(
+            std::forward<Args>(args)..., static_cast<T>(0));
+    }
+
+    template <class T, class... Args>
+    auto make_replace_if_conversion_failed_adding_0_impl(
+        std::false_type, Args&&... args)
+    {
+        return replace_if_conversion_failed<T>(std::forward<Args>(args)...);
+    }
+};
 
 TYPED_TEST_SUITE(TestFieldTranslatorForIntegralTypes, ChIntegrals);
 
@@ -258,9 +283,9 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
             replacement_fail, static_cast<value_t>(42))));
     h.set_field_scanner(2, make_field_translator(values2,
         fail_if_skipped(),
-        replace_if_conversion_failed<value_t>(
+        this->template make_replace_if_conversion_failed_adding_0<value_t>(
             replacement_fail, replacement_fail,
-            static_cast<value_t>(1), static_cast<value_t>(0))));
+            static_cast<value_t>(1))));
 
     stringstream_t s;
     s << "-5,x," << maxxPlus1 << '\n'
@@ -311,9 +336,7 @@ TEST_F(TestFieldTranslatorForIntegralRestriction, Unsigned)
         replace_if_conversion_failed<unsigned short>(
             static_cast<unsigned short>(3),     // empty
             static_cast<unsigned short>(4),     // invalid
-            static_cast<unsigned short>(2),     // above max
-            static_cast<unsigned short>(5),     // below min
-            static_cast<unsigned short>(0))));  // underflow
+            static_cast<unsigned short>(2))));  // above max
 
     try {
         parse_csv(s, std::move(h));

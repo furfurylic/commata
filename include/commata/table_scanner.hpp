@@ -1796,11 +1796,6 @@ class replace_if_conversion_failed
             underflow = 4
         };
 
-        static constexpr std::size_t n()
-        {
-            return n_impl(std::is_integral<T>(), std::is_signed<T>());
-        }
-
     private:
         static constexpr std::size_t n_impl(std::true_type, std::true_type)
         {
@@ -1818,35 +1813,52 @@ class replace_if_conversion_failed
             return 5;
         }
 
+        static constexpr std::size_t init_n()
+        {
+            return n_impl(std::is_integral<T>(), std::is_signed<T>());
+        }
+
     public:
-        std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[n()];
+        static constexpr std::size_t n = init_n();
+
+        std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[n];
         std::uint_fast8_t has_;
         std::uint_fast8_t skips_;
 
-        template <class... Args>
-        store(slot head_r, Args&&... args) :
-            store(std::integral_constant<std::size_t, n()>(),
-                head_r, std::forward<Args>(args)...)
+        template <class Head, class... Tails,
+            std::enable_if_t<!std::is_base_of<store,
+                std::decay_t<Head>>::value, std::nullptr_t> = nullptr>
+        store(Head&& head, Tails&&... tails) :
+            store(std::integral_constant<std::size_t, 0>(),
+                std::forward<Head>(head), std::forward<Tails>(tails)...)
         {}
 
     private:
-        template <std::size_t Remaining, class Head, class... Tails>
-        store(std::integral_constant<std::size_t, Remaining>,
-                slot head_r, Head&& head_v, Tails&&... tails) :
-            store(std::integral_constant<std::size_t, Remaining - 1>(),
+        template <std::size_t Slot, class Head, class... Tails>
+        store(std::integral_constant<std::size_t, Slot>,
+                Head&& head, Tails&&... tails) :
+            store(std::integral_constant<std::size_t, Slot + 1>(),
                 std::forward<Tails>(tails)...)
         {
-            init(head_r, std::forward<Head>(head_v));
+            init(Slot, std::forward<Head>(head));
         }
 
-        template <class Head, class... Tails>
-        store(std::integral_constant<std::size_t, 0>,
-                slot, Head&&, Tails&&...) noexcept :
-            store(std::integral_constant<std::size_t, 0>())
+        template <class Head, class... Tails,
+            std::enable_if_t<!std::is_base_of<store,
+                std::decay_t<Head>>::value, std::nullptr_t> = nullptr>
+        store(std::integral_constant<std::size_t, n>,
+                Head&&, Tails&&...) noexcept :
+            store(std::integral_constant<std::size_t, n>())
         {}
 
-        template <std::size_t Remaining>
-        store(std::integral_constant<std::size_t, Remaining>) noexcept :
+        template <std::size_t Slot>
+        store(std::integral_constant<std::size_t, Slot>) noexcept :
+            store(std::integral_constant<std::size_t, Slot + 1>())
+        {
+            init(Slot);
+        }
+
+        store(std::integral_constant<std::size_t, n>) noexcept :
             has_(0U), skips_(0U)
         {}
 
@@ -1878,7 +1890,7 @@ class replace_if_conversion_failed
         {
             using f_t = std::conditional_t<
                 std::is_lvalue_reference<Other>::value, const T&, T>;
-            for (unsigned r = 0; r < n(); ++r) {
+            for (unsigned r = 0; r < n; ++r) {
                 auto p = get_g(std::addressof(other), r);
                 if (p.first == mode::replace) {
                     place_copy(r, std::forward<f_t>(*p.second));
@@ -1886,15 +1898,15 @@ class replace_if_conversion_failed
             }
         }
 
-        template <class U, std::enable_if_t<
+        template <class U = T, std::enable_if_t<
             (!std::is_base_of<
                 replacement_fail_t, std::decay_t<U>>::value)
          && (!std::is_base_of<
                 replacement_ignore_t, std::decay_t<U>>::value),
             std::nullptr_t> = nullptr>
-        void init(unsigned r, U&& value)
+        void init(unsigned r, U&& value = U())
         {
-            assert(r < n());
+            assert(r < n);
             assert(!has(r));
             assert(!skips(r));
             place_copy(r, std::forward<U>(value));
@@ -1904,14 +1916,14 @@ class replace_if_conversion_failed
         void init(unsigned r, replacement_fail_t) noexcept
         {
             static_cast<void>(r);
-            assert(r < n());
+            assert(r < n);
             assert(!has(r));
             assert(!skips(r));
         }
 
         void init(unsigned r, replacement_ignore_t) noexcept
         {
-            assert(r < n());
+            assert(r < n);
             assert(!has(r));
             assert(!skips(r));
             skips_ |= 1U << r;
@@ -1966,7 +1978,7 @@ class replace_if_conversion_failed
 
         void destroy(std::false_type) noexcept
         {
-            for (unsigned r = 0; r < n(); ++r) {
+            for (unsigned r = 0; r < n; ++r) {
                 if (has(r)) {
                     reinterpret_cast<const T*>(replacements_ + r)->~T();
                 }
@@ -1978,8 +1990,7 @@ class replace_if_conversion_failed
 
 public:
     template <class Empty = T, class InvalidFormat = T,
-        class AboveUpperLimit = T, class BelowLowerLimit = T,
-        class Underflow = T,
+        class AboveUpperLimit = T,
         std::enable_if_t<
             !std::is_base_of<
                 replace_if_conversion_failed<T>, std::decay_t<Empty>>::value,
@@ -1987,19 +1998,48 @@ public:
     explicit replace_if_conversion_failed(
         Empty&& on_empty = Empty(),
         InvalidFormat&& on_invalid_format = InvalidFormat(),
-        AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit(),
-        BelowLowerLimit&& on_below_lower_limit = BelowLowerLimit(),
-        Underflow&& on_underflow = Underflow()) :
+        AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit()) :
         store_(store(
-            store::empty, std::forward<Empty>(on_empty),
-            store::invalid_format,
-                std::forward<InvalidFormat>(on_invalid_format),
-            store::above_upper_limit,
-                std::forward<AboveUpperLimit>(on_above_upper_limit),
-            store::below_lower_limit,
-                std::forward<BelowLowerLimit>(on_below_lower_limit),
-            store::underflow, std::forward<Underflow>(on_underflow)))
+            std::forward<Empty>(on_empty),
+            std::forward<InvalidFormat>(on_invalid_format),
+            std::forward<AboveUpperLimit>(on_above_upper_limit)))
     {}
+
+    template <class Empty, class InvalidFormat,
+        class AboveUpperLimit, class BelowLowerLimit>
+    replace_if_conversion_failed(
+        Empty&& on_empty,
+        InvalidFormat&& on_invalid_format,
+        AboveUpperLimit&& on_above_upper_limit,
+        BelowLowerLimit&& on_below_lower_limit) :
+        store_(store(
+            std::forward<Empty>(on_empty),
+            std::forward<InvalidFormat>(on_invalid_format),
+            std::forward<AboveUpperLimit>(on_above_upper_limit),
+            std::forward<BelowLowerLimit>(on_below_lower_limit)))
+    {
+        static_assert(
+            !(std::is_integral<T>::value && !std::is_signed<T>::value), "");
+    }
+
+    template <class Empty, class InvalidFormat,
+        class AboveUpperLimit, class BelowLowerLimit,
+        class Underflow>
+    replace_if_conversion_failed(
+        Empty&& on_empty,
+        InvalidFormat&& on_invalid_format,
+        AboveUpperLimit&& on_above_upper_limit,
+        BelowLowerLimit&& on_below_lower_limit,
+        Underflow&& on_underflow) :
+        store_(store(
+            std::forward<Empty>(on_empty),
+            std::forward<InvalidFormat>(on_invalid_format),
+            std::forward<AboveUpperLimit>(on_above_upper_limit),
+            std::forward<BelowLowerLimit>(on_below_lower_limit),
+            std::forward<Underflow>(on_underflow)))
+    {
+        static_assert(!std::is_integral<T>::value, "");
+    }
 
     replace_if_conversion_failed(const replace_if_conversion_failed&)
         = default;
