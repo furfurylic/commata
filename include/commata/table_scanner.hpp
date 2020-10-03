@@ -1793,24 +1793,64 @@ class replace_if_conversion_failed
             invalid_format = 1,
             above_upper_limit = 2,
             below_lower_limit = 3,
-            underflow = 4,
-            n = 5
+            underflow = 4
         };
 
-        std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[n];
+        static constexpr std::size_t n()
+        {
+            return n_impl(std::is_integral<T>(), std::is_signed<T>());
+        }
+
+    private:
+        static constexpr std::size_t n_impl(std::true_type, std::true_type)
+        {
+            return 4;
+        }
+
+        static constexpr std::size_t n_impl(std::true_type, std::false_type)
+        {
+            return 3;
+        }
+
+        template <class AnyBool>
+        static constexpr std::size_t n_impl(std::false_type, AnyBool)
+        {
+            return 5;
+        }
+
+    public:
+        std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[n()];
         std::uint_fast8_t has_;
         std::uint_fast8_t skips_;
 
-        store() noexcept : has_(0U), skips_(0U)
+        template <class... Args>
+        store(slot head_r, Args&&... args) :
+            store(std::integral_constant<std::size_t, n()>(),
+                head_r, std::forward<Args>(args)...)
         {}
 
-        template <class Head, class... Tails>
-        store(unsigned head_r, Head&& head_v, Tails&&... tails) :
-            store(std::forward<Tails>(tails)...)
+    private:
+        template <std::size_t Remaining, class Head, class... Tails>
+        store(std::integral_constant<std::size_t, Remaining>,
+                slot head_r, Head&& head_v, Tails&&... tails) :
+            store(std::integral_constant<std::size_t, Remaining - 1>(),
+                std::forward<Tails>(tails)...)
         {
             init(head_r, std::forward<Head>(head_v));
         }
 
+        template <class Head, class... Tails>
+        store(std::integral_constant<std::size_t, 0>,
+                slot, Head&&, Tails&&...) noexcept :
+            store(std::integral_constant<std::size_t, 0>())
+        {}
+
+        template <std::size_t Remaining>
+        store(std::integral_constant<std::size_t, Remaining>) noexcept :
+            has_(0U), skips_(0U)
+        {}
+
+    public:
         store(const store& other)
             noexcept(std::is_trivially_copyable<T>::value) :
             store(other, std::is_trivially_copyable<T>())
@@ -1838,7 +1878,7 @@ class replace_if_conversion_failed
         {
             using f_t = std::conditional_t<
                 std::is_lvalue_reference<Other>::value, const T&, T>;
-            for (unsigned r = 0; r < n; ++r) {
+            for (unsigned r = 0; r < n(); ++r) {
                 auto p = get_g(std::addressof(other), r);
                 if (p.first == mode::replace) {
                     place_copy(r, std::forward<f_t>(*p.second));
@@ -1854,6 +1894,7 @@ class replace_if_conversion_failed
             std::nullptr_t> = nullptr>
         void init(unsigned r, U&& value)
         {
+            assert(r < n());
             assert(!has(r));
             assert(!skips(r));
             place_copy(r, std::forward<U>(value));
@@ -1863,12 +1904,14 @@ class replace_if_conversion_failed
         void init(unsigned r, replacement_fail_t) noexcept
         {
             static_cast<void>(r);
+            assert(r < n());
             assert(!has(r));
             assert(!skips(r));
         }
 
         void init(unsigned r, replacement_ignore_t) noexcept
         {
+            assert(r < n());
             assert(!has(r));
             assert(!skips(r));
             skips_ |= 1U << r;
@@ -1923,7 +1966,7 @@ class replace_if_conversion_failed
 
         void destroy(std::false_type) noexcept
         {
-            for (unsigned r = 0; r < n; ++r) {
+            for (unsigned r = 0; r < n(); ++r) {
                 if (has(r)) {
                     reinterpret_cast<const T*>(replacements_ + r)->~T();
                 }
