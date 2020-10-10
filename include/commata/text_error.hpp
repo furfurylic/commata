@@ -254,7 +254,7 @@ std::basic_ostream<wchar_t, Tr>& operator<<(
         const auto l_len = detail::print_pos(l, p->first, i.get_base());
 
         // column
-        wchar_t c[sizeof(l) / sizeof(wchar_t)];
+        wchar_t c[std::size(l)];
         const auto c_len = detail::print_pos(c, p->second, i.get_base());
 
         // what
