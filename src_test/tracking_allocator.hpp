@@ -114,8 +114,7 @@ public:
             const auto i = std::find_if(
                 allocated_->cbegin(), allocated_->cend(),
                 [p](auto be) {
-                    return be.first == tracking_allocator::true_addressof(p);
-                        // "tracking_allocator::" is to satiate GCC 6.3.1
+                    return be.first == true_addressof(p);
                 });
             assert(i != allocated_->cend());
             allocated_->erase(i);

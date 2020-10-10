@@ -128,7 +128,7 @@ std::basic_string<Ch, Tr, Allocator>& string_value_plus_assign(
     try {
         left.append(right.size(), typename T::value_type());    // throw 
     } catch (...) {
-        // gcc 6.3 dislikes const_iterator here
+        // gcc 7.3.1 dislikes const_iterator here
         left.erase(left.begin() + ln, left.end());
         throw;
     }

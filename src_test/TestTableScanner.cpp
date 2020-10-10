@@ -74,7 +74,7 @@ std::basic_string<Ch> plus1(std::basic_string<Ch> s, std::size_t i
         if (k == all_end - 1) {
             s[i] = all[0];  // carrying occurs
             if (i == 0) {
-                s.insert(s.begin(), all[1]);  // gcc 6.3.1 refuses s.cbegin()
+                s.insert(s.begin(), all[1]);  // gcc 7.3.1 refuses s.cbegin()
                 break;
             } else {
                 --i;
