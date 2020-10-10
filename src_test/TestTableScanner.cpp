@@ -65,9 +65,8 @@ std::basic_string<Ch> plus1(std::basic_string<Ch> s, std::size_t i
 {
     i = std::min(i, static_cast<std::size_t>(s.size() - 1));
 
-    const Ch (&all)[sizeof(digits<Ch>::all) / sizeof(digits<Ch>::all[0])]
-        = digits<Ch>::all;
-    const auto all_end = all + sizeof(all) / sizeof(all[0]);
+    const Ch (&all)[std::size(digits<Ch>::all)] = digits<Ch>::all;
+    const auto all_end = all + std::size(digits<Ch>::all);
 
     for (;;) {
         const auto k = std::find(all, all_end, s[i]);
