@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-10-04 (UTC)</signature>
+<signature>2020-10-11 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -771,7 +771,7 @@ namespace commata {
   public:
     using char_type = Ch;
     using traits_type = Tr;
-    using size_type = std::make_unsigned&lt;std::streamsize>;
+    using size_type = std::make_unsigned_t&lt;std::streamsize>;
 
     <c>// <n><xref id="streambuf_input.cons"/>, construct/copy/destroy:</n></c>
     explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>* sb);
