@@ -49,8 +49,7 @@ void stored_table_sample()
   stored_table table;
 
   // Open stars.csv and load its content into table
-  std::ifstream in("stars.csv");
-  parse_csv(in, make_stored_table_builder(table));
+  parse_csv(std::ifstream("stars.csv"), make_stored_table_builder(table));
 
   std::cout << table.size() << std::endl; // will print "9" (not "10")
   std::cout << table[0][3] << std::endl;  // will print "Distance, in parsec"
@@ -148,8 +147,7 @@ using commata::wstored_table;
 void stored_table_sample2()
 {
   wstored_table table;
-  std::wifstream in("stars.csv");
-  parse_csv(in, make_stored_table_builder(table));
+  parse_csv(std::wifstream("stars.csv"), make_stored_table_builder(table));
 
   std::wcout << (table[1][0] == L"Virgo") << std::endl;
     // will print "1" or "true" or something like that
@@ -189,8 +187,7 @@ void one_pass_scanning_sample()
   scanner.set_field_scanner(2, make_field_translator(magnitudes));
     // sets a body field scanner for field #2 (zero-based)
 
-  std::ifstream in("stars.csv");
-  parse_csv(in, std::move(scanner));
+  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
 
   std::cout << constellation_set.size() << std::endl;
                                                 // will print "2"
@@ -248,8 +245,7 @@ void one_pass_scanning_sample2()
         max_magnitude = std::min(max_magnitude, magnitude);
       }));
 
-  std::ifstream in("stars.csv");
-  parse_csv(in, std::move(scanner));
+  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
     // Here the body field scanner for field #1 will print the names of stars
     // to the standard output on the fly
 
@@ -316,8 +312,7 @@ void one_pass_scanning_sample3()
                     // and the next record will be the first body record
     });
 
-  std::ifstream in("stars.csv");
-  parse_csv(in, std::move(scanner));
+  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
 
   std::cout << names.front() << std::endl;  // will print "Spica"
   std::cout << names[4] << std::endl;       // will print "Deneb"
@@ -376,8 +371,7 @@ void stored_table_error_sample()
   stored_table table;
 
   try {
-    std::ifstream in("stars2.csv");
-    parse_csv(in, make_stored_table_builder(table));
+    parse_csv(std::ifstream("stars2.csv"), make_stored_table_builder(table));
   } catch (const text_error& e) {
     std::cout << e.what() << std::endl;
     throw;
@@ -412,8 +406,7 @@ void stored_table_error_sample2()
   stored_table table;
 
   try {
-    std::ifstream in("stars2.csv");
-    parse_csv(in, make_stored_table_builder(table));
+    parse_csv(std::ifstream("stars2.csv"), make_stored_table_builder(table));
   } catch (const text_error& e) {
     std::cout << e.info() << std::endl;
     throw;
@@ -459,8 +452,7 @@ void one_pass_scanning_error_sample()
         ++distance_num;
       }));
 
-  std::ifstream in("stars.csv");
-  parse_csv(in, std::move(scanner));
+  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
 
   std::cout << distance_sum / distance_num << std::endl;
     // will print the average distance
@@ -506,8 +498,7 @@ void one_pass_scanning_error_sample2()
       replace_if_skipped<double>(replacement_ignore),               /* added */
       replace_if_conversion_failed<double>(replacement_ignore)));   /* added */
 
-  std::ifstream in("stars.csv");
-  parse_csv(in, std::move(scanner));
+  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
 
   std::cout << distance_sum / distance_num << std::endl;
     // will print the average distance
@@ -556,7 +547,7 @@ public:
 
   explicit vov_text_handler(
     std::vector<std::vector<std::string>>& records) :
-    records_(&field_values)
+    records_(&records)
   {}
 
   void start_record(const char*)
@@ -587,8 +578,7 @@ void vov_text_handler_sample()
 {
   std::vector<std::vector<std::string>> records;
 
-  std::ifstream in("stars.csv");
-  parse_csv(in, vov_text_handler(records));
+  parse_csv(std::ifstream("stars.csv"), vov_text_handler(records));
 
   std::cout << records.size() << std::endl; // will print "9"
   std::cout << records[3][1] << std::endl;  // will print "Porrima"
@@ -650,8 +640,7 @@ void make_empty_physical_line_aware_sample()
 {
   stored_table table;
 
-  std::ifstream in("stars.csv");
-  parse_csv(in,
+  parse_csv(std::ifstream("stars.csv"),
     make_empty_physical_line_aware(
       make_stored_table_builder(table)));
 
@@ -680,9 +669,7 @@ using commata::make_text_pull;
 
 void pull_parsing_sample()
 {
-  std::ifstream in("stars.csv");
-  auto s = make_csv_source(in);
-  auto p = make_text_pull(s);
+  auto p = make_text_pull(make_csv_source(std::ifstream("stars.csv")));
   p.set_empty_physical_line_aware();
 
   // Skip the first record
@@ -729,9 +716,7 @@ using commata::make_text_pull;
 
 void pull_parsing_sample2()
 {
-  std::ifstream in("stars.csv");
-  auto s = make_csv_source(in);
-  auto p = make_text_pull(s);
+  auto p = make_text_pull(make_csv_source(std::ifstream("stars.csv")));
   std::vector<std::string> v;
 
   while (p.skip_record()(1)) {      // moves to the end of the record and
