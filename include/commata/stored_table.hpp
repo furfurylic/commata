@@ -1732,7 +1732,7 @@ struct adaptive_manoeuvre<T,
     template <class Container>
     static void emplace_back(Container& c, T&& t)
     {
-        c.emplace(c.cend(), c.get_allocator());
+        c.emplace(c.cend(), t.get_allocator());
         c.end().swap(t);
     }
 
