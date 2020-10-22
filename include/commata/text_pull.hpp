@@ -456,7 +456,7 @@ public:
     {
         if (handler_) {
             const auto& sq = handler_->state_queue();
-            assert(sq.size() > i_sq_);    
+            assert(sq.size() > i_sq_);
             return sq[i_sq_].first;
         } else {
             return primitive_text_pull_state::moved;
@@ -467,7 +467,7 @@ public:
     {
         if (handler_) {
             const auto& sq = handler_->state_queue();
-            assert(sq.size() > i_sq_);    
+            assert(sq.size() > i_sq_);
             return (sq[i_sq_].first != primitive_text_pull_state::eof);
         } else {
             return false;
@@ -767,9 +767,7 @@ public:
                 value_expiring_ = false;
             }
             try {
-                if (!p_()) {
-                    break;
-                }
+                p_();
             } catch (...) {
                 set_state(text_pull_state::error);
                 if (suppresses_error_) {
@@ -799,11 +797,15 @@ public:
             case primitive_text_pull_state::end_record:
                 set_state(text_pull_state::record_end);
                 return *this;
+            case primitive_text_pull_state::eof:
+            case primitive_text_pull_state::moved:
+                goto exit;
             case primitive_text_pull_state::end_buffer:
             default:
                 break;
             }
         }
+    exit:
         set_state(text_pull_state::eof);
         return *this;
     }
@@ -820,9 +822,7 @@ private:
         }
         for (;;) {
             try {
-                if (!p_()) {
-                    break;
-                }
+                p_();
             } catch (...) {
                 set_state(text_pull_state::error);
                 last_ = empty_string();
@@ -864,10 +864,14 @@ private:
                     last_.first = empty_string().first;
                 }
                 break;
+            case primitive_text_pull_state::eof:
+            case primitive_text_pull_state::moved:
+                goto exit;
             default:
                 break;
             }
         }
+    exit:
         set_state(text_pull_state::eof);
         last_ = empty_string();
         return *this;
@@ -888,9 +892,7 @@ public:
                 value_expiring_ = false;
             }
             try {
-                if (!p_()) {
-                    break;
-                }
+                p_();
             } catch (...) {
                 set_state(text_pull_state::error);
                 if (suppresses_error_) {
@@ -919,11 +921,15 @@ public:
                 }
                 --n;
                 break;
+            case primitive_text_pull_state::eof:
+            case primitive_text_pull_state::moved:
+                goto exit;
             case primitive_text_pull_state::end_buffer:
             default:
                 break;
             }
         }
+    exit:
         set_state(text_pull_state::eof);
         return *this;
     }
