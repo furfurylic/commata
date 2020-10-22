@@ -761,14 +761,17 @@ public:
         last_ = empty_string();
         value_.clear();
         detail::temporarily_discard<decltype(p_)> d(p_);
+        if (value_expiring_) {
+            ++j_;
+            value_expiring_ = false;
+        }
         for (;;) {
-            if (value_expiring_) {
-                ++j_;
-                value_expiring_ = false;
-            }
             try {
                 p_();
             } catch (...) {
+                if (last_state_ == text_pull_state::field) {
+                    value_expiring_ = true;
+                }
                 set_state(text_pull_state::error);
                 if (suppresses_error_) {
                     suppressed_error_ = std::current_exception();
@@ -782,11 +785,12 @@ public:
                 break;
             case primitive_text_pull_state::finalize:
                 set_state(text_pull_state::field);
-                value_expiring_ = true;
                 if (n == 1) {
                     d.reset();
+                    value_expiring_ = true;
                     return next_field();
                 }
+                ++j_;
                 --n;
                 break;
             case primitive_text_pull_state::empty_physical_line:
@@ -795,6 +799,9 @@ public:
                 }
                 // fall through
             case primitive_text_pull_state::end_record:
+                if (last_state_ == text_pull_state::field) {
+                    value_expiring_ = true;
+                }
                 set_state(text_pull_state::record_end);
                 return *this;
             case primitive_text_pull_state::eof:
@@ -886,14 +893,17 @@ public:
         last_ = empty_string();
         value_.clear();
         detail::temporarily_discard<decltype(p_)> d(p_);
+        if (value_expiring_) {
+            ++j_;
+            value_expiring_ = false;
+        }
         for (;;) {
-            if (value_expiring_) {
-                ++j_;
-                value_expiring_ = false;
-            }
             try {
                 p_();
             } catch (...) {
+                if (last_state_ == text_pull_state::field) {
+                    value_expiring_ = true;
+                }
                 set_state(text_pull_state::error);
                 if (suppresses_error_) {
                     suppressed_error_ = std::current_exception();
@@ -907,7 +917,7 @@ public:
                 break;
             case primitive_text_pull_state::finalize:
                 set_state(text_pull_state::field);
-                value_expiring_ = true;
+                ++j_;
                 break;
             case primitive_text_pull_state::empty_physical_line:
                 if (!empty_physical_line_aware_) {
@@ -915,12 +925,17 @@ public:
                 }
                 // fall through
             case primitive_text_pull_state::end_record:
-                set_state(text_pull_state::record_end);
                 if (n == 0) {
+                    if (last_state_ == text_pull_state::field) {
+                        value_expiring_ = true;
+                    }
+                    set_state(text_pull_state::record_end);
                     return *this;
+                } else {
+                    set_state(text_pull_state::record_end);
+                    --n;
+                    break;
                 }
-                --n;
-                break;
             case primitive_text_pull_state::eof:
             case primitive_text_pull_state::moved:
                 goto exit;
