@@ -396,7 +396,12 @@ private:
     std::size_t i_sq_;
     std::size_t i_dq_;
     handler_p_t handler_;
+    typename handler_t::state_queue_type* sq_;
+    typename handler_t::data_queue_type* dq_;
     detail::base_member_pair<allocator_type, parser_t> ap_;
+
+    static typename handler_t::state_queue_type sq_moved_from;
+    static typename handler_t::data_queue_type dq_moved_from;
 
 public:
     static constexpr bool physical_position_available =
@@ -414,9 +419,10 @@ public:
         i_sq_(0), i_dq_(0),
         handler_(create_handler(alloc,
             std::allocator_arg, alloc, buffer_size)),
+        sq_(&handler_->state_queue()), dq_(&handler_->data_queue()),
         ap_(alloc, in(detail::wrapper_handler<handler_t>(*handler_)))
     {
-        handler_->state_queue().emplace_back(
+        sq_->emplace_back(
             primitive_text_pull_state::before_parse,
             static_cast<typename std::decay_t<decltype(*handler_)>::
                     state_queue_element_type::second_type>(0));
@@ -424,9 +430,15 @@ public:
 
     primitive_text_pull(primitive_text_pull&& other) noexcept :
         i_sq_(other.i_sq_), i_dq_(other.i_dq_),
-        handler_(other.handler_), ap_(std::move(other.ap_))
+        handler_(other.handler_),
+        sq_(&handler_->state_queue()), dq_(&handler_->data_queue()),
+        ap_(std::move(other.ap_))
     {
+        other.i_sq_ = 0;
+        other.i_dq_ = 0;
         other.handler_ = nullptr;
+        other.sq_ = &sq_moved_from;
+        other.dq_ = &dq_moved_from;
     }
 
     ~primitive_text_pull()
@@ -456,57 +468,46 @@ public:
 
     primitive_text_pull_state state() const noexcept
     {
-        if (handler_) {
-            const auto& sq = handler_->state_queue();
-            assert(sq.size() > i_sq_);
-            return sq[i_sq_].first;
-        } else {
-            return primitive_text_pull_state::moved;
-        }
+        assert(sq_->size() > i_sq_);
+        return (*sq_)[i_sq_].first;
     }
 
     explicit operator bool() const noexcept
     {
-        if (handler_) {
-            const auto& sq = handler_->state_queue();
-            assert(sq.size() > i_sq_);
-            return (sq[i_sq_].first != primitive_text_pull_state::eof);
-        } else {
-            return false;
-        }
+        const auto s = state();
+        return (s != primitive_text_pull_state::eof)
+            && (s != primitive_text_pull_state::moved);
     }
 
     primitive_text_pull& operator()()
     {
-        if (!handler_) { // means 'moved'
+        assert(!sq_->empty());
+        const auto s = (*sq_)[i_sq_];
+        if (s.first == primitive_text_pull_state::moved) {
             return *this;
         }
 
-        auto& sq = handler_->state_queue();
-        auto& dq = handler_->data_queue();
-
-        assert(!sq.empty());
-        const auto s = sq[i_sq_];
         if (s.second > 0) {
             i_dq_ += s.second;
-            if (i_dq_ == dq.size()) {
-                dq.clear();
+            if (i_dq_ == dq_->size()) {
+                dq_->clear();
                 i_dq_ = 0;
             }
         }
+
         ++i_sq_;
-        if (i_sq_ == sq.size()) {
-            sq.clear();
+        if (i_sq_ == sq_->size()) {
+            sq_->clear();
             i_sq_ = 0;
         }
 
-        if (sq.empty()) {
+        if (sq_->empty()) {
             ap_.member()();
-            if (sq.empty()) {
-                sq.emplace_back(
+            if (sq_->empty()) {
+                sq_->emplace_back(
                     primitive_text_pull_state::eof,
-                    static_cast<typename std::decay_t<decltype(*handler_)>::
-                        state_queue_element_type::second_type>(0));
+                    static_cast<typename handler_t::state_queue_element_type::
+                        second_type>(0));
             }
         }
         return *this;
@@ -515,18 +516,18 @@ public:
     char_type* operator[](size_type i)
     {
         assert(i < data_size());
-        return handler_->data_queue()[i_dq_ + i];
+        return (*dq_)[i_dq_ + i];
     }
 
     const char_type* operator[](size_type i) const
     {
         assert(i < data_size());
-        return handler_->data_queue()[i_dq_ + i];
+        return (*dq_)[i_dq_ + i];
     }
 
     size_type data_size() const noexcept
     {
-        return handler_? handler_->state_queue()[i_sq_].second : 0;
+        return (*sq_)[i_sq_].second;
     }
 
     size_type max_data_size() const noexcept
@@ -580,6 +581,22 @@ private:
         return { npos, npos };
     }
 };
+
+template <class TextSource, class Allocator,
+    std::underlying_type_t<primitive_text_pull_handle> Handle>
+typename primitive_text_pull<TextSource, Allocator, Handle>::handler_t::
+            state_queue_type
+    primitive_text_pull<TextSource, Allocator, Handle>::sq_moved_from
+ = { std::make_pair(
+        primitive_text_pull_state::moved,
+        static_cast<typename primitive_text_pull<TextSource, Allocator,
+            Handle>::handler_t::state_queue_element_type::second_type>(0)) };
+
+template <class TextSource, class Allocator,
+    std::underlying_type_t<primitive_text_pull_handle> Handle>
+typename primitive_text_pull<TextSource, Allocator, Handle>::handler_t::
+            data_queue_type
+    primitive_text_pull<TextSource, Allocator, Handle>::dq_moved_from = {};
 
 enum class text_pull_state : std::uint_fast8_t
 {
