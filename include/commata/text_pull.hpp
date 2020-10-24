@@ -483,9 +483,6 @@ public:
     {
         assert(!sq_->empty());
         const auto s = (*sq_)[i_sq_];
-        if (s.first == primitive_text_pull_state::moved) {
-            return *this;
-        }
 
         if (s.second > 0) {
             i_dq_ += s.second;
@@ -493,6 +490,8 @@ public:
                 dq_->clear();
                 i_dq_ = 0;
             }
+        } else if (s.first == primitive_text_pull_state::moved) {
+            return *this;
         }
 
         ++i_sq_;
