@@ -486,28 +486,26 @@ public:
         assert(!sq.empty());
         const auto s = sq[i_sq_];
         if (s.second > 0) {
-            if (i_dq_ == dq.size() - s.second) {
+            i_dq_ += s.second;
+            if (i_dq_ == dq.size()) {
                 dq.clear();
                 i_dq_ = 0;
-            } else {
-                i_dq_ += s.second;
             }
         }
-        if (i_sq_ == sq.size() - 1) {
+        ++i_sq_;
+        if (i_sq_ == sq.size()) {
             sq.clear();
             i_sq_ = 0;
-        } else {
-            ++i_sq_;
         }
 
         if (sq.empty()) {
             ap_.member()();
-        }
-        if (sq.empty()) {
-            sq.emplace_back(
-                primitive_text_pull_state::eof,
-                static_cast<typename std::decay_t<decltype(*handler_)>::
-                    state_queue_element_type::second_type>(0));
+            if (sq.empty()) {
+                sq.emplace_back(
+                    primitive_text_pull_state::eof,
+                    static_cast<typename std::decay_t<decltype(*handler_)>::
+                        state_queue_element_type::second_type>(0));
+            }
         }
         return *this;
     }
