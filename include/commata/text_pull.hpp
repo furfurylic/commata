@@ -443,12 +443,14 @@ public:
 
     bool discards_data() const noexcept
     {
-        return handler_->discards_data();
+        return handler_ && handler_->discards_data();
     }
 
     primitive_text_pull& set_discards_data(bool b = true) noexcept
     {
-        handler_->set_discards_data(b);
+        if (handler_) {
+            handler_->set_discards_data(b);
+        }
         return *this;
     }
 
