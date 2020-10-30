@@ -33,6 +33,7 @@ set(COMMATA_HEADERS
     ../include/commata/handler_decorator.hpp
     ../include/commata/key_chars.hpp
     ../include/commata/member_like_base.hpp
+    ../include/commata/nothrow_move_constructible.hpp
     ../include/commata/parse_csv.hpp
     ../include/commata/parse_error.hpp
     ../include/commata/propagation_controlled_allocator.hpp
