@@ -15,14 +15,14 @@
 #include <streambuf>
 #include <sstream>
 #include <stdexcept>
-#include <string>
 #include <type_traits>
 #include <utility>
 
 #include "allocation_only_allocator.hpp"
-#include "text_error.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
+#include "nothrow_move_constructible.hpp"
+#include "text_error.hpp"
 #include "typing_aid.hpp"
 
 namespace commata {
@@ -112,15 +112,14 @@ class record_extractor_impl
                                 // switched, current buffer's begin otherwise
     std::basic_streambuf<Ch, Tr>* out_;
 
-    // We use string instead of vector for its nothrow-movability, but in
-    // C++17 we shall have nothrow-movable vector, so then we shall be able to
-    // adopt vector
     detail::base_member_pair<
         FieldNamePred,
-        std::basic_string<Ch, Tr, alloc_t>/*field_buffer*/> nf_;
+        detail::nothrow_move_constructible<
+            std::vector<Ch, alloc_t>>/*field_buffer*/> nf_;
     detail::base_member_pair<
         FieldValuePred,
-        std::basic_string<Ch, Tr, alloc_t>/*record_buffer*/> vr_;
+        detail::nothrow_move_constructible<
+            std::vector<Ch, alloc_t>>/*record_buffer*/> vr_;
                                 // populated only after the buffer switched in
                                 // a unknown (included or not) record and
                                 // shall not overlap with interval
@@ -148,9 +147,11 @@ public:
         record_num_to_include_(max_record_num), target_field_index_(npos),
         field_index_(0), out_(out),
         nf_(std::forward<FieldNamePredR>(field_name_pred),
-            std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc))),
+            detail::nothrow_move_constructible<std::vector<Ch, alloc_t>>(
+                std::allocator_arg, alloc, alloc_t(alloc))),
         vr_(std::forward<FieldValuePredR>(field_value_pred),
-            std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc)))
+            detail::nothrow_move_constructible<std::vector<Ch, alloc_t>>(
+                std::allocator_arg, alloc, alloc_t(alloc)))
     {}
 
     record_extractor_impl(record_extractor_impl&&) = default;
@@ -176,7 +177,8 @@ public:
             flush_current(buffer_end);
             break;
         case record_mode::unknown:
-            record_buffer().append(current_begin_, buffer_end);
+            record_buffer().insert(
+                record_buffer().cend(), current_begin_, buffer_end);
             break;
         default:
             break;
@@ -195,7 +197,7 @@ public:
     {
         if ((is_in_header() && (target_field_index_ == npos))
          || (field_index_ == target_field_index_)) {
-            field_buffer().append(first, last);
+            field_buffer().insert(field_buffer().cend(), first, last);
         }
     }
 
@@ -255,14 +257,14 @@ public:
     }
 
 private:
-    std::basic_string<Ch, Tr, alloc_t>& field_buffer() noexcept
+    std::vector<Ch, alloc_t>& field_buffer() noexcept
     {
-        return nf_.member();
+        return *nf_.member();
     }
 
-    std::basic_string<Ch, Tr, alloc_t>& record_buffer() noexcept
+    std::vector<Ch, alloc_t>& record_buffer() noexcept
     {
-        return vr_.member();
+        return *vr_.member();
     }
 
     template <class F>
@@ -272,8 +274,8 @@ private:
         if (b.empty()) {
             return f(first, last);
         } else {
-            b.append(first, last);
-            const auto r = f(&b[0], &b[0] + b.size());
+            b.insert(b.cend(), first, last);
+            const auto r = f(b.data(), b.data() + b.size());
             b.clear();
             return r;
         }
