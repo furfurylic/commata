@@ -33,10 +33,9 @@ TEST_P(TestRecordExtractor, LeftmostKey)
                        L"\"ka1\",kb1,va1,vb1\r\n"
                        L"ka2,kb2,va2,vb2\n"
                        L"ka1,kb3,vb3,\"vb3\"\r";
-    std::wstringbuf in(s);
     std::wstringbuf out;
     std::wstring key_a = L"key_a";
-    parse_csv(&in, make_record_extractor(&out, key_a, L"ka1"), GetParam());
+    parse_csv(s, make_record_extractor(&out, key_a, L"ka1"), GetParam());
     ASSERT_EQ(L"key_a,key_b,value_a,value_b\n"
               L"\"ka1\",kb1,va1,vb1\n"
               L"ka1,kb3,vb3,\"vb3\"\n",
@@ -50,9 +49,8 @@ TEST_P(TestRecordExtractor, InnerKey)
                     "ka1,kb01,va1,vb1\n"
                     "ka2,kb12,va2,vb2\n"
                     "ka1,kb13,\"vb\n3\",vb3";
-    std::stringbuf in(s);
     std::ostringstream out;
-    parse_csv(&in, make_record_extractor(out, "key_b",
+    parse_csv(s, make_record_extractor(out, "key_b",
         [](const char* first ,const char* last) {
             return std::string(first, last).substr(0, 3) == "kb1";
         }), GetParam());
@@ -67,10 +65,9 @@ TEST_P(TestRecordExtractor, NoSuchKey)
     const char* s = "key_a,key_b,value_a,value_b\n"
                     "ka1,kb01,va1,vb1\n"
                     "ka2,kb12,va2,vb2\n";
-    std::stringbuf in(s);
     std::stringbuf out;
     try {
-        parse_csv(&in, make_record_extractor(&out, "key_c", "kc1"), GetParam());
+        parse_csv(s, make_record_extractor(&out, "key_c", "kc1"), GetParam());
         FAIL();
     } catch (const record_extraction_error& e) {
         ASSERT_NE(e.get_physical_position(), nullptr);
@@ -85,9 +82,8 @@ TEST_P(TestRecordExtractor, NoSuchField)
     const char* s = "key_a,key_b\r"
                     "k1\r"
                     "k0,k1,k2\r";
-    std::stringbuf in(s);
     std::stringbuf out;
-    ASSERT_TRUE(parse_csv(&in,
+    ASSERT_TRUE(parse_csv(s,
         make_record_extractor(&out, "key_b", "k1"), GetParam()));
     ASSERT_EQ("key_a,key_b\n"
               "k0,k1,k2\n",
@@ -108,9 +104,8 @@ TEST_P(TestRecordExtractorLimit, Basics)
                     "ka1,kb1,va1,vb1\r"
                     "ka2,kb2,va2,vb2\n"
                     "ka1,kb3,vb3,vb3\n";
-    std::stringbuf in(s);
     std::stringbuf out;
-    const auto result = parse_csv(&in, make_record_extractor(&out,
+    const auto result = parse_csv(s, make_record_extractor(&out,
         "key_a", std::string("ka1"), includes_header, max_record_num), 2);
     ASSERT_EQ(max_record_num > 1, result);
     std::string expected;
@@ -136,9 +131,8 @@ TEST_F(TestRecordExtractorLimit0, IncludeHeader)
 {
     const char* s = "key_a,key_b,value_a,value_b\r"
                     "ka1,kb1,va1,\"vb1\r";  // Ill-formed line, but not parsed
-    std::stringbuf in(s);
     std::stringbuf out;
-    const auto result = parse_csv(&in, make_record_extractor(
+    const auto result = parse_csv(s, make_record_extractor(
             &out, std::string("key_a"), "ka1", true, 0), 64);
     ASSERT_FALSE(result);
     std::string expected;
@@ -149,10 +143,9 @@ TEST_F(TestRecordExtractorLimit0, ExcludeHeaderNoSuchKey)
 {
     const char* s = "key_a,key_b,value_a,value_b\r"
                     "ka1,kb1,va1,vb1\r";
-    std::stringbuf in(s);
     std::stringbuf out;
     try {
-        parse_csv(&in, make_record_extractor(
+        parse_csv(s, make_record_extractor(
             &out, "key_A", "ka1", false, 0), 64);
         FAIL();
     } catch (const record_extraction_error& e) {
@@ -171,9 +164,8 @@ TEST_F(TestRecordExtractorIndexed, Basics)
                     "ka1,kb01,va1,vb1\n"
                     "ka2,kb12,va2,vb2\n"
                     "ka1,kb13,\"vb\n3\",vb3";
-    std::stringbuf in(s);
     std::ostringstream out;
-    parse_csv(&in, make_record_extractor(out, 1,
+    parse_csv(s, make_record_extractor(out, 1,
         [](const char* first ,const char* last) {
             return std::string(first, last).substr(0, 3) == "kb1";
         }), 1024);
@@ -205,9 +197,8 @@ TEST_F(TestRecordExtractorFinalPredicateForValue, Basics)
                     "ka1,kb01,va1,vb1\n"
                     "ka2,kb12,va2,vb2\n"
                     "ka1,kb13,\"vb\n3\",vb3";
-    std::stringbuf in(s);
     std::stringbuf out;
-    parse_csv(&in,
+    parse_csv(s,
         make_record_extractor(&out, 1, final_predicate_for_value()), 1024);
     ASSERT_EQ("key_a,key_b,value_a,value_b\n"
               "ka2,kb12,va2,vb2\n"
@@ -225,7 +216,6 @@ TEST_F(TestRecordExtractorMiscellaneous, Reference)
                     "tuba,brass\n"
                     "clarinet,woodwind\n"
                     "koto,string";
-    std::stringbuf in(s);
     std::stringbuf out;
 
     const auto key_pred = [](auto begin, auto end) {
@@ -238,7 +228,7 @@ TEST_F(TestRecordExtractorMiscellaneous, Reference)
 
     auto ex = make_record_extractor(
         &out, std::ref(key_pred), std::ref(value_pred));
-    parse_csv(&in, std::move(ex));
+    parse_csv(s, std::move(ex));
     ASSERT_EQ("instrument,type\n"
               "tuba,brass\n"
               "clarinet,woodwind\n",
@@ -255,12 +245,11 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
     const char* s = "instrument_______,type\n"
                     "castanets________,idiophone\n"
                     "clarinet_________,woodwind\n";
-    std::stringbuf in(s);
     std::stringbuf out;
 
     auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
         "instrument_______", std::string("clarinet_________"));
-    parse_csv(&in, std::move(ex), 8U);
+    parse_csv(s, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }
 
@@ -273,12 +262,11 @@ TEST_F(TestRecordExtractorMiscellaneous, Fancy)
     const wchar_t* s = L"instrument_______,type\n"
                        L"castanets________,idiophone\n"
                        L"clarinet_________,woodwind\n";
-    std::wstringbuf in(s);
     std::wstringbuf out;
 
      auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
         L"instrument_______", std::wstring(L"clarinet_________"));
-    parse_csv(&in, std::move(ex), 8U);
+    parse_csv(s, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }
 
@@ -363,11 +351,10 @@ TEST_F(TestRecordExtractorMiscellaneous, IsInHeader)
     const char* s = "instrument,type\n"
                     "castanets,idiophone\n"
                     "clarinet,woodwind\n";
-    std::stringbuf in(s);
     std::stringbuf out;
 
     auto x = make_record_extractor(&out, "[instrument]", "clarinet");
-    parse_csv(&in, record_extractor_wrapper<decltype(x)>(std::move(x)));
+    parse_csv(s, record_extractor_wrapper<decltype(x)>(std::move(x)));
 
     ASSERT_STREQ("[instrument],[type]\n"
                  "clarinet,woodwind\n", out.str().c_str());
@@ -378,11 +365,10 @@ TEST_F(TestRecordExtractorMiscellaneous, IsInHeaderIndexed)
     const char* s = "instrument,type\n"
                     "castanets,idiophone\n"
                     "clarinet,woodwind\n";
-    std::stringbuf in(s);
     std::stringbuf out;
 
     auto x = make_record_extractor(&out, 1U, "woodwind");
-    parse_csv(&in, record_extractor_wrapper<decltype(x)>(std::move(x)));
+    parse_csv(s, record_extractor_wrapper<decltype(x)>(std::move(x)));
 
     ASSERT_STREQ("[instrument],[type]\n"
                  "clarinet,woodwind\n", out.str().c_str());

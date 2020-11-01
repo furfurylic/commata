@@ -3,6 +3,10 @@
  * http://unlicense.org
  */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4996)
+#endif
+
 #include <sstream>
 #include <string>
 #include <vector>
@@ -32,8 +36,7 @@ TYPED_TEST_P(TestTextPull, PrimitiveBasics)
    
     const auto csv = str(",\"col1\", col2 ,col3,\r\n\n"
                          " cell10 ,,\"cell\r\n12\",\"cell\"\"13\"\"\",\"\"\n");
-    std::basic_stringbuf<char_t> buf(csv);
-    auto source = make_csv_source(&buf);
+    auto source = make_csv_source(csv);
     primitive_text_pull<decltype(source)> pull(
         std::move(source), TypeParam::second_type::value);
     ASSERT_EQ(2, pull.max_data_size());
@@ -92,8 +95,7 @@ TYPED_TEST_P(TestTextPull, PrimitiveMove)
     const auto str = char_helper<char_t>::str;
    
     const auto csv = str("A,B\nC,D");
-    std::basic_stringbuf<char_t> buf(csv);
-    auto source = make_csv_source(&buf);
+    auto source = make_csv_source(csv);
     primitive_text_pull<decltype(source)> pull(
         std::move(source), TypeParam::second_type::value);
 
@@ -136,9 +138,8 @@ TYPED_TEST_P(TestTextPull, Basics)
                          " cell10 ,,\"cell\r\n12\",\"cell\"\"13\"\"\",\"\"\n");
 
     for (auto e : { false, true }) {
-        std::basic_stringbuf<char_t> buf(csv);
         auto pull = make_text_pull(
-            make_csv_source(&buf), TypeParam::second_type::value);
+            make_csv_source(csv), TypeParam::second_type::value);
         pull.set_empty_physical_line_aware(e);
 
         ASSERT_TRUE(pull) << e;
@@ -286,9 +287,8 @@ TYPED_TEST_P(TestTextPull, SkipField)
    
     const auto csv = str("1A,1B,1C,1D,1E,1F");
 
-    std::basic_stringbuf<char_t> buf(csv);
     auto pull = make_text_pull(
-        make_csv_source(&buf), TypeParam::second_type::value);
+        make_csv_source(csv), TypeParam::second_type::value);
 
     std::size_t i = 0;
     std::size_t j = 0;
@@ -315,9 +315,8 @@ TYPED_TEST_P(TestTextPull, SkipRecord)
    
     const auto csv = str("1A,1B\n2A,2B\n3A,3B\n4A,4B");
 
-    std::basic_stringbuf<char_t> buf(csv);
     auto pull = make_text_pull(
-        make_csv_source(&buf), TypeParam::second_type::value);
+        make_csv_source(csv), TypeParam::second_type::value);
 
     std::size_t i = 0;
     std::size_t j = 0;
@@ -346,9 +345,8 @@ TYPED_TEST_P(TestTextPull, SuppressedError)
    
     const auto csv = str("\nA\nB,\"C");
 
-    std::basic_stringbuf<char_t> buf(csv);
     auto pull = make_text_pull(
-        make_csv_source(&buf), TypeParam::second_type::value);
+        make_csv_source(csv), TypeParam::second_type::value);
     pull.set_suppresses_error();
     ASSERT_EQ(text_pull_state::field, pull().state());
     ASSERT_EQ(text_pull_state::record_end, pull().state());
@@ -381,7 +379,6 @@ TYPED_TEST_P(TestTextPull, Relations)
 {
     using char_t = typename TypeParam::first_type;
     using string_t = std::basic_string<char_t>;
-    using stream_t = std::basic_stringstream<char_t>;
 
     const auto str = char_helper<char_t>::str;
 
@@ -399,11 +396,9 @@ TYPED_TEST_P(TestTextPull, Relations)
         string_t s01 = s1 + char_t();
         string_t s02 = s2 + char_t();
 
-        stream_t stream1(s1);
-        stream_t stream2(s2);
-        auto p1 = make_text_pull(make_csv_source(stream1),
+        auto p1 = make_text_pull(make_csv_source(s1),
             TypeParam::second_type::value);
-        auto p2 = make_text_pull(make_csv_source(stream2),
+        auto p2 = make_text_pull(make_csv_source(s2),
             TypeParam::second_type::value);
         p1();
         p2();
@@ -484,12 +479,10 @@ TYPED_TEST_P(TestTextPull, Plus)
 {
     using char_t = typename TypeParam::first_type;
     using string_t = std::basic_string<char_t>;
-    using stream_t = std::basic_stringstream<char_t>;
 
     const auto str = char_helper<char_t>::str;
 
-    stream_t in(str("XYZ"));
-    auto pull = make_text_pull(make_csv_source(in),
+    auto pull = make_text_pull(make_csv_source(str("XYZ")),
         TypeParam::second_type::value);
     pull();
 

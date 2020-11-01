@@ -1123,9 +1123,8 @@ TEST_F(TestStoredTableAllocator, Basics)
         const char* s = "Col1,Col2\n"
                         "aaa,bbb,ccc\n"
                         "AAA,BBB,CCC\n";
-        std::stringbuf in(s);
         try {
-            parse_csv(&in, make_stored_table_builder(table));
+            parse_csv(s, make_stored_table_builder(table));
         } catch (const text_error& e) {
             FAIL() << e.info();
         }
@@ -1152,9 +1151,8 @@ TEST_F(TestStoredTableAllocator, Basics)
     {
         const char* s = "Col1,Col2\n"
                         "xxx,yyy\n";
-        std::stringbuf in(s);
         try {
-            parse_csv(&in, make_stored_table_builder(table2));
+            parse_csv(s, make_stored_table_builder(table2));
         } catch (const text_error& e) {
             FAIL() << e.info();
         }
@@ -1462,10 +1460,9 @@ TEST_P(TestStoredTableBuilder, Basics)
                     "ka1,\"kb\"\"01\"\"\",va1,\n"
                     "ka2,\"\",\"\"\"va2\"\"\",vb2\n"
                     "\"k\"\"a\"\"1\",\"kb\"\"13\"\"\",\"vb\n3\"";
-    std::stringbuf in(s);
     stored_table table(GetParam());
     try {
-        parse_csv(&in, make_stored_table_builder(table));
+        parse_csv(s, make_stored_table_builder(table));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1497,10 +1494,9 @@ TEST_P(TestStoredTableBuilder, MaxRecordNum)
 {
     const char* s1 = "\"key_a\",key_b,value_a,value_b\n"
                      "ka1,\"kb\"\"01\"\"\",va1,\n";
-    std::stringbuf in(s1);
     stored_table table(GetParam());
     try {
-        parse_csv(&in, make_stored_table_builder(table, 1U));
+        parse_csv(s1, make_stored_table_builder(table, 1U));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1516,10 +1512,9 @@ TEST_P(TestStoredTableBuilder, MaxRecordNum)
 TEST_P(TestStoredTableBuilder, MaxRecordNumPathological)
 {
     const char* s1 = "\r\n\n\"key_a\",key_b,value_a,value_b";
-    std::stringbuf in(s1);
     stored_table table(GetParam());
     try {
-        parse_csv(&in, make_stored_table_builder(table, 5U));
+        parse_csv(s1, make_stored_table_builder(table, 5U));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1535,10 +1530,9 @@ TEST_P(TestStoredTableBuilder, MaxRecordNumPathological)
 TEST_P(TestStoredTableBuilder, EmptyLineAware)
 {
     const char* s = "\r1,2,3,4\na,b\r\n\nx,y,z\r\n\"\"";
-    std::stringbuf in(s);
     stored_table table(GetParam());
     try {
-        parse_csv(&in, make_empty_physical_line_aware(
+        parse_csv(s, make_empty_physical_line_aware(
             make_stored_table_builder(table)));
     } catch (const text_error& e) {
         FAIL() << e.info();
@@ -1568,10 +1562,9 @@ TEST_P(TestStoredTableBuilder, Transpose)
     const char* s = "Col1,Col2\n"
                     "aaa,bbb,ccc\n"
                     "AAA,BBB,CCC\n";
-    std::stringbuf in(s);
     stored_table table(GetParam());
     try {
-        parse_csv(&in, make_transposed_stored_table_builder(table));
+        parse_csv(s, make_transposed_stored_table_builder(table));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1595,9 +1588,8 @@ TEST_P(TestStoredTableBuilder, Transpose)
     ASSERT_EQ("CCC", table[2][2]);
 
     const char* t = "AAa,BBb";
-    std::stringbuf in2(t);
     try {
-        parse_csv(&in2, make_transposed_stored_table_builder(table));
+        parse_csv(t, make_transposed_stored_table_builder(table));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1625,11 +1617,10 @@ TEST_P(TestStoredTableBuilder, Fancy)
     const wchar_t* s = L"Col1,Col2\n"
                        L"aaa,bbb,ccc\n"
                        L"AAA,BBB,CCC\n";
-    std::wstringbuf in(s);
     basic_stored_table<content_t, alloc_t> table(
         std::allocator_arg, a, GetParam());
     try {
-        parse_csv(&in, make_stored_table_builder(table));
+        parse_csv(s, make_stored_table_builder(table));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1654,9 +1645,8 @@ TEST_F(TestStoredTableBuilderReusingBuffer, Basics)
     table.clear();  // the buffer shall be retained
 
     const wchar_t* s = L"ABCDEFG";
-    std::wstringbuf in(s);
     try {
-        parse_csv(&in, make_stored_table_builder(table));
+        parse_csv(s, make_stored_table_builder(table));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1753,10 +1743,9 @@ TEST_F(TestStoredTableConst, Build)
     const char* s = "A1,B1\n"
                     "A2,B2\n"
                     "A3,B3\n";
-    std::stringbuf in(s);
     cstored_table table;
     try {
-        parse_csv(&in, make_stored_table_builder(table));
+        parse_csv(s, make_stored_table_builder(table));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }

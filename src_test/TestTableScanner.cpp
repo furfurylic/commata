@@ -157,8 +157,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Correct)
     basic_table_scanner<char_t> h;
     h.set_field_scanner(0, make_field_translator(values));
 
-    std::basic_stringbuf<char_t> buf(str(" 40\r\n63\t\n-10"));
-    ASSERT_NO_THROW(parse_csv(&buf, std::move(h)));
+    ASSERT_NO_THROW(parse_csv(str(" 40\r\n63\t\n-10"), std::move(h)));
     ASSERT_EQ(3U, values.size());
     ASSERT_EQ(static_cast<value_t>(40), values[0]);
     ASSERT_EQ(static_cast<value_t>(63), values[1]);
@@ -369,9 +368,8 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, Correct)
     h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_string<char_t> s = str("6.02e23\t\r -5\n");
-    std::basic_stringbuf<char_t> buf(s);
     try {
-        parse_csv(&buf, std::move(h));
+        parse_csv(s, std::move(h));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -481,10 +479,9 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
     h.set_field_scanner(0, make_field_translator(values));
 
     std::basic_string<TypeParam> s = str("ABC  \n\"xy\rz\"\n\"\"");
-    std::basic_stringbuf<TypeParam> buf(s);
 
     try {
-        parse_csv(&buf, std::move(h));
+        parse_csv(s, std::move(h));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -723,9 +720,8 @@ TYPED_TEST(TestTableScanner, HeaderScan)
 
     auto s = str("ID,Value0,Value1,Value1\n"
                  "1,ABC,123,xyz\n");
-    std::basic_stringbuf<TypeParam> buf(s);
     try {
-        parse_csv(&buf, std::move(h));
+        parse_csv(s, std::move(h));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -755,9 +751,7 @@ TYPED_TEST(TestTableScanner, HeaderScanToTheEnd)
             }
     });
 
-    auto s = str("A\n1\n");
-    std::basic_stringbuf<TypeParam> buf(s);
-    ASSERT_NO_THROW(parse_csv(&buf, std::move(h)));
+    ASSERT_NO_THROW(parse_csv(str("A\n1\n"), std::move(h)));
 }
 
 namespace {
@@ -812,8 +806,7 @@ TYPED_TEST(TestTableScanner, MultilinedHeaderScan)
                  "JPY,USD,USD\r"
                  "80.0,0.9,1.3\r"
                  "82.1,0.91,1.35");
-    std::basic_stringbuf<TypeParam> buf(s);
-    parse_csv(&buf, std::move(scanner));
+    parse_csv(s, std::move(scanner));
 
     std::vector<double> aud_jpy = { 80.0, 82.1 };
     ASSERT_EQ(aud_jpy, fx[str("AUDJPY")]);
@@ -936,8 +929,7 @@ TYPED_TEST(TestTableScanner, IsInHeader)
     auto s = str("Country,Currency\r"
                  "Ukraine,Hryvnia\r"
                  "Estonia,Euro\r");
-    std::basic_stringbuf<TypeParam> buf(s);
-    parse_csv(&buf,
+    parse_csv(s,
         basic_table_scanner_wrapper<TypeParam>(std::move(scanner)));
 
     ASSERT_EQ(2U, currency_map.size());
@@ -987,10 +979,10 @@ TYPED_TEST(TestTableScanner, LocaleBased)
     h.set_field_scanner(1, make_field_translator<double>(
         std::front_inserter(values1), loc));
 
-    std::basic_stringbuf<TypeParam> buf(str("100 000,\"12 345 678,5\""));
+    std::basic_string<TypeParam> s = str("100 000,\"12 345 678,5\"");
 
     try {
-        parse_csv(&buf, std::move(h));
+        parse_csv(s, std::move(h));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1078,11 +1070,11 @@ TYPED_TEST(TestTableScanner, Allocators)
 
     // A lengthy field is required to make sure String uses an allocator
     try {
-        std::basic_stringbuf<TypeParam>
-            buf(str("ABCDEFGHIJKLMNOPQRSTUVWXYZ,"
-                    "abcdefghijklmnopqrstuvwxyz,"
-                    "12345678901234567890123456"));
-        parse_csv(&buf, std::move(scanner));
+        std::basic_string<TypeParam> s =
+            str("ABCDEFGHIJKLMNOPQRSTUVWXYZ,"
+                "abcdefghijklmnopqrstuvwxyz,"
+                "12345678901234567890123456");
+        parse_csv(s, std::move(scanner));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1163,8 +1155,7 @@ TYPED_TEST(TestTableScanner, Fancy)
     ASSERT_TRUE(a.tracks(scanner.template
         get_record_end_scanner<decltype(h)>()));
 
-    std::basic_stringbuf<TypeParam> buf(str("abc"));
-    ASSERT_NO_THROW(parse_csv(&buf, std::move(scanner)));
+    ASSERT_NO_THROW(parse_csv(str("abc"), std::move(scanner)));
 }
 
 namespace {
@@ -1201,8 +1192,7 @@ TEST_F(TestTableScannerReference, HeaderScanner)
     header_scanner.index = 1;
 
     try {
-        std::stringbuf buf("A,B\n100,200");
-        parse_csv(&buf, std::move(scanner));
+        parse_csv("A,B\n100,200", std::move(scanner));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1222,8 +1212,7 @@ TEST_F(TestTableScannerReference, FieldScanner)
         scanner.get_field_scanner_type(0));
 
     try {
-        std::stringbuf buf("100");
-        parse_csv(&buf, std::move(scanner));
+        parse_csv("100", std::move(scanner));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1250,8 +1239,7 @@ TEST_F(TestTableScannerReference, RecordEndScanner)
         scanner.get_record_end_scanner_type());
 
     try {
-        std::stringbuf buf("100\n200");
-        parse_csv(&buf, std::move(scanner));
+        parse_csv("100\n200", std::move(scanner));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1390,8 +1378,7 @@ TEST_F(TestReplaceIfConversionFailed, Ignored)
         std::ref(a), fail_if_skipped(), std::move(r)));
 
     try {
-        std::stringbuf buf("100\nn/a\n\n200");
-        parse_csv(&buf, std::move(scanner));
+        parse_csv("100\nn/a\n\n200", std::move(scanner));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
