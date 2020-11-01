@@ -37,8 +37,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
     const auto csv = str(",\"col1\", col2 ,col3,\r\n\n"
                          " cell10 ,,\"cell\r\n12\",\"cell\"\"13\"\"\",\"\"\n");
     auto source = make_csv_source(csv);
-    primitive_table_pull<decltype(source)> pull(
-        std::move(source), TypeParam::second_type::value);
+    primitive_table_pull pull(std::move(source), TypeParam::second_type::value);
     ASSERT_EQ(2, pull.max_data_size());
     std::basic_string<char_t> s;
     bool in_value = false;
@@ -95,8 +94,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveMove)
    
     const auto csv = str("A,B\nC,D");
     auto source = make_csv_source(csv);
-    primitive_table_pull<decltype(source)> pull(
-        std::move(source), TypeParam::second_type::value);
+    primitive_table_pull pull(std::move(source), TypeParam::second_type::value);
 
     // Skip first line
     while (pull().state() != primitive_table_pull_state::end_record);

@@ -715,7 +715,7 @@ public:
         }
         last_ = empty_string();
         value_.clear();
-        detail::temporarily_discard<decltype(p_)> d(p_);
+        detail::temporarily_discard d(p_);
         if (value_expiring_) {
             ++j_;
             value_expiring_ = false;
@@ -832,7 +832,7 @@ public:
         }
         last_ = empty_string();
         value_.clear();
-        detail::temporarily_discard<decltype(p_)> d(p_);
+        detail::temporarily_discard d(p_);
         if (value_expiring_) {
             ++j_;
             value_expiring_ = false;
