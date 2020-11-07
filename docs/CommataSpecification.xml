@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-10-11 (UTC)</signature>
+<signature>2020-11-14 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -756,6 +756,26 @@ namespace commata {
   <c>// <n><xref id="owned_string_input"/>, owned_string_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class owned_string_input;
+
+  <c>// <n><xref id="text_input.creation"/>, TextInput creation functions:</n></c>
+  template &lt;class Ch, class Tr>
+    streambuf_input&lt;Ch, Tr> make_text_input(std::basic_streambuf&lt;Ch, Tr>* in);
+  template &lt;class Ch, class Tr>
+    streambuf_input&lt;Ch, Tr> make_text_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+  template &lt;class Streambuf>
+    owned_streambuf_input&lt;Streambuf> make_text_input(Streambuf&amp;&amp; in) noexcept;
+  template &lt;class IStream>
+    owned_istream_input&lt;IStream> make_text_input(IStream&amp;&amp; in) noexcept;
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
+    string_input&lt;Ch, Tr> make_text_input(const Ch* in);
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
+    string_input&lt;Ch, Tr> make_text_input(const Ch* in, std::size_t length);
+  template &lt;class Ch, class Tr, class Allocator>
+    string_input&lt;Ch, Tr>
+      make_text_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
+  template &lt;class Ch, class Tr, class Allocator>
+    owned_string_input&lt;Ch, Tr, Allocator>
+      make_text_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
 }
       </codeblock>
 
@@ -1105,6 +1125,65 @@ size_type operator()(Ch* out, size_type n);
         </code-item>
       </section>
     </section>
+
+    <section id="text_input.creation">
+      <name><c>TextInput</c> creation functions</name>
+
+      <code-item>
+        <code>
+template &lt;class Ch, class Tr>
+  streambuf_input&lt;Ch, Tr> make_text_input(std::basic_streambuf&lt;Ch, Tr>* in);
+template &lt;class Ch, class Tr>
+  streambuf_input&lt;Ch, Tr> make_text_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+        </code>
+        <requires>In the first form, <c>in</c> shall be a valid pointer to a stream buffer object.</requires>
+        <returns><c>streambuf_input&lt;Ch, Tr>(in)</c>.</returns>
+        <throws>Nothing.</throws>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class Streambuf>
+  owned_streambuf_input&lt;Streambuf> make_text_input(Streambuf&amp;&amp; in) noexcept;
+        </code>
+        <returns><c>owned_streambuf_input&lt;Streambuf>(std::move(in))</c>.</returns>
+        <remark>This overload shall not participate in overload resolution unless the template parameter <c>Streambuf</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class IStream>
+  owned_istream_input&lt;IStream> make_text_input(IStream&amp;&amp; in) noexcept;
+        </code>
+        <returns><c>owned_istream_input&lt;IStream>(std::move(in))</c>.</returns>
+        <remark>This overload shall not participate in overload resolution unless the template parameter <c>IStream</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
+  string_input&lt;Ch, Tr> make_text_input(const Ch* in);
+template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
+  string_input&lt;Ch, Tr> make_text_input(const Ch* in, std::size_t length);
+template &lt;class Ch, class Tr, class Allocator>
+  string_input&lt;Ch, Tr>
+    make_text_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
+        </code>
+        <requires>In the first form, <c>in</c> shall be a valid pointer to an element in a null terminated sequence.
+                  In the second form, [<c>in</c>, <c>in + length</c>) shall be a valid range.</requires>
+        <returns><c>string_input&lt;Ch, Tr>(in)</c> or <c>string_input&lt;Ch, Tr>(in, length)</c>.</returns>
+        <throws>Nothing.</throws>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class Ch, class Tr, class Allocator>
+  owned_string_input&lt;Ch, Tr, Allocator>
+    make_text_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
+        </code>
+        <returns><c>owned_string_input&lt;Ch, Tr, Allocator>(std::move(in))</c>.</returns>
+      </code-item>
+    </section>
   </section>
 
   <section id="parser.csv">
@@ -1132,24 +1211,8 @@ namespace commata {
   template &lt;class Ch, class Tr> class csv_source;
 
   <c>// <n><xref id="csv_source.creation"/>, csv_source creation functions:</n></c>
-  template &lt;class Ch, class Tr>
-    csv_source&lt;streambuf_input&lt;Ch, Tr>> make_csv_source(std::basic_streambuf&lt;Ch, Tr>* in);
-  template &lt;class Ch, class Tr>
-    csv_source&lt;streambuf_input&lt;Ch, Tr>> make_csv_source(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
-  template &lt;class Streambuf>
-    csv_source&lt;owned_streambuf_input&lt;Streambuf>>make_csv_source(Streambuf&amp;&amp; in) noexcept;
-  template &lt;class IStream>
-    csv_source&lt;owned_istream_input&lt;IStream>>make_csv_source(IStream&amp;&amp; in) noexcept;
-  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-    csv_source&lt;string_input&lt;Ch, Tr>> make_csv_source(const Ch* in);
-  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-    csv_source&lt;string_input&lt;Ch, Tr>> make_csv_source(const Ch* in, std::size_t length);
-  template &lt;class Ch, class Tr, class Allocator>
-    csv_source&lt;string_input&lt;Ch, Tr>>
-      make_csv_source(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
-  template &lt;class Ch, class Tr, class Allocator>
-    csv_source&lt;owned_string_input&lt;Ch, Tr, Allocator>>
-      make_csv_source(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
+  template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args)
+    -> csv_source&lt;decltype(make_text_input(std::forward&lt;Args>(args)...))>;
 
   <c>// <n><xref id="parse_csv"/>, functions that utilize the CSV parser:</n></c>
   template &lt;class Input, class... Args> bool parse_csv(Input&amp;&amp; in, Args&amp;&amp;... args);
@@ -1284,57 +1347,10 @@ template &lt;class Handler, class... Args>
 
       <code-item>
         <code>
-template &lt;class Ch, class Tr>
-  csv_source&lt;streambuf_input&lt;Ch, Tr>> make_csv_source(std::basic_streambuf&lt;Ch, Tr>* in);
-template &lt;class Ch, class Tr>
-  csv_source&lt;streambuf_input&lt;Ch, Tr>> make_csv_source(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args)
+  -> csv_source&lt;decltype(make_text_input(std::forward&lt;Args>(args)...))>;
         </code>
-        <requires>In the first form, <c>in</c> shall be a valid pointer to a stream buffer object.</requires>
-        <returns><c>csv_source&lt;streambuf_input&lt;Ch, Tr>>(in)</c>.</returns>
-        <throws>Nothing.</throws>
-      </code-item>
-
-      <code-item>
-        <code>
-template &lt;class Streambuf>
-  csv_source&lt;owned_streambuf_input&lt;Streambuf>> make_csv_source(Streambuf&amp;&amp; in) noexcept;
-        </code>
-        <returns><c>csv_source&lt;owned_streambuf_input&lt;Streambuf>>(std::move(in))</c>.</returns>
-        <remark>This overload shall not participate in overload resolution unless the template parameter <c>Streambuf</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</remark>
-      </code-item>
-
-      <code-item>
-        <code>
-template &lt;class IStream>
-  csv_source&lt;owned_istream_input&lt;IStream>>make_csv_source(IStream&amp;&amp; in) noexcept;
-        </code>
-        <returns><c>csv_source&lt;owned_istream_input&lt;IStream>>(std::move(in))</c>.</returns>
-        <remark>This overload shall not participate in overload resolution unless the template parameter <c>IStream</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</remark>
-      </code-item>
-
-      <code-item>
-        <code>
-template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-  csv_source&lt;string_input&lt;Ch, Tr>> make_csv_source(const Ch* in);
-template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-  csv_source&lt;string_input&lt;Ch, Tr>> make_csv_source(const Ch* in, std::size_t length);
-template &lt;class Ch, class Tr, class Allocator>
-  csv_source&lt;string_input&lt;Ch, Tr>>
-    make_csv_source(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
-        </code>
-        <requires>In the first form, <c>in</c> shall be a valid pointer to an element in a null terminated sequence.
-                  In the second form, [<c>in</c>, <c>in + length</c>) shall be a valid range.</requires>
-        <returns><c>csv_source&lt;string_input&lt;Ch, Tr>>(in)</c> or <c>csv_source&lt;string_input&lt;Ch, Tr>>(in, length)</c>.</returns>
-        <throws>Nothing.</throws>
-      </code-item>
-
-      <code-item>
-        <code>
-template &lt;class Ch, class Tr, class Allocator>
-  csv_source&lt;owned_string_input&lt;Ch, Tr, Allocator>>
-    make_csv_source(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
-        </code>
-        <returns><c>csv_source&lt;owned_string_input&lt;Ch, Tr, Allocator>>(std::move(in))</c>.</returns>
+        <returns><c>csv_source&lt;decltype(make_text_input(std::forward&lt;Args>(args)...))>(make_text_input(std::forward&lt;Args>(args)...))</c>.</returns>
       </code-item>
     </section>
 

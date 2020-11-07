@@ -12,6 +12,7 @@
 #include <streambuf>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 namespace commata {
 
@@ -210,6 +211,79 @@ public:
         return len;
     }
 };
+
+template <class Ch, class Tr>
+streambuf_input<Ch, Tr> make_text_input(std::basic_streambuf<Ch, Tr>* in)
+{
+    return streambuf_input<Ch, Tr>(in);
+}
+
+template <class Streambuf>
+auto make_text_input(Streambuf&& in) noexcept
+ -> std::enable_if_t<
+        !std::is_lvalue_reference<Streambuf>::value
+     && std::is_base_of<
+            std::basic_streambuf<
+                typename Streambuf::char_type,
+                typename Streambuf::traits_type>,
+            Streambuf>::value,
+        owned_streambuf_input<Streambuf>>
+{
+    return owned_streambuf_input<Streambuf>(std::forward<Streambuf>(in));
+}
+
+template <class IStream>
+auto make_text_input(IStream&& in) noexcept
+ -> std::enable_if_t<
+        !std::is_lvalue_reference<IStream>::value
+     && std::is_base_of<
+            std::basic_istream<
+                typename IStream::char_type,
+                typename IStream::traits_type>,
+            IStream>::value,
+        owned_istream_input<IStream>>
+{
+    return owned_istream_input<IStream>(std::forward<IStream>(in));
+}
+
+template <class Ch, class Tr>
+streambuf_input<Ch, Tr> make_text_input(
+    std::basic_istream<Ch, Tr>& in) noexcept
+{
+    return streambuf_input<Ch, Tr>(in);
+}
+
+template <class Ch, class Tr = std::char_traits<Ch>>
+auto make_text_input(const Ch* in)
+ -> std::enable_if_t<
+        std::is_same<Ch, char>::value || std::is_same<Ch, wchar_t>::value,
+        string_input<Ch, Tr>>
+{
+    return string_input<Ch, Tr>(in);
+}
+
+template <class Ch, class Tr = std::char_traits<Ch>>
+auto make_text_input(const Ch* in, std::size_t length)
+ -> std::enable_if_t<
+        std::is_same<Ch, char>::value || std::is_same<Ch, wchar_t>::value,
+        string_input<Ch, Tr>>
+{
+    return string_input<Ch, Tr>(in, length);
+}
+
+template <class Ch, class Tr, class Allocator>
+string_input<Ch, Tr> make_text_input(
+    const std::basic_string<Ch, Tr, Allocator>& in) noexcept
+{
+    return string_input<Ch, Tr>(in);
+}
+
+template <class Ch, class Tr, class Allocator>
+owned_string_input<Ch, Tr, Allocator> make_text_input(
+    std::basic_string<Ch, Tr, Allocator>&& in) noexcept
+{
+    return owned_string_input<Ch, Tr, Allocator>(std::move(in));
+}
 
 }
 
