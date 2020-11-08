@@ -1029,6 +1029,9 @@ public:
     }
 };
 
+template <class TextInput>
+csv_source(TextInput) -> csv_source<TextInput>;
+
 template <class CharInput>
 void swap(csv_source<CharInput>& left, csv_source<CharInput>& right)
     noexcept(noexcept(left.swap(right)))
@@ -1041,10 +1044,9 @@ auto make_csv_source(Args&&... args)
     noexcept(noexcept(make_char_input(std::forward<Args>(args)...))
           && std::is_nothrow_move_constructible_v<
                 decltype(make_char_input(std::forward<Args>(args)...))>)
- -> csv_source<decltype(make_char_input(std::forward<Args>(args)...))>
+ -> decltype(csv_source(make_char_input(std::forward<Args>(args)...)))
 {
-    return csv_source<decltype(make_char_input(std::forward<Args>(args)...))>(
-        make_char_input(std::forward<Args>(args)...));
+    return csv_source(make_char_input(std::forward<Args>(args)...));
 }
 
 namespace detail::csv {
