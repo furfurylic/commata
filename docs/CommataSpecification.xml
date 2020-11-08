@@ -1884,6 +1884,7 @@ template &lt;class Ch, class Tr, class Allocator>
 namespace commata {
   <c>// <n><xref id="csv_source"/>, csv_source:</n></c>
   template &lt;class CharInput> class csv_source;
+  template &lt;class CharInput> csv_source(CharInput) -> csv_source&lt;CharInput>;
   template &lt;class CharInput>
     void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(<nc>see below</nc>);
   template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
@@ -1941,6 +1942,8 @@ namespace commata {
   private:
     CharInput in;   <c>// <n>exposition only</n></c>
   };
+
+  template &lt;class CharInput> csv_source(CharInput) -> csv_source&lt;CharInput>;
 
   <c>// <n><xref id="csv_source.special"/>, specialized algorithms:</n></c>
   template &lt;class CharInput>

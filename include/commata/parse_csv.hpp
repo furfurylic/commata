@@ -871,6 +871,9 @@ public:
     }
 };
 
+template <class TextInput>
+csv_source(TextInput) -> csv_source<TextInput>;
+
 template <class CharInput>
 void swap(csv_source<CharInput>& left, csv_source<CharInput>& right)
     noexcept(noexcept(left.swap(right)))
