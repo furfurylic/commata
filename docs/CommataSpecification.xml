@@ -1362,7 +1362,6 @@ template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args)
 template &lt;class Arg1, class Arg2, class... OtherArgs>
   bool parse_csv(Arg1&amp;&amp; arg1, Arg2&amp;&amp; arg2, OtherArgs&amp;&amp;... other_args);
         </code>
-        <requires><c>sizeof...(args) > 1</c>.</requires>
         <effects>If <c>make_csv_source(std::forward&lt;Arg1>(arg1), std::forward&lt;Arg2>(arg2))</c> is a valid expression,
                  calls <c>make_csv_source(std::forward&lt;Arg1>(arg1), std::forward&lt;Arg2>(arg2))(std::forward&lt;OtherArgs>(other_args)...)()</c>.
                  Otherwise, calls <c>make_csv_source(std::forward&lt;Arg1>(arg1))(std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs)>(other_args)...)()</c>.</effects>
