@@ -93,7 +93,7 @@ TEST_P(TestRecordExtractor, NoSuchField)
 INSTANTIATE_TEST_SUITE_P(, TestRecordExtractor, testing::Values(1, 10, 1024));
 
 struct TestRecordExtractorLimit :
-    testing::TestWithParam<std::tuple<bool, std::size_t>>
+    commata::test::BaseTestWithParam<std::tuple<bool, std::size_t>>
 {};
 
 TEST_P(TestRecordExtractorLimit, Basics)

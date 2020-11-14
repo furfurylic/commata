@@ -254,7 +254,7 @@ TYPED_TEST(TestParseCsvFancy, Basics)
 }
 
 struct TestParseCsvEndsWithoutLF :
-    testing::TestWithParam<std::pair<const char*, const char*>>
+    commata::test::BaseTestWithParam<std::pair<const char*, const char*>>
 {};
 
 TEST_P(TestParseCsvEndsWithoutLF, All)
@@ -277,7 +277,7 @@ INSTANTIATE_TEST_SUITE_P(, TestParseCsvEndsWithoutLF,
         std::make_pair("ColA,ColB,", "ColA/ColB//")));
 
 struct TestParseCsvErrors :
-    testing::TestWithParam<
+    commata::test::BaseTestWithParam<
         std::pair<const char*, std::pair<std::size_t, std::size_t>>>
 {};
 
@@ -327,12 +327,15 @@ struct full_fledged
     void finalize(const Ch*, const Ch*) {}
 };
 
+struct TestCsvSource : commata::test::BaseTest
+{};
+
 // We'd like to confirm only that this function compiles
-TEST(TestCsvSource, AcceptFullFledged)
+TEST_F(TestCsvSource, AcceptFullFledged)
 {
     std::basic_stringbuf<char> in1("abc");
     make_csv_source(&in1)(full_fledged<char>())();
-    
+
     make_csv_source(L"def")(full_fledged<wchar_t>())();
 }
 
