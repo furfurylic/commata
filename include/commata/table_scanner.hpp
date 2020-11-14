@@ -1733,7 +1733,10 @@ class replace_if_conversion_failed
 
         template <class Other>
         store(Other&& other, std::false_type)
-            noexcept(std::is_nothrow_move_constructible<T>::value) :
+            noexcept(std::conditional_t<
+                std::is_lvalue_reference<Other>::value,
+                std::is_nothrow_copy_constructible<T>,
+                std::is_nothrow_move_constructible<T>>::value) :
             has_(other.has_), skips_(other.skips_)
         {
             using f_t = std::conditional_t<
