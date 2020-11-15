@@ -2307,7 +2307,7 @@ public:
         if (value.get_allocator() == get_allocator()) {
             at_.member().put(std::move(value));
         } else {
-            field_value(value.c_str(), value.c_str() + value.size());
+            field_value(value.data(), value.data() + value.size());
         }
     }
 };
