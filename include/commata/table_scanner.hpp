@@ -2202,7 +2202,7 @@ public:
                 Ch() : facet.thousands_sep();
             decimal_point_ = facet.decimal_point();
 
-            mimics_ = (decimal_point_ != decimal_point_)
+            mimics_ = (decimal_point_ != decimal_point_c_)
                    || ((thousands_sep_ != Ch()) // means needs to take care of
                                                 // separators in field values
                     && (thousands_sep_ != thousands_sep_c_));
