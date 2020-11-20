@@ -42,6 +42,24 @@ namespace commata {
 
 namespace detail {
 
+template <class... Ts>
+struct first;
+
+template <>
+struct first<>
+{
+    using type = void;
+};
+
+template <class Head, class... Tail>
+struct first<Head, Tail...>
+{
+    using type = Head;
+};
+
+template <class... Ts>
+using first_t = typename first<Ts...>::type;
+
 struct accepts_range_impl
 {
     template <class T, class Ch>
@@ -1395,8 +1413,15 @@ public:
     movable_store() : t_(std::make_shared<T>())
     {}
 
-    explicit movable_store(T t) :
-        t_(std::make_shared<T>(std::move(t)))
+    template <class... Args,
+        std::enable_if_t<
+            (sizeof...(Args) != 1)
+         || !std::is_base_of<
+                movable_store,
+                detail::first_t<std::decay_t<Args>...>>::value,
+            std::nullptr_t> = nullptr>
+    explicit movable_store(Args&&... args) :
+        t_(std::make_shared<T>(std::forward<Args>(args)...))
     {}
 
     movable_store(const movable_store& other) noexcept = default;
@@ -1421,10 +1446,19 @@ class movable_store<T,
     T t_;
 
 public:
-    movable_store() : t_(T())
+    movable_store() : t_()
     {}
 
-    explicit movable_store(T t) noexcept : t_(std::move(t))
+    template <class... Args,
+        std::enable_if_t<
+            (sizeof...(Args) != 1)
+         || !std::is_base_of<
+                movable_store,
+                detail::first_t<std::decay_t<Args>...>>::value,
+            std::nullptr_t> = nullptr>
+    explicit movable_store(Args&&... args)
+        noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
+        t_(std::forward<Args>(args)...)
     {}
 
     movable_store(const movable_store&) = default;
@@ -1850,10 +1884,10 @@ public:
         Empty&& on_empty = Empty(),
         InvalidFormat&& on_invalid_format = InvalidFormat(),
         AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit()) :
-        store_(store(
+        store_(
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
-            std::forward<AboveUpperLimit>(on_above_upper_limit)))
+            std::forward<AboveUpperLimit>(on_above_upper_limit))
     {}
 
     template <class Empty, class InvalidFormat,
@@ -1863,11 +1897,11 @@ public:
         InvalidFormat&& on_invalid_format,
         AboveUpperLimit&& on_above_upper_limit,
         BelowLowerLimit&& on_below_lower_limit) :
-        store_(store(
+        store_(
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
             std::forward<AboveUpperLimit>(on_above_upper_limit),
-            std::forward<BelowLowerLimit>(on_below_lower_limit)))
+            std::forward<BelowLowerLimit>(on_below_lower_limit))
     {
         static_assert(
             !(std::is_integral<T>::value && !std::is_signed<T>::value), "");
@@ -1882,12 +1916,12 @@ public:
         AboveUpperLimit&& on_above_upper_limit,
         BelowLowerLimit&& on_below_lower_limit,
         Underflow&& on_underflow) :
-        store_(store(
+        store_(
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
             std::forward<AboveUpperLimit>(on_above_upper_limit),
             std::forward<BelowLowerLimit>(on_below_lower_limit),
-            std::forward<Underflow>(on_underflow)))
+            std::forward<Underflow>(on_underflow))
     {
         static_assert(!std::is_integral<T>::value, "");
     }
@@ -2313,24 +2347,6 @@ public:
 };
 
 namespace detail {
-
-template <class... Ts>
-struct first;
-
-template <>
-struct first<>
-{
-    using type = void;
-};
-
-template <class Head, class... Tail>
-struct first<Head, Tail...>
-{
-    using type = Head;
-};
-
-template <class... Ts>
-using first_t = typename first<Ts...>::type;
 
 template <class T, class Sink, class... Appendices,
     std::enable_if_t<
