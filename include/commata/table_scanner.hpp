@@ -1410,9 +1410,6 @@ class movable_store
     std::shared_ptr<T> t_;
 
 public:
-    movable_store() : t_(std::make_shared<T>())
-    {}
-
     template <class... Args,
         std::enable_if_t<
             (sizeof...(Args) != 1)
@@ -1446,9 +1443,6 @@ class movable_store<T,
     T t_;
 
 public:
-    movable_store() : t_()
-    {}
-
     template <class... Args,
         std::enable_if_t<
             (sizeof...(Args) != 1)
@@ -1504,23 +1498,32 @@ class replace_if_skipped
     detail::movable_store<T> default_value_;
 
 public:
+    template <class... Args,
+        std::enable_if_t<
+            (sizeof...(Args) != 1)
+         || !(std::is_base_of<
+                replace_if_skipped,
+                detail::first_t<std::decay_t<Args>...>>::value
+           || std::is_base_of<
+                replacement_ignore_t,
+                detail::first_t<std::decay_t<Args>...>>::value
+           || std::is_base_of<
+                replacement_fail_t,
+                detail::first_t<std::decay_t<Args>...>>::value),
+            std::nullptr_t> = nullptr>
+    replace_if_skipped(Args&&... args)
+        noexcept(std::is_nothrow_move_constructible<T>::value
+              && std::is_nothrow_constructible<T, Args&&...>::value) :
+        mode_(mode::replace),
+        default_value_(std::forward<Args>(args)...)
+    {}
+
     explicit replace_if_skipped(replacement_fail_t) noexcept :
         mode_(mode::fail)
     {}
 
     explicit replace_if_skipped(replacement_ignore_t) noexcept :
         mode_(mode::ignore)
-    {}
-
-    template <class U = T,
-        std::enable_if_t<
-            !std::is_base_of<replace_if_skipped<T>, std::decay_t<U>>::value
-         && !std::is_base_of<replacement_ignore_t, std::decay_t<U>>::value
-         && !std::is_base_of<replacement_fail_t, std::decay_t<U>>::value,
-            std::nullptr_t> = nullptr>
-    replace_if_skipped(U&& default_value = U()) :
-        mode_(mode::replace),
-        default_value_(std::forward<U>(default_value))
     {}
 
     replace_if_skipped(const replace_if_skipped&) = default;

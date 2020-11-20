@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-11-14 (UTC)</signature>
+<signature>2020-11-20 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4139,9 +4139,9 @@ template &lt;class T> [[noreturn]] replacement&lt;T> operator()(T*) const;
 namespace commata {
   template &lt;class T> class replace_if_skipped {
   public:
+    template &lt;class... Args> explicit replace_if_skipped(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
     explicit replace_if_skipped(replacement_fail_t) noexcept;
     explicit replace_if_skipped(replacement_ignore_t) noexcept;
-    template &lt;class U = T> explicit replace_if_skipped(U&amp;&amp; default_value = U());
     replace_if_skipped(const replace_if_skipped&amp; other);
     replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept;
    ~replace_if_skipped();
@@ -4188,6 +4188,18 @@ namespace commata {
 
         <code-item>
           <code>
+template &lt;class... Args> explicit replace_if_skipped(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Args>(args)...</c>.</effects>
+          <remark>This overload shall not participate in overload resolution unless <c>sizeof...(Args)</c> is not equal to <c>1</c> or
+                  all of <c>std::is_base_of&lt;replace_if_skipped&lt;T>, DF>::value</c>,
+                  <c>std::is_base_of&lt;replacement_fail_t, DF>::value</c> and
+                  <c>std::is_base_of&lt;replacement_ignore_t, DF>::value</c> are <c>false</c> where <c>DF</c> is <c>std::decay_t&lt;F></c> and <c>F</c> is the first type of <c>Args</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value &amp;&amp; std::is_nothrow_constructible&lt;T, Args&amp;&amp;...>::value</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
 explicit replace_if_skipped(replacement_fail_t) noexcept;
           </code>
           <effects>Configures the replacement action to be <c>fail</c>.</effects>
@@ -4198,16 +4210,6 @@ explicit replace_if_skipped(replacement_fail_t) noexcept;
 explicit replace_if_skipped(replacement_ignore_t) noexcept;
           </code>
           <effects>Configures the replacement action to be <c>ignore</c>.</effects>
-        </code-item>
-
-        <code-item>
-          <code>
-template &lt;class U = T> explicit replace_if_skipped(U&amp;&amp; default_value = U());
-          </code>
-          <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;U>(default_value)</c>.</effects>
-          <remark>This overload shall not participate in overload resolution unless all of <c>std::is_base_of&lt;replace_if_skipped&lt;T>, std::decay_t&lt;U>>::value</c>,
-                  <c>std::is_base_of&lt;replacement_fail_t, std::decay_t&lt;U>>::value</c> and
-                  <c>std::is_base_of&lt;replacement_ignore_t, std::decay_t&lt;U>>::value</c> are <c>false</c>.</remark>
         </code-item>
 
         <code-item>
