@@ -1455,7 +1455,8 @@ public:
         t_(std::forward<Args>(args)...)
     {}
 
-    movable_store(const movable_store&) = default;
+    movable_store(const movable_store&)
+        noexcept(std::is_nothrow_copy_constructible<T>::value) = default;
     movable_store(movable_store&&) noexcept = default;
 
     const T& operator*() const noexcept
@@ -1526,7 +1527,9 @@ public:
         mode_(mode::ignore)
     {}
 
-    replace_if_skipped(const replace_if_skipped&) = default;
+    replace_if_skipped(const replace_if_skipped&)
+        noexcept(std::is_nothrow_copy_constructible<T>::value
+              || !std::is_nothrow_move_constructible<T>::value) = default;
     replace_if_skipped(replace_if_skipped&&) noexcept = default;
 
     replacement<T> operator()() const
@@ -1749,14 +1752,12 @@ class replace_if_conversion_failed
 
     public:
         store(const store& other)
-            noexcept(std::is_trivially_copyable<T>::value) :
+            noexcept(std::is_nothrow_copy_constructible<T>::value) :
             store(other, std::is_trivially_copyable<T>())
         {}
 
         store(store&& other)
-            noexcept(
-                std::is_trivially_copyable<T>::value
-             || std::is_nothrow_move_constructible<T>::value) :
+            noexcept(std::is_nothrow_move_constructible<T>::value) :
             store(std::move(other), std::is_trivially_copyable<T>())
         {}
 
@@ -1886,7 +1887,9 @@ public:
     explicit replace_if_conversion_failed(
         Empty&& on_empty = Empty(),
         InvalidFormat&& on_invalid_format = InvalidFormat(),
-        AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit()) :
+        AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit())
+            noexcept(std::is_nothrow_default_constructible<T>::value
+                  && std::is_nothrow_move_constructible<T>::value) :
         store_(
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
@@ -1899,7 +1902,9 @@ public:
         Empty&& on_empty,
         InvalidFormat&& on_invalid_format,
         AboveUpperLimit&& on_above_upper_limit,
-        BelowLowerLimit&& on_below_lower_limit) :
+        BelowLowerLimit&& on_below_lower_limit)
+            noexcept(std::is_nothrow_default_constructible<T>::value
+                  && std::is_nothrow_move_constructible<T>::value) :
         store_(
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
@@ -1918,7 +1923,8 @@ public:
         InvalidFormat&& on_invalid_format,
         AboveUpperLimit&& on_above_upper_limit,
         BelowLowerLimit&& on_below_lower_limit,
-        Underflow&& on_underflow) :
+        Underflow&& on_underflow)
+            noexcept(std::is_nothrow_move_constructible<T>::value) :
         store_(
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
@@ -1930,7 +1936,8 @@ public:
     }
 
     replace_if_conversion_failed(const replace_if_conversion_failed&)
-        = default;
+        noexcept(std::is_nothrow_copy_constructible<T>::value
+             || !std::is_nothrow_move_constructible<T>::value) = default;
     replace_if_conversion_failed(replace_if_conversion_failed&&) noexcept
         = default;
     ~replace_if_conversion_failed() = default;

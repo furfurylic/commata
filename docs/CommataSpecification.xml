@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-11-20 (UTC)</signature>
+<signature>2020-11-21 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4142,7 +4142,7 @@ namespace commata {
     template &lt;class... Args> explicit replace_if_skipped(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
     explicit replace_if_skipped(replacement_fail_t) noexcept;
     explicit replace_if_skipped(replacement_ignore_t) noexcept;
-    replace_if_skipped(const replace_if_skipped&amp; other);
+    replace_if_skipped(const replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
     replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept;
    ~replace_if_skipped();
 
@@ -4214,9 +4214,11 @@ explicit replace_if_skipped(replacement_ignore_t) noexcept;
 
         <code-item>
           <code>
-replace_if_skipped(const replace_if_skipped&amp; other);
+replace_if_skipped(const replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <postcondition>Member function <c>operator()</c> behaves the same as <c>other</c>'s.</postcondition>
+          <remark>The expression inside <c>noexcept</c> shall be <c>true</c> if <c>std::is_nothrow_copy_constructible&lt;T>::value</c> is not <c>false</c>.
+                  Note that this is a mere sufficient condition, that is, when it is not satisfied, the expression inside <c>noexcept</c> is unspecified.</remark>
         </code-item>
 
         <code-item>
@@ -4320,20 +4322,21 @@ namespace commata {
       explicit
         replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
                                      InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
-                                     AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit());
+                                     AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
+          noexcept(<nc>see below</nc>);
     template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit>
       replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
                                    InvalidFormat&amp;&amp;   on_invalid_format,
                                    AboveUpperLimit&amp;&amp; on_above_upper_limit,
-                                   BelowLowerLimit&amp;&amp; on_below_lower_limit);
+                                   BelowLowerLimit&amp;&amp; on_below_lower_limit) noexcept(<nc>see below</nc>);
     template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit,
               class Underflow>
       replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
                                    InvalidFormat&amp;&amp;   on_invalid_format,
                                    AboveUpperLimit&amp;&amp; on_above_upper_limit,
                                    BelowLowerLimit&amp;&amp; on_below_lower_limit,
-                                   Underflow&amp;&amp;       on_underflow);
-    replace_if_conversion_failed(const replace_if_conversion_failed&amp; other);
+                                   Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
+    replace_if_conversion_failed(const replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
     replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept;
    ~replace_if_conversion_failed();
 
@@ -4356,14 +4359,16 @@ template &lt;class Empty = T, class InvalidFormat = T, class AboveUpperLimit = T
   explicit
     replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
                                  InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
-                                 AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit());
+                                 AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
+      noexcept(<nc>see below</nc>);
           </code>
           <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
                    Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
                    Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
                    Does the same with <c>action_on_invalid_format</c> and <c>action_on_above_upper_limit</c>.
                    Configures <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_base_of&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;Empty>>::value</c> is <c>false</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_base_of&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;Empty>>::value</c> is <c>false</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible&lt;T>::value &amp;&amp; std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
         </code-item>
 
         <code-item>
@@ -4372,14 +4377,15 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
   replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
                                InvalidFormat&amp;&amp;   on_invalid_format,
                                AboveUpperLimit&amp;&amp; on_above_upper_limit,
-                               BelowLowerLimit&amp;&amp; on_below_lower_limit);
+                               BelowLowerLimit&amp;&amp; on_below_lower_limit) noexcept(<nc>see below</nc>);
           </code>
           <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
                    Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
                    Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
                    Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c>.
                    Configures <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-          <remark>If <c>T</c> is an unsigned integer type, instantiating this overload shall make the program ill-formed.</remark>
+          <remark>If <c>T</c> is an unsigned integer type, instantiating this overload shall make the program ill-formed.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible&lt;T>::value &amp;&amp; std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
         </code-item>
 
         <code-item>
@@ -4390,20 +4396,23 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                                InvalidFormat&amp;&amp;   on_invalid_format,
                                AboveUpperLimit&amp;&amp; on_above_upper_limit,
                                BelowLowerLimit&amp;&amp; on_below_lower_limit,
-                               Underflow&amp;&amp;       on_underflow);
+                               Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
           </code>
           <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
                    Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
                    Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
                    Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>.</effects>
-          <remark>If <c>T</c> is an integer type, instantiating this overload shall make the program ill-formed.</remark>
+          <remark>If <c>T</c> is an integer type, instantiating this overload shall make the program ill-formed.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-replace_if_conversion_failed(const replace_if_conversion_failed&amp; other);
+replace_if_conversion_failed(const replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <postcondition>Member functions <c>invalid_format</c>, <c>out_of_range</c> and <c>empty</c> behave the same as those of <c>other</c>.</postcondition>
+          <remark>The expression inside <c>noexcept</c> shall be <c>true</c> if <c>std::is_nothrow_copy_constructible&lt;T>::value</c> is not <c>false</c>.
+                  Note that this is a mere sufficient condition, that is, when it is not satisfied, the expression inside <c>noexcept</c> is unspecified.</remark>
         </code-item>
 
         <code-item>
