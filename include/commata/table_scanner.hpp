@@ -1652,9 +1652,8 @@ class replace_if_conversion_failed
             has_ |= 1U << r;
         }
 
-        void init(unsigned r, replacement_fail_t) noexcept
+        void init([[maybe_unused]] unsigned r, replacement_fail_t) noexcept
         {
-            static_cast<void>(r);
             assert(r < n);
             assert(!has(r));
             assert(!skips(r));
