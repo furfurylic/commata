@@ -9,7 +9,7 @@ Codes here should compile if you configure your compiler refer Commata's
 link errors because Commata is a header-only library.
 
 For simplicity, codes here omits `#include` directive for the standard library
-of C++ lauguage.
+of C++ language.
 
 ## Sample CSV file
 
