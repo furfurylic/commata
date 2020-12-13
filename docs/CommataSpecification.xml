@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-11-21 (UTC)</signature>
+<signature>2020-12-13 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -354,7 +354,7 @@
     </section>
 
     <section id="header_text_error_hpp">
-      <name>Header <c>"text_error.hpp"</c> synopsis</name>
+      <name>Header <c>"commama/text_error.hpp"</c> synopsis</name>
       <codeblock>
 #include &lt;cstddef>
 #include &lt;exception>
@@ -581,7 +581,7 @@ std::wstring to_wstring(const text_error_info&amp; i);
     </section>
 
     <section id="header_parse_error_hpp">
-      <name>Header <c>"parse_error.hpp"</c> synopsis</name>
+      <name>Header <c>"commama/parse_error.hpp"</c> synopsis</name>
       <codeblock>
 #include "text_error.hpp"
 
@@ -623,7 +623,7 @@ template &lt;class T>
     <name>Wrappers of text handlers</name>
 
     <section id="header_empty_physical_line_aware_handler">
-      <name>Header <c>"empty_physical_line_aware_handler.hpp"</c> synopsis</name>
+      <name>Header <c>"commama/empty_physical_line_aware_handler.hpp"</c> synopsis</name>
       <codeblock>
 #include &lt;functional>
 
@@ -733,7 +733,7 @@ template &lt;class Handler>
     </section>
 
     <section id="header_text_input_hpp">
-      <name>Header <c>"text_input.hpp"</c> synopsis</name>
+      <name>Header <c>"commama/text_input.hpp"</c> synopsis</name>
       <codeblock>
 #include &lt;cstddef>
 #include &lt;streambuf>
@@ -779,7 +779,7 @@ namespace commata {
 }
       </codeblock>
 
-      <p>The header <c>"text_input.hpp"</c> defines some class templates whose instances meet the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>).</p>
+      <p>The header <c>"commama/text_input.hpp"</c> defines some class templates whose instances meet the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>).</p>
     </section>
 
     <section id="streambuf_input">
@@ -1195,7 +1195,7 @@ template &lt;class Ch, class Tr, class Allocator>
     </section>
 
     <section id="header_parse_csv_hpp">
-      <name>Header <c>"parse_csv.hpp"</c> synopsis</name>
+      <name>Header <c>"commama/parse_csv.hpp"</c> synopsis</name>
       <codeblock>
 #include &lt;cstddef>
 #include &lt;functional>
@@ -1390,7 +1390,7 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
     </section>
 
     <section id="record_extractor_hpp">
-      <name>Header <c>"record_extractor.hpp"</c> synopsis</name>
+      <name>Header <c>"commama/record_extractor.hpp"</c> synopsis</name>
 
       <codeblock>
 #include &lt;cstddef>
@@ -1828,7 +1828,7 @@ template &lt;class Ch, class Tr, class... Appendices>
     </section>
 
     <section id="stored_table_hpp">
-      <name>Header <c>"stored_table.hpp"</c> synopsis</name>
+      <name>Header <c>"commama/stored_table.hpp"</c> synopsis</name>
 
       <codeblock>
 #include &lt;cstddef>
@@ -3598,7 +3598,7 @@ template &lt;class Content, class Allocator, class... Args>
     </section>
 
     <section id="table_scanner_hpp">
-      <name>Header <c>"table_scanner.hpp"</c> synopsis</name>
+      <name>Header <c>"commama/table_scanner.hpp"</c> synopsis</name>
 
       <codeblock>
 #include &lt;cstddef>
@@ -5126,7 +5126,7 @@ template &lt;class Allocator, class Container, class... Appendices>
     </section>
 
     <section id="text_pull_hpp">
-      <name>Header <c>"text_pull.hpp"</c> synopsis</name>
+      <name>Header <c>"commama/text_pull.hpp"</c> synopsis</name>
 
       <codeblock>
 #include &lt;iterator>
