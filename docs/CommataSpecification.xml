@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-12-13 (UTC)</signature>
+<signature>2020-12-19 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -726,7 +726,7 @@ template &lt;class Handler>
           <td>(4)</td>
           <td><c>t(d, n)</c></td>
           <td><c>T::size_type</c></td>
-          <td>Assigns at most <c>n</c> characters to <c>[d, d + m)</c> where <c>m</c> denotes the number of characters actually assigned.
+          <td>Assigns at most <c>n</c> characters to [<c>d</c>, <c>d + m</c>) where <c>m</c> denotes the number of characters actually assigned.
               Then returns <c>m</c>.</td>
         </tr>
       </table>
