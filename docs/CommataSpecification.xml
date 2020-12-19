@@ -279,7 +279,7 @@
     <p>A type <c>T</c> meets the <c>TextParser</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
     <ul>
       <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-      <li>each object of <c>T</c> has (possibly a reference to) a <n>tied text source</n> object, and (similarly, possibly a reference to) a <n>tied text handler</n> object whose type meets the <c>TextHandler</c> requirements;
+      <li>each object of <c>T</c> has (possibly a reference to) a <n>tied text input</n> object, and (similarly, possibly a reference to) a <n>tied text handler</n> object whose type meets the <c>TextHandler</c> requirements;
           and the expressions shown in <xref id="table.text_parser.requirements"/> are valid and have the indicated semantics.</li>
     </ul>
 
@@ -300,7 +300,7 @@
         <td>(1)</td>
         <td><c>t()</c></td>
         <td>A type contextually convertible to <c>bool</c></td>
-        <td>Retrieves the text content from its tied text source, parses the text content, and calls the member functions of its tied text handler object compliantly with the <c>TextHandler</c> requirements.
+        <td>Retrieves the text content from its tied text input, parses the text content, and calls the member functions of its tied text handler object compliantly with the <c>TextHandler</c> requirements.
             Returns <c>false</c> if the return value of a call on <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c>, or <c>finalize</c> is <c>false</c>; <c>true</c> otherwise.
             If this returns <c>false</c> or exits via an exception, then this becomes unable to be called again.</td>
       </tr>
@@ -1296,7 +1296,7 @@ template &lt;class HandlerR>
           </code>
           <requires><c>std::decay_t&lt;HandlerR></c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</requires>
           <returns>A text parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.
-                   <c>p</c> holds <c>in</c> as its tied text source and an object of <c>std::decay_t&lt;HandlerR></c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler.
+                   <c>p</c> holds <c>in</c> as its tied text input and an object of <c>std::decay_t&lt;HandlerR></c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler.
                    <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;std::decay_t&lt;HandlerR>>::value</c> is <c>true</c>.
                    Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied text handler object.
                    <c>P</c> implements the optional <c>TextParser</c> operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
@@ -5089,7 +5089,7 @@ template &lt;class Allocator, class Container, class... Appendices>
         <p>A type <c>T</c> meets the <c>TextSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-          <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped text source</n> object, and the expressions shown in <xref id="table.text_source.requirements"/> are valid and have the indicated semantics.</li>
+          <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped text input</n> object, and the expressions shown in <xref id="table.text_source.requirements"/> are valid and have the indicated semantics.</li>
         </ul>
 
         <p>In <xref id="table.text_source.requirements"/>, <c>t</c> is an lvalue of cv-unqualified <c>T</c>.
@@ -5116,8 +5116,8 @@ template &lt;class Allocator, class Container, class... Appendices>
           <tr>
             <td>(2)</td>
             <td><c>t(h)</c></td>
-            <td>A type that meets the <c>TextParser</c> requirements for <c>Ch</c></td>
-            <td>Creates a text parser object <c>p</c> that has its tied text source object identical to the wrapped text source object of <c>*this</c> and
+            <td>A type that meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c></td>
+            <td>Creates a text parser object <c>p</c> that has its tied text input object identical to the wrapped text input object of <c>*this</c> and
                 a copy of <c>h</c> as its tied text handler object.
                 Then returns <c>p</c>.</td>
           </tr>
