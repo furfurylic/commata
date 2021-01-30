@@ -2518,7 +2518,8 @@ template <class Allocator, class Container, class... Appendices>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_insertable<Container>::value,
+        detail::is_back_insertable<Container>::value
+     || detail::is_insertable<Container>::value,
         string_field_translator<
             detail::back_insert_iterator_t<Container>,
             typename Container::value_type::value_type,

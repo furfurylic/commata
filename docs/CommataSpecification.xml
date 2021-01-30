@@ -5066,7 +5066,7 @@ template &lt;class Allocator, class Container, class... Appendices>
                     <li>otherwise, <c>std::inserter(values, values.end())</c>.</li>
                   </ul>
           </returns>
-          <remark>These overloads shall not participate in overload resolution unless <c>c.insert(c.end(), t)</c> is a valid expression where <c>c</c> is an lvalue of <c>Container</c> and <c>t</c> is an rvalue of <c>typename Container::value_type</c>.</remark>
+          <remark>These overloads shall not participate in overload resolution unless either <c>c.push_back(t)</c> or <c>c.insert(c.end(), t)</c> is a valid expression where <c>c</c> is an lvalue of <c>Container</c> and <c>t</c> is an rvalue of <c>typename Container::value_type</c>.</remark>
         </code-item>
       </section>
     </section>
