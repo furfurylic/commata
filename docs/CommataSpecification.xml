@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2020-12-19 (UTC)</signature>
+<signature>2021-02-20 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -564,7 +564,7 @@ template &lt;class Tr>
                                               const text_error_info&amp; i);
           </code>
           <effects>Behaves as a formatted output function of <c>os</c>.
-                   Forms a character sequence <c>seq</c> of an unspecified concise character representation of <c>i.error()</c> from <c>i.error().what()</c> and <c>i.error().get_physical_position()</c>, in which the line number and the column number are <c>i.base()</c>-based.
+                   Forms a character sequence <c>seq</c> of an unspecified concise character representation of <c>i.error()</c> from <c>i.error().what()</c> and <c>i.error().get_physical_position()</c>, in which the line number and the column number are <c>i.get_base()</c>-based.
                  Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c> where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>. Then calls <c>os.width(0)</c>.</effects>
           <returns><c>os</c>.</returns>
           <remark>The second function template shall widen each character <c>c</c> in the null-terminated byte string pointed by <c>i.error().what()</c> with <c>os.widen(c)</c>.</remark>
@@ -1264,7 +1264,7 @@ namespace commata {
 template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes <c>in</c> with <c>std::forward&lt;Args>(args)...</c>.</effects>
-          <remark>This constructor shall not participate in overload resolution unless <c>sizeof...(Args)</c> is equal to <c>1</c> and
+          <remark>This constructor shall not participate in overload resolution if <c>sizeof...(Args)</c> is equal to <c>1</c> and
                   the reference-removed and cv-unqualified type of the first type of <c>args</c> is the same type as <c>csv_source&lt;TextInput></c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;TextInput, Args&amp;&amp;...>::value</c>.</remark>
         </code-item>
@@ -1294,15 +1294,16 @@ csv_source(csv_source&amp;&amp; other) noexcept(<nc>see below</nc>);
 template &lt;class HandlerR>
   <nc>unspecified</nc> operator()(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
           </code>
-          <requires><c>std::decay_t&lt;HandlerR></c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</requires>
+          <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
+          <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</requires>
           <returns>A text parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.
-                   <c>p</c> holds <c>in</c> as its tied text input and an object of <c>std::decay_t&lt;HandlerR></c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler.
-                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;std::decay_t&lt;HandlerR>>::value</c> is <c>true</c>.
+                   <c>p</c> holds <c>in</c> as its tied text input and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler.
+                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
                    Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied text handler object.
                    <c>P</c> implements the optional <c>TextParser</c> operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
-          <remark>This member function template shall not participate in overload resolution unless <c>std::decay_t&lt;HandlerR></c> is not an instance of <c>std::reference_wrapper</c> and has both of <c>get_buffer</c> and <c>release_buffer</c> member functions
+          <remark>This member function template shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and has both of <c>get_buffer</c> and <c>release_buffer</c> member functions
                   that have signatures and return types compatible with <c>TextHandler</c> requirements.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;HandlerR>>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
         </code-item>
 
         <code-item>
@@ -1311,18 +1312,19 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;Ch>>
   <nc>unspecified</nc> operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
                          const Allocator&amp; alloc = Allocator()) noexcept(<nc>see below</nc>);
           </code>
-          <requires><c>std::decay_t&lt;HandlerR></c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.
+          <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
+          <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.
                     <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>Ch</c>.</requires>
           <returns>A text parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.
-                   <c>p</c> holds <c>in</c> as its tied text source and an object of <c>std::decay_t&lt;HandlerR></c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler,
+                   <c>p</c> holds <c>in</c> as its tied text source and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler,
                    and allocates and deallocates character buffers with a copy of <c>alloc</c>.
                    The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
-                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;std::decay_t&lt;HandlerR>>::value</c> is <c>true</c>.
+                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
                    Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied text handler object and the copy of <c>alloc</c>.
                    <c>P</c> implements the optional <c>TextParser</c> operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
-          <remark>This member function template shall not participate in overload resolution if <c>std::decay_t&lt;HandlerR></c> is an instance of <c>std::reference_wrapper</c> or has either of <c>get_buffer</c> or <c>release_buffer</c> member function
+          <remark>This member function template shall not participate in overload resolution if <c>Handler</c> is an instance of <c>std::reference_wrapper</c> or has either of <c>get_buffer</c> or <c>release_buffer</c> member function
                   that has a signature and a return type compatible with <c>TextHandler</c> requirements.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;HandlerR>>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
         </code-item>
 
         <code-item>
@@ -1414,22 +1416,22 @@ namespace commata {
     class record_extractor_with_indexed_key;
 
   <c>// <n><xref id="record_extractor.creation"/>, creation functions:</n></c>
-  template &lt;class FieldNamePred, class FieldValuePred,
+  template &lt;class FieldIdentifier, class FieldValuePred,
             class Ch, class Tr, class Allocator, class... Appendices>
-    <nc>unspecified</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                      std::basic_streambuf&lt;Ch, Tr>* out,
-                                      FieldNamePred&amp;&amp; field_name_pred,
-                                      FieldValuePred&amp;&amp; field_value_pred,
-                                      Appendices&amp;&amp;... appendices);
+    <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                    std::basic_streambuf&lt;Ch, Tr>* out,
+                                    FieldIdentifier&amp;&amp; field_id,
+                                    FieldValuePred&amp;&amp; field_value_pred,
+                                    Appendices&amp;&amp;... appendices);
   template &lt;class Ch, class Tr, class Allocator, class... Appendices>
-    <nc>unspecified</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                      std::basic_ostream&lt;Ch, Tr>&amp; out, Appendices&amp;&amp;... appendices);
+    <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                    std::basic_ostream&lt;Ch, Tr>&amp; out, Appendices&amp;&amp;... appendices);
   template &lt;class Ch, class Tr, class... Appendices>
-    <nc>unspecified</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
-                                      Appendices&amp;&amp;... appendices);
+    <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
+                                    Appendices&amp;&amp;... appendices);
   template &lt;class Ch, class Tr, class... Appendices>
-    <nc>unspecified</nc> make_record_extractor(std::basic_ostream&lt;Ch, Tr>&amp; out,
-                                      Appendices&amp;... appendices);
+    <nc>see below</nc> make_record_extractor(std::basic_ostream&lt;Ch, Tr>&amp; out,
+                                    Appendices&amp;... appendices);
 }
       </codeblock>
     </section>
@@ -1758,12 +1760,12 @@ bool is_in_header() const noexcept;
       <p>In this subclause, a function template <c>template &lt;class Ch, class Tr, class P, class Allocator> <nc>unspecified</nc> STRING_PRED(P&amp;&amp; p, const Allocator&amp; alloc)</c> is introduced for ease of explanation.
          Its return value is as following:</p>
       <ul>
-        <li>if <c>P</c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c> and
+        <li>if <c>P</c> is non-reference and cv-unqualified <c>std::basic_string&lt;Ch, Tr, Allocator></c> and
             <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp;, const Allocator&amp;>>::value</c> is not <c>false</c>
             (which shall not be <c>false</c> according to ISO C++14 standard),
             a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::move(p)</c> and <c>alloc</c>,
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
-        <li>otherwise, if <c>P</c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c>,
+        <li>otherwise, if <c>P</c> is non-reference and cv-unqualified <c>std::basic_string&lt;Ch, Tr, Allocator></c>,
             a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::move(p)</c>,
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
         <li>otherwise, if <c>std::decay_t&lt;P></c> is <c>std::basic_string&lt;Ch, Tr, A></c> for a certain <c>A</c>,
@@ -1778,25 +1780,25 @@ bool is_in_header() const noexcept;
 
       <code-item>
         <code>
-template &lt;class FieldNamePred, class FieldValuePred,
+template &lt;class FieldIdentifier, class FieldValuePred,
           class Ch, class Tr, class Allocator, class... Appendices>
-  <nc>unspecified</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    std::basic_streambuf&lt;Ch, Tr>* out,
-                                    FieldNamePred&amp;&amp; field_name_pred,
-                                    FieldValuePred&amp;&amp; field_value_pred,
-                                    Appendices&amp;&amp;... appendices);
+  <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                  std::basic_streambuf&lt;Ch, Tr>* out,
+                                  FieldIdentifier&amp;&amp; field_id,
+                                  FieldValuePred&amp;&amp; field_value_pred,
+                                  Appendices&amp;&amp;... appendices);
         </code>
         <effects>First makes a non-reference and cv-unqualified type variable <c>fvp</c> initialized with <c>STRING_PRED&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred), alloc)</c>.
-                 Then if the reference-removed type of <c>FieldNamePred</c> is an integral type, returns <c>record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(std::allocator_arg, alloc, out, field_name_pred, std::move(fvp), std::forward&lt;Appendices>(appendices)...)</c>.
-                 Otherwise, makes one more non-reference and cv-unqualified type variable <c>fnp</c> initialized with <c>STRING_PRED&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred), alloc)</c>,
+                 Then if the reference-removed type of <c>FieldIdentifier</c> is an integral type, returns <c>record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(std::allocator_arg, alloc, out, field_id, std::move(fvp), std::forward&lt;Appendices>(appendices)...)</c>.
+                 Otherwise, makes one more non-reference and cv-unqualified type variable <c>fnp</c> initialized with <c>STRING_PRED&lt;Ch, Tr>(std::forward&lt;FieldIdentifier>(field_id), alloc)</c>,
                  and then returns <c>record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(std::allocator_arg, alloc, out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...)</c>.</effects>
       </code-item>
 
       <code-item>
         <code>
 template &lt;class Ch, class Tr, class Allocator, class... Appendices>
-  <nc>unspecified</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    std::basic_ostream&lt;Ch, Tr>&amp; out, Appendices&amp;&amp;... appendices);
+  <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                  std::basic_ostream&lt;Ch, Tr>&amp; out, Appendices&amp;&amp;... appendices);
         </code>
         <returns><c>make_record_extractor(std::allocator_arg, alloc, out.rdbuf(), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
       </code-item>
@@ -1804,11 +1806,11 @@ template &lt;class Ch, class Tr, class Allocator, class... Appendices>
       <code-item>
         <code>
 template &lt;class Ch, class Tr, class... Appendices>
-  <nc>unspecified</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
-                                    Appendices&amp;&amp;... appendices);
+  <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
+                                  Appendices&amp;&amp;... appendices);
 template &lt;class Ch, class Tr, class... Appendices>
-  <nc>unspecified</nc> make_record_extractor(std::basic_ostream&lt;Ch, Tr>&amp; out,
-                                    Appendices&amp;... appendices);
+  <nc>see below</nc> make_record_extractor(std::basic_ostream&lt;Ch, Tr>&amp; out,
+                                  Appendices&amp;... appendices);
         </code>
         <returns><c>make_record_extractor(std::allocator_arg, std::allocator&lt;Ch>(), out, std::forward&lt;Appendices>(appendices)...)</c>.</returns>
       </code-item>
@@ -2702,7 +2704,7 @@ namespace commata {
 
           <p>An object of an instance of <c>basic_stored_table</c> without its content is called <n>singular</n>.</p>
 
-          <p>The <n>value type</n> of an object of an instance of <c>basic_stored_table&lt;Content, Allocator></c> denotes <c>typename Content::value_type::value_type</c>, whose type is an instance of <c>basic_stored_value</c>.</p>
+          <p>The <n>value type</n> of an object of an instance of <c>basic_stored_table&lt;Content, Allocator></c> denotes <c>typename Content::value_type::value_type</c>, which is an instance of <c>basic_stored_value</c>.</p>
 
           <p><n>Contained values</n> of an object <c>t</c> of an instance <c>T</c> of <c>basic_stored_table</c> denotes the objects of the value type in the content of <c>t</c>.</p>
 
@@ -2722,19 +2724,19 @@ namespace commata {
              A singular object can be assigned, destroyed, copied from, or moved from.
              Also a singular object has a store, an allocator, and a buffer size similarly to non-singular objects.</p>
 
-          <p>All member functions of <c>basic_stored_table</c> and all non-member functions declared in this header (<xref id="stored_table_hpp"/>) that take at least one parameter whose reference-removed and cv-unqualified type is an instance of <c>basic_stored_table</c> require that the following conditions meet:</p>
+          <p>All member functions of <c>basic_stored_table</c> and all instances of non-member function templates declared in this header (<xref id="stored_table_hpp"/>) that take at least one parameter whose reference-removed and cv-unqualified type is an instance of <c>basic_stored_table</c> require that the following conditions meet:</p>
           <ul>
              <li>all participating <c>basic_stored_table</c> objects are complete, and</li>
              <li>no two of the contained values of the participating <c>basic_stored_table</c> objects overlap.</li>
           </ul>
-          <p>And they meet the following postconditions:</p>
+          <p>And they shall meet the following postconditions:</p>
           <ul>
-             <li>all participating <c>basic_stored_table</c> objects shall be complete,</li>
-             <li>no two of the contained values of the participating <c>basic_stored_table</c> objects shall overlap, and</li>
-             <li>the states of the participating <c>basic_stored_table</c> objects shall not be changed if the call exits via an exception.</li>
+             <li>all participating <c>basic_stored_table</c> objects are be complete,</li>
+             <li>no two of the contained values of the participating <c>basic_stored_table</c> objects overlap, and</li>
+             <li>the states of the participating <c>basic_stored_table</c> objects are not changed if the call exits via an exception.</li>
           </ul>
 
-          <p>All non-const member functions of <c>basic_stored_table</c> and all non-member functions declared in this header (<xref id="stored_table_hpp"/>) that take at least one parameter whose type is a reference to a non-const <c>basic_stored_table&lt;Ch, Tr></c> for some <c>Ch</c> and <c>Tr</c> may change the current buffer marks of the participating non-const <c>basic_stored_table</c> objects.</p>
+          <p>All non-const member functions of <c>basic_stored_table</c> and all instances of non-member function templates declared in this header (<xref id="stored_table_hpp"/>) that take at least one parameter whose type is a reference to a non-const <c>basic_stored_table&lt;Ch, Tr></c> for some <c>Ch</c> and <c>Tr</c> may change the current buffer marks of the participating non-const <c>basic_stored_table</c> objects.</p>
         </section>
       </section>
 
@@ -3002,7 +3004,7 @@ template &lt;class ForwardIterator>
           <effects>Calls <c>rewrite_value(value, new_value, null_termination())</c>.</effects>
           <returns><c>value</c>.</returns>
           <remark>This overload shall not participate in overload resolution unless <c>std::iterator_traits&lt;ForwardIterator>::iterator_category</c> is a type
-                  which is equal to or a derived class of <c>std::forward_iterator_tag</c>.</remark>
+                  that is equal to or a derived class of <c>std::forward_iterator_tag</c>.</remark>
         </code-item>
 
         <code-item>
@@ -3071,8 +3073,9 @@ void add_buffer(char_type* buffer, std::size_t size);
           <requires><c>buffer</c> shall point the first element of a buffer allocated by a rebound copy of a return value of <c>get_allocator()</c> to <c>char_type</c>.
                     <c>size</c> shall match the value passed to the allocator to obtain this memory.
                     The range [<c>buffer</c>, <c>buffer + size</c>) shall not overlap with any buffers in the store of <c>*this</c>.</requires>
-          <effects>Adds the range [<c>buffer</c>, <c>buffer + size</c>) to the store as a buffer and marks it as the current buffer.</effects>
-          <remark>If an exception is thrown, the buffer is deallocated.</remark>
+          <effects>Makes the store take over the ownership of the buffer whose first element is pointed by <c>buffer</c> and whose length is <c>size</c>.
+                   Then marks it as the current buffer.</effects>
+          <remark>If an exception is thrown, the buffer is deallocated and the current buffer mark is not changed.</remark>
         </code-item>
 
         <code-item>
@@ -4748,14 +4751,14 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
                 <td rowspan="3">Yes</td>
                 <td rowspan="2">Yes</td>
                 <td>Yes</td>
-                <td>Let <c>w</c> be <c>static_cast&lt;T>(static_cast&lt;SV>(v) + x + 1)</c> if <c>T</c> is an unsigned integer type, <c>V</c> has a greater size than <c>T</c>, and <c>static_cast&lt;SV>(v)</c> is a negative value; <c>static_cast&lt;T>(v)</c> otherwise.
+                <td>Lets <c>w</c> be <c>static_cast&lt;T>(static_cast&lt;SV>(v) + x + 1)</c> if <c>T</c> is an unsigned integer type, <c>V</c> has a greater size than <c>T</c>, and <c>static_cast&lt;SV>(v)</c> is a negative value; <c>static_cast&lt;T>(v)</c> otherwise.
                     Then puts <c>w</c> into the field translator sink.</td>
               </tr>
 
               <tr>
                 <td>No</td>
-                <td rowspan="2">Let <c>g</c> be a positive value of <c>int</c> if <c>T</c> is an unsigned integer type or the field value should be translated into a value above any values in the domain of <c>T</c>, a negative value of <c>int</c> if the field value should be translated into a value below any values in the domain of <c>T</c>, a zero value of <c>int</c> otherwise.
-                    Then evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and let <c>r</c> be the return value.
+                <td rowspan="2">Lets <c>g</c> be a positive value of <c>int</c> if <c>T</c> is an unsigned integer type or the field value should be translated into a value above any values in the domain of <c>T</c>, a negative value of <c>int</c> if the field value should be translated into a value below any values in the domain of <c>T</c>, a zero value of <c>int</c> otherwise.
+                    Then evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and lets <c>r</c> be the return value.
                     Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
               </tr>
 
@@ -4768,7 +4771,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
                 <td>No</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
-                <td>Evaluates <c>ceh.empty()</c> or <c>ceh.empty(n)</c> and let <c>r</c> be the return value.
+                <td>Evaluates <c>ceh.empty()</c> or <c>ceh.empty(n)</c> and lets <c>r</c> be the return value.
                     Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
               </tr>
 
@@ -4777,7 +4780,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
                 <td>&#8211;</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
-                <td>Evaluates <c>ceh.invalid_format(begin, end)</c> or <c>ceh.invalid_format(begin, end, n)</c> and let <c>r</c> be the return value.
+                <td>Evaluates <c>ceh.invalid_format(begin, end)</c> or <c>ceh.invalid_format(begin, end, n)</c> and lets <c>r</c> be the return value.
                     Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
               </tr>
             </table>
@@ -4787,7 +4790,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
             <code>
 void field_skipped();
             </code>
-            <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
+            <effects>Evaluates <c>get_skipping_handler()()</c> and puts the result into the field translator sink.</effects>
           </code-item>
         </section>
       </section>
@@ -4880,21 +4883,17 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
 template &lt;class Ch> void field_value(Ch* begin, Ch* end);
             </code>
             <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
-            <effects>If the specified locale has a non-empty grouping spec of the numeric output, removes all digit group separator characters of the specified locale in the range [<c>begin</c>, <c>end</c>) in place.
-                    Replaces the decimal radix separator character of the specified locale in the resulted range on its first occurrence in place with the decimal radix separator character of the C-language locale.
-                    Then calls a parsing function with the resulted range and put a value into the field translator sink as if a <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>) object does.</effects>
-            <remark>Suppose that <c>npf</c> is <c>std::use_facet&lt;std::numpunct&lt;Ch>>(l)</c> where <c>l</c> is the specified locale.
-                    The grouping spec of the numeric output of it is <c>npf.grouping()</c>.
-                    The digit group separator character of the specified locale is <c>npf.thousands_sep()</c>.
-                    The decimal radix separator character of it is <c>npf.decimal_point()</c>.
-                    The decimal radix separator character of the C-language locale is <c>*std::localeconv()->decimal_point</c> conditionally widen with <c>std::btowc</c> to get a value of the type <c>Ch</c>.</remark>
+            <effects>Let <c>npf</c> be <c>std::use_facet&lt;std::numpunct&lt;Ch>>(loc)</c> where <c>loc</c> is the specified locale.
+                     First, if <c>npf.grouping().empty()</c> is <c>false</c>, removes all occurrences of <c>npf.thousands_sep()</c> in the range [<c>begin</c>, <c>end</c>) in place.
+                     Second, replaces the first occurrence of <c>npf.decimal_point()</c> in the resulted range with <c>*std::localeconv()->decimal_point</c> conditionally widen with <c>std::btowc</c> to get a value of the type <c>Ch</c> in place.
+                     Then calls a parsing function with the resulted range and put a value into the field translator sink as if a <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>) object does.</effects>
           </code-item>
 
           <code-item>
             <code>
 void field_skipped();
             </code>
-            <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
+            <effects>Evaluates <c>get_skipping_handler()()</c> and puts the result into the field translator sink.</effects>
           </code-item>
         </section>
       </section>
@@ -5011,7 +5010,7 @@ void field_value(std::basic_string&lt;Ch, Tr, Alloc>&amp;&amp; value);
             <code>
 void field_skipped();
             </code>
-            <effects>Evaluates <c>sh()</c> and puts the result into the field translator sink where <c>sh</c> is the skipping handler.</effects>
+            <effects>Evaluates <c>get_skipping_handler()()</c> and puts the result into the field translator sink.</effects>
           </code-item>
         </section>
       </section>
@@ -5019,7 +5018,7 @@ void field_skipped();
       <section id="make_field_translator">
         <name>Creation of default field scanners</name>
 
-        <p>In this subclause, a type <c>S</c> is <n>deemed to be an acceptable sink</n> of a type <c>T</c> if:</p>
+        <p>In this subclause, a type <c>S</c> is <n>deemed to be an acceptable sink</n> of type <c>T</c> if:</p>
         <ul>
           <li><c>std::iterator_traits&lt;S>::iterator_category</c> is a type equal to <c>std::output_iterator_tag</c>, <c>std::forward_iterator_tag</c>, or their derived type; or</li>
           <li><c>s(t)</c> is a valid expression where <c>s</c> is an lvalue of <c>S</c> and <c>t</c> is an rvalue of <c>T</c>.</li>
@@ -5033,7 +5032,7 @@ template &lt;class T, class Sink, class... Appendices>
           <returns><c>R(std::move(sink), std::forward&lt;Appendices>(appendices)...)</c> where the type <c>R</c> is decided as follows:
                   <ul>
                     <li>If <c>T</c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain combination of <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>, <c>string_field_translator&lt;Sink, Ch, Tr, Allocator, Appendices...></c>,</li>
-                    <li>otherwise, if the reference-removed type of the first type of <c>Appendices</c> is a possibly cv-qualified <c>std::locale</c> or its derived type,
+                    <li>otherwise, if the reference-removed type of the first type of <c>Appendices</c> is possibly cv-qualified <c>std::locale</c> or its derived type,
                         <c>locale_based_arithmetic_field_translator&lt;T, Sink, TailOfAppendices...></c> where <c>TailOfAppendices...</c> represents the types of <c>Appendices...</c> without its first type,</li>
                     <li>otherwise, <c>arithmetic_field_translator&lt;T, Sink, Appendices...></c>.</li>
                   </ul>
@@ -5059,10 +5058,11 @@ template &lt;class Allocator, class Container, class... Appendices>
   <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
                                   Container&amp; values, Appendices&amp;&amp;... appendices);
           </code>
-          <returns><c>make_field_translator(std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (first overload) or
-                  <c>make_field_translator(std::allocator_arg, alloc, std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (second overload) where <c>s</c> is an object constructed as follows:
+          <preface>Let <c>V</c> be <c>typename Container::value_type</c>.</preface>
+          <returns><c>make_field_translator&lt;V>(std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (first overload) or
+                  <c>make_field_translator&lt;V>(std::allocator_arg, alloc, std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (second overload) where <c>s</c> is an object constructed as follows:
                   <ul>
-                    <li>if <c>values.push_back(t)</c> is a valid expression where <c>t</c> is an rvalue of <c>typename Container::value_type</c>, <c>std::back_inserter(values)</c>,</li>
+                    <li>if <c>values.push_back(t)</c> is a valid expression where <c>t</c> is an rvalue of <c>V</c>, <c>std::back_inserter(values)</c>,</li>
                     <li>otherwise, <c>std::inserter(values, values.end())</c>.</li>
                   </ul>
           </returns>
