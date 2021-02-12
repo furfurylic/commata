@@ -279,7 +279,7 @@
     <p>A type <c>T</c> meets the <c>TextParser</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
     <ul>
       <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-      <li>each object of <c>T</c> has (possibly a reference to) a <n>tied text input</n> object, and (similarly, possibly a reference to) a <n>tied text handler</n> object whose type meets the <c>TextHandler</c> requirements;
+      <li>each object of <c>T</c> has (possibly a reference to) a <n>tied character input</n> object, and (similarly, possibly a reference to) a <n>tied text handler</n> object whose type meets the <c>TextHandler</c> requirements;
           and the expressions shown in <xref id="table.text_parser.requirements"/> are valid and have the indicated semantics.</li>
     </ul>
 
@@ -300,7 +300,7 @@
         <td>(1)</td>
         <td><c>t()</c></td>
         <td>A type contextually convertible to <c>bool</c></td>
-        <td>Retrieves the text content from its tied text input, parses the text content, and calls the member functions of its tied text handler object compliantly with the <c>TextHandler</c> requirements.
+        <td>Retrieves the text content from its tied character input, parses the text content, and calls the member functions of its tied text handler object compliantly with the <c>TextHandler</c> requirements.
             Returns <c>false</c> if the return value of a call on <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c>, or <c>finalize</c> is <c>false</c>; <c>true</c> otherwise.
             If this returns <c>false</c> or exits via an exception, then this becomes unable to be called again.</td>
       </tr>
@@ -676,22 +676,22 @@ template &lt;class Handler>
     <section id="parser.input.general">
       <name>General</name>
 
-      <p>This subclause describes the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>), which is an abstraction of text inputs to be parsed, and its built-in implementations.</p>
+      <p>This subclause describes the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>), which is an abstraction of text inputs to be parsed, and its built-in implementations.</p>
     </section>
 
-    <section id="text_input.requirements">
-      <name><c>TextInput</c> requirements</name>
+    <section id="char_input.requirements">
+      <name><c>CharInput</c> requirements</name>
 
-      <p>A type <c>T</c> meets the <c>TextInput</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
+      <p>A type <c>T</c> meets the <c>CharInput</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
       <ul>
         <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-        <li>the expressions shown in <xref id="table.text_input.requirements"/> are valid and have the indicated semantics.</li>
+        <li>the expressions shown in <xref id="table.char_input.requirements"/> are valid and have the indicated semantics.</li>
       </ul>
 
-       <p>In <xref id="table.text_input.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>d</c> is a rvalue of <c>Ch*</c>. <c>n</c> is a rvalue of <c>T::size_type</c>.</p>
+       <p>In <xref id="table.char_input.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>d</c> is a rvalue of <c>Ch*</c>. <c>n</c> is a rvalue of <c>T::size_type</c>.</p>
 
-      <table id="table.text_input.requirements">
-        <caption>TextInput requirements</caption>
+      <table id="table.char_input.requirements">
+        <caption>CharInput requirements</caption>
         <col width="3"/><col width="10"/><col width="10"/><col width="60"/>
 
         <tr>
@@ -732,8 +732,8 @@ template &lt;class Handler>
       </table>
     </section>
 
-    <section id="header_text_input_hpp">
-      <name>Header <c>"commama/text_input.hpp"</c> synopsis</name>
+    <section id="header_char_input_hpp">
+      <name>Header <c>"commama/char_input.hpp"</c> synopsis</name>
       <codeblock>
 #include &lt;cstddef>
 #include &lt;streambuf>
@@ -757,29 +757,29 @@ namespace commata {
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class owned_string_input;
 
-  <c>// <n><xref id="text_input.creation"/>, TextInput creation functions:</n></c>
+  <c>// <n><xref id="char_input.creation"/>, CharInput creation functions:</n></c>
   template &lt;class Ch, class Tr>
-    streambuf_input&lt;Ch, Tr> make_text_input(std::basic_streambuf&lt;Ch, Tr>* in);
+    streambuf_input&lt;Ch, Tr> make_char_input(std::basic_streambuf&lt;Ch, Tr>* in);
   template &lt;class Ch, class Tr>
-    streambuf_input&lt;Ch, Tr> make_text_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+    streambuf_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
   template &lt;class Streambuf>
-    owned_streambuf_input&lt;Streambuf> make_text_input(Streambuf&amp;&amp; in) noexcept;
+    owned_streambuf_input&lt;Streambuf> make_char_input(Streambuf&amp;&amp; in) noexcept;
   template &lt;class IStream>
-    owned_istream_input&lt;IStream> make_text_input(IStream&amp;&amp; in) noexcept;
+    owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept;
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-    string_input&lt;Ch, Tr> make_text_input(const Ch* in);
+    string_input&lt;Ch, Tr> make_char_input(const Ch* in);
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-    string_input&lt;Ch, Tr> make_text_input(const Ch* in, std::size_t length);
+    string_input&lt;Ch, Tr> make_char_input(const Ch* in, std::size_t length);
   template &lt;class Ch, class Tr, class Allocator>
     string_input&lt;Ch, Tr>
-      make_text_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
+      make_char_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
   template &lt;class Ch, class Tr, class Allocator>
     owned_string_input&lt;Ch, Tr, Allocator>
-      make_text_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
+      make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
 }
       </codeblock>
 
-      <p>The header <c>"commama/text_input.hpp"</c> defines some class templates whose instances meet the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>).</p>
+      <p>The header <c>"commama/char_input.hpp"</c> defines some class templates whose instances meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>).</p>
     </section>
 
     <section id="streambuf_input">
@@ -810,7 +810,7 @@ namespace commata {
 
       <p>The class template <c>streambuf_input</c> describes thin wrappers of stream buffers without any ownership of them.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>streambuf_input</c> meets the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Ch</c>.</p>
+      <p>An instance of <c>streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
 
       <section id="streambuf_input.cons">
         <name><c>streambuf_input</c> costruct/copy/destroy</name>
@@ -880,7 +880,7 @@ namespace commata {
 
       <p>The class template <c>owned_streambuf_input</c> describes thin wrappers of an object of an derived type of an instance of <c>std::basic_streambuf</c> with the ownership of it.</p>
       <p>The template parameter <c>Streambuf</c> shall be the same type as, or be a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</p>
-      <p>An instance of <c>owned_streambuf_input</c> meets the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
+      <p>An instance of <c>owned_streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
 
       <section id="owned_streambuf_input.cons">
         <name><c>owned_streambuf_input</c> costruct/copy/destroy</name>
@@ -942,7 +942,7 @@ namespace commata {
 
       <p>The class template <c>owned_istream_input</c> describes thin wrappers of an object of an derived type of an instance of <c>std::basic_istream</c> with the ownership of it.</p>
       <p>The template parameter <c>IStream</c> shall be the same type as, or be a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</p>
-      <p>An instance of <c>owned_istream_input</c> meets the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
+      <p>An instance of <c>owned_istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
 
       <section id="owned_istream_input.cons">
         <name><c>owned_istream_input</c> costruct/copy/destroy</name>
@@ -1008,7 +1008,7 @@ namespace commata {
 
       <p>The class template <c>string_input</c> describes thin wrappers of on-memory character sequences without any ownership of them.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>string_input</c> meets the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Ch</c>.</p>
+      <p>An instance of <c>string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
 
       <section id="string_input.cons">
         <name><c>string_input</c> costruct/copy/destroy</name>
@@ -1092,7 +1092,7 @@ namespace commata {
 
       <p>The class template <c>owned_string_input</c> describes thin wrappers of an object of an instance of <c>std::basic_string</c> with the ownership of it.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>owned_string_input</c> meets the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Ch</c>.</p>
+      <p>An instance of <c>owned_string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
 
       <section id="owned_string_input.cons">
         <name><c>owned_string_input</c> costruct/copy/destroy</name>
@@ -1126,15 +1126,15 @@ size_type operator()(Ch* out, size_type n);
       </section>
     </section>
 
-    <section id="text_input.creation">
-      <name><c>TextInput</c> creation functions</name>
+    <section id="char_input.creation">
+      <name><c>CharInput</c> creation functions</name>
 
       <code-item>
         <code>
 template &lt;class Ch, class Tr>
-  streambuf_input&lt;Ch, Tr> make_text_input(std::basic_streambuf&lt;Ch, Tr>* in);
+  streambuf_input&lt;Ch, Tr> make_char_input(std::basic_streambuf&lt;Ch, Tr>* in);
 template &lt;class Ch, class Tr>
-  streambuf_input&lt;Ch, Tr> make_text_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+  streambuf_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
         </code>
         <requires>In the first form, <c>in</c> shall be a valid pointer to a stream buffer object.</requires>
         <returns><c>streambuf_input&lt;Ch, Tr>(in)</c>.</returns>
@@ -1144,7 +1144,7 @@ template &lt;class Ch, class Tr>
       <code-item>
         <code>
 template &lt;class Streambuf>
-  owned_streambuf_input&lt;Streambuf> make_text_input(Streambuf&amp;&amp; in) noexcept;
+  owned_streambuf_input&lt;Streambuf> make_char_input(Streambuf&amp;&amp; in) noexcept;
         </code>
         <returns><c>owned_streambuf_input&lt;Streambuf>(std::move(in))</c>.</returns>
         <remark>This overload shall not participate in overload resolution unless the template parameter <c>Streambuf</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</remark>
@@ -1153,7 +1153,7 @@ template &lt;class Streambuf>
       <code-item>
         <code>
 template &lt;class IStream>
-  owned_istream_input&lt;IStream> make_text_input(IStream&amp;&amp; in) noexcept;
+  owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept;
         </code>
         <returns><c>owned_istream_input&lt;IStream>(std::move(in))</c>.</returns>
         <remark>This overload shall not participate in overload resolution unless the template parameter <c>IStream</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</remark>
@@ -1162,12 +1162,12 @@ template &lt;class IStream>
       <code-item>
         <code>
 template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-  string_input&lt;Ch, Tr> make_text_input(const Ch* in);
+  string_input&lt;Ch, Tr> make_char_input(const Ch* in);
 template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-  string_input&lt;Ch, Tr> make_text_input(const Ch* in, std::size_t length);
+  string_input&lt;Ch, Tr> make_char_input(const Ch* in, std::size_t length);
 template &lt;class Ch, class Tr, class Allocator>
   string_input&lt;Ch, Tr>
-    make_text_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
+    make_char_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
         </code>
         <requires>In the first form, <c>in</c> shall be a valid pointer to an element in a null terminated sequence.
                   In the second form, [<c>in</c>, <c>in + length</c>) shall be a valid range.</requires>
@@ -1179,7 +1179,7 @@ template &lt;class Ch, class Tr, class Allocator>
         <code>
 template &lt;class Ch, class Tr, class Allocator>
   owned_string_input&lt;Ch, Tr, Allocator>
-    make_text_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
+    make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
         </code>
         <returns><c>owned_string_input&lt;Ch, Tr, Allocator>(std::move(in))</c>.</returns>
       </code-item>
@@ -1204,7 +1204,7 @@ template &lt;class Ch, class Tr, class Allocator>
 #include &lt;streambuf>
 
 #include "parse_error.hpp"
-#include "text_input.hpp"
+#include "char_input.hpp"
 
 namespace commata {
   <c>// <n><xref id="csv_source"/>, csv_source:</n></c>
@@ -1212,7 +1212,7 @@ namespace commata {
 
   <c>// <n><xref id="csv_source.creation"/>, csv_source creation functions:</n></c>
   template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args)
-    -> csv_source&lt;decltype(make_text_input(std::forward&lt;Args>(args)...))>;
+    -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
 
   <c>// <n><xref id="parse_csv"/>, functions that utilize the CSV parser:</n></c>
   template &lt;class Input, class... Args> bool parse_csv(Input&amp;&amp; in, Args&amp;&amp;... args);
@@ -1225,10 +1225,10 @@ namespace commata {
 
       <codeblock>
 namespace commata {
-  template &lt;class TextInput> class csv_source {
+  template &lt;class CharInput> class csv_source {
   public:
-    using char_type = typename TextInput::char_type;
-    using traits_type = typename TextInput::traits_type;
+    using char_type = typename CharInput::char_type;
+    using traits_type = typename CharInput::traits_type;
   
     <c>// <n><xref id="csv_source.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
@@ -1247,13 +1247,13 @@ namespace commata {
                              Args&amp;&amp;... args) noexcept;
 
   private:
-    TextInput in;   <c>// <n>exposition only</n></c>
+    CharInput in;   <c>// <n>exposition only</n></c>
   };
 }
       </codeblock>
 
       <p>The class template <c>csv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TextParser</c> objects (<xref id="text_parser.requirements"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
-      <p>The template parameter <c>TextInput</c> shall meet the <c>TextInput</c> requirements (<xref id="text_input.requirements"/>) for <c>Ch</c>.</p>
+      <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
       <p>An instance of <c>csv_source</c> shall meet the <c>TextSource</c> requirements (<xref id="text_source.requirements"/>) for <c>Ch</c>.</p>
 
       <section id="csv_source.cons">
@@ -1265,8 +1265,8 @@ template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept
           </code>
           <effects>Initializes <c>in</c> with <c>std::forward&lt;Args>(args)...</c>.</effects>
           <remark>This constructor shall not participate in overload resolution if <c>sizeof...(Args)</c> is equal to <c>1</c> and
-                  the reference-removed and cv-unqualified type of the first type of <c>args</c> is the same type as <c>csv_source&lt;TextInput></c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;TextInput, Args&amp;&amp;...>::value</c>.</remark>
+                  the reference-removed and cv-unqualified type of the first type of <c>args</c> is the same type as <c>csv_source&lt;CharInput></c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;CharInput, Args&amp;&amp;...>::value</c>.</remark>
         </code-item>
 
         <code-item>
@@ -1274,7 +1274,7 @@ template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept
 csv_source(const csv_source&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes <c>in</c> with <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;TextInput>::value</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;CharInput>::value</c>.</remark>
         </code-item>
 
         <code-item>
@@ -1282,7 +1282,7 @@ csv_source(const csv_source&amp; other) noexcept(<nc>see below</nc>);
 csv_source(csv_source&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes <c>in</c> with <c>std::move(other.in)</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;TextInput>::value</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;CharInput>::value</c>.</remark>
         </code-item>
       </section>
 
@@ -1297,7 +1297,7 @@ template &lt;class HandlerR>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</requires>
           <returns>A text parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.
-                   <c>p</c> holds <c>in</c> as its tied text input and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler.
+                   <c>p</c> holds <c>in</c> as its tied character input and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler.
                    <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
                    Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied text handler object.
                    <c>P</c> implements the optional <c>TextParser</c> operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
@@ -1350,9 +1350,9 @@ template &lt;class Handler, class... Args>
       <code-item>
         <code>
 template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args)
-  -> csv_source&lt;decltype(make_text_input(std::forward&lt;Args>(args)...))>;
+  -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
         </code>
-        <returns><c>csv_source&lt;decltype(make_text_input(std::forward&lt;Args>(args)...))>(make_text_input(std::forward&lt;Args>(args)...))</c>.</returns>
+        <returns><c>csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>(make_char_input(std::forward&lt;Args>(args)...))</c>.</returns>
       </code-item>
     </section>
 
@@ -5117,7 +5117,7 @@ template &lt;class Allocator, class Container, class... Appendices>
             <td>(2)</td>
             <td><c>t(h)</c></td>
             <td>A type that meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c></td>
-            <td>Creates a text parser object <c>p</c> that has its tied text input object identical to the wrapped text input object of <c>*this</c> and
+            <td>Creates a text parser object <c>p</c> that has its tied character input object identical to the wrapped text input object of <c>*this</c> and
                 a copy of <c>h</c> as its tied text handler object.
                 Then returns <c>p</c>.</td>
           </tr>

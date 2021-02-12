@@ -19,11 +19,11 @@
 #include <utility>
 
 #include "buffer_size.hpp"
+#include "char_input.hpp"
 #include "handler_decorator.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
 #include "parse_error.hpp"
-#include "text_input.hpp"
 #include "typing_aid.hpp"
 
 namespace commata {
@@ -839,14 +839,14 @@ private:
 
 }} // end namespace detail
 
-template <class TextInput>
+template <class CharInput>
 class csv_source
 {
-    TextInput in_;
+    CharInput in_;
 
 public:
-    using char_type = typename TextInput::char_type;
-    using traits_type = typename TextInput::traits_type;
+    using char_type = typename CharInput::char_type;
+    using traits_type = typename CharInput::traits_type;
 
     template <class... Args,
         std::enable_if_t<
@@ -855,7 +855,7 @@ public:
                 std::tuple<csv_source>>::value,
             std::nullptr_t> = nullptr>
     explicit csv_source(Args&&... args) noexcept(
-            std::is_nothrow_constructible<TextInput, Args&&...>::value) :
+            std::is_nothrow_constructible<CharInput, Args&&...>::value) :
         in_(std::forward<Args>(args)...)
     {}
 
@@ -871,7 +871,7 @@ public:
             !detail::is_std_reference_wrapper<std::decay_t<HandlerR>>::value
          && detail::is_with_buffer_control<std::decay_t<HandlerR>>::value,
             detail::csv::parser<
-                TextInput,
+                CharInput,
                 std::conditional_t<
                     detail::is_full_fledged<std::decay_t<HandlerR>>::value,
                     std::decay_t<HandlerR>,
@@ -890,7 +890,7 @@ public:
             handler_t,
             detail::full_fledged_handler<
                 handler_t, detail::thru_buffer_control>>;
-        return detail::csv::parser<TextInput, full_fledged_handler_t>(
+        return detail::csv::parser<CharInput, full_fledged_handler_t>(
                 std::move(in_),
                 full_fledged_handler_t(std::forward<HandlerR>(handler)));
     }
@@ -903,7 +903,7 @@ public:
             !detail::is_std_reference_wrapper<Handler>::value
          && detail::is_without_buffer_control<Handler>::value,
             detail::csv::parser<
-                TextInput,
+                CharInput,
                 detail::full_fledged_handler<std::remove_reference_t<Handler>,
                 detail::default_buffer_control<Allocator>>>>
     {
@@ -923,7 +923,7 @@ public:
         using buffer_engine_t = detail::default_buffer_control<Allocator>;
         using full_fledged_handler_t =
             detail::full_fledged_handler<handler_t, buffer_engine_t>;
-        return detail::csv::parser<TextInput, full_fledged_handler_t>(
+        return detail::csv::parser<CharInput, full_fledged_handler_t>(
                 std::move(in_),
                 full_fledged_handler_t(
                     std::move(handler), buffer_engine_t(buffer_size, alloc)));
@@ -940,10 +940,10 @@ public:
 
 template <class... Args>
 auto make_csv_source(Args&&... args)
- -> csv_source<decltype(make_text_input(std::forward<Args>(args)...))>
+ -> csv_source<decltype(make_char_input(std::forward<Args>(args)...))>
 {
-    return csv_source<decltype(make_text_input(std::forward<Args>(args)...))>(
-        make_text_input(std::forward<Args>(args)...));
+    return csv_source<decltype(make_char_input(std::forward<Args>(args)...))>(
+        make_char_input(std::forward<Args>(args)...));
 }
 
 namespace detail { namespace csv {
