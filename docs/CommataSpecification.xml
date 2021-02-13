@@ -1211,7 +1211,7 @@ namespace commata {
   template &lt;class Ch, class Tr> class csv_source;
 
   <c>// <n><xref id="csv_source.creation"/>, csv_source creation functions:</n></c>
-  template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args)
+  template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
     -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
 
   <c>// <n><xref id="parse_csv"/>, functions that utilize the CSV parser:</n></c>
@@ -1349,10 +1349,12 @@ template &lt;class Handler, class... Args>
 
       <code-item>
         <code>
-template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args)
+template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
   -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
         </code>
-        <returns><c>csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>(make_char_input(std::forward&lt;Args>(args)...))</c>.</returns>
+        <preface>Let <c>CI</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
+        <returns><c>csv_source&lt;CI>(make_char_input(std::forward&lt;Args>(args)...))</c>.</returns>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(make_char_input(std::forward&lt;Args>(args)...)) &amp;&amp; std::is_nothrow_move_constructible&lt;CI>::value</c>.</remark>
       </code-item>
     </section>
 

@@ -940,6 +940,9 @@ public:
 
 template <class... Args>
 auto make_csv_source(Args&&... args)
+    noexcept(noexcept(make_char_input(std::forward<Args>(args)...))
+          && std::is_nothrow_move_constructible<
+                decltype(make_char_input(std::forward<Args>(args)...))>::value)
  -> csv_source<decltype(make_char_input(std::forward<Args>(args)...))>
 {
     return csv_source<decltype(make_char_input(std::forward<Args>(args)...))>(
