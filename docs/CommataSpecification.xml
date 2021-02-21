@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-02-20 (UTC)</signature>
+<signature>2021-02-21 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -865,8 +865,8 @@ namespace commata {
     using size_type   = std::make_unsigned_t&lt;std::streamsize>;
 
     <c>// <n><xref id="owned_streambuf_input.cons"/>, construct/copy/destroy:</n></c>
-    explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept;
-    owned_streambuf_input(owned_streambuf_input&amp;&amp; other) noexcept;
+    explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</nc>);
+    owned_streambuf_input(owned_streambuf_input&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~owned_streambuf_input();
 
     <c>// <n><xref id="owned_streambuf_input.inv"/>, invocation:</n></c>
@@ -887,17 +887,19 @@ namespace commata {
 
         <code-item>
           <code>
-explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept;
+explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes <c>in</c> with <c>std::move(sb)</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Streambuf>::value</c>.</remark>
           <note>This constructor can cause a so-called slicing.</note>
         </code-item>
 
         <code-item>
           <code>
-owned_streambuf_input(owned_streambuf_input&amp;&amp; other) noexcept;
+owned_streambuf_input(owned_streambuf_input&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes <c>in</c> with <c>std::move(other.in)</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Streambuf>::value</c>.</remark>
         </code-item>
       </section>
 
@@ -927,8 +929,8 @@ namespace commata {
     using size_type   = std::make_unsigned_t&lt;std::streamsize>;
 
     <c>// <n><xref id="owned_istream_input.cons"/>, construct/copy/destroy:</n></c>
-    explicit owned_istream_input(IStream&amp;&amp; s) noexcept;
-    owned_istream_input(owned_istream_input&amp;&amp; other) noexcept;
+    explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
+    owned_istream_input(owned_istream_input&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~owned_istream_input();
 
     <c>// <n><xref id="owned_istream_input.inv"/>, invocation:</n></c>
@@ -949,17 +951,19 @@ namespace commata {
 
         <code-item>
           <code>
-explicit owned_istream_input(IStream&amp;&amp; s) noexcept;
+explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes <c>in</c> with <c>std::move(s)</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;IStream>::value</c>.</remark>
           <note>This constructor can cause a so-called slicing.</note>
         </code-item>
 
         <code-item>
           <code>
-owned_istream_input(owned_istream_input&amp;&amp; other) noexcept;
+owned_istream_input(owned_istream_input&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Initializes <c>in</c> with <c>std::move(other.in)</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;IStream>::value</c>.</remark>
         </code-item>
       </section>
 

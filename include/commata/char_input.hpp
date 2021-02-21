@@ -91,11 +91,16 @@ public:
     using traits_type = typename Streambuf::traits_type;
     using size_type = std::make_unsigned_t<std::streamsize>;
 
-    explicit owned_streambuf_input(Streambuf&& in) noexcept :
+    explicit owned_streambuf_input(Streambuf&& in)
+        noexcept(std::is_nothrow_move_constructible<Streambuf>::value) :
         in_(std::move(in))
     {}
 
-    owned_streambuf_input(owned_streambuf_input&&) = default;
+    owned_streambuf_input(owned_streambuf_input&& other)
+        noexcept(std::is_nothrow_move_constructible<Streambuf>::value) :
+        in_(std::move(other.in_))
+    {}
+
     ~owned_streambuf_input() = default;
 
     std::basic_streambuf<char_type, traits_type>* in() noexcept
@@ -122,11 +127,16 @@ public:
     using traits_type = typename IStream::traits_type;
     using size_type = std::make_unsigned_t<std::streamsize>;
 
-    explicit owned_istream_input(IStream&& in) noexcept :
+    explicit owned_istream_input(IStream&& in)
+        noexcept(std::is_nothrow_move_constructible<IStream>::value) :
         in_(std::move(in))
     {}
 
-    owned_istream_input(owned_istream_input&&) = default;
+    owned_istream_input(owned_istream_input&& other)
+        noexcept(std::is_nothrow_move_constructible<IStream>::value) :
+        in_(std::move(other.in_))
+    {}
+
     ~owned_istream_input() = default;
 
     std::basic_streambuf<char_type, traits_type>* in() noexcept
