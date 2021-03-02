@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-02-21 (UTC)</signature>
+<signature>2021-03-02 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2629,7 +2629,8 @@ namespace commata {
               basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
    ~basic_stored_table();
     basic_stored_table&amp; operator=(const basic_stored_table&amp;  other);
-    basic_stored_table&amp; operator=(      basic_stored_table&amp;&amp; other);
+    basic_stored_table&amp; operator=(      basic_stored_table&amp;&amp; other)
+      noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment::value);
 
     <c>// <n><xref id="basic_stored_table.constituents"/>, access to the constituents:</n></c>
     allocator_type get_allocator() const noexcept;
@@ -2891,7 +2892,8 @@ basic_stored_table&amp; operator=(const basic_stored_table&amp; other);
 
         <code-item>
           <code>
-basic_stored_table&amp; operator=(basic_stored_table&amp;&amp; other);
+basic_stored_table&amp; operator=(basic_stored_table&amp;&amp; other)
+  noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment::value);
           </code>
           <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and the value of <c>other.get_buffer_size()</c> before this assignment.
                          If not singular, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this assignment.
