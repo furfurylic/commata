@@ -181,7 +181,8 @@ namespace detail {
 template <std::size_t N>
 std::streamsize print_pos(char (&s)[N], std::size_t pos, std::size_t base)
 {
-    const auto len = (pos != text_error::npos) ?
+    const auto len = (pos != text_error::npos)
+                  && (text_error::npos - base >= pos) ?
         std::snprintf(s, N, "%zu", pos + base) :
         std::snprintf(s, N, "n/a");
     assert((len > 0 ) && (static_cast<std::size_t>(len) < N));
@@ -191,7 +192,8 @@ std::streamsize print_pos(char (&s)[N], std::size_t pos, std::size_t base)
 template <std::size_t N>
 std::streamsize print_pos(wchar_t (&s)[N], std::size_t pos, std::size_t base)
 {
-    const auto len = (pos != text_error::npos) ?
+    const auto len = (pos != text_error::npos)
+                  && (text_error::npos - base >= pos) ?
         std::swprintf(s, N, L"%zu", pos + base) :
         std::swprintf(s, N, L"n/a");
     assert((len > 0 ) && (static_cast<std::size_t>(len) < N));
