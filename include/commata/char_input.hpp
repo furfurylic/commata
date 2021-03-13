@@ -18,34 +18,28 @@ namespace commata {
 
 namespace detail {
 
-template <class D>
-struct streambuf_input_base
+template <class Ch, class Tr>
+auto read(std::basic_streambuf<Ch, Tr>& in,
+    Ch* out, std::make_unsigned_t<std::streamsize> n)
 {
-    using size_type = std::make_unsigned_t<std::streamsize>;
-
-    template <class Ch>
-    size_type operator()(Ch* out, size_type n)
-    {
-        constexpr size_type nmax = std::numeric_limits<std::streamsize>::max();
-        size_type m = 0;
-        while (n > nmax) {
-            const auto mm = static_cast<D*>(this)->in()->sgetn(out, nmax);
-            if (mm == 0) {
-                return m;
-            }
-            m += mm;
-            n -= mm;
+    decltype(n) nmax = std::numeric_limits<std::streamsize>::max();
+    decltype(n) m = 0;
+    while (n > nmax) {
+        const auto mm = in.sgetn(out, nmax);
+        if (mm == 0) {
+            return m;
         }
-        m += static_cast<D*>(this)->in()->sgetn(out, n);
-        return m;
+        m += mm;
+        n -= mm;
     }
-};
+    m += in.sgetn(out, n);
+    return m;
+}
 
 }
 
 template <class Ch, class Tr = std::char_traits<Ch>>
-class streambuf_input :
-    public detail::streambuf_input_base<streambuf_input<Ch, Tr>>
+class streambuf_input
 {
     std::basic_streambuf<Ch, Tr>* in_;
 
@@ -64,18 +58,22 @@ public:
         streambuf_input(in.rdbuf())
     {}
 
-    streambuf_input(const streambuf_input&) = default;
+    streambuf_input(streambuf_input&& other) noexcept :
+        in_(other.in_)
+    {
+        other.in_ = nullptr;
+    }
+
     ~streambuf_input() = default;
 
-    std::basic_streambuf<Ch, Tr>* in() noexcept
+    size_type operator()(Ch* out, size_type n)
     {
-        return in_;
+        return in_ ? detail::read(*in_, out, n) : 0;
     }
 };
 
 template <class Streambuf>
-class owned_streambuf_input :
-    public detail::streambuf_input_base<owned_streambuf_input<Streambuf>>
+class owned_streambuf_input
 {
     Streambuf in_;
 
@@ -103,15 +101,14 @@ public:
 
     ~owned_streambuf_input() = default;
 
-    std::basic_streambuf<char_type, traits_type>* in() noexcept
+    size_type operator()(char_type* out, size_type n)
     {
-        return &in_;
+        return detail::read(in_, out, n);
     }
 };
 
 template <class IStream>
-class owned_istream_input :
-    public detail::streambuf_input_base<owned_istream_input<IStream>>
+class owned_istream_input
 {
     IStream in_;
 
@@ -139,9 +136,9 @@ public:
 
     ~owned_istream_input() = default;
 
-    std::basic_streambuf<char_type, traits_type>* in() noexcept
+    size_type operator()(char_type* out, size_type n)
     {
-        return in_.rdbuf();
+        return detail::read(*in_.rdbuf(), out, n);
     }
 };
 
@@ -172,7 +169,12 @@ public:
         string_input(str.data(), str.size())
     {}
 
-    string_input(const string_input&) = default;
+    string_input(string_input&& other) noexcept :
+        begin_(other.begin_), end_(other.end_)
+    {
+        other.begin_ = end_;
+    }
+
     ~string_input() = default;
 
     size_type operator()(Ch* out, size_type n)

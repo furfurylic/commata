@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-03-02 (UTC)</signature>
+<signature>2021-03-13 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -796,7 +796,7 @@ namespace commata {
     <c>// <n><xref id="streambuf_input.cons"/>, construct/copy/destroy:</n></c>
     explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>* sb);
     explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
-    streambuf_input(const streambuf_input&amp; other) noexcept;
+    streambuf_input(streambuf_input&amp;&amp; other) noexcept;
    ~streambuf_input();
 
     <c>// <n><xref id="streambuf_input.inv"/>, invocation:</n></c>
@@ -833,9 +833,9 @@ explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
 
         <code-item>
           <code>
-streambuf_input(const streambuf_input&amp; other) noexcept;
+streambuf_input(streambuf_input&amp;&amp; other) noexcept;
           </code>
-          <effects>Initializes <c>in</c> with <c>other.in</c>.</effects>
+          <effects>Initializes <c>in</c> with <c>other.in</c> and then, in an unspecified way, makes invocations of <c>operator()</c> on <c>other</c> not affect <c>*in</c>.</effects>
         </code-item>
       </section>
 
@@ -997,7 +997,7 @@ namespace commata {
     string_input(const Ch* data, std::size_t length);
     template &lt;class Allocator>
       explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
-    string_input(const string_input&amp; other) noexcept;
+    string_input(string_input&amp;&amp; other) noexcept;
    ~string_input();
 
     <c>// <n><xref id="string_input.inv"/>, invocation:</n></c>
@@ -1045,9 +1045,10 @@ template &lt;class Allocator>
 
         <code-item>
           <code>
-string_input(const string_input&amp; other) noexcept;
+string_input(string_input&amp;&amp; other) noexcept;
           </code>
-          <effects>Initializes <c>begin</c> with <c>other.begin</c> and <c>end</c> with <c>other.end</c>.</effects>
+          <effects>Initializes <c>begin</c> with <c>other.begin</c> and <c>end</c> with <c>other.end</c>
+                   and then make [<c>other.begin</c>, <c>other.end</c>) not overlap with [<c>begin</c>, <c>end</c>).</effects>
         </code-item>
       </section>
 
