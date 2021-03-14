@@ -333,14 +333,14 @@ void swap(owned_string_input<Ch, Tr, Allocator>& left,
 template <class Ch, class Tr>
 streambuf_input<Ch, Tr> make_char_input(std::basic_streambuf<Ch, Tr>* in)
 {
-    return streambuf_input<Ch, Tr>(in);
+    return streambuf_input(in);
 }
 
 template <class Ch, class Tr>
 streambuf_input<Ch, Tr> make_char_input(
     std::basic_istream<Ch, Tr>& in) noexcept
 {
-    return streambuf_input<Ch, Tr>(in);
+    return streambuf_input(in);
 }
 
 template <class Streambuf>
@@ -355,7 +355,7 @@ auto make_char_input(Streambuf&& in)
             Streambuf>,
         owned_streambuf_input<Streambuf>>
 {
-    return owned_streambuf_input<Streambuf>(std::move(in));
+    return owned_streambuf_input(std::move(in));
 }
 
 template <class IStream>
@@ -370,7 +370,7 @@ auto make_char_input(IStream&& in)
             IStream>,
         owned_istream_input<IStream>>
 {
-    return owned_istream_input<IStream>(std::move(in));
+    return owned_istream_input(std::move(in));
 }
 
 template <class Ch, class Tr = std::char_traits<Ch>>
@@ -379,7 +379,7 @@ auto make_char_input(const Ch* in)
         std::is_same_v<Ch, char> || std::is_same_v<Ch, wchar_t>,
         string_input<Ch, Tr>>
 {
-    return string_input<Ch, Tr>(in);
+    return string_input(in);
 }
 
 template <class Ch, class Tr = std::char_traits<Ch>>
@@ -388,28 +388,28 @@ auto make_char_input(const Ch* in, std::size_t length)
         std::is_same_v<Ch, char> || std::is_same_v<Ch, wchar_t>,
         string_input<Ch, Tr>>
 {
-    return string_input<Ch, Tr>(in, length);
+    return string_input(in, length);
 }
 
 template <class Ch, class Tr, class Allocator>
 string_input<Ch, Tr> make_char_input(
     const std::basic_string<Ch, Tr, Allocator>& in) noexcept
 {
-    return string_input<Ch, Tr>(in);
+    return string_input(in);
 }
 
 template <class Ch, class Tr>
 string_input<Ch, Tr> make_char_input(
     std::basic_string_view<Ch, Tr> in) noexcept
 {
-    return string_input<Ch, Tr>(in);
+    return string_input(in);
 }
 
 template <class Ch, class Tr, class Allocator>
 owned_string_input<Ch, Tr, Allocator> make_char_input(
     std::basic_string<Ch, Tr, Allocator>&& in) noexcept
 {
-    return owned_string_input<Ch, Tr, Allocator>(std::move(in));
+    return owned_string_input(std::move(in));
 }
 
 }
