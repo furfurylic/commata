@@ -51,6 +51,10 @@ public:
     using traits_type = Tr;
     using size_type = std::make_unsigned_t<std::streamsize>;
 
+    streambuf_input() noexcept :
+        in_(nullptr)
+    {}
+
     explicit streambuf_input(std::basic_streambuf<Ch, Tr>* in) :
         in_(in)
     {}
@@ -102,6 +106,8 @@ public:
     using traits_type = typename Streambuf::traits_type;
     using size_type = std::make_unsigned_t<std::streamsize>;
 
+    owned_streambuf_input() = default;
+
     explicit owned_streambuf_input(Streambuf&& in)
         noexcept(std::is_nothrow_move_constructible<Streambuf>::value) :
         in_(std::move(in))
@@ -149,6 +155,8 @@ public:
     using traits_type = typename IStream::traits_type;
     using size_type = std::make_unsigned_t<std::streamsize>;
 
+    owned_istream_input() = default;
+
     explicit owned_istream_input(IStream&& in)
         noexcept(std::is_nothrow_move_constructible<IStream>::value) :
         in_(std::move(in))
@@ -191,6 +199,10 @@ public:
     using char_type = Ch;
     using traits_type = Tr;
     using size_type = std::size_t;
+
+    string_input() noexcept :
+        begin_(nullptr), end_(nullptr)
+    {}
 
     explicit string_input(const Ch* str) :
         string_input(str, Tr::length(str))
@@ -257,6 +269,17 @@ public:
 
     using char_type = Ch;
     using traits_type = Tr;
+
+    owned_string_input()
+        noexcept(std::is_nothrow_default_constructible<
+            std::basic_string<Ch, Tr, Allocator>>::value) :
+        s_(), head_(0)
+    {}
+
+    explicit owned_string_input(
+        const std::basic_string<Ch, Tr, Allocator>& str) :
+        s_(str), head_(0)
+    {}
 
     explicit owned_string_input(std::basic_string<Ch, Tr, Allocator>&& str)
         noexcept :
