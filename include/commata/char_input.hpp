@@ -71,7 +71,19 @@ public:
     {
         return in_ ? detail::read(*in_, out, n) : 0;
     }
+
+    void swap(streambuf_input& other) noexcept
+    {
+        std::swap(in_, other.in_);
+    }
 };
+
+template <class Ch, class Tr>
+void swap(streambuf_input<Ch, Tr>& left,
+          streambuf_input<Ch, Tr>& right) noexcept
+{
+    left.swap(right);
+}
 
 template <class Streambuf>
 class owned_streambuf_input
@@ -106,7 +118,23 @@ public:
     {
         return detail::read(in_, out, n);
     }
+
+    void swap(owned_streambuf_input& other)
+        noexcept(noexcept(
+            std::declval<Streambuf&>().swap(std::declval<Streambuf&>())))
+    {
+        using std::swap;
+        swap(in_, other.in_);
+    }
 };
+
+template <class Streambuf>
+void swap(owned_streambuf_input<Streambuf>& left,
+          owned_streambuf_input<Streambuf>& right)
+    noexcept(noexcept(left.swap(right)))
+{
+    left.swap(right);
+}
 
 template <class IStream>
 class owned_istream_input
@@ -141,7 +169,23 @@ public:
     {
         return detail::read(*in_.rdbuf(), out, n);
     }
+
+    void swap(owned_istream_input& other)
+        noexcept(noexcept(
+            std::declval<IStream&>().swap(std::declval<IStream&>())))
+    {
+        using std::swap;
+        swap(in_, other.in_);
+    }
 };
+
+template <class IStream>
+void swap(owned_istream_input<IStream>& left,
+          owned_istream_input<IStream>& right)
+    noexcept(noexcept(left.swap(right)))
+{
+    left.swap(right);
+}
 
 template <class Ch, class Tr = std::char_traits<Ch>>
 class string_input
@@ -190,7 +234,20 @@ public:
             return 0;
         }
     }
+
+    void swap(string_input& other) noexcept
+    {
+        std::swap(begin_, other.begin_);
+        std::swap(end_, other.end_);
+    }
 };
+
+template <class Ch, class Tr>
+void swap(string_input<Ch, Tr>& left,
+          string_input<Ch, Tr>& right) noexcept
+{
+    left.swap(right);
+}
 
 template <class Ch, class Tr = std::char_traits<Ch>,
     class Allocator = std::allocator<Ch>>
@@ -223,7 +280,25 @@ public:
         head_ += len;
         return len;
     }
+
+    void swap(owned_string_input& other)
+        noexcept(noexcept(
+            std::declval<std::basic_string<Ch, Tr, Allocator>&>()
+                .swap(std::declval<std::basic_string<Ch, Tr, Allocator>&>())))
+    {
+        using std::swap;
+        swap(s_, other.s_);
+        swap(head_, other.head_);
+    }
 };
+
+template <class Ch, class Tr>
+void swap(owned_string_input<Ch, Tr>& left,
+          owned_string_input<Ch, Tr>& right)
+    noexcept(noexcept(left.swap(right)))
+{
+    left.swap(right);
+}
 
 template <class Ch, class Tr>
 streambuf_input<Ch, Tr> make_char_input(std::basic_streambuf<Ch, Tr>* in)

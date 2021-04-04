@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-04-05 (UTC)</signature>
+<signature>2021-06-06 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -743,19 +743,34 @@ template &lt;class Handler>
 namespace commata {
   <c>// <n><xref id="streambuf_input"/>, streambuf_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class streambuf_input;
+  template &lt;class Ch, class Tr>
+    void swap(streambuf_input&lt;Ch, Tr>&amp; left,
+              streambuf_input&lt;Ch, Tr>&amp; right) noexcept;
 
   <c>// <n><xref id="owned_streambuf_input"/>, owned_streambuf_input:</n></c>
   template &lt;class Streambuf> class owned_streambuf_input;
+  template &lt;class Streambuf>
+    void swap(owned_streambuf_input&lt;Streambuf>&amp; left,
+              owned_streambuf_input&lt;Streambuf>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="owned_istream_input"/>, owned_istream_input:</n></c>
   template &lt;class IStream> class owned_istream_input;
+  template &lt;class IStream>
+    void swap(owned_istream_input&lt;IStream>&amp; left,
+              owned_istream_input&lt;IStream>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="string_input"/>, string_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class string_input;
+  template &lt;class Ch, class Tr>
+    void swap(string_input&lt;Ch, Tr>&amp; left,
+              string_input&lt;Ch, Tr>&amp; right) noexcept;
 
   <c>// <n><xref id="owned_string_input"/>, owned_string_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class owned_string_input;
+  template &lt;class Ch, class Tr>
+    void swap(owned_string_input&lt;Ch, Tr>&amp; left,
+              owned_string_input&lt;Ch, Tr>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="char_input.creation"/>, CharInput creation functions:</n></c>
   template &lt;class Ch, class Tr>
@@ -802,9 +817,17 @@ namespace commata {
     <c>// <n><xref id="streambuf_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
+    <c>// <n><xref id="streambuf_input.modifiers"/>, modifiers:</n></c>
+    void swap(streambuf_input&amp; other) noexcept;
+
   private:
     std::basic_streambuf&lt;Ch, Tr>* in;  <c>// <n>exposition only</n></c>
   };
+
+  <c>// <n><xref id="streambuf_input.special"/>, specialized algorithms:</n></c>
+  template &lt;class Ch, class Tr>
+    void swap(streambuf_input&lt;Ch, Tr>&amp; left,
+              streambuf_input&lt;Ch, Tr>&amp; right) noexcept;
 }
       </codeblock>
 
@@ -851,6 +874,30 @@ size_type operator()(Ch* out, size_type n);
           <returns>The number of characters assigned.</returns>
         </code-item>
       </section>
+
+      <section id="streambuf_input.modifiers">
+        <name><c>streambuf_input</c> modifiers</name>
+
+        <code-item>
+          <code>
+void swap(streambuf_input&amp; other) noexcept;
+          </code>
+          <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
+        </code-item>
+      </section>
+
+      <section id="streambuf_input.special">
+        <name><c>streambuf_input</c> specialized algorithms</name>
+
+        <code-item>
+          <code>
+template &lt;class Ch, class Tr>
+  void swap(streambuf_input&lt;Ch, Tr>&amp; left,
+            streambuf_input&lt;Ch, Tr>&amp; right) noexcept;
+          </code>
+          <effects><c>left.swap(right)</c>.</effects>
+        </code-item>
+      </section>
     </section>
 
     <section id="owned_streambuf_input">
@@ -872,9 +919,17 @@ namespace commata {
     <c>// <n><xref id="owned_streambuf_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
+    <c>// <n><xref id="owned_streambuf_input.modifiers"/>, modifiers:</n></c>
+    void swap(owned_streambuf_input&amp; other) noexcept(<nc>see below</nc>);
+
   private:
     Streambuf in;   <c>// <n>exposition only</n></c>
   };
+
+  <c>// <n><xref id="owned_streambuf_input.special"/>, specialized algorithms:</n></c>
+  template &lt;class Streambuf>
+    void swap(owned_streambuf_input&lt;Streambuf>&amp; left,
+              owned_streambuf_input&lt;Streambuf>&amp; right) noexcept(noexcept(left.swap(right)));
 }
       </codeblock>
 
@@ -915,6 +970,31 @@ size_type operator()(Ch* out, size_type n);
           <returns>The number of characters assigned.</returns>
         </code-item>
       </section>
+
+      <section id="owned_streambuf_input.modifiers">
+        <name><c>owned_streambuf_input</c> modifiers</name>
+
+        <code-item>
+          <code>
+void swap(owned_streambuf_input&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>Streambuf::swap</c> with one argument whose type is <c>Streambuf&amp;</c> is marked as <c>noexcept</c>.</remark>
+        </code-item>
+      </section>
+
+      <section id="owned_streambuf_input.special">
+        <name><c>owned_streambuf_input</c> specialized algorithms</name>
+
+        <code-item>
+          <code>
+template &lt;class Streambuf>
+  void swap(owned_streambuf_input&lt;Ch, Tr>&amp; left,
+            owned_streambuf_input&lt;Ch, Tr>&amp; right) noexcept(noexcept(left.swap(right)));
+          </code>
+          <effects><c>left.swap(right)</c>.</effects>
+        </code-item>
+      </section>
     </section>
 
     <section id="owned_istream_input">
@@ -936,9 +1016,17 @@ namespace commata {
     <c>// <n><xref id="owned_istream_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
+    <c>// <n><xref id="owned_istream_input.modifiers"/>, modifiers:</n></c>
+    void swap(owned_istream_input&amp; other) noexcept(<nc>see below and TODO</nc>);
+
   private:
     IStream in;     <c>// <n>exposition only</n></c>
   };
+
+  <c>// <n><xref id="owned_istream_input.special"/>, specialized algorithms:</n></c>
+  template &lt;class Ch, class Tr>
+    void swap(owned_istream_input&lt;IStream>&amp; left,
+              owned_istream_input&lt;IStream>&amp; right) noexcept(<nc>see below</nc>);
 }
       </codeblock>
 
@@ -979,6 +1067,31 @@ size_type operator()(Ch* out, size_type n);
           <returns>The number of characters assigned.</returns>
         </code-item>
       </section>
+
+      <section id="owned_istream_input.modifiers">
+        <name><c>owned_istream_input</c> modifiers</name>
+
+        <code-item>
+          <code>
+void swap(owned_istream_input&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>Streambuf::swap</c> with one argument whose type is <c>IStream&amp;</c> is marked as <c>noexcept</c>.</remark>
+        </code-item>
+      </section>
+
+      <section id="owned_istream_input.special">
+        <name><c>owned_istream_input</c> specialized algorithms</name>
+
+        <code-item>
+          <code>
+template &lt;class Ch, class Tr>
+  void swap(owned_istream_input&lt;Ch, Tr>&amp; left,
+            owned_istream_input&lt;Ch, Tr>&amp; right) noexcept(noexcept(left.swap(right)));
+          </code>
+          <effects><c>left.swap(right)</c>.</effects>
+        </code-item>
+      </section>
     </section>
 
     <section id="string_input">
@@ -1003,10 +1116,18 @@ namespace commata {
     <c>// <n><xref id="string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
+    <c>// <n><xref id="string_input.modifiers"/>, modifiers:</n></c>
+    void swap(string_input&amp; other) noexcept;
+
   private:
     const Ch* begin;  <c>// <n>exposition only</n></c>
     const Ch* end;    <c>// <n>exposition only</n></c>
   };
+
+    <c>// <n><xref id="string_input.special"/>, specialized algorithms:</n></c>
+  template &lt;class Ch, class Tr>
+    void swap(string_input&lt;Ch, Tr>&amp; left,
+              string_input&lt;Ch, Tr>&amp; right) noexcept;
 }
       </codeblock>
 
@@ -1066,6 +1187,30 @@ size_type operator()(Ch* out, size_type n);
           <throws>Nothing.</throws>
         </code-item>
       </section>
+
+      <section id="string_input.modifiers">
+        <name><c>string_input</c> modifiers</name>
+
+        <code-item>
+          <code>
+void swap(string_input&amp; other) noexcept;
+          </code>
+          <effects>Exchanges <c>begin</c> and <c>other.begin</c>, and, <c>end</c> and <c>other.end</c>, respectively.</effects>
+        </code-item>
+      </section>
+
+      <section id="string_input.special">
+        <name><c>string_input</c> specialized algorithms</name>
+
+        <code-item>
+          <code>
+template &lt;class Ch, class Tr>
+  void swap(string_input&lt;Ch, Tr>&amp; left,
+            string_input&lt;Ch, Tr>&amp; right) noexcept;
+          </code>
+          <effects><c>left.swap(right)</c>.</effects>
+        </code-item>
+      </section>
     </section>
 
     <section id="owned_string_input">
@@ -1088,10 +1233,18 @@ namespace commata {
     <c>// <n><xref id="owned_string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
+    <c>// <n><xref id="owned_string_input.modifiers"/>, modifiers:</n></c>
+    void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
+
   private:
     std::basic_string&lt;Ch, Tr, Allocator> s;     <c>// <n>exposition only</n></c>
     size_type head;                             <c>// <n>exposition only</n></c>
   };
+
+  <c>// <n><xref id="owned_string_input.special"/>, specialized algorithms:</n></c>
+  template &lt;class Ch, class Tr>
+    void swap(owned_string_input&lt;Ch, Tr>&amp; left,
+              owned_string_input&lt;Ch, Tr>&amp; right) noexcept(left.swap(right));
 }
       </codeblock>
 
@@ -1127,6 +1280,31 @@ size_type operator()(Ch* out, size_type n);
           <effects>Calls <c>s.copy(out, n)</c> and let <c>rlen</c> be the return value, and then evaluates <c>head += rlen</c>.</effects>
           <returns><c>rlen</c> above.</returns>
           <throws>Nothing.</throws>
+        </code-item>
+      </section>
+
+      <section id="owned_string_input.modifiers">
+        <name><c>owned_string_input</c> modifiers</name>
+
+        <code-item>
+          <code>
+void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::basic_string&lt;Ch, Tr, Allocator>::swap</c> with one argument whose type is <c>std::basic_string&lt;Ch, Tr, Allocator>&amp;</c> is marked as <c>noexcept</c>.</remark>
+        </code-item>
+      </section>
+
+      <section id="owned_string_input.special">
+        <name><c>owned_string_input</c> specialized algorithms</name>
+
+        <code-item>
+          <code>
+template &lt;class Ch, class Tr>
+  void swap(owned_string_input&lt;Ch, Tr>&amp; left,
+            owned_string_input&lt;Ch, Tr>&amp; right) noexcept(noexcept(left.swap(right)));
+          </code>
+          <effects><c>left.swap(right)</c>.</effects>
         </code-item>
       </section>
     </section>
