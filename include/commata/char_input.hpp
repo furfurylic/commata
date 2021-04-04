@@ -132,8 +132,7 @@ public:
     }
 
     void swap(owned_streambuf_input& other)
-        noexcept(noexcept(
-            std::declval<Streambuf&>().swap(std::declval<Streambuf&>())))
+        noexcept(std::is_nothrow_swappable_v<Streambuf>)
     {
         using std::swap;
         swap(in_, other.in_);
@@ -182,8 +181,7 @@ public:
     }
 
     void swap(owned_istream_input& other)
-        noexcept(noexcept(
-            std::declval<IStream&>().swap(std::declval<IStream&>())))
+        noexcept(std::is_nothrow_swappable_v<IStream>())
     {
         using std::swap;
         swap(in_, other.in_);
@@ -352,9 +350,7 @@ public:
     }
 
     void swap(owned_string_input& other)
-        noexcept(noexcept(
-            std::declval<std::basic_string<Ch, Tr, Allocator>&>()
-                .swap(std::declval<std::basic_string<Ch, Tr, Allocator>&>())))
+        noexcept(std::is_swappable_v<std::basic_string<Ch, Tr, Allocator>>)
     {
         using std::swap;
         swap(s_, other.s_);

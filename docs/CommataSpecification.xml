@@ -1007,7 +1007,7 @@ size_type operator()(Ch* out, size_type n);
 void swap(owned_streambuf_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>Streambuf::swap</c> with one argument whose type is <c>Streambuf&amp;</c> is marked as <c>noexcept</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;Streambuf></c>.</remark>
         </code-item>
       </section>
 
@@ -1098,7 +1098,7 @@ size_type operator()(Ch* out, size_type n);
 void swap(owned_istream_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>Streambuf::swap</c> with one argument whose type is <c>IStream&amp;</c> is marked as <c>noexcept</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;IStream></c>.</remark>
         </code-item>
       </section>
 
@@ -1334,7 +1334,7 @@ size_type operator()(Ch* out, size_type n);
 void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::basic_string&lt;Ch, Tr, Allocator>::swap</c> with one argument whose type is <c>std::basic_string&lt;Ch, Tr, Allocator>&amp;</c> is marked as <c>noexcept</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;std::basic_string&lt;Ch, Tr, Allocator>></c>.</remark>
         </code-item>
       </section>
 
