@@ -31,6 +31,7 @@ auto read(std::basic_streambuf<Ch, Tr>& in,
         }
         m += mm;
         n -= mm;
+        out += mm;
     }
     m += in.sgetn(out, n);
     return m;
