@@ -814,6 +814,7 @@ namespace commata {
     explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
     streambuf_input(streambuf_input&amp;&amp; other) noexcept;
    ~streambuf_input() = default;
+    streambuf_input&amp; operator=(streambuf_input&amp;&amp; other) noexcept;
 
     <c>// <n><xref id="streambuf_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -860,6 +861,13 @@ explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
 streambuf_input(streambuf_input&amp;&amp; other) noexcept;
           </code>
           <effects>Initializes <c>in</c> with <c>other.in</c> and then assigns <c>nullptr</c> to <c>other.in</c>.</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+streambuf_input&amp; operator=(streambuf_input&amp;&amp; other) noexcept;
+          </code>
+          <effects>Assigns <c>other.in</c> to <c>in</c> and then assigns <c>nullptr</c> to <c>other.in</c>.</effects>
         </code-item>
       </section>
 
@@ -917,6 +925,7 @@ namespace commata {
     explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</nc>);
     owned_streambuf_input(owned_streambuf_input&amp;&amp; other) = default;
    ~owned_streambuf_input() = default;
+    owned_streambuf_input&amp; operator=(owned_streambuf_input&amp;&amp; other) = default;
 
     <c>// <n><xref id="owned_streambuf_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -1007,6 +1016,7 @@ namespace commata {
     explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
     owned_istream_input(owned_istream_input&amp;&amp; other) = default;
    ~owned_istream_input() = default;
+    owned_istream_input&amp; operator=(owned_istream_input&amp;&amp; other) = default;
 
     <c>// <n><xref id="owned_istream_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -1100,6 +1110,7 @@ namespace commata {
       explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
     string_input(string_input&amp;&amp; other) noexcept;
    ~string_input() = default;
+    string_input&amp; operator=(string_input&amp;&amp; other) noexcept;
 
     <c>// <n><xref id="string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -1156,7 +1167,15 @@ template &lt;class Allocator>
           <code>
 string_input(string_input&amp;&amp; other) noexcept;
           </code>
-          <effects>Initializes <c>begin</c> with <c>other.begin</c> and <c>end</c> with <c>other.end</c>
+          <effects>Initializes <c>begin</c> with <c>other.begin</c> and <c>end</c> with <c>other.end</c>,
+                   and then make [<c>other.begin</c>, <c>other.end</c>) not overlap with [<c>begin</c>, <c>end</c>).</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+string_input&amp; operator=(string_input&amp;&amp; other) noexcept;
+          </code>
+          <effects>Assigns <c>other.begin</c> to <c>begin</c> and <c>other.end</c> to <c>end</c>,
                    and then make [<c>other.begin</c>, <c>other.end</c>) not overlap with [<c>begin</c>, <c>end</c>).</effects>
         </code-item>
       </section>
@@ -1218,6 +1237,7 @@ namespace commata {
     explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; str) noexcept;
     owned_string_input(owned_string_input&amp;&amp; other) noexcept;
    ~owned_string_input() = default;
+    owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) : noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="owned_string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -1263,7 +1283,15 @@ explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; st
           <code>
 owned_string_input(owned_string_input&amp;&amp; other) noexcept;
           </code>
-          <effects>Initializes <c>s</c> with <c>std::move(other.s)</c> and <c>head</c> with <c>other.head</c>.</effects>
+          <effects>Initializes <c>s</c> with <c>std::move(other.s)</c> and <c>head</c> with <c>other.head</c>, and then assigns <c>other.size()</c> to <c>other.head</c>.</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) : noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Assigns <c>std::move(other.s)</c> to <c>s</c> and <c>other.head</c> to <c>head</c>, and then assigns <c>other.size()</c> to <c>other.head</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable&lt;std::basic_string&lt;Ch, Tr, Allocator>>::value</c>.</remark>
         </code-item>
       </section>
 

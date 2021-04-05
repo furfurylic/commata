@@ -71,6 +71,13 @@ public:
 
     ~streambuf_input() = default;
 
+    streambuf_input& operator=(streambuf_input&& other) noexcept
+    {
+        in_ = other.in_;
+        other.in_ = nullptr;
+        return *this;
+    }
+
     size_type operator()(Ch* out, size_type n)
     {
         return in_ ? detail::read(*in_, out, n) : 0;
@@ -115,6 +122,7 @@ public:
 
     owned_streambuf_input(owned_streambuf_input&& other) = default;
     ~owned_streambuf_input() = default;
+    owned_streambuf_input& operator=(owned_streambuf_input&& other) = default;
 
     size_type operator()(char_type* out, size_type n)
     {
@@ -164,6 +172,7 @@ public:
 
     owned_istream_input(owned_istream_input&& other) = default;
     ~owned_istream_input() = default;
+    owned_istream_input& operator=(owned_istream_input&& other) = default;
 
     size_type operator()(char_type* out, size_type n)
     {
@@ -226,6 +235,12 @@ public:
 
     ~string_input() = default;
 
+    string_input& operator=(string_input&& other) noexcept
+    {
+        string_input(std::move(other)).swap(*this);
+        return *this;
+    }
+
     size_type operator()(Ch* out, size_type n)
     {
         if (begin_ < end_) {
@@ -286,8 +301,23 @@ public:
         s_(std::move(str)), head_(0)
     {}
 
-    owned_string_input(owned_string_input&&) = default;
+    owned_string_input(owned_string_input&& other) noexcept :
+        s_(std::move(other)), head_(other.head_)
+    {
+        other.head_ = other.s_.size();
+    }
+
     ~owned_string_input() = default;
+
+    owned_string_input& operator=(owned_string_input&& other)
+        noexcept(std::is_nothrow_move_assignable<
+            std::basic_string<Ch, Tr, Allocator>>::value)
+    {
+        s_ = std::move(other.s_);
+        head_ = other.head_;
+        other.head_ = other.s_.size();
+        return *this;
+    }
 
     size_type operator()(Ch* out, size_type n)
     {
