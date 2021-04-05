@@ -1389,6 +1389,8 @@ template &lt;class Ch, class Tr, class Allocator>
 namespace commata {
   <c>// <n><xref id="csv_source"/>, csv_source:</n></c>
   template &lt;class CharInput> class csv_source;
+  template &lt;class CharInput>
+    void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(left.swap(right));
 
   <c>// <n><xref id="csv_source.creation"/>, csv_source creation functions:</n></c>
   template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
@@ -1426,9 +1428,16 @@ namespace commata {
       <nc>unspecified</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
                              Args&amp;&amp;... args) noexcept;
 
+    <c>// <n><xref id="csv_source.modifiers"/>, modifiers:</n></c>
+    void swap(csv_source&amp; other) noexcept(<nc>see below</nc>);
+
   private:
     CharInput in;   <c>// <n>exposition only</n></c>
   };
+
+  <c>// <n><xref id="csv_source.special"/>, specialized algorithms:</n></c>
+  template &lt;class CharInput>
+    void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(left.swap(right));
 }
       </codeblock>
 
@@ -1504,6 +1513,30 @@ template &lt;class Handler, class... Args>
                    <c>std::is_nothrow_move_constructible&lt;H>::value</c> is <c>true</c>.
                    Then forwards the call to the other <c>operator()</c> member function templates with the first argument being <c>std::move(h)</c>.</effects>
           <returns>The return value of the forwarded call above.</returns>
+        </code-item>
+      </section>
+
+      <section id="csv_source.modifiers">
+        <name><c>csv_source</c> modifiers</name>
+
+        <code-item>
+          <code>
+void swap(csv_source&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;CharInput&amp;>(), std::declval&lt;CharInput&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
+        </code-item>
+      </section>
+
+      <section id="csv_source.special">
+        <name><c>csv_source</c> specialized algorithms</name>
+
+        <code-item>
+          <code>
+template &lt;class CharInput>
+  void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(left.swap(right));
+          </code>
+          <effects><c>left.swap(right)</c>.</effects>
         </code-item>
       </section>
     </section>

@@ -859,8 +859,12 @@ public:
         in_(std::forward<Args>(args)...)
     {}
 
-    csv_source(const csv_source&) = default;
-    csv_source(csv_source&&) = default;
+    csv_source(const csv_source&) noexcept(
+        std::is_nothrow_copy_constructible<CharInput>::value) = default;
+
+    csv_source(csv_source&&) noexcept(
+        std::is_nothrow_move_constructible<CharInput>::value) = default;
+
     ~csv_source() = default;
 
     template <class HandlerR>
@@ -936,7 +940,31 @@ public:
         return (*this)(detail::wrapper_handler<Handler>(
             handler.get()), std::forward<Args>(args)...);
     }
+
+private:
+    // gcc 7.3 can not find this member function at swap's noexcept
+    // if it is placed after swap
+    constexpr static bool noexcept_swap()
+    {
+        using std::swap;
+        return noexcept(
+            swap(std::declval<CharInput&>(), std::declval<CharInput&>()));
+    }
+
+public:
+    void swap(csv_source& other) noexcept(noexcept_swap())
+    {
+        using std::swap;
+        swap(in_, other.in_);
+    }
 };
+
+template <class CharInput>
+void swap(csv_source<CharInput>& left, csv_source<CharInput>& right)
+    noexcept(noexcept(left.swap(right)))
+{
+    left.swap(right);
+}
 
 template <class... Args>
 auto make_csv_source(Args&&... args)

@@ -339,4 +339,21 @@ TEST_F(TestCsvSource, AcceptFullFledged)
     make_csv_source(L"def")(full_fledged<wchar_t>())();
 }
 
+TEST_F(TestCsvSource, Swap)
+{
+    auto abc = make_csv_source("ABC");
+    auto xyz = make_csv_source("XYZ");
+
+    static_assert(noexcept(swap(abc, xyz)), "");
+    swap(abc, xyz);
+
+    std::vector<std::vector<std::string>> field_values;
+    test_collector<char> collector(field_values);
+    abc(std::move(collector))();
+
+    ASSERT_EQ(1, field_values.size());
+    ASSERT_EQ(1, field_values[0].size());
+    ASSERT_STREQ("XYZ", field_values[0][0].c_str());
+}
+
 }
