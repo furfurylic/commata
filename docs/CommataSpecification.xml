@@ -812,7 +812,7 @@ namespace commata {
     explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>* sb);
     explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
     streambuf_input(streambuf_input&amp;&amp; other) noexcept;
-   ~streambuf_input();
+   ~streambuf_input() = default;
 
     <c>// <n><xref id="streambuf_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -913,8 +913,8 @@ namespace commata {
 
     <c>// <n><xref id="owned_streambuf_input.cons"/>, construct/copy/destroy:</n></c>
     explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</nc>);
-    owned_streambuf_input(owned_streambuf_input&amp;&amp; other) noexcept(<nc>see below</nc>);
-   ~owned_streambuf_input();
+    owned_streambuf_input(owned_streambuf_input&amp;&amp; other) = default;
+   ~owned_streambuf_input() = default;
 
     <c>// <n><xref id="owned_streambuf_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -947,14 +947,6 @@ explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</n
           <effects>Initializes <c>in</c> with <c>std::move(sb)</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Streambuf>::value</c>.</remark>
           <note>This constructor can cause a so-called slicing.</note>
-        </code-item>
-
-        <code-item>
-          <code>
-owned_streambuf_input(owned_streambuf_input&amp;&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <effects>Initializes <c>in</c> with <c>std::move(other.in)</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Streambuf>::value</c>.</remark>
         </code-item>
       </section>
 
@@ -1010,8 +1002,8 @@ namespace commata {
 
     <c>// <n><xref id="owned_istream_input.cons"/>, construct/copy/destroy:</n></c>
     explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
-    owned_istream_input(owned_istream_input&amp;&amp; other) noexcept(<nc>see below</nc>);
-   ~owned_istream_input();
+    owned_istream_input(owned_istream_input&amp;&amp; other) = default;
+   ~owned_istream_input() = default;
 
     <c>// <n><xref id="owned_istream_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -1044,14 +1036,6 @@ explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
           <effects>Initializes <c>in</c> with <c>std::move(s)</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;IStream>::value</c>.</remark>
           <note>This constructor can cause a so-called slicing.</note>
-        </code-item>
-
-        <code-item>
-          <code>
-owned_istream_input(owned_istream_input&amp;&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <effects>Initializes <c>in</c> with <c>std::move(other.in)</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;IStream>::value</c>.</remark>
         </code-item>
       </section>
 
@@ -1111,7 +1095,7 @@ namespace commata {
     template &lt;class Allocator>
       explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
     string_input(string_input&amp;&amp; other) noexcept;
-   ~string_input();
+   ~string_input() = default;
 
     <c>// <n><xref id="string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -1228,7 +1212,7 @@ namespace commata {
     <c>// <n><xref id="owned_string_input.cons"/>, construct/copy/destroy:</n></c>
     explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; str) noexcept;
     owned_string_input(owned_string_input&amp;&amp; other) noexcept;
-   ~owned_string_input();
+   ~owned_string_input() = default;
 
     <c>// <n><xref id="owned_string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -1415,9 +1399,9 @@ namespace commata {
   
     <c>// <n><xref id="csv_source.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
-    csv_source(const csv_source&amp; other) noexcept(<nc>see below</nc>);
-    csv_source(csv_source&amp;&amp; other) noexcept(<nc>see below</nc>);
-   ~csv_source();
+    csv_source(const csv_source&amp; other) = default;
+    csv_source(csv_source&amp;&amp; other) = default;
+   ~csv_source() = default;
 
     <c>// <n><xref id="csv_source.inv"/>, invocation:</n></c>
     template &lt;class HandlerR>
@@ -1450,22 +1434,6 @@ template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept
           <remark>This constructor shall not participate in overload resolution if <c>sizeof...(Args)</c> is equal to <c>1</c> and
                   the reference-removed and cv-unqualified type of the first type of <c>args</c> is the same type as <c>csv_source&lt;CharInput></c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;CharInput, Args&amp;&amp;...>::value</c>.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-csv_source(const csv_source&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <effects>Initializes <c>in</c> with <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;CharInput>::value</c>.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-csv_source(csv_source&amp;&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <effects>Initializes <c>in</c> with <c>std::move(other.in)</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;CharInput>::value</c>.</remark>
         </code-item>
       </section>
 

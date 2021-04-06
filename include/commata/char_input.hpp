@@ -107,11 +107,7 @@ public:
         in_(std::move(in))
     {}
 
-    owned_streambuf_input(owned_streambuf_input&& other)
-        noexcept(std::is_nothrow_move_constructible<Streambuf>::value) :
-        in_(std::move(other.in_))
-    {}
-
+    owned_streambuf_input(owned_streambuf_input&& other) = default;
     ~owned_streambuf_input() = default;
 
     size_type operator()(char_type* out, size_type n)
@@ -158,11 +154,7 @@ public:
         in_(std::move(in))
     {}
 
-    owned_istream_input(owned_istream_input&& other)
-        noexcept(std::is_nothrow_move_constructible<IStream>::value) :
-        in_(std::move(other.in_))
-    {}
-
+    owned_istream_input(owned_istream_input&& other) = default;
     ~owned_istream_input() = default;
 
     size_type operator()(char_type* out, size_type n)
