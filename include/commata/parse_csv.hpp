@@ -906,25 +906,24 @@ public:
          && detail::is_without_buffer_control<Handler>::value,
             detail::csv::parser<
                 CharInput,
-                detail::full_fledged_handler<std::remove_reference_t<Handler>,
-                detail::default_buffer_control<Allocator>>>>
+                detail::full_fledged_handler<
+                    Handler, detail::default_buffer_control<Allocator>>>>
     {
-        using handler_t = std::remove_reference_t<Handler>;
         static_assert(
             std::is_same<
-                typename handler_t::char_type,
+                typename Handler::char_type,
                 typename traits_type::char_type>::value,
             "Handler::char_type and traits_type::char_type are "
             "inconsistent; they shall be the same type");
         static_assert(
             std::is_same<
-                typename handler_t::char_type,
+                typename Handler::char_type,
                 typename std::allocator_traits<Allocator>::value_type>::value,
             "Handler::char_type and std::allocator_traits<Allocator>::"
             "value_type are inconsistent; they shall be the same type");
         using buffer_engine_t = detail::default_buffer_control<Allocator>;
         using full_fledged_handler_t =
-            detail::full_fledged_handler<handler_t, buffer_engine_t>;
+            detail::full_fledged_handler<Handler, buffer_engine_t>;
         return detail::csv::parser<CharInput, full_fledged_handler_t>(
                 std::move(in_),
                 full_fledged_handler_t(
