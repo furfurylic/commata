@@ -362,15 +362,14 @@
 #include &lt;string>
 
 namespace commata {
-  class text_error;   <c>// <n>forward declaration</n></c>
-
-  <c>// <n><xref id="text_error_info"/>, class text_error_info:</n></c>
-  class text_error_info;
+  class text_error_info;  <c>// <n>forward declaration</n></c>
 
   <c>// <n><xref id="text_error"/>, class text_error:</n></c>
   class text_error;
 
-  <c>// <n><xref id="text_error_info.char_repr"/>, chracter representations of text_error_info:</n></c>
+  <c>// <n><xref id="text_error_info"/>, class text_error_info:</n></c>
+  class text_error_info;
+
   template &lt;class Tr>
     std::basic_ostream&lt;char, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;char, Tr>&amp; os,
                                              const text_error_info&amp; i);
@@ -405,9 +404,8 @@ namespace commata {
     text_error&amp; set_physical_position(std::size_t row = npos, std::size_t col = npos) noexcept;
     const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noexcept;
 
-    text_error_info info(std::size_t base = 1) const noexcept {
-      return text_error_info(*this, base);
-    }
+    <c>// <n><xref id="text_error.info"/>, textual information:</n></c>
+    text_error_info info(std::size_t base = 1) const noexcept;
   };
 }
       </codeblock>
@@ -490,6 +488,17 @@ const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noex
                   <c>npos</c> shall mean &#x2018;no information.&#x2019;</remark>
         </code-item>
       </section>
+
+      <section id="text_error.info">
+        <name><c>text_error</c> textual information</name>
+
+        <code-item>
+          <code>
+text_error_info info(std::size_t base = 1) const noexcept;
+          </code>
+          <returns><c>text_error_info(*this, base)</c>.</returns>
+        </code-item>
+      </section>
     </section>
 
     <section id="text_error_info">
@@ -510,6 +519,16 @@ namespace commata {
     const text_error* e;  <c>// <n>exposition only</n></c>
     std::size_t b;        <c>// <n>exposition only</n></c>
   };
+
+  <c>// <n><xref id="text_error_info.char_repr"/>, chracter representations:</n></c>
+  template &lt;class Tr>
+    std::basic_ostream&lt;char, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;char, Tr>&amp; os,
+                                             const text_error_info&amp; i);
+  template &lt;class Tr>
+    std::basic_ostream&lt;wchar_t, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;wchar_t, Tr>&amp; os,
+                                                const text_error_info&amp; i);
+  std::string to_string(const text_error_info&amp; i);
+  std::wstring to_wstring(const text_error_info&amp; i);
 }
       </codeblock>
 
@@ -1419,8 +1438,6 @@ namespace commata {
   template &lt;class CharInput> class csv_source;
   template &lt;class CharInput>
     void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(left.swap(right));
-
-  <c>// <n><xref id="csv_source.creation"/>, csv_source creation functions:</n></c>
   template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
     -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
 
@@ -1468,6 +1485,10 @@ namespace commata {
   <c>// <n><xref id="csv_source.special"/>, specialized algorithms:</n></c>
   template &lt;class CharInput>
     void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(left.swap(right));
+
+  <c>// <n><xref id="csv_source.creation"/>, creation functions:</n></c>
+  template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
+    -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
 }
       </codeblock>
 
@@ -2077,7 +2098,6 @@ namespace commata {
   template &lt;class Ch, class Tr = std::char_traits&lt;std::remove_const_t&lt;Ch>>>
     class basic_stored_value;
 
-  <c>// <n><xref id="basic_stored_value.comparison"/>, basic_stored_value comparison functions:</n></c>
   template &lt;class ChL, class ChR, class Tr>
     bool operator==(const basic_stored_value&lt;ChL, Tr>&amp; l,
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
@@ -2087,7 +2107,6 @@ namespace commata {
   template &lt;class ChC, class Tr, class Other>
     bool operator==(const Other&amp;                       o,
                     const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
-
   template &lt;class ChL, class ChR, class Tr>
     bool operator!=(const basic_stored_value&lt;ChL, Tr>&amp; l,
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
@@ -2097,7 +2116,6 @@ namespace commata {
   template &lt;class ChC, class Tr, class Other>
     bool operator!=(const Other&amp;                       o,
                     const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
-
   template &lt;class ChL, class ChR, class Tr>
     bool operator&lt; (const basic_stored_value&lt;ChL, Tr>&amp; l,
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
@@ -2107,7 +2125,6 @@ namespace commata {
   template &lt;class ChC, class Tr, class Other>
     bool operator&lt; (const Other&amp;                       o,
                     const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
-
   template &lt;class ChL, class ChR, class Tr>
     bool operator> (const basic_stored_value&lt;ChL, Tr>&amp; l,
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
@@ -2117,7 +2134,6 @@ namespace commata {
   template &lt;class ChC, class Tr, class Other>
     bool operator> (const Other&amp;                       l,
                     const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
-
   template &lt;class ChL, class ChR, class Tr>
     bool operator&lt;=(const basic_stored_value&lt;ChL, Tr>&amp; l,
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
@@ -2127,7 +2143,6 @@ namespace commata {
   template &lt;class ChC, class Tr, class Other>
     bool operator&lt;=(const Other&amp;                       l,
                     const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
-
   template &lt;class ChL, class ChR, class Tr>
     bool operator>=(const basic_stored_value&lt;ChL, Tr>&amp; l,
                     const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
@@ -2138,12 +2153,10 @@ namespace commata {
     bool operator>=(const Other&amp;                       l,
                     const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
 
-  <c>// <n><xref id="basic_stored_value.inserter"/>, basic_stored_value inserters:</n></c>
   template &lt;class ChC, class Tr>
     std::basic_ostream&lt;std::remove_const_t&lt;ChC>, Tr>&amp; operator&lt;&lt;(
       std::basic_ostream&lt;ChC, Tr>&amp; os, const basic_stored_value&lt;ChC, Tr>&amp; o);
 
-  <c>// <n><xref id="basic_stored_value.conversion"/>, basic_stored_value conversion:</n></c>
   template &lt;class ChC, class Tr, class Allocator>
     std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
       const basic_stored_value&lt;ChC, Tr>&amp;                                left,
@@ -2160,17 +2173,14 @@ namespace commata {
     std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
       std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      left,
       const basic_stored_value&lt;ChC, Tr>&amp;                                right);
-
   template &lt;class ChC, class Tr, class Allocator>
     std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; operator+=(
       std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;       left,
       const basic_stored_value&lt;ChC, Tr>&amp;                                right);
-
   template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove_const&lt;Ch>>>
     std::basic_string&lt;std::remove_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>, Allocator>
       to_string(basic_stored_value&lt;Ch, Tr>&amp; o, const Allocator&amp; alloc = Allocator());
 
-  <c>// <n><xref id="basic_stored_value.swap"/>, basic_stored_value specialized algorithms:</n></c>
   template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; left,
                                           basic_stored_value&lt;Ch, Tr>&amp; right) noexcept;
 
@@ -2182,7 +2192,6 @@ namespace commata {
   <c>// <n><xref id="basic_stored_table"/>, basic_stored_table:</n></c>
   template &lt;class Content, class Allocator = std::allocator&lt;Content>> class basic_stored_table;
 
-  <c>// <n><xref id="basic_stored_table.nonmember"/>, basic_stored_table non-member functions:</n></c>
   template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
     basic_stored_table&lt;ContentL, AllocatorL>
       operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
@@ -2200,7 +2209,6 @@ namespace commata {
       operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
                       basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
 
-  <c>// <n><xref id="basic_stored_table.swap"/>, basic_stored_table specialized algorithms:</n></c>
   template &lt;class Content, class Allocator>
     void swap(basic_stored_table&lt;Content, Allocator>&amp; left,
               basic_stored_table&lt;Content, Allocator>&amp; right)
@@ -2220,7 +2228,6 @@ namespace commata {
             std::underlying_type_t&lt;stored_table_builder_option> Options = 0>
     class stored_table_builder;
 
-  <c>// <n><xref id="stored_table_builder.creation"/>, stored_table_builder creation functions:</n></c>
   template &lt;class Content, class Allocator, class... Args>
     <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
                                         Args... args);
@@ -2329,6 +2336,103 @@ namespace commata {
     Ch* b;    <c>// <n>exposition only</n></c>
     Ch* e;    <c>// <n>exposition only</n></c>
   };
+
+  <c>// <n><xref id="basic_stored_value.comparison"/>, comparison functions:</n></c>
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator==(const basic_stored_value&lt;ChL, Tr>&amp; l,
+                    const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
+  template &lt;class ChC, class Tr, class Other>
+    bool operator==(const basic_stored_value&lt;ChC, Tr>&amp; v,
+                    const Other&amp;                       o) noexcept(<nc>see below</nc>);
+  template &lt;class ChC, class Tr, class Other>
+    bool operator==(const Other&amp;                       o,
+                    const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
+
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator!=(const basic_stored_value&lt;ChL, Tr>&amp; l,
+                    const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
+  template &lt;class ChC, class Tr, class Other>
+    bool operator!=(const basic_stored_value&lt;ChC, Tr>&amp; v,
+                    const Other&amp;                       o) noexcept(<nc>see below</nc>);
+  template &lt;class ChC, class Tr, class Other>
+    bool operator!=(const Other&amp;                       o,
+                    const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
+
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator&lt; (const basic_stored_value&lt;ChL, Tr>&amp; l,
+                    const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
+  template &lt;class ChC, class Tr, class Other>
+    bool operator&lt; (const basic_stored_value&lt;ChC, Tr>&amp; v,
+                    const Other&amp;                       o) noexcept(<nc>see below</nc>);
+  template &lt;class ChC, class Tr, class Other>
+    bool operator&lt; (const Other&amp;                       o,
+                    const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
+
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator> (const basic_stored_value&lt;ChL, Tr>&amp; l,
+                    const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
+  template &lt;class ChC, class Tr, class Other>
+    bool operator> (const basic_stored_value&lt;ChC, Tr>&amp; l,
+                    const Other&amp;                       r) noexcept(<nc>see below</nc>);
+  template &lt;class ChC, class Tr, class Other>
+    bool operator> (const Other&amp;                       l,
+                    const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
+
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator&lt;=(const basic_stored_value&lt;ChL, Tr>&amp; l,
+                    const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
+  template &lt;class ChC, class Tr, class Other>
+    bool operator&lt;=(const basic_stored_value&lt;ChC, Tr>&amp; l,
+                    const Other&amp;                       r) noexcept(<nc>see below</nc>);
+  template &lt;class ChC, class Tr, class Other>
+    bool operator&lt;=(const Other&amp;                       l,
+                    const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
+
+  template &lt;class ChL, class ChR, class Tr>
+    bool operator>=(const basic_stored_value&lt;ChL, Tr>&amp; l,
+                    const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
+  template &lt;class ChC, class Tr, class Other>
+    bool operator>=(const basic_stored_value&lt;ChC, Tr>&amp; l,
+                    const Other&amp;                       r) noexcept(<nc>see below</nc>);
+  template &lt;class ChC, class Tr, class Other>
+    bool operator>=(const Other&amp;                       l,
+                    const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
+
+  <c>// <n><xref id="basic_stored_value.inserter"/>, inserters:</n></c>
+  template &lt;class ChC, class Tr>
+    std::basic_ostream&lt;std::remove_const_t&lt;ChC>, Tr>&amp; operator&lt;&lt;(
+      std::basic_ostream&lt;ChC, Tr>&amp; os, const basic_stored_value&lt;ChC, Tr>&amp; o);
+
+  <c>// <n><xref id="basic_stored_value.conversion"/>, conversion:</n></c>
+  template &lt;class ChC, class Tr, class Allocator>
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+      const basic_stored_value&lt;ChC, Tr>&amp;                                left,
+      const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; right);
+  template &lt;class ChC, class Tr, class Allocator>
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+      const basic_stored_value&lt;ChC, Tr>&amp;                                left,
+      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      right);
+  template &lt;class ChC, class Tr, class Allocator>
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+      const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; left,
+      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
+  template &lt;class ChC, class Tr, class Allocator>
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
+      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      left,
+      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
+
+  template &lt;class ChC, class Tr, class Allocator>
+    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; operator+=(
+      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;       left,
+      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
+
+  template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove_const&lt;Ch>>>
+    std::basic_string&lt;std::remove_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>, Allocator>
+      to_string(basic_stored_value&lt;Ch, Tr>&amp; o, const Allocator&amp; alloc = Allocator());
+
+  <c>// <n><xref id="basic_stored_value.swap"/>, specialized algorithms:</n></c>
+  template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; left,
+                                          basic_stored_value&lt;Ch, Tr>&amp; right) noexcept;
 }
       </codeblock>
 
@@ -2906,6 +3010,30 @@ namespace commata {
       }
     };
   };
+
+  <c>// <n><xref id="basic_stored_table.nonmember"/>, non-member functions:</n></c>
+  template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+    basic_stored_table&lt;ContentL, AllocatorL>
+      operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
+                const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
+  template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+    basic_stored_table&lt;ContentL, AllocatorL>
+      operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
+                      basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
+  template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+    basic_stored_table&lt;ContentL, AllocatorL>
+      operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
+                const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
+  template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
+    basic_stored_table&lt;ContentL, AllocatorL>
+      operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
+                      basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
+
+  <c>// <n><xref id="basic_stored_table.swap"/>, specialized algorithms:</n></c>
+  template &lt;class Content, class Allocator>
+    void swap(basic_stored_table&lt;Content, Allocator>&amp; left,
+              basic_stored_table&lt;Content, Allocator>&amp; right)
+      noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value);
 }
         </codeblock>
 
@@ -3456,6 +3584,14 @@ namespace commata {
     void update(const char_type* first, const char_type* last);
     void finalize(const char_type* first, const char_type* last);
   };
+
+  <c>// <n><xref id="stored_table_builder.creation"/>, creation functions:</n></c>
+  template &lt;class Content, class Allocator, class... Args>
+    <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
+                                        Args... args);
+  template &lt;class Content, class Allocator, class... Args>
+    <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
+                                                   Args... args);
 }
       </codeblock>
 
@@ -5406,7 +5542,6 @@ namespace commata {
             class Allocator = std::allocator&lt;typename TextSource::char_type>>
     class text_pull;
 
-  <c>// <n><xref id="text_pull.comparison"/>, text_pull comparison functions:</n></c>
   template &lt;class TextSourceL, class TextSourceR,
             class AllocatorL, class AllocatorR>
     bool operator==(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
@@ -5417,7 +5552,6 @@ namespace commata {
   template &lt;class TextSource, class Allocator, class Other>
     bool operator==(const Other&amp;                              o,
                     const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
-
   template &lt;class TextSourceL, class TextSourceR,
             class AllocatorL, class AllocatorR>
     bool operator!=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
@@ -5428,7 +5562,6 @@ namespace commata {
   template &lt;class TextSource, class Allocator, class Other>
     bool operator!=(const Other&amp;                              l,
                     const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-
   template &lt;class TextSourceL, class TextSourceR,
             class AllocatorL, class AllocatorR>
     bool operator&lt; (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
@@ -5439,7 +5572,6 @@ namespace commata {
   template &lt;class TextSource, class Allocator, class Other>
     bool operator&lt; (const Other&amp;                              l,
                     const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-
   template &lt;class TextSourceL, class TextSourceR,
             class AllocatorL, class AllocatorR>
     bool operator> (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
@@ -5450,7 +5582,6 @@ namespace commata {
   template &lt;class TextSource, class Allocator, class Other>
     bool operator> (const Other&amp;                              l,
                     const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-
   template &lt;class TextSourceL, class TextSourceR,
             class AllocatorL, class AllocatorR>
     bool operator&lt;=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
@@ -5461,7 +5592,6 @@ namespace commata {
   template &lt;class TextSource, class Allocator, class Other>
     bool operator&lt;=(const Other&amp;                              l,
                     const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-
   template &lt;class TextSourceL, class TextSourceR,
             class AllocatorL, class AllocatorR>
     bool operator>=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
@@ -5473,14 +5603,12 @@ namespace commata {
     bool operator>=(const Other&amp;                              l,
                     const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
-  <c>// <n><xref id="text_pull.io"/>, <c>text_pull</c> inserters:</n></c>
   template &lt;class TextSource, class Allocator>
     std::basic_ostream&lt;typename TextSource::char_type, typename TextSource::traits_type>&amp;
       operator&lt;&lt;(std::basic_ostream&lt;typename TextSource::char_type,
                                     typename TextSource::traits_type>&amp; os,
                  const text_pull&lt;TextSource, Allocator>&amp; o);
 
-  <c>// <n><xref id="text_pull.conversion"/>, text_pull conversion:</n></c>
   template &lt;class TextSource, class Allocator, class OtherAllocator>
     std::basic_string&lt;typename TextSource::char_type,
                       typename TextSource::traits_type, OtherAllocator>
@@ -5505,14 +5633,12 @@ namespace commata {
       operator+(std::basic_string&lt;typename TextSource::char_type,
                                   typename TextSource::traits_type, OtherAllocator>&amp;&amp; left,
                 const text_pull&lt;TextSource, Allocator>&amp; right);
-
   template &lt;class TextSource, class Allocator, class OtherAllocator>
     std::basic_string&lt;typename TextSource::char_type,
                       typename TextSource::traits_type, OtherAllocator>&amp;
       operator+=(std::basic_string&lt;typename TextSource::char_type,
                                    typename TextSource::traits_type, OtherAllocator>&amp; left,
-                const text_pull&lt;TextSource, Allocator>&amp; right);
-
+                 const text_pull&lt;TextSource, Allocator>&amp; right);
   template &lt;class TextSource, class Allocator,
             class OtherAllocator = std::allocator&lt;typename TextSource::char_type>>
     std::basic_string&lt;typename TextSource::char_type,
@@ -5521,7 +5647,6 @@ namespace commata {
       to_string(const text_pull&lt;TextSource, Allocator>&amp; o,
                 const OtherAllocator&amp; alloc = Allocator());
 
-  <c>// <n><xref id="text_pull.creation"/>, text_pull creation functions:</n></c>
   template &lt;class TextSource, class... Appendices>
     text_pull&lt;std::decay_t&lt;TextSource>>
       make_text_pull(TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
@@ -5529,6 +5654,7 @@ namespace commata {
     text_pull&lt;std::decay_t&lt;TextSource>, Allocator>
       make_text_pull(std::allocator_arg_t, const Allocator&amp; alloc,
                      TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+}
       </codeblock>
     </section>
 
@@ -5946,6 +6072,130 @@ namespace commata {
     <c>// <n><xref id="text_pull.rethrow"/>, caught exception access:</n></c>
     void rethrow_suppressed();
   };
+
+  <c>// <n><xref id="text_pull.comparison"/>, text_pull comparison functions:</n></c>
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator==(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator==(const text_pull&lt;TextSource, Allocator>&amp;   v,
+                    const Other&amp;                              o) noexcept(<nc>see below</nc>);
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator==(const Other&amp;                              o,
+                    const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
+
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator!=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator!=(const text_pull&lt;TextSource, Allocator>&amp;   l,
+                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator!=(const Other&amp;                              l,
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator&lt; (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator&lt; (const text_pull&lt;TextSource, Allocator>&amp;   l,
+                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator&lt; (const Other&amp;                              l,
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator> (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator> (const text_pull&lt;TextSource, Allocator>&amp;   l,
+                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator> (const Other&amp;                              l,
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator&lt;=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator&lt;=(const text_pull&lt;TextSource, Allocator>&amp;   l,
+                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator&lt;=(const Other&amp;                              l,
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+
+  template &lt;class TextSourceL, class TextSourceR,
+            class AllocatorL, class AllocatorR>
+    bool operator>=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator>=(const text_pull&lt;TextSource, Allocator>&amp;   l,
+                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
+  template &lt;class TextSource, class Allocator, class Other>
+    bool operator>=(const Other&amp;                              l,
+                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+
+  <c>// <n><xref id="text_pull.io"/>, <c>text_pull</c> inserters:</n></c>
+  template &lt;class TextSource, class Allocator>
+    std::basic_ostream&lt;typename TextSource::char_type, typename TextSource::traits_type>&amp;
+      operator&lt;&lt;(std::basic_ostream&lt;typename TextSource::char_type,
+                                    typename TextSource::traits_type>&amp; os,
+                 const text_pull&lt;TextSource, Allocator>&amp; o);
+
+  <c>// <n><xref id="text_pull.conversion"/>, text_pull conversion:</n></c>
+  template &lt;class TextSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TextSource::char_type,
+                      typename TextSource::traits_type, OtherAllocator>
+      operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
+                const std::basic_string&lt;typename TextSource::char_type,
+                                        typename TextSource::traits_type, OtherAllocator>&amp; right);
+  template &lt;class TextSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TextSource::char_type,
+                      typename TextSource::traits_type, OtherAllocator>
+      operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
+                std::basic_string&lt;typename TextSource::char_type,
+                                  typename TextSource::traits_type, OtherAllocator>&amp;&amp; right);
+  template &lt;class TextSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TextSource::char_type,
+                      typename TextSource::traits_type, OtherAllocator>
+      operator+(const std::basic_string&lt;typename TextSource::char_type,
+                                        typename TextSource::traits_type, OtherAllocator>&amp; left,
+                const text_pull&lt;TextSource, Allocator>&amp; right);
+  template &lt;class TextSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TextSource::char_type,
+                      typename TextSource::traits_type, OtherAllocator>
+      operator+(std::basic_string&lt;typename TextSource::char_type,
+                                  typename TextSource::traits_type, OtherAllocator>&amp;&amp; left,
+                const text_pull&lt;TextSource, Allocator>&amp; right);
+
+  template &lt;class TextSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TextSource::char_type,
+                      typename TextSource::traits_type, OtherAllocator>&amp;
+      operator+=(std::basic_string&lt;typename TextSource::char_type,
+                                   typename TextSource::traits_type, OtherAllocator>&amp; left,
+                 const text_pull&lt;TextSource, Allocator>&amp; right);
+
+  template &lt;class TextSource, class Allocator,
+            class OtherAllocator = std::allocator&lt;typename TextSource::char_type>>
+    std::basic_string&lt;typename TextSource::char_type,
+                      std::char_traits&lt;typename TextSource::char_type>,
+                      OtherAllocator>
+      to_string(const text_pull&lt;TextSource, Allocator>&amp; o,
+                const OtherAllocator&amp; alloc = Allocator());
+
+  <c>// <n><xref id="text_pull.creation"/>, text_pull creation functions:</n></c>
+  template &lt;class TextSource, class... Appendices>
+    text_pull&lt;std::decay_t&lt;TextSource>>
+      make_text_pull(TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+  template &lt;class TextSource, class Allocator, class... Appendices>
+    text_pull&lt;std::decay_t&lt;TextSource>, Allocator>
+      make_text_pull(std::allocator_arg_t, const Allocator&amp; alloc,
+                     TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
 }
       </codeblock>
 
