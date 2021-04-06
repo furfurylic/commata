@@ -302,7 +302,7 @@ public:
     {}
 
     owned_string_input(owned_string_input&& other) noexcept :
-        s_(std::move(other)), head_(other.head_)
+        s_(std::move(other.s_)), head_(other.head_)
     {
         other.head_ = other.s_.size();
     }

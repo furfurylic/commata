@@ -859,13 +859,11 @@ public:
         in_(std::forward<Args>(args)...)
     {}
 
-    csv_source(const csv_source&) noexcept(
-        std::is_nothrow_copy_constructible<CharInput>::value) = default;
-
-    csv_source(csv_source&&) noexcept(
-        std::is_nothrow_move_constructible<CharInput>::value) = default;
-
+    csv_source(const csv_source&)  = default;
+    csv_source(csv_source&&) = default;
     ~csv_source() = default;
+    csv_source& operator=(const csv_source&) = default;
+    csv_source& operator=(csv_source&&) = default;
 
     template <class HandlerR>
     auto operator()(HandlerR&& handler)

@@ -1445,6 +1445,8 @@ namespace commata {
     csv_source(const csv_source&amp; other) = default;
     csv_source(csv_source&amp;&amp; other) = default;
    ~csv_source() = default;
+    csv_source&amp; operator=(const csv_source&amp; other) = default;
+    csv_source&amp; operator=(csv_source&amp;&amp; other) = default;
 
     <c>// <n><xref id="csv_source.inv"/>, invocation:</n></c>
     template &lt;class HandlerR>
