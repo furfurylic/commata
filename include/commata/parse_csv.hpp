@@ -458,9 +458,13 @@ class full_fledged_handler :
 public:
     using char_type = typename Handler::char_type;
 
-    explicit full_fledged_handler(Handler&& handler,
+    template <class HandlerR,
+        std::enable_if_t<
+            std::is_same<Handler, std::decay_t<HandlerR>>::value,
+            std::nullptr_t> = nullptr>
+    explicit full_fledged_handler(HandlerR&& handler,
         BufferControl&& buffer_engine = BufferControl())
-        noexcept(std::is_nothrow_move_constructible<Handler>::value) :
+        noexcept(std::is_nothrow_constructible<Handler, HandlerR&&>::value) :
         BufferControl(std::move(buffer_engine)),
         handler_(std::move(handler))
     {}
@@ -865,76 +869,172 @@ public:
     csv_source& operator=(const csv_source&) = default;
     csv_source& operator=(csv_source&&) = default;
 
-    template <class HandlerR>
-    auto operator()(HandlerR&& handler)
-        noexcept(
-            std::is_nothrow_move_constructible<std::decay_t<HandlerR>>::value)
-     -> std::enable_if_t<
-            !detail::is_std_reference_wrapper<std::decay_t<HandlerR>>::value
-         && detail::is_with_buffer_control<std::decay_t<HandlerR>>::value,
-            detail::csv::parser<
-                CharInput,
-                std::conditional_t<
-                    detail::is_full_fledged<std::decay_t<HandlerR>>::value,
-                    std::decay_t<HandlerR>,
-                    detail::full_fledged_handler<
-                        std::decay_t<HandlerR>, detail::thru_buffer_control>>>>
+private:
+    template <class Handler>
+    class without_allocator
     {
-        using handler_t = std::decay_t<HandlerR>;
-        static_assert(
-            std::is_same<
-                typename handler_t::char_type,
-                typename traits_type::char_type>::value,
-            "std::decay_t<HandlerR>::char_type and traits_type::char_type are "
-            "inconsistent; they shall be the same type");
-        using full_fledged_handler_t = std::conditional_t<
-            detail::is_full_fledged<handler_t>::value,
-            handler_t,
-            detail::full_fledged_handler<
-                handler_t, detail::thru_buffer_control>>;
-        return detail::csv::parser<CharInput, full_fledged_handler_t>(
-                std::move(in_),
-                full_fledged_handler_t(std::forward<HandlerR>(handler)));
+        using handler_t = std::decay_t<Handler>;
+
+    public:
+        static constexpr bool enabled =
+            !detail::is_std_reference_wrapper<handler_t>::value
+         && detail::is_with_buffer_control<handler_t>::value;
+
+        using full_fledged_handler_t =
+            std::conditional_t<
+                detail::is_full_fledged<handler_t>::value,
+                handler_t,
+                detail::full_fledged_handler<
+                    handler_t, detail::thru_buffer_control>>;
+
+        using ret_t =
+            detail::csv::parser<CharInput, full_fledged_handler_t>;
+
+        template <class HandlerR, class CharInputR>
+        static auto invoke(HandlerR&& handler, CharInputR&& in)
+        {
+            static_assert(
+                std::is_same<handler_t, std::decay_t<HandlerR>>::value, "");
+            static_assert(
+                std::is_same<
+                    typename std::decay_t<Handler>::char_type,
+                    typename traits_type::char_type>::value,
+                "std::decay_t<Handler>::char_type and traits_type::char_type "
+                "are inconsistent; they shall be the same type");
+            using specs_t = without_allocator<Handler>;
+            return ret_t(
+                    std::forward<CharInputR>(in),
+                    typename specs_t::full_fledged_handler_t(
+                        std::forward<Handler>(handler)));
+        }
+    };
+
+public:
+    template <class Handler>
+    using parser_type = typename without_allocator<Handler>::ret_t;
+
+    template <class Handler>
+    auto operator()(Handler&& handler) const&
+        noexcept(
+            std::is_nothrow_constructible<
+                std::decay_t<Handler>, Handler>::value
+         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
+         && std::is_nothrow_copy_constructible<CharInput>::value)
+     -> std::enable_if_t<without_allocator<Handler>::enabled,
+            parser_type<std::decay_t<Handler>>>
+    {
+        return without_allocator<Handler>::invoke(
+            std::forward<Handler>(handler), in_);
+    }
+
+    template <class Handler>
+    auto operator()(Handler&& handler) &&
+        noexcept(
+            std::is_nothrow_constructible<
+                std::decay_t<Handler>, Handler>::value
+         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
+         && std::is_nothrow_move_constructible<CharInput>::value)
+     -> std::enable_if_t<without_allocator<Handler>::enabled,
+            parser_type<std::decay_t<Handler>>>
+    {
+        return without_allocator<Handler>::invoke(
+            std::forward<Handler>(handler), std::move(in_));
+    }
+
+private:
+    template <class Handler, class Allocator>
+    class with_allocator
+    {
+        using handler_t = std::decay_t<Handler>;
+
+        using buffer_engine_t = detail::default_buffer_control<Allocator>;
+
+        using full_fledged_handler_t =
+            detail::full_fledged_handler<handler_t, buffer_engine_t>;
+
+    public:
+        static constexpr bool enabled =
+            !detail::is_std_reference_wrapper<handler_t>::value
+         && detail::is_without_buffer_control<handler_t>::value;
+
+        using ret_t = detail::csv::parser<CharInput, full_fledged_handler_t>;
+
+        template <class HandlerR, class CharInputR>
+        static auto invoke(HandlerR&& handler,
+            std::size_t buffer_size, const Allocator& alloc, CharInputR&& in)
+        {
+            static_assert(
+                std::is_same<
+                    typename handler_t::char_type,
+                    typename traits_type::char_type>::value,
+                "std::decay_t<Handler>::char_type and traits_type::char_type "
+                "are inconsistent; they shall be the same type");
+            static_assert(
+                std::is_same<
+                    typename handler_t::char_type,
+                    typename std::allocator_traits<Allocator>::value_type>
+                        ::value,
+                "std::decay_t<Handler>::char_type and "
+                "std::allocator_traits<Allocator>::value_type are "
+                "inconsistent; they shall be the same type");
+            return ret_t(
+                    std::forward<CharInputR>(in),
+                    full_fledged_handler_t(
+                        std::forward<HandlerR>(handler),
+                        buffer_engine_t(buffer_size, alloc)));
+        }
+    };
+
+public:
+    template <class Handler, class Allocator = std::allocator<char_type>>
+    auto operator()(Handler&& handler, std::size_t buffer_size = 0,
+            const Allocator& alloc = Allocator()) const&
+        noexcept(
+            std::is_nothrow_constructible<
+                std::decay_t<Handler>, Handler>::value
+         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
+         && std::is_nothrow_copy_constructible<CharInput>::value)
+     -> std::enable_if_t<
+            with_allocator<Handler, Allocator>::enabled,
+            typename with_allocator<Handler, Allocator>::ret_t>
+    {
+        return with_allocator<Handler, Allocator>::invoke(
+            std::forward<Handler>(handler),
+            buffer_size, std::move(alloc), in_);
     }
 
     template <class Handler, class Allocator = std::allocator<char_type>>
-    auto operator()(Handler handler,
-        std::size_t buffer_size = 0, const Allocator& alloc = Allocator())
-        noexcept(std::is_nothrow_move_constructible<Handler>::value)
+    auto operator()(Handler&& handler,
+        std::size_t buffer_size = 0, const Allocator& alloc = Allocator()) &&
+        noexcept(
+            std::is_nothrow_constructible<
+                std::decay_t<Handler>, Handler>::value
+         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
+         && std::is_nothrow_move_constructible<CharInput>::value)
      -> std::enable_if_t<
-            !detail::is_std_reference_wrapper<Handler>::value
-         && detail::is_without_buffer_control<Handler>::value,
-            detail::csv::parser<
-                CharInput,
-                detail::full_fledged_handler<
-                    Handler, detail::default_buffer_control<Allocator>>>>
+            with_allocator<Handler, Allocator>::enabled,
+            typename with_allocator<Handler, Allocator>::ret_t>
     {
-        static_assert(
-            std::is_same<
-                typename Handler::char_type,
-                typename traits_type::char_type>::value,
-            "Handler::char_type and traits_type::char_type are "
-            "inconsistent; they shall be the same type");
-        static_assert(
-            std::is_same<
-                typename Handler::char_type,
-                typename std::allocator_traits<Allocator>::value_type>::value,
-            "Handler::char_type and std::allocator_traits<Allocator>::"
-            "value_type are inconsistent; they shall be the same type");
-        using buffer_engine_t = detail::default_buffer_control<Allocator>;
-        using full_fledged_handler_t =
-            detail::full_fledged_handler<Handler, buffer_engine_t>;
-        return detail::csv::parser<CharInput, full_fledged_handler_t>(
-                std::move(in_),
-                full_fledged_handler_t(
-                    std::move(handler), buffer_engine_t(buffer_size, alloc)));
+        return with_allocator<Handler, Allocator>::invoke(
+            std::forward<Handler>(handler),
+            buffer_size, std::move(alloc), std::move(in_));
     }
 
     template <class Handler, class... Args>
     auto operator()(const std::reference_wrapper<Handler>& handler,
-        Args&&... args) noexcept
+            Args&&... args) const&
+        noexcept(std::is_nothrow_copy_constructible<CharInput>::value)
     {
         return (*this)(detail::wrapper_handler<Handler>(
+            handler.get()), std::forward<Args>(args)...);
+    }
+
+    template <class Handler, class... Args>
+    auto operator()(const std::reference_wrapper<Handler>& handler,
+            Args&&... args) &&
+        noexcept(std::is_nothrow_move_constructible<CharInput>::value)
+    {
+        return std::move(*this)(detail::wrapper_handler<Handler>(
             handler.get()), std::forward<Args>(args)...);
     }
 

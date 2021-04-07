@@ -127,6 +127,7 @@ private:
 
 public:
     pull_handler(const pull_handler& other) = delete;
+    pull_handler(pull_handler&& other) = default;
 
     ~pull_handler()
     {
@@ -390,9 +391,15 @@ private:
     using handler_at_t = std::allocator_traits<handler_a_t>;
     using handler_p_t = typename handler_at_t::pointer;
 
-    using parser_t =
-        decltype(std::declval<TextSource&>()(
-            std::declval<detail::wrapper_handler<handler_t>>()));
+    static_assert(std::is_same<
+        decltype(std::declval<const TextSource&>()(
+            std::declval<detail::wrapper_handler<handler_t>>())),
+        decltype(std::declval<TextSource>()(
+            std::declval<detail::wrapper_handler<handler_t>>()))>::value,
+        "");
+
+    using parser_t = typename TextSource::template parser_type<
+        detail::wrapper_handler<handler_t>>;
 
     std::size_t i_sq_;
     std::size_t i_dq_;
@@ -410,18 +417,29 @@ public:
 
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
-    explicit primitive_text_pull(TextSource in, std::size_t buffer_size = 0) :
+    template <class TextSourceR,
+        std::enable_if_t<
+            std::is_same<
+                TextSource,
+                std::remove_const_t<
+                    std::remove_reference_t<TextSourceR>>>::value,
+            std::nullptr_t> = nullptr>
+    explicit primitive_text_pull(
+        TextSourceR&& in, std::size_t buffer_size = 0) :
         primitive_text_pull(std::allocator_arg, Allocator(),
-            std::move(in), buffer_size)
+            std::forward<TextSourceR>(in), buffer_size)
     {}
 
+    template <class TextSourceR>
     primitive_text_pull(std::allocator_arg_t, const Allocator& alloc,
-        TextSource in, std::size_t buffer_size = 0) :
+        TextSourceR&& in, std::size_t buffer_size = 0) :
         i_sq_(0), i_dq_(0),
         handler_(create_handler(alloc,
             std::allocator_arg, alloc, buffer_size)),
         sq_(&handler_->state_queue()), dq_(&handler_->data_queue()),
-        ap_(alloc, in(detail::wrapper_handler<handler_t>(*handler_)))
+        ap_(alloc,
+            std::forward<TextSourceR>(in)(
+                detail::wrapper_handler<handler_t>(*handler_)))
     {
         sq_->emplace_back(
             primitive_text_pull_state::before_parse,
@@ -686,14 +704,22 @@ public:
 
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
-    explicit text_pull(TextSource in,
-        std::size_t buffer_size = 0) :
-        text_pull(std::allocator_arg, Allocator(), std::move(in), buffer_size)
+    template <class TextSourceR,
+        std::enable_if_t<
+            std::is_same<
+                TextSource,
+                std::remove_const_t<
+                    std::remove_reference_t<TextSourceR>>>::value,
+            std::nullptr_t> = nullptr>
+    explicit text_pull(TextSourceR&& in, std::size_t buffer_size = 0) :
+        text_pull(std::allocator_arg, Allocator(),
+            std::forward<TextSourceR>(in), buffer_size)
     {}
 
+    template <class TextSourceR>
     text_pull(std::allocator_arg_t, const Allocator& alloc,
-        TextSource in, std::size_t buffer_size = 0) :
-        p_(std::allocator_arg, alloc, std::move(in),
+        TextSourceR&& in, std::size_t buffer_size = 0) :
+        p_(std::allocator_arg, alloc, std::forward<TextSourceR>(in),
             ((buffer_size > 1) ? buffer_size : 2)),
         empty_physical_line_aware_(false), suppresses_error_(false),
         last_state_(text_pull_state::before_parse), last_(empty_string()),

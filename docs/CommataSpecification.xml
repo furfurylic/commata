@@ -1458,6 +1458,7 @@ namespace commata {
   public:
     using char_type = typename CharInput::char_type;
     using traits_type = typename CharInput::traits_type;
+    template &lt;class Handler> using parser_type = <nc>unspecified</nc>;
   
     <c>// <n><xref id="csv_source.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
@@ -1469,13 +1470,21 @@ namespace commata {
 
     <c>// <n><xref id="csv_source.inv"/>, invocation:</n></c>
     template &lt;class HandlerR>
-      <nc>unspecified</nc> operator()(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
+      parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
+    template &lt;class HandlerR>
+      parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class HandlerR, class Allocator = std::allocator&lt;Ch>>
-      <nc>unspecified</nc> operator()(Handler&amp;&amp; handler, std::size_t buffer_size = 0,
-                             const Allocator&amp; alloc = Allocator()) noexcept(<nc>see below</nc>);
+      <nc>unspecified</nc> operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
+                             const Allocator&amp; alloc = Allocator()) const&amp; noexcept(<nc>see below</nc>);
+    template &lt;class HandlerR, class Allocator = std::allocator&lt;Ch>>
+      <nc>unspecified</nc> operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
+                             const Allocator&amp; alloc = Allocator()) &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
       <nc>unspecified</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
-                             Args&amp;&amp;... args) noexcept;
+                             Args&amp;&amp;... args) const&amp; noexcept;
+    template &lt;class Handler, class... Args>
+      <nc>unspecified</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
+                             Args&amp;&amp;... args) &amp;&amp; noexcept;
 
     <c>// <n><xref id="csv_source.modifiers"/>, modifiers:</n></c>
     void swap(csv_source&amp; other) noexcept(<nc>see below</nc>);
@@ -1518,53 +1527,63 @@ template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept
         <code-item>
           <code>
 template &lt;class HandlerR>
-  <nc>unspecified</nc> operator()(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
+  parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
+template &lt;class HandlerR>
+  parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</requires>
           <returns>A text parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.
-                   <c>p</c> holds <c>in</c> as its tied character input and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler.
-                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (<c>&amp;</c> ref-qualifier version) or <c>std::move(in)</c> (<c>&amp;&amp;</c> ref-qualifier version) as its tied character input
+                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler.
+                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
                    Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied text handler object.
                    <c>P</c> implements the optional <c>TextParser</c> operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
-          <remark>This member function template shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and has both of <c>get_buffer</c> and <c>release_buffer</c> member functions
+          <remark>These member function templates shall not participate in overload resolution unless the reference-removed and cv-unqualified type of <c>HandlerR</c> is not an instance of <c>std::reference_wrapper</c> and has both of <c>get_buffer</c> and <c>release_buffer</c> member functions
                   that have signatures and return types compatible with <c>TextHandler</c> requirements.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value &amp;&amp; std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
 template &lt;class HandlerR, class Allocator = std::allocator&lt;Ch>>
   <nc>unspecified</nc> operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
-                         const Allocator&amp; alloc = Allocator()) noexcept(<nc>see below</nc>);
+                         const Allocator&amp; alloc = Allocator()) const&amp; noexcept(<nc>see below</nc>);
+template &lt;class HandlerR, class Allocator = std::allocator&lt;Ch>>
+  <nc>unspecified</nc> operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
+                         const Allocator&amp; alloc = Allocator()) &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.
                     <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>Ch</c>.</requires>
           <returns>A text parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.
-                   <c>p</c> holds <c>in</c> as its tied text source and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler,
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (<c>&amp;</c> ref-qualifier version) or <c>std::move(in)</c> (<c>&amp;&amp;</c> ref-qualifier version) as its tied character input
+                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler,
                    and allocates and deallocates character buffers with a copy of <c>alloc</c>.
                    The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
-                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if and only if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
+                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
                    Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied text handler object and the copy of <c>alloc</c>.
                    <c>P</c> implements the optional <c>TextParser</c> operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
-          <remark>This member function template shall not participate in overload resolution if <c>Handler</c> is an instance of <c>std::reference_wrapper</c> or has either of <c>get_buffer</c> or <c>release_buffer</c> member function
+          <remark>These member function templates shall not participate in overload resolution unless the reference-removed and cv-unqualified type of <c>HandlerR</c> is not an instance of <c>std::reference_wrapper</c> and does not have both of <c>get_buffer</c> and <c>release_buffer</c> member function
                   that has a signature and a return type compatible with <c>TextHandler</c> requirements.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value &amp;&amp; std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
 template &lt;class Handler, class... Args>
   <nc>unspecified</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
-                         Args&amp;&amp;... args) noexcept;
+                         Args&amp;&amp;... args) const&amp; noexcept;
+template &lt;class Handler, class... Args>
+  <nc>unspecified</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
+                         Args&amp;&amp;... args) &amp;&amp; noexcept;
           </code>
           <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>,
                     except that it need not meet either the <c>MoveConstructible</c> requirement or the <c>Destructible</c> requirements.</requires>
           <effects>Creates an object <c>h</c> whose type <c>H</c> is an unspecified type that meets the <c>TextHandler</c> requirements.
                    <c>h</c> wraps <c>handler.get()</c> and forwards calls to <c>handler.get()</c>.
                    <c>std::is_nothrow_move_constructible&lt;H>::value</c> is <c>true</c>.
-                   Then forwards the call to the other <c>operator()</c> member function templates with the first argument being <c>std::move(h)</c>.</effects>
+                   Then forwards the call with the arguments being <c>std::move(h), args...</c> to the other <c>operator()</c> member function templates that have the same ref-qualifier.</effects>
           <returns>The return value of the forwarded call above.</returns>
         </code-item>
       </section>
@@ -5461,12 +5480,13 @@ template &lt;class Allocator, class Container, class... Appendices>
           <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped text input</n> object, and the expressions shown in <xref id="table.text_source.requirements"/> are valid and have the indicated semantics.</li>
         </ul>
 
-        <p>In <xref id="table.text_source.requirements"/>, <c>t</c> is an lvalue of cv-unqualified <c>T</c>.
-          <c>h</c> is an rvalue of a type that meets the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</p>
+        <p>In <xref id="table.text_source.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c> and <c>rt</c> is an rvalue of <c>T</c>.
+          <c>H</c> is a type that meets the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.
+          <c>h</c> is an expression whose type meets the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</p>
 
         <table id="table.text_source.requirements">
           <caption><c>TextSource</c> requirements</caption>
-          <col width="1"/><col width="3"/><col width="7"/><col width="14"/>
+          <col width="1"/><col width="4"/><col width="9"/><col width="14"/>
 
           <tr>
             <th>#</th>
@@ -5484,11 +5504,23 @@ template &lt;class Allocator, class Container, class... Appendices>
 
           <tr>
             <td>(2)</td>
-            <td><c>t(h)</c></td>
-            <td>A type that meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c></td>
-            <td>Creates a text parser object <c>p</c> that has its tied character input object identical to the wrapped text input object of <c>*this</c> and
-                a copy of <c>h</c> as its tied text handler object.
+            <td><c>T::parser_type&lt;H></c></td>
+            <td></td>
+            <td>Shall be a type that meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.</td>
+          </tr>
+
+          <tr>
+            <td>(3)</td>
+            <td><c>ct(h)</c></td>
+            <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
+            <td rowspan="2">Creates a text parser object <c>p</c> that has its tied character input object which is copy constructed (on (3)) or move constructed (on (4)) from the wrapped text input object of <c>*this</c> and
+                its tied text handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with from <c>h</c> (otherwise).
                 Then returns <c>p</c>.</td>
+          </tr>
+
+          <tr>
+            <td>(4)</td>
+            <td><c>rt(h)</c></td>
           </tr>
         </table>
       </section>
@@ -5702,10 +5734,12 @@ namespace commata {
     static constexpr std::size_t npos = -1;
 
     <c>// <n><xref id="primitive_text_pull.cons"/>, construct/copy/destroy:</n></c>
-    explicit primitive_text_pull(TextSource in,
-                                 std::size_t buffer_size = 0);
-    primitive_text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSource in,
-                        std::size_t buffer_size = 0);
+    template &lt;class TextSourceR>
+      explicit primitive_text_pull(TextSourceR&amp;&amp; in,
+                                   std::size_t buffer_size = 0);
+    template &lt;class TextSourceR>
+      primitive_text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSourceR&amp;&amp; in,
+                          std::size_t buffer_size = 0);
     primitive_text_pull(primitive_text_pull&amp;&amp; other) noexcept;
    ~primitive_text_pull();
 
@@ -5734,13 +5768,12 @@ namespace commata {
       <p>The class template <c>primitive_text_pull</c> describes the low-level pull parser objects for text tables (<xref id="definitions.text_table"/>).</p>
       <p>The template parameter <c>TextSource</c> shall meet the <c>TextSource</c> requirements (<xref id="text_source.requirements"/>) for a char-like type.
          The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TextSource::char_type</c>.</p>
-      <p>An object of an instantiation of it holds three objects:</p>
+      <p>An object of an instantiation of it holds two objects:</p>
       <ul>
-        <li>a text parser object (<xref id="text_parser.requirements"/>), which parses the content of text source specified by the constructor and invokes member functions of the text handler below,</li>
-        <li>a text handler object (<xref id="text_handler.requirements"/>), which recognizes each invocation on its member functions
+        <li>a text parser object (<xref id="text_parser.requirements"/>), whose tied text handler object recognizes each invocation on its member functions
             <c>start_buffer</c>, <c>end_buffer</c>, <c>start_record</c>, <c>end_record</c>, <c>empty_physical_line</c>, <c>update</c> and <c>finalize</c> as a <n>parsing event</n>
             and enqueues it into the event queue below, and</li>
-        <li>a <n>event queue</n>, which is a queue of the parsing events, and which is enqueued by the text handler on the back and dequeued by the user on the front.</li>
+        <li>an <n>event queue</n>, which is a queue of the parsing events, and which is enqueued on the back by the tied text handler object of the text parser object and dequeued by the user on the front.</li>
       </ul>
       <p>The user of this class template can configure the text handler object to ignore some parsing event with the template parameter <c>Handle</c>.
          If <c>(Handle &amp; primitive_text_pull_handle_start_buffer) == 0</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
@@ -5763,27 +5796,30 @@ static constexpr bool physical_position_available = <nc>see below</nc>;
         <name><c>primitive_text_pull</c> construct/copy/destroy</name>
         <code-item>
           <code>
-explicit primitive_text_pull(TextSource in,
-                             std::size_t buffer_size = 0);
+template &lt;class TextSourceR>
+  explicit primitive_text_pull(TextSourceR&amp;&amp; in,
+                               std::size_t buffer_size = 0);
           </code>
           <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>First default constructs an <c>Allocator</c> object <c>a</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
-                   Makes the text handler object <c>h</c> configured to enqueue events into the event queue above ant to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
-                   Then constructs the text parser object with <c>in(h)</c>.</effects>
+                   Makes a text handler object <c>h</c> configured to enqueue events into the event queue above ant to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
+                   Then constructs the text parser object with <c>std::forward&lt;TextSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>discards_data()</c> shall return <c>false</c>.</postcondition>
-          <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</remark>
+          <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;.
+                  This overload shall not participate in overload resolution unless if <c>std::decay_t&lt;TextSourceR></c> is the same type as <c>TextSource</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-primitive_text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSource in,
-                    std::size_t buffer_size = 0);
+template &lt;class TextSourceR>
+  primitive_text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSourceR&amp;&amp; in,
+                      std::size_t buffer_size = 0);
           </code>
           <effects>First constructs an <c>Allocator</c> object <c>a</c> with <c>alloc</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
-                   Makes the text handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
-                   Then constructs the text parser object with <c>in(h)</c>.</effects>
+                   Makes a text handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
+                   Then constructs the text parser object with <c>std::forward&lt;TextSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>discards_data()</c> shall return <c>false</c>.</postcondition>
         </code-item>
 
@@ -5875,7 +5911,7 @@ primitive_text_pull_state state() const noexcept;
             <tr>
               <td><c>(2)</c></td>
               <td><c>eof</c></td>
-              <td><c>*this</c> has already consumed all content of the text source.</td>
+              <td>The text parser has already consumed all content of its tied text source.</td>
               <td>0</td>
             </tr>
 
@@ -6025,9 +6061,11 @@ namespace commata {
     static constexpr std::size_t npos = -1;
 
     <c>// <n><xref id="text_pull.cons"/>, construct/copy/destroy:</n></c>
-    explicit text_pull(TextSource in, std::size_t buffer_size = 0);
-    text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSource in,
-              std::size_t buffer_size = 0);
+    template &lt;class TextSourceR>
+      explicit text_pull(TextSourceR&amp;&amp; in, std::size_t buffer_size = 0);
+    template &lt;class TextSourceR>
+      text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSourceR&amp;&amp; in,
+                std::size_t buffer_size = 0);
     text_pull(text_pull&amp;&amp; other) noexcept;
    ~text_pull();
 
@@ -6224,18 +6262,21 @@ static constexpr bool physical_position_available = <nc>see below</nc>;
         <name><c>text_pull</c> construct/copy/destroy</name>
         <code-item>
           <code>
-explicit text_pull(TextSource in, std::size_t buffer_size = 0);
+template &lt;class TextSourceR>
+  explicit text_pull(TextSourceR&amp;&amp; in, std::size_t buffer_size = 0);
           </code>
           <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Initializes an object of <c>text_pull</c> with a default constructed <c>Allocator</c> object as its allocator object.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
           <postcondition><c>is_empty_line_aware()</c> and <c>suppresses_error()</c> shall return <c>false</c>.</postcondition>
+          <remark>This overload shall not participate in overload resolution unless if <c>std::decay_t&lt;TextSourceR></c> is the same type as <c>TextSource</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSource in,
+template &lt;class TextSourceR>
+  text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSourceR&amp;&amp; in,
           std::size_t buffer_size = 0);
           </code>
           <effects>Initializes an object of <c>text_pull</c> with an allocator object constructed with <c>alloc</c>.
