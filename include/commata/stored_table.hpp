@@ -948,7 +948,7 @@ private:
         const auto r = p->detach();
         typename nat_t::allocator_type na(this->get());
         nat_t::deallocate(na, npt_t::pointer_to(*p), 1U);
-        static_assert(std::is_trivially_destructible_v<node_type>, "");
+        static_assert(std::is_trivially_destructible_v<node_type>);
         return std::make_pair(r, next);
     }
 
@@ -1720,12 +1720,12 @@ void append_stored_table_content_primitive(
 template <class ContentL, class ContentR>
 void append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
 {
-    static_assert(!std::is_reference_v<ContentR>, "");
+    static_assert(!std::is_reference_v<ContentR>);
         // so we'll use move instead of forward
     static_assert(std::is_same_v<typename ContentL::value_type,
-        typename ContentR::value_type>, "");
+        typename ContentR::value_type>);
     static_assert(
-        has_adaptive_manoeuvre_v<typename ContentL::value_type>, "");
+        has_adaptive_manoeuvre_v<typename ContentL::value_type>);
 
     // We require:
     // - if an exception is thrown by ContentL's emplace() at the end,
@@ -1761,8 +1761,8 @@ template <class Record, class AllocatorL, class ContentR>
 void append_stored_table_content_adaptive(
     std::list<Record, AllocatorL>& l, ContentR&& r)
 {
-    static_assert(std::is_same_v<Record, typename ContentR::value_type>, "");
-    static_assert(has_adaptive_manoeuvre_v<Record>, "");
+    static_assert(std::is_same_v<Record, typename ContentR::value_type>);
+    static_assert(has_adaptive_manoeuvre_v<Record>);
 
     using manoeuvre = adaptive_manoeuvre<Record>;
 
@@ -1784,7 +1784,7 @@ void append_stored_table_content_adaptive(
 template <class ContentL, class ContentR>
 void append_stored_table_content(ContentL& l, ContentR&& r)
 {
-    static_assert(!std::is_reference_v<ContentR>, "");
+    static_assert(!std::is_reference_v<ContentR>);
         // so we'll use move instead of forward
     if constexpr (std::is_same_v<
                     typename ContentL::value_type,

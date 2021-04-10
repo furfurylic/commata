@@ -46,7 +46,7 @@ class streambuf_input
     std::basic_streambuf<Ch, Tr>* in_;
 
 public:
-    static_assert(std::is_same_v<Ch, typename Tr::char_type>, "");
+    static_assert(std::is_same_v<Ch, typename Tr::char_type>);
 
     using char_type = Ch;
     using traits_type = Tr;
@@ -108,7 +108,7 @@ public:
             std::basic_streambuf<
                 typename Streambuf::char_type,
                 typename Streambuf::traits_type>,
-            Streambuf>, "");
+            Streambuf>);
 
     using char_type = typename Streambuf::char_type;
     using traits_type = typename Streambuf::traits_type;
@@ -158,7 +158,7 @@ public:
             std::basic_istream<
                 typename IStream::char_type,
                 typename IStream::traits_type>,
-            IStream>, "");
+            IStream>);
 
     using char_type = typename IStream::char_type;
     using traits_type = typename IStream::traits_type;
@@ -204,7 +204,7 @@ class string_input
     const Ch* end_;
 
 public:
-    static_assert(std::is_same_v<Ch, typename Tr::char_type>, "");
+    static_assert(std::is_same_v<Ch, typename Tr::char_type>);
 
     using char_type = Ch;
     using traits_type = Tr;
@@ -284,7 +284,7 @@ private:
     size_type head_;
 
 public:
-    static_assert(std::is_same_v<Ch, typename Tr::char_type>, "");
+    static_assert(std::is_same_v<Ch, typename Tr::char_type>);
 
     using char_type = Ch;
     using traits_type = Tr;

@@ -1724,8 +1724,7 @@ public:
             std::forward<AboveUpperLimit>(on_above_upper_limit),
             std::forward<BelowLowerLimit>(on_below_lower_limit))
     {
-        static_assert(
-            !(std::is_integral_v<T> && !std::is_signed_v<T>), "");
+        static_assert(!(std::is_integral_v<T> && !std::is_signed_v<T>));
     }
 
     template <class Empty, class InvalidFormat,
@@ -1745,7 +1744,7 @@ public:
             std::forward<BelowLowerLimit>(on_below_lower_limit),
             std::forward<Underflow>(on_underflow))
     {
-        static_assert(!std::is_integral_v<T>, "");
+        static_assert(!std::is_integral_v<T>);
     }
 
     replace_if_conversion_failed(const replace_if_conversion_failed&)

@@ -353,11 +353,9 @@ TEST_F(TestCsvSource, DefaultConstructAndAssign)
     auto abc = make_csv_source("ABC");
     auto xyz = decltype(abc)();
 
-    static_assert(std::is_nothrow_default_constructible<decltype(abc)>::value,
-        "");
-    static_assert(std::is_nothrow_move_constructible<decltype(abc)>::value,
-        "");
-    static_assert(std::is_nothrow_move_assignable<decltype(abc)>::value, "");
+    static_assert(std::is_nothrow_default_constructible<decltype(abc)>::value);
+    static_assert(std::is_nothrow_move_constructible<decltype(abc)>::value);
+    static_assert(std::is_nothrow_move_assignable<decltype(abc)>::value);
 
     xyz = std::move(abc);
 
@@ -375,7 +373,7 @@ TEST_F(TestCsvSource, Swap)
     auto abc = make_csv_source("ABC");
     auto xyz = make_csv_source("XYZ");
 
-    static_assert(noexcept(swap(abc, xyz)), "");
+    static_assert(noexcept(swap(abc, xyz)));
     swap(abc, xyz);
 
     std::vector<std::vector<std::string>> field_values;

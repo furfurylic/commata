@@ -486,7 +486,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
 }
 
 static_assert(
-    std::uses_allocator_v<table_scanner, std::allocator<char>>, "");
+    std::uses_allocator_v<table_scanner, std::allocator<char>>);
 
 template <class Ch>
 struct TestTableScanner : BaseTest
@@ -1250,7 +1250,7 @@ struct TestReplaceIfConversionFailed : BaseTest
 TEST_F(TestReplaceIfConversionFailed, NonArithmeticNoThrowMoveConstructible)
 {
     using r_t = replace_if_conversion_failed<std::string>;
-    static_assert(std::is_nothrow_move_constructible_v<r_t>, "");
+    static_assert(std::is_nothrow_move_constructible_v<r_t>);
 
     r_t r("E", replacement_fail, "U", replacement_ignore);
     std::vector<r_t> rs;
@@ -1296,7 +1296,7 @@ public:
 TEST_F(TestReplaceIfConversionFailed, NonArithmeticNonNoThrowMoveConstructible)
 {
     using r_t = replace_if_conversion_failed<char_holder>;
-    static_assert(std::is_nothrow_move_constructible_v<r_t>, "");
+    static_assert(std::is_nothrow_move_constructible_v<r_t>);
 
     r_t r(replacement_fail, char_holder('I'), replacement_fail,
         char_holder('B'), replacement_ignore);
