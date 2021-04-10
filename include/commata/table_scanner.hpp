@@ -1160,7 +1160,7 @@ template <class T, class H, class U, class = void>
 struct restrained_converter :
     private raw_converter<U, H>
 {
-    static_assert(!std::is_floating_point_v<T>, "");
+    static_assert(!std::is_floating_point_v<T>);
 
     using raw_converter<U, H>::raw_converter;
     using raw_converter<U, H>::get_conversion_error_handler;
@@ -1190,7 +1190,7 @@ struct restrained_converter<T, H, U,
         std::enable_if_t<std::is_unsigned_v<T>>> :
     private raw_converter<U, H>
 {
-    static_assert(!std::is_floating_point_v<T>, "");
+    static_assert(!std::is_floating_point_v<T>);
 
     using raw_converter<U, H>::raw_converter;
     using raw_converter<U, H>::get_conversion_error_handler;
@@ -1602,7 +1602,7 @@ private:
     void init(U&& value)
         noexcept(std::is_nothrow_constructible_v<T, U&&>)
     {
-        static_assert(Slot < N, "");
+        static_assert(Slot < N);
         assert(!has(Slot));
         assert(!skips(Slot));
         emplace(Slot, std::forward<U>(value));
@@ -1612,7 +1612,7 @@ private:
     template <unsigned Slot>
     void init() noexcept(std::is_nothrow_default_constructible_v<T>)
     {
-        static_assert(Slot < N, "");
+        static_assert(Slot < N);
         assert(!has(Slot));
         assert(!skips(Slot));
         emplace(Slot);
@@ -1622,7 +1622,7 @@ private:
     template <unsigned Slot>
     void init(replacement_fail_t) noexcept
     {
-        static_assert(Slot < N, "");
+        static_assert(Slot < N);
         assert(!has(Slot));
         assert(!skips(Slot));
     }
@@ -1630,7 +1630,7 @@ private:
     template <unsigned Slot>
     void init(replacement_ignore_t) noexcept
     {
-        static_assert(Slot < N, "");
+        static_assert(Slot < N);
         assert(!has(Slot));
         assert(!skips(Slot));
         set_skips(Slot);

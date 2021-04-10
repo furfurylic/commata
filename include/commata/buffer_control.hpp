@@ -101,8 +101,8 @@ template <class Handler, class BufferControl>
 class full_fledged_handler :
     BufferControl
 {
-    static_assert(!std::is_reference_v<Handler>, "");
-    static_assert(!is_full_fledged_v<Handler>, "");
+    static_assert(!std::is_reference_v<Handler>);
+    static_assert(!is_full_fledged_v<Handler>);
 
     Handler handler_;
 

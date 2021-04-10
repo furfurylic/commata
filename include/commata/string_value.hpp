@@ -24,7 +24,7 @@ bool string_value_eq(
      && noexcept(left.data()) && noexcept(right.data()))
 {
     static_assert(std::is_same_v<typename T::traits_type,
-                                 typename U::traits_type>, "");
+                                 typename U::traits_type>);
     using tr_t = typename T::traits_type;
     return (left.size() == right.size())
         && (tr_t::compare(left.data(), right.data(), left.size()) == 0);
@@ -69,7 +69,7 @@ bool string_value_lt(
      && noexcept(left.data()) && noexcept(right.data()))
 {
     static_assert(std::is_same_v<typename T::traits_type,
-                                 typename U::traits_type>, "");
+                                 typename U::traits_type>);
     using tr_t = typename T::traits_type;
     if (left.size() < right.size()) {
         return tr_t::compare(left.data(), right.data(), left.size()) <= 0;

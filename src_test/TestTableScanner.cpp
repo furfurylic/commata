@@ -639,7 +639,7 @@ TYPED_TEST(TestLocaleBased, Copy)
     ASSERT_EQ(expected, values);
 }
 
-static_assert(std::uses_allocator_v<table_scanner, std::allocator<char>>, "");
+static_assert(std::uses_allocator_v<table_scanner, std::allocator<char>>);
 
 template <class Ch>
 struct TestTableScanner : BaseTest
@@ -1717,19 +1717,19 @@ namespace replace_if_skipped_static_asserts {
 using ri_t = replace_if_skipped<int>;
 using rv_t = replace_if_skipped<std::vector<int>>;
 
-static_assert(std::is_nothrow_copy_constructible_v<ri_t>, "");
-static_assert(std::is_nothrow_move_constructible_v<ri_t>, "");
-static_assert(std::is_nothrow_copy_assignable_v<ri_t>, "");
-static_assert(std::is_nothrow_move_assignable_v<ri_t>, "");
-static_assert(std::is_nothrow_swappable_v<ri_t>, "");
+static_assert(std::is_nothrow_copy_constructible_v<ri_t>);
+static_assert(std::is_nothrow_move_constructible_v<ri_t>);
+static_assert(std::is_nothrow_copy_assignable_v<ri_t>);
+static_assert(std::is_nothrow_move_assignable_v<ri_t>);
+static_assert(std::is_nothrow_swappable_v<ri_t>);
 
-static_assert(!std::is_nothrow_copy_constructible_v<rv_t>, "");
-static_assert(std::is_nothrow_move_constructible_v<rv_t>, "");
-static_assert(!std::is_nothrow_copy_assignable_v<rv_t>, "");
-static_assert(std::is_nothrow_move_assignable_v<rv_t>, "");
-static_assert(std::is_nothrow_swappable_v<rv_t>, "");
+static_assert(!std::is_nothrow_copy_constructible_v<rv_t>);
+static_assert(std::is_nothrow_move_constructible_v<rv_t>);
+static_assert(!std::is_nothrow_copy_assignable_v<rv_t>);
+static_assert(std::is_nothrow_move_assignable_v<rv_t>);
+static_assert(std::is_nothrow_swappable_v<rv_t>);
 
-static_assert(std::is_trivially_copyable<ri_t>::value, "");
+static_assert(std::is_trivially_copyable<ri_t>::value);
 
 }
 
@@ -2186,24 +2186,24 @@ namespace replace_if_conversion_failed_static_asserts {
 using ri_t = replace_if_conversion_failed<int>;
 using rv_t = replace_if_conversion_failed<std::vector<int>>;
 
-static_assert(std::is_nothrow_copy_constructible_v<ri_t>, "");
-static_assert(std::is_nothrow_move_constructible_v<ri_t>, "");
-static_assert(std::is_nothrow_copy_assignable_v<ri_t>, "");
-static_assert(std::is_nothrow_move_assignable_v<ri_t>, "");
-static_assert(std::is_nothrow_swappable_v<ri_t>, "");
+static_assert(std::is_nothrow_copy_constructible_v<ri_t>);
+static_assert(std::is_nothrow_move_constructible_v<ri_t>);
+static_assert(std::is_nothrow_copy_assignable_v<ri_t>);
+static_assert(std::is_nothrow_move_assignable_v<ri_t>);
+static_assert(std::is_nothrow_swappable_v<ri_t>);
 
-static_assert(!std::is_nothrow_copy_constructible_v<rv_t>, "");
-static_assert(std::is_nothrow_move_constructible_v<rv_t>, "");
-static_assert(!std::is_nothrow_copy_assignable_v<rv_t>, "");
-static_assert(std::is_nothrow_move_assignable_v<rv_t>, "");
-static_assert(std::is_nothrow_swappable_v<rv_t>, "");
+static_assert(!std::is_nothrow_copy_constructible_v<rv_t>);
+static_assert(std::is_nothrow_move_constructible_v<rv_t>);
+static_assert(!std::is_nothrow_copy_assignable_v<rv_t>);
+static_assert(std::is_nothrow_move_assignable_v<rv_t>);
+static_assert(std::is_nothrow_swappable_v<rv_t>);
 
-static_assert(std::is_trivially_copyable<ri_t>::value, "");
+static_assert(std::is_trivially_copyable<ri_t>::value);
 
 static_assert(!std::is_constructible<replace_if_conversion_failed<int>,
-    int, int, int, int, int>::value, "");
+    int, int, int, int, int>::value);
 static_assert(!std::is_constructible<replace_if_conversion_failed<unsigned>,
-    unsigned, replacement_fail_t, replacement_ignore_t, long>::value, "");
+    unsigned, replacement_fail_t, replacement_ignore_t, long>::value);
 
 namespace {
 
@@ -2215,10 +2215,10 @@ struct ndc  // not default constructible
 }
 
 static_assert(!std::is_constructible<replace_if_conversion_failed<ndc>,
-    ndc, ndc, ndc>::value, "");
+    ndc, ndc, ndc>::value);
 static_assert(!std::is_constructible<replace_if_conversion_failed<ndc>,
-    ndc, ndc, ndc, ndc>::value, "");
+    ndc, ndc, ndc, ndc>::value);
 static_assert(std::is_constructible<replace_if_conversion_failed<ndc>,
-    ndc, ndc, ndc, ndc, ndc>::value, "");
+    ndc, ndc, ndc, ndc, ndc>::value);
 
 }

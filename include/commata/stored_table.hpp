@@ -908,7 +908,7 @@ private:
         const auto r = p->detach();
         typename nat_t::allocator_type na(this->get());
         nat_t::deallocate(na, npt_t::pointer_to(*p), 1U);
-        static_assert(std::is_trivially_destructible_v<node_type>, "");
+        static_assert(std::is_trivially_destructible_v<node_type>);
         return std::make_pair(r, next);
     }
 
@@ -1687,7 +1687,7 @@ struct invoke_clear
 template <class ContainerFrom, class ContainerTo>
 void  emigrate(ContainerFrom&& from, ContainerTo& to)
 {
-    static_assert(!std::is_reference_v<ContainerFrom>, "");
+    static_assert(!std::is_reference_v<ContainerFrom>);
         // so we'll use move instead of forward
 
     std::unique_ptr<ContainerTo, invoke_clear<ContainerTo>> p(&to);
@@ -1705,7 +1705,7 @@ void  emigrate(ContainerFrom&& from, ContainerTo& to)
 template <class ContentL, class ContentR>
 void append_stored_table_content(ContentL& l, ContentR&& r)
 {
-    static_assert(!std::is_reference_v<ContentR>, "");
+    static_assert(!std::is_reference_v<ContentR>);
         // so we'll use move instead of forward
 
     // We require:

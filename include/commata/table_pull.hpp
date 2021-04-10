@@ -317,7 +317,7 @@ private:
         decltype(std::declval<const TableSource&>()(
             std::declval<reference_handler<handler_t>>())),
         decltype(std::declval<TableSource>()(
-            std::declval<reference_handler<handler_t>>()))>, "");
+            std::declval<reference_handler<handler_t>>()))>);
 
     using parser_t = typename TableSource::template parser_type<
         reference_handler<handler_t>>;

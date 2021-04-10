@@ -156,16 +156,16 @@ check_handler<Ch, F> make_check_handler(F f)
 } // unnamed
 
 static_assert(
-    std::is_nothrow_swappable_v<reference_handler<test_collector<char>>>, "");
+    std::is_nothrow_swappable_v<reference_handler<test_collector<char>>>);
 static_assert(
-    std::is_trivially_copyable_v<reference_handler<test_collector<char>>>, "");
+    std::is_trivially_copyable_v<reference_handler<test_collector<char>>>);
 
 static_assert(
     std::is_same_v<
         typename csv_source<string_input<char>>::template
             parser_type<test_collector<char>>,
         typename csv_source<string_input<char>>::template
-            parser_type<test_collector<char>, std::allocator<char>>>, "");
+            parser_type<test_collector<char>, std::allocator<char>>>);
 
 struct TestParseCsvBasics :
     commata::test::BaseTestWithParam<std::size_t>
@@ -299,7 +299,7 @@ static_assert(std::is_same_v<
             std::declval<std::reference_wrapper<test_collector2<wchar_t>>>())),
     typename csv_source<string_input<wchar_t>>::template parser_type<
         reference_handler<test_collector2<wchar_t>>,
-        std::allocator<wchar_t>>>, "");
+        std::allocator<wchar_t>>>);
 
 template <class Ch>
 struct TestParseCsvFancy : BaseTest
@@ -419,9 +419,9 @@ TEST_F(TestCsvSource, DefaultConstructAndAssign)
     auto abc = make_csv_source("ABC");
     auto xyz = decltype(abc)();
 
-    static_assert(std::is_nothrow_default_constructible_v<decltype(abc)>, "");
-    static_assert(std::is_nothrow_move_constructible_v<decltype(abc)>, "");
-    static_assert(std::is_nothrow_move_assignable_v<decltype(abc)>, "");
+    static_assert(std::is_nothrow_default_constructible_v<decltype(abc)>);
+    static_assert(std::is_nothrow_move_constructible_v<decltype(abc)>);
+    static_assert(std::is_nothrow_move_assignable_v<decltype(abc)>);
 
     xyz = std::move(abc);
 
@@ -439,7 +439,7 @@ TEST_F(TestCsvSource, Swap)
     auto abc = make_csv_source("ABC");
     auto xyz = make_csv_source("XYZ");
 
-    static_assert(noexcept(swap(abc, xyz)), "");
+    static_assert(noexcept(swap(abc, xyz)));
     swap(abc, xyz);
 
     std::vector<std::vector<std::string>> field_values;

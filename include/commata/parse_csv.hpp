@@ -719,8 +719,7 @@ private:
         template <class HandlerR, class CharInputR>
         static auto invoke(HandlerR&& handler, CharInputR&& in)
         {
-            static_assert(
-                std::is_same_v<handler_t, std::decay_t<HandlerR>>, "");
+            static_assert(std::is_same_v<handler_t, std::decay_t<HandlerR>>);
             static_assert(
                 std::is_same_v<
                     typename std::decay_t<Handler>::char_type,

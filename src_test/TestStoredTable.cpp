@@ -38,31 +38,31 @@
 using namespace commata;
 using namespace commata::test;
 
-static_assert(std::is_nothrow_copy_constructible_v<stored_value>, "");
-static_assert(std::is_nothrow_copy_assignable_v<stored_value>, "");
-static_assert(std::is_trivially_copyable_v<stored_value>, "");
-static_assert(std::is_trivially_copy_assignable_v<stored_value>, "");
-static_assert(std::is_trivially_destructible_v<stored_value>, "");
-static_assert(noexcept(std::declval<stored_value&>().begin()), "");
-static_assert(noexcept(std::declval<stored_value&>().end()), "");
-static_assert(noexcept(std::declval<stored_value&>().rbegin()), "");
-static_assert(noexcept(std::declval<stored_value&>().rend()), "");
-static_assert(noexcept(std::declval<stored_value&>().cbegin()), "");
-static_assert(noexcept(std::declval<stored_value&>().cend()), "");
-static_assert(noexcept(std::declval<stored_value&>().crbegin()), "");
-static_assert(noexcept(std::declval<stored_value&>().crend()), "");
-static_assert(noexcept(std::declval<const stored_value&>().begin()), "");
-static_assert(noexcept(std::declval<const stored_value&>().end()), "");
-static_assert(noexcept(std::declval<const stored_value&>().rbegin()), "");
-static_assert(noexcept(std::declval<const stored_value&>().rend()), "");
-static_assert(noexcept(std::declval<stored_value&>().c_str()), "");
-static_assert(noexcept(std::declval<const stored_value&>().c_str()), "");
-static_assert(noexcept(std::declval<stored_value&>().data()), "");
-static_assert(noexcept(std::declval<const stored_value&>().data()), "");
-static_assert(noexcept(std::declval<stored_value&>().size()), "");
-static_assert(noexcept(std::declval<stored_value&>().length()), "");
-static_assert(noexcept(std::declval<stored_value&>().empty()), "");
-static_assert(noexcept(std::declval<stored_value&>().clear()), "");
+static_assert(std::is_nothrow_copy_constructible_v<stored_value>);
+static_assert(std::is_nothrow_copy_assignable_v<stored_value>);
+static_assert(std::is_trivially_copyable_v<stored_value>);
+static_assert(std::is_trivially_copy_assignable_v<stored_value>);
+static_assert(std::is_trivially_destructible_v<stored_value>);
+static_assert(noexcept(std::declval<stored_value&>().begin()));
+static_assert(noexcept(std::declval<stored_value&>().end()));
+static_assert(noexcept(std::declval<stored_value&>().rbegin()));
+static_assert(noexcept(std::declval<stored_value&>().rend()));
+static_assert(noexcept(std::declval<stored_value&>().cbegin()));
+static_assert(noexcept(std::declval<stored_value&>().cend()));
+static_assert(noexcept(std::declval<stored_value&>().crbegin()));
+static_assert(noexcept(std::declval<stored_value&>().crend()));
+static_assert(noexcept(std::declval<const stored_value&>().begin()));
+static_assert(noexcept(std::declval<const stored_value&>().end()));
+static_assert(noexcept(std::declval<const stored_value&>().rbegin()));
+static_assert(noexcept(std::declval<const stored_value&>().rend()));
+static_assert(noexcept(std::declval<stored_value&>().c_str()));
+static_assert(noexcept(std::declval<const stored_value&>().c_str()));
+static_assert(noexcept(std::declval<stored_value&>().data()));
+static_assert(noexcept(std::declval<const stored_value&>().data()));
+static_assert(noexcept(std::declval<stored_value&>().size()));
+static_assert(noexcept(std::declval<stored_value&>().length()));
+static_assert(noexcept(std::declval<stored_value&>().empty()));
+static_assert(noexcept(std::declval<stored_value&>().clear()));
 static_assert(std::is_nothrow_swappable_v<stored_value>);
 
 template <class Ch>
@@ -608,11 +608,12 @@ namespace privy {
 
 using store_t = detail::stored::table_store<char, std::allocator<char>>;
 
-static_assert(std::is_default_constructible_v<store_t>, "");
-static_assert(std::is_nothrow_move_constructible_v<store_t>, "");
-static_assert(std::is_nothrow_move_assignable_v<store_t>, "");
-static_assert(noexcept(std::declval<store_t&>().secure_any(0)), "");
-static_assert(noexcept(std::declval<store_t&>().clear()), "");
+static_assert(std::is_default_constructible_v<store_t>);
+static_assert(std::is_nothrow_move_constructible_v<store_t>);
+static_assert(std::is_nothrow_move_assignable_v<store_t>);
+static_assert(noexcept(std::declval<store_t&>().secure_any(0)));
+static_assert(noexcept(std::declval<store_t&>().clear()));
+static_assert(std::is_nothrow_swappable_v<store_t>);
 
 }
 
@@ -713,8 +714,8 @@ TEST_F(TestTableStore, Swap)
     ASSERT_EQ(expected2, store2.get_security());
 }
 
-static_assert(std::is_default_constructible_v<stored_table>, "");
-static_assert(std::is_nothrow_move_constructible_v<stored_table>, "");
+static_assert(std::is_default_constructible_v<stored_table>);
+static_assert(std::is_nothrow_move_constructible_v<stored_table>);
 
 struct TestStoredTable : BaseTest
 {};
@@ -1427,13 +1428,13 @@ static_assert(
     std::is_nothrow_move_constructible_v<
         stored_table_builder<
             wstored_table::content_type,
-            wstored_table::allocator_type>>, "");
+            wstored_table::allocator_type>>);
 static_assert(
     std::is_nothrow_move_constructible_v<
         stored_table_builder<
             stored_table::content_type,
             stored_table::allocator_type,
-            stored_table_builder_option_transpose>>, "");
+            stored_table_builder_option_transpose>>);
 
 struct TestStoredTableReusingBuffer : BaseTest
 {
@@ -1861,7 +1862,7 @@ TEST_F(TestStoredTableConst, Table)
 {
     cwstored_table table;
     static_assert(
-        std::is_same_v<decltype(table)::char_type, wchar_t>, "");
+        std::is_same_v<decltype(table)::char_type, wchar_t>);
     auto value = table.import_value(L"alpha-beta-gamma");
     const auto b = value.begin();
     table.rewrite_value(value, L"alpha-beta-delta");
