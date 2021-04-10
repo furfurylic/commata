@@ -5473,6 +5473,12 @@ namespace commata {
               primitive_table_pull_handle_all>
     class primitive_table_pull;
 
+  template &lt;class TableSource, class... Args>
+    primitive_table_pull(TableSource, Args&amp;&amp;...) -> primitive_table_pull&lt;TableSource>;
+  template &lt;class TableSource, class Allocator, class... Args>
+    primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args&amp;&amp;...)
+      -> primitive_table_pull&lt;TableSource, Allocator>;
+
   enum class table_pull_state : <nc>unspecified</nc> {
     before_parse = <nc>unspecified</nc>,
     eof          = <nc>unspecified</nc>,
@@ -5484,6 +5490,12 @@ namespace commata {
   template &lt;class TableSource,
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class table_pull;
+
+  template &lt;class TableSource, class... Args>
+    table_pull(TableSource, Args&amp;&amp;...) -> table_pull&lt;TableSource>;
+  template &lt;class TableSource, class Allocator, class... Args>
+    table_pull(std::allocator_arg_t, Allocator, TableSource, Args&amp;&amp;...)
+      -> table_pull&lt;TableSource, Allocator>;
 
   template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
@@ -5674,6 +5686,12 @@ namespace commata {
     size_type data_size() const noexcept;
     size_type max_data_size() const noexcept;
   };
+
+  template &lt;class TableSource, class... Args>
+    primitive_table_pull(TableSource, Args&amp;&amp;...) -> primitive_table_pull&lt;TableSource>;
+  template &lt;class TableSource, class Allocator, class... Args>
+    primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args&amp;&amp;...)
+      -> primitive_table_pull&lt;TableSource, Allocator>;
 }
       </codeblock>
 
@@ -6015,6 +6033,12 @@ namespace commata {
       class OtherAllocator = std::allocator&lt;char_type>>
         explicit operator std::basic_string&lt;char_type, OtherTr, OtherAllocator>() const;
   };
+
+  template &lt;class TableSource, class... Args>
+    table_pull(TableSource, Args&amp;&amp;...) -> table_pull&lt;TableSource>;
+  template &lt;class TableSource, class Allocator, class... Args>
+    table_pull(std::allocator_arg_t, Allocator, TableSource, Args&amp;&amp;...)
+      -> table_pull&lt;TableSource, Allocator>;
 
   <c>// <n><xref id="table_pull.comparison"/>, table_pull comparison functions:</n></c>
   template &lt;class TableSourceL, class TableSourceR,

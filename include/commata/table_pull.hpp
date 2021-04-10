@@ -524,6 +524,14 @@ private:
     }
 };
 
+template <class TableSource, class... Args>
+primitive_table_pull(TableSource, Args&&...)
+    -> primitive_table_pull<TableSource>;
+
+template <class TableSource, class Allocator, class... Args>
+primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args&&...)
+    -> primitive_table_pull<TableSource, Allocator>;
+
 template <class TableSource, class Allocator,
     std::underlying_type_t<primitive_table_pull_handle> Handle>
 typename primitive_table_pull<TableSource, Allocator, Handle>::handler_t::
@@ -1011,6 +1019,13 @@ private:
             &detail::nul<char_type>::value, &detail::nul<char_type>::value);
     }
 };
+
+template <class TableSource, class... Args>
+table_pull(TableSource, Args...) -> table_pull<TableSource>;
+
+template <class TableSource, class Allocator, class... Args>
+table_pull(std::allocator_arg_t, Allocator, TableSource, Args&&...)
+    -> table_pull<TableSource, Allocator>;
  
 template <class TableSource, class Allocator>
 std::basic_string_view<typename TableSource::char_type> to_string_view(
