@@ -1127,9 +1127,9 @@ namespace commata {
     string_input(const Ch* data, std::size_t length);
     template &lt;class Allocator>
       explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
-    string_input(string_input&amp;&amp; other) noexcept;
+    string_input(const string_input&amp; other) = default;
    ~string_input() = default;
-    string_input&amp; operator=(string_input&amp;&amp; other) noexcept;
+    string_input&amp; operator=(const string_input&amp; other) = default;
 
     <c>// <n><xref id="string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -1180,22 +1180,6 @@ template &lt;class Allocator>
   explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
           </code>
           <effects>Initializes <c>begin</c> with <c>str.data()</c> and <c>end</c> with <c>str.data() + str.size()</c>.</effects>
-        </code-item>
-
-        <code-item>
-          <code>
-string_input(string_input&amp;&amp; other) noexcept;
-          </code>
-          <effects>Initializes <c>begin</c> with <c>other.begin</c> and <c>end</c> with <c>other.end</c>,
-                   and then make [<c>other.begin</c>, <c>other.end</c>) not overlap with [<c>begin</c>, <c>end</c>).</effects>
-        </code-item>
-
-        <code-item>
-          <code>
-string_input&amp; operator=(string_input&amp;&amp; other) noexcept;
-          </code>
-          <effects>Assigns <c>other.begin</c> to <c>begin</c> and <c>other.end</c> to <c>end</c>,
-                   and then make [<c>other.begin</c>, <c>other.end</c>) not overlap with [<c>begin</c>, <c>end</c>).</effects>
         </code-item>
       </section>
 
@@ -1254,8 +1238,10 @@ namespace commata {
     <c>// <n><xref id="owned_string_input.cons"/>, construct/copy/destroy:</n></c>
     owned_string_input() noexcept(<nc>see below</nc>);
     explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; str) noexcept;
+    owned_string_input(const owned_string_input&amp; other);
     owned_string_input(owned_string_input&amp;&amp; other) noexcept;
    ~owned_string_input() = default;
+    owned_string_input&amp; operator=(const owned_string_input&amp; other);
     owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) : noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="owned_string_input.inv"/>, invocation:</n></c>
@@ -1300,9 +1286,25 @@ explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; st
 
         <code-item>
           <code>
+owned_string_input(const owned_string_input&amp; other);
+          </code>
+          <effects>Initializes <c>s</c> with <c>other.s</c>, <c>other.head</c>, <c>std::basic_string&lt;Ch, Tr, Allocator>::npos</c> and <c>std::allocator_traits&lt;Allocator>::select_on_container_copy_construction(other.s.get_allocator())</c>, and <c>head</c> with <c>0</c>.</effects>
+        </code-item>
+
+        <code-item>
+          <code>
 owned_string_input(owned_string_input&amp;&amp; other) noexcept;
           </code>
           <effects>Initializes <c>s</c> with <c>std::move(other.s)</c> and <c>head</c> with <c>other.head</c>, and then assigns <c>other.size()</c> to <c>other.head</c>.</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+owned_string_input&amp; operator=(const owned_string_input&amp; other);
+          </code>
+          <effects>Make <c>s.compare(head, s.size() - head, other.s, other.head)</c> be <c>0</c>.
+                   Replaces the allocator of <c>s</c> with the allocator of <c>other.s</c> if and only if <c>std::allocator_traits&lt;Allocator>::propagate_on_container_copy_assignment</c> is <c>true</c>.</effects>
+          <remark>If an exception is thrown by this function, the invocation shall have no effect.</remark>
         </code-item>
 
         <code-item>

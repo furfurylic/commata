@@ -48,6 +48,7 @@ set(COMMATA_HEADERS
 )
 
 set(TEST_COMMATA_SOURCES
+    TestCharInput.cpp
     TestParseCsv.cpp
     TestRecordExtractor.cpp
     TestStoredTable.cpp

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <limits>
+#include <memory>
 #include <streambuf>
 #include <string>
 #include <type_traits>
@@ -227,6 +228,8 @@ public:
         string_input(str.data(), str.size())
     {}
 
+    string_input(const string_input& other) = default;
+
     string_input(string_input&& other) noexcept :
         begin_(other.begin_), end_(other.end_)
     {
@@ -234,6 +237,7 @@ public:
     }
 
     ~string_input() = default;
+    string_input& operator=(const string_input& other) = default;
 
     string_input& operator=(string_input&& other) noexcept
     {
@@ -301,6 +305,14 @@ public:
         s_(std::move(str)), head_(0)
     {}
 
+    owned_string_input(const owned_string_input& other) :
+        s_(other.s_, other.head_, std::basic_string<Ch, Tr, Allocator>::npos,
+            std::allocator_traits<Allocator>::
+                select_on_container_copy_construction(
+                    other.s_.get_allocator())),
+        head_(0)
+    {}
+
     owned_string_input(owned_string_input&& other) noexcept :
         s_(std::move(other.s_)), head_(other.head_)
     {
@@ -309,6 +321,31 @@ public:
 
     ~owned_string_input() = default;
 
+    owned_string_input& operator=(const owned_string_input& other)
+    {
+        assign(other, std::allocator_traits<Allocator>::
+                        propagate_on_container_copy_assignment());
+        return *this;
+    }
+
+private:
+    void assign(const owned_string_input& other, std::true_type)
+    {
+        // This implementation inhibits s_'s buffer from being reused,
+        // but it seems necessary so that s_'s allocator is replaced with
+        // other.s_'s allocator (even if the allocators are equivalent)
+        s_ = std::basic_string<Ch, Tr, Allocator>(
+            other.s_, other.head_, other.s_.get_allocator());   // throw
+        head_ = 0;
+    }
+
+    void assign(const owned_string_input& other, std::false_type)
+    {
+        s_.assign(other.s_, other.head_);   // throw
+        head_ = 0;
+    }
+
+public:
     owned_string_input& operator=(owned_string_input&& other)
         noexcept(std::is_nothrow_move_assignable<
             std::basic_string<Ch, Tr, Allocator>>::value)
