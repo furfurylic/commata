@@ -5747,8 +5747,8 @@ namespace commata {
     allocator_type get_allocator() const noexcept;
 
     <c>// <n><xref id="primitive_text_pull.tweaks"/>, tweaks:</n></c>
-    bool discards_data() const noexcept;
-    primitive_text_pull&amp; set_discards_data(bool b = true) noexcept;
+    bool is_discarding_data() const noexcept;
+    primitive_text_pull&amp; set_discarding_data(bool b = true) noexcept;
 
     <c>// <n><xref id="primitive_text_pull.inv"/>, invocation:</n></c>
     primitive_text_pull&amp; operator()();
@@ -5805,7 +5805,7 @@ template &lt;class TextSourceR>
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
                    Makes a text handler object <c>h</c> configured to enqueue events into the event queue above ant to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the text parser object with <c>std::forward&lt;TextSourceR>(in)(std::move(h))</c>.</effects>
-          <postcondition><c>discards_data()</c> shall return <c>false</c>.</postcondition>
+          <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
           <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;.
                   This overload shall not participate in overload resolution unless if <c>std::decay_t&lt;TextSourceR></c> is the same type as <c>TextSource</c>.</remark>
         </code-item>
@@ -5820,7 +5820,7 @@ template &lt;class TextSourceR>
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
                    Makes a text handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the text parser object with <c>std::forward&lt;TextSourceR>(in)(std::move(h))</c>.</effects>
-          <postcondition><c>discards_data()</c> shall return <c>false</c>.</postcondition>
+          <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -5847,14 +5847,14 @@ allocator_type get_allocator() const noexcept;
 
         <code-item>
           <code>
-bool discards_data() const noexcept;
+bool is_discarding_data() const noexcept;
           </code>
           <returns>Whether <c>*this</c> collects data of events and makes them accessible with <c>operator[]</c> (<c>false</c>) or not (otherwise).</returns>
         </code-item>
 
         <code-item>
           <code>
-primitive_text_pull&amp; set_discards_data(bool b = true) noexcept;
+primitive_text_pull&amp; set_discarding_data(bool b = true) noexcept;
           </code>
           <effects>Sets whether <c>*this</c> collects data of events and makes them accessible with <c>operator[]</c> (if <c>b</c> is <c>false</c>) or not (otherwise).</effects>
           <returns><c>*this</c>.</returns>
@@ -5888,7 +5888,7 @@ primitive_text_pull_state state() const noexcept;
           </code>
           <returns>A value of <c>primitive_text_pull_state</c> that tells the current status of <c>*this</c> as shown in <xref id="table.primitive_text_pull.state"/>.
                    In <xref id="table.primitive_text_pull.state"/>, <c>h</c> denotes the text handler object held by <c>*this</c>.
-                   &#x2018;Maximum data size&#x2019; column shows the return value of <c>data_size()</c> if the current event was queued while <c>discards_data()</c> was <c>false</c>.</returns>
+                   &#x2018;Maximum data size&#x2019; column shows the return value of <c>data_size()</c> if the current event was queued while <c>is_discarding_data()</c> was <c>false</c>.</returns>
 
           <table id="table.primitive_text_pull.state">
             <caption>The meanings of the values <c>state()</c> returns</caption>
@@ -5927,7 +5927,7 @@ primitive_text_pull_state state() const noexcept;
               <td><c>start_buffer</c></td>
               <td>The front of the event queue is the invocation of <c>start_buffer</c> on <c>h</c>.
                   The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
-                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
+                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
               <td>2</td>
             </tr>
 
@@ -5936,7 +5936,7 @@ primitive_text_pull_state state() const noexcept;
               <td><c>end_buffer</c></td>
               <td>The front of the event queue is the invocation of <c>end_buffer</c> on <c>h</c>.
                   The argument of the invocation is available as <c>(*this)[0]</c>
-                  if and only if the event was queued while <c>discards_data()</c> is <c>false</c>.
+                  if and only if the event was queued while <c>is_discarding_data()</c> is <c>false</c>.
                   All pointers that have been returned by <c>operator[]</c> will be invalidated with the next call of <c>operator()</c>.</td>
               <td>1</td>
             </tr>
@@ -5946,7 +5946,7 @@ primitive_text_pull_state state() const noexcept;
               <td><c>empty_physical_line</c></td>
               <td>The front of the event queue is the invocation of <c>empty_physical_line</c> on <c>h</c>.
                   The argument of the invocation is available as <c>(*this)[0]</c>
-                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
+                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
               <td>1</td>
             </tr>
 
@@ -5955,7 +5955,7 @@ primitive_text_pull_state state() const noexcept;
               <td><c>start_record</c></td>
               <td>The front of the event queue is the invocation of <c>start_record</c> on <c>h</c>.
                   The argument of the invocation is available as <c>(*this)[0]</c>
-                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
+                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
               <td>1</td>
             </tr>
 
@@ -5964,7 +5964,7 @@ primitive_text_pull_state state() const noexcept;
               <td><c>end_record</c></td>
               <td>The front of the event queue is the invocation of <c>end_record</c> on <c>h</c>.
                   The argument of the invocation is available as <c>(*this)[0]</c>
-                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
+                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
               <td>1</td>
             </tr>
 
@@ -5973,7 +5973,7 @@ primitive_text_pull_state state() const noexcept;
               <td><c>update</c></td>
               <td>The front of the event queue is the invocation of <c>update</c> on <c>h</c>.
                   The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
-                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
+                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
               <td>2</td>
             </tr>
 
@@ -5982,7 +5982,7 @@ primitive_text_pull_state state() const noexcept;
               <td><c>finalize</c></td>
               <td>The front of the event queue is the invocation of <c>finalize</c> on <c>h</c>.
                   The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
-                  if and only if the event was queued while <c>discards_data()</c> was <c>false</c>.</td>
+                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
               <td>2</td>
             </tr>
           </table>
@@ -6075,8 +6075,8 @@ namespace commata {
     <c>// <n><xref id="text_pull.tweaks"/>, tweaks:</n></c>
     bool is_empty_physical_line_aware() const noexcept;
     text_pull&amp; set_empty_physical_line_aware(bool b = true) noexcept;
-    bool suppresses_error() const noexcept;
-    text_pull&amp; set_suppresses_error(bool b = true) noexcept;
+    bool is_suppressing_errors() const noexcept;
+    text_pull&amp; set_suppressing_errors(bool b = true) noexcept;
 
     <c>// <n><xref id="text_pull.inv"/>, invocation:</n></c>
     text_pull&amp; operator()(std::size_t n = 0);
@@ -6269,7 +6269,7 @@ template &lt;class TextSourceR>
           <effects>Initializes an object of <c>text_pull</c> with a default constructed <c>Allocator</c> object as its allocator object.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
-          <postcondition><c>is_empty_line_aware()</c> and <c>suppresses_error()</c> shall return <c>false</c>.</postcondition>
+          <postcondition><c>is_empty_line_aware()</c> and <c>is_suppressing_errors()</c> shall return <c>false</c>.</postcondition>
           <remark>This overload shall not participate in overload resolution unless if <c>std::decay_t&lt;TextSourceR></c> is the same type as <c>TextSource</c>.</remark>
         </code-item>
 
@@ -6282,7 +6282,7 @@ template &lt;class TextSourceR>
           <effects>Initializes an object of <c>text_pull</c> with an allocator object constructed with <c>alloc</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
-          <postcondition><c>is_empty_line_aware()</c> and <c>suppresses_error()</c> shall return <c>false</c>.</postcondition>
+          <postcondition><c>is_empty_line_aware()</c> and <c>is_suppressing_errors()</c> shall return <c>false</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -6324,14 +6324,14 @@ text_pull&amp; set_empty_physical_line_aware(bool b = true) noexcept;
 
         <code-item>
           <code>
-bool suppresses_error() const noexcept;
+bool is_suppressing_errors() const noexcept;
           </code>
           <returns>Whether <c>operator()</c> and <c>skip_records()</c> catches all the exceptions thrown by the internal text parser.</returns>
         </code-item>
 
         <code-item>
           <code>
-text_pull&amp; suppresses_error(bool b = true) noexcept;
+text_pull&amp; set_suppressing_errors(bool b = true) noexcept;
           </code>
           <returns>Sets hether <c>operator()</c> and <c>skip_records()</c> catches all the exceptions thrown by the internal text parser (if <c>b</c> is not <c>false</c>) or not (otherwise).</returns>
           <returns><c>*this</c>.</returns>
@@ -6625,7 +6625,7 @@ template &lt;class OtherTr = std::char_traits&lt;char_type>,
           <code>
 void rethrow_suppressed();
           </code>
-          <effects>If <c>*this</c> has caught exceptions while <c>suppresses_error()</c> (<xref id="text_pull.tweaks"/>) is set to <c>true</c>, clears them and rethrow the latest one.
+          <effects>If <c>*this</c> has caught exceptions while <c>is_suppressing_errors()</c> (<xref id="text_pull.tweaks"/>) is set to <c>true</c>, clears them and rethrow the latest one.
                    Otherwise, does nothing.</effects>
           <remark>The return values of <c>state</c> shall be the same between before and after invoking this function.</remark>
         </code-item>

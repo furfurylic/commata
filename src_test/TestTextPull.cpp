@@ -347,7 +347,7 @@ TYPED_TEST_P(TestTextPull, SuppressedError)
 
     auto pull = make_text_pull(
         make_csv_source(csv), TypeParam::second_type::value);
-    pull.set_suppresses_error();
+    pull.set_suppressing_errors();
     ASSERT_EQ(text_pull_state::field, pull().state());
     ASSERT_EQ(text_pull_state::record_end, pull().state());
     ASSERT_EQ(text_pull_state::field, pull().state());

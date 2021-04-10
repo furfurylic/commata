@@ -156,12 +156,12 @@ public:
         return dq_;
     }
 
-    bool discards_data() const noexcept
+    bool is_discarding_data() const noexcept
     {
         return !collects_data_;
     }
 
-    pull_handler& set_discards_data(bool b = true) noexcept
+    pull_handler& set_discarding_data(bool b = true) noexcept
     {
         collects_data_ = !b;
         return *this;
@@ -472,15 +472,15 @@ public:
         return ap_.base();
     }
 
-    bool discards_data() const noexcept
+    bool is_discarding_data() const noexcept
     {
-        return handler_ && handler_->discards_data();
+        return handler_ && handler_->is_discarding_data();
     }
 
-    primitive_text_pull& set_discards_data(bool b = true) noexcept
+    primitive_text_pull& set_discarding_data(bool b = true) noexcept
     {
         if (handler_) {
-            handler_->set_discards_data(b);
+            handler_->set_discarding_data(b);
         }
         return *this;
     }
@@ -636,7 +636,7 @@ class temporarily_discard
 public:
     explicit temporarily_discard(PrimitiveTextPull& p) noexcept : p_(&p)
     {
-        p_->set_discards_data();
+        p_->set_discarding_data();
     }
 
     temporarily_discard(const temporarily_discard&) = delete;
@@ -644,13 +644,13 @@ public:
     ~temporarily_discard()
     {
         if (p_) {
-            p_->set_discards_data(false);
+            p_->set_discarding_data(false);
         }
     }
 
     void reset() noexcept
     {
-        p_->set_discards_data(false);
+        p_->set_discarding_data(false);
         p_ = nullptr;
     }
 };
@@ -761,12 +761,12 @@ public:
         return *this;
     }
 
-    bool suppresses_error() const noexcept
+    bool is_suppressing_errors() const noexcept
     {
         return suppresses_error_;
     }
 
-    text_pull& set_suppresses_error(bool b = true) noexcept
+    text_pull& set_suppressing_errors(bool b = true) noexcept
     {
         suppresses_error_ = b;
         return *this;
