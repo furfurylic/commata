@@ -40,7 +40,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
                          R"( cell10 ,,"cell)" "\r\n"
                          R"(12","cell""13""","")" "\n");
     auto source = make_csv_source(csv);
-    primitive_table_pull<decltype(source)> pull(
+    primitive_table_pull pull(
         std::move(source), TypeParam::second_type::value);
     ASSERT_EQ(2U, pull.max_data_size());
     std::basic_string<char_t> s;
@@ -108,7 +108,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveMove)
    
     const auto csv = str("A,B\nC,D");
     auto source = make_csv_source(csv);
-    primitive_table_pull<decltype(source)> pull(
+    primitive_table_pull pull(
         std::move(source), TypeParam::second_type::value);
 
     // Skip first line

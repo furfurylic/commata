@@ -6255,6 +6255,12 @@ namespace commata {
               primitive_table_pull_handle_all>
     class primitive_table_pull;
 
+  template &lt;class TableSource, class... Args>
+    primitive_table_pull(TableSource, Args...) -> primitive_table_pull&lt;TableSource>;
+  template &lt;class TableSource, class Allocator, class... Args>
+    primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
+      -> primitive_table_pull&lt;TableSource, Allocator>;
+
   enum class table_pull_state : <nc>unspecified</nc> {
     before_parse = <nc>unspecified</nc>,
     eof          = <nc>unspecified</nc>,
@@ -6266,6 +6272,12 @@ namespace commata {
   template &lt;class TableSource,
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class table_pull;
+
+  template &lt;class TableSource, class... Args>
+    table_pull(TableSource, Args...) -> table_pull&lt;TableSource>;
+  template &lt;class TableSource, class Allocator, class... Args>
+    table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
+      -> table_pull&lt;TableSource, Allocator>;
 
   template &lt;class TableSource, class... Appendices>
     table_pull&lt;std::decay_t&lt;TableSource>>
@@ -6350,6 +6362,12 @@ namespace commata {
     size_type data_size() const noexcept;
     size_type max_data_size() const noexcept;
   };
+
+  template &lt;class TableSource, class... Args>
+    primitive_table_pull(TableSource, Args...) -> primitive_table_pull&lt;TableSource>;
+  template &lt;class TableSource, class Allocator, class... Args>
+    primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
+      -> primitive_table_pull&lt;TableSource, Allocator>;
 }
       </codeblock>
 
@@ -6671,6 +6689,12 @@ namespace commata {
     const view_type&amp; operator*() const noexcept;
     const view_type* operator->() const noexcept;
   };
+
+  template &lt;class TableSource, class... Args>
+    table_pull(TableSource, Args...) -> table_pull&lt;TableSource>;
+  template &lt;class TableSource, class Allocator, class... Args>
+    table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
+      -> table_pull&lt;TableSource, Allocator>;
 
   <c>// <n><xref id="table_pull.creation"/>, table_pull creation functions:</n></c>
   template &lt;class TableSource, class... Appendices>
