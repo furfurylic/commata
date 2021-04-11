@@ -28,7 +28,6 @@
 #include "formatted_output.hpp"
 #include "handler_decorator.hpp"
 #include "member_like_base.hpp"
-#include "nothrow_move_constructible.hpp"
 #include "string_value.hpp"
 
 namespace commata {
@@ -678,8 +677,7 @@ private:
 
     text_pull_state last_state_;
     std::pair<char_type*, char_type*> last_;
-    detail::nothrow_move_constructible<std::vector<char_type, Allocator>>
-        value_;
+    std::basic_string<char_type, traits_type, Allocator> value_;
     bool value_expiring_;
 
     std::size_t i_;
@@ -723,7 +721,7 @@ public:
             ((buffer_size > 1) ? buffer_size : 2)),
         empty_physical_line_aware_(false), suppresses_error_(false),
         last_state_(text_pull_state::before_parse), last_(empty_string()),
-        value_(std::allocator_arg, alloc), value_expiring_(false),
+        value_(alloc), value_expiring_(false),
         i_(0), j_(0)
     {}
 
@@ -747,7 +745,7 @@ public:
 
     allocator_type get_allocator() const noexcept
     {
-        return value_->get_allocator();
+        return value_.get_allocator();
     }
 
     bool is_empty_physical_line_aware() const noexcept
@@ -804,7 +802,7 @@ public:
             return next_field();
         }
         last_ = empty_string();
-        value_->clear();
+        value_.clear();
         detail::temporarily_discard<decltype(p_)> d(p_);
         if (value_expiring_) {
             ++j_;
@@ -867,7 +865,7 @@ private:
     {
         assert(*this);
         if (value_expiring_) {
-            value_->clear();
+            value_.clear();
             last_ = empty_string();
             ++j_;
             value_expiring_ = false;
@@ -891,12 +889,12 @@ private:
                 break;
             case primitive_text_pull_state::finalize:
                 do_update(p_[0], p_[1]);
-                if (value_->empty()) {
+                if (value_.empty()) {
                     *last_.second = char_type();
                 } else {
-                    value_->push_back(char_type());
-                    last_.first = value_->data();
-                    last_.second = last_.first + value_->size() - 1;
+                    value_.push_back(char_type());
+                    last_.first = &value_[0];
+                    last_.second = last_.first + value_.size() - 1;
                 }
                 set_state(text_pull_state::field);
                 value_expiring_ = true;
@@ -912,7 +910,7 @@ private:
                 return *this;
             case primitive_text_pull_state::end_buffer:
                 if (last_.first != empty_string().first) {
-                    value_->insert(value_->cend(), last_.first, last_.second);
+                    value_.append(last_.first, last_.second);
                     last_.first = empty_string().first;
                 }
                 break;
@@ -936,7 +934,7 @@ public:
             return *this;
         }
         last_ = empty_string();
-        value_->clear();
+        value_.clear();
         detail::temporarily_discard<decltype(p_)> d(p_);
         if (value_expiring_) {
             ++j_;
@@ -1119,8 +1117,8 @@ private:
 
     void do_update(char_type* first, char_type* last)
     {
-        if (!value_->empty()) {
-            value_->insert(value_->cend(), first, last);
+        if (!value_.empty()) {
+            value_.append(first, last);
         } else if (last_.first != empty_string().first) {
             TextSource::traits_type::move(last_.second, first, last - first);
             last_.second += last - first;
