@@ -34,7 +34,6 @@
 
 #include "allocation_only_allocator.hpp"
 #include "buffer_size.hpp"
-#include "nothrow_move_constructible.hpp"
 #include "text_error.hpp"
 #include "member_like_base.hpp"
 #include "typing_aid.hpp"
@@ -309,8 +308,7 @@ class basic_table_scanner
     const Ch* end_;
     string_t fragmented_value_;
     typename hfs_at_t::pointer header_field_scanner_;
-    detail::nothrow_move_constructible<
-        std::vector<bfs_ptr_p_t, scanners_a_t>> scanners_;
+    std::vector<bfs_ptr_p_t, scanners_a_t> scanners_;
     std::size_t sj_;    // possibly active scanner: can't be an iterator
                         // because it would be invalidated by header scanners
     typename res_at_t::pointer end_scanner_;
@@ -345,7 +343,7 @@ public:
         remaining_header_records_(header_record_count),
         buffer_size_(sanitize_buffer_size(buffer_size)), buffer_(),
         begin_(nullptr), fragmented_value_(alloc),
-        header_field_scanner_(), scanners_(make_scanners()),
+        header_field_scanner_(), scanners_(scanners_a_t(bfs_ptr_p_a_t(alloc))),
         end_scanner_(nullptr)
     {}
 
@@ -361,7 +359,7 @@ public:
         buffer_(), begin_(nullptr), fragmented_value_(alloc),
         header_field_scanner_(allocate_construct<
             typed_header_field_scanner<HeaderFieldScanner>>(std::move(s))),
-        scanners_(make_scanners()), end_scanner_(nullptr)
+        scanners_(scanners_a_t(bfs_ptr_p_a_t(alloc))), end_scanner_(nullptr)
     {}
 
     basic_table_scanner(basic_table_scanner&& other) noexcept :
@@ -387,11 +385,8 @@ public:
         if (header_field_scanner_) {
             destroy_deallocate(header_field_scanner_);
         }
-        if (scanners_) {
-            for (const auto& p : *scanners_) {
-                destroy_deallocate(p.first);
-            }
-            scanners_.kill(a);
+        for (const auto& p : scanners_) {
+            destroy_deallocate(p.first);
         }
         if (end_scanner_) {
             destroy_deallocate(end_scanner_);
@@ -429,18 +424,15 @@ private:
     void do_set_field_scanner(std::size_t j, FieldScanner s)
     {
         using scanner_t = typed_body_field_scanner<FieldScanner>;
-        if (!scanners_) {
-            scanners_.assign(get_allocator(), make_scanners());     // throw
-        }
         const auto it = std::lower_bound(
-            scanners_->begin(), scanners_->end(), j, scanner_less());
+            scanners_.begin(), scanners_.end(), j, scanner_less());
         const auto p = allocate_construct<scanner_t>(std::move(s)); // throw
-        if ((it != scanners_->end()) && (it->second == j)) {
+        if ((it != scanners_.end()) && (it->second == j)) {
             destroy_deallocate(it->first);
             it->first = p;
         } else {
             try {
-                scanners_->emplace(it, p, j);                       // throw
+                scanners_.emplace(it, p, j);                       // throw
             } catch (...) {
                 destroy_deallocate(p);
                 throw;
@@ -450,36 +442,29 @@ private:
 
     void do_set_field_scanner(std::size_t j, std::nullptr_t)
     {
-        if (scanners_) {
-            const auto it = std::lower_bound(
-                scanners_->begin(), scanners_->end(), j, scanner_less());
-            if ((it != scanners_->end()) && (it->second == j)) {
-                destroy_deallocate(it->first);
-                scanners_->erase(it);
-            }
+        const auto it = std::lower_bound(
+            scanners_.begin(), scanners_.end(), j, scanner_less());
+        if ((it != scanners_.end()) && (it->second == j)) {
+            destroy_deallocate(it->first);
+            scanners_.erase(it);
         }
     }
 
 public:
     const std::type_info& get_field_scanner_type(std::size_t j) const noexcept
     {
-        if (scanners_) {
-            const auto it = std::lower_bound(
-                scanners_->cbegin(), scanners_->cend(), j, scanner_less());
-            if ((it != scanners_->cend()) && (it->second == j)) {
-                return it->first->get_type();
-            }
+        const auto it = std::lower_bound(
+            scanners_.cbegin(), scanners_.cend(), j, scanner_less());
+        if ((it != scanners_.cend()) && (it->second == j)) {
+            return it->first->get_type();
         }
         return typeid(void);
     }
 
     bool has_field_scanner(std::size_t j) const noexcept
     {
-        if (scanners_) {
-            return std::binary_search(
-                scanners_->cbegin(), scanners_->cend(), j, scanner_less());
-        }
-        return false;
+        return std::binary_search(
+            scanners_.cbegin(), scanners_.cend(), j, scanner_less());
     }
 
     template <class FieldScanner>
@@ -501,12 +486,10 @@ private:
         const FieldScanner, FieldScanner>*
     get_field_scanner_g(ThisType& me, std::size_t j) noexcept
     {
-        if (me.scanners_) {
-            const auto it = std::lower_bound(me.scanners_->begin(),
-                me.scanners_->end(), j, scanner_less());
-            if ((it != me.scanners_->end()) && (it->second == j)) {
-                return it->first->template get_target<FieldScanner>();
-            }
+        const auto it = std::lower_bound(me.scanners_.begin(),
+            me.scanners_.end(), j, scanner_less());
+        if ((it != me.scanners_.end()) && (it->second == j)) {
+            return it->first->template get_target<FieldScanner>();
         }
         return nullptr;
     }
@@ -635,8 +618,7 @@ public:
                 scanner->field_value(uc(first), uc(last), *this);
             }
         }
-        if (scanners_ && (sj_ < scanners_->size())
-         && (j_ == (*scanners_)[sj_].second)) {
+        if ((sj_ < scanners_.size()) && (j_ == scanners_[sj_].second)) {
             ++sj_;
         }
         ++j_;
@@ -649,10 +631,8 @@ public:
         } else if (remaining_header_records_ > 0) {
             --remaining_header_records_;
         } else {
-            if (scanners_) {
-                for (auto i = sj_, ie = scanners_->size(); i != ie; ++i) {
-                    (*scanners_)[i].first->field_skipped();
-                }
+            for (auto i = sj_, ie = scanners_.size(); i != ie; ++i) {
+                scanners_[i].first->field_skipped();
             }
             if (end_scanner_) {
                 end_scanner_->end_record();
@@ -701,13 +681,6 @@ private:
         t_at_t::deallocate(a, p, 1);
     }
 
-    auto make_scanners()
-    {
-        const auto a = get_allocator();
-        return decltype(scanners_)(std::allocator_arg, a,
-            scanners_a_t(bfs_ptr_p_a_t(a)));
-    }
-
     Ch* true_buffer() const noexcept
     {
         assert(buffer_);
@@ -718,10 +691,9 @@ private:
     {
         if (header_field_scanner_) {
             return std::addressof(*header_field_scanner_);
-        } else if ((remaining_header_records_ == 0U) && scanners_
-                && (sj_ < scanners_->size())
-                && (j_ == (*scanners_)[sj_].second)) {
-            return std::addressof(*(*scanners_)[sj_].first);
+        } else if ((remaining_header_records_ == 0U)
+                && (sj_ < scanners_.size()) && (j_ == scanners_[sj_].second)) {
+            return std::addressof(*scanners_[sj_].first);
         } else {
             return nullptr;
         }
