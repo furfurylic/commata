@@ -2035,18 +2035,21 @@ bool is_in_header() const noexcept;
             <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp;, const Allocator&amp;>>::value</c> is not <c>false</c>
             (which shall not be <c>false</c> according to ISO C++14 standard),
             a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::move(p)</c> and <c>alloc</c>,
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,
+            and whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
         <li>otherwise, if <c>P</c> is non-reference and cv-unqualified <c>std::basic_string&lt;Ch, Tr, Allocator></c>,
             a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::move(p)</c>,
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,
+            and whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
         <li>otherwise, if <c>std::decay_t&lt;P></c> is <c>std::basic_string&lt;Ch, Tr, A></c> for a certain <c>A</c>,
             a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with arguments being <c>p.cbegin()</c>, <c>p.cend()</c> and <c>alloc</c>,
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,
+            and whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
         <li>otherwise, if <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, P&amp;&amp;, const Allocator&amp;>>::value</c> is not <c>false</c>,
-            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::forward&lt;P>(p)</c> and <c>alloc</c>
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,</li>
-        <li>otherwise, if <c>P</c> is an lvalue reference type, an lvalue reference to <c>p</c>,</li>
-        <li>otherwise, an rvalue reference to <c>p</c>.</li>
+            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::forward&lt;P>(p)</c> and <c>alloc</c>,
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,
+            and whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
+        <li>otherwise, <c>std::forward&lt;P>(p)</c>.</li>
       </ul>
 
       <code-item>

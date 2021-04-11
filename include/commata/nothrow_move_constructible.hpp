@@ -54,8 +54,8 @@ public:
         return t_ != nullptr;
     }
 
-    // Requires the passed allocator is equal to the one passed on construction
-    // of *this; throws nothing
+    // Requires that the passed allocator is equal to the one passed on
+    // construction of *this; throws nothing
     template <class AnyAllocator>
     void kill(const AnyAllocator& any_alloc)
     {

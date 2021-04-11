@@ -90,6 +90,34 @@ TEST_P(TestRecordExtractor, NoSuchField)
               out.str());
 }
 
+TEST_P(TestRecordExtractor, MoveCtor)
+{
+    const wchar_t* s = L",key_b,value_a,value_b\n"
+                       L"\"ka1\",kb1,va1,vb1\r\n"
+                       L",kb2,va2,vb2\n"
+                       L"ka1,kb3,vb3,\"vb3\"\r";
+        // field name/value preds are likely to be empty strings
+        // after moved from, so we contain empty fields in the header and
+        // a non-heder record
+    std::wstringbuf out;
+    std::wstring key_a = L"key_b";
+    auto ex = make_record_extractor(&out, key_a, L"kb3");
+    auto ey = std::move(ex);
+
+    try {
+        parse_csv(s, std::move(ex), GetParam());
+        ASSERT_STREQ(L"", out.str().c_str());
+    } catch (const record_extraction_error&) {
+        // "no such field" is all right
+    }
+
+    parse_csv(s, std::move(ey), GetParam());
+    ASSERT_STREQ(
+        L",key_b,value_a,value_b\n"
+        L"ka1,kb3,vb3,\"vb3\"\n",
+        out.str().c_str());
+}
+
 INSTANTIATE_TEST_SUITE_P(, TestRecordExtractor, testing::Values(1, 10, 1024));
 
 struct TestRecordExtractorLimit :
