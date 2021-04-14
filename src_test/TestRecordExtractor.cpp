@@ -92,6 +92,11 @@ TEST_P(TestRecordExtractor, NoSuchField)
 
 TEST_P(TestRecordExtractor, MoveCtor)
 {
+    // TextHandler requirements do not require that moved-from objects can be
+    // used for parsing, but record_extractor provides the ability only if
+    // the moved-from objects have not been used parsed yet.
+    // This is a test for that behaviour.
+
     const wchar_t* s = L",key_b,value_a,value_b\n"
                        L"\"ka1\",kb1,va1,vb1\r\n"
                        L",kb2,va2,vb2\n"

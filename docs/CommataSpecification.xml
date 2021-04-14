@@ -112,8 +112,9 @@
 
     <p>A type <c>T</c> meets the <c>TextHandler</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
     <ul>
-      <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-      <li>the expressions shown in <xref id="table.text_handler.requirements"/> are valid and have the indicated semantics.</li>
+      <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>,</li>
+      <li>the expressions shown in <xref id="table.text_handler.requirements"/> are valid and have the indicated semantics, and</li>
+      <li>moved-to objects of <c>T</c> takes over the states of moved-from objects in terms of <xref id="table.text_handler.requirements"/>.</li>
     </ul>
 
     <p>In <xref id="table.text_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>. <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
@@ -271,6 +272,8 @@
         <td>Returns <c>0</c>.</td>
       </tr>
     </table>
+
+    <p>A moved-from object whose type satisfies <c>TextHandler</c> requirements may cause undefined behaviour when used in terms of <xref id="table.text_handler.requirements"/>.</p>
   </section>
 
   <section id="text_parser.requirements">
