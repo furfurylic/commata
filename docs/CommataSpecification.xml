@@ -2958,7 +2958,9 @@ namespace commata {
     using size_type       = typename content_type::size_type;
 
     <c>// <n><xref id="basic_stored_table.cons"/>, construct/copy/destroy:</n></c>
-    explicit basic_stored_table(std::size_t buffer_size = 0);
+    explicit basic_stored_table(std::size_t buffer_size = 0) :
+      basic_stored_table(std::allocator_arg, Allocator(), buffer_size);
+    basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t buffer_size = 0U);
     basic_stored_table(const basic_stored_table&amp;  other);
     basic_stored_table(      basic_stored_table&amp;&amp; other) noexcept;
     template &lt;class OtherContent, class OtherAllocator>
@@ -2989,7 +2991,6 @@ namespace commata {
     <c>// <n><xref id="basic_stored_table.constituents"/>, access to the constituents:</n></c>
     allocator_type get_allocator() const noexcept;
     std::size_t get_buffer_size() const noexcept;
-    bool is_singular() const noexcept;
     content_type&amp;       content();
     const content_type&amp; content() const;
     record_type&amp;       operator[](size_type record_index);
@@ -3066,7 +3067,8 @@ namespace commata {
 
         <p>The class template <c>basic_stored_table</c> is a facility to make an in-memory image of text values arranged two-dimensionally.</p>
 
-        <p>The template parameter <c>Content</c> shall be a sequence container type of a sequence container type of <c>basic_stored_value&lt;Ch, Tr></c> (<xref id="basic_stored_value"/>) for some <c>Ch</c> and <c>Tr</c>.
+        <p>The template parameter <c>Content</c> shall be a sequence container type of a sequence container type of <c>basic_stored_value&lt;Ch, Tr></c> (<xref id="basic_stored_value"/>) for some <c>Ch</c> and <c>Tr</c>
+           and shall meet the <c>DefaultInsertable</c> requirements with <c>Allocator</c>.
            Note that <c>std::array</c> and <c>std::forward_list</c> do not qualify because they lack some essential functionalities of sequence containers.</p>
         <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>Content</c>.</p>
 
@@ -3075,19 +3077,16 @@ namespace commata {
 
           <p>An object of <c>basic_stored_table&lt;Content, Allocator></c> consists of the four following constituents:</p>
           <ul>
-            <li>a <n>content</n>, whose type is <c>Content</c> and that is a sequence container object of sequence container objects of text values that are objects of <c>basic_stored_value&lt;Ch, Tr></c> (<xref id="basic_stored_value"/>) for some <c>Ch</c> and <c>Tr</c>,</li>
+            <li>a <n>content container</n>, which is an allocator-aware container of <c>Content</c> with its size being at most one (and its possible sole element is called the <n>content</n>),</li>
             <li>a <n>store</n>, which is a bundle of <n>buffers</n> and a <n>bookkeeper object</n>; each one of the the buffers is an array of <c>Ch</c> and contains memory referenced by the text values in the content and the bookkeeper object memorizes all the ranges of memory possibly reserved for the text values,</li>
-            <li>an allocator, whose type is <c>Allocator</c> and that is used to allocate and construct the content and to allocate memories required by the store and any other operations, and</li>
+            <li>an allocator, whose type is <c>Allocator</c>, which is used to allocate and construct the content, and whose rebound coplies for <c>Ch</c> are used to allocate memories required by the store, and</li>
             <li>a <n>buffer size</n>, whose type is <c>std::size_t</c> and that is used as the least amount of <c>Ch</c> in one memory allocation.</li>
           </ul>
-          <p>An object of an instance of <c>basic_stored_table</c> is able not to have its content.</p>
           <p>The store of an object of <c>basic_stored_table</c> marks one buffer in it as its <n>current buffer</n> when it is not empty; that is, when it has at least one buffer.</p>
         </section>
 
         <section id="basic_stored_table.defs">
           <name>Definitions</name>
-
-          <p>An object of an instance of <c>basic_stored_table</c> without its content is called <n>singular</n>.</p>
 
           <p>The <n>value type</n> of an object of an instance of <c>basic_stored_table&lt;Content, Allocator></c> denotes <c>typename Content::value_type::value_type</c>, which is an instance of <c>basic_stored_value</c>.</p>
 
@@ -3098,16 +3097,11 @@ namespace commata {
             <li><c>v.empty()</c> is not <c>false</c>, or</li>
             <li>the range [<c>v.cbegin()</c>, <c>v.cend()</c>] resides in a buffer in the store of <c>t</c>, and <c>*v.cend()</c> is equal to <c>Ch()</c>.</li>
           </ul>
-          <p>An object of an instance of <c>basic_stored_table</c> is called <n>complete</n> if none of its contained values is not backed by it.
-             Note that also a singular object of an instance of <c>basic_stored_table</c> is complete because it has no contained values.</p>
+          <p>An object of an instance of <c>basic_stored_table</c> is called <n>complete</n> if none of its contained values is not backed by it.</p>
         </section>
 
         <section id="basic_stored_table.conds">
           <name>General requirements and postconditions</name>
-
-          <p>The consequence of accessing to the content of a singular <c>basic_stored_table</c> object is undefined.
-             A singular object can be assigned, destroyed, copied from, or moved from.
-             Also a singular object has a store, an allocator, and a buffer size similarly to non-singular objects.</p>
 
           <p>All member functions of <c>basic_stored_table</c> and all instances of non-member function templates declared in this header (<xref id="stored_table_hpp"/>) that take at least one parameter whose reference-removed and cv-unqualified type is an instance of <c>basic_stored_table</c> require that the following conditions meet:</p>
           <ul>
@@ -3128,38 +3122,33 @@ namespace commata {
       <section id="basic_stored_table.cons">
         <name><c>basic_stored_table</c> construct/copy/destroy</name>
 
-        <p>In this subclause, <c>AT</c> denotes <c>std::allocator_traits&lt;Allocator></c>.</p>
-        <p>All constructors and assignment operators that take a parameter whose cv-unqualified type is an instance of <c>basic_stored_table</c> propagates singularity;
-           that is, <c>*this</c> shall be singular after the call if and only if the argument is singular.</p>
-        <p>With respect to allocators, all constructors shall perform uses-allocator construction of the store.
-           All constructors and assignment operators shall behave as if <c>basic_stored_table&lt;Content, Allocator></c> is a container of <c>Content</c> (even though its size is at most one), and
-           shall make an appropriate decision about propagation of the allocator in accordance with <c>AT::select_on_container_copy_construnction</c>, <c>AT::propagete_on_container_copy_assignment</c> and <c>AT::propagete_on_container_move_assignment</c>.</p>
+        <p>In this subclause, <c>AT</c> denotes <c>std::allocator_traits&lt;Allocator></c>, <c>CAT</c> denotes <c>typename AT::template rebind_traits&lt;Ch></c> and <c>CA</c> denotes <c>typename CAT::allocator_type</c>.</p>
+        <p>All constructors and assignment operators shall make an appropriate decision about propagation of the allocator in accordance with <c>AT::select_on_container_copy_construnction</c>, <c>AT::propagete_on_container_copy_assignment</c> and <c>AT::propagete_on_container_move_assignment</c>.</p>
 
         <code-item>
           <code>
-explicit basic_stored_table(std::size_t buffer_size = 0);
+basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t buffer_size = 0U);
           </code>
-          <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
-          <effects>If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>AT::max_size(Allocator())</c> and <c>b2</c> where <c>b2</c> is the greater of <c>buffer_size</c> and <c>2</c>.
-                   Otherwise, initializes it to a unspecified value.
-                   Initializes the allocator with its default constructor.
-                   Initializes the content to be an empty one.</effects>
+          <effects>Copy constructs the allocator from <c>alloc</c>.
+                   If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>CAT::max_size(CA(a))</c> and the greater of <c>buffer_size</c> and <c>2</c> where <c>a</c> is an lvalue to the allocator.
+                   Otherwise, initializes it to an unspecified value.
+                   Initializes the content container to have an element as default inserted into it.</effects>
         </code-item>
 
         <code-item>
           <code>
 basic_stored_table(const basic_stored_table&amp; other);
           </code>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and <c>other.get_buffer_size()</c>.
-                         If not singular, also <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c> where <c>CAT</c> is equal to <c>std::allocator_traits&lt;Allocator>::template rebind_alloc&lt;char_type></c>.
+                         If defined, also <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
           <code>
 basic_stored_table(basic_stored_table&amp;&amp; other) noexcept;
           </code>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and the value of <c>other.get_buffer_size()</c> before this construction.
-                         If not singular, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and the value of <c>other.get_buffer_size()</c> before this construction.
+                         If defined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
         </code-item>
 
         <code-item>
@@ -3170,11 +3159,10 @@ template &lt;class OtherContent, class OtherAllocator>
           </code>
           <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.
                     <c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.</requires>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and <c>other.get_buffer_size()</c>.
-                         <c>get_allocator() == Allocator()</c> shall not be equal to <c>false</c>.
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
+                         <c>get_allocator() == Allocator()</c> shall be <c>true</c>.
                          The values of <c>size()</c> and <c>other.size()</c> shall be identical.
-                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the values of <c>*ti</c> and <c>record_type(oi->cbegin(), oi->cend())</c> shall be equal.
-                         <c>*this</c> may be singular only if <c>other</c> is singular.</postcondition>
+                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the values of <c>*ti</c> and <c>record_type(oi->cbegin(), oi->cend())</c> shall be equal.</postcondition>
         </code-item>
 
         <code-item>
@@ -3185,11 +3173,10 @@ template &lt;class OtherContent, class OtherAllocator>
           </code>
           <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.
                     <c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.</requires>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and <c>other.get_buffer_size()</c>.
-                         <c>get_allocator() == Allocator()</c> shall not be equal to <c>false</c>.
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
+                         <c>get_allocator() == Allocator()</c> shall be <c>true</c>.
                          The values of <c>size()</c> and the value that <c>other.size()</c> had before this construction shall be identical.
-                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the value of <c>*ti</c> shall be equal to the value that <c>record_type(oi->cbegin(), oi->cend())</c> had before this construction.
-                         <c>*this</c> may be singular only if <c>other</c> was singular before the construction.</postcondition>
+                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the value of <c>*ti</c> shall be equal to the value that <c>record_type(oi->cbegin(), oi->cend())</c> had before this construction.</postcondition>
         </code-item>
 
         <code-item>
@@ -3197,10 +3184,10 @@ template &lt;class OtherContent, class OtherAllocator>
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                    std::size_t buffer_size = 0);
           </code>
-          <effects>If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>AT::max_size(alloc)</c> and <c>b2</c> where <c>b2</c> is the greater of <c>buffer_size</c> and <c>2</c>.
+          <effects>If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>CAT::max_size(CA(alloc))</c> and the greater of <c>buffer_size</c> and <c>2</c>.
                    Otherwise, initializes it to a unspecified value.
                    Initializes the allocator with <c>alloc</c>.
-                   Initializes the content to be an empty one.</effects>
+                   Make the content container have an element as default inserted.</effects>
         </code-item>
 
         <code-item>
@@ -3208,8 +3195,8 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                    const basic_stored_table&amp; other);
           </code>
-          <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(alloc)</c> and <c>other.get_buffer_size()</c>.
-                         If not singular, <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
+          <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(alloc))</c> and <c>other.get_buffer_size()</c>.
+                         If defined, <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -3217,8 +3204,8 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                    basic_stored_table&amp;&amp; other);
           </code>
-          <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(alloc)</c> and <c>other.get_buffer_size()</c>.
-                         If not singular, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
+          <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(alloc))</c> and <c>other.get_buffer_size()</c>.
+                         If defined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
         </code-item>
 
         <code-item>
@@ -3230,11 +3217,10 @@ template &lt;class OtherContent, class OtherAllocator>
           </code>
           <requires><c>OtherContent::char_type</c> and <c>OtherContent::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
                     <c>Allocator</c> shall be <c>CopyConstructible</c>.</requires>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and <c>other.get_buffer_size()</c>.
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
                          The value of <c>get_allocator()</c> shall be equal to <c>alloc</c>.
                          The values of <c>size()</c> and <c>other.size()</c> shall be identical.
-                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the values of <c>*ti</c> and <c>record_type(oi->cbegin(), oi->cend())</c> shall be equal.
-                         <c>*this</c> may be singular only if <c>other</c> is singular.</postcondition>
+                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the values of <c>*ti</c> and <c>record_type(oi->cbegin(), oi->cend())</c> shall be equal.</postcondition>
         </code-item>
 
         <code-item>
@@ -3246,26 +3232,25 @@ template &lt;class OtherContent, class OtherAllocator>
           </code>
           <requires><c>OtherContent::char_type</c> and <c>OtherContent::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
                     <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and <c>other.get_buffer_size()</c>.
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
                          The value of <c>get_allocator()</c> shall be equal to <c>alloc</c>.
                          The values of <c>size()</c> and the value that <c>other.size()</c> had before this construction shall be identical.
-                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the value of <c>*ti</c> shall be equal to the value that <c>record_type(oi->cbegin(), oi->cend())</c> had before this construction.
-                         <c>*this</c> may be singular only if <c>other</c> was singular before the construction.</postcondition>
+                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the value of <c>*ti</c> shall be equal to the value that <c>record_type(oi->cbegin(), oi->cend())</c> had before this construction.</postcondition>
         </code-item>
 
         <code-item>
           <code>
 ~basic_stored_table();
           </code>
-          <effects>Destroys the content if not singular, deallocates all buffers in the store, and destroys the allocator.</effects>
+          <effects>Destroys the content container, deallocates all buffers in the store, and destroys the allocator.</effects>
         </code-item>
 
         <code-item>
           <code>
 basic_stored_table&amp; operator=(const basic_stored_table&amp; other);
           </code>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and <c>other.get_buffer_size()</c>.
-                         If not singular, <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
+                         If defined, <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -3273,9 +3258,8 @@ basic_stored_table&amp; operator=(const basic_stored_table&amp; other);
 basic_stored_table&amp; operator=(basic_stored_table&amp;&amp; other)
   noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment::value);
           </code>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>AT::max_size(get_allocator())</c> and the value of <c>other.get_buffer_size()</c> before this assignment.
-                         If not singular, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this assignment.
-                         <c>other</c> may be singular.</postcondition>
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and the value of <c>other.get_buffer_size()</c> before this assignment.
+                         If defined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this assignment.</postcondition>
         </code-item>
       </section>
 
@@ -3298,18 +3282,12 @@ std::size_t get_buffer_size() const noexcept;
 
         <code-item>
           <code>
-bool is_singular() const noexcept;
-          </code>
-          <returns><c>true</c> if <c>*this</c> is singular; <c>false</c> otherwise.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
 content_type&amp;       content();
 const content_type&amp; content() const;
           </code>
-          <requires><c>*this</c> shall not be singular.</requires>
-          <returns>The content.</returns>
+          <requires>The content container of <c>*this</c> shall not be empty.</requires>
+          <returns>A reference to the content, which is the sole element of the content container.</returns>
+          <throws>Nothing.</throws>
         </code-item>
 
         <code-item>
@@ -3317,7 +3295,7 @@ const content_type&amp; content() const;
 record_type&amp;       operator[](size_type record_index);
 const record_type&amp; operator[](size_type record_index) const;
           </code>
-          <requires><c>*this</c> shall not be singular.</requires>
+          <requires>The content container of <c>*this</c> shall not be empty.</requires>
           <returns><c>content()[record_index]</c>.</returns>
         </code-item>
 
@@ -3325,7 +3303,7 @@ const record_type&amp; operator[](size_type record_index) const;
           <code>
 size_type size() const noexcept(<nc>see below</nc>);
           </code>
-          <returns><c>0</c> if singular; <c>content().size()</c> otherwise.</returns>
+          <returns><c>0</c> if the content container is empty; <c>content().size()</c> otherwise.</returns>
           <remark>The expression inside <c>noexcept</c> is <c>false</c> if and only if <c>Content::size</c> with no parameters is not marked as <c>noexcept</c>.</remark>
         </code-item>
 
@@ -3333,7 +3311,7 @@ size_type size() const noexcept(<nc>see below</nc>);
           <code>
 bool empty() const noexcept(<nc>see below</nc>);
           </code>
-          <returns><c>true</c> if singular; <c>content().empty()</c> otherwise.</returns>
+          <returns><c>true</c> if the content container is empty; <c>content().empty()</c> otherwise.</returns>
           <remark>The expression inside <c>noexcept</c> is <c>false</c> if and only if <c>Content::empty</c> with no parameters is not marked as <c>noexcept</c>.</remark>
         </code-item>
 
@@ -3341,7 +3319,7 @@ bool empty() const noexcept(<nc>see below</nc>);
           <code>
 void clear() noexcept(<nc>see below</nc>);
           </code>
-          <effects>Calls <c>content().clear()</c> if and only if not singular. Then makes the bookkeeper object of the store recognize no memory in the buffers of the store are reserved for any text values.</effects>
+          <effects>Calls <c>content().clear()</c> if and only if the content container of <c>*this</c> is not be empty. Then makes the bookkeeper object of the store recognize no memory in the buffers of the store are reserved for any text values.</effects>
           <remark>The expression inside <c>noexcept</c> is <c>false</c> if and only if <c>Content::clear</c> with no parameters is not marked as <c>noexcept</c>.</remark>
         </code-item>
       </section>
@@ -3352,7 +3330,7 @@ void clear() noexcept(<nc>see below</nc>);
           <code>
 void shrink_to_fit();
           </code>
-          <postcondition>The values of <c>is_singular()</c>, <c>content()</c> (if not singular), <c>get_allocator()</c> and <c>get_buffer_size()</c> shall be equal to the values that those had before this call.</postcondition>
+          <postcondition>The values of <c>content()</c> (if defined), <c>get_allocator()</c> and <c>get_buffer_size()</c> shall be equal to the values that those had before this call.</postcondition>
           <remark>This is a non-binding request to reduce memory use.</remark>
         </code-item>
       </section>
@@ -3478,7 +3456,7 @@ void secure_current_upto(char_type* secured_last);
       <section id="basic_stored_table.modifiers">
         <name><c>basic_stored_table</c> modifiers</name>
 
-        <p>To achieve clarity, in this subclause <c>operator[]</c> are used on a non-singular object <c>t</c> of an instance of <c>basic_stored_table</c> that does not necessarily have them well-defined. In these cases, the semaintics of <c>t[n]</c> is the same as that of <c>*std::next(t.content().cbegin(), n)</c>.</p>
+        <p>To achieve clarity, in this subclause <c>operator[]</c> are used on an object <c>t</c> of an instance of <c>basic_stored_table</c> that does not necessarily have them well-defined. In these cases, the semaintics of <c>t[n]</c> is the same as that of <c>*std::next(t.content().cbegin(), n)</c>.</p>
 
         <code-item>
           <code>
@@ -3492,8 +3470,7 @@ template &lt;class OtherContent, class OtherAllocator>
           <postcondition>Let <c>lsize</c> be the value that <c>size()</c> returned before the call.
                          <c>size() == lsize + other.size()</c> shall be <c>true</c>.
                          For each <c>i</c> in the range [<c>0</c>, <c>lsize</c>), the value of <c>(*this)[i]</c> shall be equal to the value that it had before call.
-                         For each <c>i</c> in the range [<c>0</c>, <c>other.size()</c>), <c>(*this)[lsize + i] == record_type(other[i].cbegin(), other[i].cend())</c> shall hold <c>true</c>.
-                         <c>*this</c> shall be singular only if both of <c>*this</c> and <c>other</c> were singular before the call.</postcondition>
+                         For each <c>i</c> in the range [<c>0</c>, <c>other.size()</c>), <c>(*this)[lsize + i] == record_type(other[i].cbegin(), other[i].cend())</c> shall hold <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -3509,8 +3486,7 @@ template &lt;class OtherContent>
           <postcondition>Let <c>lsize</c> be the value that <c>size()</c> returned before the call.
                          <c>size() == lsize + other.size()</c> shall be <c>true</c>.
                          For each <c>i</c> in the range [<c>0</c>, <c>lsize</c>), the value of <c>(*this)[i]</c> shall be equal to the value that it had before call.
-                         For each <c>i</c> in the range [<c>0</c>, <c>other.size()</c>), the value of <c>(*this)[lsize + i]</c> shall be equal to the value that <c>record_type(other[i].cbegin(), other[i].cend())</c> had before the call.
-                         <c>*this</c> shall be singular only if both of <c>*this</c> and <c>other</c> were singular before the call.</postcondition>
+                         For each <c>i</c> in the range [<c>0</c>, <c>other.size()</c>), the value of <c>(*this)[lsize + i]</c> shall be equal to the value that <c>record_type(other[i].cbegin(), other[i].cend())</c> had before the call.</postcondition>
         </code-item>
 
         <code-item>
@@ -3656,7 +3632,7 @@ namespace commata {
         </tr>
       </table>
 
-      <p>After parsing, even when it has exited via an exception, the targeted object shall be complete and not singular (<xref id="basic_stored_table.defs"/>).</p>
+      <p>After parsing, even when it has exited via an exception, the targeted object shall be complete (<xref id="basic_stored_table.defs"/>) and have its content container not empty.</p>
 
       <section id="stored_table_builder.cons">
         <name><c>stored_table_builder</c> construct/copy/destroy</name>
@@ -3664,7 +3640,7 @@ namespace commata {
           <code>
 explicit stored_table_builder(table_type&amp; table, std::size_t max_record_num = 0);
           </code>
-          <requires><c>table</c> shall not be singular.</requires>
+          <requires><c>table</c> shall have its content container not empty.</requires>
           <effects>Initializes an object of <c>stored_table_builder&lt;Content, Allocator, Options></c> that holds a reference to the targeted object <c>table</c>.
                    If <c>max_record_num</c> is not <c>0</c>, the returned object make the parser after the first <c>max_record_num</c> records are processed.</effects>
           <remark><c>table.empty()</c> may be <c>false</c>. This constructor does nothing on the targeted object.</remark>

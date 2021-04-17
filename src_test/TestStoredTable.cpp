@@ -871,7 +871,6 @@ TEST_F(TestStoredTable, Move)
 
     stored_table table2(std::move(table1));
 
-    ASSERT_TRUE(table1.is_singular());
     ASSERT_TRUE(table1.empty());
     ASSERT_EQ(table1.size(), 0U);
 
@@ -890,7 +889,6 @@ TEST_F(TestStoredTable, Move)
 
     table3 = std::move(table2);
 
-    ASSERT_TRUE(table2.is_singular());
     ASSERT_TRUE(table2.empty());
     ASSERT_EQ(table2.size(), 0U);
     table2.clear();
@@ -905,7 +903,7 @@ TEST_F(TestStoredTable, Move)
     ASSERT_EQ(char000, &table3[0][0][0]);
 }
 
-TEST_F(TestStoredTable, WithSingular)
+TEST_F(TestStoredTable, WithMovedFrom)
 {
     wstored_table table1;
     table1.content().emplace_back(1U);
@@ -915,37 +913,37 @@ TEST_F(TestStoredTable, WithSingular)
 
     wstored_table table2(std::move(table1));
 
-    ASSERT_TRUE(table1.is_singular()) << "Test's precondition";
+    ASSERT_TRUE(table1.empty()) << "Test's precondition";
 
-    // Copy ctor with singular
+    // Copy ctor with moved-from
 
     wstored_table table3(table1);
-    ASSERT_TRUE(table3.is_singular());
+    ASSERT_TRUE(table3.empty());
 
-    // Move ctor with singular
+    // Move ctor with moved-from
 
     wstored_table table4(table3);
-    ASSERT_TRUE(table3.is_singular());
-    ASSERT_TRUE(table4.is_singular());
+    ASSERT_TRUE(table3.empty());
+    ASSERT_TRUE(table4.empty());
 
-    // Copy assignment from singular
+    // Copy assignment from moved-from
 
     wstored_table table5;
     table5 = table3;
-    ASSERT_TRUE(table5.is_singular());
+    ASSERT_TRUE(table5.empty());
 
-    // Move assignment from singular
+    // Move assignment from moved-from
 
     wstored_table table6;
     table6 = std::move(table4);
-    ASSERT_TRUE(table4.is_singular());
-    ASSERT_TRUE(table6.is_singular());
+    ASSERT_TRUE(table4.empty());
+    ASSERT_TRUE(table6.empty());
 
-    // Swap with singular
+    // Swap with moved-from
 
     swap(table2, table6);
-    ASSERT_TRUE (table2.is_singular());
-    ASSERT_FALSE(table6.is_singular());
+    ASSERT_TRUE (table2.empty());
+    ASSERT_FALSE(table6.empty());
     ASSERT_EQ(char000, &table6[0][0][0]);
 }
 
@@ -1024,7 +1022,7 @@ TYPED_TEST(TestStoredTableMerge, Merge)
     ASSERT_EQ("consectetur", (*table1.content().crbegin())          [0]);
 }
 
-TYPED_TEST(TestStoredTableMerge, WithSingular)
+TYPED_TEST(TestStoredTableMerge, WithMovedFrom)
 {
     using t1_t = basic_stored_table<typename TypeParam::first_type>;
     using t2_t = basic_stored_table<typename TypeParam::second_type>;
@@ -1039,7 +1037,7 @@ TYPED_TEST(TestStoredTableMerge, WithSingular)
 
     {
         t1_t table3(std::move(table1));
-        ASSERT_TRUE(table1.is_singular()) << "Test's precondition";
+        ASSERT_TRUE(table1.empty()) << "Test's precondition";
     }
 
     table2 += table1;
@@ -1060,7 +1058,7 @@ TYPED_TEST(TestStoredTableMerge, WithSingular)
     ASSERT_EQ("value", table1.content().back().back());
     ASSERT_EQ(char000, &table2.content().back().back().back());
 
-    if (table2.is_singular()) {
+    if (table2.empty()) {
         table2 += table1;
         ASSERT_EQ(1U, table2.size());
         ASSERT_EQ(1U, table2.content().back().size());
@@ -1069,7 +1067,7 @@ TYPED_TEST(TestStoredTableMerge, WithSingular)
     }
 }
 
-TYPED_TEST(TestStoredTableMerge, WithSingulars)
+TYPED_TEST(TestStoredTableMerge, WithMovedFroms)
 {
     using t1_t = basic_stored_table<typename TypeParam::first_type>;
     using t2_t = basic_stored_table<typename TypeParam::second_type>;
@@ -1087,34 +1085,37 @@ TYPED_TEST(TestStoredTableMerge, WithSingulars)
     ASSERT_TRUE(table1.empty());
 }
 
-struct TestStoredTableAllocator : BaseTest
-{};
+class TestStoredTableAllocator : public BaseTest
+{
+    template <class T>
+    using TA = tracking_allocator<std::allocator<T>>;
+};
 
 TEST_F(TestStoredTableAllocator, Basics)
 {
     using Record = std::vector<
         stored_value,
-        tracking_allocator<std::allocator<stored_value>>>;
+        TA<stored_value>>;
     using Content = std::deque<
         Record,
         std::scoped_allocator_adaptor<
-            tracking_allocator<std::allocator<Record>>,
+            TA<Record>,
             Record::allocator_type>>;
     using Table = basic_stored_table<
         Content,
         std::scoped_allocator_adaptor<
-            tracking_allocator<std::allocator<Content>>,
-            tracking_allocator<std::allocator<Record>>,
-            tracking_allocator<std::allocator<stored_value>>>>;
+            TA<Content>,
+            TA<Record>,
+            TA<stored_value>>>;
 
     std::vector<std::pair<char*, char*>> allocated2;
-    tracking_allocator<std::allocator<stored_value>> a2(allocated2);
+    TA<stored_value> a2(allocated2);
 
     std::vector<std::pair<char*, char*>> allocated1;
-    tracking_allocator<std::allocator<Record>> a1(allocated1);
+    TA<Record> a1(allocated1);
 
     std::vector<std::pair<char*, char*>> allocated0;
-    tracking_allocator<std::allocator<Content>> a0(allocated0);
+    TA<Content> a0(allocated0);
 
     Table::allocator_type a(a0, a1, a2);
 
@@ -1135,15 +1136,16 @@ TEST_F(TestStoredTableAllocator, Basics)
     ASSERT_TRUE(a1.tracks(&table.content().front()));
     ASSERT_TRUE(a2.tracks(&table.content().front().front()));
     ASSERT_TRUE(a0.tracks(&table.content().front().front().front()));
+    ASSERT_TRUE(a0.tracks(&table.content()));
 
     std::vector<std::pair<char*, char*>> bllocated2;
     Record::allocator_type b2(bllocated2);
 
     std::vector<std::pair<char*, char*>> bllocated1;
-    tracking_allocator<std::allocator<Record>> b1(bllocated1);
+    TA<Record> b1(bllocated1);
 
     std::vector<std::pair<char*, char*>> bllocated0;
-    tracking_allocator<std::allocator<Content>> b0(bllocated0);
+    TA<Content> b0(bllocated0);
 
     Table::allocator_type b(b0, b1, b2);
 
@@ -1165,6 +1167,7 @@ TEST_F(TestStoredTableAllocator, Basics)
     ASSERT_TRUE(b1.tracks(&table2[0]));
     ASSERT_TRUE(b2.tracks(&table2[0].front()));
     ASSERT_TRUE(b0.tracks(&table2[0].front().front()));
+    ASSERT_TRUE(b0.tracks(&table2.content()));
 
     table2.clear();
 
@@ -1242,7 +1245,7 @@ TYPED_TEST(TestStoredTableAllocatorPropagation, MoveAssignment)
     const a_t& expected = pocma ? a1 : a2;
     ASSERT_EQ(expected, table2.get_allocator());
 
-    ASSERT_EQ(pocma, table1.is_singular());
+    ASSERT_EQ(pocma, table1.empty());
 }
 
 TYPED_TEST(TestStoredTableAllocatorPropagation, MoveAssignmentCompatibleAlloc)
@@ -1266,7 +1269,7 @@ TYPED_TEST(TestStoredTableAllocatorPropagation, MoveAssignmentCompatibleAlloc)
     const a_t& expected = pocma ? a1 : a2;
     ASSERT_EQ(expected, table2.get_allocator());
 
-    ASSERT_TRUE(table1.is_singular());
+    ASSERT_TRUE(table1.empty());
 }
 
 TYPED_TEST(TestStoredTableAllocatorPropagation, Swap)

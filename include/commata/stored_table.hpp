@@ -1159,7 +1159,7 @@ public:
         std::size_t buffer_size = 0U) :
         store_(std::allocator_arg, ca_t(ca_base_t(alloc))),
         records_(allocate_create_content(alloc)),
-        buffer_size_(sanitize_buffer_size(buffer_size, alloc))
+        buffer_size_(sanitize_buffer_size(buffer_size, store_.get_allocator()))
     {}
 
     basic_stored_table(const basic_stored_table& other) :
@@ -1171,11 +1171,11 @@ public:
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
         const basic_stored_table& other) :
         store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
-        buffer_size_(std::min(at_t::max_size(alloc), other.buffer_size_))
+        buffer_size_(std::min(cat_t::max_size(ca_t(store_.get_allocator())),
+            other.buffer_size_))
     {
-        if (other.is_singular()) {
-            // leave also *this singular
-            assert(is_singular());
+        if (!other.records_) {
+            // leave also *this moved-from
             return;
         }
         records_ = allocate_create_content(alloc);      // throw
@@ -1212,7 +1212,8 @@ public:
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
         basic_stored_table&& other) :
         store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
-        buffer_size_(std::min(at_t::max_size(alloc), other.buffer_size_))
+        buffer_size_(std::min(cat_t::max_size(ca_t(store_.get_allocator())),
+            other.buffer_size_))
     {
         if (alloc == other.get_allocator()) {
             store_type s(std::allocator_arg,
@@ -1247,10 +1248,10 @@ private:
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
         mimic_other_t, Other&& other) :
         store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
-        buffer_size_(std::min(at_t::max_size(alloc), other.buffer_size_))
+        buffer_size_(std::min(cat_t::max_size(ca_t(store_.get_allocator())),
+            other.buffer_size_))
     {
-        assert(is_singular());
-        if (!other.is_singular()) {
+        if (other.records_) {
             basic_stored_table t(
                 std::allocator_arg, get_allocator(), get_buffer_size());
             t += std::forward<Other>(other);
@@ -1266,7 +1267,7 @@ public:
 
 private:
     static std::size_t sanitize_buffer_size(
-        std::size_t buffer_size, const Allocator& alloc) noexcept
+        std::size_t buffer_size, const ca_t& alloc) noexcept
     {
         return std::max(
             static_cast<std::size_t>(2U),
@@ -1329,20 +1330,15 @@ public:
         return buffer_size_;
     }
 
-    bool is_singular() const noexcept
-    {
-        return !records_;
-    }
-
     content_type& content()
     {
-        assert(!is_singular());
+        assert(records_);
         return *records_;
     }
 
     const content_type& content() const
     {
-        assert(!is_singular());
+        assert(records_);
         return *records_;
     }
 
@@ -1509,19 +1505,19 @@ public:
     size_type size() const
         noexcept(noexcept(std::declval<const content_type&>().size()))
     {
-        return is_singular() ? 0 : content().size();
+        return records_ ? content().size() : 0;
     }
 
     bool empty() const
         noexcept(noexcept(std::declval<const content_type&>().empty()))
     {
-        return is_singular() || content().empty();
+        return (!records_) || content().empty();
     }
 
     void clear()
         noexcept(noexcept(std::declval<content_type&>().clear()))
     {
-        if (!is_singular()) {
+        if (records_) {
             content().clear();
         }
         store_.clear();
@@ -1584,15 +1580,15 @@ private:
     template <class OtherTable>
     basic_stored_table& operator_plus_assign_impl(OtherTable&& other)
     {
-        if (is_singular()) {
-            if (!other.is_singular()) {
+        if (!records_) {
+            if (other.records_) {
                 basic_stored_table t(
                     std::allocator_arg, get_allocator());           // throw
                 t.append_no_singular(
                     std::forward<OtherTable>(other));               // throw
                 swap(t);
             }
-        } else if (!other.is_singular()) {
+        } else if (other.records_) {
             append_no_singular(std::forward<OtherTable>(other));    // throw
         }
         return *this;
