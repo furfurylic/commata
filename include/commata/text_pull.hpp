@@ -35,7 +35,6 @@ namespace commata {
 enum class primitive_text_pull_state : std::uint_fast8_t
 {
     eof,
-    moved,
     before_parse,
     start_record,
     end_record,
@@ -493,23 +492,20 @@ public:
     explicit operator bool() const noexcept
     {
         const auto s = state();
-        return (s != primitive_text_pull_state::eof)
-            && (s != primitive_text_pull_state::moved);
+        return s != primitive_text_pull_state::eof;
     }
 
     primitive_text_pull& operator()()
     {
         assert(!sq_->empty());
-        const auto s = (*sq_)[i_sq_];
+        const auto dsize = (*sq_)[i_sq_].second;
 
-        if (s.second > 0) {
-            i_dq_ += s.second;
+        if (dsize > 0) {
+            i_dq_ += dsize;
             if (i_dq_ == dq_->size()) {
                 dq_->clear();
                 i_dq_ = 0;
             }
-        } else if (s.first == primitive_text_pull_state::moved) {
-            return *this;
         }
 
         ++i_sq_;
@@ -605,7 +601,7 @@ typename primitive_text_pull<TextSource, Allocator, Handle>::handler_t::
             state_queue_type
     primitive_text_pull<TextSource, Allocator, Handle>::sq_moved_from
  = { std::make_pair(
-        primitive_text_pull_state::moved,
+        primitive_text_pull_state::eof,
         static_cast<typename primitive_text_pull<TextSource, Allocator,
             Handle>::handler_t::state_queue_element_type::second_type>(0)) };
 
@@ -848,7 +844,6 @@ public:
                 set_state(text_pull_state::record_end);
                 return *this;
             case primitive_text_pull_state::eof:
-            case primitive_text_pull_state::moved:
                 goto exit;
             case primitive_text_pull_state::end_buffer:
             default:
@@ -915,7 +910,6 @@ private:
                 }
                 break;
             case primitive_text_pull_state::eof:
-            case primitive_text_pull_state::moved:
                 goto exit;
             default:
                 break;
@@ -980,7 +974,6 @@ public:
                     break;
                 }
             case primitive_text_pull_state::eof:
-            case primitive_text_pull_state::moved:
                 goto exit;
             case primitive_text_pull_state::end_buffer:
             default:

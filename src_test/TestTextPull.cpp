@@ -103,7 +103,8 @@ TYPED_TEST_P(TestTextPull, PrimitiveMove)
     while (pull().state() != primitive_text_pull_state::end_record);
 
     auto pull2 = std::move(pull);
-    ASSERT_EQ(primitive_text_pull_state::moved, pull.state());
+    ASSERT_EQ(primitive_text_pull_state::eof/* actually unspecified */,
+        pull.state());
     ASSERT_EQ(primitive_text_pull_state::end_record, pull2.state());
 
     std::basic_string<char_t> s;

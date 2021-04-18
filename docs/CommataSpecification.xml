@@ -5452,7 +5452,6 @@ namespace commata {
   enum class primitive_text_pull_state : <nc>unspecified</nc> {
     before_parse        = <nc>unspecified</nc>,
     eof                 = <nc>unspecified</nc>,
-    moved               = <nc>unspecified</nc>,
     start_buffer        = <nc>unspecified</nc>,
     end_buffer          = <nc>unspecified</nc>,
     start_record        = <nc>unspecified</nc>,
@@ -5779,7 +5778,7 @@ primitive_text_pull&amp; set_discarding_data(bool b = true) noexcept;
           <code>
 primitive_text_pull&amp; operator()();
           </code>
-          <effects>If <c>(state() == primitive_text_pull_state::eof) || (state() == primitive_text_pull_state::moved)</c> is <c>true</c>, return without doing anything.
+          <effects>If <c>state() == primitive_text_pull_state::eof</c> is <c>true</c>, return without doing anything.
                    Otherwise, first dequeues an event from the event queue on the front if the queue is not empty.
                    Then iteratively calls <c>p()</c> to enqueue parsing events into the event queue on the back while the event queue is empty
                    where <c>p</c> is the text parser held by <c>*this</c>.</effects>
@@ -5827,13 +5826,6 @@ primitive_text_pull_state state() const noexcept;
 
             <tr>
               <td><c>(3)</c></td>
-              <td><c>moved</c></td>
-              <td><c>*this</c> is moved-from.</td>
-              <td>0</td>
-            </tr>
-
-            <tr>
-              <td><c>(4)</c></td>
               <td><c>start_buffer</c></td>
               <td>The front of the event queue is the invocation of <c>start_buffer</c> on <c>h</c>.
                   The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
@@ -5842,7 +5834,7 @@ primitive_text_pull_state state() const noexcept;
             </tr>
 
             <tr>
-              <td><c>(5)</c></td>
+              <td><c>(4)</c></td>
               <td><c>end_buffer</c></td>
               <td>The front of the event queue is the invocation of <c>end_buffer</c> on <c>h</c>.
                   The argument of the invocation is available as <c>(*this)[0]</c>
@@ -5852,7 +5844,7 @@ primitive_text_pull_state state() const noexcept;
             </tr>
 
             <tr>
-              <td><c>(6)</c></td>
+              <td><c>(5)</c></td>
               <td><c>empty_physical_line</c></td>
               <td>The front of the event queue is the invocation of <c>empty_physical_line</c> on <c>h</c>.
                   The argument of the invocation is available as <c>(*this)[0]</c>
@@ -5861,7 +5853,7 @@ primitive_text_pull_state state() const noexcept;
             </tr>
 
             <tr>
-              <td><c>(7)</c></td>
+              <td><c>(6)</c></td>
               <td><c>start_record</c></td>
               <td>The front of the event queue is the invocation of <c>start_record</c> on <c>h</c>.
                   The argument of the invocation is available as <c>(*this)[0]</c>
@@ -5870,7 +5862,7 @@ primitive_text_pull_state state() const noexcept;
             </tr>
 
             <tr>
-              <td><c>(8)</c></td>
+              <td><c>(7)</c></td>
               <td><c>end_record</c></td>
               <td>The front of the event queue is the invocation of <c>end_record</c> on <c>h</c>.
                   The argument of the invocation is available as <c>(*this)[0]</c>
@@ -5879,7 +5871,7 @@ primitive_text_pull_state state() const noexcept;
             </tr>
 
             <tr>
-              <td><c>(9)</c></td>
+              <td><c>(8)</c></td>
               <td><c>update</c></td>
               <td>The front of the event queue is the invocation of <c>update</c> on <c>h</c>.
                   The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
@@ -5888,7 +5880,7 @@ primitive_text_pull_state state() const noexcept;
             </tr>
 
             <tr>
-              <td><c>(10)</c></td>
+              <td><c>(9)</c></td>
               <td><c>finalize</c></td>
               <td>The front of the event queue is the invocation of <c>finalize</c> on <c>h</c>.
                   The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
@@ -5902,7 +5894,7 @@ primitive_text_pull_state state() const noexcept;
           <code>
 explicit operator bool() const noexcept;
           </code>
-          <returns><c>(state() != primitive_text_pull_state::eof) &amp;&amp; (state() != primitive_text_pull_state::moved)</c>.</returns>
+          <returns><c>state() != primitive_text_pull_state::eof</c>.</returns>
         </code-item>
 
         <code-item>
