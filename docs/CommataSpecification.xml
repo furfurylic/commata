@@ -2963,26 +2963,12 @@ namespace commata {
     basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t buffer_size = 0U);
     basic_stored_table(const basic_stored_table&amp;  other);
     basic_stored_table(      basic_stored_table&amp;&amp; other) noexcept;
-    template &lt;class OtherContent, class OtherAllocator>
-      basic_stored_table(
-        const basic_stored_table&lt;OtherContent, OtherAllocator>&amp;  other);
-    template &lt;class OtherContent, class OtherAllocator>
-      basic_stored_table(
-              basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
     basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                        std::size_t buffer_size = 0);
     basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                        const basic_stored_table&amp;  other);
     basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                              basic_stored_table&amp;&amp; other);
-    template &lt;class OtherContent, class OtherAllocator>
-      basic_stored_table(
-        std::allocator_arg_t, const Allocator&amp; alloc,
-        const basic_stored_table&lt;OtherContent, OtherAllocator>&amp;  other);
-    template &lt;class OtherContent, class OtherAllocator>
-      basic_stored_table(
-        std::allocator_arg_t, const Allocator&amp; alloc,
-              basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
    ~basic_stored_table();
     basic_stored_table&amp; operator=(const basic_stored_table&amp;  other);
     basic_stored_table&amp; operator=(      basic_stored_table&amp;&amp; other)
@@ -3153,34 +3139,6 @@ basic_stored_table(basic_stored_table&amp;&amp; other) noexcept;
 
         <code-item>
           <code>
-template &lt;class OtherContent, class OtherAllocator>
-  basic_stored_table(
-    const basic_stored_table&lt;OtherContent, OtherAllocator>&amp; other);
-          </code>
-          <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.
-                    <c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.</requires>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
-                         <c>get_allocator() == Allocator()</c> shall be <c>true</c>.
-                         The values of <c>size()</c> and <c>other.size()</c> shall be identical.
-                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the values of <c>*ti</c> and <c>record_type(oi->cbegin(), oi->cend())</c> shall be equal.</postcondition>
-        </code-item>
-
-        <code-item>
-          <code>
-template &lt;class OtherContent, class OtherAllocator>
-  basic_stored_table(
-    basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
-          </code>
-          <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.
-                    <c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.</requires>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
-                         <c>get_allocator() == Allocator()</c> shall be <c>true</c>.
-                         The values of <c>size()</c> and the value that <c>other.size()</c> had before this construction shall be identical.
-                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the value of <c>*ti</c> shall be equal to the value that <c>record_type(oi->cbegin(), oi->cend())</c> had before this construction.</postcondition>
-        </code-item>
-
-        <code-item>
-          <code>
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                    std::size_t buffer_size = 0);
           </code>
@@ -3206,36 +3164,6 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
           </code>
           <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(alloc))</c> and <c>other.get_buffer_size()</c>.
                          If defined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
-        </code-item>
-
-        <code-item>
-          <code>
-template &lt;class OtherContent, class OtherAllocator>
-  basic_stored_table(
-    std::allocator_arg_t, const Allocator&amp; alloc,
-    const basic_stored_table&lt;OtherContent, OtherAllocator>&amp; other);
-          </code>
-          <requires><c>OtherContent::char_type</c> and <c>OtherContent::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
-                    <c>Allocator</c> shall be <c>CopyConstructible</c>.</requires>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
-                         The value of <c>get_allocator()</c> shall be equal to <c>alloc</c>.
-                         The values of <c>size()</c> and <c>other.size()</c> shall be identical.
-                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the values of <c>*ti</c> and <c>record_type(oi->cbegin(), oi->cend())</c> shall be equal.</postcondition>
-        </code-item>
-
-        <code-item>
-          <code>
-template &lt;class OtherContent, class OtherAllocator>
-  basic_stored_table(
-    std::allocator_arg_t, const Allocator&amp; alloc,
-    basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
-          </code>
-          <requires><c>OtherContent::char_type</c> and <c>OtherContent::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
-                    <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
-                         The value of <c>get_allocator()</c> shall be equal to <c>alloc</c>.
-                         The values of <c>size()</c> and the value that <c>other.size()</c> had before this construction shall be identical.
-                         For each <c>ti</c> and <c>oi</c> that denote the possible corresponding elements in the contents of <c>*this</c> and <c>other</c> respectively, the value of <c>*ti</c> shall be equal to the value that <c>record_type(oi->cbegin(), oi->cend())</c> had before this construction.</postcondition>
         </code-item>
 
         <code-item>

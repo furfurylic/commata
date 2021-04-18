@@ -1187,20 +1187,6 @@ public:
         }
     }
 
-    // This ctor template is here only to get accordance with opetator+=
-    template <class OtherContent, class OtherAllocator>
-    basic_stored_table(
-        const basic_stored_table<OtherContent, OtherAllocator>& other) :
-        basic_stored_table(std::allocator_arg, Allocator(), other)
-    {}
-
-    template <class OtherContent, class OtherAllocator>
-    basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
-        const basic_stored_table<OtherContent, OtherAllocator>& other) :
-        basic_stored_table(
-            std::allocator_arg, alloc, mimic_other_t(), other)
-    {}
-
     basic_stored_table(basic_stored_table&& other) noexcept :
         store_(std::move(other.store_)), records_(other.records_),
         buffer_size_(other.buffer_size_)
@@ -1227,39 +1213,6 @@ public:
         }
     }
 
-    // This ctor template is here only to get accordance with opetator+=
-    template <class OtherContent, class OtherAllocator>
-    basic_stored_table(
-        basic_stored_table<OtherContent, OtherAllocator>&& other) :
-        basic_stored_table(std::allocator_arg, Allocator(), std::move(other))
-    {}
-
-    template <class OtherContent, class OtherAllocator>
-    basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
-        basic_stored_table<OtherContent, OtherAllocator>&& other) :
-        basic_stored_table(
-            std::allocator_arg, alloc, mimic_other_t(), std::move(other))
-    {}
-
-private:
-    struct mimic_other_t {};
-
-    template <class Other>
-    basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
-        mimic_other_t, Other&& other) :
-        store_(std::allocator_arg, ca_t(ca_base_t(alloc))), records_(nullptr),
-        buffer_size_(std::min(cat_t::max_size(ca_t(store_.get_allocator())),
-            other.buffer_size_))
-    {
-        if (other.records_) {
-            basic_stored_table t(
-                std::allocator_arg, get_allocator(), get_buffer_size());
-            t += std::forward<Other>(other);
-            swap_force(t);
-        }
-    }
-
-public:
     ~basic_stored_table()
     {
         destroy_deallocate_content(get_allocator(), records_);
