@@ -615,7 +615,6 @@ enum class text_pull_state : std::uint_fast8_t
 {
     eof,
     error,
-    moved,
     before_parse,
     field,
     record_end
@@ -730,7 +729,7 @@ public:
         value_expiring_(other.value_expiring_), i_(other.i_), j_(other.j_),
         suppressed_error_(std::move(other.suppressed_error_))
     {
-        other.last_state_ = text_pull_state::moved;
+        other.last_state_ = text_pull_state::eof;
         other.last_ = empty_string();
         other.i_ = 0;
         other.j_ = 0;
@@ -774,8 +773,7 @@ public:
     explicit operator bool() const noexcept
     {
         return (state() != text_pull_state::eof)
-            && (state() != text_pull_state::error)
-            && (state() != text_pull_state::moved);
+            && (state() != text_pull_state::error);
     }
 
     std::pair<std::size_t, std::size_t> get_position() const noexcept

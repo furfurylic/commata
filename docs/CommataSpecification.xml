@@ -5475,7 +5475,6 @@ namespace commata {
     before_parse = <nc>unspecified</nc>,
     eof          = <nc>unspecified</nc>,
     error        = <nc>unspecified</nc>,
-    moved        = <nc>unspecified</nc>,
     field        = <nc>unspecified</nc>,
     record_end   = <nc>unspecified</nc>
   };
@@ -6248,11 +6247,11 @@ text_pull&amp; set_suppressing_errors(bool b = true) noexcept;
           <code>
 text_pull&amp; operator()(std::size_t n = 0);
           </code>
-          <effects>If <c>(state() == text_pull_state::eof) || (state() == text_pull_state::error) || (state() == text_pull_state::moved)</c> is <c>true</c>, return without doing anything.
+          <effects>If <c>(state() == text_pull_state::eof) || (state() == text_pull_state::error)</c> is <c>true</c>, return without doing anything.
                    Otherwise, tries to read next <c>n + 1</c> fields in the text table until it encounters an end of a record and make the current string value be the value of the last-read field.</effects>
           <returns><c>*this</c>.</returns>
           <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal text parser and the allocator.</throws>
-          <postcondition>If <c>(state() == text_pull_state::eof) || (state() == text_pull_state::error) || (state() == text_pull_state::moved)</c> is <c>false</c> before the call,
+          <postcondition>If <c>(state() == text_pull_state::eof) || (state() == text_pull_state::error)</c> is <c>false</c> before the call,
                          <c>(state() == text_pull_state::eof) || (state() == text_pull_state::error) || (state() == text_pull_state::field) || (state() == text_pull_state::record_end)</c> shall be <c>true</c>.
                          </postcondition>
           <remark>Invalidates all pointers that have been returned by <c>begin</c>, <c>cbegin</c>, <c>end</c> and <c>cend</c>.</remark>
@@ -6262,12 +6261,12 @@ text_pull&amp; operator()(std::size_t n = 0);
           <code>
 text_pull&amp; skip_records(std::size_t n = 0);
           </code>
-          <effects>If <c>(state() == text_pull_state::eof) || (state() == text_pull_state::error) || (state() == text_pull_state::moved)</c> is <c>true</c>, return without doing anything.
+          <effects>If <c>(state() == text_pull_state::eof) || (state() == text_pull_state::error)</c> is <c>true</c>, return without doing anything.
                    Otherwise, tries to read the text table until it encounters <c>n + 1</c> ends of records.</effects>
           <returns><c>*this</c>.</returns>
           <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal text parser and the allocator.</throws>
-          <postcondition>If <c>(state() == text_pull_state::eof) || (state() == text_pull_state::error) || (state() == text_pull_state::moved)</c> is <c>false</c> before the call,
-                         <c>(state() == text_pull_state::eof) || (state() == text_pull_state::error) || (state() == text_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
+          <postcondition>If <c>(state() == text_pull_state::eof) || (state() == text_pull_state::error)</c> is <c>false</c> before the call,
+                         <c>(state() == text_pull_state::eof) || (state() == text_pull_state::error)</c> shall be <c>true</c>.</postcondition>
           <remark>Invalidates all pointers that have been returned by <c>begin</c>, <c>cbegin</c>, <c>end</c> and <c>cend</c>.</remark>
         </code-item>
       </section>
@@ -6315,20 +6314,13 @@ text_pull_state state() const noexcept;
 
             <tr>
               <td><c>(4)</c></td>
-              <td><c>moved</c></td>
-              <td><c>*this</c> is moved-from.</td>
-              <td>An empty string</td>
-            </tr>
-
-            <tr>
-              <td><c>(5)</c></td>
               <td><c>field</c></td>
               <td><c>*this</c> has reached a field with the latest call of <c>operator()</c>.</td>
               <td>The field value</td>
             </tr>
 
             <tr>
-              <td><c>(6)</c></td>
+              <td><c>(5)</c></td>
               <td><c>record_end</c></td>
               <td><c>*this</c> has reached an end of the a record with the latest call of <c>operator()</c> or <c>skip_record</c>.</td>
               <td>An empty string</td>
@@ -6340,7 +6332,7 @@ text_pull_state state() const noexcept;
           <code>
 explicit operator bool() const noexcept;
           </code>
-          <returns><c>(state() != text_pull_state::eof) &amp;&amp; (state() != text_pull_state::error) &amp;&amp; (state() != text_pull_state::moved)</c>.</returns>
+          <returns><c>(state() != text_pull_state::eof) &amp;&amp; (state() != text_pull_state::error)</c>.</returns>
         </code-item>
 
         <code-item>
@@ -6395,20 +6387,13 @@ std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
 
             <tr>
               <td><c>(4)</c></td>
-              <td><c>moved</c></td>
-              <td>Unspecified</td>
-              <td>Unspecified</td>
-            </tr>
-
-            <tr>
-              <td><c>(5)</c></td>
               <td><c>field</c></td>
               <td>The zero-based index of the record</td>
               <td>The zero-based index of the field in the record</td>
             </tr>
 
             <tr>
-              <td><c>(6)</c></td>
+              <td><c>(5)</c></td>
               <td><c>record_end</c></td>
               <td>The zero-based index of the record</td>
               <td>The number of the fields contained in the record</td>

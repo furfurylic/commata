@@ -499,9 +499,38 @@ TYPED_TEST_P(TestTextPull, Plus)
     ASSERT_EQ(str("abcXYZ"), s2 += pull);
 }
 
+TYPED_TEST_P(TestTextPull, Move)
+{
+    using char_t = typename TypeParam::first_type;
+    using pos_t = std::pair<std::size_t, std::size_t>;
+
+    const auto str = char_helper<char_t>::str;
+
+    auto pull = make_text_pull(make_csv_source(str("XYZ,UVW\n"
+                                                   "abc,def\n"
+                                                   "\"\"\"")),
+        TypeParam::second_type::value);
+    pull.set_suppressing_errors(true);
+    pull.skip_record()();
+
+    auto pull2 = std::move(pull);
+    ASSERT_TRUE(pull2.is_suppressing_errors());
+    ASSERT_EQ(pos_t(1, 0), pull2.get_position());
+    ASSERT_EQ(str("def"), pull2());
+
+    ASSERT_EQ(text_pull_state::eof, pull.state());
+                                    // Unspecified but implemented so
+    ASSERT_EQ(str(""), pull());     // ditto
+
+    ASSERT_EQ(text_pull_state::error, pull2()().state());
+
+    auto pull3 = std::move(pull2);  // also suppressed errors are moved
+    ASSERT_THROW(pull3.rethrow_suppressed(), parse_error);
+}
+
 REGISTER_TYPED_TEST_SUITE_P(TestTextPull,
     PrimitiveBasics, PrimitiveMove,
-    Basics, SkipRecord, SkipField, SuppressedError, Relations, Plus);
+    Basics, SkipRecord, SkipField, SuppressedError, Relations, Plus, Move);
 
 typedef testing::Types<
     std::pair<char, std::integral_constant<std::size_t, 2>>,
