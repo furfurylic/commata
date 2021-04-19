@@ -369,14 +369,14 @@ private:
 
 }
 
-template <class TextSource,
-    class Allocator = std::allocator<typename TextSource::char_type>,
+template <class TableSource,
+    class Allocator = std::allocator<typename TableSource::char_type>,
     std::underlying_type_t<primitive_text_pull_handle> Handle =
         primitive_text_pull_handle_all>
 class primitive_text_pull
 {
 public:
-    using char_type = typename TextSource::char_type;
+    using char_type = typename TableSource::char_type;
     using allocator_type = Allocator;
     using size_type = std::size_t;
 
@@ -390,13 +390,13 @@ private:
     using handler_p_t = typename handler_at_t::pointer;
 
     static_assert(std::is_same<
-        decltype(std::declval<const TextSource&>()(
+        decltype(std::declval<const TableSource&>()(
             std::declval<detail::wrapper_handler<handler_t>>())),
-        decltype(std::declval<TextSource>()(
+        decltype(std::declval<TableSource>()(
             std::declval<detail::wrapper_handler<handler_t>>()))>::value,
         "");
 
-    using parser_t = typename TextSource::template parser_type<
+    using parser_t = typename TableSource::template parser_type<
         detail::wrapper_handler<handler_t>>;
 
     std::size_t i_sq_;
@@ -415,28 +415,28 @@ public:
 
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
-    template <class TextSourceR,
+    template <class TableSourceR,
         std::enable_if_t<
             std::is_same<
-                TextSource,
+                TableSource,
                 std::remove_const_t<
-                    std::remove_reference_t<TextSourceR>>>::value,
+                    std::remove_reference_t<TableSourceR>>>::value,
             std::nullptr_t> = nullptr>
     explicit primitive_text_pull(
-        TextSourceR&& in, std::size_t buffer_size = 0) :
+        TableSourceR&& in, std::size_t buffer_size = 0) :
         primitive_text_pull(std::allocator_arg, Allocator(),
-            std::forward<TextSourceR>(in), buffer_size)
+            std::forward<TableSourceR>(in), buffer_size)
     {}
 
-    template <class TextSourceR>
+    template <class TableSourceR>
     primitive_text_pull(std::allocator_arg_t, const Allocator& alloc,
-        TextSourceR&& in, std::size_t buffer_size = 0) :
+        TableSourceR&& in, std::size_t buffer_size = 0) :
         i_sq_(0), i_dq_(0),
         handler_(create_handler(alloc,
             std::allocator_arg, alloc, buffer_size)),
         sq_(&handler_->state_queue()), dq_(&handler_->data_queue()),
         ap_(alloc,
-            std::forward<TextSourceR>(in)(
+            std::forward<TableSourceR>(in)(
                 detail::wrapper_handler<handler_t>(*handler_)))
     {
         sq_->emplace_back(
@@ -595,21 +595,21 @@ private:
     }
 };
 
-template <class TextSource, class Allocator,
+template <class TableSource, class Allocator,
     std::underlying_type_t<primitive_text_pull_handle> Handle>
-typename primitive_text_pull<TextSource, Allocator, Handle>::handler_t::
+typename primitive_text_pull<TableSource, Allocator, Handle>::handler_t::
             state_queue_type
-    primitive_text_pull<TextSource, Allocator, Handle>::sq_moved_from
+    primitive_text_pull<TableSource, Allocator, Handle>::sq_moved_from
  = { std::make_pair(
         primitive_text_pull_state::eof,
-        static_cast<typename primitive_text_pull<TextSource, Allocator,
+        static_cast<typename primitive_text_pull<TableSource, Allocator,
             Handle>::handler_t::state_queue_element_type::second_type>(0)) };
 
-template <class TextSource, class Allocator,
+template <class TableSource, class Allocator,
     std::underlying_type_t<primitive_text_pull_handle> Handle>
-typename primitive_text_pull<TextSource, Allocator, Handle>::handler_t::
+typename primitive_text_pull<TableSource, Allocator, Handle>::handler_t::
             data_queue_type
-    primitive_text_pull<TextSource, Allocator, Handle>::dq_moved_from = {};
+    primitive_text_pull<TableSource, Allocator, Handle>::dq_moved_from = {};
 
 enum class text_pull_state : std::uint_fast8_t
 {
@@ -651,17 +651,17 @@ public:
 
 }
 
-template <class TextSource,
-    class Allocator = std::allocator<typename TextSource::char_type>>
+template <class TableSource,
+    class Allocator = std::allocator<typename TableSource::char_type>>
 class text_pull
 {
 public:
-    using char_type = typename TextSource::char_type;
-    using traits_type = typename TextSource::traits_type;
+    using char_type = typename TableSource::char_type;
+    using traits_type = typename TableSource::traits_type;
     using allocator_type = Allocator;
 
 private:
-    primitive_text_pull<TextSource, allocator_type,
+    primitive_text_pull<TableSource, allocator_type,
         (primitive_text_pull_handle_end_buffer
        | primitive_text_pull_handle_end_record
        | primitive_text_pull_handle_empty_physical_line
@@ -697,22 +697,22 @@ public:
 
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
-    template <class TextSourceR,
+    template <class TableSourceR,
         std::enable_if_t<
             std::is_same<
-                TextSource,
+                TableSource,
                 std::remove_const_t<
-                    std::remove_reference_t<TextSourceR>>>::value,
+                    std::remove_reference_t<TableSourceR>>>::value,
             std::nullptr_t> = nullptr>
-    explicit text_pull(TextSourceR&& in, std::size_t buffer_size = 0) :
+    explicit text_pull(TableSourceR&& in, std::size_t buffer_size = 0) :
         text_pull(std::allocator_arg, Allocator(),
-            std::forward<TextSourceR>(in), buffer_size)
+            std::forward<TableSourceR>(in), buffer_size)
     {}
 
-    template <class TextSourceR>
+    template <class TableSourceR>
     text_pull(std::allocator_arg_t, const Allocator& alloc,
-        TextSourceR&& in, std::size_t buffer_size = 0) :
-        p_(std::allocator_arg, alloc, std::forward<TextSourceR>(in),
+        TableSourceR&& in, std::size_t buffer_size = 0) :
+        p_(std::allocator_arg, alloc, std::forward<TableSourceR>(in),
             ((buffer_size > 1) ? buffer_size : 2)),
         empty_physical_line_aware_(false), suppresses_error_(false),
         last_state_(text_pull_state::before_parse), last_(empty_string()),
@@ -1111,7 +1111,7 @@ private:
         if (!value_.empty()) {
             value_.append(first, last);
         } else if (last_.first != empty_string().first) {
-            TextSource::traits_type::move(last_.second, first, last - first);
+            TableSource::traits_type::move(last_.second, first, last - first);
             last_.second += last - first;
         } else {
             last_.first = first;
@@ -1127,301 +1127,301 @@ private:
     }
 };
 
-template <class TextSourceL, class TextSourceR,
+template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator==(
-    const text_pull<TextSourceL, AllocatorL>& left,
-    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+    const text_pull<TableSourceL, AllocatorL>& left,
+    const text_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
-            typename TextSourceL::char_type,
-            typename TextSourceR::char_type>::value
+            typename TableSourceL::char_type,
+            typename TableSourceR::char_type>::value
      && std::is_same<
-            typename TextSourceL::traits_type,
-            typename TextSourceR::traits_type>::value, bool>
+            typename TableSourceL::traits_type,
+            typename TableSourceR::traits_type>::value, bool>
 {
     return detail::string_value_eq(left, right);
 }
 
-template <class TextSource, class Allocator, class Right>
+template <class TableSource, class Allocator, class Right>
 auto operator==(
-    const text_pull<TextSource, Allocator>& left,
+    const text_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(detail::string_value_eq(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Right>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Right>::value, bool>
 {
     return detail::string_value_eq(left, right);
 }
 
-template <class TextSource, class Allocator, class Left>
+template <class TableSource, class Allocator, class Left>
 auto operator==(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right)
+    const text_pull<TableSource, Allocator>& right)
     noexcept(noexcept(detail::string_value_eq(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Left>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Left>::value, bool>
 {
     return detail::string_value_eq(left, right);
 }
 
-template <class TextSourceL, class TextSourceR,
+template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator!=(
-    const text_pull<TextSourceL, AllocatorL>& left,
-    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+    const text_pull<TableSourceL, AllocatorL>& left,
+    const text_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
-            typename TextSourceL::char_type,
-            typename TextSourceR::char_type>::value
+            typename TableSourceL::char_type,
+            typename TableSourceR::char_type>::value
      && std::is_same<
-            typename TextSourceL::traits_type,
-            typename TextSourceR::traits_type>::value, bool>
+            typename TableSourceL::traits_type,
+            typename TableSourceR::traits_type>::value, bool>
 {
     return !(left == right);
 }
 
-template <class TextSource, class Allocator, class Right>
+template <class TableSource, class Allocator, class Right>
 auto operator!=(
-    const text_pull<TextSource, Allocator>& left,
+    const text_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(!(left == right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Right>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Right>::value, bool>
 {
     return !(left == right);
 }
 
-template <class TextSource, class Allocator, class Left>
+template <class TableSource, class Allocator, class Left>
 auto operator!=(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right)
+    const text_pull<TableSource, Allocator>& right)
     noexcept(noexcept(!(left == right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Left>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Left>::value, bool>
 {
     return !(left == right);
 }
 
-template <class TextSourceL, class TextSourceR,
+template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator<(
-    const text_pull<TextSourceL, AllocatorL>& left,
-    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+    const text_pull<TableSourceL, AllocatorL>& left,
+    const text_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
-            typename TextSourceL::char_type,
-            typename TextSourceR::char_type>::value
+            typename TableSourceL::char_type,
+            typename TableSourceR::char_type>::value
      && std::is_same<
-            typename TextSourceL::traits_type,
-            typename TextSourceR::traits_type>::value, bool>
+            typename TableSourceL::traits_type,
+            typename TableSourceR::traits_type>::value, bool>
 {
     return detail::string_value_lt(left, right);
 }
 
-template <class TextSource, class Allocator, class Right>
+template <class TableSource, class Allocator, class Right>
 auto operator<(
-    const text_pull<TextSource, Allocator>& left,
+    const text_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(detail::string_value_lt(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Right>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Right>::value, bool>
 {
     return detail::string_value_lt(left, right);
 }
 
-template <class TextSource, class Allocator, class Left>
+template <class TableSource, class Allocator, class Left>
 auto operator<(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right)
+    const text_pull<TableSource, Allocator>& right)
     noexcept(noexcept(detail::string_value_lt(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Left>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Left>::value, bool>
 {
     return detail::string_value_lt(left, right);
 }
 
-template <class TextSourceL, class TextSourceR,
+template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator>(
-    const text_pull<TextSourceL, AllocatorL>& left,
-    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+    const text_pull<TableSourceL, AllocatorL>& left,
+    const text_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
-            typename TextSourceL::char_type,
-            typename TextSourceR::char_type>::value
+            typename TableSourceL::char_type,
+            typename TableSourceR::char_type>::value
      && std::is_same<
-            typename TextSourceL::traits_type,
-            typename TextSourceR::traits_type>::value, bool>
+            typename TableSourceL::traits_type,
+            typename TableSourceR::traits_type>::value, bool>
 {
     return right < left;
 }
 
-template <class TextSource, class Allocator, class Right>
+template <class TableSource, class Allocator, class Right>
 auto operator>(
-    const text_pull<TextSource, Allocator>& left,
+    const text_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(right < left))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Right>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Right>::value, bool>
 {
     return right < left;
 }
 
-template <class TextSource, class Allocator, class Left>
+template <class TableSource, class Allocator, class Left>
 auto operator>(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right)
+    const text_pull<TableSource, Allocator>& right)
     noexcept(noexcept(right < left))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Left>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Left>::value, bool>
 {
     return right < left;
 }
 
-template <class TextSourceL, class TextSourceR,
+template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator<=(
-    const text_pull<TextSourceL, AllocatorL>& left,
-    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+    const text_pull<TableSourceL, AllocatorL>& left,
+    const text_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
-            typename TextSourceL::char_type,
-            typename TextSourceR::char_type>::value
+            typename TableSourceL::char_type,
+            typename TableSourceR::char_type>::value
      && std::is_same<
-            typename TextSourceL::traits_type,
-            typename TextSourceR::traits_type>::value, bool>
+            typename TableSourceL::traits_type,
+            typename TableSourceR::traits_type>::value, bool>
 {
     return !(right < left);
 }
 
-template <class TextSource, class Allocator, class Right>
+template <class TableSource, class Allocator, class Right>
 auto operator<=(
-    const text_pull<TextSource, Allocator>& left,
+    const text_pull<TableSource, Allocator>& left,
     const Right& right) 
     noexcept(noexcept(!(right < left)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Right>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Right>::value, bool>
 {
     return !(right < left);
 }
 
-template <class TextSource, class Allocator, class Left>
+template <class TableSource, class Allocator, class Left>
 auto operator<=(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right)
+    const text_pull<TableSource, Allocator>& right)
     noexcept(noexcept(!(right < left)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Left>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Left>::value, bool>
 {
     return !(right < left);
 }
 
-template <class TextSourceL, class TextSourceR,
+template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator>=(
-    const text_pull<TextSourceL, AllocatorL>& left,
-    const text_pull<TextSourceR, AllocatorR>& right) noexcept
+    const text_pull<TableSourceL, AllocatorL>& left,
+    const text_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
-            typename TextSourceL::char_type,
-            typename TextSourceR::char_type>::value
+            typename TableSourceL::char_type,
+            typename TableSourceR::char_type>::value
      && std::is_same<
-            typename TextSourceL::traits_type,
-            typename TextSourceR::traits_type>::value, bool>
+            typename TableSourceL::traits_type,
+            typename TableSourceR::traits_type>::value, bool>
 {
     return !(left < right);
 }
 
-template <class TextSource, class Allocator, class Right>
+template <class TableSource, class Allocator, class Right>
 auto operator>=(
-    const text_pull<TextSource, Allocator>& left,
+    const text_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(!(left < right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Right>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Right>::value, bool>
 {
     return !(left < right);
 }
 
-template <class TextSource, class Allocator, class Left>
+template <class TableSource, class Allocator, class Left>
 auto operator>=(
     const Left& left,
-    const text_pull<TextSource, Allocator>& right)
+    const text_pull<TableSource, Allocator>& right)
     noexcept(noexcept(!(left < right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TextSource::char_type,
-        typename TextSource::traits_type, Left>::value, bool>
+        typename TableSource::char_type,
+        typename TableSource::traits_type, Left>::value, bool>
 {
     return !(left < right);
 }
 
-template <class TextSource, class Allocator, class OtherAllocator>
+template <class TableSource, class Allocator, class OtherAllocator>
 auto operator+(
-    const text_pull<TextSource, Allocator>& left,
-    const std::basic_string<typename TextSource::char_type,
-        typename TextSource::traits_type, OtherAllocator>& right)
+    const text_pull<TableSource, Allocator>& left,
+    const std::basic_string<typename TableSource::char_type,
+        typename TableSource::traits_type, OtherAllocator>& right)
  -> std::decay_t<decltype(right)>
 {
     return detail::string_value_plus(left, right);
 }
 
-template <class TextSource, class Allocator, class OtherAllocator>
+template <class TableSource, class Allocator, class OtherAllocator>
 auto operator+(
-    const text_pull<TextSource, Allocator>& left,
-    std::basic_string<typename TextSource::char_type,
-        typename TextSource::traits_type, OtherAllocator>&& right)
+    const text_pull<TableSource, Allocator>& left,
+    std::basic_string<typename TableSource::char_type,
+        typename TableSource::traits_type, OtherAllocator>&& right)
  -> std::decay_t<decltype(right)>
 {
     return detail::string_value_plus(left, std::move(right));
 }
 
-template <class TextSource, class Allocator, class OtherAllocator>
+template <class TableSource, class Allocator, class OtherAllocator>
 auto operator+(
-    const std::basic_string<typename TextSource::char_type,
-        typename TextSource::traits_type, OtherAllocator>& left,
-    const text_pull<TextSource, Allocator>& right)
+    const std::basic_string<typename TableSource::char_type,
+        typename TableSource::traits_type, OtherAllocator>& left,
+    const text_pull<TableSource, Allocator>& right)
  -> std::decay_t<decltype(left)>
 {
     return detail::string_value_plus(left, right);
 }
 
-template <class TextSource, class Allocator, class OtherAllocator>
+template <class TableSource, class Allocator, class OtherAllocator>
 auto operator+(
-    std::basic_string<typename TextSource::char_type,
-        typename TextSource::traits_type, OtherAllocator>&& left,
-    const text_pull<TextSource, Allocator>& right)
+    std::basic_string<typename TableSource::char_type,
+        typename TableSource::traits_type, OtherAllocator>&& left,
+    const text_pull<TableSource, Allocator>& right)
  -> std::decay_t<decltype(left)>
 {
     return detail::string_value_plus(std::move(left), right);
 }
 
-template <class TextSource, class Allocator, class OtherAllocator>
+template <class TableSource, class Allocator, class OtherAllocator>
 auto operator+=(
-    std::basic_string<typename TextSource::char_type,
-        typename TextSource::traits_type, OtherAllocator>& left,
-    const text_pull<TextSource, Allocator>& right)
+    std::basic_string<typename TableSource::char_type,
+        typename TableSource::traits_type, OtherAllocator>& left,
+    const text_pull<TableSource, Allocator>& right)
  -> decltype(left)
 {
     return detail::string_value_plus_assign(left, right);
 }
 
-template <class TextSource, class Allocator>
+template <class TableSource, class Allocator>
 auto operator<<(
-    std::basic_ostream<typename TextSource::char_type,
-                       typename TextSource::traits_type>& os,
-    const text_pull<TextSource, Allocator>& p)
+    std::basic_ostream<typename TableSource::char_type,
+                       typename TableSource::traits_type>& os,
+    const text_pull<TableSource, Allocator>& p)
  -> decltype(os)
 {
     // In C++17, this function will be able to be implemented in terms of
@@ -1434,33 +1434,33 @@ auto operator<<(
         });
 }
 
-template <class TextSource, class Allocator,
-    class OtherAllocator = std::allocator<typename TextSource::char_type>>
-std::basic_string<typename TextSource::char_type,
-                  std::char_traits<typename TextSource::char_type>,
+template <class TableSource, class Allocator,
+    class OtherAllocator = std::allocator<typename TableSource::char_type>>
+std::basic_string<typename TableSource::char_type,
+                  std::char_traits<typename TableSource::char_type>,
                   OtherAllocator> to_string(
-    const text_pull<TextSource, Allocator>& p,
+    const text_pull<TableSource, Allocator>& p,
     const OtherAllocator& alloc = Allocator())
 {
     return { p.cbegin(), p.cend(), alloc };
 }
 
-template <class TextSource, class... Appendices>
-text_pull<std::decay_t<TextSource>> make_text_pull(
-    TextSource&& in, Appendices&&... appendices)
+template <class TableSource, class... Appendices>
+text_pull<std::decay_t<TableSource>> make_text_pull(
+    TableSource&& in, Appendices&&... appendices)
 {
-    return text_pull<std::decay_t<TextSource>>(
-        std::forward<TextSource>(in),
+    return text_pull<std::decay_t<TableSource>>(
+        std::forward<TableSource>(in),
         std::forward<Appendices>(appendices)...);
 }
 
-template <class TextSource, class Allocator, class... Appendices>
-text_pull<std::decay_t<TextSource>, Allocator> make_text_pull(
+template <class TableSource, class Allocator, class... Appendices>
+text_pull<std::decay_t<TableSource>, Allocator> make_text_pull(
     std::allocator_arg_t, const Allocator& alloc,
-    TextSource&& in, Appendices&&... appendices)
+    TableSource&& in, Appendices&&... appendices)
 {
-    return text_pull<std::decay_t<TextSource>, Allocator>(
-        std::allocator_arg, alloc, std::forward<TextSource>(in),
+    return text_pull<std::decay_t<TableSource>, Allocator>(
+        std::allocator_arg, alloc, std::forward<TableSource>(in),
         std::forward<Appendices>(appendices)...);
 }
 

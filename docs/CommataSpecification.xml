@@ -1508,7 +1508,7 @@ namespace commata {
 
       <p>The class template <c>csv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TextParser</c> objects (<xref id="text_parser.requirements"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
-      <p>An instance of <c>csv_source</c> shall meet the <c>TextSource</c> requirements (<xref id="text_source.requirements"/>) for <c>Ch</c>.</p>
+      <p>An instance of <c>csv_source</c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for <c>Ch</c>.</p>
 
       <section id="csv_source.cons">
         <name><c>csv_source</c> costruct/copy/destroy</name>
@@ -5373,29 +5373,29 @@ template &lt;class Allocator, class Container, class... Appendices>
   <section id="pull">
     <name>Pull parsing</name>
 
-    <section id="text_source.general">
+    <section id="table_source.general">
       <name>General</name>
 
       <p>Commata offers some tools to perform <n>pull parsing</n>, in which the users can immediately access the results of parsing text tables
          with the control of the execution flow of parsing held by the users themselves and with the knowledge of where in the text table they are processing.</p>
       <p>The pull parsing facilities of Commata need objects that can create the text parsers for their &#x2018;pull-parsing&#x2019; text handlers.
-         The types of these objects are abstracted into the <c>TextSource</c> requirements (<xref id="text_source.requirements"/>).</p>
+         The types of these objects are abstracted into the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>).</p>
 
-      <section id="text_source.requirements">
-        <name><c>TextSource</c> requirements</name>
+      <section id="table_source.requirements">
+        <name><c>TableSource</c> requirements</name>
 
-        <p>A type <c>T</c> meets the <c>TextSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
+        <p>A type <c>T</c> meets the <c>TableSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
           <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character input</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
         </ul>
 
-        <p>In <xref id="table.text_source.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c> and <c>rt</c> is an rvalue of <c>T</c>.
+        <p>In <xref id="table.table_source.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c> and <c>rt</c> is an rvalue of <c>T</c>.
           <c>H</c> is a type that meets the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.
           <c>h</c> is an expression whose type meets the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</p>
 
-        <table id="table.text_source.requirements">
-          <caption><c>TextSource</c> requirements</caption>
+        <table id="table.table_source.requirements">
+          <caption><c>TableSource</c> requirements</caption>
           <col width="1"/><col width="4"/><col width="9"/><col width="14"/>
 
           <tr>
@@ -5465,8 +5465,8 @@ namespace commata {
   enum primitive_text_pull_handle : <nc>see below</nc>;
 
   <c>// <n><xref id="primitive_text_pull"/>, primitive_text_pull:</n></c>
-  template &lt;class TextSource,
-            class Allocator = std::allocator&lt;typename TextSource::char_type>,
+  template &lt;class TableSource,
+            class Allocator = std::allocator&lt;typename TableSource::char_type>,
             std::underlying_type_t&lt;primitive_text_pull_handle> Handle =
               primitive_text_pull_handle_all>
     class primitive_text_pull;
@@ -5480,122 +5480,122 @@ namespace commata {
   };
 
   <c>// <n><xref id="text_pull"/>, text_pull:</n></c>
-  template &lt;class TextSource,
-            class Allocator = std::allocator&lt;typename TextSource::char_type>>
+  template &lt;class TableSource,
+            class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class text_pull;
 
-  template &lt;class TextSourceL, class TextSourceR,
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator==(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator==(const text_pull&lt;TextSource, Allocator>&amp;   v,
-                    const Other&amp;                              o) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator==(const Other&amp;                              o,
-                    const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
-  template &lt;class TextSourceL, class TextSourceR,
+    bool operator==(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator==(const text_pull&lt;TableSource, Allocator>&amp;   v,
+                    const Other&amp;                               o) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator==(const Other&amp;                               o,
+                    const text_pull&lt;TableSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator!=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator!=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator!=(const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSourceL, class TextSourceR,
+    bool operator!=(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator!=(const text_pull&lt;TableSource, Allocator>&amp;   l,
+                    const Other&amp;                               r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator!=(const Other&amp;                               l,
+                    const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator&lt; (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator&lt; (const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator&lt; (const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSourceL, class TextSourceR,
+    bool operator&lt; (const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator&lt; (const text_pull&lt;TableSource, Allocator>&amp;   l,
+                    const Other&amp;                               r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator&lt; (const Other&amp;                               l,
+                    const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator> (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator> (const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator> (const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSourceL, class TextSourceR,
+    bool operator> (const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator> (const text_pull&lt;TableSource, Allocator>&amp;   l,
+                    const Other&amp;                               r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator> (const Other&amp;                               l,
+                    const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator&lt;=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator&lt;=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator&lt;=(const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSourceL, class TextSourceR,
+    bool operator&lt;=(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator&lt;=(const text_pull&lt;TableSource, Allocator>&amp;   l,
+                    const Other&amp;                               r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator&lt;=(const Other&amp;                               l,
+                    const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator>=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator>=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator>=(const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+    bool operator>=(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator>=(const text_pull&lt;TableSource, Allocator>&amp;   l,
+                    const Other&amp;                               r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator>=(const Other&amp;                               l,
+                    const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
-  template &lt;class TextSource, class Allocator>
-    std::basic_ostream&lt;typename TextSource::char_type, typename TextSource::traits_type>&amp;
-      operator&lt;&lt;(std::basic_ostream&lt;typename TextSource::char_type,
-                                    typename TextSource::traits_type>&amp; os,
-                 const text_pull&lt;TextSource, Allocator>&amp; o);
+  template &lt;class TableSource, class Allocator>
+    std::basic_ostream&lt;typename TableSource::char_type, typename TableSource::traits_type>&amp;
+      operator&lt;&lt;(std::basic_ostream&lt;typename TableSource::char_type,
+                                    typename TableSource::traits_type>&amp; os,
+                 const text_pull&lt;TableSource, Allocator>&amp; o);
 
-  template &lt;class TextSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TextSource::char_type,
-                      typename TextSource::traits_type, OtherAllocator>
-      operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
-                const std::basic_string&lt;typename TextSource::char_type,
-                                        typename TextSource::traits_type, OtherAllocator>&amp; right);
-  template &lt;class TextSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TextSource::char_type,
-                      typename TextSource::traits_type, OtherAllocator>
-      operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
-                std::basic_string&lt;typename TextSource::char_type,
-                                  typename TextSource::traits_type, OtherAllocator>&amp;&amp; right);
-  template &lt;class TextSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TextSource::char_type,
-                      typename TextSource::traits_type, OtherAllocator>
-      operator+(const std::basic_string&lt;typename TextSource::char_type,
-                                        typename TextSource::traits_type, OtherAllocator>&amp; left,
-                const text_pull&lt;TextSource, Allocator>&amp; right);
-  template &lt;class TextSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TextSource::char_type,
-                      typename TextSource::traits_type, OtherAllocator>
-      operator+(std::basic_string&lt;typename TextSource::char_type,
-                                  typename TextSource::traits_type, OtherAllocator>&amp;&amp; left,
-                const text_pull&lt;TextSource, Allocator>&amp; right);
-  template &lt;class TextSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TextSource::char_type,
-                      typename TextSource::traits_type, OtherAllocator>&amp;
-      operator+=(std::basic_string&lt;typename TextSource::char_type,
-                                   typename TextSource::traits_type, OtherAllocator>&amp; left,
-                 const text_pull&lt;TextSource, Allocator>&amp; right);
-  template &lt;class TextSource, class Allocator,
-            class OtherAllocator = std::allocator&lt;typename TextSource::char_type>>
-    std::basic_string&lt;typename TextSource::char_type,
-                      std::char_traits&lt;typename TextSource::char_type>,
+  template &lt;class TableSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TableSource::char_type,
+                      typename TableSource::traits_type, OtherAllocator>
+      operator+(const text_pull&lt;TableSource, Allocator>&amp; left,
+                const std::basic_string&lt;typename TableSource::char_type,
+                                        typename TableSource::traits_type, OtherAllocator>&amp; right);
+  template &lt;class TableSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TableSource::char_type,
+                      typename TableSource::traits_type, OtherAllocator>
+      operator+(const text_pull&lt;TableSource, Allocator>&amp; left,
+                std::basic_string&lt;typename TableSource::char_type,
+                                  typename TableSource::traits_type, OtherAllocator>&amp;&amp; right);
+  template &lt;class TableSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TableSource::char_type,
+                      typename TableSource::traits_type, OtherAllocator>
+      operator+(const std::basic_string&lt;typename TableSource::char_type,
+                                        typename TableSource::traits_type, OtherAllocator>&amp; left,
+                const text_pull&lt;TableSource, Allocator>&amp; right);
+  template &lt;class TableSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TableSource::char_type,
+                      typename TableSource::traits_type, OtherAllocator>
+      operator+(std::basic_string&lt;typename TableSource::char_type,
+                                  typename TableSource::traits_type, OtherAllocator>&amp;&amp; left,
+                const text_pull&lt;TableSource, Allocator>&amp; right);
+  template &lt;class TableSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TableSource::char_type,
+                      typename TableSource::traits_type, OtherAllocator>&amp;
+      operator+=(std::basic_string&lt;typename TableSource::char_type,
+                                   typename TableSource::traits_type, OtherAllocator>&amp; left,
+                 const text_pull&lt;TableSource, Allocator>&amp; right);
+  template &lt;class TableSource, class Allocator,
+            class OtherAllocator = std::allocator&lt;typename TableSource::char_type>>
+    std::basic_string&lt;typename TableSource::char_type,
+                      std::char_traits&lt;typename TableSource::char_type>,
                       OtherAllocator>
-      to_string(const text_pull&lt;TextSource, Allocator>&amp; o,
+      to_string(const text_pull&lt;TableSource, Allocator>&amp; o,
                 const OtherAllocator&amp; alloc = Allocator());
 
-  template &lt;class TextSource, class... Appendices>
-    text_pull&lt;std::decay_t&lt;TextSource>>
-      make_text_pull(TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
-  template &lt;class TextSource, class Allocator, class... Appendices>
-    text_pull&lt;std::decay_t&lt;TextSource>, Allocator>
+  template &lt;class TableSource, class... Appendices>
+    text_pull&lt;std::decay_t&lt;TableSource>>
+      make_text_pull(TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+  template &lt;class TableSource, class Allocator, class... Appendices>
+    text_pull&lt;std::decay_t&lt;TableSource>, Allocator>
       make_text_pull(std::allocator_arg_t, const Allocator&amp; alloc,
-                     TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+                     TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
 }
       </codeblock>
     </section>
@@ -5627,13 +5627,13 @@ namespace commata {
 
       <codeblock>
 namespace commata {
-  template &lt;class TextSource,
-            class Allocator = std::allocator&lt;typename TextSource::char_type>,
+  template &lt;class TableSource,
+            class Allocator = std::allocator&lt;typename TableSource::char_type>,
             std::underlying_type_t&lt;primitive_text_pull_handle> Handle =
               primitive_text_pull_handle_all>
     class primitive_text_pull {
   public:
-    using char_type      = typename TextSource::char_type;
+    using char_type      = typename TableSource::char_type;
     using allocator_type = Allocator;
     using size_type      = std::size_t;
 
@@ -5642,11 +5642,11 @@ namespace commata {
     static constexpr std::size_t npos = -1;
 
     <c>// <n><xref id="primitive_text_pull.cons"/>, construct/copy/destroy:</n></c>
-    template &lt;class TextSourceR>
-      explicit primitive_text_pull(TextSourceR&amp;&amp; in,
+    template &lt;class TableSourceR>
+      explicit primitive_text_pull(TableSourceR&amp;&amp; in,
                                    std::size_t buffer_size = 0);
-    template &lt;class TextSourceR>
-      primitive_text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSourceR&amp;&amp; in,
+    template &lt;class TableSourceR>
+      primitive_text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
                           std::size_t buffer_size = 0);
     primitive_text_pull(primitive_text_pull&amp;&amp; other) noexcept;
    ~primitive_text_pull();
@@ -5674,8 +5674,8 @@ namespace commata {
       </codeblock>
 
       <p>The class template <c>primitive_text_pull</c> describes the low-level pull parser objects for text tables (<xref id="definitions.text_table"/>).</p>
-      <p>The template parameter <c>TextSource</c> shall meet the <c>TextSource</c> requirements (<xref id="text_source.requirements"/>) for a char-like type.
-         The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TextSource::char_type</c>.</p>
+      <p>The template parameter <c>TableSource</c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for a char-like type.
+         The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TableSource::char_type</c>.</p>
       <p>An object of an instantiation of it holds two objects:</p>
       <ul>
         <li>a text parser object (<xref id="text_parser.requirements"/>), whose tied text handler object recognizes each invocation on its member functions
@@ -5704,30 +5704,30 @@ static constexpr bool physical_position_available = <nc>see below</nc>;
         <name><c>primitive_text_pull</c> construct/copy/destroy</name>
         <code-item>
           <code>
-template &lt;class TextSourceR>
-  explicit primitive_text_pull(TextSourceR&amp;&amp; in,
+template &lt;class TableSourceR>
+  explicit primitive_text_pull(TableSourceR&amp;&amp; in,
                                std::size_t buffer_size = 0);
           </code>
           <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>First default constructs an <c>Allocator</c> object <c>a</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
                    Makes a text handler object <c>h</c> configured to enqueue events into the event queue above ant to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
-                   Then constructs the text parser object with <c>std::forward&lt;TextSourceR>(in)(std::move(h))</c>.</effects>
+                   Then constructs the text parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
           <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;.
-                  This overload shall not participate in overload resolution unless if <c>std::decay_t&lt;TextSourceR></c> is the same type as <c>TextSource</c>.</remark>
+                  This overload shall not participate in overload resolution unless if <c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class TextSourceR>
-  primitive_text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSourceR&amp;&amp; in,
+template &lt;class TableSourceR>
+  primitive_text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
                       std::size_t buffer_size = 0);
           </code>
           <effects>First constructs an <c>Allocator</c> object <c>a</c> with <c>alloc</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
                    Makes a text handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
-                   Then constructs the text parser object with <c>std::forward&lt;TextSourceR>(in)(std::move(h))</c>.</effects>
+                   Then constructs the text parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
         </code-item>
 
@@ -5819,7 +5819,7 @@ primitive_text_pull_state state() const noexcept;
             <tr>
               <td><c>(2)</c></td>
               <td><c>eof</c></td>
-              <td>The text parser has already consumed all content of its tied text source.</td>
+              <td>The text parser has already consumed all content of its tied table source.</td>
               <td>0</td>
             </tr>
 
@@ -5937,12 +5937,12 @@ size_type max_data_size() const noexcept;
 
       <codeblock>
 namespace commata {
-  template &lt;class TextSource,
-            class Allocator = std::allocator&lt;typename TextSource::char_type>>
+  template &lt;class TableSource,
+            class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class text_pull {
   public:
-    using char_type      = typename TextSource::char_type;
-    using traits_type    = typename TextSource::traits_type;
+    using char_type      = typename TableSource::char_type;
+    using traits_type    = typename TableSource::traits_type;
     using allocator_type = Allocator;
 
     using value_type      = const char_type;
@@ -5962,10 +5962,10 @@ namespace commata {
     static constexpr std::size_t npos = -1;
 
     <c>// <n><xref id="text_pull.cons"/>, construct/copy/destroy:</n></c>
-    template &lt;class TextSourceR>
-      explicit text_pull(TextSourceR&amp;&amp; in, std::size_t buffer_size = 0);
-    template &lt;class TextSourceR>
-      text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSourceR&amp;&amp; in,
+    template &lt;class TableSourceR>
+      explicit text_pull(TableSourceR&amp;&amp; in, std::size_t buffer_size = 0);
+    template &lt;class TableSourceR>
+      text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
                 std::size_t buffer_size = 0);
     text_pull(text_pull&amp;&amp; other) noexcept;
    ~text_pull();
@@ -6015,137 +6015,137 @@ namespace commata {
   };
 
   <c>// <n><xref id="text_pull.comparison"/>, text_pull comparison functions:</n></c>
-  template &lt;class TextSourceL, class TextSourceR,
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator==(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator==(const text_pull&lt;TextSource, Allocator>&amp;   v,
-                    const Other&amp;                              o) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator==(const Other&amp;                              o,
-                    const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
+    bool operator==(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator==(const text_pull&lt;TableSource, Allocator>&amp;   v,
+                    const Other&amp;                               o) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator==(const Other&amp;                               o,
+                    const text_pull&lt;TableSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
 
-  template &lt;class TextSourceL, class TextSourceR,
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator!=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator!=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator!=(const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+    bool operator!=(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator!=(const text_pull&lt;TableSource, Allocator>&amp;   l,
+                    const Other&amp;                               r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator!=(const Other&amp;                               l,
+                    const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
-  template &lt;class TextSourceL, class TextSourceR,
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator&lt; (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator&lt; (const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator&lt; (const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+    bool operator&lt; (const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator&lt; (const text_pull&lt;TableSource, Allocator>&amp;   l,
+                    const Other&amp;                               r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator&lt; (const Other&amp;                               l,
+                    const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
-  template &lt;class TextSourceL, class TextSourceR,
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator> (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator> (const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator> (const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+    bool operator> (const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator> (const text_pull&lt;TableSource, Allocator>&amp;   l,
+                    const Other&amp;                               r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator> (const Other&amp;                               l,
+                    const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
-  template &lt;class TextSourceL, class TextSourceR,
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator&lt;=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator&lt;=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator&lt;=(const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+    bool operator&lt;=(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator&lt;=(const text_pull&lt;TableSource, Allocator>&amp;   l,
+                    const Other&amp;                               r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator&lt;=(const Other&amp;                               l,
+                    const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
-  template &lt;class TextSourceL, class TextSourceR,
+  template &lt;class TableSourceL, class TableSourceR,
             class AllocatorL, class AllocatorR>
-    bool operator>=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                    const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator>=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                    const Other&amp;                              r) noexcept(<nc>see below</nc>);
-  template &lt;class TextSource, class Allocator, class Other>
-    bool operator>=(const Other&amp;                              l,
-                    const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+    bool operator>=(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                    const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator>=(const text_pull&lt;TableSource, Allocator>&amp;   l,
+                    const Other&amp;                               r) noexcept(<nc>see below</nc>);
+  template &lt;class TableSource, class Allocator, class Other>
+    bool operator>=(const Other&amp;                               l,
+                    const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
 
   <c>// <n><xref id="text_pull.io"/>, <c>text_pull</c> inserters:</n></c>
-  template &lt;class TextSource, class Allocator>
-    std::basic_ostream&lt;typename TextSource::char_type, typename TextSource::traits_type>&amp;
-      operator&lt;&lt;(std::basic_ostream&lt;typename TextSource::char_type,
-                                    typename TextSource::traits_type>&amp; os,
-                 const text_pull&lt;TextSource, Allocator>&amp; o);
+  template &lt;class TableSource, class Allocator>
+    std::basic_ostream&lt;typename TableSource::char_type, typename TableSource::traits_type>&amp;
+      operator&lt;&lt;(std::basic_ostream&lt;typename TableSource::char_type,
+                                    typename TableSource::traits_type>&amp; os,
+                 const text_pull&lt;TableSource, Allocator>&amp; o);
 
   <c>// <n><xref id="text_pull.conversion"/>, text_pull conversion:</n></c>
-  template &lt;class TextSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TextSource::char_type,
-                      typename TextSource::traits_type, OtherAllocator>
-      operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
-                const std::basic_string&lt;typename TextSource::char_type,
-                                        typename TextSource::traits_type, OtherAllocator>&amp; right);
-  template &lt;class TextSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TextSource::char_type,
-                      typename TextSource::traits_type, OtherAllocator>
-      operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
-                std::basic_string&lt;typename TextSource::char_type,
-                                  typename TextSource::traits_type, OtherAllocator>&amp;&amp; right);
-  template &lt;class TextSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TextSource::char_type,
-                      typename TextSource::traits_type, OtherAllocator>
-      operator+(const std::basic_string&lt;typename TextSource::char_type,
-                                        typename TextSource::traits_type, OtherAllocator>&amp; left,
-                const text_pull&lt;TextSource, Allocator>&amp; right);
-  template &lt;class TextSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TextSource::char_type,
-                      typename TextSource::traits_type, OtherAllocator>
-      operator+(std::basic_string&lt;typename TextSource::char_type,
-                                  typename TextSource::traits_type, OtherAllocator>&amp;&amp; left,
-                const text_pull&lt;TextSource, Allocator>&amp; right);
+  template &lt;class TableSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TableSource::char_type,
+                      typename TableSource::traits_type, OtherAllocator>
+      operator+(const text_pull&lt;TableSource, Allocator>&amp; left,
+                const std::basic_string&lt;typename TableSource::char_type,
+                                        typename TableSource::traits_type, OtherAllocator>&amp; right);
+  template &lt;class TableSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TableSource::char_type,
+                      typename TableSource::traits_type, OtherAllocator>
+      operator+(const text_pull&lt;TableSource, Allocator>&amp; left,
+                std::basic_string&lt;typename TableSource::char_type,
+                                  typename TableSource::traits_type, OtherAllocator>&amp;&amp; right);
+  template &lt;class TableSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TableSource::char_type,
+                      typename TableSource::traits_type, OtherAllocator>
+      operator+(const std::basic_string&lt;typename TableSource::char_type,
+                                        typename TableSource::traits_type, OtherAllocator>&amp; left,
+                const text_pull&lt;TableSource, Allocator>&amp; right);
+  template &lt;class TableSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TableSource::char_type,
+                      typename TableSource::traits_type, OtherAllocator>
+      operator+(std::basic_string&lt;typename TableSource::char_type,
+                                  typename TableSource::traits_type, OtherAllocator>&amp;&amp; left,
+                const text_pull&lt;TableSource, Allocator>&amp; right);
 
-  template &lt;class TextSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TextSource::char_type,
-                      typename TextSource::traits_type, OtherAllocator>&amp;
-      operator+=(std::basic_string&lt;typename TextSource::char_type,
-                                   typename TextSource::traits_type, OtherAllocator>&amp; left,
-                 const text_pull&lt;TextSource, Allocator>&amp; right);
+  template &lt;class TableSource, class Allocator, class OtherAllocator>
+    std::basic_string&lt;typename TableSource::char_type,
+                      typename TableSource::traits_type, OtherAllocator>&amp;
+      operator+=(std::basic_string&lt;typename TableSource::char_type,
+                                   typename TableSource::traits_type, OtherAllocator>&amp; left,
+                 const text_pull&lt;TableSource, Allocator>&amp; right);
 
-  template &lt;class TextSource, class Allocator,
-            class OtherAllocator = std::allocator&lt;typename TextSource::char_type>>
-    std::basic_string&lt;typename TextSource::char_type,
-                      std::char_traits&lt;typename TextSource::char_type>,
+  template &lt;class TableSource, class Allocator,
+            class OtherAllocator = std::allocator&lt;typename TableSource::char_type>>
+    std::basic_string&lt;typename TableSource::char_type,
+                      std::char_traits&lt;typename TableSource::char_type>,
                       OtherAllocator>
-      to_string(const text_pull&lt;TextSource, Allocator>&amp; o,
+      to_string(const text_pull&lt;TableSource, Allocator>&amp; o,
                 const OtherAllocator&amp; alloc = Allocator());
 
   <c>// <n><xref id="text_pull.creation"/>, text_pull creation functions:</n></c>
-  template &lt;class TextSource, class... Appendices>
-    text_pull&lt;std::decay_t&lt;TextSource>>
-      make_text_pull(TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
-  template &lt;class TextSource, class Allocator, class... Appendices>
-    text_pull&lt;std::decay_t&lt;TextSource>, Allocator>
+  template &lt;class TableSource, class... Appendices>
+    text_pull&lt;std::decay_t&lt;TableSource>>
+      make_text_pull(TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+  template &lt;class TableSource, class Allocator, class... Appendices>
+    text_pull&lt;std::decay_t&lt;TableSource>, Allocator>
       make_text_pull(std::allocator_arg_t, const Allocator&amp; alloc,
-                     TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+                     TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
 }
       </codeblock>
 
       <p><c>text_pull</c> is another class template that describes pull parser objects for text tables (<xref id="definitions.text_table"/>) than <c>primitive_text_pull</c> (<xref id="primitive_text_pull"/>).
          It offers higher-level parsing functionality.</p>
-      <p>The template parameter <c>TextSource</c> shall meet the <c>TextSource</c> requirements (<xref id="text_source.requirements"/>) for a char-like type.
-         The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TextSource::char_type</c>.</p>
+      <p>The template parameter <c>TableSource</c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for a char-like type.
+         The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TableSource::char_type</c>.</p>
       <p>An object of an instantiation of it performs field-wisely or record-wisely step-by-step parsing of a text table.
-         Its user can retrieve the field values through its <n>current string values</n>, which are null-terminated sequences of <c>TextSource::char_type</c>.</p>
+         Its user can retrieve the field values through its <n>current string values</n>, which are null-terminated sequences of <c>TableSource::char_type</c>.</p>
 
       <section id="text_pull.physical_position_available">
         <name><c>text_pull</c> physical position availability</name>
@@ -6163,21 +6163,21 @@ static constexpr bool physical_position_available = <nc>see below</nc>;
         <name><c>text_pull</c> construct/copy/destroy</name>
         <code-item>
           <code>
-template &lt;class TextSourceR>
-  explicit text_pull(TextSourceR&amp;&amp; in, std::size_t buffer_size = 0);
+template &lt;class TableSourceR>
+  explicit text_pull(TableSourceR&amp;&amp; in, std::size_t buffer_size = 0);
           </code>
           <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Initializes an object of <c>text_pull</c> with a default constructed <c>Allocator</c> object as its allocator object.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
           <postcondition><c>is_empty_line_aware()</c> and <c>is_suppressing_errors()</c> shall return <c>false</c>.</postcondition>
-          <remark>This overload shall not participate in overload resolution unless if <c>std::decay_t&lt;TextSourceR></c> is the same type as <c>TextSource</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless if <c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class TextSourceR>
-  text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TextSourceR&amp;&amp; in,
+template &lt;class TableSourceR>
+  text_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
           std::size_t buffer_size = 0);
           </code>
           <effects>Initializes an object of <c>text_pull</c> with an allocator object constructed with <c>alloc</c>.
@@ -6301,7 +6301,7 @@ text_pull_state state() const noexcept;
             <tr>
               <td><c>(2)</c></td>
               <td><c>eof</c></td>
-              <td><c>*this</c> has already consumed all content of the text source.</td>
+              <td><c>*this</c> has already consumed all content of the table source.</td>
               <td>An empty string</td>
             </tr>
 
@@ -6521,33 +6521,33 @@ void rethrow_suppressed();
       <section id="text_pull.comparison">
         <name><c>text_pull</c> comparison functions</name>
 
-        <p>Function templates described in this subclause that take template parameters <c>TextSourceL</c> and <c>TextSourceR</c> shall not participate in overload resolution unless <c>TextSourceL::char_type</c> and <c>TextSourceL::traits_type</c> are the same types as <c>TextSourceR::char_type</c> and <c>TextSourceR::traits_type</c> respectively.</p>
-        <p>Function templates described in this subclause that take template parameters <c>TextSource</c> and <c>Other</c> shall not participate in overload resolution unless <c>std::is_convertible&lt;Other, typename TextSource::char_type*>::value</c> is not <c>false</c> or <c>Other</c> is the same type as <c>std::basic_string&lt;typename TextSource::char_type, typename TextSource::traits_type, Allocator></c> for a certain type <c>Allocator</c>.</p>
+        <p>Function templates described in this subclause that take template parameters <c>TableSourceL</c> and <c>TableSourceR</c> shall not participate in overload resolution unless <c>TableSourceL::char_type</c> and <c>TableSourceL::traits_type</c> are the same types as <c>TableSourceR::char_type</c> and <c>TableSourceR::traits_type</c> respectively.</p>
+        <p>Function templates described in this subclause that take template parameters <c>TableSource</c> and <c>Other</c> shall not participate in overload resolution unless <c>std::is_convertible&lt;Other, typename TableSource::char_type*>::value</c> is not <c>false</c> or <c>Other</c> is the same type as <c>std::basic_string&lt;typename TableSource::char_type, typename TableSource::traits_type, Allocator></c> for a certain type <c>Allocator</c>.</p>
 
         <section id="text_pull.comparison.eq">
           <name><c>operator==</c></name>
           <code-item>
             <code>
-template &lt;class TextSourceL, class TextSourceR,
+template &lt;class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
-  bool operator==(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  bool operator==(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
             </code>
-            <returns><c>l.size() == r.size() &amp;&amp; TextSourceL::traits_type::compare(l.data(), r.data(), l.size()) == 0</c>.</returns>
+            <returns><c>l.size() == r.size() &amp;&amp; TableSourceL::traits_type::compare(l.data(), r.data(), l.size()) == 0</c>.</returns>
           </code-item>
 
           <code-item>
             <code>
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator==(const text_pull&lt;TextSource, Allocator>&amp;   v,
-                  const Other&amp;                              o) noexcept(<nc>see below</nc>);
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator==(const Other&amp;                              o,
-                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator==(const text_pull&lt;TableSource, Allocator>&amp;   v,
+                  const Other&amp;                               o) noexcept(<nc>see below</nc>);
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator==(const Other&amp;                               o,
+                  const text_pull&lt;TableSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
             </code>
-            <returns>If <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c>, <c>v.size() == o.size() &amp;&amp; Tr::compare(v.data(), o.data(), v.size()) == 0</c>.
-                     Otherwise, <c>v.size() == TextSource::traits_type::length(o) &amp;&amp; TextSource::traits_type::compare(v.data(), o, v.size()) == 0</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <returns>If <c>std::is_convertible&lt;Other, const typename TableSource::char_type*>::value</c> is <c>false</c>, <c>v.size() == o.size() &amp;&amp; Tr::compare(v.data(), o.data(), v.size()) == 0</c>.
+                     Otherwise, <c>v.size() == TableSource::traits_type::length(o) &amp;&amp; TableSource::traits_type::compare(v.data(), o, v.size()) == 0</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TableSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -6555,19 +6555,19 @@ template &lt;class TextSource, class Allocator, class Other>
           <name><c>operator!=</c></name>
           <code-item>
             <code>
-template &lt;class TextSourceL, class TextSourceR,
+template &lt;class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
-  bool operator!=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator!=(const text_pull&lt;TextSource, Allocator>&amp;   v,
-                  const Other&amp;                              o) noexcept(<nc>see below</nc>);
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator!=(const Other&amp;                              o,
-                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
+  bool operator!=(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator!=(const text_pull&lt;TableSource, Allocator>&amp;   v,
+                  const Other&amp;                               o) noexcept(<nc>see below</nc>);
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator!=(const Other&amp;                               o,
+                  const text_pull&lt;TableSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>left != right</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TableSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -6575,36 +6575,36 @@ template &lt;class TextSource, class Allocator, class Other>
           <name><c>operator&lt;</c></name>
           <code-item>
             <code>
-template &lt;class TextSourceL, class TextSourceR,
+template &lt;class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
-  bool operator&lt; (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
+  bool operator&lt; (const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
             </code>
-            <returns><c>c &lt; 0 || (c == 0 &amp;&amp; l.size() &lt; r.size())</c> where <c>c</c> is the return value of <c>TextSourceL::traits_type::compare(l.data(), r.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>l.size()</c> and <c>r.size()</c>.</returns>
+            <returns><c>c &lt; 0 || (c == 0 &amp;&amp; l.size() &lt; r.size())</c> where <c>c</c> is the return value of <c>TableSourceL::traits_type::compare(l.data(), r.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>l.size()</c> and <c>r.size()</c>.</returns>
           </code-item>
 
           <code-item>
             <code>
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator&lt; (const text_pull&lt;TextSource, Allocator>&amp;   v,
-                  const Other&amp;                              o) noexcept(<nc>see below</nc>);
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator&lt; (const text_pull&lt;TableSource, Allocator>&amp;   v,
+                  const Other&amp;                               o) noexcept(<nc>see below</nc>);
             </code>
-            <returns>If <c>std::is_convertible&lt;Other, typename TextSource::char_type*>::value</c> is <c>false</c>,
-                     <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; o.size()</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(v.data(), o.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>o.size()</c>.
-                     Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; TextSource::traits_type::length(o)</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(v.data(), o, rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>Tr::length(o)</c>.</returns>
-            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <returns>If <c>std::is_convertible&lt;Other, typename TableSource::char_type*>::value</c> is <c>false</c>,
+                     <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; o.size()</c> where <c>c</c> is the return value of <c>TableSource::traits_type::compare(v.data(), o.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>o.size()</c>.
+                     Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; TableSource::traits_type::length(o)</c> where <c>c</c> is the return value of <c>TableSource::traits_type::compare(v.data(), o, rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>Tr::length(o)</c>.</returns>
+            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible&lt;Other, const typename TableSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
 
           <code-item>
             <code>
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator&lt; (const Other&amp;                              o,
-                  const text_pull&lt;TextSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator&lt; (const Other&amp;                               o,
+                  const text_pull&lt;TableSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
             </code>
-            <returns>If <c>std::is_convertible&lt;Other, typename TextSource::char_type*>::value</c> is <c>false</c>,
-                     <c>c &lt; 0 || (c == 0 &amp;&amp; o.size() &lt; v.size()</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(o.data(), v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>o.size()</c> and <c>v.size()</c>.
-                     Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; TextSource::traits_type::length(o) &lt; v.size()</c> where <c>c</c> is the return value of <c>TextSource::traits_type::compare(o, v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>Tr::length(o)</c> and <c>v.size()</c>.</returns>
-            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <returns>If <c>std::is_convertible&lt;Other, typename TableSource::char_type*>::value</c> is <c>false</c>,
+                     <c>c &lt; 0 || (c == 0 &amp;&amp; o.size() &lt; v.size()</c> where <c>c</c> is the return value of <c>TableSource::traits_type::compare(o.data(), v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>o.size()</c> and <c>v.size()</c>.
+                     Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; TableSource::traits_type::length(o) &lt; v.size()</c> where <c>c</c> is the return value of <c>TableSource::traits_type::compare(o, v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>Tr::length(o)</c> and <c>v.size()</c>.</returns>
+            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible&lt;Other, const typename TableSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -6612,19 +6612,19 @@ template &lt;class TextSource, class Allocator, class Other>
           <name><c>operator></c></name>
           <code-item>
             <code>
-template &lt;class TextSourceL, class TextSourceR,
+template &lt;class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
-  bool operator> (const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator> (const text_pull&lt;TextSource, Allocator>&amp;   l,
-                  const Other&amp;                              r) noexcept(<nc>see below</nc>);
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator> (const Other&amp;                              l,
-                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+  bool operator> (const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator> (const text_pull&lt;TableSource, Allocator>&amp;   l,
+                  const Other&amp;                               r) noexcept(<nc>see below</nc>);
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator> (const Other&amp;                               l,
+                  const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>r &lt; l</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TableSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -6632,19 +6632,19 @@ template &lt;class TextSource, class Allocator, class Other>
           <name><c>operator&lt;=</c></name>
           <code-item>
             <code>
-template &lt;class TextSourceL, class TextSourceR,
+template &lt;class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
-  bool operator&lt;=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator&lt;=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                  const Other&amp;                              r) noexcept(<nc>see below</nc>);
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator&lt;=(const Other&amp;                              l,
-                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+  bool operator&lt;=(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator&lt;=(const text_pull&lt;TableSource, Allocator>&amp;   l,
+                  const Other&amp;                               r) noexcept(<nc>see below</nc>);
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator&lt;=(const Other&amp;                               l,
+                  const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(r &lt; l)</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TableSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -6652,19 +6652,19 @@ template &lt;class TextSource, class Allocator, class Other>
           <name><c>operator>=</c></name>
           <code-item>
             <code>
-template &lt;class TextSourceL, class TextSourceR,
+template &lt;class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
-  bool operator>=(const text_pull&lt;TextSourceL, AllocatorL>&amp; l,
-                  const text_pull&lt;TextSourceR, AllocatorR>&amp; r) noexcept;
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator>=(const text_pull&lt;TextSource, Allocator>&amp;   l,
-                  const Other&amp;                              r) noexcept(<nc>see below</nc>);
-template &lt;class TextSource, class Allocator, class Other>
-  bool operator>=(const Other&amp;                              l,
-                  const text_pull&lt;TextSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
+  bool operator>=(const text_pull&lt;TableSourceL, AllocatorL>&amp; l,
+                  const text_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator>=(const text_pull&lt;TableSource, Allocator>&amp;   l,
+                  const Other&amp;                               r) noexcept(<nc>see below</nc>);
+template &lt;class TableSource, class Allocator, class Other>
+  bool operator>=(const Other&amp;                               l,
+                  const text_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(l &lt; r)</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TextSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible&lt;Other, const typename TableSource::char_type*>::value</c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
           </code-item>
         </section>
       </section>
@@ -6673,11 +6673,11 @@ template &lt;class TextSource, class Allocator, class Other>
         <name><c>text_pull</c> inserters</name>
         <code-item>
           <code>
-template &lt;class TextSource, class Allocator>
-  std::basic_ostream&lt;typename TextSource::char_type, typename TextSource::traits_type>&amp;
-    operator&lt;&lt;(std::basic_ostream&lt;typename TextSource::char_type,
-                                  typename TextSource::traits_type>&amp; os,
-                const text_pull&lt;TextSource, Allocator>&amp; o);
+template &lt;class TableSource, class Allocator>
+  std::basic_ostream&lt;typename TableSource::char_type, typename TableSource::traits_type>&amp;
+    operator&lt;&lt;(std::basic_ostream&lt;typename TableSource::char_type,
+                                  typename TableSource::traits_type>&amp; os,
+                const text_pull&lt;TableSource, Allocator>&amp; o);
           </code>
           <effects>Behaves as a formatted output function of <c>os</c>.
                    Forms a character sequence <c>seq</c>, initially consisting of the elements defined by the range [<c>o.cbegin()</c>, <c>o.cend()</c>).
@@ -6691,30 +6691,30 @@ template &lt;class TextSource, class Allocator>
 
         <code-item>
           <code>
-template &lt;class TextSource, class Allocator, class OtherAllocator>
-  std::basic_string&lt;typename TextSource::char_type,
-                    typename TextSource::traits_type, OtherAllocator>
-    operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
-              const std::basic_string&lt;typename TextSource::char_type,
-                                      typename TextSource::traits_type, OtherAllocator>&amp; right);
-template &lt;class TextSource, class Allocator, class OtherAllocator>
-  std::basic_string&lt;typename TextSource::char_type,
-                    typename TextSource::traits_type, OtherAllocator>
-    operator+(const text_pull&lt;TextSource, Allocator>&amp; left,
-              std::basic_string&lt;typename TextSource::char_type,
-                                typename TextSource::traits_type, OtherAllocator>&amp;&amp; right);
-template &lt;class TextSource, class Allocator, class OtherAllocator>
-  std::basic_string&lt;typename TextSource::char_type,
-                    typename TextSource::traits_type, OtherAllocator>
-    operator+(const std::basic_string&lt;typename TextSource::char_type,
-                                      typename TextSource::traits_type, OtherAllocator>&amp; left,
-              const text_pull&lt;TextSource, Allocator>&amp; right);
-template &lt;class TextSource, class Allocator, class OtherAllocator>
-  std::basic_string&lt;typename TextSource::char_type,
-                    typename TextSource::traits_type, OtherAllocator>
-    operator+(std::basic_string&lt;typename TextSource::char_type,
-                                typename TextSource::traits_type, OtherAllocator>&amp;&amp; left,
-              const text_pull&lt;TextSource, Allocator>&amp; right);
+template &lt;class TableSource, class Allocator, class OtherAllocator>
+  std::basic_string&lt;typename TableSource::char_type,
+                    typename TableSource::traits_type, OtherAllocator>
+    operator+(const text_pull&lt;TableSource, Allocator>&amp; left,
+              const std::basic_string&lt;typename TableSource::char_type,
+                                      typename TableSource::traits_type, OtherAllocator>&amp; right);
+template &lt;class TableSource, class Allocator, class OtherAllocator>
+  std::basic_string&lt;typename TableSource::char_type,
+                    typename TableSource::traits_type, OtherAllocator>
+    operator+(const text_pull&lt;TableSource, Allocator>&amp; left,
+              std::basic_string&lt;typename TableSource::char_type,
+                                typename TableSource::traits_type, OtherAllocator>&amp;&amp; right);
+template &lt;class TableSource, class Allocator, class OtherAllocator>
+  std::basic_string&lt;typename TableSource::char_type,
+                    typename TableSource::traits_type, OtherAllocator>
+    operator+(const std::basic_string&lt;typename TableSource::char_type,
+                                      typename TableSource::traits_type, OtherAllocator>&amp; left,
+              const text_pull&lt;TableSource, Allocator>&amp; right);
+template &lt;class TableSource, class Allocator, class OtherAllocator>
+  std::basic_string&lt;typename TableSource::char_type,
+                    typename TableSource::traits_type, OtherAllocator>
+    operator+(std::basic_string&lt;typename TableSource::char_type,
+                                typename TableSource::traits_type, OtherAllocator>&amp;&amp; left,
+              const text_pull&lt;TableSource, Allocator>&amp; right);
           </code>
           <returns>A string object whose content is [<c>l.cbegin()</c>, <c>l.cend()</c>) and [<c>r.cbegin()</c>, <c>r.cend()</c>) concatenated
                     where <c>l</c> and <c>r</c> are the values of <c>left</c> and <c>right</c> before the call respectively.</returns>
@@ -6723,12 +6723,12 @@ template &lt;class TextSource, class Allocator, class OtherAllocator>
 
         <code-item>
           <code>
-template &lt;class TextSource, class Allocator, class OtherAllocator>
-  std::basic_string&lt;typename TextSource::char_type,
-                    typename TextSource::traits_type, OtherAllocator>&amp;
-    operator+=(std::basic_string&lt;typename TextSource::char_type,
-                                 typename TextSource::traits_type, OtherAllocator>&amp; left,
-               const text_pull&lt;TextSource, Allocator>&amp; right);
+template &lt;class TableSource, class Allocator, class OtherAllocator>
+  std::basic_string&lt;typename TableSource::char_type,
+                    typename TableSource::traits_type, OtherAllocator>&amp;
+    operator+=(std::basic_string&lt;typename TableSource::char_type,
+                                 typename TableSource::traits_type, OtherAllocator>&amp; left,
+               const text_pull&lt;TableSource, Allocator>&amp; right);
           </code>
           <effects>Equivalent to call <c>left.append(right.cbegin(), right.cend())</c>.</effects>
           <returns><c>left</c>.</returns>
@@ -6737,15 +6737,15 @@ template &lt;class TextSource, class Allocator, class OtherAllocator>
 
         <code-item>
           <code>
-template &lt;class TextSource, class Allocator,
-          class OtherAllocator = std::allocator&lt;typename TextSource::char_type>>
-  std::basic_string&lt;typename TextSource::char_type,
-                    std::char_traits&lt;typename TextSource::char_type>,
+template &lt;class TableSource, class Allocator,
+          class OtherAllocator = std::allocator&lt;typename TableSource::char_type>>
+  std::basic_string&lt;typename TableSource::char_type,
+                    std::char_traits&lt;typename TableSource::char_type>,
                     OtherAllocator>
-    to_string(const text_pull&lt;TextSource, Allocator>&amp; o,
+    to_string(const text_pull&lt;TableSource, Allocator>&amp; o,
               const OtherAllocator&amp; alloc = Allocator());
           </code>
-          <returns><c>std::basic_string&lt;typename TextSource::char_type, std::char_traits&lt;typename TextSource::char_type>, OtherAllocator>(o.cbegin(), o.cend(), alloc)</c>.</returns>
+          <returns><c>std::basic_string&lt;typename TableSource::char_type, std::char_traits&lt;typename TableSource::char_type>, OtherAllocator>(o.cbegin(), o.cend(), alloc)</c>.</returns>
         </code-item>
       </section>
 
@@ -6753,21 +6753,21 @@ template &lt;class TextSource, class Allocator,
         <name><c>text_pull</c> creation functions</name>
         <code-item>
           <code>
-template &lt;class TextSource, class... Appendices>
-  text_pull&lt;std::decay_t&lt;TextSource>>
-    make_text_pull(TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+template &lt;class TableSource, class... Appendices>
+  text_pull&lt;std::decay_t&lt;TableSource>>
+    make_text_pull(TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
           </code>
-          <returns><c>text_pull&lt;std::decay_t&lt;TextSource>>(std::forward&lt;TextSource>(in), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
+          <returns><c>text_pull&lt;std::decay_t&lt;TableSource>>(std::forward&lt;TableSource>(in), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class TextSource, class Allocator, class... Appendices>
-  text_pull&lt;std::decay_t&lt;TextSource>, Allocator>
+template &lt;class TableSource, class Allocator, class... Appendices>
+  text_pull&lt;std::decay_t&lt;TableSource>, Allocator>
     make_text_pull(std::allocator_arg_t, const Allocator&amp; alloc,
-                   TextSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+                   TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
           </code>
-          <returns><c>text_pull&lt;std::decay_t&lt;TextSource>, Allocator>(std::allocator_arg, alloc, std::forward&lt;TextSource>(in), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
+          <returns><c>text_pull&lt;std::decay_t&lt;TableSource>, Allocator>(std::allocator_arg, alloc, std::forward&lt;TableSource>(in), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
         </code-item>
       </section>
     </section>
