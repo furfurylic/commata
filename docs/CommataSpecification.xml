@@ -5387,7 +5387,7 @@ template &lt;class Allocator, class Container, class... Appendices>
         <p>A type <c>T</c> meets the <c>TextSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-          <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped text input</n> object, and the expressions shown in <xref id="table.text_source.requirements"/> are valid and have the indicated semantics.</li>
+          <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character input</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
         </ul>
 
         <p>In <xref id="table.text_source.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c> and <c>rt</c> is an rvalue of <c>T</c>.
@@ -5423,7 +5423,7 @@ template &lt;class Allocator, class Container, class... Appendices>
             <td>(3)</td>
             <td><c>ct(h)</c></td>
             <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
-            <td rowspan="2">Creates a text parser object <c>p</c> that has its tied character input object which is copy constructed (on (3)) or move constructed (on (4)) from the wrapped text input object of <c>*this</c> and
+            <td rowspan="2">Creates a text parser object <c>p</c> that has its tied character input object which is copy constructed (on (3)) or move constructed (on (4)) from the wrapped character input object of <c>*this</c> and
                 its tied text handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with from <c>h</c> (otherwise).
                 Then returns <c>p</c>.</td>
           </tr>
