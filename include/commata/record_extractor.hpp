@@ -132,23 +132,56 @@ public:
     using traits_type = Tr;
     using allocator_type = Allocator;
 
+    template <class FieldNamePredR, class FieldValuePredR,
+        std::enable_if_t<
+            !std::is_integral<FieldNamePredR>::value,
+            std::nullptr_t> = nullptr>
+    record_extractor_impl(
+            std::allocator_arg_t, const Allocator& alloc,
+            std::basic_streambuf<Ch, Tr>* out,
+            FieldNamePredR&& field_name_pred,
+            FieldValuePredR&& field_value_pred,
+            bool includes_header, std::size_t max_record_num) :
+        record_extractor_impl(
+            std::allocator_arg, alloc, out,
+            std::forward<FieldNamePredR>(field_name_pred),
+            std::forward<FieldValuePredR>(field_value_pred),
+            npos, includes_header, max_record_num)
+    {}
+
+    template <class FieldValuePredR>
+    record_extractor_impl(
+            std::allocator_arg_t, const Allocator& alloc,
+            std::basic_streambuf<Ch, Tr>* out,
+            std::size_t target_field_index, FieldValuePredR&& field_value_pred,
+            bool includes_header, std::size_t max_record_num) :
+        record_extractor_impl(
+            std::allocator_arg, alloc, out,
+            FieldNamePred(),
+            std::forward<FieldValuePredR>(field_value_pred),
+            target_field_index, includes_header, max_record_num)
+    {}
+
+private:
     template <class FieldNamePredR, class FieldValuePredR>
     record_extractor_impl(
         std::allocator_arg_t, const Allocator& alloc,
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
+        std::size_t target_field_index,
         bool includes_header, std::size_t max_record_num) :
         header_mode_(includes_header ?
             record_mode::include : record_mode::exclude),
         record_mode_(record_mode::exclude),
-        record_num_to_include_(max_record_num), target_field_index_(npos),
-        field_index_(0), out_(out),
+        record_num_to_include_(max_record_num),
+        target_field_index_(target_field_index), field_index_(0), out_(out),
         nf_(std::forward<FieldNamePredR>(field_name_pred),
             std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc))),
         vr_(std::forward<FieldValuePredR>(field_value_pred),
             std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc)))
     {}
 
+public:
     record_extractor_impl(record_extractor_impl&& other)
             noexcept(
                 std::is_nothrow_move_constructible<FieldNamePred>::value
@@ -423,12 +456,10 @@ public:
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
         bool includes_header = true, std::size_t max_record_num = base::npos) :
         base(std::allocator_arg, alloc, out,
-            detail::hollow_field_name_pred<Ch>(),
+            target_field_index,
             std::forward<FieldValuePredR>(field_value_pred),
             includes_header, max_record_num)
-    {
-        this->target_field_index_ = target_field_index;
-    }
+    {}
 
     record_extractor_with_indexed_key(
         record_extractor_with_indexed_key&&) = default;
