@@ -662,14 +662,14 @@ See the following sample:
 
 ```C++
 #include <commata/parse_csv.hpp>
-#include <commata/text_pull.hpp>
+#include <commata/table_pull.hpp>
 
 using commata::make_csv_source;
-using commata::make_text_pull;
+using commata::make_table_pull;
 
 void pull_parsing_sample()
 {
-  auto p = make_text_pull(make_csv_source(std::ifstream("stars.csv")));
+  auto p = make_table_pull(make_csv_source(std::ifstream("stars.csv")));
   p.set_empty_physical_line_aware();
 
   // Skip the first record
@@ -683,25 +683,25 @@ void pull_parsing_sample()
 }
 ```
 
-`make_text_pull(s)` in the sample above returns an object of `text_pull`.
+`make_table_pull(s)` in the sample above returns an object of `table_pull`.
 It can proceed to an end of a record by `skip_record` or to a further field by
 `operator()`. They take one parameter which instructs the number of ends of records
 or fields jumped over. It defaults to `0`. Note that `operator()` cannot make the
-`text_pull` object jump over an end of a record.
+`table_pull` object jump over an end of a record.
 
-Also note that `skip_record` and `operator()` of a `text_pull` object return
-a reference to the `text_pull` object itself.
+Also note that `skip_record` and `operator()` of a `table_pull` object return
+a reference to the `table_pull` object itself.
 
-The value of the current field where a `text_pull` object points can be inserted
+The value of the current field where a `table_pull` object points can be inserted
 into character streams with `operator<<`. Commata also offers `to_string` function
 templates to convert the value into an `std::string` object.
-In addition, `text_pull` has member functions `cbegin` and `cend` which return the
+In addition, `table_pull` has member functions `cbegin` and `cend` which return the
 pointers to the first or the past-the-end element of the value.
 The return value of `cbegin` can also be passed to C APIs that expects the sequences
 are terminated with zeros because the return value of `cend` is dereferenceable and
 points the terminating zero.
 
-An object of `text_pull` is convertible to `bool`.
+An object of `table_pull` is convertible to `bool`.
 It is converted to `false` if it does not point either an end of a record or
 a field&mdash;for example, it has reached the EOF.
 
@@ -709,14 +709,14 @@ So you can easily make it 'run to the end' like this:
 
 ```C++
 #include <commata/parse_csv.hpp>
-#include <commata/text_pull.hpp>
+#include <commata/table_pull.hpp>
 
 using commata::make_csv_source;
-using commata::make_text_pull;
+using commata::make_table_pull;
 
 void pull_parsing_sample2()
 {
-  auto p = make_text_pull(make_csv_source(std::ifstream("stars.csv")));
+  auto p = make_table_pull(make_csv_source(std::ifstream("stars.csv")));
   std::vector<std::string> v;
 
   while (p.skip_record()(1)) {      // moves to the end of the record and
@@ -731,10 +731,10 @@ void pull_parsing_sample2()
 ```
 
 In the sample above, please note there is no `p.set_empty_physical_line_aware()`.
-By default, `text_pull` objects do not regard empty lines as records with no fields.
+By default, `table_pull` objects do not regard empty lines as records with no fields.
 Instead, they simply ignore these lines.
 
-In addition, with `state` member function, you can make a `text_pull` object tell its
+In addition, with `state` member function, you can make a `table_pull` object tell its
 status, for example, 'points an end of a record', 'points a field', 'reached the EOF',
 and so on. This functionality is essential to handle texts whose structure is not known
 in advance.

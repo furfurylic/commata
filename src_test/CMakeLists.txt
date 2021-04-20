@@ -41,9 +41,9 @@ set(COMMATA_HEADERS
     ../include/commata/record_extractor.hpp
     ../include/commata/stored_table.hpp
     ../include/commata/string_value.hpp
+    ../include/commata/table_pull.hpp
     ../include/commata/table_scanner.hpp
     ../include/commata/text_error.hpp
-    ../include/commata/text_pull.hpp
     ../include/commata/typing_aid.hpp
 )
 
@@ -52,9 +52,9 @@ set(TEST_COMMATA_SOURCES
     TestParseCsv.cpp
     TestRecordExtractor.cpp
     TestStoredTable.cpp
+    TestTablePull.cpp
     TestTableScanner.cpp
     TestTextError.cpp
-    TestTextPull.cpp
 )
 
 set(TEST_COMMATA_HEADERS

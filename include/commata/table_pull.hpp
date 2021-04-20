@@ -30,7 +30,7 @@
 
 namespace commata {
 
-enum class primitive_text_pull_state : std::uint_fast8_t
+enum class primitive_table_pull_state : std::uint_fast8_t
 {
     eof,
     before_parse,
@@ -43,16 +43,16 @@ enum class primitive_text_pull_state : std::uint_fast8_t
     end_buffer
 };
 
-enum primitive_text_pull_handle : std::uint_fast8_t
+enum primitive_table_pull_handle : std::uint_fast8_t
 {
-    primitive_text_pull_handle_start_buffer        = 1,
-    primitive_text_pull_handle_end_buffer          = 1 << 1,
-    primitive_text_pull_handle_start_record        = 1 << 2,
-    primitive_text_pull_handle_end_record          = 1 << 3,
-    primitive_text_pull_handle_empty_physical_line = 1 << 4,
-    primitive_text_pull_handle_update              = 1 << 5,
-    primitive_text_pull_handle_finalize            = 1 << 6,
-    primitive_text_pull_handle_all = static_cast<std::uint_fast8_t>(-1)
+    primitive_table_pull_handle_start_buffer        = 1,
+    primitive_table_pull_handle_end_buffer          = 1 << 1,
+    primitive_table_pull_handle_start_record        = 1 << 2,
+    primitive_table_pull_handle_end_record          = 1 << 3,
+    primitive_table_pull_handle_empty_physical_line = 1 << 4,
+    primitive_table_pull_handle_update              = 1 << 5,
+    primitive_table_pull_handle_finalize            = 1 << 6,
+    primitive_table_pull_handle_all = static_cast<std::uint_fast8_t>(-1)
 };
 
 namespace detail {
@@ -75,13 +75,13 @@ struct has_get_physical_position :
 {};
 
 template <class Ch, class Allocator,
-    std::underlying_type_t<primitive_text_pull_handle> Handle>
+    std::underlying_type_t<primitive_table_pull_handle> Handle>
 class pull_handler
 {
 public:
     using char_type = Ch;
     using state_queue_element_type =
-        std::pair<primitive_text_pull_state, std::uint_fast8_t>;
+        std::pair<primitive_table_pull_state, std::uint_fast8_t>;
 
 private:
     using at_t = std::allocator_traits<Allocator>;
@@ -178,7 +178,7 @@ public:
     {
         start_buffer(buffer_begin, buffer_end,
             std::integral_constant<bool,
-                (Handle & primitive_text_pull_handle_start_buffer) != 0>());
+                (Handle & primitive_table_pull_handle_start_buffer) != 0>());
     }
 
 private:
@@ -186,11 +186,11 @@ private:
         std::true_type)
     {
         if (collects_data_) {
-            sq_.emplace_back(primitive_text_pull_state::start_buffer, dn(2));
+            sq_.emplace_back(primitive_table_pull_state::start_buffer, dn(2));
             dq_.push_back(uc(buffer_begin));
             dq_.push_back(uc(buffer_end));
         } else {
-            sq_.emplace_back(primitive_text_pull_state::start_buffer, dn(0));
+            sq_.emplace_back(primitive_table_pull_state::start_buffer, dn(0));
         }
     }
 
@@ -202,17 +202,17 @@ public:
     {
         end_buffer(buffer_end,
             std::integral_constant<bool,
-                (Handle & primitive_text_pull_handle_end_buffer) != 0>());
+                (Handle & primitive_table_pull_handle_end_buffer) != 0>());
     }
 
 private:
     void end_buffer(const Ch* buffer_end, std::true_type)
     {
         if (collects_data_) {
-            sq_.emplace_back(primitive_text_pull_state::end_buffer, dn(1));
+            sq_.emplace_back(primitive_table_pull_state::end_buffer, dn(1));
             dq_.push_back(uc(buffer_end));
         } else {
-            sq_.emplace_back(primitive_text_pull_state::end_buffer, dn(0));
+            sq_.emplace_back(primitive_table_pull_state::end_buffer, dn(0));
         }
     }
 
@@ -224,17 +224,17 @@ public:
     {
         start_record(record_begin,
             std::integral_constant<bool,
-                (Handle & primitive_text_pull_handle_start_record) != 0>());
+                (Handle & primitive_table_pull_handle_start_record) != 0>());
     }
 
 private:
     void start_record(const char_type* record_begin, std::true_type)
     {
         if (collects_data_) {
-            sq_.emplace_back(primitive_text_pull_state::start_record, dn(1));
+            sq_.emplace_back(primitive_table_pull_state::start_record, dn(1));
             dq_.push_back(uc(record_begin));
         } else {
-            sq_.emplace_back(primitive_text_pull_state::start_record, dn(0));
+            sq_.emplace_back(primitive_table_pull_state::start_record, dn(0));
         }
     }
 
@@ -246,7 +246,7 @@ public:
     {
         update(first, last,
             std::integral_constant<bool,
-                (Handle & primitive_text_pull_handle_update) != 0>());
+                (Handle & primitive_table_pull_handle_update) != 0>());
     }
 
 private:
@@ -254,11 +254,11 @@ private:
         std::true_type)
     {
         if (collects_data_) {
-            sq_.emplace_back(primitive_text_pull_state::update, dn(2));
+            sq_.emplace_back(primitive_table_pull_state::update, dn(2));
             dq_.push_back(uc(first));
             dq_.push_back(uc(last));
         } else {
-            sq_.emplace_back(primitive_text_pull_state::update, dn(0));
+            sq_.emplace_back(primitive_table_pull_state::update, dn(0));
         }
     }
 
@@ -270,7 +270,7 @@ public:
     {
         finalize(first, last,
             std::integral_constant<bool,
-                (Handle & primitive_text_pull_handle_finalize) != 0>());
+                (Handle & primitive_table_pull_handle_finalize) != 0>());
     }
 
 private:
@@ -278,11 +278,11 @@ private:
         std::true_type)
     {
         if (collects_data_) {
-            sq_.emplace_back(primitive_text_pull_state::finalize, dn(2));
+            sq_.emplace_back(primitive_table_pull_state::finalize, dn(2));
             dq_.push_back(uc(first));
             dq_.push_back(uc(last));
         } else {
-            sq_.emplace_back(primitive_text_pull_state::finalize, dn(0));
+            sq_.emplace_back(primitive_table_pull_state::finalize, dn(0));
         }
     }
 
@@ -294,17 +294,17 @@ public:
     {
         end_record(record_end,
             std::integral_constant<bool,
-                (Handle & primitive_text_pull_handle_end_record) != 0>());
+                (Handle & primitive_table_pull_handle_end_record) != 0>());
     }
 
 private:
     void end_record(const char_type* record_end, std::true_type)
     {
         if (collects_data_) {
-            sq_.emplace_back(primitive_text_pull_state::end_record, dn(1));
+            sq_.emplace_back(primitive_table_pull_state::end_record, dn(1));
             dq_.push_back(uc(record_end));
         } else {
-            sq_.emplace_back(primitive_text_pull_state::end_record, dn(0));
+            sq_.emplace_back(primitive_table_pull_state::end_record, dn(0));
         }
     }
 
@@ -317,7 +317,7 @@ public:
         empty_physical_line(where,
             std::integral_constant<bool,
                 (Handle
-               & primitive_text_pull_handle_empty_physical_line) != 0>());
+               & primitive_table_pull_handle_empty_physical_line) != 0>());
     }
 
 private:
@@ -325,11 +325,11 @@ private:
     {
         if (collects_data_) {
             sq_.emplace_back(
-                primitive_text_pull_state::empty_physical_line, dn(1));
+                primitive_table_pull_state::empty_physical_line, dn(1));
             dq_.push_back(uc(where));
         } else {
             sq_.emplace_back(
-                primitive_text_pull_state::empty_physical_line, dn(0));
+                primitive_table_pull_state::empty_physical_line, dn(0));
         }
     }
 
@@ -369,9 +369,9 @@ private:
 
 template <class TableSource,
     class Allocator = std::allocator<typename TableSource::char_type>,
-    std::underlying_type_t<primitive_text_pull_handle> Handle =
-        primitive_text_pull_handle_all>
-class primitive_text_pull
+    std::underlying_type_t<primitive_table_pull_handle> Handle =
+        primitive_table_pull_handle_all>
+class primitive_table_pull
 {
 public:
     using char_type = typename TableSource::char_type;
@@ -420,14 +420,14 @@ public:
                 std::remove_const_t<
                     std::remove_reference_t<TableSourceR>>>::value,
             std::nullptr_t> = nullptr>
-    explicit primitive_text_pull(
+    explicit primitive_table_pull(
         TableSourceR&& in, std::size_t buffer_size = 0) :
-        primitive_text_pull(std::allocator_arg, Allocator(),
+        primitive_table_pull(std::allocator_arg, Allocator(),
             std::forward<TableSourceR>(in), buffer_size)
     {}
 
     template <class TableSourceR>
-    primitive_text_pull(std::allocator_arg_t, const Allocator& alloc,
+    primitive_table_pull(std::allocator_arg_t, const Allocator& alloc,
         TableSourceR&& in, std::size_t buffer_size = 0) :
         i_sq_(0), i_dq_(0),
         handler_(create_handler(alloc,
@@ -438,12 +438,12 @@ public:
                 detail::wrapper_handler<handler_t>(*handler_)))
     {
         sq_->emplace_back(
-            primitive_text_pull_state::before_parse,
+            primitive_table_pull_state::before_parse,
             static_cast<typename std::decay_t<decltype(*handler_)>::
                     state_queue_element_type::second_type>(0));
     }
 
-    primitive_text_pull(primitive_text_pull&& other) noexcept :
+    primitive_table_pull(primitive_table_pull&& other) noexcept :
         i_sq_(other.i_sq_), i_dq_(other.i_dq_),
         handler_(other.handler_),
         sq_(&handler_->state_queue()), dq_(&handler_->data_queue()),
@@ -456,7 +456,7 @@ public:
         other.dq_ = &dq_moved_from;
     }
 
-    ~primitive_text_pull()
+    ~primitive_table_pull()
     {
         if (handler_) {
             destroy_handler(handler_);
@@ -473,7 +473,7 @@ public:
         return handler_ && handler_->is_discarding_data();
     }
 
-    primitive_text_pull& set_discarding_data(bool b = true) noexcept
+    primitive_table_pull& set_discarding_data(bool b = true) noexcept
     {
         if (handler_) {
             handler_->set_discarding_data(b);
@@ -481,7 +481,7 @@ public:
         return *this;
     }
 
-    primitive_text_pull_state state() const noexcept
+    primitive_table_pull_state state() const noexcept
     {
         assert(sq_->size() > i_sq_);
         return (*sq_)[i_sq_].first;
@@ -490,10 +490,10 @@ public:
     explicit operator bool() const noexcept
     {
         const auto s = state();
-        return s != primitive_text_pull_state::eof;
+        return s != primitive_table_pull_state::eof;
     }
 
-    primitive_text_pull& operator()()
+    primitive_table_pull& operator()()
     {
         assert(!sq_->empty());
         const auto dsize = (*sq_)[i_sq_].second;
@@ -516,7 +516,7 @@ public:
             ap_.member()();
             if (sq_->empty()) {
                 sq_->emplace_back(
-                    primitive_text_pull_state::eof,
+                    primitive_table_pull_state::eof,
                     static_cast<typename handler_t::state_queue_element_type::
                         second_type>(0));
             }
@@ -543,13 +543,13 @@ public:
 
     size_type max_data_size() const noexcept
     {
-        return ((Handle & (primitive_text_pull_handle_start_buffer
-                         | primitive_text_pull_handle_update
-                         | primitive_text_pull_handle_finalize)) != 0) ?  2 :
-               ((Handle & (primitive_text_pull_handle_end_buffer
-                         | primitive_text_pull_handle_empty_physical_line
-                         | primitive_text_pull_handle_start_record
-                         | primitive_text_pull_handle_end_record)) != 0) ? 1 :
+        return ((Handle & (primitive_table_pull_handle_start_buffer
+                         | primitive_table_pull_handle_update
+                         | primitive_table_pull_handle_finalize)) != 0) ?  2 :
+               ((Handle & (primitive_table_pull_handle_end_buffer
+                         | primitive_table_pull_handle_empty_physical_line
+                         | primitive_table_pull_handle_start_record
+                         | primitive_table_pull_handle_end_record)) != 0) ? 1 :
                0;
     }
 
@@ -594,22 +594,22 @@ private:
 };
 
 template <class TableSource, class Allocator,
-    std::underlying_type_t<primitive_text_pull_handle> Handle>
-typename primitive_text_pull<TableSource, Allocator, Handle>::handler_t::
+    std::underlying_type_t<primitive_table_pull_handle> Handle>
+typename primitive_table_pull<TableSource, Allocator, Handle>::handler_t::
             state_queue_type
-    primitive_text_pull<TableSource, Allocator, Handle>::sq_moved_from
+    primitive_table_pull<TableSource, Allocator, Handle>::sq_moved_from
  = { std::make_pair(
-        primitive_text_pull_state::eof,
-        static_cast<typename primitive_text_pull<TableSource, Allocator,
+        primitive_table_pull_state::eof,
+        static_cast<typename primitive_table_pull<TableSource, Allocator,
             Handle>::handler_t::state_queue_element_type::second_type>(0)) };
 
 template <class TableSource, class Allocator,
-    std::underlying_type_t<primitive_text_pull_handle> Handle>
-typename primitive_text_pull<TableSource, Allocator, Handle>::handler_t::
+    std::underlying_type_t<primitive_table_pull_handle> Handle>
+typename primitive_table_pull<TableSource, Allocator, Handle>::handler_t::
             data_queue_type
-    primitive_text_pull<TableSource, Allocator, Handle>::dq_moved_from = {};
+    primitive_table_pull<TableSource, Allocator, Handle>::dq_moved_from = {};
 
-enum class text_pull_state : std::uint_fast8_t
+enum class table_pull_state : std::uint_fast8_t
 {
     eof,
     error,
@@ -620,13 +620,13 @@ enum class text_pull_state : std::uint_fast8_t
 
 namespace detail {
 
-template <class PrimitiveTextPull>
+template <class PrimitiveTablePull>
 class temporarily_discard
 {
-    PrimitiveTextPull* p_;
+    PrimitiveTablePull* p_;
 
 public:
-    explicit temporarily_discard(PrimitiveTextPull& p) noexcept : p_(&p)
+    explicit temporarily_discard(PrimitiveTablePull& p) noexcept : p_(&p)
     {
         p_->set_discarding_data();
     }
@@ -651,7 +651,7 @@ public:
 
 template <class TableSource,
     class Allocator = std::allocator<typename TableSource::char_type>>
-class text_pull
+class table_pull
 {
 public:
     using char_type = typename TableSource::char_type;
@@ -659,16 +659,16 @@ public:
     using allocator_type = Allocator;
 
 private:
-    primitive_text_pull<TableSource, allocator_type,
-        (primitive_text_pull_handle_end_buffer
-       | primitive_text_pull_handle_end_record
-       | primitive_text_pull_handle_empty_physical_line
-       | primitive_text_pull_handle_update
-       | primitive_text_pull_handle_finalize)> p_;
+    primitive_table_pull<TableSource, allocator_type,
+        (primitive_table_pull_handle_end_buffer
+       | primitive_table_pull_handle_end_record
+       | primitive_table_pull_handle_empty_physical_line
+       | primitive_table_pull_handle_update
+       | primitive_table_pull_handle_finalize)> p_;
     bool empty_physical_line_aware_;
     bool suppresses_error_;
 
-    text_pull_state last_state_;
+    table_pull_state last_state_;
     std::pair<char_type*, char_type*> last_;
     std::basic_string<char_type, traits_type, Allocator> value_;
     bool value_expiring_;
@@ -702,23 +702,23 @@ public:
                 std::remove_const_t<
                     std::remove_reference_t<TableSourceR>>>::value,
             std::nullptr_t> = nullptr>
-    explicit text_pull(TableSourceR&& in, std::size_t buffer_size = 0) :
-        text_pull(std::allocator_arg, Allocator(),
+    explicit table_pull(TableSourceR&& in, std::size_t buffer_size = 0) :
+        table_pull(std::allocator_arg, Allocator(),
             std::forward<TableSourceR>(in), buffer_size)
     {}
 
     template <class TableSourceR>
-    text_pull(std::allocator_arg_t, const Allocator& alloc,
+    table_pull(std::allocator_arg_t, const Allocator& alloc,
         TableSourceR&& in, std::size_t buffer_size = 0) :
         p_(std::allocator_arg, alloc, std::forward<TableSourceR>(in),
             ((buffer_size > 1) ? buffer_size : 2)),
         empty_physical_line_aware_(false), suppresses_error_(false),
-        last_state_(text_pull_state::before_parse), last_(empty_string()),
+        last_state_(table_pull_state::before_parse), last_(empty_string()),
         value_(alloc), value_expiring_(false),
         i_(0), j_(0)
     {}
 
-    text_pull(text_pull&& other) noexcept :
+    table_pull(table_pull&& other) noexcept :
         p_(std::move(other.p_)),
         empty_physical_line_aware_(other.empty_physical_line_aware_),
         suppresses_error_(other.suppresses_error_),
@@ -727,14 +727,14 @@ public:
         value_expiring_(other.value_expiring_), i_(other.i_), j_(other.j_),
         suppressed_error_(std::move(other.suppressed_error_))
     {
-        other.last_state_ = text_pull_state::eof;
+        other.last_state_ = table_pull_state::eof;
         other.last_ = empty_string();
         other.i_ = 0;
         other.j_ = 0;
         other.suppressed_error_ = nullptr;
     }
 
-    ~text_pull() = default;
+    ~table_pull() = default;
 
     allocator_type get_allocator() const noexcept
     {
@@ -746,7 +746,7 @@ public:
         return empty_physical_line_aware_;
     }
 
-    text_pull& set_empty_physical_line_aware(bool b = true) noexcept
+    table_pull& set_empty_physical_line_aware(bool b = true) noexcept
     {
         empty_physical_line_aware_ = b;
         return *this;
@@ -757,21 +757,21 @@ public:
         return suppresses_error_;
     }
 
-    text_pull& set_suppressing_errors(bool b = true) noexcept
+    table_pull& set_suppressing_errors(bool b = true) noexcept
     {
         suppresses_error_ = b;
         return *this;
     }
 
-    text_pull_state state() const noexcept
+    table_pull_state state() const noexcept
     {
         return last_state_;
     }
 
     explicit operator bool() const noexcept
     {
-        return (state() != text_pull_state::eof)
-            && (state() != text_pull_state::error);
+        return (state() != table_pull_state::eof)
+            && (state() != table_pull_state::error);
     }
 
     std::pair<std::size_t, std::size_t> get_position() const noexcept
@@ -785,7 +785,7 @@ public:
         return p_.get_physical_position();
     }
 
-    text_pull& operator()(std::size_t n = 0)
+    table_pull& operator()(std::size_t n = 0)
     {
         if (!*this) {
             return *this;
@@ -804,10 +804,10 @@ public:
             try {
                 p_();
             } catch (...) {
-                if (last_state_ == text_pull_state::field) {
+                if (last_state_ == table_pull_state::field) {
                     value_expiring_ = true;
                 }
-                set_state(text_pull_state::error);
+                set_state(table_pull_state::error);
                 if (suppresses_error_) {
                     suppressed_error_ = std::current_exception();
                     return *this;
@@ -816,10 +816,10 @@ public:
                 }
             }
             switch (p_.state()) {
-            case primitive_text_pull_state::update:
+            case primitive_table_pull_state::update:
                 break;
-            case primitive_text_pull_state::finalize:
-                set_state(text_pull_state::field);
+            case primitive_table_pull_state::finalize:
+                set_state(table_pull_state::field);
                 if (n == 1) {
                     d.reset();
                     value_expiring_ = true;
@@ -828,31 +828,31 @@ public:
                 ++j_;
                 --n;
                 break;
-            case primitive_text_pull_state::empty_physical_line:
+            case primitive_table_pull_state::empty_physical_line:
                 if (!empty_physical_line_aware_) {
                     break;
                 }
                 // fall through
-            case primitive_text_pull_state::end_record:
-                if (last_state_ == text_pull_state::field) {
+            case primitive_table_pull_state::end_record:
+                if (last_state_ == table_pull_state::field) {
                     value_expiring_ = true;
                 }
-                set_state(text_pull_state::record_end);
+                set_state(table_pull_state::record_end);
                 return *this;
-            case primitive_text_pull_state::eof:
+            case primitive_table_pull_state::eof:
                 goto exit;
-            case primitive_text_pull_state::end_buffer:
+            case primitive_table_pull_state::end_buffer:
             default:
                 break;
             }
         }
     exit:
-        set_state(text_pull_state::eof);
+        set_state(table_pull_state::eof);
         return *this;
     }
 
 private:
-    text_pull& next_field()
+    table_pull& next_field()
     {
         assert(*this);
         if (value_expiring_) {
@@ -865,7 +865,7 @@ private:
             try {
                 p_();
             } catch (...) {
-                set_state(text_pull_state::error);
+                set_state(table_pull_state::error);
                 last_ = empty_string();
                 if (suppresses_error_) {
                     suppressed_error_ = std::current_exception();
@@ -875,10 +875,10 @@ private:
                 }
             }
             switch (p_.state()) {
-            case primitive_text_pull_state::update:
+            case primitive_table_pull_state::update:
                 do_update(p_[0], p_[1]);
                 break;
-            case primitive_text_pull_state::finalize:
+            case primitive_table_pull_state::finalize:
                 do_update(p_[0], p_[1]);
                 if (value_.empty()) {
                     *last_.second = char_type();
@@ -887,38 +887,38 @@ private:
                     last_.first = &value_[0];
                     last_.second = last_.first + value_.size() - 1;
                 }
-                set_state(text_pull_state::field);
+                set_state(table_pull_state::field);
                 value_expiring_ = true;
                 return *this;
-            case primitive_text_pull_state::empty_physical_line:
+            case primitive_table_pull_state::empty_physical_line:
                 if (!empty_physical_line_aware_) {
                     break;
                 }
                 // fall through
-            case primitive_text_pull_state::end_record:
-                set_state(text_pull_state::record_end);
+            case primitive_table_pull_state::end_record:
+                set_state(table_pull_state::record_end);
                 last_ = empty_string();
                 return *this;
-            case primitive_text_pull_state::end_buffer:
+            case primitive_table_pull_state::end_buffer:
                 if (last_.first != empty_string().first) {
                     value_.append(last_.first, last_.second);
                     last_.first = empty_string().first;
                 }
                 break;
-            case primitive_text_pull_state::eof:
+            case primitive_table_pull_state::eof:
                 goto exit;
             default:
                 break;
             }
         }
     exit:
-        set_state(text_pull_state::eof);
+        set_state(table_pull_state::eof);
         last_ = empty_string();
         return *this;
     }
 
 public:
-    text_pull& skip_record(std::size_t n = 0)
+    table_pull& skip_record(std::size_t n = 0)
     {
         if (!*this) {
             return *this;
@@ -934,10 +934,10 @@ public:
             try {
                 p_();
             } catch (...) {
-                if (last_state_ == text_pull_state::field) {
+                if (last_state_ == table_pull_state::field) {
                     value_expiring_ = true;
                 }
-                set_state(text_pull_state::error);
+                set_state(table_pull_state::error);
                 if (suppresses_error_) {
                     suppressed_error_ = std::current_exception();
                     return *this;
@@ -946,38 +946,38 @@ public:
                 }
             }
             switch (p_.state()) {
-            case primitive_text_pull_state::update:
+            case primitive_table_pull_state::update:
                 break;
-            case primitive_text_pull_state::finalize:
-                set_state(text_pull_state::field);
+            case primitive_table_pull_state::finalize:
+                set_state(table_pull_state::field);
                 ++j_;
                 break;
-            case primitive_text_pull_state::empty_physical_line:
+            case primitive_table_pull_state::empty_physical_line:
                 if (!empty_physical_line_aware_) {
                     break;
                 }
                 // fall through
-            case primitive_text_pull_state::end_record:
+            case primitive_table_pull_state::end_record:
                 if (n == 0) {
-                    if (last_state_ == text_pull_state::field) {
+                    if (last_state_ == table_pull_state::field) {
                         value_expiring_ = true;
                     }
-                    set_state(text_pull_state::record_end);
+                    set_state(table_pull_state::record_end);
                     return *this;
                 } else {
-                    set_state(text_pull_state::record_end);
+                    set_state(table_pull_state::record_end);
                     --n;
                     break;
                 }
-            case primitive_text_pull_state::eof:
+            case primitive_table_pull_state::eof:
                 goto exit;
-            case primitive_text_pull_state::end_buffer:
+            case primitive_table_pull_state::end_buffer:
             default:
                 break;
             }
         }
     exit:
-        set_state(text_pull_state::eof);
+        set_state(table_pull_state::eof);
         return *this;
     }
 
@@ -1095,9 +1095,9 @@ public:
     }
 
 private:
-    void set_state(text_pull_state s) noexcept
+    void set_state(table_pull_state s) noexcept
     {
-        if (last_state_ == text_pull_state::record_end) {
+        if (last_state_ == table_pull_state::record_end) {
             ++i_;
             j_ = 0;
         }
@@ -1128,8 +1128,8 @@ private:
 template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator==(
-    const text_pull<TableSourceL, AllocatorL>& left,
-    const text_pull<TableSourceR, AllocatorR>& right) noexcept
+    const table_pull<TableSourceL, AllocatorL>& left,
+    const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
             typename TableSourceL::char_type,
@@ -1143,7 +1143,7 @@ auto operator==(
 
 template <class TableSource, class Allocator, class Right>
 auto operator==(
-    const text_pull<TableSource, Allocator>& left,
+    const table_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(detail::string_value_eq(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
@@ -1156,7 +1156,7 @@ auto operator==(
 template <class TableSource, class Allocator, class Left>
 auto operator==(
     const Left& left,
-    const text_pull<TableSource, Allocator>& right)
+    const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(detail::string_value_eq(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TableSource::char_type,
@@ -1168,8 +1168,8 @@ auto operator==(
 template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator!=(
-    const text_pull<TableSourceL, AllocatorL>& left,
-    const text_pull<TableSourceR, AllocatorR>& right) noexcept
+    const table_pull<TableSourceL, AllocatorL>& left,
+    const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
             typename TableSourceL::char_type,
@@ -1183,7 +1183,7 @@ auto operator!=(
 
 template <class TableSource, class Allocator, class Right>
 auto operator!=(
-    const text_pull<TableSource, Allocator>& left,
+    const table_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(!(left == right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
@@ -1196,7 +1196,7 @@ auto operator!=(
 template <class TableSource, class Allocator, class Left>
 auto operator!=(
     const Left& left,
-    const text_pull<TableSource, Allocator>& right)
+    const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(!(left == right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TableSource::char_type,
@@ -1208,8 +1208,8 @@ auto operator!=(
 template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator<(
-    const text_pull<TableSourceL, AllocatorL>& left,
-    const text_pull<TableSourceR, AllocatorR>& right) noexcept
+    const table_pull<TableSourceL, AllocatorL>& left,
+    const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
             typename TableSourceL::char_type,
@@ -1223,7 +1223,7 @@ auto operator<(
 
 template <class TableSource, class Allocator, class Right>
 auto operator<(
-    const text_pull<TableSource, Allocator>& left,
+    const table_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(detail::string_value_lt(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
@@ -1236,7 +1236,7 @@ auto operator<(
 template <class TableSource, class Allocator, class Left>
 auto operator<(
     const Left& left,
-    const text_pull<TableSource, Allocator>& right)
+    const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(detail::string_value_lt(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TableSource::char_type,
@@ -1248,8 +1248,8 @@ auto operator<(
 template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator>(
-    const text_pull<TableSourceL, AllocatorL>& left,
-    const text_pull<TableSourceR, AllocatorR>& right) noexcept
+    const table_pull<TableSourceL, AllocatorL>& left,
+    const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
             typename TableSourceL::char_type,
@@ -1263,7 +1263,7 @@ auto operator>(
 
 template <class TableSource, class Allocator, class Right>
 auto operator>(
-    const text_pull<TableSource, Allocator>& left,
+    const table_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(right < left))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
@@ -1276,7 +1276,7 @@ auto operator>(
 template <class TableSource, class Allocator, class Left>
 auto operator>(
     const Left& left,
-    const text_pull<TableSource, Allocator>& right)
+    const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(right < left))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TableSource::char_type,
@@ -1288,8 +1288,8 @@ auto operator>(
 template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator<=(
-    const text_pull<TableSourceL, AllocatorL>& left,
-    const text_pull<TableSourceR, AllocatorR>& right) noexcept
+    const table_pull<TableSourceL, AllocatorL>& left,
+    const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
             typename TableSourceL::char_type,
@@ -1303,7 +1303,7 @@ auto operator<=(
 
 template <class TableSource, class Allocator, class Right>
 auto operator<=(
-    const text_pull<TableSource, Allocator>& left,
+    const table_pull<TableSource, Allocator>& left,
     const Right& right) 
     noexcept(noexcept(!(right < left)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
@@ -1316,7 +1316,7 @@ auto operator<=(
 template <class TableSource, class Allocator, class Left>
 auto operator<=(
     const Left& left,
-    const text_pull<TableSource, Allocator>& right)
+    const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(!(right < left)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TableSource::char_type,
@@ -1328,8 +1328,8 @@ auto operator<=(
 template <class TableSourceL, class TableSourceR,
           class AllocatorL, class AllocatorR>
 auto operator>=(
-    const text_pull<TableSourceL, AllocatorL>& left,
-    const text_pull<TableSourceR, AllocatorR>& right) noexcept
+    const table_pull<TableSourceL, AllocatorL>& left,
+    const table_pull<TableSourceR, AllocatorR>& right) noexcept
  -> std::enable_if_t<
         std::is_same<
             typename TableSourceL::char_type,
@@ -1343,7 +1343,7 @@ auto operator>=(
 
 template <class TableSource, class Allocator, class Right>
 auto operator>=(
-    const text_pull<TableSource, Allocator>& left,
+    const table_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(!(left < right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
@@ -1356,7 +1356,7 @@ auto operator>=(
 template <class TableSource, class Allocator, class Left>
 auto operator>=(
     const Left& left,
-    const text_pull<TableSource, Allocator>& right)
+    const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(!(left < right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value<
         typename TableSource::char_type,
@@ -1367,7 +1367,7 @@ auto operator>=(
 
 template <class TableSource, class Allocator, class OtherAllocator>
 auto operator+(
-    const text_pull<TableSource, Allocator>& left,
+    const table_pull<TableSource, Allocator>& left,
     const std::basic_string<typename TableSource::char_type,
         typename TableSource::traits_type, OtherAllocator>& right)
  -> std::decay_t<decltype(right)>
@@ -1377,7 +1377,7 @@ auto operator+(
 
 template <class TableSource, class Allocator, class OtherAllocator>
 auto operator+(
-    const text_pull<TableSource, Allocator>& left,
+    const table_pull<TableSource, Allocator>& left,
     std::basic_string<typename TableSource::char_type,
         typename TableSource::traits_type, OtherAllocator>&& right)
  -> std::decay_t<decltype(right)>
@@ -1389,7 +1389,7 @@ template <class TableSource, class Allocator, class OtherAllocator>
 auto operator+(
     const std::basic_string<typename TableSource::char_type,
         typename TableSource::traits_type, OtherAllocator>& left,
-    const text_pull<TableSource, Allocator>& right)
+    const table_pull<TableSource, Allocator>& right)
  -> std::decay_t<decltype(left)>
 {
     return detail::string_value_plus(left, right);
@@ -1399,7 +1399,7 @@ template <class TableSource, class Allocator, class OtherAllocator>
 auto operator+(
     std::basic_string<typename TableSource::char_type,
         typename TableSource::traits_type, OtherAllocator>&& left,
-    const text_pull<TableSource, Allocator>& right)
+    const table_pull<TableSource, Allocator>& right)
  -> std::decay_t<decltype(left)>
 {
     return detail::string_value_plus(std::move(left), right);
@@ -1409,7 +1409,7 @@ template <class TableSource, class Allocator, class OtherAllocator>
 auto operator+=(
     std::basic_string<typename TableSource::char_type,
         typename TableSource::traits_type, OtherAllocator>& left,
-    const text_pull<TableSource, Allocator>& right)
+    const table_pull<TableSource, Allocator>& right)
  -> decltype(left)
 {
     return detail::string_value_plus_assign(left, right);
@@ -1419,7 +1419,7 @@ template <class TableSource, class Allocator>
 auto operator<<(
     std::basic_ostream<typename TableSource::char_type,
                        typename TableSource::traits_type>& os,
-    const text_pull<TableSource, Allocator>& p)
+    const table_pull<TableSource, Allocator>& p)
  -> decltype(os)
 {
     // In C++17, this function will be able to be implemented in terms of
@@ -1437,27 +1437,27 @@ template <class TableSource, class Allocator,
 std::basic_string<typename TableSource::char_type,
                   std::char_traits<typename TableSource::char_type>,
                   OtherAllocator> to_string(
-    const text_pull<TableSource, Allocator>& p,
+    const table_pull<TableSource, Allocator>& p,
     const OtherAllocator& alloc = Allocator())
 {
     return { p.cbegin(), p.cend(), alloc };
 }
 
 template <class TableSource, class... Appendices>
-text_pull<std::decay_t<TableSource>> make_text_pull(
+table_pull<std::decay_t<TableSource>> make_table_pull(
     TableSource&& in, Appendices&&... appendices)
 {
-    return text_pull<std::decay_t<TableSource>>(
+    return table_pull<std::decay_t<TableSource>>(
         std::forward<TableSource>(in),
         std::forward<Appendices>(appendices)...);
 }
 
 template <class TableSource, class Allocator, class... Appendices>
-text_pull<std::decay_t<TableSource>, Allocator> make_text_pull(
+table_pull<std::decay_t<TableSource>, Allocator> make_table_pull(
     std::allocator_arg_t, const Allocator& alloc,
     TableSource&& in, Appendices&&... appendices)
 {
-    return text_pull<std::decay_t<TableSource>, Allocator>(
+    return table_pull<std::decay_t<TableSource>, Allocator>(
         std::allocator_arg, alloc, std::forward<TableSource>(in),
         std::forward<Appendices>(appendices)...);
 }
