@@ -146,18 +146,23 @@ class basic_table_scanner
 
         typed_body_field_scanner(typed_body_field_scanner&&) = delete;
 
-        void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
+        void field_value(Ch* begin, Ch* end,
+            [[maybe_unused]] basic_table_scanner& me) override
         {
-            field_value_r(
-                std::is_invocable<decltype(scanner()), Ch*, Ch*>(),
-                begin, end, me);
+            if constexpr (std::is_invocable_v<decltype(scanner()), Ch*, Ch*>) {
+                scanner()(begin, end);
+            } else {
+                scanner()(string_t(begin, end, me.get_allocator()));
+            }
         }
 
-        void field_value(string_t&& value, basic_table_scanner& me) override
+        void field_value(string_t&& value, basic_table_scanner&) override
         {
-            field_value_s(
-                std::is_invocable<decltype(scanner()), string_t>(),
-                std::move(value), me);
+            if constexpr (std::is_invocable_v<decltype(scanner()), string_t>) {
+                scanner()(std::move(value));
+            } else {
+                scanner()(&*value.begin(), &*value.begin() + value.size());
+            }
         }
 
         void field_skipped() override
@@ -172,30 +177,6 @@ class basic_table_scanner
         }
 
     private:
-        void field_value_r(std::true_type,
-            Ch* begin, Ch* end, basic_table_scanner&)
-        {
-            scanner()(begin, end);
-        }
-
-        void field_value_r(std::false_type,
-            Ch* begin, Ch* end, basic_table_scanner& me)
-        {
-            scanner()(string_t(begin, end, me.get_allocator()));
-        }
-
-        void field_value_s(std::true_type,
-            string_t&& value, basic_table_scanner&)
-        {
-            scanner()(std::move(value));
-        }
-
-        void field_value_s(std::false_type,
-            string_t&& value, basic_table_scanner&)
-        {
-            scanner()(&*value.begin(), &*value.begin() + value.size());
-        }
-
         const void* get_target_v() const noexcept override
         {
             return std::addressof(this->get());
@@ -230,7 +211,22 @@ class basic_table_scanner
 
         bool end_record(basic_table_scanner& me) override
         {
-            return do_end_record(this->get(), me);
+            auto& f = this->get();
+            if constexpr (std::is_invocable_v<T&, basic_table_scanner&>) {
+                if constexpr (std::is_void_v<decltype(f(me))>) {
+                    f(me);
+                    return true;
+                } else {
+                    return f(me);
+                }
+            } else {
+                if constexpr (std::is_void_v<decltype(f())>) {
+                    f();
+                    return true;
+                } else {
+                    return f();
+                }
+            }
         }
 
         const std::type_info& get_type() const noexcept override
@@ -247,40 +243,6 @@ class basic_table_scanner
         void* get_target_v() noexcept override
         {
             return std::addressof(this->get());
-        }
-
-        template <class U>
-        static auto do_end_record(U& u, basic_table_scanner& me)
-         -> std::enable_if_t<std::is_invocable_v<U&, basic_table_scanner&>,
-                             bool>
-        {
-            return do_end_record_no_arg(std::bind(std::ref(u), std::ref(me)));
-        }
-
-        template <class U>
-        static auto do_end_record(U& u, basic_table_scanner&)
-         -> std::enable_if_t<!std::is_invocable_v<U&, basic_table_scanner&>
-                          && std::is_invocable_v<U&>,
-                             bool>
-        {
-            return do_end_record_no_arg(u);
-        }
-
-        template <class F>
-        static auto do_end_record_no_arg(F&& f)
-         -> std::enable_if_t<
-                std::is_void_v<decltype(std::forward<F>(f)())>, bool>
-        {
-            std::forward<F>(f)();
-            return true;
-        }
-
-        template <class F>
-        static auto do_end_record_no_arg(F&& f)
-         -> std::enable_if_t<
-                !std::is_void_v<decltype(std::forward<F>(f)())>, bool>
-        {
-            return std::forward<F>(f)();
         }
     };
 
@@ -1006,27 +968,20 @@ struct raw_converter<T, H, std::enable_if_t<std::is_integral_v<T>,
 
     int erange(T v) const
     {
-        return erange_impl(v, std::is_signed<T>());
-    }
-
-private:
-    int erange_impl(T v, std::true_type) const
-    {
-        if (v == std::numeric_limits<T>::max()) {
-            return 1;
-        } else if (v == std::numeric_limits<T>::min()) {
-            return -1;
+        if constexpr (std::is_signed_v<T>) {
+            if (v == std::numeric_limits<T>::max()) {
+                return 1;
+            } else if (v == std::numeric_limits<T>::min()) {
+                return -1;
+            } else {
+                return 0;
+            }
         } else {
-            return 0;
-        }
-    }
-
-    int erange_impl(T v, std::false_type) const
-    {
-        if (v == std::numeric_limits<T>::max()) {
-            return 1;
-        } else {
-            return -1;
+            if (v == std::numeric_limits<T>::max()) {
+                return 1;
+            } else {
+                return -1;
+            }
         }
     }
 };
@@ -1083,6 +1038,10 @@ struct has_simple_invalid_format :
         check<F>(nullptr))
 {};
 
+template <class F, class Ch>
+constexpr bool has_simple_invalid_format_v =
+    has_simple_invalid_format<F, Ch>::value;
+
 template <class Ch>
 struct has_simple_out_of_range_impl
 {
@@ -1103,6 +1062,10 @@ struct has_simple_out_of_range :
         check<F>(nullptr))
 {};
 
+template <class F, class Ch>
+constexpr bool has_simple_out_of_range_v =
+    has_simple_out_of_range<F, Ch>::value;
+
 struct has_simple_empty_impl
 {
     template <class F>
@@ -1119,53 +1082,43 @@ struct has_simple_empty :
     decltype(has_simple_empty_impl::check<F>(nullptr))
 {};
 
+template <class F>
+constexpr bool has_simple_empty_v = has_simple_empty<F>::value;
+
 template <class T>
 struct conversion_error_facade
 {
-    template <class H, class Ch,
-        std::enable_if_t<has_simple_invalid_format<H, Ch>::value>* = nullptr>
+    template <class H, class Ch>
     static std::optional<T> invalid_format(
         H& h,const Ch* begin, const Ch* end)
     {
-        return h(invalid_format_t(), begin, end);
+        if constexpr (has_simple_invalid_format_v<H, Ch>) {
+            return h(invalid_format_t(), begin, end);
+        } else {
+            return h(invalid_format_t(), begin, end, static_cast<T*>(nullptr));
+        }
     }
 
-    template <class H, class Ch,
-        std::enable_if_t<!has_simple_invalid_format<H, Ch>::value>* = nullptr>
-    static std::optional<T> invalid_format(
-        H& h, const Ch* begin, const Ch* end)
-    {
-        return h(invalid_format_t(), begin, end, static_cast<T*>(nullptr));
-    }
-
-    template <class H, class Ch,
-        std::enable_if_t<has_simple_out_of_range<H, Ch>::value>* = nullptr>
+    template <class H, class Ch>
     static std::optional<T> out_of_range(
         H& h, const Ch* begin, const Ch* end, int sign)
     {
-        return h(out_of_range_t(), begin, end, sign);
+        if constexpr (has_simple_out_of_range_v<H, Ch>) {
+            return h(out_of_range_t(), begin, end, sign);
+        } else {
+            return h(out_of_range_t(),
+                     begin, end, sign, static_cast<T*>(nullptr));
+        }
     }
 
-    template <class H, class Ch,
-        std::enable_if_t<!has_simple_out_of_range<H, Ch>::value>* = nullptr>
-    static std::optional<T> out_of_range(
-        H& h, const Ch* begin, const Ch* end, int sign)
-    {
-        return h(out_of_range_t(), begin, end, sign, static_cast<T*>(nullptr));
-    }
-
-    template <class H,
-        std::enable_if_t<has_simple_empty<H>::value>* = nullptr>
+    template <class H>
     static std::optional<T> empty(H& h)
     {
-        return h(empty_t());
-    }
-
-    template <class H,
-        std::enable_if_t<!has_simple_empty<H>::value>* = nullptr>
-    static std::optional<T> empty(H& h)
-    {
-        return h(empty_t(), static_cast<T*>(nullptr));
+        if constexpr (has_simple_empty_v<H>) {
+            return h(empty_t());
+        } else {
+            return h(empty_t(), static_cast<T*>(nullptr));
+        }
     }
 };
 
@@ -1266,38 +1219,27 @@ struct restrained_converter<T, H, U,
         if (!result.has_value()) {
             return std::optional<T>();
         }
-        const auto r = convert_impl(*result,
-            std::bool_constant<sizeof(T) < sizeof(U)>());
-        if (r.second) {
-            return std::optional<T>(r.first);
-        } else {
-            return conversion_error_facade<T>::out_of_range(
-                this->get_conversion_error_handler(), begin, end, 1);
-        }
-    }
-
-    std::pair<T, bool> convert_impl(U r, std::true_type)
-    {
-        constexpr auto t_max = std::numeric_limits<T>::max();
-        if (r <= t_max) {
-            return { static_cast<T>(r), true };
-        } else {
-            const auto s = static_cast<std::make_signed_t<U>>(r);
-            if (s < 0) {
-                // -t_max is the lowest number that can be wrapped around
-                // and then returned
-                const auto s_wrapped_around = s + t_max + 1;
-                if (s_wrapped_around > 0) {
-                    return { static_cast<T>(s_wrapped_around), true };
+        const auto r = *result;
+        if constexpr (sizeof(T) < sizeof(U)) {
+            constexpr auto t_max = std::numeric_limits<T>::max();
+            if (r <= t_max) {
+                return { static_cast<T>(r) };
+            } else {
+                const auto s = static_cast<std::make_signed_t<U>>(r);
+                if (s < 0) {
+                    // -t_max is the lowest number that can be wrapped around
+                    // and then returned
+                    const auto s_wrapped_around = s + t_max + 1;
+                    if (s_wrapped_around > 0) {
+                        return { static_cast<T>(s_wrapped_around) };
+                    }
                 }
             }
+            return conversion_error_facade<T>::out_of_range(
+                this->get_conversion_error_handler(), begin, end, 1);
+        } else {
+            return { static_cast<T>(r) };
         }
-        return { static_cast<T>(0U), false };
-    }
-
-    std::pair<T, bool> convert_impl(U r, std::false_type)
-    {
-        return { static_cast<T>(r), true };
     }
 };
 
@@ -2187,6 +2129,9 @@ struct is_output_iterator<T,
     std::true_type
 {};
 
+template <class T>
+constexpr bool is_output_iterator_v = is_output_iterator<T>::value;
+
 template <class T, class Sink, class SkippingHandler>
 class translator :
     member_like_base<SkippingHandler>
@@ -2236,43 +2181,24 @@ public:
     template <class U>
     void put(U&& value)
     {
-        do_put(std::forward<U>(value), is_output_iterator<Sink>());
+        if constexpr (is_output_iterator_v<Sink>) {
+            *sink_ = std::forward<U>(value);
+            ++sink_;
+        } else {
+            sink_(std::forward<U>(value));
+        }
     }
 
     template <class U>
     void put(std::optional<U>&& value)
     {
-        do_put(std::move(value), is_output_iterator<Sink>());
-    }
-
-private:
-    template <class U>
-    void do_put(U&& value, std::true_type)
-    {
-        *sink_ = std::forward<U>(value);
-        ++sink_;
-    }
-
-    template <class U>
-    void do_put(U&& value, std::false_type)
-    {
-        sink_(std::forward<U>(value));
-    }
-
-    template <class U>
-    void do_put(std::optional<U>&& value, std::true_type)
-    {
         if (value.has_value()) {
-            *sink_ = std::move(*value);
-            ++sink_;
-        }
-    }
-
-    template <class U>
-    void do_put(std::optional<U>&& value, std::false_type)
-    {
-        if (value.has_value()) {
-            sink_(std::move(*value));
+            if constexpr (is_output_iterator_v<Sink>) {
+                *sink_ = std::move(*value);
+                ++sink_;
+            } else {
+                sink_(std::move(*value));
+            }
         }
     }
 };

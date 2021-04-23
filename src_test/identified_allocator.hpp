@@ -54,10 +54,14 @@ public:
     }
 
     template <class U>
-    bool operator==(const identified_allocator<
+    bool operator==([[maybe_unused]] const identified_allocator<
         U, Pocca, Pocma, Pocs, Iae>& other) const noexcept
     {
-        return equal_to(std::bool_constant<Iae>(), other);
+        if constexpr (Iae) {
+            return true;
+        } else {
+            return id() == other.id();
+        }
     }
 
     template <class U>
@@ -75,21 +79,6 @@ public:
     std::size_t id() const noexcept
     {
         return id_;
-    }
-
-private:
-    template <class U>
-    constexpr bool equal_to(std::true_type, const identified_allocator<
-        U, Pocca, Pocma, Pocs, Iae>&) const noexcept
-    {
-        return true;
-    }
-
-    template <class U>
-    bool equal_to(std::false_type, const identified_allocator<
-        U, Pocca, Pocma, Pocs, Iae>& other) const noexcept
-    {
-        return id() == other.id();
     }
 };
 

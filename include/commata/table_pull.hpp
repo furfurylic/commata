@@ -154,169 +154,116 @@ public:
     void release_buffer(const char_type*) noexcept
     {}
 
-    void start_buffer(const Ch* buffer_begin, const Ch* buffer_end)
+    void start_buffer(
+        [[maybe_unused]] const Ch* buffer_begin,
+        [[maybe_unused]] const Ch* buffer_end)
     {
-        start_buffer(buffer_begin, buffer_end,
-            std::bool_constant<
-                (Handle & primitive_table_pull_handle_start_buffer) != 0>());
-    }
-
-private:
-    void start_buffer(const Ch* buffer_begin, const Ch* buffer_end,
-        std::true_type)
-    {
-        if (collects_data_) {
-            sq_.emplace_back(primitive_table_pull_state::start_buffer, dn(2));
-            dq_.push_back(uc(buffer_begin));
-            dq_.push_back(uc(buffer_end));
-        } else {
-            sq_.emplace_back(primitive_table_pull_state::start_buffer, dn(0));
+        if constexpr (
+            (Handle & primitive_table_pull_handle_start_buffer) != 0) {
+            if (collects_data_) {
+                sq_.emplace_back(
+                    primitive_table_pull_state::start_buffer, dn(2));
+                dq_.push_back(uc(buffer_begin));
+                dq_.push_back(uc(buffer_end));
+            } else {
+                sq_.emplace_back(
+                    primitive_table_pull_state::start_buffer, dn(0));
+            }
         }
     }
 
-    void start_buffer(const Ch*, const Ch*, std::false_type) noexcept
-    {}
-
-public:
-    void end_buffer(const Ch* buffer_end)
+    void end_buffer([[maybe_unused]] const Ch* buffer_end)
     {
-        end_buffer(buffer_end,
-            std::bool_constant<
-                (Handle & primitive_table_pull_handle_end_buffer) != 0>());
-    }
-
-private:
-    void end_buffer(const Ch* buffer_end, std::true_type)
-    {
-        if (collects_data_) {
-            sq_.emplace_back(primitive_table_pull_state::end_buffer, dn(1));
-            dq_.push_back(uc(buffer_end));
-        } else {
-            sq_.emplace_back(primitive_table_pull_state::end_buffer, dn(0));
+        if constexpr (
+            (Handle & primitive_table_pull_handle_end_buffer) != 0) {
+            if (collects_data_) {
+                sq_.emplace_back(
+                    primitive_table_pull_state::end_buffer, dn(1));
+                dq_.push_back(uc(buffer_end));
+            } else {
+                sq_.emplace_back(
+                    primitive_table_pull_state::end_buffer, dn(0));
+            }
         }
     }
 
-    void end_buffer(const Ch*, std::false_type) noexcept
-    {}
-
-public:
-    void start_record(const char_type* record_begin)
+    void start_record([[maybe_unused]] const char_type* record_begin)
     {
-        start_record(record_begin,
-            std::bool_constant<
-                (Handle & primitive_table_pull_handle_start_record) != 0>());
-    }
-
-private:
-    void start_record(const char_type* record_begin, std::true_type)
-    {
-        if (collects_data_) {
-            sq_.emplace_back(primitive_table_pull_state::start_record, dn(1));
-            dq_.push_back(uc(record_begin));
-        } else {
-            sq_.emplace_back(primitive_table_pull_state::start_record, dn(0));
+        if constexpr
+            ((Handle & primitive_table_pull_handle_start_record) != 0) {
+            if (collects_data_) {
+                sq_.emplace_back(
+                    primitive_table_pull_state::start_record, dn(1));
+                dq_.push_back(uc(record_begin));
+            } else {
+                sq_.emplace_back(
+                    primitive_table_pull_state::start_record, dn(0));
+            }
         }
     }
 
-    void start_record(const char_type*, std::false_type)
-    {}
-
-public:
-    void update(const char_type* first, const char_type* last)
+    void update(
+        [[maybe_unused]] const char_type* first,
+        [[maybe_unused]] const char_type* last)
     {
-        update(first, last,
-            std::bool_constant<
-                (Handle & primitive_table_pull_handle_update) != 0>());
-    }
-
-private:
-    void update(const char_type* first, const char_type* last,
-        std::true_type)
-    {
-        if (collects_data_) {
-            sq_.emplace_back(primitive_table_pull_state::update, dn(2));
-            dq_.push_back(uc(first));
-            dq_.push_back(uc(last));
-        } else {
-            sq_.emplace_back(primitive_table_pull_state::update, dn(0));
+        if constexpr (
+            (Handle & primitive_table_pull_handle_update) != 0) {
+            if (collects_data_) {
+                sq_.emplace_back(primitive_table_pull_state::update, dn(2));
+                dq_.push_back(uc(first));
+                dq_.push_back(uc(last));
+            } else {
+                sq_.emplace_back(primitive_table_pull_state::update, dn(0));
+            }
         }
     }
 
-    void update(const char_type*, const char_type*, std::false_type)
-    {}
-
-public:
-    void finalize(const char_type* first, const char_type* last)
+    void finalize(
+        [[maybe_unused]] const char_type* first,
+        [[maybe_unused]] const char_type* last)
     {
-        finalize(first, last,
-            std::bool_constant<
-                (Handle & primitive_table_pull_handle_finalize) != 0>());
-    }
-
-private:
-    void finalize(const char_type* first, const char_type* last,
-        std::true_type)
-    {
-        if (collects_data_) {
-            sq_.emplace_back(primitive_table_pull_state::finalize, dn(2));
-            dq_.push_back(uc(first));
-            dq_.push_back(uc(last));
-        } else {
-            sq_.emplace_back(primitive_table_pull_state::finalize, dn(0));
+        if constexpr (
+            (Handle & primitive_table_pull_handle_finalize) != 0) {
+            if (collects_data_) {
+                sq_.emplace_back(primitive_table_pull_state::finalize, dn(2));
+                dq_.push_back(uc(first));
+                dq_.push_back(uc(last));
+            } else {
+                sq_.emplace_back(primitive_table_pull_state::finalize, dn(0));
+            }
         }
     }
 
-    void finalize(const char_type*, const char_type*, std::false_type)
-    {}
-
-public:
-    void end_record(const char_type* record_end)
+    void end_record([[maybe_unused]] const char_type* record_end)
     {
-        end_record(record_end,
-            std::bool_constant<
-                (Handle & primitive_table_pull_handle_end_record) != 0>());
-    }
-
-private:
-    void end_record(const char_type* record_end, std::true_type)
-    {
-        if (collects_data_) {
-            sq_.emplace_back(primitive_table_pull_state::end_record, dn(1));
-            dq_.push_back(uc(record_end));
-        } else {
-            sq_.emplace_back(primitive_table_pull_state::end_record, dn(0));
+        if constexpr (
+            (Handle & primitive_table_pull_handle_end_record) != 0) {
+            if (collects_data_) {
+                sq_.emplace_back(
+                    primitive_table_pull_state::end_record, dn(1));
+                dq_.push_back(uc(record_end));
+            } else {
+                sq_.emplace_back(
+                    primitive_table_pull_state::end_record, dn(0));
+            }
         }
     }
 
-    void end_record(const char_type*, std::false_type)
-    {}
-
-public:
-    void empty_physical_line(const char_type* where)
+    void empty_physical_line([[maybe_unused]] const char_type* where)
     {
-        empty_physical_line(where,
-            std::bool_constant<
-                (Handle
-               & primitive_table_pull_handle_empty_physical_line) != 0>());
-    }
-
-private:
-    void empty_physical_line(const char_type* where, std::true_type)
-    {
-        if (collects_data_) {
-            sq_.emplace_back(
-                primitive_table_pull_state::empty_physical_line, dn(1));
-            dq_.push_back(uc(where));
-        } else {
-            sq_.emplace_back(
-                primitive_table_pull_state::empty_physical_line, dn(0));
+        if constexpr (
+            (Handle & primitive_table_pull_handle_empty_physical_line) != 0) {
+            if (collects_data_) {
+                sq_.emplace_back(
+                    primitive_table_pull_state::empty_physical_line, dn(1));
+                dq_.push_back(uc(where));
+            } else {
+                sq_.emplace_back(
+                    primitive_table_pull_state::empty_physical_line, dn(0));
+            }
         }
     }
 
-    void empty_physical_line(const char_type*, std::false_type)
-    {}
-
-public:
     bool yield(std::size_t location) noexcept
     {
         if ((location != static_cast<std::size_t>(-1)) && sq_.empty()) {
@@ -562,8 +509,12 @@ public:
               || noexcept(std::declval<const parser_t&>()
                             .get_physical_position()))
     {
-        return get_physical_position_impl(
-            detail::pull::has_get_physical_position<parser_t>());
+        if constexpr (detail::pull::
+                has_get_physical_position<parser_t>::value) {
+            return ap_.member().get_physical_position();
+        } else {
+            return { npos, npos };
+        }
     }
 
 private:
@@ -581,19 +532,6 @@ private:
         p->~handler_t();
         handler_a_t a(get_allocator());
         handler_at_t::deallocate(a, p, 1);
-    }
-
-    std::pair<std::size_t, std::size_t> get_physical_position_impl(
-        std::true_type) const noexcept(
-            noexcept(std::declval<const parser_t&>().get_physical_position()))
-    {
-        return ap_.member().get_physical_position();
-    }
-
-    std::pair<std::size_t, std::size_t> get_physical_position_impl(
-        std::false_type) const noexcept
-    {
-        return { npos, npos };
     }
 };
 

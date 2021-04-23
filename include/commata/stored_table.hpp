@@ -1333,66 +1333,58 @@ public:
     value_type& rewrite_value(value_type& value,
         InputIterator new_value_begin, InputIteratorEnd new_value_end)
     {
-        return rewrite_value(
-            typename std::iterator_traits<InputIterator>::iterator_category(),
-            value, new_value_begin, new_value_end);
-    }
+        using it_cat =
+            typename std::iterator_traits<InputIterator>::iterator_category;
 
-private:
-    template <class ForwardIterator, class ForwardIteratorEnd>
-    value_type& rewrite_value(std::forward_iterator_tag, value_type& value,
-        ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end)
-    {
-        return rewrite_value_n(value, new_value_begin,
-            detail::stored::distance(new_value_begin, new_value_end));
-    }
+        if constexpr (std::is_base_of_v<std::forward_iterator_tag, it_cat>) {
+            return rewrite_value_n(value, new_value_begin,
+                detail::stored::distance(new_value_begin, new_value_end));
 
-    template <class InputIterator, class InputIteratorEnd>
-    value_type& rewrite_value(std::input_iterator_tag, value_type& value,
-        InputIterator new_value_begin, InputIteratorEnd new_value_end)
-    {
-        std::pair<char_type*, std::size_t> generated(nullptr, 0);
+        } else {
+            std::pair<char_type*, std::size_t> generated(nullptr, 0);
 
-        auto range = store_.get_current();
-        if (!range.first) {
-            const auto buffer = generate_buffer(buffer_size_);      // throw
-            range = std::pair<char_type*, char_type*>(
-                buffer.first, buffer.first + buffer.second);
-            generated = buffer;
-        }
-
-        char_type* i = range.first;
-        while (new_value_begin != new_value_end) {
-            *i = *new_value_begin;
-            ++i;
-            if (i == range.second) {
-                constexpr auto smax = std::numeric_limits<std::size_t>::max();
-                const std::size_t n = i - range.first;
-                const auto alloc_size = (n > smax / 2) ?
-                    std::max<std::size_t>(smax, buffer_size_) :
-                    std::max<std::size_t>(2 * n, buffer_size_);
-                auto buffer = generate_buffer(alloc_size);  // throw
-                traits_type::move(buffer.first, range.first, n);
-                if (generated.first) {
-                    store_.consume_buffer(generated.first, generated.second);
-                }
+            auto range = store_.get_current();
+            if (!range.first) {
+                const auto buffer = generate_buffer(buffer_size_);  // throw
                 range = std::pair<char_type*, char_type*>(
                     buffer.first, buffer.first + buffer.second);
-                i = range.first + n;
                 generated = buffer;
             }
-            ++new_value_begin;
+
+            char_type* i = range.first;
+            while (new_value_begin != new_value_end) {
+                *i = *new_value_begin;
+                ++i;
+                if (i == range.second) {
+                    constexpr auto smax =
+                        std::numeric_limits<std::size_t>::max();
+                    const std::size_t n = i - range.first;
+                    const auto alloc_size = (n > smax / 2) ?
+                        std::max<std::size_t>(smax, buffer_size_) :
+                        std::max<std::size_t>(2 * n, buffer_size_);
+                    auto buffer = generate_buffer(alloc_size);      // throw
+                    traits_type::move(buffer.first, range.first, n);
+                    if (generated.first) {
+                        store_.consume_buffer(
+                            generated.first, generated.second);
+                    }
+                    range = std::pair<char_type*, char_type*>(
+                        buffer.first, buffer.first + buffer.second);
+                    i = range.first + n;
+                    generated = buffer;
+                }
+                ++new_value_begin;
+            }
+            *i = char_type();
+            if (generated.first) {
+                add_buffer(generated.first, generated.second);      // throw
+            }
+            secure_current_upto(i + 1);
+            value = value_type(range.first, i);
+            return value;
         }
-        *i = char_type();
-        if (generated.first) {
-            add_buffer(generated.first, generated.second);          // throw
-        }
-        secure_current_upto(i + 1);
-        value = value_type(range.first, i);
-        return value;
     }
 
-public:
     template <class InputIterator>
     auto rewrite_value(value_type& value, InputIterator new_value)
      -> std::enable_if_t<
@@ -1402,56 +1394,30 @@ public:
                     iterator_category>,
             value_type&>
     {
-        return rewrite_value(
-            typename std::iterator_traits<InputIterator>::iterator_category(),
-            value, new_value);
+        using it_cat =
+            typename std::iterator_traits<InputIterator>::iterator_category;
+        if constexpr (std::is_base_of_v<std::forward_iterator_tag, it_cat>) {
+            return rewrite_value_n(value, new_value,
+                detail::stored::length<traits_type>(new_value));
+        } else {
+            return rewrite_value(value, new_value,
+                detail::stored::null_termination<traits_type>());
+        }
     }
 
 private:
-    template <class ForwardIterator>
-    value_type& rewrite_value(std::forward_iterator_tag,
-        value_type& value, ForwardIterator new_value)
-    {
-        return rewrite_value_n(value, new_value,
-            detail::stored::length<traits_type>(new_value));
-    }
-
-    template <class InputIterator>
-    value_type& rewrite_value(std::input_iterator_tag,
-        value_type& value, InputIterator new_value)
-    {
-        return rewrite_value(std::input_iterator_tag(), value,
-            new_value, detail::stored::null_termination<traits_type>());
-    }
-
     template <class InputIterator>
     value_type& rewrite_value_n(value_type& value,
         InputIterator new_value_begin, std::size_t new_value_size)
     {
-        return rewrite_value_n_impl(
-            std::is_const<typename value_type::value_type>(),
-            value, new_value_begin, new_value_size);
-    }
-
-    template <class InputIterator>
-    value_type& rewrite_value_n_impl(std::false_type, value_type& value,
-        InputIterator new_value_begin, std::size_t new_value_size)
-    {
-        if (new_value_size <= value.size()) {
-            detail::stored::move_chs<traits_type>(
-                new_value_begin, new_value_size, value.begin());
-            value.erase(value.cbegin() + new_value_size, value.cend());
-            return value;
-        } else {
-            return rewrite_value_n_impl(std::true_type(),
-                value, new_value_begin, new_value_size);
+        if constexpr (!std::is_const_v<typename value_type::value_type>) {
+            if (new_value_size <= value.size()) {
+                detail::stored::move_chs<traits_type>(
+                    new_value_begin, new_value_size, value.begin());
+                value.erase(value.cbegin() + new_value_size, value.cend());
+                return value;
+            }
         }
-    }
-
-    template <class InputIterator>
-    value_type& rewrite_value_n_impl(std::true_type, value_type& value,
-        InputIterator new_value_begin, std::size_t new_value_size)
-    {
         const auto secured = secure_n(new_value_size + 1);
         detail::stored::move_chs<traits_type>(
             new_value_begin, new_value_size, secured);
@@ -1644,46 +1610,36 @@ private:
     template <class OtherContent>
     void import_leaky(const OtherContent& other, content_type& records)
     {
-        import_leaky_impl(
-            std::is_const<typename value_type::value_type>(), other, records);
-    }
+        reserve(records, records.size() + other.size());            // throw
 
-    template <class OtherContent>
-    void import_leaky_impl(
-        std::false_type, const OtherContent& other, content_type& records)
-    {
-        reserve(records, records.size() + other.size());        // throw
-        for (const auto& r : other) {
-            const auto e = records.emplace(records.cend());     // throw
-            reserve(*e, r.size());                              // throw
-            for (const auto& v : r) {
-                e->insert(e->cend(), import_value(v));          // throw
+        if constexpr (std::is_const_v<typename value_type::value_type>) {
+            using va_t = typename at_t::template rebind_alloc<value_type>;
+            using canon_t = std::unordered_set<value_type,
+                std::hash<value_type>, std::equal_to<value_type>, va_t>;
+
+            canon_t canonicals(va_t{get_allocator()});              // throw
+
+            for (const auto& r : other) {
+                const auto e = records.emplace(records.cend());     // throw
+                reserve(*e, r.size());                              // throw
+                for (const auto& v : r) {
+                    const auto i = canonicals.find(v);
+                    if (i == canonicals.cend()) {
+                        const auto j =
+                            canonicals.insert(import_value(v));     // throw
+                        e->insert(e->cend(), *j.first);             // throw
+                    } else {
+                        e->insert(e->cend(), *i);                   // throw
+                    }
+                }
             }
-        }
-    }
 
-    template <class OtherContent>
-    void import_leaky_impl(
-        std::true_type, const OtherContent& other, content_type& records)
-    {
-        using va_t = typename at_t::template rebind_alloc<value_type>;
-        using canon_t = std::unordered_set<value_type,
-            std::hash<value_type>, std::equal_to<value_type>, va_t>;
-
-        canon_t canonicals(va_t{get_allocator()});              // throw
-
-        reserve(records, records.size() + other.size());        // throw
-        for (const auto& r : other) {
-            const auto e = records.emplace(records.cend());     // throw
-            reserve(*e, r.size());                              // throw
-            for (const auto& v : r) {
-                const auto i = canonicals.find(v);
-                if (i == canonicals.cend()) {
-                    const auto j =
-                        canonicals.insert(import_value(v));     // throw
-                    e->insert(e->cend(), *j.first);             // throw
-                } else {
-                    e->insert(e->cend(), *i);                   // throw
+        } else {
+            for (const auto& r : other) {
+                const auto e = records.emplace(records.cend());     // throw
+                reserve(*e, r.size());                              // throw
+                for (const auto& v : r) {
+                    e->insert(e->cend(), import_value(v));          // throw
                 }
             }
         }
@@ -1733,34 +1689,21 @@ struct invoke_clear
 };
 
 template <class ContainerFrom, class ContainerTo>
-void  emigrate_impl(ContainerFrom&& from, ContainerTo& to, std::false_type)
-{
-    for (const auto& f : from) {
-        to.emplace(to.cend(), f.cbegin(), f.cend());            // throw
-    }
-}
-
-template <class ContainerFrom, class ContainerTo>
-void  emigrate_impl(ContainerFrom&& from, ContainerTo& to, std::true_type)
-{
-    static_assert(!std::is_reference_v<ContainerFrom>, "");
-        // so we'll use move instead of forward
-
-    to.insert(to.end(), std::make_move_iterator(from.begin()),
-                        std::make_move_iterator(from.end()));   // throw
-}
-
-template <class ContainerFrom, class ContainerTo>
 void  emigrate(ContainerFrom&& from, ContainerTo& to)
 {
     static_assert(!std::is_reference_v<ContainerFrom>, "");
         // so we'll use move instead of forward
 
     std::unique_ptr<ContainerTo, invoke_clear<ContainerTo>> p(&to);
-    emigrate_impl(
-        std::move(from), to,
-        std::is_same<typename ContainerFrom::value_type,
-                     typename ContainerTo::value_type>());      // throw
+    if constexpr (std::is_same_v<typename ContainerFrom::value_type,
+                                 typename ContainerTo::value_type>) {
+        to.insert(to.end(), std::make_move_iterator(from.begin()),
+                            std::make_move_iterator(from.end()));   // throw
+    } else {
+        for (const auto& f : from) {
+            to.emplace(to.cend(), f.cbegin(), f.cend());            // throw
+        }
+    }
 }
 
 template <class ContentL, class ContentR>

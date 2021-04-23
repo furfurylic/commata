@@ -106,10 +106,14 @@ public:
               && noexcept(std::declval<empty_physical_line_aware_handler&>().
                             end_record(where)))
     {
-        return empty_physical_line_impl(where,
-            std::bool_constant<
-                std::is_void_v<decltype(this->start_record(where))>
-             && std::is_void_v<decltype(this->end_record(where))>>());
+        if constexpr (std::is_void_v<decltype(this->start_record(where))>
+                   && std::is_void_v<decltype(this->end_record(where))>) {
+            this->start_record(where);
+            this->end_record(where);
+        } else {
+            return essay([this, where] { return this->start_record(where); })
+                && essay([this, where] { return this->end_record(where); });
+        }
     }
 
     void swap(empty_physical_line_aware_handler& other)
@@ -120,39 +124,15 @@ public:
     }
 
 private:
-    void empty_physical_line_impl(const char_type* where, std::true_type)
-        noexcept(noexcept(std::declval<empty_physical_line_aware_handler&>().
-                            start_record(where))
-              && noexcept(std::declval<empty_physical_line_aware_handler&>().
-                            end_record(where)))
-    {
-        this->start_record(where);
-        this->end_record(where);
-    }
-
-    auto empty_physical_line_impl(const char_type* where, std::false_type)
-        noexcept(noexcept(std::declval<empty_physical_line_aware_handler&>().
-                            start_record(where))
-              && noexcept(std::declval<empty_physical_line_aware_handler&>().
-                            end_record(where)))
-    {
-        return essay([this, where] { return this->start_record(where); })
-            && essay([this, where] { return this->end_record(where); });
-    }
-
     template <class F>
-    static auto essay(F f) noexcept(noexcept(f()))
-     -> std::enable_if_t<std::is_void_v<decltype(f())>, bool>
+    static bool essay(F f) noexcept(noexcept(f()))
     {
-        f();
-        return true;
-    }
-
-    template <class F>
-    static auto essay(F f) noexcept(noexcept(f()))
-     -> std::enable_if_t<!std::is_void_v<decltype(f())>, bool>
-    {
-        return f();
+        if constexpr (std::is_void_v<decltype(f())>) {
+            f();
+            return true;
+        } else {
+            return f();
+        }
     }
 };
 
@@ -165,30 +145,6 @@ void swap(
     return left.swap(right);
 }
 
-namespace detail::empty_physical_line_aware {
-
-template <class Handler>
-auto make(Handler&& h)
-    noexcept(std::is_nothrow_move_constructible_v<std::decay_t<Handler>>)
- -> std::enable_if_t<
-        !has_empty_physical_line<std::decay_t<Handler>>::value,
-        empty_physical_line_aware_handler<std::decay_t<Handler>>>
-{
-    return empty_physical_line_aware_handler<std::decay_t<Handler>>(
-            std::forward<Handler>(h));
-}
-
-template <class Handler>
-auto make(Handler&& h) noexcept
- -> std::enable_if_t<
-        has_empty_physical_line<std::decay_t<Handler>>::value,
-        std::decay_t<Handler>>
-{
-    return std::forward<Handler>(h);
-}
-
-} // end detail::empty_physical_line_aware
-
 template <class Handler>
 auto make_empty_physical_line_aware(Handler&& handler)
     noexcept(
@@ -200,8 +156,13 @@ auto make_empty_physical_line_aware(Handler&& handler)
             std::decay_t<Handler>,
             empty_physical_line_aware_handler<std::decay_t<Handler>>>>
 {
-    return detail::empty_physical_line_aware::
-        make(std::forward<Handler>(handler));
+    if constexpr (detail::has_empty_physical_line<std::decay_t<Handler>>
+                    ::value) {
+        return std::forward<Handler>(handler);
+    } else {
+        return empty_physical_line_aware_handler<std::decay_t<Handler>>(
+                    std::forward<Handler>(handler));
+    }
 }
 
 template <class Handler>

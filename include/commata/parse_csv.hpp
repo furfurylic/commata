@@ -35,31 +35,23 @@ namespace commata {
 namespace detail::csv {
 
 template <class T>
-auto do_yield(T& f, std::size_t location)
- -> std::enable_if_t<has_yield<T>::value, bool>
+bool do_yield([[maybe_unused]] T& f, [[maybe_unused]] std::size_t location)
 {
-    return f.yield(location);
+    if constexpr (has_yield<T>::value) {
+        return f.yield(location);
+    } else {
+        return false;
+    }
 }
 
 template <class T>
-auto do_yield(T&, std::size_t)
- -> std::enable_if_t<!has_yield<T>::value, bool>
+std::size_t do_yield_location([[maybe_unused]] T& f)
 {
-    return false;
-}
-
-template <class T>
-auto do_yield_location(T& f)
- -> std::enable_if_t<has_yield_location<T>::value, std::size_t>
-{
-    return f.yield_location();
-}
-
-template <class T>
-auto do_yield_location(T&)
- -> std::enable_if_t<!has_yield_location<T>::value, std::size_t>
-{
-    return 0;
+    if constexpr (has_yield_location<T>::value) {
+        return f.yield_location();
+    } else {
+        return 0;
+    }
 }
 
 enum class state : std::int_fast8_t
@@ -633,17 +625,11 @@ private:
 
 private:
     template <class F>
-    static auto do_or_abort(F f)
-     -> std::enable_if_t<std::is_void_v<decltype(f())>>
+    static void do_or_abort(F f)
     {
-        f();
-    }
-
-    template <class F>
-    static auto do_or_abort(F f)
-     -> std::enable_if_t<!std::is_void_v<decltype(f())>>
-    {
-        if (!f()) {
+        if constexpr (std::is_void_v<decltype(f())>) {
+            f();
+        } else if (!f()) {
             throw parse_aborted();
         }
     }
@@ -941,22 +927,6 @@ struct are_make_csv_source_args2 :
     decltype(are_make_csv_source_args2_impl::check<Arg1, Arg2>(nullptr))
 {};
 
-template <class Arg1, class Arg2, class... Args>
-auto parse(Arg1&& arg1, Arg2&& arg2, Args&&... args)
- -> std::enable_if_t<are_make_csv_source_args2<Arg1, Arg2>::value, bool>
-{
-    return make_csv_source(std::forward<Arg1>(arg1), std::forward<Arg2>(arg2))
-        (std::forward<Args>(args)...)();
-}
-
-template <class Arg1, class Arg2, class... Args>
-auto parse(Arg1&& arg1, Arg2&& arg2, Args&&... args)
- -> std::enable_if_t<!are_make_csv_source_args2<Arg1, Arg2>::value, bool>
-{
-    return make_csv_source(std::forward<Arg1>(arg1))
-        (std::forward<Arg2>(arg2), std::forward<Args>(args)...)();
-}
-
 } // detail::csv
 
 template <class Arg1, class Arg2, class... OtherArgs>
@@ -966,9 +936,15 @@ auto parse_csv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)
      || detail::csv::are_make_csv_source_args2<Arg1, Arg2>::value,
         bool>
 {
-    return detail::csv::parse(
-        std::forward<Arg1>(arg1), std::forward<Arg2>(arg2),
-        std::forward<OtherArgs>(other_args)...);
+    if constexpr (detail::csv::are_make_csv_source_args2<Arg1, Arg2>::value) {
+        return make_csv_source(
+                std::forward<Arg1>(arg1), std::forward<Arg2>(arg2))
+            (std::forward<OtherArgs>(other_args)...)();
+    } else {
+        return make_csv_source(std::forward<Arg1>(arg1))
+            (std::forward<Arg2>(arg2),
+                std::forward<OtherArgs>(other_args)...)();
+    }
 }
 
 }

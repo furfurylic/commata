@@ -273,29 +273,20 @@ public:
 
     owned_string_input& operator=(const owned_string_input& other)
     {
-        assign(other, std::allocator_traits<Allocator>::
-                        propagate_on_container_copy_assignment());
+        if constexpr (std::allocator_traits<Allocator>::
+                propagate_on_container_copy_assignment()) {
+            // This implementation inhibits s_'s buffer from being reused,
+            // but it seems necessary so that s_'s allocator is replaced with
+            // other.s_'s allocator (even if the allocators are equivalent)
+            s_ = std::basic_string<Ch, Tr, Allocator>(
+                other.s_, other.head_, other.s_.get_allocator());   // throw
+        } else {
+            s_.assign(other.s_, other.head_);   // throw
+        }
+        head_ = 0;
         return *this;
     }
 
-private:
-    void assign(const owned_string_input& other, std::true_type)
-    {
-        // This implementation inhibits s_'s buffer from being reused,
-        // but it seems necessary so that s_'s allocator is replaced with
-        // other.s_'s allocator (even if the allocators are equivalent)
-        s_ = std::basic_string<Ch, Tr, Allocator>(
-            other.s_, other.head_, other.s_.get_allocator());   // throw
-        head_ = 0;
-    }
-
-    void assign(const owned_string_input& other, std::false_type)
-    {
-        s_.assign(other.s_, other.head_);   // throw
-        head_ = 0;
-    }
-
-public:
     owned_string_input& operator=(owned_string_input&& other)
         noexcept(std::is_nothrow_move_assignable_v<
             std::basic_string<Ch, Tr, Allocator>>)
