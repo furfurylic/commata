@@ -59,6 +59,9 @@ struct accepts_range :
     decltype(accepts_range_impl::check<T, Ch>(nullptr))
 {};
 
+template <class T, class Ch>
+constexpr bool accepts_range_v = accepts_range<T, Ch>::value;
+
 struct accepts_x_impl
 {
     template <class T, class X>
@@ -74,6 +77,10 @@ template <class T, class X>
 struct accepts_x :
     decltype(accepts_x_impl::check<T, X>(nullptr))
 {};
+
+template <class T, class X>
+constexpr bool accepts_x_v = accepts_x<T, X>::value;
+
 
 struct typable
 {
@@ -177,20 +184,27 @@ class basic_table_scanner
             detail::member_like_base<FieldScanner>(std::move(s))
         {}
 
-        void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
+        void field_value(Ch* begin, Ch* end,
+            [[maybe_unused]] basic_table_scanner& me) override
         {
-            field_value_r(
-                typename detail::accepts_range<
-                    std::remove_reference_t<decltype(scanner())>, Ch>(),
-                begin, end, me);
+            if constexpr (detail::accepts_range_v<
+                    std::remove_reference_t<decltype(scanner())>, Ch>) {
+                scanner().field_value(begin, end);
+            } else {
+                scanner().field_value(
+                    string_t(begin, end, me.get_allocator()));
+            }
         }
 
-        void field_value(string_t&& value, basic_table_scanner& me) override
+        void field_value(string_t&& value, basic_table_scanner&) override
         {
-            field_value_s(
-                typename detail::accepts_x<
-                    std::remove_reference_t<decltype(scanner())>, string_t>(),
-                std::move(value), me);
+            if constexpr (detail::accepts_x_v<
+                    std::remove_reference_t<decltype(scanner())>, string_t>) {
+                scanner().field_value(std::move(value));
+            } else {
+                scanner().field_value(
+                    &*value.begin(), &*value.begin() + value.size());
+            }
         }
 
         void field_skipped() override
@@ -205,31 +219,6 @@ class basic_table_scanner
         }
 
     private:
-        void field_value_r(std::true_type,
-            Ch* begin, Ch* end, basic_table_scanner&)
-        {
-            scanner().field_value(begin, end);
-        }
-
-        void field_value_r(std::false_type,
-            Ch* begin, Ch* end, basic_table_scanner& me)
-        {
-            scanner().field_value(string_t(begin, end, me.get_allocator()));
-        }
-
-        void field_value_s(std::true_type,
-            string_t&& value, basic_table_scanner&)
-        {
-            scanner().field_value(std::move(value));
-        }
-
-        void field_value_s(std::false_type,
-            string_t&& value, basic_table_scanner&)
-        {
-            scanner().field_value(
-                &*value.begin(), &*value.begin() + value.size());
-        }
-
         const void* get_target_v() const noexcept override
         {
             return std::addressof(this->get());
@@ -242,19 +231,11 @@ class basic_table_scanner
 
         decltype(auto) scanner() noexcept
         {
-            return scanner_impl(
-                detail::is_std_reference_wrapper<FieldScanner>());
-        }
-
-    private:
-        decltype(auto) scanner_impl(std::false_type) noexcept
-        {
-            return this->get();
-        }
-
-        decltype(auto) scanner_impl(std::true_type) noexcept
-        {
-            return this->get().get();
+            if constexpr (detail::is_std_reference_wrapper_v<FieldScanner>) {
+                return this->get().get();
+            } else {
+                return this->get();
+            }
         }
     };
 
@@ -948,27 +929,20 @@ struct raw_converter<T, H, std::enable_if_t<std::is_integral<T>::value,
 
     int erange(T v) const
     {
-        return erange_impl(v, std::is_signed<T>());
-    }
-
-private:
-    int erange_impl(T v, std::true_type) const
-    {
-        if (v == std::numeric_limits<T>::max()) {
-            return 1;
-        } else if (v == std::numeric_limits<T>::min()) {
-            return -1;
+        if constexpr (std::is_signed_v<T>) {
+            if (v == std::numeric_limits<T>::max()) {
+                return 1;
+            } else if (v == std::numeric_limits<T>::min()) {
+                return -1;
+            } else {
+                return 0;
+            }
         } else {
-            return 0;
-        }
-    }
-
-    int erange_impl(T v, std::false_type) const
-    {
-        if (v == std::numeric_limits<T>::max()) {
-            return 1;
-        } else {
-            return -1;
+            if (v == std::numeric_limits<T>::max()) {
+                return 1;
+            } else {
+                return -1;
+            }
         }
     }
 };
@@ -1025,6 +999,10 @@ struct has_simple_invalid_format :
         check<F>(nullptr))
 {};
 
+template <class F, class Ch>
+constexpr bool has_simple_invalid_format_v =
+    has_simple_invalid_format<F, Ch>::value;
+
 template <class Ch>
 struct has_simple_out_of_range_impl
 {
@@ -1045,6 +1023,10 @@ struct has_simple_out_of_range :
         check<F>(nullptr))
 {};
 
+template <class F, class Ch>
+constexpr bool has_simple_out_of_range_v =
+    has_simple_out_of_range<F, Ch>::value;
+
 struct has_simple_empty_impl
 {
     template <class F>
@@ -1061,53 +1043,42 @@ struct has_simple_empty :
     decltype(has_simple_empty_impl::check<F>(nullptr))
 {};
 
+template <class F>
+constexpr bool has_simple_empty_v = has_simple_empty<F>::value;
+
 template <class T>
 struct conversion_error_facade
 {
-    template <class H, class Ch,
-        std::enable_if_t<has_simple_invalid_format<H, Ch>::value>* = nullptr>
+    template <class H, class Ch>
     static std::optional<T> invalid_format(
         H& h,const Ch* begin, const Ch* end)
     {
-        return h.invalid_format(begin, end);
+        if constexpr (has_simple_invalid_format_v<H, Ch>) {
+            return h.invalid_format(begin, end);
+        } else {
+            return h.invalid_format(begin, end, static_cast<T*>(nullptr));
+        }
     }
 
-    template <class H, class Ch,
-        std::enable_if_t<!has_simple_invalid_format<H, Ch>::value>* = nullptr>
-    static std::optional<T> invalid_format(
-        H& h, const Ch* begin, const Ch* end)
-    {
-        return h.invalid_format(begin, end, static_cast<T*>(nullptr));
-    }
-
-    template <class H, class Ch,
-        std::enable_if_t<has_simple_out_of_range<H, Ch>::value>* = nullptr>
+    template <class H, class Ch>
     static std::optional<T> out_of_range(
         H& h, const Ch* begin, const Ch* end, int sign)
     {
-        return h.out_of_range(begin, end, sign);
+        if constexpr (has_simple_out_of_range_v<H, Ch>) {
+            return h.out_of_range(begin, end, sign);
+        } else {
+            return h.out_of_range(begin, end, sign, static_cast<T*>(nullptr));
+        }
     }
 
-    template <class H, class Ch,
-        std::enable_if_t<!has_simple_out_of_range<H, Ch>::value>* = nullptr>
-    static std::optional<T> out_of_range(
-        H& h, const Ch* begin, const Ch* end, int sign)
-    {
-        return h.out_of_range(begin, end, sign, static_cast<T*>(nullptr));
-    }
-
-    template <class H,
-        std::enable_if_t<has_simple_empty<H>::value>* = nullptr>
+    template <class H>
     static std::optional<T> empty(H& h)
     {
-        return h.empty();
-    }
-
-    template <class H,
-        std::enable_if_t<!has_simple_empty<H>::value>* = nullptr>
-    static std::optional<T> empty(H& h)
-    {
-        return h.empty(static_cast<T*>(nullptr));
+        if constexpr (has_simple_empty_v<H>) {
+            return h.empty();
+        } else {
+            return h.empty(static_cast<T*>(nullptr));
+        }
     }
 };
 
@@ -1206,38 +1177,27 @@ struct restrained_converter<T, H, U,
         if (!result.has_value()) {
             return std::optional<T>();
         }
-        const auto r = convert_impl(*result,
-            std::integral_constant<bool, sizeof(T) < sizeof(U)>());
-        if (r.second) {
-            return std::optional<T>(r.first);
-        } else {
-            return conversion_error_facade<T>::out_of_range(
-                this->get_conversion_error_handler(), begin, end, 1);
-        }
-    }
-
-    std::pair<T, bool> convert_impl(U r, std::true_type)
-    {
-        constexpr auto t_max = std::numeric_limits<T>::max();
-        if (r <= t_max) {
-            return { static_cast<T>(r), true };
-        } else {
-            const auto s = static_cast<std::make_signed_t<U>>(r);
-            if (s < 0) {
-                // -t_max is the lowest number that can be wrapped around
-                // and then returned
-                const auto s_wrapped_around = s + t_max + 1;
-                if (s_wrapped_around > 0) {
-                    return { static_cast<T>(s_wrapped_around), true };
+        const auto r = *result;
+        if constexpr (sizeof(T) < sizeof(U)) {
+            constexpr auto t_max = std::numeric_limits<T>::max();
+            if (r <= t_max) {
+                return { static_cast<T>(r) };
+            } else {
+                const auto s = static_cast<std::make_signed_t<U>>(r);
+                if (s < 0) {
+                    // -t_max is the lowest number that can be wrapped around
+                    // and then returned
+                    const auto s_wrapped_around = s + t_max + 1;
+                    if (s_wrapped_around > 0) {
+                        return { static_cast<T>(s_wrapped_around) };
+                    }
                 }
             }
+            return conversion_error_facade<T>::out_of_range(
+                this->get_conversion_error_handler(), begin, end, 1);
+        } else {
+            return { static_cast<T>(r) };
         }
-        return { static_cast<T>(0U), false };
-    }
-
-    std::pair<T, bool> convert_impl(U r, std::false_type)
-    {
-        return { static_cast<T>(r), true };
     }
 };
 
@@ -1544,25 +1504,17 @@ class replace_if_conversion_failed
         };
 
     private:
-        static constexpr std::size_t n_impl(std::true_type, std::true_type)
-        {
-            return 4;
-        }
-
-        static constexpr std::size_t n_impl(std::true_type, std::false_type)
-        {
-            return 3;
-        }
-
-        template <class AnyBool>
-        static constexpr std::size_t n_impl(std::false_type, AnyBool)
-        {
-            return 5;
-        }
-
         static constexpr std::size_t init_n()
         {
-            return n_impl(std::is_integral<T>(), std::is_signed<T>());
+            if constexpr (std::is_integral_v<T>) {
+                if constexpr (std::is_signed_v<T>) {
+                    return 4;
+                } else {
+                    return 3;
+                }
+            } else {
+                return 5;
+            }
         }
 
     public:
@@ -1694,7 +1646,15 @@ class replace_if_conversion_failed
     public:
         ~store()
         {
-            destroy(std::is_trivially_destructible<T>());
+            if constexpr (!std::is_trivially_destructible_v<T>) {
+                for (unsigned r = 0; r < n; ++r) {
+                    if (has(r)) {
+                        static_cast<const T*>(
+                            static_cast<const void*>(
+                                replacements_[r].m))->~T();
+                    }
+                }
+            }
         }
 
         std::pair<mode, const T*> get(unsigned r) const noexcept
@@ -1730,19 +1690,6 @@ class replace_if_conversion_failed
         unsigned skips(unsigned r) const noexcept
         {
             return skips_ & (1U << r);
-        }
-
-        void destroy(std::true_type) noexcept
-        {}
-
-        void destroy(std::false_type) noexcept
-        {
-            for (unsigned r = 0; r < n; ++r) {
-                if (has(r)) {
-                    static_cast<const T*>(
-                        static_cast<const void*>(replacements_[r].m))->~T();
-                }
-            }
         }
     };
 
@@ -1883,6 +1830,9 @@ struct is_output_iterator<T,
     std::true_type
 {};
 
+template <class T>
+constexpr bool is_output_iterator_v = is_output_iterator<T>::value;
+
 template <class T, class Sink, class SkippingHandler>
 class translator :
     member_like_base<SkippingHandler>
@@ -1929,43 +1879,24 @@ public:
     template <class U>
     void put(U&& value)
     {
-        do_put(std::forward<U>(value), is_output_iterator<Sink>());
+        if constexpr (is_output_iterator_v<Sink>) {
+            *sink_ = std::forward<U>(value);
+            ++sink_;
+        } else {
+            sink_(std::forward<U>(value));
+        }
     }
 
     template <class U>
     void put(std::optional<U>&& value)
     {
-        do_put(std::move(value), is_output_iterator<Sink>());
-    }
-
-private:
-    template <class U>
-    void do_put(U&& value, std::true_type)
-    {
-        *sink_ = std::forward<U>(value);
-        ++sink_;
-    }
-
-    template <class U>
-    void do_put(U&& value, std::false_type)
-    {
-        sink_(std::forward<U>(value));
-    }
-
-    template <class U>
-    void do_put(std::optional<U>&& value, std::true_type)
-    {
         if (value.has_value()) {
-            *sink_ = std::move(*value);
-            ++sink_;
-        }
-    }
-
-    template <class U>
-    void do_put(std::optional<U>&& value, std::false_type)
-    {
-        if (value.has_value()) {
-            sink_(std::move(*value));
+            if constexpr (is_output_iterator_v<Sink>) {
+                *sink_ = std::move(*value);
+                ++sink_;
+            } else {
+                sink_(std::move(*value));
+            }
         }
     }
 };

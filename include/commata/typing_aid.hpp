@@ -33,6 +33,9 @@ struct is_std_string_of<std::basic_string<Ch, Args...>, Ch> :
     std::true_type
 {};
 
+template <class T, class Ch>
+constexpr bool is_std_string_of_v = is_std_string_of<T, Ch>::value;
+
 template <class W>
 struct is_std_reference_wrapper : std::false_type
 {};
@@ -40,6 +43,10 @@ struct is_std_reference_wrapper : std::false_type
 template <class T>
 struct is_std_reference_wrapper<std::reference_wrapper<T>> : std::true_type
 {};
+
+template <class W>
+constexpr bool is_std_reference_wrapper_v =
+    is_std_reference_wrapper<W>::value;
 
 template <class... Ts>
 struct first;

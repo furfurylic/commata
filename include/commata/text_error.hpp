@@ -101,29 +101,25 @@ class text_error :
 public:
     template <class T,
         std::enable_if_t<
-            detail::is_std_string_of<std::decay_t<T>, char>::value
-         || std::is_constructible<std::string, T>::value,
+            detail::is_std_string_of_v<std::decay_t<T>, char>
+         || std::is_constructible_v<std::string, T>,
             std::nullptr_t> = nullptr>
     explicit text_error(T&& what_arg) :
-        what_(create_what(
-            detail::is_std_string_of<std::decay_t<T>, char>(),
-            std::forward<T>(what_arg))),
+        what_(create_what(std::forward<T>(what_arg))),
         physical_position_(npos, npos)
     {}
 
 private:
     template <class T>
-    static auto create_what(std::true_type, T&& what_arg)
+    static auto create_what(T&& what_arg)
     {
-        return std::allocate_shared<string_holder<std::decay_t<T>>>(
-            what_arg.get_allocator(), std::forward<T>(what_arg));
-    }
-
-    template <class T>
-    static auto create_what(std::false_type, T&& what_arg)
-    {
-        return std::make_shared<string_holder<std::string>>(
-            std::forward<T>(what_arg));
+        if constexpr (detail::is_std_string_of_v<std::decay_t<T>, char>) {
+            return std::allocate_shared<string_holder<std::decay_t<T>>>(
+                what_arg.get_allocator(), std::forward<T>(what_arg));
+        } else {
+            return std::make_shared<string_holder<std::string>>(
+                std::forward<T>(what_arg));
+        }
     }
 
 public:

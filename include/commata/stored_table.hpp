@@ -1316,7 +1316,15 @@ public:
     value_type& rewrite_value(value_type& value,
         ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end)
     {
-        return rewrite_value_impl(value, new_value_begin, new_value_end);
+        std::size_t length;
+        if constexpr (std::is_same_v<ForwardIterator, ForwardIteratorEnd>) {
+            length = static_cast<std::size_t>(
+                std::distance(new_value_begin, new_value_end));
+        } else {
+            length = 0;
+            for (auto i = new_value_begin; i != new_value_end; ++i) ++length;
+        }
+        return rewrite_value_n(value, new_value_begin, length);
     }
 
     template <class ForwardIterator>
@@ -1328,62 +1336,17 @@ public:
                     iterator_category>::value,
             value_type&>
     {
-        return rewrite_value_impl(value, new_value);
+        if constexpr (std::is_same_v<
+                const std::remove_pointer_t<ForwardIterator>, const char>) {
+            return rewrite_value_n(value,
+                new_value, traits_type::length(new_value));
+        } else {
+            return rewrite_value(value,
+                new_value, detail::null_termination<traits_type>());
+        }
     }
 
 private:
-    template <class ForwardIterator>
-    value_type& rewrite_value_impl(value_type& value,
-        ForwardIterator new_value_begin, ForwardIterator new_value_end)
-    {
-        return rewrite_value_n(value, new_value_begin,
-            static_cast<std::size_t>(
-                std::distance(new_value_begin, new_value_end)));
-    }
-
-    template <class ForwardIterator, class ForwardIteratorEnd>
-    value_type& rewrite_value_impl(value_type& value,
-        ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end)
-    {
-        ForwardIterator i = new_value_begin;
-        std::size_t length = 0;
-        while (i != new_value_end) {
-            ++i;
-            ++length;
-        }
-        return rewrite_value_n(value, new_value_begin, length);
-    }
-
-    template <class ForwardIterator>
-    value_type& rewrite_value_impl(value_type& value,
-        ForwardIterator new_value)
-    {
-        return rewrite_value_impl(value,
-            new_value, detail::null_termination<traits_type>());
-    }
-
-    value_type& rewrite_value_impl(value_type& value, const char* new_value)
-    {
-        return rewrite_value_n(value,
-            new_value, traits_type::length(new_value));
-    }
-
-    template <class InputIterator>
-    value_type& rewrite_value_n(value_type& value,
-        InputIterator new_value_begin, std::size_t new_value_size)
-    {
-        return rewrite_value_n_impl(
-            std::is_const<typename value_type::value_type>(),
-            value, new_value_begin, new_value_size);
-    }
-
-    template <class InputIterator>
-    value_type& rewrite_value_n_impl(std::true_type, value_type& value,
-        InputIterator new_value_begin, std::size_t new_value_size)
-    {
-        return rewrite_value_n_secure(value, new_value_begin, new_value_size);
-    }
-
     static void move_chs(
         const char_type* begin1, std::size_t size, char_type* begin2)
     {
@@ -1402,13 +1365,15 @@ private:
     }
 
     template <class InputIterator>
-    value_type& rewrite_value_n_impl(std::false_type, value_type& value,
+    value_type& rewrite_value_n(value_type& value,
         InputIterator new_value_begin, std::size_t new_value_size)
     {
-        if (new_value_size <= value.size()) {
-            move_chs(new_value_begin, new_value_size, value.begin());
-            value.erase(value.cbegin() + new_value_size, value.cend());
-            return value;
+        if constexpr (!std::is_const_v<typename value_type::value_type>) {
+            if (new_value_size <= value.size()) {
+                move_chs(new_value_begin, new_value_size, value.begin());
+                value.erase(value.cbegin() + new_value_size, value.cend());
+                return value;
+            }
         }
         return rewrite_value_n_secure(value, new_value_begin, new_value_size);
     }
@@ -1825,29 +1790,19 @@ void append_stored_table_content_adaptive(
 }
 
 template <class ContentL, class ContentR>
-auto append_stored_table_content(ContentL& l, ContentR&& r)
- -> std::enable_if_t<
-        std::is_same<
-            typename ContentL::value_type,
-            typename ContentR::value_type>::value
-     && has_adaptive_manoeuvre<
-            typename ContentL::value_type>::value>
+void append_stored_table_content(ContentL& l, ContentR&& r)
 {
     static_assert(!std::is_reference<ContentR>::value, "");
         // so we'll use move instead of forward
-    append_stored_table_content_adaptive(l, std::move(r));
-}
-
-template <class ContentL, class ContentR>
-auto append_stored_table_content(ContentL& l, ContentR&& r)
- -> std::enable_if_t<
-        !std::is_same<
-            typename ContentL::value_type,
-            typename ContentR::value_type>::value
-     || !has_adaptive_manoeuvre<
-            typename ContentL::value_type>::value>
-{
-    append_stored_table_content_primitive(l, r);
+    if constexpr (std::is_same_v<
+                    typename ContentL::value_type,
+                    typename ContentR::value_type>
+               && has_adaptive_manoeuvre<
+                    typename ContentL::value_type>::value) {
+        append_stored_table_content_adaptive(l, std::move(r));
+    } else {
+        append_stored_table_content_primitive(l, r);
+    }
 }
 
 template <class Record, class Allocator>

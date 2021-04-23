@@ -158,9 +158,11 @@ public:
     }
 
     template <class T>
-    void destroy(T* p)
+    void destroy([[maybe_unused]] T* p)
     {
-        destroy(p, std::is_trivially_destructible<T>());
+        if constexpr (!std::is_trivially_destructible_v<T>) {
+            p->~T();
+        }
     }
 
     auto select_on_container_copy_construction() const noexcept(noexcept(
@@ -186,17 +188,6 @@ public:
     decltype(auto) base() const noexcept
     {
         return this->get();
-    }
-
-private:
-    template <class T>
-    void destroy(T*, std::true_type)
-    {}
-
-    template <class T>
-    void destroy(T* p, std::false_type)
-    {
-        p->~T();
     }
 };
 

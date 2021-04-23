@@ -24,35 +24,15 @@ class empty_physical_line_aware_handler_base
         return static_cast<D*>(this);
     }
 
-    void empty_physical_line(const Ch* where, std::true_type)
-        noexcept(noexcept(std::declval<D&>().start_record(where))
-              && noexcept(std::declval<D&>().end_record(where)))
-    {
-        d()->start_record(where);
-        d()->end_record(where);
-    }
-
-    auto empty_physical_line(const Ch* where, std::false_type)
-        noexcept(noexcept(std::declval<D&>().start_record(where))
-              && noexcept(std::declval<D&>().end_record(where)))
-    {
-        return essay([t = d(), where] { return t->start_record(where); })
-            && essay([t = d(), where] { return t->end_record(where); });
-    }
-
     template <class F>
-    static auto essay(F f) noexcept(noexcept(f()))
-     -> std::enable_if_t<std::is_void<decltype(f())>::value, bool>
+    static bool essay(F f) noexcept(noexcept(f()))
     {
-        f();
-        return true;
-    }
-
-    template <class F>
-    static auto essay(F f) noexcept(noexcept(f()))
-     -> std::enable_if_t<!std::is_void<decltype(f())>::value, bool>
-    {
-        return f();
+        if constexpr (std::is_void_v<decltype(f())>) {
+            f();
+            return true;
+        } else {
+            return f();
+        }
     }
 
 public:
@@ -60,10 +40,14 @@ public:
         noexcept(noexcept(std::declval<D&>().start_record(where))
               && noexcept(std::declval<D&>().end_record(where)))
     {
-        return empty_physical_line(where,
-            std::integral_constant<bool,
-                std::is_void<decltype(d()->start_record(where))>::value
-             && std::is_void<decltype(d()->end_record(where))>::value>());
+        if constexpr (std::is_void_v<decltype(d()->start_record(where))>
+                   && std::is_void_v<decltype(d()->end_record(where))>) {
+            d()->start_record(where);
+            d()->end_record(where);
+        } else {
+            return essay([t = d(), where] { return t->start_record(where); })
+                && essay([t = d(), where] { return t->end_record(where); });
+        }
     }
 };
 

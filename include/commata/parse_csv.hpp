@@ -31,31 +31,23 @@ namespace detail {
 namespace csv {
 
 template <class T>
-auto do_yield(T& f, std::size_t location)
- -> std::enable_if_t<has_yield<T>::value, bool>
+bool do_yield([[maybe_unused]] T& f, [[maybe_unused]] std::size_t location)
 {
-    return f.yield(location);
+    if constexpr (has_yield<T>::value) {
+        return f.yield(location);
+    } else {
+        return false;
+    }
 }
 
 template <class T>
-auto do_yield(T&, std::size_t)
- -> std::enable_if_t<!has_yield<T>::value, bool>
+std::size_t do_yield_location([[maybe_unused]] T& f)
 {
-    return false;
-}
-
-template <class T>
-auto do_yield_location(T& f)
- -> std::enable_if_t<has_yield_location<T>::value, std::size_t>
-{
-    return f.yield_location();
-}
-
-template <class T>
-auto do_yield_location(T&)
- -> std::enable_if_t<!has_yield_location<T>::value, std::size_t>
-{
-    return 0;
+    if constexpr (has_yield_location<T>::value) {
+        return f.yield_location();
+    } else {
+        return 0;
+    }
 }
 
 enum class state : std::int_fast8_t
@@ -480,14 +472,19 @@ public:
     }
 
     void start_buffer(
-        const char_type* buffer_begin, const char_type* buffer_end)
+        [[maybe_unused]] const char_type* buffer_begin,
+        [[maybe_unused]] const char_type* buffer_end)
     {
-        start_buffer(has_start_buffer<Handler>(), buffer_begin, buffer_end);
+        if constexpr (has_start_buffer<Handler>()) {
+            handler_.start_buffer(buffer_begin, buffer_end);
+        }
     }
 
-    void end_buffer(const char_type* buffer_end)
+    void end_buffer([[maybe_unused]] const char_type* buffer_end)
     {
-        end_buffer(has_end_buffer<Handler>(), buffer_end);
+        if constexpr (has_end_buffer<Handler>()) {
+            handler_.end_buffer(buffer_end);
+        }
     }
 
     auto start_record(const char_type* record_begin)
@@ -510,36 +507,12 @@ public:
         return handler_.end_record(end);
     }
 
-    auto empty_physical_line(const char_type* where)
+    auto empty_physical_line([[maybe_unused]] const char_type* where)
     {
-        return empty_physical_line(has_empty_physical_line<Handler>(), where);
+        if constexpr (has_empty_physical_line<Handler>()) {
+            return handler_.empty_physical_line(where);
+        }
     }
-
-private:
-    void start_buffer(std::true_type,
-        const char_type* buffer_begin, const char_type* buffer_end)
-    {
-        handler_.start_buffer(buffer_begin, buffer_end);
-    }
-
-    void start_buffer(std::false_type, ...)
-    {}
-
-    void end_buffer(std::true_type, const char_type* buffer_end)
-    {
-        handler_.end_buffer(buffer_end);
-    }
-
-    void end_buffer(std::false_type, ...)
-    {}
-
-    auto empty_physical_line(std::true_type, const char_type* where)
-    {
-        return handler_.empty_physical_line(where);
-    }
-
-    void empty_physical_line(std::false_type, ...)
-    {}
 };
 
 namespace csv {
@@ -795,17 +768,11 @@ private:
 
 private:
     template <class F>
-    static auto do_or_abort(F f)
-     -> std::enable_if_t<std::is_void<decltype(f())>::value>
+    static void do_or_abort(F f)
     {
-        f();
-    }
-
-    template <class F>
-    static auto do_or_abort(F f)
-     -> std::enable_if_t<!std::is_void<decltype(f())>::value>
-    {
-        if (!f()) {
+        if constexpr (std::is_void_v<decltype(f())>) {
+            f();
+        } else if (!f()) {
             throw parse_aborted();
         }
     }
@@ -1104,30 +1071,20 @@ struct are_make_csv_source_args :
     decltype(are_make_csv_source_args_impl::check<Arg1, Arg2>(nullptr))
 {};
 
-template <class Arg1, class Arg2, class... Args>
-auto parse(Arg1&& arg1, Arg2&& arg2, Args&&... args)
- -> std::enable_if_t<are_make_csv_source_args<Arg1, Arg2>::value, bool>
-{
-    return make_csv_source(std::forward<Arg1>(arg1), std::forward<Arg2>(arg2))
-        (std::forward<Args>(args)...)();
-}
-
-template <class Arg1, class Arg2, class... Args>
-auto parse(Arg1&& arg1, Arg2&& arg2, Args&&... args)
- -> std::enable_if_t<!are_make_csv_source_args<Arg1, Arg2>::value, bool>
-{
-    return make_csv_source(std::forward<Arg1>(arg1))
-        (std::forward<Arg2>(arg2), std::forward<Args>(args)...)();
-}
-
 }}
 
 template <class Arg1, class Arg2, class... OtherArgs>
 bool parse_csv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)
 {
-    return detail::csv::parse(
-        std::forward<Arg1>(arg1), std::forward<Arg2>(arg2),
-        std::forward<OtherArgs>(other_args)...);
+    if constexpr (detail::csv::are_make_csv_source_args<Arg1, Arg2>::value) {
+        return make_csv_source(
+                std::forward<Arg1>(arg1), std::forward<Arg2>(arg2))
+            (std::forward<OtherArgs>(other_args)...)();
+    } else {
+        return make_csv_source(std::forward<Arg1>(arg1))
+            (std::forward<Arg2>(arg2),
+                std::forward<OtherArgs>(other_args)...)();
+    }
 }
 
 }

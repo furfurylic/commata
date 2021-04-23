@@ -126,32 +126,7 @@ typedef testing::Types<
 
 template <class ChNum>
 struct TestFieldTranslatorForIntegralTypes : BaseTest
-{
-protected:
-    template <class T, class... Args>
-    auto make_replace_if_conversion_failed_adding_0(Args&&... args)
-    {
-        return this->template
-            make_replace_if_conversion_failed_adding_0_impl<T>(
-                std::is_signed<T>(), std::forward<Args>(args)...);
-    }
-
-private:
-    template <class T, class... Args>
-    auto make_replace_if_conversion_failed_adding_0_impl(
-        std::true_type, Args&&... args)
-    {
-        return replace_if_conversion_failed<T>(
-            std::forward<Args>(args)..., static_cast<T>(0));
-    }
-
-    template <class T, class... Args>
-    auto make_replace_if_conversion_failed_adding_0_impl(
-        std::false_type, Args&&... args)
-    {
-        return replace_if_conversion_failed<T>(std::forward<Args>(args)...);
-    }
-};
+{};
 
 TYPED_TEST_SUITE(TestFieldTranslatorForIntegralTypes, ChIntegrals);
 
@@ -223,7 +198,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
 
     string_t minn;
     string_t minnMinus1;
-    if (std::is_signed<value_t>::value) {
+    if constexpr (std::is_signed<value_t>::value) {
         minn = to_string(std::numeric_limits<value_t>::min() + 0);
         minnMinus1 = ch('-') + plus1(minn.substr(1));
     } else {
@@ -267,7 +242,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
 
     string_t minn;
     string_t minnMinus1;
-    if (std::is_signed<value_t>::value) {
+    if constexpr (std::is_signed<value_t>::value) {
         minn = to_string(std::numeric_limits<value_t>::min() + 0);
         minnMinus1 = ch('-') + plus1(minn.substr(1));
     } else {
@@ -290,11 +265,19 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
         fail_if_skipped(),
         replace_if_conversion_failed<value_t>(
             replacement_fail, static_cast<value_t>(42))));
-    h.set_field_scanner(2, make_field_translator(values2,
-        fail_if_skipped(),
-        this->template make_replace_if_conversion_failed_adding_0<value_t>(
-            replacement_fail, replacement_fail,
-            static_cast<value_t>(1))));
+    if constexpr (std::is_signed_v<value_t>) {
+        h.set_field_scanner(2, make_field_translator(values2,
+            fail_if_skipped(),
+            replace_if_conversion_failed<value_t>(
+                replacement_fail, replacement_fail,
+                static_cast<value_t>(1), static_cast<value_t>(0))));
+    } else {
+        h.set_field_scanner(2, make_field_translator(values2,
+            fail_if_skipped(),
+            replace_if_conversion_failed<value_t>(
+                replacement_fail, replacement_fail,
+                static_cast<value_t>(1))));
+    }
 
     stringstream_t s;
     s << "-5,x," << maxxPlus1 << '\n'
@@ -313,7 +296,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     ASSERT_EQ(static_cast<value_t>(42), values1[0]);
     ASSERT_EQ(static_cast<value_t>(3), values1[1]);
     ASSERT_EQ(static_cast<value_t>(1), values2[0]);
-    if (std::is_signed<value_t>::value) {
+    if constexpr (std::is_signed<value_t>::value) {
         ASSERT_EQ(static_cast<value_t>(0), values2[1]);
     } else {
         ASSERT_EQ(static_cast<value_t>(1), values2[1]);
