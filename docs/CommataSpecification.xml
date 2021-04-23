@@ -1605,7 +1605,7 @@ template &lt;class Handler, class... Args>
 void swap(csv_source&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;CharInput&amp;>(), std::declval&lt;CharInput&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;CharInput></c>.</remark>
         </code-item>
       </section>
 
