@@ -13,42 +13,30 @@
 namespace commata::detail {
 
 template <class T>
-struct is_std_string :
-    std::false_type
-{};
+constexpr bool is_std_string_v = false;
 
 template <class... Args>
-struct is_std_string<std::basic_string<Args...>> :
-    std::true_type
-{};
+constexpr bool is_std_string_v<std::basic_string<Args...>> = true;
 
 template <class T, class Ch>
-struct is_std_string_of_ch :
-    std::false_type
-{};
+constexpr bool is_std_string_of_ch_v = false;
 
 template <class Ch, class... Args>
-struct is_std_string_of_ch<std::basic_string<Ch, Args...>, Ch> :
-    std::true_type
-{};
+constexpr bool is_std_string_of_ch_v<std::basic_string<Ch, Args...>,
+                                     Ch> = true;
 
 template <class T, class Ch, class Tr>
-struct is_std_string_of_ch_tr :
-    std::false_type
-{};
+constexpr bool is_std_string_of_ch_tr_v = false;
 
 template <class Ch, class Tr, class... Args>
-struct is_std_string_of_ch_tr<std::basic_string<Ch, Tr, Args...>, Ch, Tr> :
-    std::true_type
-{};
+constexpr bool is_std_string_of_ch_tr_v<std::basic_string<Ch, Tr, Args...>,
+                                        Ch, Tr> = true;
 
 template <class W>
-struct is_std_reference_wrapper : std::false_type
-{};
+constexpr bool is_std_reference_wrapper_v = false;
 
 template <class T>
-struct is_std_reference_wrapper<std::reference_wrapper<T>> : std::true_type
-{};
+constexpr bool is_std_reference_wrapper_v<std::reference_wrapper<T>> = true;
 
 template <class... Ts>
 struct first;

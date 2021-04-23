@@ -9,16 +9,11 @@
 #include <string>
 #include <type_traits>
 
-#include "typing_aid.hpp"
-
 namespace commata::detail {
 
 template <class Ch, class Tr, class T>
-struct is_comparable_with_string_value :
-    std::bool_constant<
-        std::is_convertible_v<T, const Ch*>
-     || detail::is_std_string_of_ch_tr<T, Ch, Tr>::value>
-{};
+constexpr bool is_comparable_with_string_value_v =
+    std::is_convertible_v<T, std::basic_string_view<Ch, Tr>>;
 
 template <class T, class U>
 bool string_value_eq(

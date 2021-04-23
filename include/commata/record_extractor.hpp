@@ -92,36 +92,33 @@ struct is_stream_writable_impl
 };
 
 template <class Stream, class T>
-struct is_stream_writable :
-    decltype(is_stream_writable_impl::check<Stream, T>(nullptr))
-{};
+constexpr bool is_stream_writable_v =
+    decltype(is_stream_writable_impl::check<Stream, T>(nullptr))();
 
 template <class Ch, class T>
-struct is_plain_field_name_pred :
-    std::bool_constant<
-        std::is_pointer_v<T>
-            // to match with function pointer types
-     || std::is_convertible_v<T, bool (*)(const Ch*, const Ch*)>>
-            // to match with no-capture closure types,
-            // with gcc 7.3, whose objects are converted to function pointers
-            // and again converted to bool values to produce dull "1" outputs
-            // and generate dull -Waddress warnings;
-            // this treatment is apparently not sufficient but seems to be
-            // better than never
-{};
+constexpr bool is_plain_field_name_pred_v =
+    std::is_pointer_v<T>
+        // to match with function pointer types
+ || std::is_convertible_v<T, bool (*)(const Ch*, const Ch*)>;
+        // to match with no-capture closure types,
+        // with gcc 7.3, whose objects are converted to function pointers
+        // and again converted to bool values to produce dull "1" outputs
+        // and generate dull -Waddress warnings;
+        // this treatment is apparently not sufficient but seems to be
+        // better than never
 
 template <class Ch, class T,
-          std::enable_if_t<!(is_stream_writable<std::ostream, T>::value
-                          || is_stream_writable<std::wostream, T>::value)
-                        || is_plain_field_name_pred<Ch, T>::value,
+          std::enable_if_t<!(is_stream_writable_v<std::ostream, T>
+                          || is_stream_writable_v<std::wostream, T>)
+                        || is_plain_field_name_pred_v<Ch, T>,
                            std::nullptr_t> = nullptr>
 void write_formatted_field_name_of(
     std::ostream&, const char*, const T&, const Ch*)
 {}
 
 template <class Ch, class T,
-          std::enable_if_t<is_stream_writable<std::ostream, T>::value
-                        && !is_plain_field_name_pred<Ch, T>::value,
+          std::enable_if_t<is_stream_writable_v<std::ostream, T>
+                        && !is_plain_field_name_pred_v<Ch, T>,
                            std::nullptr_t> = nullptr>
 void write_formatted_field_name_of(
     std::ostream& o, const char* prefix, const T& t, const Ch*)
@@ -131,9 +128,9 @@ void write_formatted_field_name_of(
 }
 
 template <class Ch, class T,
-          std::enable_if_t<!is_stream_writable<std::ostream, T>::value
-                        && is_stream_writable<std::wostream, T>::value
-                        && !is_plain_field_name_pred<Ch, T>::value,
+          std::enable_if_t<!is_stream_writable_v<std::ostream, T>
+                        && is_stream_writable_v<std::wostream, T>
+                        && !is_plain_field_name_pred_v<Ch, T>,
                            std::nullptr_t> = nullptr>
 void write_formatted_field_name_of(
     std::ostream& o, const char* prefix, const T& t, const Ch*)
@@ -617,9 +614,8 @@ struct has_const_iterator_impl
 };
 
 template <class T>
-struct has_const_iterator :
-    decltype(has_const_iterator_impl::check<T>(nullptr))
-{};
+constexpr bool has_const_iterator_v =
+    decltype(has_const_iterator_impl::check<T>(nullptr))::value;
 
 template <class Ch, class Tr, class Allocator, class OtherAllocator>
 auto make_string_pred(
@@ -652,10 +648,10 @@ auto make_string_pred(const Ch* s, const Allocator&) noexcept
 template <class Ch, class Tr, class Allocator, class T>
 auto make_string_pred(T&& s, const Allocator& a)
  -> std::enable_if_t<
-        !detail::is_std_string_of_ch_tr<
-            std::remove_const_t<std::remove_reference_t<T>>, Ch, Tr>::value
+        !detail::is_std_string_of_ch_tr_v<
+            std::remove_const_t<std::remove_reference_t<T>>, Ch, Tr>
      && !std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>, Ch*>
-     && has_const_iterator<std::remove_reference_t<T>>::value,
+     && has_const_iterator_v<std::remove_reference_t<T>>,
         string_eq<Ch, Tr, Allocator>>
 {
     return string_eq<Ch, Tr, Allocator>(
@@ -666,10 +662,10 @@ auto make_string_pred(T&& s, const Allocator& a)
 template <class Ch, class Tr, class Allocator, class T>
 auto make_string_pred(T&& s, const Allocator&)
  -> std::enable_if_t<
-        !detail::is_std_string_of_ch_tr<
-            std::remove_const_t<std::remove_reference_t<T>>, Ch, Tr>::value
+        !detail::is_std_string_of_ch_tr_v<
+            std::remove_const_t<std::remove_reference_t<T>>, Ch, Tr>
      && !std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>, Ch*>
-     && !has_const_iterator<std::remove_reference_t<T>>::value,
+     && !has_const_iterator_v<std::remove_reference_t<T>>,
         T&&>
 {
     // This "not uses-allocator construction" is intentional because
@@ -678,8 +674,8 @@ auto make_string_pred(T&& s, const Allocator&)
 }
 
 template <class T, class Ch>
-struct is_string_pred : std::is_invocable_r<bool, T, const Ch*, const Ch*>
-{};
+constexpr bool is_string_pred_v =
+    std::is_invocable_r_v<bool, T, const Ch*, const Ch*>;
 
 } // end detail::record_extraction
 
@@ -691,14 +687,14 @@ auto make_record_extractor(
     FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::record_extraction::is_string_pred<std::decay_t<
+        detail::record_extraction::is_string_pred_v<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
                 std::declval<FieldNamePred>(),
-                std::declval<Allocator>()))>, Ch>::value
-     && detail::record_extraction::is_string_pred<std::decay_t<
+                std::declval<Allocator>()))>, Ch>
+     && detail::record_extraction::is_string_pred_v<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
                 std::declval<FieldValuePred>(),
-                std::declval<Allocator>()))>, Ch>::value,
+                std::declval<Allocator>()))>, Ch>,
         record_extractor<
             std::decay_t<
                 decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
@@ -728,10 +724,10 @@ auto make_record_extractor(
     std::size_t target_field_index, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::record_extraction::is_string_pred<std::decay_t<
+        detail::record_extraction::is_string_pred_v<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
                 std::declval<FieldValuePred>(),
-                std::declval<Allocator>()))>, Ch>::value,
+                std::declval<Allocator>()))>, Ch>,
         record_extractor_with_indexed_key<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
                 std::declval<FieldValuePred>(),

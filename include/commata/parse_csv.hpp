@@ -37,7 +37,7 @@ namespace detail::csv {
 template <class T>
 bool do_yield([[maybe_unused]] T& f, [[maybe_unused]] std::size_t location)
 {
-    if constexpr (has_yield<T>::value) {
+    if constexpr (has_yield_v<T>) {
         return f.yield(location);
     } else {
         return false;
@@ -47,7 +47,7 @@ bool do_yield([[maybe_unused]] T& f, [[maybe_unused]] std::size_t location)
 template <class T>
 std::size_t do_yield_location([[maybe_unused]] T& f)
 {
-    if constexpr (has_yield_location<T>::value) {
+    if constexpr (has_yield_location_v<T>) {
         return f.yield_location();
     } else {
         return 0;
@@ -703,12 +703,12 @@ private:
 
     public:
         static constexpr bool enabled =
-            !detail::is_std_reference_wrapper<handler_t>::value
-         && detail::is_with_buffer_control<handler_t>::value;
+            !detail::is_std_reference_wrapper_v<handler_t>
+         && detail::is_with_buffer_control_v<handler_t>;
 
         using full_fledged_handler_t =
             std::conditional_t<
-                detail::is_full_fledged<handler_t>::value,
+                detail::is_full_fledged_v<handler_t>,
                 handler_t,
                 detail::full_fledged_handler<
                     handler_t, detail::thru_buffer_control>>;
@@ -747,8 +747,8 @@ private:
 
     public:
         static constexpr bool enabled =
-            !detail::is_std_reference_wrapper<handler_t>::value
-         && detail::is_without_buffer_control<handler_t>::value;
+            !detail::is_std_reference_wrapper_v<handler_t>
+         && detail::is_without_buffer_control_v<handler_t>;
 
         using ret_t = detail::csv::parser<CharInput, full_fledged_handler_t>;
 
@@ -907,9 +907,8 @@ struct are_make_csv_source_args1_impl
 };
 
 template <class Arg1>
-struct are_make_csv_source_args1 :
-    decltype(are_make_csv_source_args1_impl::check<Arg1>(nullptr))
-{};
+constexpr bool are_make_csv_source_args1_v =
+    decltype(are_make_csv_source_args1_impl::check<Arg1>(nullptr))();
 
 struct are_make_csv_source_args2_impl
 {
@@ -923,20 +922,19 @@ struct are_make_csv_source_args2_impl
 };
 
 template <class Arg1, class Arg2>
-struct are_make_csv_source_args2 :
-    decltype(are_make_csv_source_args2_impl::check<Arg1, Arg2>(nullptr))
-{};
+constexpr bool are_make_csv_source_args2_v =
+    decltype(are_make_csv_source_args2_impl::check<Arg1, Arg2>(nullptr))();
 
 } // detail::csv
 
 template <class Arg1, class Arg2, class... OtherArgs>
 auto parse_csv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)
  -> std::enable_if_t<
-        detail::csv::are_make_csv_source_args1<Arg1>::value
-     || detail::csv::are_make_csv_source_args2<Arg1, Arg2>::value,
+        detail::csv::are_make_csv_source_args1_v<Arg1>
+     || detail::csv::are_make_csv_source_args2_v<Arg1, Arg2>,
         bool>
 {
-    if constexpr (detail::csv::are_make_csv_source_args2<Arg1, Arg2>::value) {
+    if constexpr (detail::csv::are_make_csv_source_args2_v<Arg1, Arg2>) {
         return make_csv_source(
                 std::forward<Arg1>(arg1), std::forward<Arg2>(arg2))
             (std::forward<OtherArgs>(other_args)...)();

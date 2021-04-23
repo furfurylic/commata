@@ -64,9 +64,8 @@ struct has_get_physical_position_impl
 };
 
 template <class T>
-struct has_get_physical_position :
-    decltype(has_get_physical_position_impl::check<T>(nullptr))
-{};
+constexpr bool has_get_physical_position_v =
+    decltype(has_get_physical_position_impl::check<T>(nullptr))();
 
 template <class Ch, class Allocator,
     std::underlying_type_t<primitive_table_pull_handle> Handle>
@@ -335,7 +334,7 @@ private:
 
 public:
     static constexpr bool physical_position_available =
-        detail::pull::has_get_physical_position<parser_t>::value;
+        detail::pull::has_get_physical_position_v<parser_t>;
 
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
@@ -505,12 +504,11 @@ public:
     }
 
     std::pair<std::size_t, std::size_t> get_physical_position() const
-        noexcept((!detail::pull::has_get_physical_position<parser_t>::value)
+        noexcept((!detail::pull::has_get_physical_position_v<parser_t>)
               || noexcept(std::declval<const parser_t&>()
                             .get_physical_position()))
     {
-        if constexpr (detail::pull::
-                has_get_physical_position<parser_t>::value) {
+        if constexpr (detail::pull::has_get_physical_position_v<parser_t>) {
             return ap_.member().get_physical_position();
         } else {
             return { npos, npos };

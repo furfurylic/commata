@@ -878,9 +878,8 @@ struct is_convertible_numeric_type_impl
 };
 
 template <class T>
-struct is_convertible_numeric_type :
-    decltype(is_convertible_numeric_type_impl::check<T>(nullptr))
-{};
+constexpr bool is_convertible_numeric_type_v =
+    decltype(is_convertible_numeric_type_impl::check<T>(nullptr))();
 
 // D must derive from raw_converter_base<D, H> (CRTP)
 // and must have member functions "engine" for const char* and const wchar_t*
@@ -1033,14 +1032,8 @@ struct has_simple_invalid_format_impl
 };
 
 template <class F, class Ch>
-struct has_simple_invalid_format :
-    decltype(has_simple_invalid_format_impl<Ch>::template
-        check<F>(nullptr))
-{};
-
-template <class F, class Ch>
 constexpr bool has_simple_invalid_format_v =
-    has_simple_invalid_format<F, Ch>::value;
+    decltype(has_simple_invalid_format_impl<Ch>::template check<F>(nullptr))();
 
 template <class Ch>
 struct has_simple_out_of_range_impl
@@ -1057,14 +1050,8 @@ struct has_simple_out_of_range_impl
 };
 
 template <class F, class Ch>
-struct has_simple_out_of_range :
-    decltype(has_simple_out_of_range_impl<Ch>::template
-        check<F>(nullptr))
-{};
-
-template <class F, class Ch>
 constexpr bool has_simple_out_of_range_v =
-    has_simple_out_of_range<F, Ch>::value;
+    decltype(has_simple_out_of_range_impl<Ch>::template check<F>(nullptr))();
 
 struct has_simple_empty_impl
 {
@@ -1078,12 +1065,8 @@ struct has_simple_empty_impl
 };
 
 template <class F>
-struct has_simple_empty :
-    decltype(has_simple_empty_impl::check<F>(nullptr))
-{};
-
-template <class F>
-constexpr bool has_simple_empty_v = has_simple_empty<F>::value;
+constexpr bool has_simple_empty_v =
+    decltype(has_simple_empty_impl::check<F>(nullptr))();
 
 template <class T>
 struct conversion_error_facade
@@ -1851,20 +1834,16 @@ void swap(nontrivial_store<T, N>& left, nontrivial_store<T, N>& right)
 }
 
 template <class T, class A>
-struct is_acceptable_arg :
-    std::bool_constant<
-        std::is_base_of_v<replacement_fail_t, std::decay_t<A>>
-     || std::is_base_of_v<replacement_ignore_t, std::decay_t<A>>
-     || std::is_constructible_v<T, A>>
-{};
+constexpr bool is_acceptable_arg_v =
+    std::is_base_of_v<replacement_fail_t, std::decay_t<A>>
+ || std::is_base_of_v<replacement_ignore_t, std::decay_t<A>>
+ || std::is_constructible_v<T, A>;
 
 template <class T, class A>
-struct is_nothrow_arg :
-    std::bool_constant<
-        std::is_base_of_v<replacement_fail_t, std::decay_t<A>>
-     || std::is_base_of_v<replacement_ignore_t, std::decay_t<A>>
-     || std::is_nothrow_constructible_v<T, A>>
-{};
+constexpr bool is_nothrow_arg_v =
+    std::is_base_of_v<replacement_fail_t, std::decay_t<A>>
+ || std::is_base_of_v<replacement_ignore_t, std::decay_t<A>>
+ || std::is_nothrow_constructible_v<T, A>;
 
 template <class T>
 constexpr unsigned base_n =
@@ -1908,17 +1887,17 @@ struct base<T, 3> : base<T, 0>
     template <class Empty = T, class InvalidFormat = T,
         class AboveUpperLimit = T,
         std::enable_if_t<
-            is_acceptable_arg<T, Empty>::value
-         && is_acceptable_arg<T, InvalidFormat>::value
-         && is_acceptable_arg<T, AboveUpperLimit>::value>* = nullptr>
+            is_acceptable_arg_v<T, Empty>
+         && is_acceptable_arg_v<T, InvalidFormat>
+         && is_acceptable_arg_v<T, AboveUpperLimit>>* = nullptr>
     explicit base(
         Empty&& on_empty = Empty(),
         InvalidFormat&& on_invalid_format = InvalidFormat(),
         AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit())
             noexcept(std::is_nothrow_default_constructible_v<T>
-                  && is_nothrow_arg<T, Empty>::value
-                  && is_nothrow_arg<T, InvalidFormat>::value
-                  && is_nothrow_arg<T, AboveUpperLimit>::value) :
+                  && is_nothrow_arg_v<T, Empty>
+                  && is_nothrow_arg_v<T, InvalidFormat>
+                  && is_nothrow_arg_v<T, AboveUpperLimit>) :
         base<T, 0>(
             detail::scanner::generic_args_t(),
             std::forward<Empty>(on_empty),
@@ -1935,20 +1914,20 @@ struct base<T, 4> : base<T, 3>
     template <class Empty, class InvalidFormat,
         class AboveUpperLimit, class BelowLowerLimit,
         std::enable_if_t<
-            is_acceptable_arg<T, Empty>::value
-         && is_acceptable_arg<T, InvalidFormat>::value
-         && is_acceptable_arg<T, AboveUpperLimit>::value
-         && is_acceptable_arg<T, BelowLowerLimit>::value>* = nullptr>
+            is_acceptable_arg_v<T, Empty>
+         && is_acceptable_arg_v<T, InvalidFormat>
+         && is_acceptable_arg_v<T, AboveUpperLimit>
+         && is_acceptable_arg_v<T, BelowLowerLimit>>* = nullptr>
     base(
         Empty&& on_empty,
         InvalidFormat&& on_invalid_format,
         AboveUpperLimit&& on_above_upper_limit,
         BelowLowerLimit&& on_below_lower_limit)
             noexcept(std::is_nothrow_default_constructible_v<T>
-                  && is_nothrow_arg<T, Empty>::value
-                  && is_nothrow_arg<T, InvalidFormat>::value
-                  && is_nothrow_arg<T, AboveUpperLimit>::value
-                  && is_nothrow_arg<T, BelowLowerLimit>::value) :
+                  && is_nothrow_arg_v<T, Empty>
+                  && is_nothrow_arg_v<T, InvalidFormat>
+                  && is_nothrow_arg_v<T, AboveUpperLimit>
+                  && is_nothrow_arg_v<T, BelowLowerLimit>) :
         base<T, 3>(
             detail::scanner::generic_args_t(),
             std::forward<Empty>(on_empty),
@@ -1967,22 +1946,22 @@ struct base<T, 5> : base<T, std::is_default_constructible<T>::value ? 4 : 0>
         class AboveUpperLimit, class BelowLowerLimit,
         class Underflow,
         std::enable_if_t<
-            is_acceptable_arg<T, Empty>::value
-         && is_acceptable_arg<T, InvalidFormat>::value
-         && is_acceptable_arg<T, AboveUpperLimit>::value
-         && is_acceptable_arg<T, BelowLowerLimit>::value
-         && is_acceptable_arg<T, Underflow>::value>* = nullptr>
+            is_acceptable_arg_v<T, Empty>
+         && is_acceptable_arg_v<T, InvalidFormat>
+         && is_acceptable_arg_v<T, AboveUpperLimit>
+         && is_acceptable_arg_v<T, BelowLowerLimit>
+         && is_acceptable_arg_v<T, Underflow>>* = nullptr>
     base(
         Empty&& on_empty,
         InvalidFormat&& on_invalid_format,
         AboveUpperLimit&& on_above_upper_limit,
         BelowLowerLimit&& on_below_lower_limit,
         Underflow&& on_underflow)
-            noexcept(is_nothrow_arg<T, Empty>::value
-                  && is_nothrow_arg<T, InvalidFormat>::value
-                  && is_nothrow_arg<T, AboveUpperLimit>::value
-                  && is_nothrow_arg<T, BelowLowerLimit>::value
-                  && is_nothrow_arg<T, Underflow>::value) :
+            noexcept(is_nothrow_arg_v<T, Empty>
+                  && is_nothrow_arg_v<T, InvalidFormat>
+                  && is_nothrow_arg_v<T, AboveUpperLimit>
+                  && is_nothrow_arg_v<T, BelowLowerLimit>
+                  && is_nothrow_arg_v<T, Underflow>) :
         base<T, std::is_default_constructible<T>::value ? 4 : 0>(
             detail::scanner::generic_args_t(),
             std::forward<Empty>(on_empty),
@@ -2474,15 +2453,13 @@ public:
 namespace detail::scanner {
 
 template <class T, class Sink, class... As,
-    std::enable_if_t<
-        !detail::is_std_string<T>::value,
-        std::nullptr_t> = nullptr>
+    std::enable_if_t<!detail::is_std_string_v<T>, std::nullptr_t> = nullptr>
 arithmetic_field_translator<T, Sink, fail_if_skipped, As...>
     make_field_translator_na(Sink, replacement_fail_t, As...);
 
 template <class T, class Sink, class ReplaceIfSkipped, class... As,
     std::enable_if_t<
-        !detail::is_std_string<T>::value
+        !detail::is_std_string_v<T>
      && !std::is_base_of_v<std::locale, std::decay_t<ReplaceIfSkipped>>
      && !std::is_base_of_v<replacement_fail_t,std::decay_t<ReplaceIfSkipped>>
      && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
@@ -2492,7 +2469,7 @@ arithmetic_field_translator<T, Sink, replace_if_skipped<T>, As...>
 
 template <class T, class Sink, class... As,
     std::enable_if_t<
-        !detail::is_std_string<T>::value
+        !detail::is_std_string_v<T>
      && ((sizeof...(As) == 0)
       || !(std::is_base_of_v<std::locale, std::decay_t<detail::first_t<As...>>>
         || std::is_constructible_v<replace_if_skipped<T>,
@@ -2503,14 +2480,14 @@ arithmetic_field_translator<T, Sink, std::decay_t<As>...>
 
 template <class T, class Sink, class... As,
     std::enable_if_t<
-        !detail::is_std_string<T>::value,
+        !detail::is_std_string_v<T>,
         std::nullptr_t> = nullptr>
 locale_based_arithmetic_field_translator<T, Sink, fail_if_skipped, As...>
     make_field_translator_na(Sink, std::locale, replacement_fail_t, As...);
 
 template <class T, class Sink, class ReplaceIfSkipped, class... As,
     std::enable_if_t<
-        !detail::is_std_string<T>::value
+        !detail::is_std_string_v<T>
      && !std::is_base_of_v<replacement_fail_t, std::decay_t<ReplaceIfSkipped>>
      && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
         std::nullptr_t> = nullptr>
@@ -2519,7 +2496,7 @@ locale_based_arithmetic_field_translator<T, Sink, replace_if_skipped<T>, As...>
 
 template <class T, class Sink, class... As,
     std::enable_if_t<
-        !detail::is_std_string<T>::value
+        !detail::is_std_string_v<T>
      && ((sizeof...(As) == 0)
       || !std::is_constructible_v<replace_if_skipped<T>,
                                   detail::first_t<As...>>),
@@ -2528,7 +2505,7 @@ locale_based_arithmetic_field_translator<T, Sink, std::decay_t<As>...>
     make_field_translator_na(Sink, std::locale, As&&... as);
 
 template <class T, class Sink,
-    std::enable_if_t<detail::is_std_string<T>::value, std::nullptr_t>
+    std::enable_if_t<detail::is_std_string_v<T>, std::nullptr_t>
         = nullptr>
 string_field_translator<Sink,
         typename T::value_type, typename T::traits_type,
@@ -2537,7 +2514,7 @@ string_field_translator<Sink,
 
 template <class T, class Sink, class ReplaceIfSkipped,
     std::enable_if_t<
-        detail::is_std_string<T>::value
+        detail::is_std_string_v<T>
      && !std::is_base_of_v<replacement_fail_t, std::decay_t<ReplaceIfSkipped>>
      && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
         std::nullptr_t> = nullptr>
@@ -2548,7 +2525,7 @@ string_field_translator<Sink,
 
 template <class T, class Sink, class... As,
     std::enable_if_t<
-        detail::is_std_string<T>::value
+        detail::is_std_string_v<T>
      && ((sizeof...(As) == 0)
       || !std::is_constructible_v<replace_if_skipped<T>,
                                   detail::first_t<As...>>),
@@ -2563,9 +2540,9 @@ string_field_translator<Sink,
 template <class T, class Sink, class... Appendices>
 auto make_field_translator(Sink&& sink, Appendices&&... appendices)
  -> std::enable_if_t<
-        (detail::scanner::is_convertible_numeric_type<T>::value
-      || detail::is_std_string<T>::value)
-     && (detail::scanner::is_output_iterator<std::decay_t<Sink>>::value
+        (detail::scanner::is_convertible_numeric_type_v<T>
+      || detail::is_std_string_v<T>)
+     && (detail::scanner::is_output_iterator_v<std::decay_t<Sink>>
       || std::is_invocable_v<std::decay_t<Sink>&, T>),
         decltype(detail::scanner::make_field_translator_na<T>(
                     std::forward<Sink>(sink),
@@ -2581,9 +2558,9 @@ template <class T, class Allocator, class Sink, class... Appendices>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Sink&& sink, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_std_string<T>::value
+        detail::is_std_string_v<T>
      && std::is_same_v<Allocator, typename T::allocator_type>
-     && (detail::scanner::is_output_iterator<std::decay_t<Sink>>::value
+     && (detail::scanner::is_output_iterator_v<std::decay_t<Sink>>
       || std::is_invocable_v<std::decay_t<Sink>&, T>),
         decltype(detail::scanner::make_field_translator_na<T>(
                     std::forward<Sink>(sink),
@@ -2609,9 +2586,8 @@ struct is_back_insertable_impl
 };
 
 template <class T>
-struct is_back_insertable :
-    decltype(is_back_insertable_impl::check<T>(nullptr))
-{};
+constexpr bool is_back_insertable_v =
+    decltype(is_back_insertable_impl::check<T>(nullptr))();
 
 struct is_insertable_impl
 {
@@ -2630,13 +2606,16 @@ struct is_insertable :
     decltype(is_insertable_impl::check<T>(nullptr))
 {};
 
+template <class T>
+constexpr bool is_insertable_v = is_insertable<T>::value;
+
 template <class Container, class = void>
 struct back_insert_iterator;
 
 template <class Container>
 struct back_insert_iterator<Container,
-    std::enable_if_t<is_insertable<Container>::value
-                  && is_back_insertable<Container>::value>>
+    std::enable_if_t<is_insertable_v<Container>
+                  && is_back_insertable_v<Container>>>
 {
     using type = std::back_insert_iterator<Container>;
 
@@ -2648,8 +2627,8 @@ struct back_insert_iterator<Container,
 
 template <class Container>
 struct back_insert_iterator<Container,
-    std::enable_if_t<is_insertable<Container>::value
-                  && !is_back_insertable<Container>::value>>
+    std::enable_if_t<is_insertable_v<Container>
+                  && !is_back_insertable_v<Container>>>
 {
     using type = std::insert_iterator<Container>;
 
@@ -2667,11 +2646,11 @@ using back_insert_iterator_t = typename back_insert_iterator<Container>::type;
 template <class Container, class... Appendices>
 auto make_field_translator(Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
-        (detail::scanner::is_convertible_numeric_type<
-            typename Container::value_type>::value
-      || detail::is_std_string<typename Container::value_type>::value)
-     && (detail::scanner::is_back_insertable<Container>::value
-      || detail::scanner::is_insertable<Container>::value),
+        (detail::scanner::is_convertible_numeric_type_v<
+            typename Container::value_type>
+      || detail::is_std_string_v<typename Container::value_type>)
+     && (detail::scanner::is_back_insertable_v<Container>
+      || detail::scanner::is_insertable_v<Container>),
         decltype(
             detail::scanner::make_field_translator_na<
                     typename Container::value_type>(
@@ -2688,9 +2667,9 @@ template <class Allocator, class Container, class... Appendices>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_std_string<typename Container::value_type>::value
-     && (detail::scanner::is_back_insertable<Container>::value
-      || detail::scanner::is_insertable<Container>::value),
+        detail::is_std_string_v<typename Container::value_type>
+     && (detail::scanner::is_back_insertable_v<Container>
+      || detail::scanner::is_insertable_v<Container>),
         string_field_translator<
             detail::scanner::back_insert_iterator_t<Container>,
             typename Container::value_type::value_type,

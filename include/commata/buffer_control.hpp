@@ -17,16 +17,12 @@
 namespace commata::detail {
 
 template <class T>
-struct is_with_buffer_control :
-    std::bool_constant<
-        has_get_buffer<T>::value && has_release_buffer<T>::value>
-{};
+constexpr bool is_with_buffer_control_v =
+    has_get_buffer_v<T> && has_release_buffer_v<T>;
 
 template <class T>
-struct is_without_buffer_control :
-    std::bool_constant<
-        (!has_get_buffer<T>::value) && (!has_release_buffer<T>::value)>
-{};
+constexpr bool is_without_buffer_control_v =
+    (!has_get_buffer_v<T>) && (!has_release_buffer_v<T>);
 
 template <class Allocator>
 class default_buffer_control :
@@ -92,12 +88,10 @@ struct thru_buffer_control
 };
 
 template <class Handler>
-struct is_full_fledged :
-    std::bool_constant<
-        is_with_buffer_control<Handler>::value
-     && has_start_buffer<Handler>::value && has_end_buffer<Handler>::value
-     && has_empty_physical_line<Handler>::value>
-{};
+constexpr bool is_full_fledged_v =
+    is_with_buffer_control_v<Handler>
+ && has_start_buffer_v<Handler> && has_end_buffer_v<Handler>
+ && has_empty_physical_line_v<Handler>;
 
 // noexcept-ness of the member functions except the ctor and the dtor does not
 // count because they are invoked as parts of a willingly-throwing operation,
@@ -108,7 +102,7 @@ class full_fledged_handler :
     BufferControl
 {
     static_assert(!std::is_reference_v<Handler>, "");
-    static_assert(!is_full_fledged<Handler>::value, "");
+    static_assert(!is_full_fledged_v<Handler>, "");
 
     Handler handler_;
 
@@ -142,14 +136,14 @@ public:
         [[maybe_unused]] const char_type* buffer_begin,
         [[maybe_unused]] const char_type* buffer_end)
     {
-        if constexpr (has_start_buffer<Handler>()) {
+        if constexpr (has_start_buffer_v<Handler>) {
             handler_.start_buffer(buffer_begin, buffer_end);
         }
     }
 
     void end_buffer([[maybe_unused]] const char_type* buffer_end)
     {
-        if constexpr (has_end_buffer<Handler>()) {
+        if constexpr (has_end_buffer_v<Handler>) {
             handler_.end_buffer(buffer_end);
         }
     }
@@ -176,7 +170,7 @@ public:
 
     auto empty_physical_line([[maybe_unused]] const char_type* where)
     {
-        if constexpr (has_empty_physical_line<Handler>()) {
+        if constexpr (has_empty_physical_line_v<Handler>) {
             return handler_.empty_physical_line(where);
         }
     }

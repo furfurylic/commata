@@ -150,14 +150,13 @@ auto make_empty_physical_line_aware(Handler&& handler)
     noexcept(
         std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler>)
  -> std::enable_if_t<
-        !detail::is_std_reference_wrapper<std::decay_t<Handler>>::value,
+        !detail::is_std_reference_wrapper_v<std::decay_t<Handler>>,
         std::conditional_t<
-            detail::has_empty_physical_line<std::decay_t<Handler>>::value,
+            detail::has_empty_physical_line_v<std::decay_t<Handler>>,
             std::decay_t<Handler>,
             empty_physical_line_aware_handler<std::decay_t<Handler>>>>
 {
-    if constexpr (detail::has_empty_physical_line<std::decay_t<Handler>>
-                    ::value) {
+    if constexpr (detail::has_empty_physical_line_v<std::decay_t<Handler>>) {
         return std::forward<Handler>(handler);
     } else {
         return empty_physical_line_aware_handler<std::decay_t<Handler>>(
@@ -169,7 +168,7 @@ template <class Handler>
 auto make_empty_physical_line_aware(
     std::reference_wrapper<Handler> handler) noexcept
  -> std::conditional_t<
-        detail::has_empty_physical_line<Handler>::value,
+        detail::has_empty_physical_line_v<Handler>,
         reference_handler<Handler>,
         empty_physical_line_aware_handler<reference_handler<Handler>>>
 {
