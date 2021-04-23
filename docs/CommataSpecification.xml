@@ -6164,11 +6164,8 @@ template &lt;class Allocator, class Container, class... Appendices>
       <name>Header <c>"commama/table_pull.hpp"</c> synopsis</name>
 
       <codeblock>
-#include &lt;iterator>
 #include &lt;memory>
-#include &lt;ostream>
-#include &lt;stdexcept>
-#include &lt;string>
+#include &lt;string_view>
 #include &lt;type_traits>
 
 namespace commata {
@@ -6206,87 +6203,6 @@ namespace commata {
   template &lt;class TableSource,
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class table_pull;
-
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator==(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator==(const table_pull&lt;TableSource, Allocator>&amp;   v,
-                    const Other&amp;                                o) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator==(const Other&amp;                                o,
-                    const table_pull&lt;TableSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator!=(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator!=(const table_pull&lt;TableSource, Allocator>&amp;   l,
-                    const Other&amp;                                r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator!=(const Other&amp;                                l,
-                    const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator&lt; (const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator&lt; (const table_pull&lt;TableSource, Allocator>&amp;   l,
-                    const Other&amp;                                r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator&lt; (const Other&amp;                                l,
-                    const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator> (const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator> (const table_pull&lt;TableSource, Allocator>&amp;   l,
-                    const Other&amp;                                r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator> (const Other&amp;                                l,
-                    const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator&lt;=(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator&lt;=(const table_pull&lt;TableSource, Allocator>&amp;   l,
-                    const Other&amp;                                r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator&lt;=(const Other&amp;                                l,
-                    const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator>=(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator>=(const table_pull&lt;TableSource, Allocator>&amp;   l,
-                    const Other&amp;                                r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator>=(const Other&amp;                                l,
-                    const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-
-  template &lt;class TableSource, class Allocator>
-    std::basic_ostream&lt;typename TableSource::char_type, typename TableSource::traits_type>&amp;
-      operator&lt;&lt;(std::basic_ostream&lt;typename TableSource::char_type,
-                                    typename TableSource::traits_type>&amp; os,
-                 const table_pull&lt;TableSource, Allocator>&amp; o);
-
-  template &lt;class TableSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TableSource::char_type,
-                      typename TableSource::traits_type, OtherAllocator>&amp;
-      operator+=(std::basic_string&lt;typename TableSource::char_type,
-                                   typename TableSource::traits_type, OtherAllocator>&amp; left,
-                 const table_pull&lt;TableSource, Allocator>&amp; right);
-  template &lt;class TableSource, class Allocator,
-            class OtherAllocator = std::allocator&lt;typename TableSource::char_type>>
-    std::basic_string&lt;typename TableSource::char_type,
-                      std::char_traits&lt;typename TableSource::char_type>,
-                      OtherAllocator>
-      to_string(const table_pull&lt;TableSource, Allocator>&amp; o,
-                const OtherAllocator&amp; alloc = Allocator());
 
   template &lt;class TableSource, class... Appendices>
     table_pull&lt;std::decay_t&lt;TableSource>>
@@ -6657,18 +6573,7 @@ namespace commata {
     using char_type      = typename TableSource::char_type;
     using traits_type    = typename TableSource::traits_type;
     using allocator_type = Allocator;
-
-    using value_type      = const char_type;
-    using reference       = value_type&amp;;
-    using const_reference = reference;
-    using pointer         = value_type*;
-    using const_pointer   = pointer;
-    using size_type       = std::size_t;
-    using difference_type = std::ptrdiff_t;
-    using iterator        = value_type*;
-    using const_iterator  = iterator;
-    using reverse_iterator       = std::reverse_iterator&lt;iterator>;
-    using const_reverse_iterator = std::reverse_iterator&lt;const_iterator>;
+    using view_type      = std::basic_string_view&lt;char_type, traits_type>;
 
     <c>// <n><xref id="table_pull.physical_position_available"/>, physical position availability:</n></c>
     static constexpr bool physical_position_available = <nc>see below</nc>;
@@ -6699,118 +6604,10 @@ namespace commata {
     explicit operator bool() const noexcept;
     std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<nc>see below</nc>);
     std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
-    const_iterator begin()  const noexcept;
-    const_iterator cbegin() const noexcept;
-    const_iterator end()  const noexcept;
-    const_iterator cend() const noexcept;
-    const_reverse_iterator rbegin()  const noexcept;
-    const_reverse_iterator crbegin() const noexcept;
-    const_reverse_iterator rend()  const noexcept;
-    const_reverse_iterator crend() const noexcept;
-    const_reference operator[](size_type pos) const;
-    const_reference at(size_type pos) const;
-    const_reference front() const;
-    const_reference back() const;
-    const_pointer c_str() const noexcept;
-    const_pointer data()  const noexcept;
-    size_type size() const noexcept;
-    size_type max_size() const noexcept;
-    bool empty() const noexcept;
-
-    template &lt;class OtherTr = std::char_traits&lt;char_type>,
-              class OtherAllocator = std::allocator&lt;char_type>>
-      explicit operator std::basic_string&lt;char_type, OtherTr, OtherAllocator>() const;
+    const char_type* c_str() const noexcept;
+    const view_type&amp; operator*() const noexcept;
+    const view_type* operator->() const noexcept;
   };
-
-  <c>// <n><xref id="table_pull.comparison"/>, table_pull comparison functions:</n></c>
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator==(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator==(const table_pull&lt;TableSource, Allocator>&amp;   v,
-                    const Other&amp;                                o) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator==(const Other&amp;                                o,
-                    const table_pull&lt;TableSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
-
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator!=(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator!=(const table_pull&lt;TableSource, Allocator>&amp;   l,
-                    const Other&amp;                                r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator!=(const Other&amp;                                l,
-                    const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator&lt; (const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator&lt; (const table_pull&lt;TableSource, Allocator>&amp;   l,
-                    const Other&amp;                                r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator&lt; (const Other&amp;                                l,
-                    const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator> (const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator> (const table_pull&lt;TableSource, Allocator>&amp;   l,
-                    const Other&amp;                                r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator> (const Other&amp;                                l,
-                    const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator&lt;=(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator&lt;=(const table_pull&lt;TableSource, Allocator>&amp;   l,
-                    const Other&amp;                                r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator&lt;=(const Other&amp;                                l,
-                    const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-
-  template &lt;class TableSourceL, class TableSourceR,
-            class AllocatorL, class AllocatorR>
-    bool operator>=(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                    const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator>=(const table_pull&lt;TableSource, Allocator>&amp;   l,
-                    const Other&amp;                                r) noexcept(<nc>see below</nc>);
-  template &lt;class TableSource, class Allocator, class Other>
-    bool operator>=(const Other&amp;                                l,
-                    const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-
-  <c>// <n><xref id="table_pull.io"/>, <c>table_pull</c> inserters:</n></c>
-  template &lt;class TableSource, class Allocator>
-    std::basic_ostream&lt;typename TableSource::char_type, typename TableSource::traits_type>&amp;
-      operator&lt;&lt;(std::basic_ostream&lt;typename TableSource::char_type,
-                                    typename TableSource::traits_type>&amp; os,
-                 const table_pull&lt;TableSource, Allocator>&amp; o);
-
-  <c>// <n><xref id="table_pull.conversion"/>, table_pull conversion:</n></c>
-  template &lt;class TableSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TableSource::char_type,
-                      typename TableSource::traits_type, OtherAllocator>&amp;
-      operator+=(std::basic_string&lt;typename TableSource::char_type,
-                                   typename TableSource::traits_type, OtherAllocator>&amp; left,
-                 const table_pull&lt;TableSource, Allocator>&amp; right);
-
-  template &lt;class TableSource, class Allocator,
-            class OtherAllocator = std::allocator&lt;typename TableSource::char_type>>
-    std::basic_string&lt;typename TableSource::char_type,
-                      std::char_traits&lt;typename TableSource::char_type>,
-                      OtherAllocator>
-      to_string(const table_pull&lt;TableSource, Allocator>&amp; o,
-                const OtherAllocator&amp; alloc = Allocator());
 
   <c>// <n><xref id="table_pull.creation"/>, table_pull creation functions:</n></c>
   template &lt;class TableSource, class... Appendices>
@@ -6920,7 +6717,7 @@ table_pull&amp; operator()(std::size_t n = 0);
           <returns><c>*this</c>.</returns>
           <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
           <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::field) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
-          <remark>Invalidates all pointers that have been returned by <c>begin</c>, <c>cbegin</c>, <c>end</c> and <c>cend</c>.
+          <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
                   When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</remark>
         </code-item>
 
@@ -6933,7 +6730,7 @@ table_pull&amp; skip_records(std::size_t n = 0);
           <returns><c>*this</c>.</returns>
           <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
           <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
-          <remark>Invalidates all pointers that have been returned by <c>begin</c>, <c>cbegin</c>, <c>end</c> and <c>cend</c>.
+          <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
                   When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</remark>
         </code-item>
       </section>
@@ -7056,308 +6853,17 @@ std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
 
         <code-item>
           <code>
-const_iterator begin()  const noexcept;
-const_iterator cbegin() const noexcept;
+const char_type* c_str() const noexcept;
           </code>
           <returns>A pointer that points the first element of a null-terminated sequence of the current string value.</returns>
         </code-item>
 
         <code-item>
           <code>
-const_iterator end()  const noexcept;
-const_iterator cend() const noexcept;
+const view_type&amp; operator*() const noexcept;
+const view_type* operator->() const noexcept;
           </code>
-          <returns>A pointer that points the terminating zero character element of a null-terminated sequence of the current string value.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-const_reverse_iterator rbegin()  const noexcept;
-const_reverse_iterator crbegin() const noexcept;
-          </code>
-          <returns><c>reverse_iterator(cend())</c>.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-const_reverse_iterator rend()  const noexcept;
-const_reverse_iterator crend() const noexcept;
-          </code>
-          <returns><c>reverse_iterator(cbegin())</c>.</returns>
-        </code-item>
-
-
-        <code-item>
-          <code>
-const_reference operator[](size_type pos) const;
-          </code>
-          <requires><c>pos &lt;= size()</c>.</requires>
-          <returns><c>*(cbegin() + pos)</c>.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-const_reference at(size_type pos) const;
-          </code>
-          <returns><c>*(cbegin() + pos)</c>.</returns>
-          <throws><c>std::out_of_range</c> if <c>pos >= size()</c>.</throws>
-        </code-item>
-
-        <code-item>
-          <code>
-const_reference front() const;
-          </code>
-          <requires><c>!empty()</c>.</requires>
-          <returns><c>*cbegin()</c>.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-const_reference back() const;
-          </code>
-          <requires><c>!empty()</c>.</requires>
-          <returns><c>*(cend() - 1)</c>.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-const_pointer c_str() const noexcept;
-const_pointer data()  const noexcept;
-          </code>
-          <returns><c>cbegin()</c>.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-size_type size() const noexcept;
-          </code>
-          <returns><c>cend() - cbegin()</c>.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-size_type max_size() const noexcept;
-          </code>
-          <returns>The largest possible number that the member function <c>size</c> returns.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-bool empty() const noexcept;
-          </code>
-          <returns><c>size() == 0</c>.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-template &lt;class OtherTr = std::char_traits&lt;char_type>,
-          class OtherAllocator = std::allocator&lt;char_type>>
-  explicit operator std::basic_string&lt;char_type, OtherTr, OtherAllocator>() const;
-          </code>
-          <returns><c>std::basic_string&lt;char_type, OtherTr, OtherAllocator>(cbegin(), cend())</c>.</returns>
-        </code-item>
-      </section>
-
-      <section id="table_pull.comparison">
-        <name><c>table_pull</c> comparison functions</name>
-
-        <p>Function templates described in this subclause that take template parameters <c>TableSourceL</c> and <c>TableSourceR</c> shall not participate in overload resolution unless <c>TableSourceL::char_type</c> and <c>TableSourceL::traits_type</c> are the same types as <c>TableSourceR::char_type</c> and <c>TableSourceR::traits_type</c> respectively.</p>
-        <p>Function templates described in this subclause that take template parameters <c>TableSource</c> and <c>Other</c> shall not participate in overload resolution unless <c>std::is_convertible_v&lt;Other, typename TableSource::char_type*></c> is not <c>false</c> or <c>Other</c> is the same type as <c>std::basic_string&lt;typename TableSource::char_type, typename TableSource::traits_type, Allocator></c> for a certain type <c>Allocator</c>.</p>
-
-        <section id="table_pull.comparison.eq">
-          <name><c>operator==</c></name>
-          <code-item>
-            <code>
-template &lt;class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-  bool operator==(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                  const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-            </code>
-            <returns><c>l.size() == r.size() &amp;&amp; TableSourceL::traits_type::compare(l.data(), r.data(), l.size()) == 0</c>.</returns>
-          </code-item>
-
-          <code-item>
-            <code>
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator==(const table_pull&lt;TableSource, Allocator>&amp;   v,
-                  const Other&amp;                                o) noexcept(<nc>see below</nc>);
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator==(const Other&amp;                                o,
-                  const table_pull&lt;TableSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
-            </code>
-            <returns>If <c>std::is_convertible_v&lt;Other, const typename TableSource::char_type*></c> is <c>false</c>, <c>v.size() == o.size() &amp;&amp; Tr::compare(v.data(), o.data(), v.size()) == 0</c>.
-                     Otherwise, <c>v.size() == TableSource::traits_type::length(o) &amp;&amp; TableSource::traits_type::compare(v.data(), o, v.size()) == 0</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> are <c>true</c> if <c>std::is_convertible_v&lt;Other, const typename TableSource::char_type*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
-          </code-item>
-        </section>
-
-        <section id="table_pull.comparison.ne">
-          <name><c>operator!=</c></name>
-          <code-item>
-            <code>
-template &lt;class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-  bool operator!=(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                  const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator!=(const table_pull&lt;TableSource, Allocator>&amp;   v,
-                  const Other&amp;                                o) noexcept(<nc>see below</nc>);
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator!=(const Other&amp;                                o,
-                  const table_pull&lt;TableSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
-            </code>
-            <returns><c>left != right</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> are <c>true</c> if <c>std::is_convertible_v&lt;Other, const typename TableSource::char_type*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
-          </code-item>
-        </section>
-
-        <section id="table_pull.comparison.lt">
-          <name><c>operator&lt;</c></name>
-          <code-item>
-            <code>
-template &lt;class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-  bool operator&lt; (const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                  const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-            </code>
-            <returns><c>c &lt; 0 || (c == 0 &amp;&amp; l.size() &lt; r.size())</c> where <c>c</c> is the return value of <c>TableSourceL::traits_type::compare(l.data(), r.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>l.size()</c> and <c>r.size()</c>.</returns>
-          </code-item>
-
-          <code-item>
-            <code>
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator&lt; (const table_pull&lt;TableSource, Allocator>&amp;   v,
-                  const Other&amp;                                o) noexcept(<nc>see below</nc>);
-            </code>
-            <returns>If <c>std::is_convertible_v&lt;Other, typename TableSource::char_type*></c> is <c>false</c>,
-                     <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; o.size()</c> where <c>c</c> is the return value of <c>TableSource::traits_type::compare(v.data(), o.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>o.size()</c>.
-                     Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; v.size() &lt; TableSource::traits_type::length(o)</c> where <c>c</c> is the return value of <c>TableSource::traits_type::compare(v.data(), o, rlen)</c> and <c>rlen</c> is the smaller of <c>v.size()</c> and <c>Tr::length(o)</c>.</returns>
-            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible_v&lt;Other, const typename TableSource::char_type*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
-          </code-item>
-
-          <code-item>
-            <code>
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator&lt; (const Other&amp;                                o,
-                  const table_pull&lt;TableSource, Allocator>&amp;   v) noexcept(<nc>see below</nc>);
-            </code>
-            <returns>If <c>std::is_convertible_v&lt;Other, typename TableSource::char_type*></c> is <c>false</c>,
-                     <c>c &lt; 0 || (c == 0 &amp;&amp; o.size() &lt; v.size()</c> where <c>c</c> is the return value of <c>TableSource::traits_type::compare(o.data(), v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>o.size()</c> and <c>v.size()</c>.
-                     Otherwise, <c>c &lt; 0 || (c == 0 &amp;&amp; TableSource::traits_type::length(o) &lt; v.size()</c> where <c>c</c> is the return value of <c>TableSource::traits_type::compare(o, v.data(), rlen)</c> and <c>rlen</c> is the smaller of <c>Tr::length(o)</c> and <c>v.size()</c>.</returns>
-            <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::is_convertible_v&lt;Other, const typename TableSource::char_type*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
-          </code-item>
-        </section>
-
-        <section id="table_pull.comparison.gt">
-          <name><c>operator></c></name>
-          <code-item>
-            <code>
-template &lt;class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-  bool operator> (const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                  const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator> (const table_pull&lt;TableSource, Allocator>&amp;   l,
-                  const Other&amp;                                r) noexcept(<nc>see below</nc>);
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator> (const Other&amp;                                l,
-                  const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-            </code>
-            <returns><c>r &lt; l</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible_v&lt;Other, const typename TableSource::char_type*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
-          </code-item>
-        </section>
-
-        <section id="table_pull.comparison.le">
-          <name><c>operator&lt;=</c></name>
-          <code-item>
-            <code>
-template &lt;class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-  bool operator&lt;=(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                  const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator&lt;=(const table_pull&lt;TableSource, Allocator>&amp;   l,
-                  const Other&amp;                                r) noexcept(<nc>see below</nc>);
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator&lt;=(const Other&amp;                                l,
-                  const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-            </code>
-            <returns><c>!(r &lt; l)</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible_v&lt;Other, const typename TableSource::char_type*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
-          </code-item>
-        </section>
-
-        <section id="table_pull.comparison.ge">
-          <name><c>operator>=</c></name>
-          <code-item>
-            <code>
-template &lt;class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-  bool operator>=(const table_pull&lt;TableSourceL, AllocatorL>&amp; l,
-                  const table_pull&lt;TableSourceR, AllocatorR>&amp; r) noexcept;
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator>=(const table_pull&lt;TableSource, Allocator>&amp;   l,
-                  const Other&amp;                                r) noexcept(<nc>see below</nc>);
-template &lt;class TableSource, class Allocator, class Other>
-  bool operator>=(const Other&amp;                                l,
-                  const table_pull&lt;TableSource, Allocator>&amp;   r) noexcept(<nc>see below</nc>);
-            </code>
-            <returns><c>!(l &lt; r)</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> if <c>std::is_convertible_v&lt;Other, const typename TableSource::char_type*></c> is <c>false</c> and neither <c>o.size()</c> nor <c>o.data()</c> is potentially-throwing.</remark>
-          </code-item>
-        </section>
-      </section>
-
-      <section id="table_pull.io">
-        <name><c>table_pull</c> inserters</name>
-        <code-item>
-          <code>
-template &lt;class TableSource, class Allocator>
-  std::basic_ostream&lt;typename TableSource::char_type, typename TableSource::traits_type>&amp;
-    operator&lt;&lt;(std::basic_ostream&lt;typename TableSource::char_type,
-                                  typename TableSource::traits_type>&amp; os,
-                const table_pull&lt;TableSource, Allocator>&amp; o);
-          </code>
-          <effects>Behaves as a formatted output function of <c>os</c>.
-                   Forms a character sequence <c>seq</c>, initially consisting of the elements defined by the range [<c>o.cbegin()</c>, <c>o.cend()</c>).
-                   Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c>, where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>; then calls <c>os.width(0)</c>.</effects>
-          <returns><c>os</c>.</returns>
-        </code-item>
-      </section>
-
-      <section id="table_pull.conversion">
-        <name><c>table_pull</c> conversion</name>
-
-        <code-item>
-          <code>
-template &lt;class TableSource, class Allocator, class OtherAllocator>
-  std::basic_string&lt;typename TableSource::char_type,
-                    typename TableSource::traits_type, OtherAllocator>&amp;
-    operator+=(std::basic_string&lt;typename TableSource::char_type,
-                                 typename TableSource::traits_type, OtherAllocator>&amp; left,
-               const table_pull&lt;TableSource, Allocator>&amp; right);
-          </code>
-          <effects>Calls <c>left.append(right.cbegin(), right.cend())</c>.</effects>
-          <returns><c>left</c>.</returns>
-          <remark>If an exception is thrown by an instance of these function templates, the invocation shall have no effect.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-template &lt;class TableSource, class Allocator,
-          class OtherAllocator = std::allocator&lt;typename TableSource::char_type>>
-  std::basic_string&lt;typename TableSource::char_type,
-                    std::char_traits&lt;typename TableSource::char_type>,
-                    OtherAllocator>
-    to_string(const table_pull&lt;TableSource, Allocator>&amp; o,
-              const OtherAllocator&amp; alloc = OtherAllocator());
-          </code>
-          <effects><p>Equivalent to:</p>
-                   <code>return std::basic_string&lt;typename TableSource::char_type,
-                         std::char_traits&lt;typename TableSource::char_type>,
-                         OtherAllocator>(o.cbegin(), o.cend(), alloc);</code>
-          </effects>
+          <returns>A reference or a pointer to a string view object that represents the current string value.</returns>
         </code-item>
       </section>
 

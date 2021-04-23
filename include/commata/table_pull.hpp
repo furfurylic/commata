@@ -9,22 +9,17 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
-#include <limits>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
-#include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "allocation_only_allocator.hpp"
 #include "buffer_size.hpp"
-#include "empty_string.hpp"
-#include "formatted_output.hpp"
 #include "member_like_base.hpp"
-#include "string_value.hpp"
 #include "wrapper_handlers.hpp"
 
 namespace commata {
@@ -634,6 +629,7 @@ public:
     using char_type = typename TableSource::char_type;
     using traits_type = typename TableSource::traits_type;
     using allocator_type = Allocator;
+    using view_type = std::basic_string_view<char_type, traits_type>;
 
 private:
     using primitive_t = primitive_table_pull<TableSource, allocator_type,
@@ -659,25 +655,13 @@ private:
     bool empty_physical_line_aware_;
 
     table_pull_state last_state_;
-    std::pair<char_type*, char_type*> last_;
+    view_type last_;
     std::basic_string<char_type, traits_type, Allocator> value_;
 
     std::size_t i_;
     std::size_t j_;
 
 public:
-    using value_type = const char_type;
-    using reference = value_type&;
-    using const_reference = reference;
-    using pointer = value_type*;
-    using const_pointer = pointer;
-    using size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
-    using iterator = value_type*;
-    using const_iterator = iterator;
-    using reverse_iterator = std::reverse_iterator<iterator>;
-    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-
     static constexpr bool physical_position_available =
         primitive_t::physical_position_available;
 
@@ -702,7 +686,7 @@ public:
         p_(std::allocator_arg, alloc, std::forward<TableSourceR>(in),
             ((buffer_size > 1) ? buffer_size : 2)),
         empty_physical_line_aware_(false),
-        last_state_(table_pull_state::before_parse), last_(empty_string()),
+        last_state_(table_pull_state::before_parse), last_(),
         value_(alloc), i_(0), j_(0)
     {}
 
@@ -710,7 +694,7 @@ public:
         p_(std::move(other.p_)),
         empty_physical_line_aware_(other.empty_physical_line_aware_),
         last_state_(std::exchange(other.last_state_, table_pull_state::eof)),
-        last_(std::exchange(other.last_, empty_string())),
+        last_(std::exchange(other.last_, view_type())),
         value_(std::move(other.value_)),
         i_(std::exchange(other.i_, 0)),
         j_(std::exchange(other.j_, 0))
@@ -761,7 +745,7 @@ public:
             return *this;
         }
 
-        last_ = empty_string();
+        last_ = view_type();
         value_.clear();
         switch (last_state_) {
         case table_pull_state::field:
@@ -832,11 +816,11 @@ private:
                 case primitive_table_pull_state::finalize:
                     do_update(p_[0], p_[1]);                        // throw
                     if (value_.empty()) {
-                        *last_.second = char_type();
+                        const_cast<char_type*>(last_.data())[last_.size()]
+                            = char_type();
                     } else {
                         value_.push_back(char_type());              // throw
-                        last_.first = &value_[0];
-                        last_.second = last_.first + value_.size() - 1;
+                        last_ = view_type(value_.data(), value_.size() - 1);
                     }
                     last_state_ = table_pull_state::field;
                     return;
@@ -847,17 +831,17 @@ private:
                     [[fallthrough]];
                 case primitive_table_pull_state::end_record:
                     last_state_ = table_pull_state::record_end;
-                    last_ = empty_string();
+                    last_ = view_type();
                     return;
                 case primitive_table_pull_state::end_buffer:
-                    if (last_.first != empty_string().first) {
-                        value_.append(last_.first, last_.second);   // throw
-                        last_.first = empty_string().first;
+                    if (!last_.empty()) {
+                        value_.append(last_);                       // throw
+                        last_ = view_type();
                     }
                     break;
                 case primitive_table_pull_state::eof:
                     last_state_ = table_pull_state::eof;
-                    last_ = empty_string();
+                    last_ = view_type();
                     return;
                 default:
                     break;
@@ -865,7 +849,7 @@ private:
             }
         } catch (...) {
             last_state_ = table_pull_state::eof;
-            last_ = empty_string();
+            last_ = view_type();
             throw;
         }
     }
@@ -877,7 +861,7 @@ public:
             return *this;
         }
 
-        last_ = empty_string();
+        last_ = view_type();
         value_.clear();
 
         p_.set_discarding_data(true);
@@ -931,107 +915,19 @@ public:
         }
     }
 
-    const_iterator begin() const noexcept
+    const char_type* c_str() const noexcept
     {
-        return cbegin();
+        return last_.data();
     }
 
-    const_iterator end() const noexcept
+    const view_type& operator*() const noexcept
     {
-        return cend();
+        return last_;
     }
 
-    const_iterator cbegin() const noexcept
+    const view_type* operator->() const noexcept
     {
-        return last_.first;
-    }
-
-    const_iterator cend() const noexcept
-    {
-        return last_.second;
-    }
-
-    const_reverse_iterator rbegin() const noexcept
-    {
-        return crbegin();
-    }
-
-    const_reverse_iterator rend() const noexcept
-    {
-        return crend();
-    }
-
-    const_reverse_iterator crbegin() const noexcept
-    {
-        return const_reverse_iterator(cend());
-    }
-
-    const_reverse_iterator crend() const noexcept
-    {
-        return const_reverse_iterator(cbegin());
-    }
-
-    const_reference operator[](size_type pos) const
-    {
-        // pos == size() is OK, IAW std::basic_string
-        return cbegin()[pos];
-    }
-
-    const_reference at(size_type pos) const
-    {
-        // pos == size() is NG, IAW std::basic_string
-        if (pos >= size()) {
-            std::ostringstream s;
-            s << pos << " is too large for the current string value, "
-                        "whose size is " << size();
-            throw std::out_of_range(s.str());
-        }
-        return (*this)[pos];
-    }
-
-    const_reference front() const
-    {
-        assert(!empty());
-        return *cbegin();
-    }
-
-    const_reference back() const
-    {
-        assert(!empty());
-        return *(cend() - 1);
-    }
-
-    const_pointer c_str() const noexcept
-    {
-        return cbegin();
-    }
-
-    const_pointer data() const noexcept
-    {
-        return cbegin();
-    }
-
-    bool empty() const noexcept
-    {
-        return cbegin() == cend();
-    }
-
-    size_type size() const noexcept
-    {
-        return cend() - cbegin();
-    }
-
-    size_type max_size() const noexcept
-    {
-        return std::numeric_limits<size_type>::max();
-    }
-
-    template <class OtherTr = std::char_traits<char_type>,
-        class OtherAllocator = std::allocator<char_type>>
-    explicit operator
-    std::basic_string<char_type, OtherTr, OtherAllocator>() const
-    {
-        return { cbegin(), cend() };
+        return &last_;
     }
 
 private:
@@ -1039,300 +935,16 @@ private:
     {
         if (!value_.empty()) {
             value_.append(first, last);                             // throw
-        } else if (last_.first != empty_string().first) {
-            TableSource::traits_type::move(last_.second, first, last - first);
-            last_.second += last - first;
+        } else if (!last_.empty()) {
+            traits_type::move(
+                const_cast<char_type*>(last_.data() + last_.size()),
+                first, last - first);
+            last_ = view_type(last_.data(), last_.size() + last - first);
         } else {
-            last_.first = first;
-            last_.second = last;
+            last_ = view_type(first, last - first);
         }
     }
-
-    static std::pair<char_type*, char_type*>
-    empty_string() noexcept
-    {
-        return std::make_pair(
-            &detail::nul<char_type>::value, &detail::nul<char_type>::value);
-    }
 };
-
-template <class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-auto operator==(
-    const table_pull<TableSourceL, AllocatorL>& left,
-    const table_pull<TableSourceR, AllocatorR>& right) noexcept
- -> std::enable_if_t<
-        std::is_same_v<
-            typename TableSourceL::char_type,
-            typename TableSourceR::char_type>
-     && std::is_same_v<
-            typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>, bool>
-{
-    return detail::string_value_eq(left, right);
-}
-
-template <class TableSource, class Allocator, class Right>
-auto operator==(
-    const table_pull<TableSource, Allocator>& left,
-    const Right& right)
-    noexcept(noexcept(detail::string_value_eq(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
-{
-    return detail::string_value_eq(left, right);
-}
-
-template <class TableSource, class Allocator, class Left>
-auto operator==(
-    const Left& left,
-    const table_pull<TableSource, Allocator>& right)
-    noexcept(noexcept(detail::string_value_eq(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
-{
-    return detail::string_value_eq(left, right);
-}
-
-template <class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-auto operator!=(
-    const table_pull<TableSourceL, AllocatorL>& left,
-    const table_pull<TableSourceR, AllocatorR>& right) noexcept
- -> std::enable_if_t<
-        std::is_same_v<
-            typename TableSourceL::char_type,
-            typename TableSourceR::char_type>
-     && std::is_same_v<
-            typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>, bool>
-{
-    return !(left == right);
-}
-
-template <class TableSource, class Allocator, class Right>
-auto operator!=(
-    const table_pull<TableSource, Allocator>& left,
-    const Right& right)
-    noexcept(noexcept(!(left == right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
-{
-    return !(left == right);
-}
-
-template <class TableSource, class Allocator, class Left>
-auto operator!=(
-    const Left& left,
-    const table_pull<TableSource, Allocator>& right)
-    noexcept(noexcept(!(left == right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
-{
-    return !(left == right);
-}
-
-template <class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-auto operator<(
-    const table_pull<TableSourceL, AllocatorL>& left,
-    const table_pull<TableSourceR, AllocatorR>& right) noexcept
- -> std::enable_if_t<
-        std::is_same_v<
-            typename TableSourceL::char_type,
-            typename TableSourceR::char_type>
-     && std::is_same_v<
-            typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>, bool>
-{
-    return detail::string_value_lt(left, right);
-}
-
-template <class TableSource, class Allocator, class Right>
-auto operator<(
-    const table_pull<TableSource, Allocator>& left,
-    const Right& right)
-    noexcept(noexcept(detail::string_value_lt(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
-{
-    return detail::string_value_lt(left, right);
-}
-
-template <class TableSource, class Allocator, class Left>
-auto operator<(
-    const Left& left,
-    const table_pull<TableSource, Allocator>& right)
-    noexcept(noexcept(detail::string_value_lt(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
-{
-    return detail::string_value_lt(left, right);
-}
-
-template <class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-auto operator>(
-    const table_pull<TableSourceL, AllocatorL>& left,
-    const table_pull<TableSourceR, AllocatorR>& right) noexcept
- -> std::enable_if_t<
-        std::is_same_v<
-            typename TableSourceL::char_type,
-            typename TableSourceR::char_type>
-     && std::is_same_v<
-            typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>, bool>
-{
-    return right < left;
-}
-
-template <class TableSource, class Allocator, class Right>
-auto operator>(
-    const table_pull<TableSource, Allocator>& left,
-    const Right& right)
-    noexcept(noexcept(right < left))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
-{
-    return right < left;
-}
-
-template <class TableSource, class Allocator, class Left>
-auto operator>(
-    const Left& left,
-    const table_pull<TableSource, Allocator>& right)
-    noexcept(noexcept(right < left))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
-{
-    return right < left;
-}
-
-template <class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-auto operator<=(
-    const table_pull<TableSourceL, AllocatorL>& left,
-    const table_pull<TableSourceR, AllocatorR>& right) noexcept
- -> std::enable_if_t<
-        std::is_same_v<
-            typename TableSourceL::char_type,
-            typename TableSourceR::char_type>
-     && std::is_same_v<
-            typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>, bool>
-{
-    return !(right < left);
-}
-
-template <class TableSource, class Allocator, class Right>
-auto operator<=(
-    const table_pull<TableSource, Allocator>& left,
-    const Right& right) 
-    noexcept(noexcept(!(right < left)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
-{
-    return !(right < left);
-}
-
-template <class TableSource, class Allocator, class Left>
-auto operator<=(
-    const Left& left,
-    const table_pull<TableSource, Allocator>& right)
-    noexcept(noexcept(!(right < left)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
-{
-    return !(right < left);
-}
-
-template <class TableSourceL, class TableSourceR,
-          class AllocatorL, class AllocatorR>
-auto operator>=(
-    const table_pull<TableSourceL, AllocatorL>& left,
-    const table_pull<TableSourceR, AllocatorR>& right) noexcept
- -> std::enable_if_t<
-        std::is_same_v<
-            typename TableSourceL::char_type,
-            typename TableSourceR::char_type>
-     && std::is_same_v<
-            typename TableSourceL::traits_type,
-            typename TableSourceR::traits_type>, bool>
-{
-    return !(left < right);
-}
-
-template <class TableSource, class Allocator, class Right>
-auto operator>=(
-    const table_pull<TableSource, Allocator>& left,
-    const Right& right)
-    noexcept(noexcept(!(left < right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
-{
-    return !(left < right);
-}
-
-template <class TableSource, class Allocator, class Left>
-auto operator>=(
-    const Left& left,
-    const table_pull<TableSource, Allocator>& right)
-    noexcept(noexcept(!(left < right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
-{
-    return !(left < right);
-}
-
-template <class TableSource, class Allocator, class OtherAllocator>
-auto operator+=(
-    std::basic_string<typename TableSource::char_type,
-        typename TableSource::traits_type, OtherAllocator>& left,
-    const table_pull<TableSource, Allocator>& right)
- -> decltype(left)
-{
-    return detail::string_value_plus_assign(left, right);
-}
-
-template <class TableSource, class Allocator>
-auto operator<<(
-    std::basic_ostream<typename TableSource::char_type,
-                       typename TableSource::traits_type>& os,
-    const table_pull<TableSource, Allocator>& p)
- -> decltype(os)
-{
-    // In C++17, this function will be able to be implemented in terms of
-    // string_view's operator<<
-    const auto n = static_cast<std::streamsize>(p.size());
-    return detail::formatted_output(
-        os, n,
-        [b = p.cbegin(), n](auto* sb) {
-            return sb->sputn(b, n) == n;
-        });
-}
-
-template <class TableSource, class Allocator,
-    class OtherAllocator = std::allocator<typename TableSource::char_type>>
-std::basic_string<typename TableSource::char_type,
-                  std::char_traits<typename TableSource::char_type>,
-                  OtherAllocator> to_string(
-    const table_pull<TableSource, Allocator>& p,
-    const OtherAllocator& alloc = OtherAllocator())
-{
-    return { p.cbegin(), p.cend(), alloc };
-}
 
 template <class TableSource, class... Appendices>
 auto make_table_pull(TableSource&& in, Appendices&&... appendices)

@@ -703,8 +703,10 @@ void pull_parsing_sample()
   // Skip one field and point the next field
   p(1);
 
-  std::cout << p << std::endl;                      // will print "Spica"
-  std::cout << p.skip_record(5)(1) << std::endl;    // will print "Albireo"
+  std::cout << *p << std::endl;                     // will print "Spica"
+  std::cout << p->size() << std::endl;              // will print "Spica"'s
+                                                    // length
+  std::cout << *p.skip_record(5)(1) << std::endl;   // will print "Albireo"
 }
 ```
 
@@ -717,14 +719,10 @@ or fields jumped over. It defaults to `0`. Note that `operator()` cannot make th
 Also note that `skip_record` and `operator()` of a `table_pull` object return
 a reference to the `table_pull` object itself.
 
-The value of the current field where a `table_pull` object points can be inserted
-into character streams with `operator<<`. Commata also offers `to_string` function
-templates to convert the value into an `std::string` object.
-In addition, `table_pull` has member functions `cbegin` and `cend` which return the
-pointers to the first or the past-the-end element of the value.
-The return value of `cbegin` can also be passed to C APIs that expects the sequences
-are terminated with zeros because the return value of `cend` is dereferenceable and
-points the terminating zero.
+The value of the current field where a `table_pull` object points can be got as
+a string view object with `table_pull`'s dereference operators `*` and `->`.
+Additionally, `table_pull`' offers `c_str` member function that returns a pointer
+to a null-terminated sequence suitable for C APIs.
 
 An object of `table_pull` is convertible to `bool`.
 It is converted to `false` if it does not point either an end of a record or
@@ -746,7 +744,7 @@ void pull_parsing_sample2()
 
   while (p.skip_record()(1)) {      // moves to the end of the record and
                                     // skip the first field of the next record
-    v.emplace_back(p.cbegin(), p.cend());
+    v.push_back(std::string(*p));
   }
 
   std::cout << v[0] << std::endl;   // will print "Spica"
