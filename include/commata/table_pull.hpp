@@ -70,9 +70,8 @@ struct has_get_physical_position_impl
 };
 
 template <class T>
-struct has_get_physical_position :
-    decltype(has_get_physical_position_impl::check<T>(nullptr))
-{};
+constexpr bool has_get_physical_position_v =
+    decltype(has_get_physical_position_impl::check<T>(nullptr))();
 
 template <class Ch, class Allocator,
     std::underlying_type_t<primitive_table_pull_handle> Handle>
@@ -351,7 +350,7 @@ private:
 
 public:
     static constexpr bool physical_position_available =
-        detail::has_get_physical_position<parser_t>::value;
+        detail::has_get_physical_position_v<parser_t>;
 
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
@@ -496,11 +495,11 @@ public:
     }
 
     std::pair<std::size_t, std::size_t> get_physical_position() const
-        noexcept((!detail::has_get_physical_position<parser_t>::value)
+        noexcept((!detail::has_get_physical_position_v<parser_t>)
               || noexcept(std::declval<const parser_t&>()
                             .get_physical_position()))
     {
-        if constexpr (detail::has_get_physical_position<parser_t>::value) {
+        if constexpr (detail::has_get_physical_position_v<parser_t>) {
             return ap_.member().get_physical_position();
         } else {
             return { npos, npos };
@@ -1041,9 +1040,9 @@ auto operator==(
     const table_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(detail::string_value_eq(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
+        typename TableSource::traits_type, Right>, bool>
 {
     return detail::string_value_eq(left, right);
 }
@@ -1053,9 +1052,9 @@ auto operator==(
     const Left& left,
     const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(detail::string_value_eq(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
+        typename TableSource::traits_type, Left>, bool>
 {
     return detail::string_value_eq(left, right);
 }
@@ -1081,9 +1080,9 @@ auto operator!=(
     const table_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(!(left == right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
+        typename TableSource::traits_type, Right>, bool>
 {
     return !(left == right);
 }
@@ -1093,9 +1092,9 @@ auto operator!=(
     const Left& left,
     const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(!(left == right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
+        typename TableSource::traits_type, Left>, bool>
 {
     return !(left == right);
 }
@@ -1121,9 +1120,9 @@ auto operator<(
     const table_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(detail::string_value_lt(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
+        typename TableSource::traits_type, Right>, bool>
 {
     return detail::string_value_lt(left, right);
 }
@@ -1133,9 +1132,9 @@ auto operator<(
     const Left& left,
     const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(detail::string_value_lt(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
+        typename TableSource::traits_type, Left>, bool>
 {
     return detail::string_value_lt(left, right);
 }
@@ -1161,9 +1160,9 @@ auto operator>(
     const table_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(right < left))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
+        typename TableSource::traits_type, Right>, bool>
 {
     return right < left;
 }
@@ -1173,9 +1172,9 @@ auto operator>(
     const Left& left,
     const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(right < left))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
+        typename TableSource::traits_type, Left>, bool>
 {
     return right < left;
 }
@@ -1201,9 +1200,9 @@ auto operator<=(
     const table_pull<TableSource, Allocator>& left,
     const Right& right) 
     noexcept(noexcept(!(right < left)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
+        typename TableSource::traits_type, Right>, bool>
 {
     return !(right < left);
 }
@@ -1213,9 +1212,9 @@ auto operator<=(
     const Left& left,
     const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(!(right < left)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
+        typename TableSource::traits_type, Left>, bool>
 {
     return !(right < left);
 }
@@ -1241,9 +1240,9 @@ auto operator>=(
     const table_pull<TableSource, Allocator>& left,
     const Right& right)
     noexcept(noexcept(!(left < right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Right>::value, bool>
+        typename TableSource::traits_type, Right>, bool>
 {
     return !(left < right);
 }
@@ -1253,9 +1252,9 @@ auto operator>=(
     const Left& left,
     const table_pull<TableSource, Allocator>& right)
     noexcept(noexcept(!(left < right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
         typename TableSource::char_type,
-        typename TableSource::traits_type, Left>::value, bool>
+        typename TableSource::traits_type, Left>, bool>
 {
     return !(left < right);
 }

@@ -511,9 +511,8 @@ struct has_const_iterator_impl
 };
 
 template <class T>
-struct has_const_iterator :
-    decltype(has_const_iterator_impl::check<T>(nullptr))
-{};
+constexpr bool has_const_iterator_v =
+    decltype(has_const_iterator_impl::check<T>(nullptr))::value;
 
 template <class Ch, class Tr, class Allocator>
 auto make_string_pred(
@@ -529,8 +528,7 @@ decltype(auto) make_string_pred(T&& s, [[maybe_unused]] const Allocator& a)
     using str_t = std::basic_string<Ch, Tr, Allocator>;
     if constexpr (std::is_constructible_v<str_t, T&&, const Allocator&>) {
         return string_eq<Ch, Tr, Allocator>(str_t(std::forward<T>(s), a));
-    } else if constexpr (
-            has_const_iterator<std::remove_reference_t<T>>::value) {
+    } else if constexpr (has_const_iterator_v<std::remove_reference_t<T>>) {
         return string_eq<Ch, Tr, Allocator>(
             str_t(std::forward<T>(s).cbegin(), std::forward<T>(s).cend(), a));
     } else {

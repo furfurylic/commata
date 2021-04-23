@@ -33,7 +33,7 @@ namespace csv {
 template <class T>
 bool do_yield([[maybe_unused]] T& f, [[maybe_unused]] std::size_t location)
 {
-    if constexpr (has_yield<T>::value) {
+    if constexpr (has_yield_v<T>) {
         return f.yield(location);
     } else {
         return false;
@@ -43,7 +43,7 @@ bool do_yield([[maybe_unused]] T& f, [[maybe_unused]] std::size_t location)
 template <class T>
 std::size_t do_yield_location([[maybe_unused]] T& f)
 {
-    if constexpr (has_yield_location<T>::value) {
+    if constexpr (has_yield_location_v<T>) {
         return f.yield_location();
     } else {
         return 0;
@@ -352,16 +352,12 @@ struct parse_step<state::after_lf>
 }
 
 template <class T>
-struct is_with_buffer_control :
-    std::integral_constant<bool,
-        has_get_buffer<T>::value && has_release_buffer<T>::value>
-{};
+constexpr bool is_with_buffer_control_v =
+    has_get_buffer_v<T> && has_release_buffer_v<T>;
 
 template <class T>
-struct is_without_buffer_control :
-    std::integral_constant<bool,
-        (!has_get_buffer<T>::value) && (!has_release_buffer<T>::value)>
-{};
+constexpr bool is_without_buffer_control_v =
+    (!has_get_buffer_v<T>) && (!has_release_buffer_v<T>);
 
 template <class Allocator>
 class default_buffer_control :
@@ -427,12 +423,10 @@ struct thru_buffer_control
 };
 
 template <class Handler>
-struct is_full_fledged :
-    std::integral_constant<bool,
-        is_with_buffer_control<Handler>::value
-     && has_start_buffer<Handler>::value && has_end_buffer<Handler>::value
-     && has_empty_physical_line<Handler>::value>
-{};
+constexpr bool is_full_fledged_v =
+    is_with_buffer_control_v<Handler>
+ && has_start_buffer_v<Handler> && has_end_buffer_v<Handler>
+ && has_empty_physical_line_v<Handler>;
 
 // noexcept-ness of the member functions except the ctor and the dtor does not
 // count because they are invoked as parts of a willingly-throwing operation,
@@ -443,7 +437,7 @@ class full_fledged_handler :
     BufferControl
 {
     static_assert(!std::is_reference_v<Handler>, "");
-    static_assert(!is_full_fledged<Handler>::value, "");
+    static_assert(!is_full_fledged_v<Handler>, "");
 
     Handler handler_;
 
@@ -475,14 +469,14 @@ public:
         [[maybe_unused]] const char_type* buffer_begin,
         [[maybe_unused]] const char_type* buffer_end)
     {
-        if constexpr (has_start_buffer<Handler>()) {
+        if constexpr (has_start_buffer_v<Handler>) {
             handler_.start_buffer(buffer_begin, buffer_end);
         }
     }
 
     void end_buffer([[maybe_unused]] const char_type* buffer_end)
     {
-        if constexpr (has_end_buffer<Handler>()) {
+        if constexpr (has_end_buffer_v<Handler>) {
             handler_.end_buffer(buffer_end);
         }
     }
@@ -509,7 +503,7 @@ public:
 
     auto empty_physical_line([[maybe_unused]] const char_type* where)
     {
-        if constexpr (has_empty_physical_line<Handler>()) {
+        if constexpr (has_empty_physical_line_v<Handler>) {
             return handler_.empty_physical_line(where);
         }
     }
@@ -843,12 +837,12 @@ private:
 
     public:
         static constexpr bool enabled =
-            !detail::is_std_reference_wrapper<handler_t>::value
-         && detail::is_with_buffer_control<handler_t>::value;
+            !detail::is_std_reference_wrapper_v<handler_t>
+         && detail::is_with_buffer_control_v<handler_t>;
 
         using full_fledged_handler_t =
             std::conditional_t<
-                detail::is_full_fledged<handler_t>::value,
+                detail::is_full_fledged_v<handler_t>,
                 handler_t,
                 detail::full_fledged_handler<
                     handler_t, detail::thru_buffer_control>>;
@@ -887,8 +881,8 @@ private:
 
     public:
         static constexpr bool enabled =
-            !detail::is_std_reference_wrapper<handler_t>::value
-         && detail::is_without_buffer_control<handler_t>::value;
+            !detail::is_std_reference_wrapper_v<handler_t>
+         && detail::is_without_buffer_control_v<handler_t>;
 
         using ret_t = detail::csv::parser<CharInput, full_fledged_handler_t>;
 
@@ -1066,16 +1060,15 @@ struct are_make_csv_source_args_impl
 };
 
 template <class Arg1, class Arg2>
-struct are_make_csv_source_args :
-    decltype(are_make_csv_source_args_impl::check<Arg1, Arg2>(nullptr))
-{};
+constexpr bool are_make_csv_source_args_v =
+    decltype(are_make_csv_source_args_impl::check<Arg1, Arg2>(nullptr))();
 
 }}
 
 template <class Arg1, class Arg2, class... OtherArgs>
 bool parse_csv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)
 {
-    if constexpr (detail::csv::are_make_csv_source_args<Arg1, Arg2>::value) {
+    if constexpr (detail::csv::are_make_csv_source_args_v<Arg1, Arg2>) {
         return make_csv_source(
                 std::forward<Arg1>(arg1), std::forward<Arg2>(arg2))
             (std::forward<OtherArgs>(other_args)...)();

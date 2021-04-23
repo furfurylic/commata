@@ -27,9 +27,8 @@ struct has_get_buffer_impl
 };
 
 template <class T>
-struct has_get_buffer :
-    decltype(has_get_buffer_impl::check<T>(nullptr))
-{};
+constexpr bool has_get_buffer_v =
+    decltype(has_get_buffer_impl::check<T>(nullptr))();
 
 template <class Handler, class D, class = void>
 struct get_buffer_t
@@ -37,7 +36,7 @@ struct get_buffer_t
 
 template <class Handler, class D>
 struct get_buffer_t<Handler, D,
-    std::enable_if_t<has_get_buffer<Handler>::value>>
+    std::enable_if_t<has_get_buffer_v<Handler>>>
 {
     std::pair<typename Handler::char_type*, std::size_t> get_buffer()
         noexcept(noexcept(std::declval<Handler&>().get_buffer()))
@@ -59,9 +58,8 @@ struct has_release_buffer_impl
 };
 
 template <class T>
-struct has_release_buffer :
-    decltype(has_release_buffer_impl::check<T>(nullptr))
-{};
+constexpr bool has_release_buffer_v =
+    decltype(has_release_buffer_impl::check<T>(nullptr))();
 
 template <class Handler, class D, class = void>
 struct release_buffer_t
@@ -69,7 +67,7 @@ struct release_buffer_t
 
 template <class Handler, class D>
 struct release_buffer_t<Handler, D,
-    std::enable_if_t<has_release_buffer<Handler>::value>>
+    std::enable_if_t<has_release_buffer_v<Handler>>>
 {
     void release_buffer(const typename Handler::char_type* buffer)
         noexcept(noexcept(std::declval<Handler&>().release_buffer(buffer)))
@@ -92,9 +90,8 @@ struct has_start_buffer_impl
 };
 
 template <class T>
-struct has_start_buffer :
-    decltype(has_start_buffer_impl::check<T>(nullptr))
-{};
+constexpr bool has_start_buffer_v =
+    decltype(has_start_buffer_impl::check<T>(nullptr))();
 
 template <class Handler, class D, class = void>
 struct start_buffer_t
@@ -102,7 +99,7 @@ struct start_buffer_t
 
 template <class Handler, class D>
 struct start_buffer_t<Handler, D,
-    std::enable_if_t<has_start_buffer<Handler>::value>>
+    std::enable_if_t<has_start_buffer_v<Handler>>>
 {
     void start_buffer(
         const typename Handler::char_type* buffer_begin,
@@ -127,9 +124,8 @@ struct has_end_buffer_impl
 };
 
 template <class T>
-struct has_end_buffer :
-    decltype(has_end_buffer_impl::check<T>(nullptr))
-{};
+constexpr bool has_end_buffer_v =
+    decltype(has_end_buffer_impl::check<T>(nullptr))();
 
 template <class Handler, class D, class = void>
 struct end_buffer_t
@@ -137,7 +133,7 @@ struct end_buffer_t
 
 template <class Handler, class D>
 struct end_buffer_t<Handler, D,
-    std::enable_if_t<has_end_buffer<Handler>::value>>
+    std::enable_if_t<has_end_buffer_v<Handler>>>
 {
     void end_buffer(const typename Handler::char_type* buffer_end)
         noexcept(noexcept(std::declval<Handler&>().end_buffer(buffer_end)))
@@ -159,9 +155,8 @@ struct has_empty_physical_line_impl
 };
 
 template <class T>
-struct has_empty_physical_line :
-    decltype(has_empty_physical_line_impl::check<T>(nullptr))
-{};
+constexpr bool has_empty_physical_line_v =
+    decltype(has_empty_physical_line_impl::check<T>(nullptr))();
 
 template <class Handler, class D, class = void>
 struct empty_physical_line_t
@@ -169,7 +164,7 @@ struct empty_physical_line_t
 
 template <class Handler, class D>
 struct empty_physical_line_t<Handler, D,
-    std::enable_if_t<has_empty_physical_line<Handler>::value>>
+    std::enable_if_t<has_empty_physical_line_v<Handler>>>
 {
     auto empty_physical_line(const typename Handler::char_type* where)
         noexcept(noexcept(std::declval<Handler&>().empty_physical_line(where)))
@@ -191,16 +186,14 @@ struct has_yield_impl
 };
 
 template <class T>
-struct has_yield :
-    decltype(has_yield_impl::check<T>(nullptr))
-{};
+constexpr bool has_yield_v = decltype(has_yield_impl::check<T>(nullptr))();
 
 template <class Handler, class D, class = void>
 struct yield_t
 {};
 
 template <class Handler, class D>
-struct yield_t<Handler, D, std::enable_if_t<has_yield<Handler>::value>>
+struct yield_t<Handler, D, std::enable_if_t<has_yield_v<Handler>>>
 {
     auto yield(std::size_t p)
         noexcept(noexcept(std::declval<Handler&>().yield(p)))
@@ -222,9 +215,8 @@ struct has_yield_location_impl
 };
 
 template <class T>
-struct has_yield_location :
-    decltype(has_yield_location_impl::check<T>(nullptr))
-{};
+constexpr bool has_yield_location_v =
+    decltype(has_yield_location_impl::check<T>(nullptr))();
 
 template <class Handler, class D, class = void>
 struct yield_location_t
@@ -232,7 +224,7 @@ struct yield_location_t
 
 template <class Handler, class D>
 struct yield_location_t<Handler, D,
-    std::enable_if_t<has_yield_location<Handler>::value>>
+    std::enable_if_t<has_yield_location_v<Handler>>>
 {
     auto yield_location() const
         noexcept(noexcept(std::declval<Handler&>().yield_location()))

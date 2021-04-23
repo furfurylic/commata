@@ -396,8 +396,8 @@ auto operator==(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right)
     noexcept(noexcept(detail::string_value_eq(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Right>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Right>, bool>
 {
     return detail::string_value_eq(left, right);
 }
@@ -407,8 +407,8 @@ auto operator==(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right)
     noexcept(noexcept(detail::string_value_eq(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Left>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Left>, bool>
 {
     return detail::string_value_eq(left, right);
 }
@@ -430,8 +430,8 @@ auto operator!=(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right)
     noexcept(noexcept(!(left == right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Right>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Right>, bool>
 {
     return !(left == right);
 }
@@ -441,8 +441,8 @@ auto operator!=(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right)
     noexcept(noexcept(!(left == right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Left>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Left>, bool>
 {
     return !(left == right);
 }
@@ -465,8 +465,8 @@ auto operator<(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right)
     noexcept(noexcept(detail::string_value_lt(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Right>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Right>, bool>
 {
     return detail::string_value_lt(left, right);
 }
@@ -476,8 +476,8 @@ auto operator<(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right)
     noexcept(noexcept(detail::string_value_lt(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Left>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Left>, bool>
 {
     return detail::string_value_lt(left, right);
 }
@@ -499,8 +499,8 @@ auto operator>(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right)
     noexcept(noexcept(right < left))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Right>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Right>, bool>
 {
     return right < left;
 }
@@ -510,8 +510,8 @@ auto operator>(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right)
     noexcept(noexcept(right < left))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Left>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Left>, bool>
 {
     return right < left;
 }
@@ -534,8 +534,8 @@ auto operator<=(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right)
     noexcept(noexcept(!(right < left)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Right>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Right>, bool>
 {
     return !(right < left);
 }
@@ -545,8 +545,8 @@ auto operator<=(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right)
     noexcept(noexcept(!(right < left)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Left>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Left>, bool>
 {
     return !(right < left);
 }
@@ -569,8 +569,8 @@ auto operator>=(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right)
     noexcept(noexcept(!(left < right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Right>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Right>, bool>
 {
     return !(left < right);
 }
@@ -580,8 +580,8 @@ auto operator>=(
     const Left& left,
     const basic_stored_value<ChC, Tr>& right)
     noexcept(noexcept(!(left < right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value<
-        std::remove_const_t<ChC>, Tr, Left>::value, bool>
+ -> std::enable_if_t<detail::is_comparable_with_string_value_v<
+        std::remove_const_t<ChC>, Tr, Left>, bool>
 {
     return !(left < right);
 }
@@ -1094,14 +1094,10 @@ void swap(
 }
 
 template <class T>
-struct is_basic_stored_value :
-    std::false_type
-{};
+constexpr bool is_basic_stored_value_v = false;
 
 template <class... Args>
-struct is_basic_stored_value<basic_stored_value<Args...>> :
-    std::true_type
-{};
+constexpr bool is_basic_stored_value_v<basic_stored_value<Args...>> = true;
 
 // Placed here to avoid bloat
 template <class Tr>
@@ -1129,7 +1125,7 @@ public:
     using traits_type     = typename value_type::traits_type;
     using size_type       = typename content_type::size_type;
 
-    static_assert(detail::is_basic_stored_value<value_type>::value,
+    static_assert(detail::is_basic_stored_value_v<value_type>,
         "Content shall be a sequence-container-of-sequence-container "
         "type of basic_stored_value");
     static_assert(
@@ -1613,14 +1609,10 @@ void swap(
 namespace detail {
 
 template <class T, class = void>
-struct has_allocator_type :
-    std::false_type
-{};
+constexpr bool has_allocator_type_v = false;
 
 template <class T>
-struct has_allocator_type<T, typename T::allocator_type*> :
-    std::true_type
-{};
+constexpr bool has_allocator_type_v<T, typename T::allocator_type*> = true;
 
 template <class T, class = void>
 struct adaptive_manoeuvre;
@@ -1645,7 +1637,7 @@ template <class T>
 struct adaptive_manoeuvre<T,
     std::enable_if_t<
         !std::is_nothrow_move_assignable_v<T>
-     && has_allocator_type<T>::value>>
+     && has_allocator_type_v<T>>>
 {
     template <class Container>
     static void emplace_back(Container& c, T&& t)
@@ -1668,7 +1660,7 @@ template <class T>
 struct adaptive_manoeuvre<T,
     std::enable_if_t<
         !std::is_nothrow_move_assignable_v<T>
-     && !has_allocator_type<T>::value
+     && !has_allocator_type_v<T>
      && std::is_nothrow_swappable_v<T>>>
 {
     template <class Container>
@@ -1685,12 +1677,10 @@ struct adaptive_manoeuvre<T,
 };
 
 template <class T>
-struct has_adaptive_manoeuvre :
-    std::integral_constant<bool,
-        std::is_nothrow_move_assignable_v<T>
-     || has_allocator_type<T>::value
-     || std::is_nothrow_swappable_v<T>>
-{};
+constexpr bool has_adaptive_manoeuvre_v =
+    std::is_nothrow_move_assignable_v<T>
+ || has_allocator_type_v<T>
+ || std::is_nothrow_swappable_v<T>;
 
 template <class ContentL, class ContentR>
 void append_stored_table_content_primitive(ContentL& l, ContentR&& r)
@@ -1735,7 +1725,7 @@ void append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
     static_assert(std::is_same_v<typename ContentL::value_type,
         typename ContentR::value_type>, "");
     static_assert(
-        has_adaptive_manoeuvre<typename ContentL::value_type>::value, "");
+        has_adaptive_manoeuvre_v<typename ContentL::value_type>, "");
 
     // We require:
     // - if an exception is thrown by ContentL's emplace() at the end,
@@ -1772,7 +1762,7 @@ void append_stored_table_content_adaptive(
     std::list<Record, AllocatorL>& l, ContentR&& r)
 {
     static_assert(std::is_same_v<Record, typename ContentR::value_type>, "");
-    static_assert(has_adaptive_manoeuvre<Record>::value, "");
+    static_assert(has_adaptive_manoeuvre_v<Record>, "");
 
     using manoeuvre = adaptive_manoeuvre<Record>;
 
@@ -1799,8 +1789,8 @@ void append_stored_table_content(ContentL& l, ContentR&& r)
     if constexpr (std::is_same_v<
                     typename ContentL::value_type,
                     typename ContentR::value_type>
-               && has_adaptive_manoeuvre<
-                    typename ContentL::value_type>::value) {
+               && has_adaptive_manoeuvre_v<
+                    typename ContentL::value_type>) {
         append_stored_table_content_adaptive(l, std::move(r));
     } else {
         append_stored_table_content_primitive(l, r);

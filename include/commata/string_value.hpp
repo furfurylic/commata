@@ -12,9 +12,8 @@
 namespace commata { namespace detail {
 
 template <class Ch, class Tr, class T>
-struct is_comparable_with_string_value :
-    std::is_convertible<T, std::basic_string_view<Ch, Tr>>
-{};
+constexpr bool is_comparable_with_string_value_v =
+    std::is_convertible_v<T, std::basic_string_view<Ch, Tr>>;
 
 template <class T, class U>
 auto string_value_eq(

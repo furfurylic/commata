@@ -2138,7 +2138,7 @@ namespace detail {
 
 template <class T, class Sink, class... Appendices,
     std::enable_if_t<
-        !detail::is_std_string<T>::value
+        !detail::is_std_string_v<T>
      && !std::is_base_of_v<
             std::locale, std::decay_t<detail::first_t<Appendices...>>>,
         std::nullptr_t> = nullptr>
@@ -2146,14 +2146,14 @@ arithmetic_field_translator<T, Sink, Appendices...>
     make_field_translator_na(Sink sink, Appendices&&... appendices);
 
 template <class T, class Sink, class... Appendices,
-    std::enable_if_t<!detail::is_std_string<T>::value, std::nullptr_t>
+    std::enable_if_t<!detail::is_std_string_v<T>, std::nullptr_t>
         = nullptr>
 locale_based_arithmetic_field_translator<T, Sink, Appendices...>
     make_field_translator_na(
         Sink sink, const std::locale& loc, Appendices&&... appendices);
 
 template <class T, class Sink, class... Appendices,
-    std::enable_if_t<detail::is_std_string<T>::value, std::nullptr_t>
+    std::enable_if_t<detail::is_std_string_v<T>, std::nullptr_t>
         = nullptr>
 string_field_translator<Sink,
         typename T::value_type, typename T::traits_type,
@@ -2165,7 +2165,7 @@ string_field_translator<Sink,
 template <class T, class Sink, class... Appendices>
 auto make_field_translator(Sink sink, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_output_iterator<Sink>::value
+        detail::is_output_iterator_v<Sink>
      || std::is_invocable_v<Sink, T>,
         decltype(detail::make_field_translator_na<T>(
             std::move(sink), std::forward<Appendices>(appendices)...))>
@@ -2179,7 +2179,7 @@ template <class T, class Allocator, class Sink, class... Appendices>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Sink sink, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_output_iterator<Sink>::value
+        detail::is_output_iterator_v<Sink>
      || std::is_invocable_v<Sink, T>,
         string_field_translator<Sink,
             typename T::value_type, typename T::traits_type,
@@ -2206,9 +2206,8 @@ struct is_back_insertable_impl
 };
 
 template <class T>
-struct is_back_insertable :
-    decltype(is_back_insertable_impl::check<T>(nullptr))
-{};
+constexpr bool is_back_insertable_v =
+    decltype(is_back_insertable_impl::check<T>(nullptr))();
 
 struct is_insertable_impl
 {
@@ -2227,13 +2226,16 @@ struct is_insertable :
     decltype(is_insertable_impl::check<T>(nullptr))
 {};
 
+template <class T>
+constexpr bool is_insertable_v = is_insertable<T>::value;
+
 template <class Container, class = void>
 struct back_insert_iterator;
 
 template <class Container>
 struct back_insert_iterator<Container,
-    std::enable_if_t<is_insertable<Container>::value
-                  && is_back_insertable<Container>::value>>
+    std::enable_if_t<is_insertable_v<Container>
+                  && is_back_insertable_v<Container>>>
 {
     using type = std::back_insert_iterator<Container>;
 
@@ -2245,8 +2247,8 @@ struct back_insert_iterator<Container,
 
 template <class Container>
 struct back_insert_iterator<Container,
-    std::enable_if_t<is_insertable<Container>::value
-                  && !is_back_insertable<Container>::value>>
+    std::enable_if_t<is_insertable_v<Container>
+                  && !is_back_insertable_v<Container>>>
 {
     using type = std::insert_iterator<Container>;
 
@@ -2264,7 +2266,7 @@ using back_insert_iterator_t = typename back_insert_iterator<Container>::type;
 template <class Container, class... Appendices>
 auto make_field_translator(Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_insertable<Container>::value,
+        detail::is_insertable_v<Container>,
         decltype(
             detail::make_field_translator_na<typename Container::value_type>(
                 std::declval<detail::back_insert_iterator_t<Container>>(),
@@ -2279,8 +2281,8 @@ template <class Allocator, class Container, class... Appendices>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_back_insertable<Container>::value
-     || detail::is_insertable<Container>::value,
+        detail::is_back_insertable_v<Container>
+     || detail::is_insertable_v<Container>,
         string_field_translator<
             detail::back_insert_iterator_t<Container>,
             typename Container::value_type::value_type,

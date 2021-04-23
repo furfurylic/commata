@@ -14,39 +14,22 @@ namespace commata {
 namespace detail {
 
 template <class T>
-struct is_std_string :
-    std::false_type
-{};
+constexpr bool is_std_string_v = false;
 
 template <class... Args>
-struct is_std_string<std::basic_string<Args...>> :
-    std::true_type
-{};
+constexpr bool is_std_string_v<std::basic_string<Args...>> = true;
 
 template <class T, class Ch>
-struct is_std_string_of :
-    std::false_type
-{};
+constexpr bool is_std_string_of_v = false;
 
 template <class Ch, class... Args>
-struct is_std_string_of<std::basic_string<Ch, Args...>, Ch> :
-    std::true_type
-{};
-
-template <class T, class Ch>
-constexpr bool is_std_string_of_v = is_std_string_of<T, Ch>::value;
+constexpr bool is_std_string_of_v<std::basic_string<Ch, Args...>, Ch> = true;
 
 template <class W>
-struct is_std_reference_wrapper : std::false_type
-{};
+constexpr bool is_std_reference_wrapper_v = false;
 
 template <class T>
-struct is_std_reference_wrapper<std::reference_wrapper<T>> : std::true_type
-{};
-
-template <class W>
-constexpr bool is_std_reference_wrapper_v =
-    is_std_reference_wrapper<W>::value;
+constexpr bool is_std_reference_wrapper_v<std::reference_wrapper<T>> = true;
 
 template <class... Ts>
 struct first;
