@@ -10,12 +10,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <iosfwd>
 #include <iterator>
 #include <limits>
 #include <memory>
 #include <stdexcept>
-#include <streambuf>
 #include <string>
 #include <tuple>
 #include <type_traits>
