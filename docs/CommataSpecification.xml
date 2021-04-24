@@ -5714,8 +5714,8 @@ template &lt;class TableSourceR>
                    Makes a text handler object <c>h</c> configured to enqueue events into the event queue above ant to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the text parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
-          <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;.
-                  This overload shall not participate in overload resolution unless if <c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.</remark>
+          <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
+                  This overload shall not participate in overload resolution unless <c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</remark>
         </code-item>
 
         <code-item>
@@ -5724,6 +5724,7 @@ template &lt;class TableSourceR>
   primitive_table_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
                        std::size_t buffer_size = 0);
           </code>
+          <requires><c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</requires>
           <effects>First constructs an <c>Allocator</c> object <c>a</c> with <c>alloc</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
                    Makes a text handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
@@ -6169,9 +6170,10 @@ template &lt;class TableSourceR>
           <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Initializes an object of <c>table_pull</c> with a default constructed <c>Allocator</c> object as its allocator object.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
-                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
+                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
+                   Internally invokes <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c> to make a text parser (<xref id="text_parser.requirements"/>) object.</effects>
           <postcondition><c>is_empty_line_aware()</c> and <c>is_suppressing_errors()</c> shall return <c>false</c>.</postcondition>
-          <remark>This overload shall not participate in overload resolution unless if <c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</remark>
         </code-item>
 
         <code-item>
@@ -6180,9 +6182,11 @@ template &lt;class TableSourceR>
   table_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
              std::size_t buffer_size = 0);
           </code>
+          <requires><c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</requires>
           <effects>Initializes an object of <c>table_pull</c> with an allocator object constructed with <c>alloc</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
-                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
+                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
+                   Internally invokes <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c> to make a text parser (<xref id="text_parser.requirements"/>) object.</effects>
           <postcondition><c>is_empty_line_aware()</c> and <c>is_suppressing_errors()</c> shall return <c>false</c>.</postcondition>
         </code-item>
 
