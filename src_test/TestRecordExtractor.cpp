@@ -92,7 +92,7 @@ TEST_P(TestRecordExtractor, NoSuchField)
 
 TEST_P(TestRecordExtractor, MoveCtor)
 {
-    // TextHandler requirements do not require that moved-from objects can be
+    // TableHandler requirements do not require that moved-from objects can be
     // used for parsing, but record_extractor provides the ability only if
     // the moved-from objects have not been used parsed yet.
     // This is a test for that behaviour.

@@ -43,11 +43,11 @@
 
     <p>Users of Commata process texts coordinating two kinds of objects below:</p>
     <ul>
-      <li><n>text parsers</n> (<xref id="text_parser.requirements"/>), which retrieve a sequence of char-like objects in a certain format such as a CSV text (<xref id="definitions.csv_text"/>) from a stream or a stream buffer and emits events to their tied text handlers, and</li>
-      <li><n>text handlers</n> (<xref id="text_handler.requirements"/>), which receive events from the text parser and do some operation on them.</li>
+      <li><n>table parsers</n> (<xref id="table_parser.requirements"/>), which retrieve a sequence of char-like objects in a certain format such as a CSV text (<xref id="definitions.csv_text"/>) from a stream or a stream buffer and emits events to their tied table handlers, and</li>
+      <li><n>table handlers</n> (<xref id="table_handler.requirements"/>), which receive events from the table parser and do some operation on them.</li>
     </ul>
     <p>Commata offers some default implementations of above two kinds of concepts.
-       Users of Commata can unsurprisingly implement their own text handlers or text parsers, and make them collaborate with the default implementations.</p>
+       Users of Commata can unsurprisingly implement their own table handlers or table parsers, and make them collaborate with the default implementations.</p>
   </section>
 
   <section id="definitions">
@@ -56,7 +56,7 @@
     <section id="definitions.text_table">
       <name>Text tables</name>
 
-      <p>Events that text handlers receive from the parser conform the <n>text table</n> model following:</p>
+      <p>Events that table handlers receive from the parser conform the <n>text table</n> model following:</p>
       <ul>
         <li>Each text table has its <n>char type</n> that is a char-like type.</li>
         <li>A text table is a sequence of <n>text records</n>.</li>
@@ -107,24 +107,24 @@
     </section>
   </section>
 
-  <section id="text_handler.requirements">
-    <name><c>TextHandler</c> requirements</name>
+  <section id="table_handler.requirements">
+    <name><c>TableHandler</c> requirements</name>
 
-    <p>A type <c>T</c> meets the <c>TextHandler</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
+    <p>A type <c>T</c> meets the <c>TableHandler</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
     <ul>
       <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>,</li>
-      <li>the expressions shown in <xref id="table.text_handler.requirements"/> are valid and have the indicated semantics, and</li>
-      <li>moved-to objects of <c>T</c> takes over the states of moved-from objects in terms of <xref id="table.text_handler.requirements"/>.</li>
+      <li>the expressions shown in <xref id="table.table_handler.requirements"/> are valid and have the indicated semantics, and</li>
+      <li>moved-to objects of <c>T</c> takes over the states of moved-from objects in terms of <xref id="table.table_handler.requirements"/>.</li>
     </ul>
 
-    <p>In <xref id="table.text_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>. <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
+    <p>In <xref id="table.table_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>. <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
 
-    <p>A requirement is optional if the last column of <xref id="table.text_handler.requirements"/> specifies a default.</p>
-    <p>If (2) in <xref id="table.text_handler.requirements"/> is satisfied without falling back on the default, then also (3) shall be so. Likewise, if (3) is satisfied without falling back on the default, then also (2) shall be so.
+    <p>A requirement is optional if the last column of <xref id="table.table_handler.requirements"/> specifies a default.</p>
+    <p>If (2) in <xref id="table.table_handler.requirements"/> is satisfied without falling back on the default, then also (3) shall be so. Likewise, if (3) is satisfied without falling back on the default, then also (2) shall be so.
        That is, <c>T</c> shall either have both of <c>get_buffer</c> and <c>release_buffer</c> member functions or have none of them.</p>
 
-    <table id="table.text_handler.requirements">
-      <caption>TextHandler requirements</caption>
+    <table id="table.table_handler.requirements">
+      <caption>TableHandler requirements</caption>
       <col width="2"/><col width="9"/><col width="9"/><col width="20"/><col width="8"/>
 
       <tr>
@@ -231,7 +231,7 @@
                Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
             <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified and resides [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
                (4) (first argument), (7) (first argument), this (second argument) or (10) (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
-            <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the text handler can reach the range as non-const, it may modify the elements in the range.</p>
+            <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the table handler can reach the range as non-const, it may modify the elements in the range.</p>
             <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
          <td/>
       </tr>
@@ -244,7 +244,7 @@
                Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
             <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified  and resides in [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
                (4) (first argument), (7) (first argument), (9) (second argument) or this (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
-            <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the text handler can reach the range as non-const, it may modify the element in the range.</p>
+            <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the table handler can reach the range as non-const, it may modify the element in the range.</p>
             <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
         <td/>
       </tr>
@@ -255,7 +255,7 @@
         <td>A type contextually convertible to <c>bool</c></td>
         <td><p>Called when the parser reaches an execution point where the parser can suspend the execution and return the control to its caller.
                The parser shall call this also just after calling (5).
-               If this is called just after calling (5), the parser might invalidate all the pointers passed to the text handler since the latest call of (3) just after caling this.</p>
+               If this is called just after calling (5), the parser might invalidate all the pointers passed to the table handler since the latest call of (3) just after caling this.</p>
             <p><c>p</c> is a number that can identificate the execution point where the call of this function occurred.
                Its value shall not be equal to <c>0</c>.
                Its value of <c>-1</c> shall mean that the parser is about to complete the execution.</p>
@@ -273,23 +273,23 @@
       </tr>
     </table>
 
-    <p>A moved-from object whose type satisfies <c>TextHandler</c> requirements may cause undefined behaviour when used in terms of <xref id="table.text_handler.requirements"/>.</p>
+    <p>A moved-from object whose type satisfies <c>TableHandler</c> requirements may cause undefined behaviour when used in terms of <xref id="table.table_handler.requirements"/>.</p>
   </section>
 
-  <section id="text_parser.requirements">
-    <name><c>TextParser</c> requirements</name>
+  <section id="table_parser.requirements">
+    <name><c>TableParser</c> requirements</name>
 
-    <p>A type <c>T</c> meets the <c>TextParser</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
+    <p>A type <c>T</c> meets the <c>TableParser</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
     <ul>
       <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-      <li>each object of <c>T</c> has (possibly a reference to) a <n>tied character input</n> object, and (similarly, possibly a reference to) a <n>tied text handler</n> object whose type meets the <c>TextHandler</c> requirements;
-          and the expressions shown in <xref id="table.text_parser.requirements"/> are valid and have the indicated semantics.</li>
+      <li>each object of <c>T</c> has (possibly a reference to) a <n>tied character input</n> object, and (similarly, possibly a reference to) a <n>tied table handler</n> object whose type meets the <c>TableHandler</c> requirements;
+          and the expressions shown in <xref id="table.table_parser.requirements"/> are valid and have the indicated semantics.</li>
     </ul>
 
-    <p>In <xref id="table.text_parser.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>.</p>
+    <p>In <xref id="table.table_parser.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>.</p>
 
-    <table id="table.text_parser.requirements">
-      <caption>TextParser requirements</caption>
+    <table id="table.table_parser.requirements">
+      <caption>TableParser requirements</caption>
       <col width="2"/><col width="9"/><col width="9"/><col width="28"/>
 
       <tr>
@@ -303,7 +303,7 @@
         <td>(1)</td>
         <td><c>t()</c></td>
         <td>A type contextually convertible to <c>bool</c></td>
-        <td>Retrieves the text content from its tied character input, parses the text content, and calls the member functions of its tied text handler object compliantly with the <c>TextHandler</c> requirements.
+        <td>Retrieves the text content from its tied character input, parses the text content, and calls the member functions of its tied table handler object compliantly with the <c>TableHandler</c> requirements.
             Returns <c>false</c> if the return value of a call on <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c>, or <c>finalize</c> is <c>false</c>; <c>true</c> otherwise.
             If this returns <c>false</c> or exits via an exception, then this becomes unable to be called again.</td>
       </tr>
@@ -312,17 +312,17 @@
         <td>(2)</td>
         <td><c>ct.~T()</c></td>
         <td>(Not used)</td>
-        <td>Calls <c>release_buffer</c> of its tied text handler object if and only if the latest call of (1) left a buffer obtained with <c>get_buffer</c> of the text handler object unreleased.</td>
+        <td>Calls <c>release_buffer</c> of its tied table handler object if and only if the latest call of (1) left a buffer obtained with <c>get_buffer</c> of the table handler object unreleased.</td>
       </tr>
     </table>
 
-    <p><xref id="table.text_parser.optional"/> lists operations provided for some types of <c>TextParser</c>s but not others.
-       Those types for which the listed operations are provided shall implement the semantics described in <xref id="table.text_parser.optional"/> unless otherwise stated.</p>
+    <p><xref id="table.table_parser.optional"/> lists operations provided for some types of <c>TableParser</c>s but not others.
+       Those types for which the listed operations are provided shall implement the semantics described in <xref id="table.table_parser.optional"/> unless otherwise stated.</p>
 
-    <p>In <xref id="table.text_parser.optional"/>, <c>ct</c> is an lvalue of <c>const T</c>, where <c>T</c> is cv-unqualified.</p>
+    <p>In <xref id="table.table_parser.optional"/>, <c>ct</c> is an lvalue of <c>const T</c>, where <c>T</c> is cv-unqualified.</p>
 
-    <table id="table.text_parser.optional">
-      <caption>Optional TextParser operations</caption>
+    <table id="table.table_parser.optional">
+      <caption>Optional TableParser operations</caption>
       <col width="2"/><col width="9"/><col width="9"/><col width="28"/>
 
       <tr>
@@ -642,7 +642,7 @@ template &lt;class T>
   </section>
 
   <section id="handler_wrappers">
-    <name>Wrappers of text handlers</name>
+    <name>Wrappers of table handlers</name>
 
     <section id="header_empty_physical_line_aware_handler">
       <name>Header <c>"commama/empty_physical_line_aware_handler.hpp"</c> synopsis</name>
@@ -650,7 +650,7 @@ template &lt;class T>
 #include &lt;functional>
 
 namespace commata {
-  <c>// <n><xref id="empty_physical_line_aware_handler"/>, creation of text handler wrappers aware of empty physical lines:</n></c>
+  <c>// <n><xref id="empty_physical_line_aware_handler"/>, creation of table handler wrappers aware of empty physical lines:</n></c>
   template &lt;class Handler>
     <nc>unspecified</nc>
       make_empty_physical_line_aware(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
@@ -662,7 +662,7 @@ namespace commata {
     </section>
 
     <section id="empty_physical_line_aware_handler">
-      <name>Creation of text handler wrappers aware of empty physical lines</name>
+      <name>Creation of table handler wrappers aware of empty physical lines</name>
 
       <code-item>
         <code>
@@ -673,8 +673,8 @@ template &lt;class Handler>
   <nc>unspecified</nc>
     make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
         </code>
-        <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements, except that in the second overload it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
-        <returns>An object of an unspecified type whose type meets the <c>TextHandler</c> requirements and that holds an object <c>h</c> that is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
+        <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements, except that in the second overload it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
+        <returns>An object of an unspecified type whose type meets the <c>TableHandler</c> requirements and that holds an object <c>h</c> that is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
                  It forwards calls of its member functions to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
                  it first calls <c>h.start_record(where)</c>, and if its contextually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
                  Its return type and the return value are as follows:
@@ -690,7 +690,7 @@ template &lt;class Handler>
 </section>
 
 <section id="parser">
-  <name>Default text parsers</name>
+  <name>Default table parsers</name>
 
   <section id="parser.input">
     <name>Input texts of parsing</name>
@@ -1423,7 +1423,7 @@ template &lt;class Ch, class Tr, class Allocator>
 
     <section id="parser.csv.general">
       <name>General</name>
-      <p>This subclause describes facilities to create or utilize the text parser (<xref id="concepts"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
+      <p>This subclause describes facilities to create or utilize the table parser (<xref id="concepts"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
     </section>
 
     <section id="header_parse_csv_hpp">
@@ -1506,7 +1506,7 @@ namespace commata {
 }
       </codeblock>
 
-      <p>The class template <c>csv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TextParser</c> objects (<xref id="text_parser.requirements"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
+      <p>The class template <c>csv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TableParser</c> objects (<xref id="table_parser.requirements"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
       <p>An instance of <c>csv_source</c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for <c>Ch</c>.</p>
 
@@ -1535,15 +1535,15 @@ template &lt;class HandlerR>
   parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
-          <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</requires>
-          <returns>A text parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.
+          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.</requires>
+          <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.
                    <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (<c>&amp;</c> ref-qualifier version) or <c>std::move(in)</c> (<c>&amp;&amp;</c> ref-qualifier version) as its tied character input
-                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler.
+                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler.
                    <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
-                   Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied text handler object.
-                   <c>P</c> implements the optional <c>TextParser</c> operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
+                   Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied table handler object.
+                   <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
           <remark>These member function templates shall not participate in overload resolution unless the reference-removed and cv-unqualified type of <c>HandlerR</c> is not an instance of <c>std::reference_wrapper</c> and has both of <c>get_buffer</c> and <c>release_buffer</c> member functions
-                  that have signatures and return types compatible with <c>TextHandler</c> requirements.
+                  that have signatures and return types compatible with <c>TableHandler</c> requirements.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value &amp;&amp; std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
         </code-item>
 
@@ -1557,18 +1557,18 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;Ch>>
                          const Allocator&amp; alloc = Allocator()) &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
-          <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.
+          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.
                     <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>Ch</c>.</requires>
-          <returns>A text parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.
+          <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type <c>P</c> meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.
                    <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (<c>&amp;</c> ref-qualifier version) or <c>std::move(in)</c> (<c>&amp;&amp;</c> ref-qualifier version) as its tied character input
-                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied text handler,
+                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler,
                    and allocates and deallocates character buffers with a copy of <c>alloc</c>.
                    The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
                    <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
-                   Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied text handler object and the copy of <c>alloc</c>.
-                   <c>P</c> implements the optional <c>TextParser</c> operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
+                   Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied table handler object and the copy of <c>alloc</c>.
+                   <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
           <remark>These member function templates shall not participate in overload resolution unless the reference-removed and cv-unqualified type of <c>HandlerR</c> is not an instance of <c>std::reference_wrapper</c> and does not have both of <c>get_buffer</c> and <c>release_buffer</c> member function
-                  that has a signature and a return type compatible with <c>TextHandler</c> requirements.
+                  that has a signature and a return type compatible with <c>TableHandler</c> requirements.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value &amp;&amp; std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
         </code-item>
 
@@ -1581,9 +1581,9 @@ template &lt;class Handler, class... Args>
   <nc>unspecified</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
                          Args&amp;&amp;... args) &amp;&amp; noexcept;
           </code>
-          <requires><c>Handler</c> shall meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>,
+          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>,
                     except that it need not meet either the <c>MoveConstructible</c> requirement or the <c>Destructible</c> requirements.</requires>
-          <effects>Creates an object <c>h</c> whose type <c>H</c> is an unspecified type that meets the <c>TextHandler</c> requirements.
+          <effects>Creates an object <c>h</c> whose type <c>H</c> is an unspecified type that meets the <c>TableHandler</c> requirements.
                    <c>h</c> wraps <c>handler.get()</c> and forwards calls to <c>handler.get()</c>.
                    <c>std::is_nothrow_move_constructible&lt;H>::value</c> is <c>true</c>.
                    Then forwards the call with the arguments being <c>std::move(h), args...</c> to the other <c>operator()</c> member function templates that have the same ref-qualifier.</effects>
@@ -1648,7 +1648,7 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
 </section>
 
 <section id="built-in_handlers">
-  <name>Default text handlers</name>
+  <name>Default table handlers</name>
 
   <section id="extractor">
     <name>Extraction of records into another stream</name>
@@ -1656,7 +1656,7 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
     <section id="extractor.general">
       <name>General</name>
 
-      <p>Commata offers two class templates <c>record_extractor</c> (<xref id="record_extractor"/>) and <c>record_extractor_with_indexed_key</c> (<xref id="record_extractor_with_indexed_key"/>), whose instances meet <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>), as simple facilities to reduce text records.</p>
+      <p>Commata offers two class templates <c>record_extractor</c> (<xref id="record_extractor"/>) and <c>record_extractor_with_indexed_key</c> (<xref id="record_extractor_with_indexed_key"/>), whose instances meet <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>), as simple facilities to reduce text records.</p>
       <p>An object of an instance of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> receives parsing events from a parser and forwards some qualified records into another stream.
          Whether a record is qualified to be forwarded or not is decided by the value of its field at the <n>target field index</n>.
          The target field index can be given explicitly by the program (with <c>record_extractor_with_indexed_key</c>), or can be decided in reference to the first one record (with <c>record_extractor</c>).</p>
@@ -1767,8 +1767,8 @@ namespace commata {
     <c>// <n><xref id="record_extractor.accessors"/>, accessors:</n></c>
     allocator_type get_allocator() const noexcept;
 
-    <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
-    // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
+    <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
+    // <n>requirements (<xref id="table_handler.requirements"/>):</n></c>
     void start_buffer(const Ch* buffer_begin, const Ch* buffer_end);
     void end_buffer(const Ch* buffer_end);
     void start_record(const Ch* record_begin);
@@ -1782,7 +1782,7 @@ namespace commata {
 }
       </codeblock>
 
-      <p>An instance of <c>record_extractor</c> is a type that meets <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
+      <p>An instance of <c>record_extractor</c> is a type that meets <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
       <p>An object of it first scans the header record to decide the target field index,
          and then scan the all non-header records to decide whether the record is forwarded to the stream in terms of their values of the field at the target field index.</p>
       <p>When the target field index is left undecided after the scanning of the header record finished, an exception shall be thrown.</p>
@@ -1875,7 +1875,7 @@ bool is_in_header() const noexcept;
           <requires>Shall be invoked within a call of <c>parse_csv</c> (<xref id="parse_csv"/>).</requires>
           <returns><c>true</c> if <c>*this</c> is configured to regard some first records as header records and
                    <c>end_record</c> has not be called for the final header record; <c>false</c> otherwise.</returns>
-          <note>This member is useful to implement a text handler class whose object wraps a <c>record_extractor</c> object.</note>
+          <note>This member is useful to implement a table handler class whose object wraps a <c>record_extractor</c> object.</note>
         </code-item>
       </section>
     </section>
@@ -1916,8 +1916,8 @@ namespace commata {
     <c>// <n><xref id="record_extractor_with_indexed_key.accessors"/>, accessors:</n></c>
     allocator_type get_allocator() const noexcept;
 
-    <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
-    // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
+    <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
+    // <n>requirements (<xref id="table_handler.requirements"/>):</n></c>
     void start_buffer(const Ch* buffer_begin, const Ch* buffer_end);
     void end_buffer(const Ch* buffer_end);
     void start_record(const Ch* record_begin);
@@ -1931,7 +1931,7 @@ namespace commata {
 }
       </codeblock>
 
-      <p>An instance of <c>record_extractor_with_indexed_key</c> is a type that meets <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
+      <p>An instance of <c>record_extractor_with_indexed_key</c> is a type that meets <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
       <p>It scans the all non-header records to decide whether the record is forwarded to the stream in terms of their values of the field at the target field index instructed with a parameter of its constructor explicitly.</p>
       <p><c>FieldValuePred</c> shall be a binary predicate type for two <c>const Ch*</c> parameters.
          <c>Ch</c> shall be a char-like type.
@@ -2023,7 +2023,7 @@ bool is_in_header() const noexcept;
           <requires>Shall be invoked within a call of <c>parse_csv</c> (<xref id="parse_csv"/>).</requires>
           <returns><c>true</c> if <c>*this</c> is configured to regard some first records as header records and
                    <c>end_record</c> has not be called for the final header record; <c>false</c> otherwise.</returns>
-          <note>This member is useful to implement a text handler class whose object wraps a <c>record_extractor_with_indexed_key</c> object.</note>
+          <note>This member is useful to implement a table handler class whose object wraps a <c>record_extractor_with_indexed_key</c> object.</note>
         </code-item>
       </section>
     </section>
@@ -2103,7 +2103,7 @@ template &lt;class Ch, class Tr, class... Appendices>
       <p>Commata offers class template <c>basic_stored_table</c> (<xref id="basic_stored_table"/>), which is an implementation of a in-memory text table (<xref id="definitions.text_table"/>).
          The text values of text fields contained by an object of an instance of it are represented by class template <c>basic_stored_value</c> (<xref id="basic_stored_value"/>),
          whose instance is a type whose object is actually a contiguous and null-terminated range of char type objects of the text table.</p>
-      <p>A text table is built by an object of an instance of <c>stored_table_builder</c> (<xref id="stored_table_builder"/>), whose instances meet <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>).</p>
+      <p>A text table is built by an object of an instance of <c>stored_table_builder</c> (<xref id="stored_table_builder"/>), whose instances meet <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</p>
     </section>
 
     <section id="stored_table_hpp">
@@ -3506,8 +3506,8 @@ namespace commata {
     stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
    ~stored_table_builder();
 
-    <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
-    // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
+    <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
+    // <n>requirements (<xref id="table_handler.requirements"/>):</n></c>
     std::pair&lt;char_type*, std::size_t> get_buffer();
     void release_buffer(const char_type* buffer) noexcept;
     void start_record(const char_type* record_begin);
@@ -3527,7 +3527,7 @@ namespace commata {
       </codeblock>
 
       <p>The class template <c>stored_table_builder</c> is a tool to create an image of a table of a text into a <c>basic_stored_table</c> (<xref id="basic_stored_table"/>) object, which is called the <n>targeted object</n>.
-         An instantiation of it satisfies the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>char_type</c>.
+         An instantiation of it satisfies the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
          An object of an instantiation of it can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
 
       <p>The template parameters <c>Content</c> and <c>Allocator</c> shall be types that make <c>basic_stored_table&lt;Content, Allocator></c> a valid type.</p>
@@ -3623,7 +3623,7 @@ template &lt;class Content, class Allocator, class... Args>
       <section id="scanner.table.general">
         <name>General</name>
 
-        <p>Commata offers a <n>table scanner</n> class template, whose name is <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>), whose instances meet the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) as a simple facility for one-pass scanning of texts.</p>
+        <p>Commata offers a <n>table scanner</n> class template, whose name is <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>), whose instances meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) as a simple facility for one-pass scanning of texts.</p>
         <p>A table scanner object can hold a <n>body field scanner</n> object for each field to which it forwards the field values, and it can hold a <n>record-end scanner</n> object to which it noitifies the end-of-record events.</p>
         <p>In addition, a table scanner object can be configured to recognize some first records as &#x2018;header&#x2019; records. It can simply ignore the header records or can forward the field values in the header to a <n>header field scanner</n> object it holds optionally.</p>
         <p>Properties that the type of the body field scanners shall meet, type of the record-end scanners shall meet, and the type of the header field scanners shall meet are bundled as
@@ -4019,8 +4019,8 @@ namespace commata {
     template &lt;class T> const T* get_record_end_scanner() const noexcept;
     template &lt;class T>       T* get_record_end_scanner()       noexcept;
 
-    <c>// <n>six member functions below are declared and defined to meet the TextHandler</n>
-    // <n>requirements (<xref id="text_handler.requirements"/>):</n></c>
+    <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
+    // <n>requirements (<xref id="table_handler.requirements"/>):</n></c>
     std::pair&lt;Ch*, std::size_t> get_buffer();
     void release_buffer(const Ch* buffer);
     void start_record(const Ch* record_begin);
@@ -4035,7 +4035,7 @@ namespace commata {
         </codeblock>
 
         <p>The class template <c>basic_table_scanner</c> describes the table scanner objects (<xref id="scanner.table.general"/>).
-           An instantiation of it satisfies the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for the template parameter <c>Ch</c>.
+           An instantiation of it satisfies the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.
            An object of an instantiation of it can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
         <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements and <c>Allocator::value_type</c> shall be a type identical to <c>Ch</c>.</p>
       </section>
@@ -4168,7 +4168,7 @@ bool is_in_header() const noexcept;
           <requires>Shall be invoked within a call of <c>parse_csv</c> (<xref id="parse_csv"/>).</requires>
           <returns><c>true</c> if <c>*this</c> is configured to regard some first records as header records and
                    <c>end_record</c> has not be called for the final header record; <c>false</c> otherwise.</returns>
-          <note>This member is useful to implement a text handler class whose object wraps a <c>basic_table_scanner</c> object.</note>
+          <note>This member is useful to implement a table handler class whose object wraps a <c>basic_table_scanner</c> object.</note>
         </code-item>
       </section>
     </section>
@@ -5378,7 +5378,7 @@ template &lt;class Allocator, class Container, class... Appendices>
 
       <p>Commata offers some tools to perform <n>pull parsing</n>, in which the users can immediately access the results of parsing text tables
          with the control of the execution flow of parsing held by the users themselves and with the knowledge of where in the text table they are processing.</p>
-      <p>The pull parsing facilities of Commata need objects that can create the text parsers for their &#x2018;pull-parsing&#x2019; text handlers.
+      <p>The pull parsing facilities of Commata need objects that can create the table parsers for their &#x2018;pull-parsing&#x2019; table handlers.
          The types of these objects are abstracted into the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>).</p>
 
       <section id="table_source.requirements">
@@ -5391,8 +5391,8 @@ template &lt;class Allocator, class Container, class... Appendices>
         </ul>
 
         <p>In <xref id="table.table_source.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c> and <c>rt</c> is an rvalue of <c>T</c>.
-          <c>H</c> is a type that meets the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.
-          <c>h</c> is an expression whose type meets the <c>TextHandler</c> requirements (<xref id="text_handler.requirements"/>) for <c>Ch</c>.</p>
+          <c>H</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.
+          <c>h</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.</p>
 
         <table id="table.table_source.requirements">
           <caption><c>TableSource</c> requirements</caption>
@@ -5416,15 +5416,15 @@ template &lt;class Allocator, class Container, class... Appendices>
             <td>(2)</td>
             <td><c>T::parser_type&lt;H></c></td>
             <td></td>
-            <td>Shall be a type that meets the <c>TextParser</c> requirements (<xref id="text_parser.requirements"/>) for <c>Ch</c>.</td>
+            <td>Shall be a type that meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.</td>
           </tr>
 
           <tr>
             <td>(3)</td>
             <td><c>ct(h)</c></td>
             <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
-            <td rowspan="2">Creates a text parser object <c>p</c> that has its tied character input object which is copy constructed (on (3)) or move constructed (on (4)) from the wrapped character input object of <c>*this</c> and
-                its tied text handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with from <c>h</c> (otherwise).
+            <td rowspan="2">Creates a table parser object <c>p</c> that has its tied character input object which is copy constructed (on (3)) or move constructed (on (4)) from the wrapped character input object of <c>*this</c> and
+                its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with from <c>h</c> (otherwise).
                 Then returns <c>p</c>.</td>
           </tr>
 
@@ -5678,12 +5678,12 @@ namespace commata {
          The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TableSource::char_type</c>.</p>
       <p>An object of an instantiation of it holds two objects:</p>
       <ul>
-        <li>a text parser object (<xref id="text_parser.requirements"/>), whose tied text handler object recognizes each invocation on its member functions
+        <li>a table parser object (<xref id="table_parser.requirements"/>), whose tied table handler object recognizes each invocation on its member functions
             <c>start_buffer</c>, <c>end_buffer</c>, <c>start_record</c>, <c>end_record</c>, <c>empty_physical_line</c>, <c>update</c> and <c>finalize</c> as a <n>parsing event</n>
             and enqueues it into the event queue below, and</li>
-        <li>an <n>event queue</n>, which is a queue of the parsing events, and which is enqueued on the back by the tied text handler object of the text parser object and dequeued by the user on the front.</li>
+        <li>an <n>event queue</n>, which is a queue of the parsing events, and which is enqueued on the back by the tied table handler object of the table parser object and dequeued by the user on the front.</li>
       </ul>
-      <p>The user of this class template can configure the text handler object to ignore some parsing event with the template parameter <c>Handle</c>.
+      <p>The user of this class template can configure the table handler object to ignore some parsing event with the template parameter <c>Handle</c>.
          If <c>(Handle &amp; primitive_table_pull_handle_start_buffer) == 0</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
          All other enumerators but <c>primitive_table_pull_handle_all</c> shall work similarly.
          <c>primitive_table_pull_handle_all</c> has a representation of all one bits and is intended to be used to express 'ignore none.'</p>
@@ -5695,7 +5695,7 @@ namespace commata {
 static constexpr bool physical_position_available = <nc>see below</nc>;
           </code>
           <remark>The expression in the right of <c>=</c> in the initializer shall be <c>true</c>
-                  if the internal parser implements the optional operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>);
+                  if the internal parser implements the optional operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>);
                   <c>false</c> otherwise.</remark>
         </code-item>
       </section>
@@ -5711,8 +5711,8 @@ template &lt;class TableSourceR>
           <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>First default constructs an <c>Allocator</c> object <c>a</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
-                   Makes a text handler object <c>h</c> configured to enqueue events into the event queue above ant to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
-                   Then constructs the text parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
+                   Makes a table handler object <c>h</c> configured to enqueue events into the event queue above ant to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
+                   Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
           <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
                   This overload shall not participate in overload resolution unless <c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</remark>
@@ -5727,8 +5727,8 @@ template &lt;class TableSourceR>
           <requires><c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</requires>
           <effects>First constructs an <c>Allocator</c> object <c>a</c> with <c>alloc</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
-                   Makes a text handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
-                   Then constructs the text parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
+                   Makes a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
+                   Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
         </code-item>
 
@@ -5781,9 +5781,9 @@ primitive_table_pull&amp; operator()();
           <effects>If <c>state() == primitive_table_pull_state::eof</c> is <c>true</c>, return without doing anything.
                    Otherwise, first dequeues an event from the event queue on the front if the queue is not empty.
                    Then iteratively calls <c>p()</c> to enqueue parsing events into the event queue on the back while the event queue is empty
-                   where <c>p</c> is the text parser held by <c>*this</c>.</effects>
+                   where <c>p</c> is the table parser held by <c>*this</c>.</effects>
           <returns><c>*this</c>.</returns>
-          <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the text parser and the allocator.</throws>
+          <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the table parser and the allocator.</throws>
           <remark>If an exception is thrown, <c>*this</c> would be placed to a valid but unspecified state.</remark>
         </code-item>
       </section>
@@ -5796,7 +5796,7 @@ primitive_table_pull&amp; operator()();
 primitive_table_pull_state state() const noexcept;
           </code>
           <returns>A value of <c>primitive_table_pull_state</c> that tells the current status of <c>*this</c> as shown in <xref id="table.primitive_table_pull.state"/>.
-                   In <xref id="table.primitive_table_pull.state"/>, <c>h</c> denotes the text handler object held by <c>*this</c>.
+                   In <xref id="table.primitive_table_pull.state"/>, <c>h</c> denotes the table handler object held by <c>*this</c>.
                    &#x2018;Maximum data size&#x2019; column shows the return value of <c>data_size()</c> if the current event was queued while <c>is_discarding_data()</c> was <c>false</c>.</returns>
 
           <table id="table.primitive_table_pull.state">
@@ -5820,7 +5820,7 @@ primitive_table_pull_state state() const noexcept;
             <tr>
               <td><c>(2)</c></td>
               <td><c>eof</c></td>
-              <td>The text parser has already consumed all content of its tied table source.</td>
+              <td>The table parser has already consumed all content of its tied table source.</td>
               <td>0</td>
             </tr>
 
@@ -5901,11 +5901,11 @@ explicit operator bool() const noexcept;
           <code>
 std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<nc>see below</nc>);
           </code>
-          <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c> where <c>p</c> is the internal text parser object.
+          <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c> where <c>p</c> is the internal table parser object.
                    Otherwise, <c>std::make_pair(npos, npos)</c>.</returns>
           <throws>Nothing.</throws>
           <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>physical_position_available</c> is <c>false</c>.
-                  Otherwise, it is equivalent to <c>noexcept(p.get_physical_position()))</c> where <c>p</c> is the internal text parser object.</remark>
+                  Otherwise, it is equivalent to <c>noexcept(p.get_physical_position()))</c> where <c>p</c> is the internal table parser object.</remark>
         </code-item>
 
         <code-item>
@@ -6155,7 +6155,7 @@ namespace commata {
 static constexpr bool physical_position_available = <nc>see below</nc>;
           </code>
           <remark>The expression in the right of <c>=</c> in the initializer shall be <c>true</c>
-                  if the internal parser implements the optional operation <c>get_physical_position</c> (<xref id="text_parser.requirements"/>);
+                  if the internal parser implements the optional operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>);
                   <c>false</c> otherwise.</remark>
         </code-item>
       </section>
@@ -6171,7 +6171,7 @@ template &lt;class TableSourceR>
           <effects>Initializes an object of <c>table_pull</c> with a default constructed <c>Allocator</c> object as its allocator object.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
-                   Internally invokes <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c> to make a text parser (<xref id="text_parser.requirements"/>) object.</effects>
+                   Internally invokes <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c> to make a table parser (<xref id="table_parser.requirements"/>) object.</effects>
           <postcondition><c>is_empty_line_aware()</c> and <c>is_suppressing_errors()</c> shall return <c>false</c>.</postcondition>
           <remark>This overload shall not participate in overload resolution unless <c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</remark>
         </code-item>
@@ -6186,7 +6186,7 @@ template &lt;class TableSourceR>
           <effects>Initializes an object of <c>table_pull</c> with an allocator object constructed with <c>alloc</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
-                   Internally invokes <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c> to make a text parser (<xref id="text_parser.requirements"/>) object.</effects>
+                   Internally invokes <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c> to make a table parser (<xref id="table_parser.requirements"/>) object.</effects>
           <postcondition><c>is_empty_line_aware()</c> and <c>is_suppressing_errors()</c> shall return <c>false</c>.</postcondition>
         </code-item>
 
@@ -6231,14 +6231,14 @@ table_pull&amp; set_empty_physical_line_aware(bool b = true) noexcept;
           <code>
 bool is_suppressing_errors() const noexcept;
           </code>
-          <returns>Whether <c>operator()</c> and <c>skip_records()</c> catches all the exceptions thrown by the internal text parser.</returns>
+          <returns>Whether <c>operator()</c> and <c>skip_records()</c> catches all the exceptions thrown by the internal table parser.</returns>
         </code-item>
 
         <code-item>
           <code>
 table_pull&amp; set_suppressing_errors(bool b = true) noexcept;
           </code>
-          <returns>Sets hether <c>operator()</c> and <c>skip_records()</c> catches all the exceptions thrown by the internal text parser (if <c>b</c> is not <c>false</c>) or not (otherwise).</returns>
+          <returns>Sets hether <c>operator()</c> and <c>skip_records()</c> catches all the exceptions thrown by the internal table parser (if <c>b</c> is not <c>false</c>) or not (otherwise).</returns>
           <returns><c>*this</c>.</returns>
           <remark>The latest caught exception can be rethrown with <c>rethrow_exception</c> (<xref id="table_pull.rethrow"/>).</remark>
         </code-item>
@@ -6254,7 +6254,7 @@ table_pull&amp; operator()(std::size_t n = 0);
           <effects>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>true</c>, return without doing anything.
                    Otherwise, tries to read next <c>n + 1</c> fields in the text table until it encounters an end of a record and make the current string value be the value of the last-read field.</effects>
           <returns><c>*this</c>.</returns>
-          <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal text parser and the allocator.</throws>
+          <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
           <postcondition>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>false</c> before the call,
                          <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error) || (state() == table_pull_state::field) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.
                          </postcondition>
@@ -6268,7 +6268,7 @@ table_pull&amp; skip_records(std::size_t n = 0);
           <effects>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>true</c>, return without doing anything.
                    Otherwise, tries to read the text table until it encounters <c>n + 1</c> ends of records.</effects>
           <returns><c>*this</c>.</returns>
-          <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal text parser and the allocator.</throws>
+          <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
           <postcondition>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>false</c> before the call,
                          <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> shall be <c>true</c>.</postcondition>
           <remark>Invalidates all pointers that have been returned by <c>begin</c>, <c>cbegin</c>, <c>end</c> and <c>cend</c>.</remark>
@@ -6343,11 +6343,11 @@ explicit operator bool() const noexcept;
           <code>
 std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<nc>see below</nc>);
           </code>
-          <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c> where <c>p</c> is the internal text parser object.
+          <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c> where <c>p</c> is the internal table parser object.
                    Otherwise, <c>std::make_pair(npos, npos)</c>.</returns>
           <throws>Nothing.</throws>
           <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>physical_position_available</c> is <c>false</c>.
-                  Otherwise, it is equivalent to <c>noexcept(p.get_physical_position()))</c> where <c>p</c> is the internal text parser object.</remark>
+                  Otherwise, it is equivalent to <c>noexcept(p.get_physical_position()))</c> where <c>p</c> is the internal table parser object.</remark>
         </code-item>
 
         <code-item>

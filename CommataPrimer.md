@@ -521,12 +521,12 @@ is an empty string; it is to solve the problem we have faced.
 Class templates `replace_if_skipped` and `replace_if_conversion_failed` are
 defined in the header `"commata/table_scanner.hpp"`.
 
-## Making your own text handler types
+## Making your own table handler types
 
 So far, the second arguments to `parse_csv` were the return value of
 `make_stored_table_builder` and rvalues of `table_scanner` objects. But you can
 define your own types whose objects can be passed to `parse_csv`.
-These types are called _text handler_ types.
+These types are called _table handler_ types.
 
 For example, if you want to make a vector of vectors of field values,
 the following codes will do:
@@ -536,7 +536,7 @@ the following codes will do:
 
 using commata::parse_csv;
 
-// A text handler type whose objects make a vector of vectors of field values
+// A table handler type whose objects make a vector of vectors of field values
 class vov_text_handler    // vov means "vector of vector"
 {
   std::vector<std::vector<std::string>>* records_;
@@ -585,13 +585,13 @@ void vov_text_handler_sample()
 }
 ```
 
-A text handler type must have four member functions: `start_record`,
+A table handler type must have four member functions: `start_record`,
 `end_record`, `update`, `finalize`. In addition, it must have a nested type
 `char_type`.
 If these requirements meet, `parse_csv` emits parsing events to the text
 handler objects.
 
-Please note that a field value may be notified to the text handler object as
+Please note that a field value may be notified to the table handler object as
 chunked; not-the-final chunks are notified by `update` and the final chunk is
 notified by `finalize`.
 
@@ -602,8 +602,8 @@ container object of container object of `std::string` objects (not
 `stored_value`objects) each of which represents its corresponding field value,
 this sample codes can be faster and optimal.)
 
-`parse_csv` depletes text handler objects passed to it; in other words,
-it leaves them in their moved-from states. If your text handler objects has
+`parse_csv` depletes table handler objects passed to it; in other words,
+it leaves them in their moved-from states. If your table handler objects has
 states and you want to access their not-moved-from states after parsing,
 you can pass them wrapping by `std::ref`.
 
@@ -612,18 +612,18 @@ you can pass them wrapping by `std::ref`.
 As astute readers might have noticed, `stars.csv` contains one empty line that
 looks like ignored completely by `parse_csv`.
 
-In fact, it is text handlers (the second arguments to `parse_csv`) that ignored
+In fact, it is table handlers (the second arguments to `parse_csv`) that ignored
 the empty line. To be precise, `parse_csv` reports empty lines to the text
 handlers with `empty_physical_line` function if they have it, but all text
 handlers that we have mentioned so far do not have it, so `parse_csv` can not
-report the empty line to the text handlers.
+report the empty line to the table handlers.
 
 (Just to be sure, empty lines are reported with `empty_physical_line` only when
 they do not belong to any fields. `parse_csv` recognizes that quoted fields
 might contain empty lines as constituents of their values.)
 
-If you want your text handlers to regard an empty line as a record that
-contains no fields, you can wrap your text handlers with
+If you want your table handlers to regard an empty line as a record that
+contains no fields, you can wrap your table handlers with
 `make_empty_physical_line_aware`:
 
 ```C++
