@@ -5711,7 +5711,7 @@ template &lt;class TableSourceR>
           <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>First default constructs an <c>Allocator</c> object <c>a</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
-                   Makes a table handler object <c>h</c> configured to enqueue events into the event queue above ant to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
+                   Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
           <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
@@ -5727,7 +5727,7 @@ template &lt;class TableSourceR>
           <requires><c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</requires>
           <effects>First constructs an <c>Allocator</c> object <c>a</c> with <c>alloc</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
-                   Makes a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
+                   Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
         </code-item>
@@ -6168,10 +6168,9 @@ template &lt;class TableSourceR>
   explicit table_pull(TableSourceR&amp;&amp; in, std::size_t buffer_size = 0);
           </code>
           <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
-          <effects>Initializes an object of <c>table_pull</c> with a default constructed <c>Allocator</c> object as its allocator object.
+          <effects>Initializes an object of <c>table_pull</c> with a default constructed <c>Allocator</c> object as its allocator object and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
-                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
-                   Internally invokes <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c> to make a table parser (<xref id="table_parser.requirements"/>) object.</effects>
+                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
           <postcondition><c>is_empty_line_aware()</c> and <c>is_suppressing_errors()</c> shall return <c>false</c>.</postcondition>
           <remark>This overload shall not participate in overload resolution unless <c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</remark>
         </code-item>
@@ -6183,10 +6182,9 @@ template &lt;class TableSourceR>
              std::size_t buffer_size = 0);
           </code>
           <requires><c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</requires>
-          <effects>Initializes an object of <c>table_pull</c> with an allocator object constructed with <c>alloc</c>.
+          <effects>Initializes an object of <c>table_pull</c> with an allocator object constructed from <c>alloc</c> and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
-                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
-                   Internally invokes <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c> to make a table parser (<xref id="table_parser.requirements"/>) object.</effects>
+                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
           <postcondition><c>is_empty_line_aware()</c> and <c>is_suppressing_errors()</c> shall return <c>false</c>.</postcondition>
         </code-item>
 
@@ -6238,7 +6236,7 @@ bool is_suppressing_errors() const noexcept;
           <code>
 table_pull&amp; set_suppressing_errors(bool b = true) noexcept;
           </code>
-          <returns>Sets hether <c>operator()</c> and <c>skip_records()</c> catches all the exceptions thrown by the internal table parser (if <c>b</c> is not <c>false</c>) or not (otherwise).</returns>
+          <returns>Sets whether <c>operator()</c> and <c>skip_records()</c> catches all the exceptions thrown by the internal table parser (if <c>b</c> is not <c>false</c>) or not (otherwise).</returns>
           <returns><c>*this</c>.</returns>
           <remark>The latest caught exception can be rethrown with <c>rethrow_exception</c> (<xref id="table_pull.rethrow"/>).</remark>
         </code-item>
@@ -6251,13 +6249,12 @@ table_pull&amp; set_suppressing_errors(bool b = true) noexcept;
           <code>
 table_pull&amp; operator()(std::size_t n = 0);
           </code>
-          <effects>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>true</c>, return without doing anything.
-                   Otherwise, tries to read next <c>n + 1</c> fields in the text table until it encounters an end of a record and make the current string value be the value of the last-read field.</effects>
+          <effects>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>true</c>, returns without doing anything.
+                   Otherwise, reads the text table until next <c>n + 1</c> fields are read, an end of a record is found, or the table source is fully consumed.</effects>
           <returns><c>*this</c>.</returns>
           <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
           <postcondition>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>false</c> before the call,
-                         <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error) || (state() == table_pull_state::field) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.
-                         </postcondition>
+                         <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error) || (state() == table_pull_state::field) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
           <remark>Invalidates all pointers that have been returned by <c>begin</c>, <c>cbegin</c>, <c>end</c> and <c>cend</c>.</remark>
         </code-item>
 
@@ -6265,12 +6262,12 @@ table_pull&amp; operator()(std::size_t n = 0);
           <code>
 table_pull&amp; skip_records(std::size_t n = 0);
           </code>
-          <effects>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>true</c>, return without doing anything.
-                   Otherwise, tries to read the text table until it encounters <c>n + 1</c> ends of records.</effects>
+          <effects>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>true</c>, returns without doing anything.
+                   Otherwise, reads the text table until <c>n + 1</c> ends of records are found or the table source is fully consumed.</effects>
           <returns><c>*this</c>.</returns>
           <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
           <postcondition>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>false</c> before the call,
-                         <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> shall be <c>true</c>.</postcondition>
+                         <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
           <remark>Invalidates all pointers that have been returned by <c>begin</c>, <c>cbegin</c>, <c>end</c> and <c>cend</c>.</remark>
         </code-item>
       </section>

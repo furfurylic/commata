@@ -98,7 +98,7 @@ public:
 
 private:
     base_member_pair<Allocator, std::size_t> alloc_;
-    typename at_t::pointer buffer_;
+    const typename at_t::pointer buffer_;
     state_queue_type sq_;
     data_queue_type dq_;
     std::size_t yield_location_;
@@ -109,7 +109,8 @@ public:
         std::allocator_arg_t, const Allocator& alloc,
         std::size_t buffer_size) :
         alloc_(alloc, sanitize_buffer_size(buffer_size, alloc)),
-        buffer_(nullptr), yield_location_(0), collects_data_(true)
+        buffer_(at_t::allocate(alloc_.base(), alloc_.member())),
+        yield_location_(0), collects_data_(true)
     {}
 
 private:
@@ -123,13 +124,11 @@ private:
 
 public:
     pull_handler(const pull_handler& other) = delete;
-    pull_handler(pull_handler&& other) = default;
+    pull_handler(pull_handler&& other) = delete;
 
     ~pull_handler()
     {
-        if (buffer_) {
-            at_t::deallocate(alloc_.base(), buffer_, alloc_.member());
-        }
+        at_t::deallocate(alloc_.base(), buffer_, alloc_.member());
     }
 
     const state_queue_type& state_queue() const noexcept
@@ -165,9 +164,6 @@ public:
 
     std::pair<char_type*, std::size_t> get_buffer()
     {
-        if (!buffer_) {
-            buffer_ = at_t::allocate(alloc_.base(), alloc_.member());
-        }
         return { std::addressof(*buffer_), alloc_.member() - 1 };
     }
 
