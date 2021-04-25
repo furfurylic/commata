@@ -4090,9 +4090,9 @@ allocator_type get_allocator() const noexcept;
           <code>
 template &lt;class T = std::nullptr_t> void set_field_scanner(std::size_t j, T s = T());
           </code>
-          <requires><c>T</c> shall either of be (possibly cv-qualified) <c>std::nullptr_t</c>,
+          <requires><c>T</c> shall either be (possibly cv-qualified) <c>std::nullptr_t</c>,
                     meet the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) for <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>, or
-                    (possibly cv-qualified) <c>std::reference_wrapper&lt;U></c> where <c>U</c> shall be a type that meets the <c>BodyFieldScanner</c> requirements for <c>Ch</c> and <c>Tr</c> except that it need not be either <c>MoveConstructible</c> or <c>Destructible</c>.</requires>
+                    be (possibly cv-qualified) <c>std::reference_wrapper&lt;U></c> where <c>U</c> shall be a type that meets the <c>BodyFieldScanner</c> requirements for <c>Ch</c> and <c>Tr</c> except that it need not be either <c>MoveConstructible</c> or <c>Destructible</c>.</requires>
           <effects>First if <c>*this</c> has a body field scanner installed at zero-based field index <c>j</c>, uninstalls it.
                    Then if <c>T</c> is (possibly cv-qualified) <c>std::nullptr_t</c>, returns immediately.
                    Otherwise, installs a copy of <c>s</c> as a body field scanner at zero-based field index <c>j</c>.</effects>
@@ -4129,7 +4129,7 @@ template &lt;class T>       T* get_field_scanner(std::size_t j)       noexcept;
           <code>
 template &lt;class T = std::nullptr_t> void set_record_end_scanner(T s = T());
           </code>
-          <requires><c>T</c> shall be (possibly cv-qualified) <c>std::nullptr_t</c> or meet the <c>RecordEndScanner</c> requirements (<xref id="record_end_scanner.requirements"/>).</requires>
+          <requires><c>T</c> shall either be (possibly cv-qualified) <c>std::nullptr_t</c> or meet the <c>RecordEndScanner</c> requirements (<xref id="record_end_scanner.requirements"/>).</requires>
           <effects>First if <c>*this</c> has a record-end scanner installed, uninstalls it.
                    Then if <c>T</c> is (possibly cv-qualified) <c>std::nullptr_t</c>, returns immediately.
                    Otherwise, then installs a copy of <c>s</c> as a record-end scanner.</effects>
