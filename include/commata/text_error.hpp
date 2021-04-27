@@ -279,9 +279,9 @@ std::basic_ostream<wchar_t, Tr>& operator<<(
             (auto* sb) {
                 if (w_len > 0) {
                     for (std::streamsize j = 0; j < w_len; ++j) {
-                      if (sb->sputc(os.widen(w_raw[j])) == Tr::eof()) {
-                          return false;
-                      }
+                        if (sb->sputc(os.widen(w_raw[j])) == Tr::eof()) {
+                            return false;
+                        }
                     }
                     if (!detail::sputn(sb, L"; line ")) {
                         return false;
