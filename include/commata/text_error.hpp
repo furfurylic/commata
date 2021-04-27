@@ -25,19 +25,6 @@
 #include "typing_aid.hpp"
 
 namespace commata {
-namespace detail {
-
-template <class T>
-struct npos_impl
-{
-    constexpr static T npos = static_cast<T>(-1);
-};
-
-// To define this in a header, npos_impl is a template
-template <class T>
-constexpr T npos_impl<T>::npos;
-
-} // end namespace detail
 
 class text_error;
 
@@ -66,7 +53,7 @@ public:
 };
 
 class text_error :
-    public std::exception, public detail::npos_impl<std::size_t>
+    public std::exception
 {
     struct what_holder
     {
@@ -99,6 +86,8 @@ class text_error :
     std::pair<std::size_t, std::size_t> physical_position_;
 
 public:
+    static constexpr std::size_t npos = static_cast<std::size_t>(-1);
+
     template <class T,
         std::enable_if_t<
             detail::is_std_string_of_v<std::decay_t<T>, char>
