@@ -26,24 +26,10 @@
 
 namespace commata {
 
-namespace detail::ex {
-
-template <class T>
-struct npos_impl
-{
-    constexpr static T npos = static_cast<T>(-1);
-};
-
-// To define this in a header, npos_impl is a template
-template <class T>
-constexpr T npos_impl<T>::npos;
-
-} // end detail::ex
-
 class text_error_info;
 
 class text_error :
-    public std::exception, public detail::ex::npos_impl<std::size_t>
+    public std::exception
 {
     struct what_holder
     {
@@ -75,6 +61,8 @@ class text_error :
     std::pair<std::size_t, std::size_t> pos_;
 
 public:
+    static constexpr std::size_t npos = static_cast<std::size_t>(-1);
+
     text_error() noexcept :
         pos_(npos, npos)
     {}
