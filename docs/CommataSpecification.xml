@@ -5977,8 +5977,6 @@ namespace commata {
     <c>// <n><xref id="table_pull.tweaks"/>, tweaks:</n></c>
     bool is_empty_physical_line_aware() const noexcept;
     table_pull&amp; set_empty_physical_line_aware(bool b = true) noexcept;
-    bool is_suppressing_errors() const noexcept;
-    table_pull&amp; set_suppressing_errors(bool b = true) noexcept;
 
     <c>// <n><xref id="table_pull.inv"/>, invocation:</n></c>
     table_pull&amp; operator()(std::size_t n = 0);
@@ -6010,9 +6008,6 @@ namespace commata {
     template &lt;class OtherTr = std::char_traits&lt;char_type>,
       class OtherAllocator = std::allocator&lt;char_type>>
         explicit operator std::basic_string&lt;char_type, OtherTr, OtherAllocator>() const;
-
-    <c>// <n><xref id="table_pull.rethrow"/>, caught exception access:</n></c>
-    void rethrow_suppressed();
   };
 
   <c>// <n><xref id="table_pull.comparison"/>, table_pull comparison functions:</n></c>
@@ -6171,7 +6166,7 @@ template &lt;class TableSourceR>
           <effects>Initializes an object of <c>table_pull</c> with a default constructed <c>Allocator</c> object as its allocator object and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
-          <postcondition><c>is_empty_line_aware()</c> and <c>is_suppressing_errors()</c> shall return <c>false</c>.</postcondition>
+          <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
           <remark>This overload shall not participate in overload resolution unless <c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</remark>
         </code-item>
 
@@ -6185,7 +6180,7 @@ template &lt;class TableSourceR>
           <effects>Initializes an object of <c>table_pull</c> with an allocator object constructed from <c>alloc</c> and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
-          <postcondition><c>is_empty_line_aware()</c> and <c>is_suppressing_errors()</c> shall return <c>false</c>.</postcondition>
+          <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -6223,22 +6218,6 @@ table_pull&amp; set_empty_physical_line_aware(bool b = true) noexcept;
           </code>
           <effects>Sets whether <c>*this</c> treats empty physical lines as records with no fields (if <c>b</c> is not <c>false</c>) or ignore empty physical lines (otherwise).</effects>
           <returns><c>*this</c>.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-bool is_suppressing_errors() const noexcept;
-          </code>
-          <returns>Whether <c>operator()</c> and <c>skip_records()</c> catches all the exceptions thrown by the internal table parser.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-table_pull&amp; set_suppressing_errors(bool b = true) noexcept;
-          </code>
-          <returns>Sets whether <c>operator()</c> and <c>skip_records()</c> catches all the exceptions thrown by the internal table parser (if <c>b</c> is not <c>false</c>) or not (otherwise).</returns>
-          <returns><c>*this</c>.</returns>
-          <remark>The latest caught exception can be rethrown with <c>rethrow_exception</c> (<xref id="table_pull.rethrow"/>).</remark>
         </code-item>
       </section>
 
@@ -6309,7 +6288,7 @@ table_pull_state state() const noexcept;
             <tr>
               <td><c>(3)</c></td>
               <td><c>error</c></td>
-              <td>An exception has thrown in <c>operator()</c> or <c>skip_records()</c> regardless of whether it was suppressed (<xref id="table_pull.tweaks"/>).</td>
+              <td>An exception has thrown out of <c>operator()</c> or <c>skip_records()</c>.</td>
               <td>An empty string</td>
             </tr>
 
@@ -6503,19 +6482,6 @@ template &lt;class OtherTr = std::char_traits&lt;char_type>,
     explicit operator std::basic_string&lt;char_type, OtherTr, OtherAllocator>() const;
           </code>
           <returns><c>std::basic_string&lt;char_type, OtherTr, OtherAllocator>(cbegin(), cend())</c>.</returns>
-        </code-item>
-      </section>
-
-      <section id="table_pull.rethrow">
-        <name><c>table_pull</c> caught exception access</name>
-
-        <code-item>
-          <code>
-void rethrow_suppressed();
-          </code>
-          <effects>If <c>*this</c> has caught exceptions while <c>is_suppressing_errors()</c> (<xref id="table_pull.tweaks"/>) is set to <c>true</c>, clears them and rethrow the latest one.
-                   Otherwise, does nothing.</effects>
-          <remark>The return values of <c>state</c> shall be the same between before and after invoking this function.</remark>
         </code-item>
       </section>
 

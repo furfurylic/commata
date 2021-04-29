@@ -338,7 +338,7 @@ TYPED_TEST_P(TestTablePull, SkipRecord)
     ASSERT_EQ(std::make_pair(i, j), pull.get_position());
 }
 
-TYPED_TEST_P(TestTablePull, SuppressedError)
+TYPED_TEST_P(TestTablePull, Error)
 {
     using char_t = typename TypeParam::first_type;
 
@@ -348,30 +348,16 @@ TYPED_TEST_P(TestTablePull, SuppressedError)
 
     auto pull = make_table_pull(
         make_csv_source(csv), TypeParam::second_type::value);
-    pull.set_suppressing_errors();
     ASSERT_EQ(table_pull_state::field, pull().state());
     ASSERT_EQ(table_pull_state::record_end, pull().state());
     ASSERT_EQ(table_pull_state::field, pull().state());
-    ASSERT_EQ(table_pull_state::error, pull().state());  // causes an error
+    ASSERT_THROW(pull(), parse_error);  // causes an error
 
     // The state is 'error'
-    ASSERT_FALSE(pull);
     ASSERT_EQ(table_pull_state::error, pull.state());
+    ASSERT_FALSE(pull);
 
     // One more call of operator() will not change the state
-    ASSERT_FALSE(pull());
-    ASSERT_EQ(table_pull_state::error, pull.state());
-
-    ASSERT_THROW(pull.rethrow_suppressed(), parse_error);
-
-    // Rethrowing the error will not change the state
-    // except that it will lose the error
-    ASSERT_FALSE(pull);
-
-    ASSERT_EQ(table_pull_state::error, pull.state());
-    ASSERT_NO_THROW(pull.rethrow_suppressed());
-
-    // Yet another call of operator() will not change the state
     ASSERT_FALSE(pull());
     ASSERT_EQ(table_pull_state::error, pull.state());
 }
@@ -510,11 +496,9 @@ TYPED_TEST_P(TestTablePull, Move)
                                                    "abc,def\n"
                                                    "\"\"\"")),
         TypeParam::second_type::value);
-    pull.set_suppressing_errors(true);
     pull.skip_record()();
 
     auto pull2 = std::move(pull);
-    ASSERT_TRUE(pull2.is_suppressing_errors());
     ASSERT_EQ(pos_t(1, 0), pull2.get_position());
     ASSERT_EQ(str("def"), pull2());
 
@@ -522,15 +506,16 @@ TYPED_TEST_P(TestTablePull, Move)
                                     // Unspecified but implemented so
     ASSERT_EQ(str(""), pull());     // ditto
 
-    ASSERT_EQ(table_pull_state::error, pull2()().state());
+    ASSERT_THROW(pull2()(), parse_error);
+    ASSERT_EQ(table_pull_state::error, pull2.state());
 
-    auto pull3 = std::move(pull2);  // also suppressed errors are moved
-    ASSERT_THROW(pull3.rethrow_suppressed(), parse_error);
+    auto pull3 = std::move(pull2);  // also the state is moved
+    ASSERT_EQ(table_pull_state::error, pull3.state());
 }
 
 REGISTER_TYPED_TEST_SUITE_P(TestTablePull,
     PrimitiveBasics, PrimitiveMove,
-    Basics, SkipRecord, SkipField, SuppressedError, Relations, Plus, Move);
+    Basics, SkipRecord, SkipField, Error, Relations, Plus, Move);
 
 typedef testing::Types<
     std::pair<char, std::integral_constant<std::size_t, 2>>,

@@ -662,7 +662,6 @@ private:
        | primitive_table_pull_handle_update
        | primitive_table_pull_handle_finalize)> p_;
     bool empty_physical_line_aware_;
-    bool suppresses_error_;
 
     table_pull_state last_state_;
     std::pair<char_type*, char_type*> last_;
@@ -671,7 +670,6 @@ private:
 
     std::size_t i_;
     std::size_t j_;
-    std::exception_ptr suppressed_error_;
 
 public:
     using value_type = const char_type;
@@ -708,7 +706,7 @@ public:
         TableSourceR&& in, std::size_t buffer_size = 0) :
         p_(std::allocator_arg, alloc, std::forward<TableSourceR>(in),
             ((buffer_size > 1) ? buffer_size : 2)),
-        empty_physical_line_aware_(false), suppresses_error_(false),
+        empty_physical_line_aware_(false),
         last_state_(table_pull_state::before_parse), last_(empty_string()),
         value_(alloc), value_expiring_(false),
         i_(0), j_(0)
@@ -717,17 +715,14 @@ public:
     table_pull(table_pull&& other) noexcept :
         p_(std::move(other.p_)),
         empty_physical_line_aware_(other.empty_physical_line_aware_),
-        suppresses_error_(other.suppresses_error_),
         last_state_(other.last_state_), last_(other.last_),
         value_(std::move(other.value_)),
-        value_expiring_(other.value_expiring_), i_(other.i_), j_(other.j_),
-        suppressed_error_(std::move(other.suppressed_error_))
+        value_expiring_(other.value_expiring_), i_(other.i_), j_(other.j_)
     {
         other.last_state_ = table_pull_state::eof;
         other.last_ = empty_string();
         other.i_ = 0;
         other.j_ = 0;
-        other.suppressed_error_ = nullptr;
     }
 
     ~table_pull() = default;
@@ -745,17 +740,6 @@ public:
     table_pull& set_empty_physical_line_aware(bool b = true) noexcept
     {
         empty_physical_line_aware_ = b;
-        return *this;
-    }
-
-    bool is_suppressing_errors() const noexcept
-    {
-        return suppresses_error_;
-    }
-
-    table_pull& set_suppressing_errors(bool b = true) noexcept
-    {
-        suppresses_error_ = b;
         return *this;
     }
 
@@ -804,12 +788,7 @@ public:
                     value_expiring_ = true;
                 }
                 set_state(table_pull_state::error);
-                if (suppresses_error_) {
-                    suppressed_error_ = std::current_exception();
-                    return *this;
-                } else {
-                    throw;
-                }
+                throw;
             }
             switch (p_.state()) {
             case primitive_table_pull_state::update:
@@ -863,12 +842,7 @@ private:
             } catch (...) {
                 set_state(table_pull_state::error);
                 last_ = empty_string();
-                if (suppresses_error_) {
-                    suppressed_error_ = std::current_exception();
-                    return *this;
-                } else {
-                    throw;
-                }
+                throw;
             }
             switch (p_.state()) {
             case primitive_table_pull_state::update:
@@ -934,12 +908,7 @@ public:
                     value_expiring_ = true;
                 }
                 set_state(table_pull_state::error);
-                if (suppresses_error_) {
-                    suppressed_error_ = std::current_exception();
-                    return *this;
-                } else {
-                    throw;
-                }
+                throw;
             }
             switch (p_.state()) {
             case primitive_table_pull_state::update:
@@ -975,16 +944,6 @@ public:
     exit:
         set_state(table_pull_state::eof);
         return *this;
-    }
-
-    void rethrow_suppressed()
-    {
-        if (suppressed_error_) {
-            using std::swap;
-            std::exception_ptr e;
-            swap(e, suppressed_error_);
-            std::rethrow_exception(e);
-        }
     }
 
     const_iterator begin() const noexcept
