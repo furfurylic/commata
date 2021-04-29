@@ -5474,7 +5474,6 @@ namespace commata {
   enum class table_pull_state : <nc>unspecified</nc> {
     before_parse = <nc>unspecified</nc>,
     eof          = <nc>unspecified</nc>,
-    error        = <nc>unspecified</nc>,
     field        = <nc>unspecified</nc>,
     record_end   = <nc>unspecified</nc>
   };
@@ -6228,26 +6227,26 @@ table_pull&amp; set_empty_physical_line_aware(bool b = true) noexcept;
           <code>
 table_pull&amp; operator()(std::size_t n = 0);
           </code>
-          <effects>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>true</c>, returns without doing anything.
+          <effects>If <c>state() == table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
                    Otherwise, reads the text table until next <c>n + 1</c> fields are read, an end of a record is found, or the table source is fully consumed.</effects>
           <returns><c>*this</c>.</returns>
           <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
-          <postcondition>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>false</c> before the call,
-                         <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error) || (state() == table_pull_state::field) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
-          <remark>Invalidates all pointers that have been returned by <c>begin</c>, <c>cbegin</c>, <c>end</c> and <c>cend</c>.</remark>
+          <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::field) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
+          <remark>Invalidates all pointers that have been returned by <c>begin</c>, <c>cbegin</c>, <c>end</c> and <c>cend</c>.
+                  When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</remark>
         </code-item>
 
         <code-item>
           <code>
 table_pull&amp; skip_records(std::size_t n = 0);
           </code>
-          <effects>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>true</c>, returns without doing anything.
+          <effects>If <c>state() == table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
                    Otherwise, reads the text table until <c>n + 1</c> ends of records are found or the table source is fully consumed.</effects>
           <returns><c>*this</c>.</returns>
           <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
-          <postcondition>If <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error)</c> is <c>false</c> before the call,
-                         <c>(state() == table_pull_state::eof) || (state() == table_pull_state::error) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
-          <remark>Invalidates all pointers that have been returned by <c>begin</c>, <c>cbegin</c>, <c>end</c> and <c>cend</c>.</remark>
+          <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
+          <remark>Invalidates all pointers that have been returned by <c>begin</c>, <c>cbegin</c>, <c>end</c> and <c>cend</c>.
+                  When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</remark>
         </code-item>
       </section>
 
@@ -6287,20 +6286,13 @@ table_pull_state state() const noexcept;
 
             <tr>
               <td><c>(3)</c></td>
-              <td><c>error</c></td>
-              <td>An exception has thrown out of <c>operator()</c> or <c>skip_records()</c>.</td>
-              <td>An empty string</td>
-            </tr>
-
-            <tr>
-              <td><c>(4)</c></td>
               <td><c>field</c></td>
               <td><c>*this</c> has reached a field with the latest call of <c>operator()</c>.</td>
               <td>The field value</td>
             </tr>
 
             <tr>
-              <td><c>(5)</c></td>
+              <td><c>(4)</c></td>
               <td><c>record_end</c></td>
               <td><c>*this</c> has reached an end of the a record with the latest call of <c>operator()</c> or <c>skip_record</c>.</td>
               <td>An empty string</td>
@@ -6312,7 +6304,7 @@ table_pull_state state() const noexcept;
           <code>
 explicit operator bool() const noexcept;
           </code>
-          <returns><c>(state() != table_pull_state::eof) &amp;&amp; (state() != table_pull_state::error)</c>.</returns>
+          <returns><c>state() != table_pull_state::eof</c>.</returns>
         </code-item>
 
         <code-item>
@@ -6335,7 +6327,7 @@ std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
 
           <table id="table.table_pull.get_position">
             <caption>The meanings of the values <c>get_position()</c> returns</caption>
-            <col width="10"/><col width="38"/><col width="107"/><col width="107"/>
+            <col width="1"/><col width="3"/><col width="8"/><col width="12"/>
 
             <tr>
               <th>#</th>
@@ -6354,26 +6346,19 @@ std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
             <tr>
               <td><c>(2)</c></td>
               <td><c>eof</c></td>
-              <td>The number of the records contained in the text table</td>
-              <td><c>0</c></td>
+              <td>The number of records successfully read</td>
+              <td>The number of fields successfully read after the last record successfully read</td>
             </tr>
 
             <tr>
               <td><c>(3)</c></td>
-              <td><c>error</c></td>
-              <td>Unspecified</td>
-              <td>Unspecified</td>
-            </tr>
-
-            <tr>
-              <td><c>(4)</c></td>
               <td><c>field</c></td>
               <td>The zero-based index of the record</td>
               <td>The zero-based index of the field in the record</td>
             </tr>
 
             <tr>
-              <td><c>(5)</c></td>
+              <td><c>(4)</c></td>
               <td><c>record_end</c></td>
               <td>The zero-based index of the record</td>
               <td>The number of the fields contained in the record</td>

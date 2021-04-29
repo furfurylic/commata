@@ -353,13 +353,19 @@ TYPED_TEST_P(TestTablePull, Error)
     ASSERT_EQ(table_pull_state::field, pull().state());
     ASSERT_THROW(pull(), parse_error);  // causes an error
 
-    // The state is 'error'
-    ASSERT_EQ(table_pull_state::error, pull.state());
+    // The state is 'eof', which is, however, not specified by the spec
+    ASSERT_EQ(table_pull_state::eof, pull.state());
     ASSERT_FALSE(pull);
+    // first is the number of successfully read records and
+    // secod is the number of successfully read fields after
+    // the last successfully read record, which is specified by the spec
+    // for 'eof'
+    ASSERT_EQ(1, pull.get_position().first);
+    ASSERT_EQ(1, pull.get_position().second);
 
     // One more call of operator() will not change the state
     ASSERT_FALSE(pull());
-    ASSERT_EQ(table_pull_state::error, pull.state());
+    ASSERT_EQ(table_pull_state::eof, pull.state());
 }
 
 TYPED_TEST_P(TestTablePull, Relations)
@@ -507,10 +513,13 @@ TYPED_TEST_P(TestTablePull, Move)
     ASSERT_EQ(str(""), pull());     // ditto
 
     ASSERT_THROW(pull2()(), parse_error);
-    ASSERT_EQ(table_pull_state::error, pull2.state());
+    ASSERT_EQ(table_pull_state::eof, pull2.state());
+                                    // Unspecified but implemented so
+    ASSERT_EQ(2, pull2.get_position().first);
+    ASSERT_EQ(0, pull2.get_position().second);
 
     auto pull3 = std::move(pull2);  // also the state is moved
-    ASSERT_EQ(table_pull_state::error, pull3.state());
+    ASSERT_EQ(table_pull_state::eof, pull3.state());
 }
 
 REGISTER_TYPED_TEST_SUITE_P(TestTablePull,

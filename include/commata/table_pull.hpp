@@ -608,7 +608,6 @@ typename primitive_table_pull<TableSource, Allocator, Handle>::handler_t::
 enum class table_pull_state : std::uint_fast8_t
 {
     eof,
-    error,
     before_parse,
     field,
     record_end
@@ -750,8 +749,7 @@ public:
 
     explicit operator bool() const noexcept
     {
-        return (state() != table_pull_state::eof)
-            && (state() != table_pull_state::error);
+        return state() != table_pull_state::eof;
     }
 
     std::pair<std::size_t, std::size_t> get_position() const noexcept
@@ -784,10 +782,7 @@ public:
             try {
                 p_();
             } catch (...) {
-                if (last_state_ == table_pull_state::field) {
-                    value_expiring_ = true;
-                }
-                set_state(table_pull_state::error);
+                set_state(table_pull_state::eof);
                 throw;
             }
             switch (p_.state()) {
@@ -840,7 +835,7 @@ private:
             try {
                 p_();
             } catch (...) {
-                set_state(table_pull_state::error);
+                set_state(table_pull_state::eof);
                 last_ = empty_string();
                 throw;
             }
@@ -904,10 +899,7 @@ public:
             try {
                 p_();
             } catch (...) {
-                if (last_state_ == table_pull_state::field) {
-                    value_expiring_ = true;
-                }
-                set_state(table_pull_state::error);
+                set_state(table_pull_state::eof);
                 throw;
             }
             switch (p_.state()) {
