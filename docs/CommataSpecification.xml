@@ -1700,8 +1700,10 @@ namespace commata {
   template &lt;class Ch, class Tr, class Allocator, class... Appendices>
     <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                                     std::basic_ostream&lt;Ch, Tr>&amp; out, Appendices&amp;&amp;... appendices);
-  template &lt;class Ch, class Tr, class... Appendices>
+  template &lt;class FieldIdentifier, class FieldValuePred, class Ch, class Tr, class... Appendices>
     <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
+                                    FieldIdentifier&amp;&amp; field_id,
+                                    FieldValuePred&amp;&amp; field_value_pred,
                                     Appendices&amp;&amp;... appendices);
   template &lt;class Ch, class Tr, class... Appendices>
     <nc>see below</nc> make_record_extractor(std::basic_ostream&lt;Ch, Tr>&amp; out,
@@ -2031,28 +2033,24 @@ bool is_in_header() const noexcept;
     <section id="record_extractor.creation">
       <name><c>record_extractor</c> and <c>record_extractor_with_indexed_key</c> creation functions</name>
 
-      <p>In this subclause, a function template <c>template &lt;class Ch, class Tr, class P, class Allocator> <nc>unspecified</nc> STRING_PRED(P&amp;&amp; p, const Allocator&amp; alloc)</c> is introduced for ease of explanation.
-         Its return value is as following:</p>
+      <p>In this subclause, a function template (which possibly have overloads and/or explicit specializations) <c>template &lt;class Ch, class Tr, class P, class Allocator> <nc>see below</nc> STRING_PRED(P&amp;&amp; p, const Allocator&amp; alloc)</c> is introduced into the namespace <c>furfurylic</c> for exposition only.
+         Its return value shall be (possibly a reference to) a binary predicate that takes two <c>const Ch*</c> paramters, which are denoted by <c>f</c> and <c>l</c> here.</p>
+      <p>The return value of <c>STRING_PRED</c> is as following:</p>
       <ul>
-        <li>if <c>P</c> is non-reference and cv-unqualified <c>std::basic_string&lt;Ch, Tr, Allocator></c> and
-            <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp;, const Allocator&amp;>>::value</c> is not <c>false</c>
-            (which shall not be <c>false</c> according to ISO C++14 standard),
-            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::move(p)</c> and <c>alloc</c>,
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,
-            and whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
-        <li>otherwise, if <c>P</c> is non-reference and cv-unqualified <c>std::basic_string&lt;Ch, Tr, Allocator></c>,
-            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::move(p)</c>,
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,
-            and whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
-        <li>otherwise, if <c>std::decay_t&lt;P></c> is <c>std::basic_string&lt;Ch, Tr, A></c> for a certain <c>A</c>,
-            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with arguments being <c>p.cbegin()</c>, <c>p.cend()</c> and <c>alloc</c>,
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,
-            and whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
-        <li>otherwise, if <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, P&amp;&amp;, const Allocator&amp;>>::value</c> is not <c>false</c>,
-            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object <c>s</c> initialized with <c>std::forward&lt;P>(p)</c> and <c>alloc</c>,
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c> where <c>f</c> and <c>l</c> are two <c>const Ch*</c> parameters of the predicate,
-            and whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
-        <li>otherwise, <c>std::forward&lt;P>(p)</c>.</li>
+        <li>if <c>P</c> is non-reference and cv-unqualified <c>std::basic_string&lt;Ch, Tr, A></c> for a certain <c>A</c>,
+            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, A></c> object initialized with <c>std::move(p)</c>,
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>
+            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
+        <li>otherwise, if <c>std::is_constructible&lt;std::basic_string&lt;Ch, Tr, Allocator>, P&amp;&amp;, const Allocator&amp;>>::value</c> is <c>true</c>,
+            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object initialized with <c>std::forward&lt;P>(p)</c> and <c>alloc</c>,
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>
+            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
+        <li>otherwise, if <c>std::remove_reference_t&lt;P>::const_iterator</c> is a type,
+            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object initialized with <c>std::forward&lt;P>(p).cbegin()</c>, <c>std::forward&lt;P>(p).cend()</c> and <c>alloc</c>,
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>
+            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
+        <li>otherwise, if <c>p</c> is a binary predicate that takes two <c>const Ch*</c> paramters, <c>std::forward&lt;P>(p)</c>.</li>
+        <li>otherwise, the program is ill-formed.</li>
       </ul>
 
       <code-item>

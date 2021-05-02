@@ -503,58 +503,67 @@ std::basic_ostream<Ch, Tr>& operator<<(
     return os << o.s_;
 }
 
+struct has_const_iterator_impl
+{
+    template <class T>
+    static auto check(T*) ->
+        decltype(std::declval<typename T::const_iterator>(), std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+struct has_const_iterator :
+    decltype(has_const_iterator_impl::check<T>(nullptr))
+{};
+
 template <class Ch, class Tr, class Allocator>
 auto make_string_pred(
     std::basic_string<Ch, Tr, Allocator>&& s, const Allocator&) noexcept
- -> std::enable_if_t<
-        !std::is_constructible<
-            std::basic_string<Ch, Tr, Allocator>,
-            std::basic_string<Ch, Tr, Allocator>&&, const Allocator&>::value,
-        string_eq<Ch, Tr, Allocator>>
 {
     return string_eq<Ch, Tr, Allocator>(
         std::basic_string<Ch, Tr, Allocator>(std::move(s)));
 }
 
-template <class Ch, class Tr, class Allocator>
-auto make_string_pred(
-    std::basic_string<Ch, Tr, Allocator>&& s, const Allocator& a)
+template <class Ch, class Tr, class Allocator, class T>
+auto make_string_pred(T&& s, const Allocator& a)
  -> std::enable_if_t<
         std::is_constructible<
             std::basic_string<Ch, Tr, Allocator>,
-            std::basic_string<Ch, Tr, Allocator>&&, const Allocator&>::value,
+            T&&,
+            const Allocator&>::value,
         string_eq<Ch, Tr, Allocator>>
 {
     return string_eq<Ch, Tr, Allocator>(
-        std::basic_string<Ch, Tr, Allocator>(std::move(s), a));
-}
-
-template <class Ch, class Tr, class Allocator, class OtherAllocator>
-string_eq<Ch, Tr, Allocator> make_string_pred(
-    const std::basic_string<Ch, Tr, OtherAllocator>& s, const Allocator& a)
-{
-    return string_eq<Ch, Tr, Allocator>(
-        std::basic_string<Ch, Tr, Allocator>(s.cbegin(), s.cend(), a));
+        std::basic_string<Ch, Tr, Allocator>(std::forward<T>(s), a));
 }
 
 template <class Ch, class Tr, class Allocator, class T>
 auto make_string_pred(T&& s, const Allocator& a)
  -> std::enable_if_t<
-        !detail::is_std_string<std::decay_t<T>>::value
-     && std::is_constructible<std::basic_string<Ch, Tr, Allocator>,
-            T&&, const Allocator&>::value, string_eq<Ch, Tr, Allocator>>
+        !std::is_constructible<
+            std::basic_string<Ch, Tr, Allocator>,
+            T&&,
+            const Allocator&>::value
+     && has_const_iterator<std::remove_reference_t<T>>::value,
+        string_eq<Ch, Tr, Allocator>>
 {
     return string_eq<Ch, Tr, Allocator>(
-        std::basic_string<Ch, Tr, Allocator>(std::forward<T>(s), a));
+        std::basic_string<Ch, Tr, Allocator>(
+            std::forward<T>(s).cbegin(), std::forward<T>(s).cend(), a));
 }
 
 // Watch out for the return type, which is not string_eq
 template <class Ch, class Tr, class Allocator, class T>
 auto make_string_pred(T&& s, const Allocator&)
  -> std::enable_if_t<
-        !detail::is_std_string<std::decay_t<T>>::value
-     && !std::is_constructible<std::basic_string<Ch, Tr, Allocator>,
-            T&&, const Allocator&>::value, T&&>
+        !std::is_constructible<
+            std::basic_string<Ch, Tr, Allocator>,
+            T&&,
+            const Allocator&>::value
+     && !has_const_iterator<std::remove_reference_t<T>>::value,
+        T&&>
 {
     // This "not uses-allocator construction" is intentional because
     // what we would like to do here is a mere move/copy by forwarding
