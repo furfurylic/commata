@@ -800,9 +800,9 @@ namespace commata {
   template &lt;class Ch, class Tr>
     streambuf_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
   template &lt;class Streambuf>
-    owned_streambuf_input&lt;Streambuf> make_char_input(Streambuf&amp;&amp; in) noexcept;
+    owned_streambuf_input&lt;Streambuf> make_char_input(Streambuf&amp;&amp; in) noexcept(<nc>see below</nc>);
   template &lt;class IStream>
-    owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept;
+    owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept(<nc>see below</nc>);
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
     string_input&lt;Ch, Tr> make_char_input(const Ch* in);
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
@@ -1376,19 +1376,21 @@ template &lt;class Ch, class Tr>
       <code-item>
         <code>
 template &lt;class Streambuf>
-  owned_streambuf_input&lt;Streambuf> make_char_input(Streambuf&amp;&amp; in) noexcept;
+  owned_streambuf_input&lt;Streambuf> make_char_input(Streambuf&amp;&amp; in) noexcept(<nc>see below</nc>);
         </code>
         <returns><c>owned_streambuf_input&lt;Streambuf>(std::move(in))</c>.</returns>
-        <remark>This overload shall not participate in overload resolution unless the template parameter <c>Streambuf</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</remark>
+        <remark>This overload shall not participate in overload resolution unless the template parameter <c>Streambuf</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.
+                The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;owned_streambuf_input&lt;Streambuf>, Streambuf&amp;&amp;>::value</c>.</remark>
       </code-item>
 
       <code-item>
         <code>
 template &lt;class IStream>
-  owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept;
+  owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept(<nc>see below</nc>);
         </code>
         <returns><c>owned_istream_input&lt;IStream>(std::move(in))</c>.</returns>
-        <remark>This overload shall not participate in overload resolution unless the template parameter <c>IStream</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</remark>
+        <remark>This overload shall not participate in overload resolution unless the template parameter <c>IStream</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.
+                The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;owned_istream_input&lt;IStream>, IStream&amp;&amp;>::value</c>.</remark>
       </code-item>
 
       <code-item>

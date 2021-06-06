@@ -389,7 +389,9 @@ streambuf_input<Ch, Tr> make_char_input(std::basic_streambuf<Ch, Tr>* in)
 }
 
 template <class Streambuf>
-auto make_char_input(Streambuf&& in) noexcept
+auto make_char_input(Streambuf&& in)
+    noexcept(std::is_nothrow_constructible<
+        owned_streambuf_input<Streambuf>, Streambuf&&>::value)
  -> std::enable_if_t<
         !std::is_lvalue_reference<Streambuf>::value
      && std::is_base_of<
@@ -403,7 +405,9 @@ auto make_char_input(Streambuf&& in) noexcept
 }
 
 template <class IStream>
-auto make_char_input(IStream&& in) noexcept
+auto make_char_input(IStream&& in)
+    noexcept(std::is_nothrow_constructible<
+        owned_istream_input<IStream>, IStream&&>::value)
  -> std::enable_if_t<
         !std::is_lvalue_reference<IStream>::value
      && std::is_base_of<
