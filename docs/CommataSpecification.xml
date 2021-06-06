@@ -1326,7 +1326,7 @@ owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) : noexcept
           <code>
 size_type operator()(Ch* out, size_type n);
           </code>
-          <effects>Calls <c>s.copy(out, n)</c> and let <c>rlen</c> be the return value, and then evaluates <c>head += rlen</c>.</effects>
+          <effects>Calls <c>s.copy(out, n, head)</c> and let <c>rlen</c> be the return value, and then evaluates <c>head += rlen</c>.</effects>
           <returns><c>rlen</c> above.</returns>
           <throws>Nothing.</throws>
         </code-item>
