@@ -4229,7 +4229,7 @@ template &lt;class Content, class Allocator, class... Args>
             <td><c>s(rv)</c></td>
             <td>(Not used)</td>
             <td>Called when the table scanner has finalized a text value of the field of a body record. The value of the field is <c>rv</c>.</td>
-            <td>Calls (1) with <c>&amp;*rv.begin()</c> and <c>&amp;*rv.begin() + rv.size()</c>.</td>
+            <td>Calls (1) with <c>rv.data()</c> and <c>rv.data() + rv.size()</c>.</td>
           </tr>
 
           <tr>
