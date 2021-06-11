@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-06-06 (UTC)</signature>
+<signature>2021-06-10 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3662,7 +3662,10 @@ template &lt;class Content, class Allocator, class... Args>
             <td><c>s.field_value(b, e)</c></td>
             <td>(Not used)</td>
             <td>Called when the table scanner has finalized a text value of the field of a body record.
-                The value of the field is [<c>b</c>, <c>e</c>), and <c>e</c> is dereferenceable and points the terminating zero. It is unspecified which of (1) and (2) the table scanner calls.</td>
+                Any pointers in the range [<c>b</c>, <c>e</c>] are dereferenceable and any values stored at them are modifiable.
+                Initially the range [<c>b</c>, <c>e</c>) represents the value of the field and <c>*e</c> is the terminating zero.
+                The range [<c>b</c>, <c>e</c>] may be invalidated after the invocation exits.
+                It is unspecified which of (1) and (2) the table scanner calls.</td>
             <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (2) with it.</td>
           </tr>
 
@@ -3747,7 +3750,9 @@ template &lt;class Content, class Allocator, class... Args>
             <td>Called by the table scanner in two situations following.
                 <ul>
                   <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
-                      The value of the header field is [<c>v->first</c>, <c>v->second</c>), and <c>v->second</c> is dereferenceable and points a null character.</li>
+                      Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable.
+                      Initially the range [<c>v->first</c>, <c>v->second</c>) represents the value of the header field and <c>*e</c> is the terminating zero.
+                      The range [<c>v->first</c>, <c>v->second</c>] may be invalidated after the invocation exits.</li>
                   <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> is a null pointer.</li>
                 </ul>
                 In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will be the first body record.</td>
