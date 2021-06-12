@@ -42,24 +42,6 @@ namespace commata {
 
 namespace detail {
 
-template <class... Ts>
-struct first;
-
-template <>
-struct first<>
-{
-    using type = void;
-};
-
-template <class Head, class... Tail>
-struct first<Head, Tail...>
-{
-    using type = Head;
-};
-
-template <class... Ts>
-using first_t = typename first<Ts...>::type;
-
 struct accepts_range_impl
 {
     template <class T, class Ch>
