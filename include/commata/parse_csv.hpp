@@ -907,39 +907,6 @@ private:
         }
     };
 
-public:
-    template <class Handler>
-    using parser_type = typename without_allocator<Handler>::ret_t;
-
-    template <class Handler>
-    auto operator()(Handler&& handler) const&
-        noexcept(
-            std::is_nothrow_constructible<
-                std::decay_t<Handler>, Handler>::value
-         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
-         && std::is_nothrow_copy_constructible<CharInput>::value)
-     -> std::enable_if_t<without_allocator<Handler>::enabled,
-            parser_type<std::decay_t<Handler>>>
-    {
-        return without_allocator<Handler>::invoke(
-            std::forward<Handler>(handler), in_);
-    }
-
-    template <class Handler>
-    auto operator()(Handler&& handler) &&
-        noexcept(
-            std::is_nothrow_constructible<
-                std::decay_t<Handler>, Handler>::value
-         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
-         && std::is_nothrow_move_constructible<CharInput>::value)
-     -> std::enable_if_t<without_allocator<Handler>::enabled,
-            parser_type<std::decay_t<Handler>>>
-    {
-        return without_allocator<Handler>::invoke(
-            std::forward<Handler>(handler), std::move(in_));
-    }
-
-private:
     template <class Handler, class Allocator>
     class with_allocator
     {
@@ -983,7 +950,53 @@ private:
         }
     };
 
+    template <class Handler, class Allocator>
+    struct parser_type_class
+    {
+        using type = typename with_allocator<Handler, Allocator>::ret_t;
+    };
+
+    template <class Handler>
+    struct parser_type_class<Handler, void>
+    {
+        using type = typename without_allocator<Handler>::ret_t;
+    };
+
 public:
+    template <class Handler, class Allocator = void>
+    using parser_type = typename parser_type_class<Handler, Allocator>::type;
+
+    template <class Handler>
+    using reference_handler_type = detail::wrapper_handler<Handler>;
+
+    template <class Handler>
+    auto operator()(Handler&& handler) const&
+        noexcept(
+            std::is_nothrow_constructible<
+                std::decay_t<Handler>, Handler>::value
+         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
+         && std::is_nothrow_copy_constructible<CharInput>::value)
+     -> std::enable_if_t<without_allocator<Handler>::enabled,
+            parser_type<std::decay_t<Handler>>>
+    {
+        return without_allocator<Handler>::invoke(
+            std::forward<Handler>(handler), in_);
+    }
+
+    template <class Handler>
+    auto operator()(Handler&& handler) &&
+        noexcept(
+            std::is_nothrow_constructible<
+                std::decay_t<Handler>, Handler>::value
+         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
+         && std::is_nothrow_move_constructible<CharInput>::value)
+     -> std::enable_if_t<without_allocator<Handler>::enabled,
+            parser_type<std::decay_t<Handler>>>
+    {
+        return without_allocator<Handler>::invoke(
+            std::forward<Handler>(handler), std::move(in_));
+    }
+
     template <class Handler, class Allocator = std::allocator<char_type>>
     auto operator()(Handler&& handler, std::size_t buffer_size = 0,
             const Allocator& alloc = Allocator()) const&
@@ -994,7 +1007,7 @@ public:
          && std::is_nothrow_copy_constructible<CharInput>::value)
      -> std::enable_if_t<
             with_allocator<Handler, Allocator>::enabled,
-            typename with_allocator<Handler, Allocator>::ret_t>
+            parser_type<Handler, Allocator>>
     {
         return with_allocator<Handler, Allocator>::invoke(
             std::forward<Handler>(handler),
@@ -1011,7 +1024,7 @@ public:
          && std::is_nothrow_move_constructible<CharInput>::value)
      -> std::enable_if_t<
             with_allocator<Handler, Allocator>::enabled,
-            typename with_allocator<Handler, Allocator>::ret_t>
+            parser_type<Handler, Allocator>>
     {
         return with_allocator<Handler, Allocator>::invoke(
             std::forward<Handler>(handler),

@@ -228,6 +228,15 @@ TEST_F(TestParseCsvReference, EmptyLineAware)
     ASSERT_EQ("D", collector.field_values()[2][1]);
 }
 
+static_assert(std::is_same<
+    decltype(
+        std::declval<const csv_source<string_input<wchar_t>>&>()(
+            std::declval<std::reference_wrapper<test_collector2<wchar_t>>>())),
+    typename csv_source<string_input<wchar_t>>::template parser_type<
+        typename csv_source<string_input<wchar_t>>::template
+            reference_handler_type<test_collector2<wchar_t>>,
+            std::allocator<wchar_t>>>::value, "");
+
 template <class Ch>
 struct TestParseCsvFancy : BaseTest
 {};
