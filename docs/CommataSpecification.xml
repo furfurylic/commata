@@ -12,7 +12,7 @@
 
     <p>This document describes the specifications of Commata, which is a header-only library in C++14 to handle formatted texts, such as CSV texts.</p>
     <p>In this document, many terms and names introduced in ISO C++14 standard are referred without notice.
-       &#x2018;Unspecified behaviour,&#x2019; &#x2018;<c>DefaultConstructible</c> requirements,&#x2019; &#x2018;formatted output function,&#x2019; &#x2018;<c>&lt;string></c>&#x2019; (as a header name) and &#x2018;<c>std::string</c>&#x2019; are the examples.</p>
+       &#x2018;Unspecified behaviour&#x2019;, &#x2018;<c>DefaultConstructible</c> requirements&#x2019;, &#x2018;formatted output function&#x2019;, &#x2018;<c>&lt;string></c>&#x2019; (as a header name) and &#x2018;<c>std::string</c>&#x2019; are the examples.</p>
 
     <p>The normativity of the specifications on this document is the same as the normativity of the description of the ISO C++14 standard for its conforming standard library implementations except that:</p>
     <ul>
@@ -338,7 +338,7 @@
         <td><c>std::pair&lt;std::size_t, std::size_t></c></td>
         <td>Returns a pair of the physical line number and the physical column number (<xref id="definitions.others"/>).
             The numbers are zero-based.
-            <c>-1</c> means shall mean &#x2018;no information.&#x2019;
+            <c>-1</c> means shall mean &#x2018;no information&#x2019;.
             Shall not exit via an exception.</td>
       </tr>
     </table>
@@ -415,7 +415,7 @@ namespace commata {
 
       <p>The class <c>text_error</c> defines the base class for the types of the objects thrown by Commata library.</p>
       <p>An object of <c>text_error</c> can optionally have a physical position information (<xref id="definitions.others"/>), which consists of the line number and the column number of the point in the input text that has made the exception thrown.
-         <c>npos</c> is a special value for the line number and the column number which indicates &#x2018;no information.&#x2019;</p>
+         <c>npos</c> is a special value for the line number and the column number which indicates &#x2018;no information&#x2019;.</p>
 
       <section id="text_error.cons">
         <name><c>text_error</c> constructors and assignment operators</name>
@@ -479,7 +479,7 @@ text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col =
           <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>get_physical_position() == nullptr</c> shall not be <c>false</c>. Otherwise, <c>*get_physical_position() == std::make_pair(line, col)</c> shall not be <c>false</c>.</postcondition>
           <returns><c>*this</c>.</returns>
           <remark><c>line</c> and <c>col</c> shall be <c>npos</c> or zero-based numbers of the row and the column.
-                  <c>npos</c> shall mean &#x2018;no information.&#x2019;</remark>
+                  <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
         </code-item>
 
         <code-item>
@@ -488,7 +488,7 @@ const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noex
           </code>
           <returns>If <c>*this</c> holds a physical position information, a pointer to an pair of its line number and column number. Otherwise, <c>nullptr</c>.</returns>
           <remark><c>p->first</c> and <c>p->second</c> shall be <c>npos</c> or zero-based numbers of the row and the column where <c>p</c> is the return value that is not equal to <c>nullptr</c>.
-                  <c>npos</c> shall mean &#x2018;no information.&#x2019;</remark>
+                  <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
         </code-item>
       </section>
 
@@ -1570,7 +1570,7 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;Ch>>
                    <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (<c>&amp;</c> ref-qualifier version) or <c>std::move(in)</c> (<c>&amp;&amp;</c> ref-qualifier version) as its tied character input
                    and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler,
                    and allocates and deallocates character buffers with a copy of <c>alloc</c>.
-                   The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
+                   The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
                    <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
                    Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied table handler object and the copy of <c>alloc</c>.
                    <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
@@ -4061,7 +4061,7 @@ basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
           </code>
           <effects>Constructs an object of <c>basic_table_scanner</c>.
                    The scanner shall ignore the first <c>header_record_count</c> records as header records.
-                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
+                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
                    The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
           <postcondition><c>*this</c> has neither a header field scanner nor any body field scanners installed.</postcondition>
         </code-item>
@@ -4076,7 +4076,7 @@ template &lt;class HeaderFieldScanner>
           </code>
           <requires><c>HeaderFieldScanner</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>Ch</c>.</requires>
           <effects>Constructs an object of <c>basic_table_scanner</c> with an header field scanner object installed.
-                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
+                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
                    The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
           <postcondition><c>*this</c> has a header field scanner constructed as a copy of <c>s</c> installed and no body field scanners installed.</postcondition>
           <remark>These constructors shall not participate in overload resolution unless <c>std::is_integral&lt;HeaderFieldScanner>::value</c> is <c>false</c>.</remark>
@@ -5693,7 +5693,7 @@ namespace commata {
       <p>The user of this class template can configure the table handler object to ignore some parsing event with the template parameter <c>Handle</c>.
          If <c>(Handle &amp; primitive_table_pull_handle_start_buffer) == 0</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
          All other enumerators but <c>primitive_table_pull_handle_all</c> shall work similarly.
-         <c>primitive_table_pull_handle_all</c> has a representation of all one bits and is intended to be used to express 'ignore none.'</p>
+         <c>primitive_table_pull_handle_all</c> has a representation of all one bits and is intended to be used to express &#x2018;ignore none&#x2019;.</p>
 
       <section id="primitive_table_pull.physical_position_available">
         <name><c>primitive_table_pull</c> physical position availability</name>
@@ -5721,7 +5721,7 @@ template &lt;class TableSourceR>
                    Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
-          <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;
+          <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
                   This overload shall not participate in overload resolution unless <c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</remark>
         </code-item>
 
@@ -6172,7 +6172,7 @@ template &lt;class TableSourceR>
           <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Initializes an object of <c>table_pull</c> with a default constructed <c>Allocator</c> object as its allocator object and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
-                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
+                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
           <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
           <remark>This overload shall not participate in overload resolution unless <c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</remark>
         </code-item>
@@ -6186,7 +6186,7 @@ template &lt;class TableSourceR>
           <requires><c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</requires>
           <effects>Initializes an object of <c>table_pull</c> with an allocator object constructed from <c>alloc</c> and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
-                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint.&#x2019;</effects>
+                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
           <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
         </code-item>
 
