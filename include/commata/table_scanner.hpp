@@ -777,8 +777,8 @@ constexpr replacement_ignore_t replacement_ignore = replacement_ignore_t{};
 template <class T>
 class replacement
 {
+    alignas(T) char store_[sizeof(T)];
     bool has_;
-    std::aligned_storage_t<sizeof(T), alignof(T)> store_;
 
     template <class U>
     friend class replacement;
@@ -797,14 +797,14 @@ public:
     explicit replacement(const T& t) :
         has_(true)
     {
-        ::new(reinterpret_cast<T*>(&store_)) T(t);
+        ::new(store_) T(t);
     }
 
     explicit replacement(T&& t)
         noexcept(std::is_nothrow_move_constructible<T>::value) :
         has_(true)
     {
-        ::new(reinterpret_cast<T*>(&store_)) T(std::move(t));
+        ::new(store_) T(std::move(t));
     }
 
     replacement(replacement&& other)
@@ -812,7 +812,7 @@ public:
         has_(other.has_)
     {
         if (const auto p = other.get()) {
-            ::new(reinterpret_cast<T*>(&store_)) T(std::move(*p));
+            ::new(store_) T(std::move(*p));
             p->~T();
             other.has_ = false;
         }
@@ -824,7 +824,7 @@ public:
         has_(other.has_)
     {
         if (const auto p = other.get()) {
-            ::new(reinterpret_cast<T*>(&store_)) T(std::move(*p));
+            ::new(&store_) T(std::move(*p));
             p->~U();
             other.has_ = false;
         }
@@ -833,7 +833,7 @@ public:
     ~replacement()
     {
         if (has_) {
-            reinterpret_cast<T*>(&store_)->~T();
+            static_cast<const T*>(static_cast<const void*>(store_))->~T();
         }
     }
 
@@ -860,13 +860,13 @@ public:
     const T* operator->() const
     {
         assert(has_);
-        return reinterpret_cast<const T*>(&store_);
+        return static_cast<const T*>(static_cast<const void*>(store_));
     }
 
     T* operator->()
     {
         assert(has_);
-        return reinterpret_cast<T*>(&store_);
+        return static_cast<T*>(static_cast<void*>(store_));
     }
 };
 
@@ -1691,7 +1691,15 @@ class replace_if_conversion_failed
     public:
         static constexpr std::size_t n = init_n();
 
-        std::aligned_storage_t<sizeof(T), alignof(T)> replacements_[n];
+        struct aligned
+        {
+            alignas(T) char m[sizeof(T)];
+        };
+
+        // GCC 6.3 seems not to handle...
+        // alignas(T) char replacements_[sizeof(T)][n];
+        // ...correctly, so we introduce a new type "aligned"
+        aligned replacements_[n];
         std::uint_fast8_t has_;
         std::uint_fast8_t skips_;
 
@@ -1803,7 +1811,7 @@ class replace_if_conversion_failed
         template <class U>
         void  place_copy(unsigned r, U&& value)
         {
-            ::new(replacements_ + r) T(std::forward<U>(value));
+            ::new(replacements_[r].m) T(std::forward<U>(value));
         }
 
     public:
@@ -1823,10 +1831,13 @@ class replace_if_conversion_failed
         {
             using t_t = std::conditional_t<
                 std::is_const<ThisType>::value, const T, T>;
+            using v_t = std::conditional_t<
+                std::is_const<ThisType>::value, const void, void>;
             using pair_t = std::pair<mode, t_t*>;
             if (me->has(r)) {
                 return pair_t(mode::replace,
-                    reinterpret_cast<t_t*>(me->replacements_ + r));
+                    static_cast<t_t*>(
+                        static_cast<v_t*>(me->replacements_[r].m)));
             } else if (me->skips(r)) {
                 return pair_t(mode::ignore, nullptr);
             } else {
@@ -1851,7 +1862,8 @@ class replace_if_conversion_failed
         {
             for (unsigned r = 0; r < n; ++r) {
                 if (has(r)) {
-                    reinterpret_cast<const T*>(replacements_ + r)->~T();
+                    static_cast<const T*>(
+                        static_cast<const void*>(replacements_[r].m))->~T();
                 }
             }
         }
