@@ -44,36 +44,46 @@ namespace {
 template <class Ch>
 struct digits
 {
+    // With std::array, it seems we cannot make the compiler count the number
+    // of the elements, so we employ good old arrays
     static const Ch all[];
 };
 
 template <>
-const char digits<char>::all[] = "0123456789";
+const char digits<char>::all[] =
+    { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
 template <>
-const wchar_t digits<wchar_t>::all[] = L"0123456789";
+const wchar_t digits<wchar_t>::all[] =
+    { L'0', L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9' };
 
 template <class Ch>
 std::basic_string<Ch> plus1(std::basic_string<Ch> s, std::size_t i
     = static_cast<std::size_t>(-1))
 {
-    const auto j = std::min(i, static_cast<std::size_t>(s.size() - 1));
+    i = std::min(i, static_cast<std::size_t>(s.size() - 1));
+
     const Ch (&all)[sizeof(digits<Ch>::all) / sizeof(digits<Ch>::all[0])]
         = digits<Ch>::all;
-    const auto all_end = all + sizeof(all) / sizeof(all[0]) - 1;
-    const auto k = std::find(all, all_end, s[j]);
-    if (k == all_end - 1) {
-        s[j] = all[0];
-        if (j == 0) {
-            s.insert(s.begin(), all[1]);  // gcc 6.3.1 refuses s.cbegin()
-            return s;
+    const auto all_end = all + sizeof(all) / sizeof(all[0]);
+
+    for (;;) {
+        const auto k = std::find(all, all_end, s[i]);
+        if (k == all_end - 1) {
+            s[i] = all[0];  // carrying occurs
+            if (i == 0) {
+                s.insert(s.begin(), all[1]);  // gcc 6.3.1 refuses s.cbegin()
+                break;
+            } else {
+                --i;
+            }
         } else {
-            return plus1(std::move(s), j - 1);
+            s[i] = k[1];    // for example, modify '3' to '4'
+            break;
         }
-    } else {
-        s[j] = k[1];
-        return s;
     }
+
+    return s;
 }
 
 }
