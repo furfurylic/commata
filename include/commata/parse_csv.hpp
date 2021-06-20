@@ -561,8 +561,6 @@ private:
     const char_type* p_;
     Handler f_;
 
-    bool record_started_;
-    state s_;
     // [first, last) is the current field value
     const char_type* first_;
     const char_type* last_;
@@ -573,9 +571,12 @@ private:
     std::size_t physical_line_chars_passed_away_;
 
     Input in_;
-    bool eof_reached_;
     char_type* buffer_;
     char_type* buffer_last_;
+
+    state s_;
+    bool record_started_;
+    bool eof_reached_;
 
 private:
     template <state>
@@ -589,11 +590,11 @@ public:
     explicit parser(Input in, Handler&& f)
         noexcept(std::is_nothrow_move_constructible<Handler>::value) :
         p_(nullptr), f_(std::move(f)),
-        record_started_(false), s_(state::after_lf),
         physical_line_index_(parse_error::npos),
         physical_line_or_buffer_begin_(nullptr),
         physical_line_chars_passed_away_(0),
-        in_(std::move(in)), eof_reached_(false), buffer_(nullptr)
+        in_(std::move(in)), buffer_(nullptr),
+        s_(state::after_lf), record_started_(false), eof_reached_(false)
     {}
 
     parser(parser&&) = default;

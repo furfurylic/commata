@@ -100,9 +100,6 @@ class record_extractor_impl
 
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
-    record_mode header_mode_;
-    record_mode record_mode_;
-
     std::size_t record_num_to_include_;
     std::size_t target_field_index_;
 
@@ -121,6 +118,9 @@ class record_extractor_impl
                                 // a unknown (included or not) record and
                                 // shall not overlap with interval
                                 // [current_begin_, +inf)
+
+    record_mode header_mode_;
+    record_mode record_mode_;
 
     friend class record_extractor<
         FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
@@ -170,15 +170,15 @@ private:
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
         std::size_t target_field_index,
         bool includes_header, std::size_t max_record_num) :
-        header_mode_(includes_header ?
-            record_mode::include : record_mode::exclude),
-        record_mode_(record_mode::exclude),
         record_num_to_include_(max_record_num),
         target_field_index_(target_field_index), field_index_(0), out_(out),
         nf_(std::forward<FieldNamePredR>(field_name_pred),
             std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc))),
         vr_(std::forward<FieldValuePredR>(field_value_pred),
-            std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc)))
+            std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc))),
+        header_mode_(includes_header ?
+            record_mode::include : record_mode::exclude),
+        record_mode_(record_mode::exclude)
     {}
 
 public:
@@ -186,12 +186,12 @@ public:
             noexcept(
                 std::is_nothrow_move_constructible<FieldNamePred>::value
              && std::is_nothrow_move_constructible<FieldValuePred>::value) :
-        header_mode_(other.header_mode_), record_mode_(other.record_mode_),
         record_num_to_include_(other.record_num_to_include_),
         target_field_index_(other.target_field_index_),
         field_index_(other.field_index_),
         current_begin_(other.current_begin_), out_(other.out_),
-        nf_(std::move(other.nf_)), vr_(std::move(other.vr_))
+        nf_(std::move(other.nf_)), vr_(std::move(other.vr_)),
+        header_mode_(other.header_mode_), record_mode_(other.record_mode_)
     {
         other.out_ = nullptr;
     }
