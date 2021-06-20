@@ -2178,9 +2178,9 @@ template <class T, class Sink,
     class ConversionErrorHandler = fail_if_conversion_failed>
 class locale_based_arithmetic_field_translator
 {
+    std::locale loc_;
     arithmetic_field_translator<
         T, Sink, SkippingHandler, ConversionErrorHandler> out_;
-    std::locale loc_;
 
     // These are initialized after parsing has started
     wchar_t decimal_point_;     // of specified loc in the ctor
@@ -2196,9 +2196,10 @@ public:
         SkippingHandler handle_skipping = SkippingHandler(),
         ConversionErrorHandler handle_conversion_error
             = ConversionErrorHandler()) :
+        loc_(loc),
         out_(std::move(sink), std::move(handle_skipping),
-            std::move(handle_conversion_error)),
-        loc_(loc), decimal_point_c_(), mimics_()
+             std::move(handle_conversion_error)),
+        decimal_point_c_(), mimics_()
     {}
 
     locale_based_arithmetic_field_translator(
