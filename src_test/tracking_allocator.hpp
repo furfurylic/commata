@@ -157,6 +157,25 @@ public:
         return false;
     }
 
+    bool tracks_relax(const void* p) const noexcept
+    {
+#ifdef _MSC_VER
+        // Visual Studio seems to return a pointer to the EBOed base type
+        // that points JUST AFTER the object, so we should test a relaxed
+        // manner
+        if (allocated_) {
+            for (const auto& be : *allocated_) {
+                if ((be.first <= p) && (p <= be.second)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+#else
+        return tracks(p);
+#endif
+    }
+
     typename base_traits::size_type total() const noexcept
     {
         return total_ ? *total_ : static_cast<decltype(*total_ + 0)>(-1);

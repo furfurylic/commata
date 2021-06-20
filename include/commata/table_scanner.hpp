@@ -127,21 +127,20 @@ class basic_table_scanner
     };
 
     template <class HeaderScanner>
-    class typed_header_field_scanner : public header_field_scanner
+    class typed_header_field_scanner :
+        public header_field_scanner, detail::member_like_base<HeaderScanner>
     {
-        HeaderScanner scanner_;
-
         using range_t = std::pair<Ch*, Ch*>;
 
     public:
         explicit typed_header_field_scanner(HeaderScanner s) :
-            scanner_(std::move(s))
+            detail::member_like_base<HeaderScanner>(std::move(s))
         {}
 
         void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
         {
             const range_t range(begin, end);
-            if (!scanner_(me.j_, std::addressof(range), me)) {
+            if (!scanner()(me.j_, std::addressof(range), me)) {
                 me.remove_header_field_scanner();
             }
         }
@@ -153,9 +152,15 @@ class basic_table_scanner
 
         void so_much_for_header(basic_table_scanner& me) override
         {
-            if (!scanner_(me.j_, static_cast<const range_t*>(nullptr), me)) {
+            if (!scanner()(me.j_, static_cast<const range_t*>(nullptr), me)) {
                 me.remove_header_field_scanner();
             }
+        }
+
+    private:
+        HeaderScanner& scanner()
+        {
+            return this->get();
         }
     };
 
@@ -165,13 +170,11 @@ class basic_table_scanner
     };
 
     template <class FieldScanner>
-    class typed_body_field_scanner : public body_field_scanner
+    struct typed_body_field_scanner :
+        body_field_scanner, private detail::member_like_base<FieldScanner>
     {
-        FieldScanner scanner_;
-
-    public:
         explicit typed_body_field_scanner(FieldScanner s) :
-            scanner_(std::move(s))
+            detail::member_like_base<FieldScanner>(std::move(s))
         {}
 
         void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
@@ -229,12 +232,12 @@ class basic_table_scanner
 
         const void* get_target_v() const noexcept override
         {
-            return std::addressof(scanner_);
+            return std::addressof(this->get());
         }
 
         void* get_target_v() noexcept override
         {
-            return std::addressof(scanner_);
+            return std::addressof(this->get());
         }
 
         decltype(auto) scanner() noexcept
@@ -243,30 +246,29 @@ class basic_table_scanner
                 detail::is_std_reference_wrapper<FieldScanner>());
         }
 
+    private:
         decltype(auto) scanner_impl(std::false_type) noexcept
         {
-            return static_cast<FieldScanner&>(scanner_);
+            return this->get();
         }
 
         decltype(auto) scanner_impl(std::true_type) noexcept
         {
-            return static_cast<typename FieldScanner::type&>(scanner_.get());
+            return this->get().get();
         }
     };
 
     template <class T>
-    class typed_record_end_scanner : public detail::record_end_scanner
+    struct typed_record_end_scanner :
+        detail::record_end_scanner, private detail::member_like_base<T>
     {
-        T scanner_;
-
-    public:
         explicit typed_record_end_scanner(T scanner) :
-            scanner_(std::move(scanner))
+            detail::member_like_base<T>(std::move(scanner))
         {}
 
         void end_record() override
         {
-            scanner_();
+            this->get()();
         }
 
         const std::type_info& get_type() const noexcept override
@@ -277,12 +279,12 @@ class basic_table_scanner
     private:
         const void* get_target_v() const noexcept override
         {
-            return std::addressof(scanner_);
+            return std::addressof(this->get());
         }
 
         void* get_target_v() noexcept override
         {
-            return std::addressof(scanner_);
+            return std::addressof(this->get());
         }
     };
 

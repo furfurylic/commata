@@ -1162,7 +1162,7 @@ TYPED_TEST(TestTableScanner, Fancy)
     scanner.set_field_scanner(0, std::move(g));
     scanner.set_record_end_scanner(std::move(h));
     ASSERT_TRUE(a.tracks(scanner.template get_field_scanner<decltype(g)>(0)));
-    ASSERT_TRUE(a.tracks(scanner.template
+    ASSERT_TRUE(a.tracks_relax(scanner.template
         get_record_end_scanner<decltype(h)>()));
 
     ASSERT_NO_THROW(parse_csv(str("abc"), std::move(scanner)));
