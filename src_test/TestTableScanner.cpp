@@ -182,7 +182,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, UpperLimit)
     using stringstream_t = std::basic_stringstream<char_t>;
 
     const auto to_string =
-        [](auto t) { return char_helper<char_t>::template to_string(t); };
+        [](auto t) { return char_helper<char_t>::to_string(t); };
     const auto widen = char_helper<char_t>::template widen<const char*>;
 
     constexpr auto maxx = std::numeric_limits<value_t>::max();
@@ -218,7 +218,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
 
     const auto ch = char_helper<char_t>::ch;
     const auto to_string =
-        [](auto t) { return char_helper<char_t>::template to_string(t); };
+        [](auto t) { return char_helper<char_t>::to_string(t); };
     const auto widen = char_helper<char_t>::template widen<const char*>;
 
     string_t minn;
@@ -263,7 +263,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
 
     const auto ch = char_helper<char_t>::ch;
     const auto to_string =
-        [](auto t) { return char_helper<char_t>::template to_string(t); };
+        [](auto t) { return char_helper<char_t>::to_string(t); };
 
     string_t minn;
     string_t minnMinus1;
