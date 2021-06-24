@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-06-21 (UTC)</signature>
+<signature>2021-06-24 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3726,16 +3726,22 @@ template &lt;class Content, class Allocator, class... Args>
       <section id="header_field_scanner.requirements">
         <name><c>HeaderFieldScanner</c> requirements</name>
 
-        <p>A type <c>S</c> meets the <c>HeaderFieldScanner</c> requirements for a char-like type <c>Ch</c> if:</p>
+        <p>A type <c>S</c> meets the <c>HeaderFieldScanner</c> requirements for an instance of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) <c>T</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
           <li>the expression shown in <xref id="table.header_field_scanner.requirements"/> is valid and have the indicated semantics.</li>
         </ul>
 
-        <p>In <xref id="table.header_field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
-           The type of <c>j</c> is <c>std::size_t</c>.
-           The type of <c>v</c> is <c>const std::pair&lt;Ch*, Ch*>*</c>.
-           <c>t</c> is an lvalue of the corresponding cv-unqualified instance of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>), whose first template argument is <c>Ch</c>.</p>
+        <p>In <xref id="table.header_field_scanner.requirements"/>:</p>
+        <ul>
+          <li><c>s</c> is an lvalue of cv-unqualified <c>S</c>.</li>
+          <li>The type of <c>j</c> is <c>std::size_t</c>.</li>
+          <li>The type of <c>v</c> is <c>const std::pair&lt;T::char_type*, T::char_type*>*</c>.</li>
+          <li><c>t</c> is an lvalue of the corresponding cv-unqualified instance of <c>T::scanner_config_type</c>,
+              which has the following member functions and function templates identical to what are specified for <c>T</c>:
+              <c>set_field_scanner</c>, <c>has_field_scanner</c>, <c>get_field_scanner_type</c>, <c>get_field_scanner</c> (<xref id="basic_table_scanner.field_scanner_access"/>),
+              <c>set_record_end_scanner</c>, <c>has_record_end_scanner</c>, <c>get_record_end_scanner_type</c> and <c>get_record_end_scanner</c> (<xref id="basic_table_scanner.record_end_scanner_access"/>).</li>
+        </ul>
 
         <table id="table.header_field_scanner.requirements">
           <caption><c>HeaderFieldScanner</c> requirements</caption>
@@ -3998,6 +4004,7 @@ namespace commata {
     using char_type = Ch;
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits&lt;Allocator>::size_type;
+    using scanner_config_type = <nc>unspecified</nc>;
 
     <c>// <n><xref id="basic_table_scanner.cons"/>, construction:</n></c>
     explicit basic_table_scanner(std::size_t header_record_count = 0, size_type buffer_size = 0);

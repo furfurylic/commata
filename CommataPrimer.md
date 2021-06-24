@@ -286,14 +286,14 @@ void one_pass_scanning_sample3()
   table_scanner scanner(
     [&names, names_attached = false]
     (std::size_t field_index, const std::pair<char*, char*>* field_value,
-     table_scanner& scanner) mutable {
+     table_scanner::scanner_config_type& config) mutable {
       if (field_value) {
         // The value of field_index-th (zero-based) header field is notified,
         // whose value is [field_value.first, field_value.second), and
         // field_value.second is dereferenceable and points the terminating
         // zero
         if (std::strcmp(field_value->first, "Name") == 0) {
-          scanner.set_field_scanner(
+          config.set_field_scanner(
             field_index, make_field_translator(names));
           names_attached = true;
         } else {

@@ -319,6 +319,7 @@ public:
     using traits_type = Tr;
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits<Allocator>::size_type;
+    using scanner_config_type = basic_table_scanner;
 
     explicit basic_table_scanner(
         std::size_t header_record_count = 0U,

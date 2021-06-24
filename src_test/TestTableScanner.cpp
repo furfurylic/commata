@@ -714,7 +714,8 @@ TYPED_TEST(TestTableScanner, HeaderScan)
 
     basic_table_scanner<TypeParam> h(
         [&ids, &values1, str, this]
-        (std::size_t j, const auto* range, auto& f) {
+        (std::size_t j, const auto* range,
+         typename basic_table_scanner<TypeParam>::scanner_config_type& f) {
             const std::basic_string<TypeParam>
                 field_name(range->first, range->second);
             if (field_name == str("ID")) {
