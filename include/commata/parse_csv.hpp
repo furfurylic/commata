@@ -855,7 +855,11 @@ public:
 
     template <class... Args,
         std::enable_if_t<
-            !std::is_base_of<csv_source, detail::first_t<Args...>>::value,
+            (sizeof...(Args) != 1)
+         || !std::is_base_of<
+                csv_source,
+                std::remove_const_t<std::remove_reference_t<
+                    detail::first_t<Args...>>>>::value,
             std::nullptr_t> = nullptr>
     explicit csv_source(Args&&... args) noexcept(
             std::is_nothrow_constructible<CharInput, Args&&...>::value) :
