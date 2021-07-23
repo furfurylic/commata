@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <ostream>
 #include <streambuf>
@@ -23,38 +24,106 @@
 #include "member_like_base.hpp"
 #include "text_error.hpp"
 #include "typing_aid.hpp"
+#include "write_ntmbs.hpp"
 
 namespace commata {
 namespace detail {
 
-template <class T>
-class format_field_name_of_impl
+template <class Ch, class Tr, class Allocator>
+class string_eq
 {
-    const char* prefix_;
-    const T* t_;
+    std::basic_string<Ch, Tr, Allocator> s_;
 
 public:
-    format_field_name_of_impl(const char* prefix, const T& t) noexcept :
-        prefix_(prefix), t_(std::addressof(t))
+    explicit string_eq(std::basic_string<Ch, Tr, Allocator>&& s) noexcept :
+        s_(std::move(s))
     {}
 
-    void operator()(std::ostream& o) const
+    bool operator()(const Ch* begin, const Ch* end) const noexcept
     {
-        o << prefix_ << *t_;
+        const auto rlen = static_cast<decltype(s_.size())>(end - begin);
+        return (s_.size() == rlen)
+            && (Tr::compare(s_.data(), begin, rlen) == 0);
+    }
+
+    const std::basic_string<Ch, Tr, Allocator>& get() const noexcept
+    {
+        return s_;
     }
 };
 
-template <class... Args>
-auto format_field_name_of(Args...) noexcept
+struct is_stream_writable_impl
 {
-    return [](std::ostream&) {};
+    template <class Stream, class T>
+    static auto check(T*) -> decltype(
+        std::declval<Stream&>() << std::declval<const T&>(),
+        std::true_type());
+
+    template <class Stream, class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class Stream, class T>
+struct is_stream_writable :
+    decltype(is_stream_writable_impl::check<Stream, T>(nullptr))
+{};
+
+template <class Ch, class T>
+struct is_plain_field_name_pred :
+    std::integral_constant<bool,
+        std::is_pointer<T>::value
+            // to match with function pointer types
+     || std::is_convertible<T, bool (*)(const Ch*, const Ch*)>::value>
+            // to match with no-capture closure types,
+            // with gcc 7.3, whose objects are converted to function pointers
+            // and again converted to bool values to produce dull "1" outputs
+            // and generate dull -Waddress warnings;
+            // this treatment is apparently not sufficient but seems to be
+            // better than never
+{};
+
+template <class Ch, class T,
+          std::enable_if_t<!(is_stream_writable<std::ostream, T>::value
+                          || is_stream_writable<std::wostream, T>::value)
+                        || is_plain_field_name_pred<Ch, T>::value,
+                           std::nullptr_t> = nullptr>
+void write_formatted_field_name_of(
+    std::ostream&, const char*, const T&, const Ch*)
+{}
+
+template <class Ch, class T,
+          std::enable_if_t<is_stream_writable<std::ostream, T>::value
+                        && !is_plain_field_name_pred<Ch, T>::value,
+                           std::nullptr_t> = nullptr>
+void write_formatted_field_name_of(
+    std::ostream& o, const char* prefix, const T& t, const Ch*)
+{
+    o.rdbuf()->sputn(prefix, std::strlen(prefix));
+    o << t;
 }
 
-template <class T>
-auto format_field_name_of(const char* prefix, const T& t,
-    decltype(&(std::declval<std::ostream&>() << t)) = nullptr) noexcept
+template <class Ch, class T,
+          std::enable_if_t<!is_stream_writable<std::ostream, T>::value
+                        && is_stream_writable<std::wostream, T>::value
+                        && !is_plain_field_name_pred<Ch, T>::value,
+                           std::nullptr_t> = nullptr>
+void write_formatted_field_name_of(
+    std::ostream& o, const char* prefix, const T& t, const Ch*)
 {
-    return format_field_name_of_impl<T>(prefix, t);
+    std::wstringstream wo;
+    wo << t;
+    o.rdbuf()->sputn(prefix, std::strlen(prefix));
+    using it_t = std::istreambuf_iterator<wchar_t>;
+    detail::write_ntmbs(o, it_t(wo), it_t());
+}
+
+template <class Tr, class Allocator>
+void write_formatted_field_name_of(
+    std::ostream& o, const char* prefix,
+    const string_eq<wchar_t, Tr, Allocator>& t, const wchar_t*)
+{
+    o.rdbuf()->sputn(prefix, std::strlen(prefix));
+    detail::write_ntmbs(o, t.get().cbegin(), t.get().cend());
 }
 
 template <class Ch>
@@ -322,10 +391,16 @@ private:
 
     record_extraction_error no_matching_field() const
     {
-        std::ostringstream what;
-        what << "No matching field";
-        format_field_name_of(" for ", nf_.base())(what);
-        return record_extraction_error(what.str());
+        const char* const what_core = "No matching field";
+        try {
+            std::ostringstream what;
+            what << what_core;
+            write_formatted_field_name_of(what, " for ", nf_.base(),
+                static_cast<const Ch*>(nullptr));
+            return record_extraction_error(what.str());
+        } catch (...) {
+            return record_extraction_error(what_core);
+        }
     }
 
     void include()
@@ -467,41 +542,6 @@ public:
 };
 
 namespace detail {
-
-template <class Ch, class Tr, class Allocator>
-class string_eq;
-
-template <class Ch, class Tr, class Allocator>
-std::basic_ostream<Ch, Tr>& operator<<(
-    std::basic_ostream<Ch, Tr>& os, const string_eq<Ch, Tr, Allocator>& o);
-
-template <class Ch, class Tr, class Allocator>
-class string_eq
-{
-    std::basic_string<Ch, Tr, Allocator> s_;
-
-public:
-    explicit string_eq(std::basic_string<Ch, Tr, Allocator>&& s) noexcept :
-        s_(std::move(s))
-    {}
-
-    bool operator()(const Ch* begin, const Ch* end) const noexcept
-    {
-        const auto rlen = static_cast<decltype(s_.size())>(end - begin);
-        return (s_.size() == rlen)
-            && (Tr::compare(s_.data(), begin, rlen) == 0);
-    }
-
-    friend std::basic_ostream<Ch, Tr>& operator<< <Ch, Tr, Allocator>(
-        std::basic_ostream<Ch, Tr>&, const string_eq<Ch, Tr, Allocator>&);
-};
-
-template <class Ch, class Tr, class Allocator>
-std::basic_ostream<Ch, Tr>& operator<<(
-    std::basic_ostream<Ch, Tr>& os, const string_eq<Ch, Tr, Allocator>& o)
-{
-    return os << o.s_;
-}
 
 struct has_const_iterator_impl
 {

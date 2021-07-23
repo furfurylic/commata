@@ -1807,6 +1807,7 @@ namespace commata {
          <c>Ch</c> shall be a char-like type.
          <c>Tr</c> shall be a character traits type of <c>std::remove_const_t&lt;Ch></c>.
          <c>Allocator</c> shall meet the <c>Allocator</c> requirements.</p>
+      <p>When the implementations of this class template throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c>, that is, with C's global locale.</p>
 
       <section id="record_extractor.cons">
         <name><c>record_extractor</c> constructors and assignment operators</name>

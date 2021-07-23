@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cwchar>
 #include <iomanip>
+#include <iterator>
 #include <limits>
 #include <new>
 #include <ostream>
@@ -108,8 +109,13 @@ public:
 
 } // end ntmbs
 
-inline void write_ntmbs(std::ostream& os,
-    const wchar_t* begin, const wchar_t* end)
+template <class InputIterator, class InputIteratorEnd>
+auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
+ -> std::enable_if_t<
+        std::is_same<
+            std::remove_const_t<
+                typename std::iterator_traits<InputIterator>::value_type>,
+            wchar_t>::value>
 {
     using namespace ntmbs;
 
@@ -133,7 +139,14 @@ inline void write_ntmbs(std::ostream& os,
                 printable = facet->is(ct_t::print, c);
             } catch (...) {}
             if (printable) {
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4996)
+#endif
                 const auto n = std::wcrtomb(s(), c, &state);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
                 if (n > 0) {
                     os.rdbuf()->sputn(s(), n);
                     continue;
@@ -146,7 +159,13 @@ inline void write_ntmbs(std::ostream& os,
     }
 }
 
-inline void write_ntmbs(std::ostream& os, const char* begin, const char* end)
+template <class InputIterator, class InputIteratorEnd>
+auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
+ -> std::enable_if_t<
+        std::is_same<
+            std::remove_const_t<
+                typename std::iterator_traits<InputIterator>::value_type>,
+            char>::value>
 {
     using namespace ntmbs;
 
