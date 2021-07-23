@@ -12,6 +12,7 @@
 #include <iterator>
 #include <limits>
 #include <new>
+#include <optional>
 #include <ostream>
 #include <streambuf>
 #include <string>
@@ -20,40 +21,6 @@
 namespace commata::detail {
 
 namespace ntmbs {
-
-class string_buffer
-{
-    alignas(std::string) char store_[sizeof(std::string)];
-    char* s_;
-
-public:
-    explicit string_buffer(std::size_t size) :
-        s_(nullptr)
-    {
-        try {
-            ::new(store_) std::string;      // throw
-            const auto p = reinterpret_cast<std::string*>(store_);
-            try {
-                p->reserve(size);           // throw
-                s_ = &(*p)[0];
-            } catch (...) {
-                reinterpret_cast<std::string*>(store_)->~basic_string();
-            }
-        } catch (...) {}
-    }
-
-    ~string_buffer()
-    {
-        if (s_) {
-            reinterpret_cast<std::string*>(store_)->~basic_string();
-        }
-    }
-
-    char* operator()()
-    {
-        return s_;
-    }
-};
 
 template <class Ch>
 constexpr std::size_t nchar()
@@ -113,7 +80,15 @@ auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
 
     // MB_CUR_MAX is not necessarily a constant;
     // we employ std::string for its no-allocation potential
-    string_buffer s(MB_CUR_MAX);
+    std::optional<std::string> s_store;
+    char* s = nullptr;
+    try {
+        s_store.emplace();              // throw
+        s_store->reserve(MB_CUR_MAX);   // throw
+        s = s_store->data();
+    } catch (...) {
+        s_store.reset();
+    }
 
     using ct_t = std::ctype<wchar_t>;
     const ct_t* facet = nullptr;
@@ -125,7 +100,7 @@ auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
     const flags f(os);
     for (; begin != end; ++begin) {
         const auto c = *begin;
-        if (s() && facet) {
+        if (s && facet) {
             bool printable = false;
             try {
                 printable = facet->is(ct_t::print, c);
@@ -135,12 +110,12 @@ auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
 #pragma warning(push)
 #pragma warning(disable:4996)
 #endif
-                const auto n = std::wcrtomb(s(), c, &state);
+                const auto n = std::wcrtomb(s, c, &state);
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
                 if (n > 0) {
-                    os.rdbuf()->sputn(s(), n);
+                    os.rdbuf()->sputn(s, n);
                     continue;
                 }
             }
