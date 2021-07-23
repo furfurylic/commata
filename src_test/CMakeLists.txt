@@ -45,7 +45,7 @@ set(COMMATA_HEADERS
     ../include/commata/table_scanner.hpp
     ../include/commata/text_error.hpp
     ../include/commata/typing_aid.hpp
-    ../include/commata/write_narrow.hpp
+    ../include/commata/write_ntmbs.hpp
 )
 
 set(TEST_COMMATA_SOURCES

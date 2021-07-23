@@ -36,7 +36,7 @@
 #include "text_error.hpp"
 #include "member_like_base.hpp"
 #include "typing_aid.hpp"
-#include "write_narrow.hpp"
+#include "write_ntmbs.hpp"
 
 namespace commata {
 
@@ -1539,7 +1539,7 @@ struct fail_if_conversion_failed
     {
         assert(*end == Ch());
         std::ostringstream s;
-        detail::write_narrow(s, begin, end);
+        detail::write_ntmbs(s, begin, end);
         s << ": cannot convert";
         write_name<T>(s, " to an instance of ");
         throw field_invalid_format(s.str());
@@ -1552,7 +1552,7 @@ struct fail_if_conversion_failed
     {
         assert(*end == Ch());
         std::ostringstream s;
-        detail::write_narrow(s, begin, end);
+        detail::write_ntmbs(s, begin, end);
         s << ": out of range";
         write_name<T>(s, " of ");
         throw field_out_of_range(s.str());

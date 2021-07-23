@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-07-24 (UTC)</signature>
+<signature>2021-07-25 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -597,6 +597,7 @@ template &lt;class Tr>
                  Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c> where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>. Then calls <c>os.width(0)</c>.</effects>
           <returns><c>os</c>.</returns>
           <remark>The second function template shall widen each character <c>c</c> in the null-terminated byte string pointed by <c>i.error().what()</c> with <c>os.widen(c)</c>.</remark>
+          <note>The second function template may not recover the full information of <c>i.error().what()</c> when it is an NTMBS because of the nature of <c>std::basic_ostream&lt;wchar_t, Tr>::widen</c>.</note>
         </code-item>
 
         <code-item>
@@ -4584,6 +4585,14 @@ replacement&lt;T> operator()() const;
 
     <section id="scanner.builtin.conversion_error_handlers">
       <name>Default conversion error handler classes</name>
+
+      <section id="scanner.builtin.conversion_error_handlers.general">
+        <name>General</name>
+
+        <p>This subclause describes struct <c>fail_if_conversion_failed</c> (<xref id="fail_if_conversion_failed"/>) and class template <c>replace_if_conversion_failed</c> (<xref id="replace_if_conversion_failed"/>),
+           which gives the default conversion error handler (<xref id="conversion_error_handler.requirements"/>) types of Commata.</p>
+        <p>When the implementations of these throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c>, that is, with C's global locale.</p>
+      </section>
 
       <section id="fail_if_conversion_failed">
         <name>Struct <c>fail_if_conversion_failed</c></name>
