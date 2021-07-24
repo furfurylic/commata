@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-07-23 (UTC)</signature>
+<signature>2021-07-24 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -94,6 +94,7 @@
     <section id="definitions.others">
       <name>Other definitions</name>
 
+      <p>Addtional terms on text tables used in this document are as follows:</p>
       <ul>
         <li>A <n>record index</n> of a text record in a text table is a number i where the record is the i-th record in the text table.
             It depends on situation whether i is zero-based or one-based.</li>
@@ -107,241 +108,247 @@
     </section>
   </section>
 
-  <section id="table_handler.requirements">
-    <name><c>TableHandler</c> requirements</name>
+  <section id="requirements">
+    <name>Basic requirements</name>
 
-    <p>A type <c>T</c> meets the <c>TableHandler</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
-    <ul>
-      <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>,</li>
-      <li>the expressions shown in <xref id="table.table_handler.requirements"/> are valid and have the indicated semantics, and</li>
-      <li>moved-to objects of <c>T</c> takes over the states of moved-from objects in terms of <xref id="table.table_handler.requirements"/>.</li>
-    </ul>
+    <p>This subclause specifies requirements that correspond the basic concepts of Commata (<xref id="concepts"/>).</p>
 
-    <p>In <xref id="table.table_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>. <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
+    <section id="table_handler.requirements">
+      <name><c>TableHandler</c> requirements</name>
 
-    <p>A requirement is optional if the last column of <xref id="table.table_handler.requirements"/> specifies a default.</p>
-    <p>If (2) in <xref id="table.table_handler.requirements"/> is satisfied without falling back on the default, then also (3) shall be so. Likewise, if (3) is satisfied without falling back on the default, then also (2) shall be so.
-       That is, <c>T</c> shall either have both of <c>get_buffer</c> and <c>release_buffer</c> member functions or have none of them.</p>
+      <p>A type <c>T</c> meets the <c>TableHandler</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
+      <ul>
+        <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>,</li>
+        <li>the expressions shown in <xref id="table.table_handler.requirements"/> are valid and have the indicated semantics, and</li>
+        <li>moved-to objects of <c>T</c> takes over the states of moved-from objects in terms of <xref id="table.table_handler.requirements"/>.</li>
+      </ul>
 
-    <table id="table.table_handler.requirements">
-      <caption>TableHandler requirements</caption>
-      <col width="2"/><col width="9"/><col width="9"/><col width="20"/><col width="8"/>
+      <p>In <xref id="table.table_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>. <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
 
-      <tr>
-        <th>#</th>
-        <th>Expression</th>
-        <th>Return type</th>
-        <th>Remark</th>
-        <th>Default behaviour</th>
-      </tr>
+      <p>A requirement is optional if the last column of <xref id="table.table_handler.requirements"/> specifies a default.</p>
+      <p>If (2) in <xref id="table.table_handler.requirements"/> is satisfied without falling back on the default, then also (3) shall be so. Likewise, if (3) is satisfied without falling back on the default, then also (2) shall be so.
+         That is, <c>T</c> shall either have both of <c>get_buffer</c> and <c>release_buffer</c> member functions or have none of them.</p>
 
-      <tr>
-        <td>(1)</td>
-        <td><c>T::char_type</c></td>
-        <td></td>
-        <td>Shall be an identical type to <c>Ch</c>.</td>
-        <td></td>
-      </tr>
+      <table id="table.table_handler.requirements">
+        <caption>TableHandler requirements</caption>
+        <col width="2"/><col width="9"/><col width="9"/><col width="20"/><col width="8"/>
 
-      <tr>
-        <td>(2)</td>
-        <td><c>t.get_buffer()</c></td>
-        <td><c>std::pair&lt;Ch*, std::size_t&gt;</c></td>
-        <td><p>Called when the parser requires a new buffer.
-               The parser calls this function only just after it was attached to this handler or just after it called (3).</p>
-            <p>Shall return a pair of a pointer that points the first element of a secured buffer and its length.
-               The parser utilizes the range [<c>gb.first</c>, <c>gb.first + gb.second</c>) as a buffer where <c>gb</c> is the return value of this function.</p></td>
-        <td><p>At the first call, acquires a buffer of a certain length and returns it. </p>
-            <p>Otherwise, returns a pooled buffer.</p></td>
-      </tr>
+        <tr>
+          <th>#</th>
+          <th>Expression</th>
+          <th>Return type</th>
+          <th>Remark</th>
+          <th>Default behaviour</th>
+        </tr>
 
-      <tr>
-        <td>(3)</td>
-        <td><c>t.release_buffer(b)</c></td>
-        <td>(Not used)</td>
-        <td><p>Called when the parser unhold the buffer acquired by the latest call of (2).</p>
-            <p><c>b</c> is identical to <c>gb.first</c> where <c>gb</c> is return value of the latest call of (2).</p>
-            <p>The parser shall not call this without making a previous call of (2).</p>
-            <p>The parser shall call this function just after the parsing process exits via an exception or an abortion when it holds the buffer acquired by a call of (2).</p>
-            <p>This function shall not throw any exceptions.</p></td>
-         <td>Stores <c>b</c> into a pool.</td>
-      </tr>
+        <tr>
+          <td>(1)</td>
+          <td><c>T::char_type</c></td>
+          <td></td>
+          <td>Shall be an identical type to <c>Ch</c>.</td>
+          <td></td>
+        </tr>
 
-      <tr>
-        <td>(4)</td>
-        <td><c>t.start_buffer(bb, be)</c></td>
-        <td>(Not used)</td>
-        <td><p>Called when the parser starts using its buffer.
-               Calling of this shall occur after a call of (2) and before its corresponding call of (3).</p>
-            <p><c>bb</c> is a pointer to const-qualified <c>*gb.first</c> and <c>be</c> is of const-qualified <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest call of (2).</p></td>
-        <td>Does nothing.</td>
-      </tr>
+        <tr>
+          <td>(2)</td>
+          <td><c>t.get_buffer()</c></td>
+          <td><c>std::pair&lt;Ch*, std::size_t&gt;</c></td>
+          <td><p>Called when the parser requires a new buffer.
+                 The parser calls this function only just after it was attached to this handler or just after it called (3).</p>
+              <p>Shall return a pair of a pointer that points the first element of a secured buffer and its length.
+                 The parser utilizes the range [<c>gb.first</c>, <c>gb.first + gb.second</c>) as a buffer where <c>gb</c> is the return value of this function.</p></td>
+          <td><p>At the first call, acquires a buffer of a certain length and returns it. </p>
+              <p>Otherwise, returns a pooled buffer.</p></td>
+        </tr>
 
-      <tr>
-        <td>(5)</td>
-        <td><c>t.end_buffer(bm)</c></td>
-        <td>(Not used) </td>
-        <td><p>Called when the parser finishes using its buffer.
-               Calling of this shall occur after a call of (2) and before its corresponding call of (3).</p>
-            <p><c>bm</c> is the past-the-end pointer of the range in the buffer actually used and resides in [<c>bb</c>, <c>be</c>] where <c>bb</c> and <c>be</c> are the arguments of the latest call of (4).</p></td>
-        <td>Does nothing.</td>
-      </tr>
+        <tr>
+          <td>(3)</td>
+          <td><c>t.release_buffer(b)</c></td>
+          <td>(Not used)</td>
+          <td><p>Called when the parser unhold the buffer acquired by the latest call of (2).</p>
+              <p><c>b</c> is identical to <c>gb.first</c> where <c>gb</c> is return value of the latest call of (2).</p>
+              <p>The parser shall not call this without making a previous call of (2).</p>
+              <p>The parser shall call this function just after the parsing process exits via an exception or an abortion when it holds the buffer acquired by a call of (2).</p>
+              <p>This function shall not throw any exceptions.</p></td>
+           <td>Stores <c>b</c> into a pool.</td>
+        </tr>
 
-      <tr>
-        <td>(6)</td>
-        <td><c>t.empty_physical_line(w)</c></td>
-        <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-        <td><p>Called when the parser finds an empty line outside any record.
-               Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
-            <p><c>w</c> points the last line break character and resides in [<c>bb</c>, <c>gb.first + gb.second</c>) where <c>bb</c> is the argument of the latest call of (4) and gb is the return value of the latest call of (2).</p>
-            <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
-        <td>Does nothing.</td>
-      </tr>
+        <tr>
+          <td>(4)</td>
+          <td><c>t.start_buffer(bb, be)</c></td>
+          <td>(Not used)</td>
+          <td><p>Called when the parser starts using its buffer.
+                 Calling of this shall occur after a call of (2) and before its corresponding call of (3).</p>
+              <p><c>bb</c> is a pointer to const-qualified <c>*gb.first</c> and <c>be</c> is of const-qualified <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest call of (2).</p></td>
+          <td>Does nothing.</td>
+        </tr>
 
-      <tr>
-        <td>(7)</td>
-        <td><c>t.start_record(rb)</c></td>
-        <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-        <td><p>Called when the parser begin to process a record.
-               Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
-            <p><c>rb</c> is a pointer to the const-qualified first character of the record. If the first field of the records is quoted, <c>*rb</c> shall be a double quote.</p>
-            <p><c>rb</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>) where <c>bb</c> is the argument of the latest call of (4) and gb is the return value of the latest call of (2).</p>
-            <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
-        <td/>
-      </tr>
+        <tr>
+          <td>(5)</td>
+          <td><c>t.end_buffer(bm)</c></td>
+          <td>(Not used) </td>
+          <td><p>Called when the parser finishes using its buffer.
+                 Calling of this shall occur after a call of (2) and before its corresponding call of (3).</p>
+              <p><c>bm</c> is the past-the-end pointer of the range in the buffer actually used and resides in [<c>bb</c>, <c>be</c>] where <c>bb</c> and <c>be</c> are the arguments of the latest call of (4).</p></td>
+          <td>Does nothing.</td>
+        </tr>
 
-      <tr>
-        <td>(8)</td>
-        <td><c>t.end_record(re)</c></td>
-        <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-        <td><p>Called when the parser finishes processing a record.
-               Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
-            <p><c>re</c> is the past-the-end pointer of the const-qualified characters that forms the record. If the last field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</p>
-            <p><c>re</c> resides in [<c>vb</c>, <c>be</c>] where vb is an argument of the latest call of (4) (first argument), (7) (first argument), (9) (second argument) or (10) (second argument), and
-               <c>be</c> is the second argument of the latest call of (4).</p>
-            <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
-        <td/>
-      </tr>
+        <tr>
+          <td>(6)</td>
+          <td><c>t.empty_physical_line(w)</c></td>
+          <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
+          <td><p>Called when the parser finds an empty line outside any record.
+                 Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
+              <p><c>w</c> points the last line break character and resides in [<c>bb</c>, <c>gb.first + gb.second</c>) where <c>bb</c> is the argument of the latest call of (4) and gb is the return value of the latest call of (2).</p>
+              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+          <td>Does nothing.</td>
+        </tr>
 
-      <tr>
-        <td>(9)</td>
-        <td><c>t.update(f, l)</c></td>
-        <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-        <td><p>Called when the parser finds a non-final chunk of a field value.
-               Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
-            <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified and resides [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
-               (4) (first argument), (7) (first argument), this (second argument) or (10) (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
-            <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the table handler can reach the range as non-const, it may modify the elements in the range.</p>
-            <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
-         <td/>
-      </tr>
+        <tr>
+          <td>(7)</td>
+          <td><c>t.start_record(rb)</c></td>
+          <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
+          <td><p>Called when the parser begin to process a record.
+                 Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
+              <p><c>rb</c> is a pointer to the const-qualified first character of the record. If the first field of the records is quoted, <c>*rb</c> shall be a double quote.</p>
+              <p><c>rb</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>) where <c>bb</c> is the argument of the latest call of (4) and gb is the return value of the latest call of (2).</p>
+              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+          <td/>
+        </tr>
 
-      <tr>
-        <td>(10)</td>
-        <td><c>t.finalize(f, l)</c></td>
-        <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-        <td><p>Called when the parser found a final chunk of a field value.
-               Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
-            <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified  and resides in [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
-               (4) (first argument), (7) (first argument), (9) (second argument) or this (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
-            <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the table handler can reach the range as non-const, it may modify the element in the range.</p>
-            <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
-        <td/>
-      </tr>
+        <tr>
+          <td>(8)</td>
+          <td><c>t.end_record(re)</c></td>
+          <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
+          <td><p>Called when the parser finishes processing a record.
+                 Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
+              <p><c>re</c> is the past-the-end pointer of the const-qualified characters that forms the record. If the last field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</p>
+              <p><c>re</c> resides in [<c>vb</c>, <c>be</c>] where vb is an argument of the latest call of (4) (first argument), (7) (first argument), (9) (second argument) or (10) (second argument), and
+                 <c>be</c> is the second argument of the latest call of (4).</p>
+              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+          <td/>
+        </tr>
 
-      <tr>
-        <td>(11)</td>
-        <td><c>t.yield(p)</c></td>
-        <td>A type contextually convertible to <c>bool</c></td>
-        <td><p>Called when the parser reaches an execution point where the parser can suspend the execution and return the control to its caller.
-               The parser shall call this also just after calling (5).
-               If this is called just after calling (5), the parser might invalidate all the pointers passed to the table handler since the latest call of (3) just after caling this.</p>
-            <p><c>p</c> is a number that can identificate the execution point where the call of this function occurred.
-               Its value shall not be equal to <c>0</c>.
-               Its value of <c>-1</c> shall mean that the parser is about to complete the execution.</p>
-            <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is not <c>false</c>, the parser shall suspend the execution and return the control to its caller.</p></td>
-        <td>Returns <c>false</c>.</td>
-      </tr>
+        <tr>
+          <td>(9)</td>
+          <td><c>t.update(f, l)</c></td>
+          <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
+          <td><p>Called when the parser finds a non-final chunk of a field value.
+                 Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
+              <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified and resides [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
+                 (4) (first argument), (7) (first argument), this (second argument) or (10) (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
+              <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the table handler can reach the range as non-const, it may modify the elements in the range.</p>
+              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+           <td/>
+        </tr>
 
-      <tr>
-        <td>(12)</td>
-        <td><c>ct.yield_position()</c></td>
-        <td><c>std::size_t</c></td>
-        <td><p>Called when the parser is about to start the execution or restart the execution after a suspension due to the latest return value of (11).</p>
-            <p>Shall return <c>0</c> if (11) has never be called; otherwise shall return the value of the parameter <c>p</c> of the latest call of (11).</p></td>
-        <td>Returns <c>0</c>.</td>
-      </tr>
-    </table>
+        <tr>
+          <td>(10)</td>
+          <td><c>t.finalize(f, l)</c></td>
+          <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
+          <td><p>Called when the parser found a final chunk of a field value.
+                 Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
+              <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified  and resides in [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
+                 (4) (first argument), (7) (first argument), (9) (second argument) or this (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
+              <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the table handler can reach the range as non-const, it may modify the element in the range.</p>
+              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+          <td/>
+        </tr>
 
-    <p>A moved-from object whose type satisfies <c>TableHandler</c> requirements may cause undefined behaviour when used in terms of <xref id="table.table_handler.requirements"/>.</p>
-  </section>
+        <tr>
+          <td>(11)</td>
+          <td><c>t.yield(p)</c></td>
+          <td>A type contextually convertible to <c>bool</c></td>
+          <td><p>Called when the parser reaches an execution point where the parser can suspend the execution and return the control to its caller.
+                 The parser shall call this also just after calling (5).
+                 If this is called just after calling (5), the parser might invalidate all the pointers passed to the table handler since the latest call of (3) just after caling this.</p>
+              <p><c>p</c> is a number that can identificate the execution point where the call of this function occurred.
+                 Its value shall not be equal to <c>0</c>.
+                 Its value of <c>-1</c> shall mean that the parser is about to complete the execution.</p>
+              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is not <c>false</c>, the parser shall suspend the execution and return the control to its caller.</p></td>
+          <td>Returns <c>false</c>.</td>
+        </tr>
 
-  <section id="table_parser.requirements">
-    <name><c>TableParser</c> requirements</name>
+        <tr>
+          <td>(12)</td>
+          <td><c>ct.yield_position()</c></td>
+          <td><c>std::size_t</c></td>
+          <td><p>Called when the parser is about to start the execution or restart the execution after a suspension due to the latest return value of (11).</p>
+              <p>Shall return <c>0</c> if (11) has never be called; otherwise shall return the value of the parameter <c>p</c> of the latest call of (11).</p></td>
+          <td>Returns <c>0</c>.</td>
+        </tr>
+      </table>
 
-    <p>A type <c>T</c> meets the <c>TableParser</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
-    <ul>
-      <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-      <li>each object of <c>T</c> has (possibly a reference to) a <n>tied character input</n> object, and (similarly, possibly a reference to) a <n>tied table handler</n> object whose type meets the <c>TableHandler</c> requirements;
-          and the expressions shown in <xref id="table.table_parser.requirements"/> are valid and have the indicated semantics.</li>
-    </ul>
+      <p>A moved-from object whose type satisfies <c>TableHandler</c> requirements may cause undefined behaviour when used in terms of <xref id="table.table_handler.requirements"/>.</p>
+    </section>
 
-    <p>In <xref id="table.table_parser.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>.</p>
+    <section id="table_parser.requirements">
+      <name><c>TableParser</c> requirements</name>
 
-    <table id="table.table_parser.requirements">
-      <caption>TableParser requirements</caption>
-      <col width="2"/><col width="9"/><col width="9"/><col width="28"/>
+      <p>A type <c>T</c> meets the <c>TableParser</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
+      <ul>
+        <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+        <li>each object of <c>T</c> has (possibly a reference to) a <n>tied character input</n> object, and (similarly, possibly a reference to) a <n>tied table handler</n> object whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>);
+            and the expressions shown in <xref id="table.table_parser.requirements"/> are valid and have the indicated semantics.</li>
+      </ul>
 
-      <tr>
-        <th>#</th>
-        <th>Expression</th>
-        <th>Return type</th>
-        <th>Remark</th>
-      </tr>
+      <p>In <xref id="table.table_parser.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>.</p>
 
-      <tr>
-        <td>(1)</td>
-        <td><c>t()</c></td>
-        <td>A type contextually convertible to <c>bool</c></td>
-        <td>Retrieves the text content from its tied character input, parses the text content, and calls the member functions of its tied table handler object compliantly with the <c>TableHandler</c> requirements.
-            Returns <c>false</c> if the return value of a call on <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c>, or <c>finalize</c> is <c>false</c>; <c>true</c> otherwise.
-            If this returns <c>false</c> or exits via an exception, then this becomes unable to be called again.</td>
-      </tr>
+      <table id="table.table_parser.requirements">
+        <caption>TableParser requirements</caption>
+        <col width="2"/><col width="9"/><col width="9"/><col width="28"/>
 
-      <tr>
-        <td>(2)</td>
-        <td><c>ct.~T()</c></td>
-        <td>(Not used)</td>
-        <td>Calls <c>release_buffer</c> of its tied table handler object if and only if the latest call of (1) left a buffer obtained with <c>get_buffer</c> of the table handler object unreleased.</td>
-      </tr>
-    </table>
+        <tr>
+          <th>#</th>
+          <th>Expression</th>
+          <th>Return type</th>
+          <th>Remark</th>
+        </tr>
 
-    <p><xref id="table.table_parser.optional"/> lists operations provided for some types of <c>TableParser</c>s but not others.
-       Those types for which the listed operations are provided shall implement the semantics described in <xref id="table.table_parser.optional"/> unless otherwise stated.</p>
+        <tr>
+          <td>(1)</td>
+          <td><c>t()</c></td>
+          <td>A type contextually convertible to <c>bool</c></td>
+          <td>Retrieves the text content from its tied character input, parses the text content, and calls the member functions of its tied table handler object compliantly with the <c>TableHandler</c> requirements.
+              Returns <c>false</c> if the return value of a call on <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c>, or <c>finalize</c> is <c>false</c>; <c>true</c> otherwise.
+              If this returns <c>false</c> or exits via an exception, then this becomes unable to be called again.</td>
+        </tr>
 
-    <p>In <xref id="table.table_parser.optional"/>, <c>ct</c> is an lvalue of <c>const T</c>, where <c>T</c> is cv-unqualified.</p>
+        <tr>
+          <td>(2)</td>
+          <td><c>ct.~T()</c></td>
+          <td>(Not used)</td>
+          <td>Calls <c>release_buffer</c> of its tied table handler object if and only if the latest call of (1) left a buffer obtained with <c>get_buffer</c> of the table handler object unreleased.</td>
+        </tr>
+      </table>
 
-    <table id="table.table_parser.optional">
-      <caption>Optional TableParser operations</caption>
-      <col width="2"/><col width="9"/><col width="9"/><col width="28"/>
+      <p><xref id="table.table_parser.optional"/> lists operations provided for some types of <c>TableParser</c>s but not others.
+         Those types for which the listed operations are provided shall implement the semantics described in <xref id="table.table_parser.optional"/> unless otherwise stated.</p>
 
-      <tr>
-        <th>#</th>
-        <th>Expression</th>
-        <th>Return type</th>
-        <th>Remark</th>
-      </tr>
+      <p>In <xref id="table.table_parser.optional"/>, <c>ct</c> is an lvalue of <c>const T</c>, where <c>T</c> is cv-unqualified.</p>
 
-      <tr>
-        <td>(1)</td>
-        <td><c>ct.get_physical_position()</c></td>
-        <td><c>std::pair&lt;std::size_t, std::size_t></c></td>
-        <td>Returns a pair of the physical line number and the physical column number (<xref id="definitions.others"/>).
-            The numbers are zero-based.
-            <c>-1</c> means shall mean &#x2018;no information&#x2019;.
-            Shall not exit via an exception.</td>
-      </tr>
-    </table>
+      <table id="table.table_parser.optional">
+        <caption>Optional TableParser operations</caption>
+        <col width="2"/><col width="9"/><col width="9"/><col width="28"/>
+
+        <tr>
+          <th>#</th>
+          <th>Expression</th>
+          <th>Return type</th>
+          <th>Remark</th>
+        </tr>
+
+        <tr>
+          <td>(1)</td>
+          <td><c>ct.get_physical_position()</c></td>
+          <td><c>std::pair&lt;std::size_t, std::size_t></c></td>
+          <td>Returns a pair of the physical line number and the physical column number (<xref id="definitions.others"/>).
+              The numbers are zero-based.
+              <c>-1</c> means shall mean &#x2018;no information&#x2019;.
+              Shall not exit via an exception.</td>
+        </tr>
+      </table>
+    </section>
   </section>
 </section>
 
