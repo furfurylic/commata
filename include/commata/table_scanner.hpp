@@ -40,7 +40,7 @@
 
 namespace commata {
 
-namespace detail {
+namespace detail { namespace scanner {
 
 struct accepts_range_impl
 {
@@ -104,7 +104,7 @@ struct record_end_scanner : typable
     virtual void end_record() = 0;
 };
 
-} // end namespace detail
+}} // end detail::scanner
 
 template <class Ch, class Tr = std::char_traits<Ch>,
           class Allocator = std::allocator<Ch>>
@@ -164,7 +164,7 @@ class basic_table_scanner
         }
     };
 
-    struct body_field_scanner : field_scanner, detail::typable
+    struct body_field_scanner : field_scanner, detail::scanner::typable
     {
         virtual void field_skipped() = 0;
     };
@@ -180,7 +180,7 @@ class basic_table_scanner
         void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
         {
             field_value_r(
-                typename detail::accepts_range<
+                typename detail::scanner::accepts_range<
                     std::remove_reference_t<decltype(scanner())>, Ch>(),
                 begin, end, me);
         }
@@ -188,7 +188,7 @@ class basic_table_scanner
         void field_value(string_t&& value, basic_table_scanner& me) override
         {
             field_value_s(
-                typename detail::accepts_x<
+                typename detail::scanner::accepts_x<
                     std::remove_reference_t<decltype(scanner())>, string_t>(),
                 std::move(value), me);
         }
@@ -260,7 +260,8 @@ class basic_table_scanner
 
     template <class T>
     struct typed_record_end_scanner :
-        detail::record_end_scanner, private detail::member_like_base<T>
+        detail::scanner::record_end_scanner,
+        private detail::member_like_base<T>
     {
         explicit typed_record_end_scanner(T scanner) :
             detail::member_like_base<T>(std::move(scanner))
@@ -297,8 +298,8 @@ class basic_table_scanner
     using bfs_ptr_p_t = typename std::pair<bfs_ptr_t, std::size_t>;
     using bfs_ptr_p_a_t = typename at_t::template rebind_alloc<bfs_ptr_p_t>;
     using scanners_a_t = detail::allocation_only_allocator<bfs_ptr_p_a_t>;
-    using res_at_t =
-        typename at_t::template rebind_traits<detail::record_end_scanner>;
+    using res_at_t = typename at_t::template
+        rebind_traits<detail::scanner::record_end_scanner>;
 
     std::size_t remaining_header_records_;
     std::size_t j_;
@@ -872,7 +873,7 @@ public:
     }
 };
 
-namespace detail {
+namespace detail { namespace scanner {
 
 template <class T>
 struct numeric_type_traits;
@@ -1399,7 +1400,7 @@ public:
             (sizeof...(Args) != 1)
          || !std::is_base_of<
                 movable_store,
-                detail::first_t<std::decay_t<Args>...>>::value,
+                first_t<std::decay_t<Args>...>>::value,
             std::nullptr_t> = nullptr>
     explicit movable_store(Args&&... args) :
         t_(std::make_shared<T>(std::forward<Args>(args)...))
@@ -1432,7 +1433,7 @@ public:
             (sizeof...(Args) != 1)
          || !std::is_base_of<
                 movable_store,
-                detail::first_t<std::decay_t<Args>...>>::value,
+                first_t<std::decay_t<Args>...>>::value,
             std::nullptr_t> = nullptr>
     explicit movable_store(Args&&... args)
         noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
@@ -1454,7 +1455,7 @@ public:
     }
 };
 
-} // end namespace detail
+}} // end detail::scanner
 
 struct replacement_fail_t {};
 constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
@@ -1480,7 +1481,7 @@ class replace_if_skipped
     };
 
     mode mode_;
-    detail::movable_store<T> default_value_;
+    detail::scanner::movable_store<T> default_value_;
 
 public:
     template <class... Args,
@@ -1571,9 +1572,9 @@ struct fail_if_conversion_failed
 private:
     template <class T>
     static std::ostream& write_name(std::ostream& os, const char* prefix,
-        decltype(detail::numeric_type_traits<T>::name)* = nullptr)
+        decltype(detail::scanner::numeric_type_traits<T>::name)* = nullptr)
     {
-        return os << prefix << detail::numeric_type_traits<T>::name;
+        return os << prefix << detail::scanner::numeric_type_traits<T>::name;
     }
 
     template <class T>
@@ -1806,7 +1807,7 @@ class replace_if_conversion_failed
         }
     };
 
-    detail::movable_store<store> store_;
+    detail::scanner::movable_store<store> store_;
 
 public:
     template <class Empty = T, class InvalidFormat = T,
@@ -1924,7 +1925,7 @@ private:
     }
 };
 
-namespace detail {
+namespace detail { namespace scanner {
 
 template <class T, class = void>
 struct is_output_iterator : std::false_type
@@ -2050,15 +2051,15 @@ private:
     }
 };
 
-} // end namespace detail
+}} // end detail::scanner
 
 template <class T, class Sink,
     class SkippingHandler = fail_if_skipped,
     class ConversionErrorHandler = fail_if_conversion_failed>
 class arithmetic_field_translator
 {
-    using converter_t = detail::converter<T, ConversionErrorHandler>;
-    using translator_t = detail::translator<T, Sink, SkippingHandler>;
+    using converter_t = detail::scanner::converter<T, ConversionErrorHandler>;
+    using translator_t = detail::scanner::translator<T, Sink, SkippingHandler>;
 
     detail::base_member_pair<converter_t, translator_t> ct_;
 
@@ -2226,7 +2227,7 @@ template <class Sink, class Ch,
 class string_field_translator
 {
     using translator_t =
-        detail::translator<std::basic_string<Ch, Tr, Allocator>,
+        detail::scanner::translator<std::basic_string<Ch, Tr, Allocator>,
         Sink, SkippingHandler>;
 
     detail::base_member_pair<Allocator, translator_t> at_;
@@ -2288,7 +2289,7 @@ public:
     }
 };
 
-namespace detail {
+namespace detail { namespace scanner {
 
 template <class T, class Sink, class... Appendices,
     std::enable_if_t<
@@ -2331,17 +2332,17 @@ struct is_callable :
     decltype(is_callable_impl<A>::template check<F>(nullptr))
 {};
 
-} // end namespace detail
+}} // end detail::scanner
 
 template <class T, class Sink, class... Appendices>
 auto make_field_translator(Sink sink, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_output_iterator<Sink>::value
-     || detail::is_callable<Sink, T>::value,
-        decltype(detail::make_field_translator_na<T>(
+        detail::scanner::is_output_iterator<Sink>::value
+     || detail::scanner::is_callable<Sink, T>::value,
+        decltype(detail::scanner::make_field_translator_na<T>(
             std::move(sink), std::forward<Appendices>(appendices)...))>
 {
-    using t = decltype(detail::make_field_translator_na<T>(
+    using t = decltype(detail::scanner::make_field_translator_na<T>(
         std::move(sink), std::forward<Appendices>(appendices)...));
     return t(std::move(sink), std::forward<Appendices>(appendices)...);
 }
@@ -2350,8 +2351,8 @@ template <class T, class Allocator, class Sink, class... Appendices>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Sink sink, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_output_iterator<Sink>::value
-     || detail::is_callable<Sink, T>::value,
+        detail::scanner::is_output_iterator<Sink>::value
+     || detail::scanner::is_callable<Sink, T>::value,
         string_field_translator<Sink,
             typename T::value_type, typename T::traits_type,
             Allocator, Appendices...>>
@@ -2363,7 +2364,7 @@ auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
         std::move(sink), std::forward<Appendices>(appendices)...);
 }
 
-namespace detail {
+namespace detail { namespace scanner {
 
 struct is_back_insertable_impl
 {
@@ -2430,19 +2431,21 @@ struct back_insert_iterator<Container,
 template <class Container>
 using back_insert_iterator_t = typename back_insert_iterator<Container>::type;
 
-} // end namespace detail
+}} // end detail::scanner
 
 template <class Container, class... Appendices>
 auto make_field_translator(Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_insertable<Container>::value,
+        detail::scanner::is_insertable<Container>::value,
         decltype(
-            detail::make_field_translator_na<typename Container::value_type>(
-                std::declval<detail::back_insert_iterator_t<Container>>(),
+            detail::scanner::make_field_translator_na<
+                    typename Container::value_type>(
+                std::declval<detail::scanner::
+                    back_insert_iterator_t<Container>>(),
                 std::forward<Appendices>(appendices)...))>
 {
     return make_field_translator<typename Container::value_type>(
-        detail::back_insert_iterator<Container>::from(values),
+        detail::scanner::back_insert_iterator<Container>::from(values),
         std::forward<Appendices>(appendices)...);
 }
 
@@ -2450,17 +2453,17 @@ template <class Allocator, class Container, class... Appendices>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_back_insertable<Container>::value
-     || detail::is_insertable<Container>::value,
+        detail::scanner::is_back_insertable<Container>::value
+     || detail::scanner::is_insertable<Container>::value,
         string_field_translator<
-            detail::back_insert_iterator_t<Container>,
+            detail::scanner::back_insert_iterator_t<Container>,
             typename Container::value_type::value_type,
             typename Container::value_type::traits_type,
             Allocator, Appendices...>>
 {
     return make_field_translator<typename Container::value_type>(
         std::allocator_arg, alloc,
-        detail::back_insert_iterator<Container>::from(values),
+        detail::scanner::back_insert_iterator<Container>::from(values),
         std::forward<Appendices>(appendices)...);
 }
 

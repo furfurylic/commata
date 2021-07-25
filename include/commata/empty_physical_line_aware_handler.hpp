@@ -14,10 +14,10 @@
 #include "typing_aid.hpp"
 
 namespace commata {
-namespace detail {
+namespace detail { namespace empty_physical_line_aware {
 
 template <class D, class Ch>
-class empty_physical_line_aware_handler_base
+class handler_base
 {
     D* d() noexcept
     {
@@ -68,12 +68,9 @@ public:
 };
 
 template <class Handler>
-class empty_physical_line_aware_handler :
-    public detail::handler_decorator<
-        Handler, empty_physical_line_aware_handler<Handler>>,
-    public empty_physical_line_aware_handler_base<
-            empty_physical_line_aware_handler<Handler>,
-            typename Handler::char_type>
+class handler :
+    public handler_decorator<Handler, handler<Handler>>,
+    public handler_base<handler<Handler>, typename Handler::char_type>
 {
     Handler handler_;
 
@@ -81,9 +78,9 @@ public:
     template <class A,
         class = std::enable_if_t<
             std::is_constructible<Handler, A&&>::value>>
-    explicit empty_physical_line_aware_handler(A&& handler)
+    explicit handler(A&& h)
         noexcept(std::is_nothrow_constructible<Handler, A&&>::value) :
-        handler_(std::forward<A>(handler))
+        handler_(std::forward<A>(h))
     {}
 
     // Defaulted move ctor is all right
@@ -100,18 +97,15 @@ public:
 };
 
 template <class Handler>
-class empty_physical_line_aware_handler<Handler&> :
-    public detail::handler_decorator<
-        Handler, empty_physical_line_aware_handler<Handler&>>,
-    public empty_physical_line_aware_handler_base<
-            empty_physical_line_aware_handler<Handler&>,
-            typename Handler::char_type>
+class handler<Handler&> :
+    public handler_decorator<Handler, handler<Handler&>>,
+    public handler_base<handler<Handler&>, typename Handler::char_type>
 {
     Handler* handler_;
 
 public:
-    explicit empty_physical_line_aware_handler(Handler& handler) noexcept :
-        handler_(std::addressof(handler))
+    explicit handler(Handler& h) noexcept :
+        handler_(std::addressof(h))
     {}
 
     // Defaulted move ctor is all right
@@ -127,25 +121,25 @@ public:
     }
 };
 
-} // end namespace detail
+}} // end detail::empty_physical_line_aware
 
 template <class Handler>
 auto make_empty_physical_line_aware(Handler&& handler)
     noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
  -> std::enable_if_t<
         !detail::is_std_reference_wrapper<Handler>::value,
-        detail::empty_physical_line_aware_handler<std::decay_t<Handler>>>
+        detail::empty_physical_line_aware::handler<std::decay_t<Handler>>>
 {
-    return detail::empty_physical_line_aware_handler<
+    return detail::empty_physical_line_aware::handler<
         std::decay_t<Handler>>(std::forward<Handler>(handler));
 }
 
 template <class Handler>
 auto make_empty_physical_line_aware(
     const std::reference_wrapper<Handler>& handler) noexcept
- -> detail::empty_physical_line_aware_handler<Handler&>
+ -> detail::empty_physical_line_aware::handler<Handler&>
 {
-    return detail::empty_physical_line_aware_handler<Handler&>(handler.get());
+    return detail::empty_physical_line_aware::handler<Handler&>(handler.get());
 }
 
 }

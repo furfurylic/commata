@@ -620,7 +620,7 @@ TYPED_TEST(TestStoredValue, Data)
 
 namespace privy {
 
-using store_t = detail::table_store<char, std::allocator<char>>;
+using store_t = detail::stored::table_store<char, std::allocator<char>>;
 
 static_assert(std::is_default_constructible<store_t>::value, "");
 static_assert(std::is_nothrow_move_constructible<store_t>::value, "");
@@ -634,7 +634,7 @@ class TestTableStore : public BaseTest
 
 TEST_F(TestTableStore, Basics)
 {
-    using store_t = detail::table_store<char, std::allocator<char>>;
+    using store_t = detail::stored::table_store<char, std::allocator<char>>;
 
     store_t store;
 
@@ -661,7 +661,8 @@ TEST_F(TestTableStore, Basics)
 
 TEST_F(TestTableStore, Merge)
 {
-    using store_t = detail::table_store<wchar_t, std::allocator<wchar_t>>;
+    using store_t = detail::stored::
+        table_store<wchar_t, std::allocator<wchar_t>>;
 
     store_t store1;
     wchar_t* const buffer1 = store1.get_allocator().allocate(10);
@@ -695,7 +696,7 @@ TEST_F(TestTableStore, Merge)
 
 TEST_F(TestTableStore, Swap)
 {
-    using store_t = detail::table_store<char, std::allocator<char>>;
+    using store_t = detail::stored::table_store<char, std::allocator<char>>;
 
     store_t store1;
     char* const buffer11 = store1.get_allocator().allocate(3);

@@ -17,7 +17,7 @@
 
 namespace commata {
 
-namespace detail {
+namespace detail { namespace input {
 
 template <class Ch, class Tr>
 auto read(std::basic_streambuf<Ch, Tr>& in,
@@ -38,7 +38,7 @@ auto read(std::basic_streambuf<Ch, Tr>& in,
     return m;
 }
 
-}
+}} // end detail::input
 
 template <class Ch, class Tr = std::char_traits<Ch>>
 class streambuf_input
@@ -81,7 +81,7 @@ public:
 
     size_type operator()(Ch* out, size_type n)
     {
-        return in_ ? detail::read(*in_, out, n) : 0;
+        return in_ ? detail::input::read(*in_, out, n) : 0;
     }
 
     void swap(streambuf_input& other) noexcept
@@ -127,7 +127,7 @@ public:
 
     size_type operator()(char_type* out, size_type n)
     {
-        return detail::read(in_, out, n);
+        return detail::input::read(in_, out, n);
     }
 
     void swap(owned_streambuf_input& other)
@@ -177,7 +177,7 @@ public:
 
     size_type operator()(char_type* out, size_type n)
     {
-        return detail::read(*in_.rdbuf(), out, n);
+        return detail::input::read(*in_.rdbuf(), out, n);
     }
 
     void swap(owned_istream_input& other)

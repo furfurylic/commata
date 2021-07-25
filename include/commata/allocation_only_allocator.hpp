@@ -15,6 +15,8 @@
 namespace commata {
 namespace detail {
 
+namespace allocation_only {
+
 template <class A, class = void>
 struct reference_forwarded
 {
@@ -39,17 +41,7 @@ struct const_reference_forwarded<A, typename A::const_reference>
     using type = typename A::const_reference;
 };
 
-template <class Allocator>
-class allocation_only_allocator;
-
-template <class T>
-class is_allocation_only_allocator : std::false_type
-{};
-
-template <class Allocator>
-class is_allocation_only_allocator<allocation_only_allocator<Allocator>> :
-    std::true_type
-{};
+} // end allocation_only
 
 template <class Allocator>
 class allocation_only_allocator :
@@ -72,9 +64,10 @@ public:
 
     // These types are not required by the C++14 standard, but
     // std::basic_string which comes with gcc 7.3.1 seems to do
-    using reference = typename reference_forwarded<Allocator>::type;
+    using reference =
+        typename allocation_only::reference_forwarded<Allocator>::type;
     using const_reference =
-        typename const_reference_forwarded<Allocator>::type;
+        typename allocation_only::const_reference_forwarded<Allocator>::type;
 
     template <class U>
     struct rebind

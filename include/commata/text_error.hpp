@@ -25,7 +25,7 @@
 #include "typing_aid.hpp"
 
 namespace commata {
-namespace detail {
+namespace detail { namespace ex {
 
 template <class T>
 struct npos_impl
@@ -37,7 +37,7 @@ struct npos_impl
 template <class T>
 constexpr T npos_impl<T>::npos;
 
-} // end namespace detail
+}} // end detail::ex
 
 class text_error;
 
@@ -66,7 +66,7 @@ public:
 };
 
 class text_error :
-    public std::exception, public detail::npos_impl<std::size_t>
+    public std::exception, public detail::ex::npos_impl<std::size_t>
 {
     struct what_holder
     {
@@ -174,7 +174,7 @@ public:
     }
 };
 
-namespace detail {
+namespace detail { namespace ex {
 
 // Prints a non-negative integer value in the decimal system
 // into a sufficient-length buffer
@@ -213,20 +213,22 @@ bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch* s, std::streamsize n)
     return sb->sputn(s, n) == n;
 }
 
-} // end namespace detail
+}} // end detail::ex
 
 template <class Tr>
 std::basic_ostream<char, Tr>& operator<<(
     std::basic_ostream<char, Tr>& os, const text_error_info& i)
 {
+    using namespace detail::ex;
+
     if (const auto p = i.error().get_physical_position()) {
         // line
         char l[std::numeric_limits<std::size_t>::digits10 + 2];
-        const auto l_len = detail::print_pos(l, p->first, i.get_base());
+        const auto l_len = print_pos(l, p->first, i.get_base());
 
         // column
         char c[sizeof(l)];
-        const auto c_len = detail::print_pos(c, p->second, i.get_base());
+        const auto c_len = print_pos(c, p->second, i.get_base());
 
         // what
         const auto w = i.error().what();
@@ -238,16 +240,16 @@ std::basic_ostream<char, Tr>& operator<<(
             [w, w_len, l = &l[0], l_len, c = &c[0], c_len]
             (auto* sb) {
                 if (w_len > 0) {
-                    if (!detail::sputn(sb, w, w_len)
-                     || !detail::sputn(sb, "; line ")) {
+                    if (!sputn(sb, w, w_len)
+                     || !sputn(sb, "; line ")) {
                         return false;
                     }
-                } else if (!detail::sputn(sb, "Text error at line ")) {
+                } else if (!sputn(sb, "Text error at line ")) {
                     return false;
                 }
-                return detail::sputn(sb, l, l_len)
-                    && detail::sputn(sb, " column ")
-                    && detail::sputn(sb, c, c_len);
+                return sputn(sb, l, l_len)
+                    && sputn(sb, " column ")
+                    && sputn(sb, c, c_len);
             });
 
     } else {
@@ -259,14 +261,16 @@ template <class Tr>
 std::basic_ostream<wchar_t, Tr>& operator<<(
     std::basic_ostream<wchar_t, Tr>& os, const text_error_info& i)
 {
+    using namespace detail::ex;
+
     if (const auto p = i.error().get_physical_position()) {
         // line
         wchar_t l[std::numeric_limits<std::size_t>::digits10 + 2];
-        const auto l_len = detail::print_pos(l, p->first, i.get_base());
+        const auto l_len = print_pos(l, p->first, i.get_base());
 
         // column
         wchar_t c[sizeof(l) / sizeof(wchar_t)];
-        const auto c_len = detail::print_pos(c, p->second, i.get_base());
+        const auto c_len = print_pos(c, p->second, i.get_base());
 
         // what
         const auto w_raw = i.error().what();
@@ -283,15 +287,15 @@ std::basic_ostream<wchar_t, Tr>& operator<<(
                             return false;
                         }
                     }
-                    if (!detail::sputn(sb, L"; line ")) {
+                    if (!sputn(sb, L"; line ")) {
                         return false;
                     }
-                } else if (!detail::sputn(sb, L"Text error at line ")) {
+                } else if (!sputn(sb, L"Text error at line ")) {
                     return false;
                 }
-                return detail::sputn(sb, l, l_len)
-                    && detail::sputn(sb, L" column ")
-                    && detail::sputn(sb, c, c_len);
+                return sputn(sb, l, l_len)
+                    && sputn(sb, L" column ")
+                    && sputn(sb, c, c_len);
             });
 
     } else {

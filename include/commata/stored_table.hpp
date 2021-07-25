@@ -660,7 +660,7 @@ struct hash<commata::basic_stored_value<Ch, Tr>>
 
 namespace commata {
 
-namespace detail {
+namespace detail { namespace stored {
 
 template <class T>
 auto select_allocator(const T&, const T& r, std::true_type)
@@ -1107,7 +1107,7 @@ struct null_termination
     }
 };
 
-} // end namespace detail
+}} // end detail::stored
 
 template <class Content, class Allocator = std::allocator<Content>>
 class basic_stored_table
@@ -1122,7 +1122,7 @@ public:
     using traits_type     = typename value_type::traits_type;
     using size_type       = typename content_type::size_type;
 
-    static_assert(detail::is_basic_stored_value<value_type>::value,
+    static_assert(detail::stored::is_basic_stored_value<value_type>::value,
         "Content shall be a sequence-container-of-sequence-container "
         "type of basic_stored_value");
     static_assert(
@@ -1139,7 +1139,7 @@ private:
             at_t::propagate_on_container_move_assignment::value,
             at_t::propagate_on_container_swap::value>>;
     using ca_t = typename cat_t::allocator_type;
-    using store_type = detail::table_store<char_type, ca_t>;
+    using store_type = detail::stored::table_store<char_type, ca_t>;
 
     template <class OtherContent, class OtherAllocator>
     friend class basic_stored_table;
@@ -1255,7 +1255,7 @@ public:
     {
         basic_stored_table(
             std::allocator_arg,
-            detail::select_allocator(*this, other,
+            detail::stored::select_allocator(*this, other,
                 typename at_t::propagate_on_container_copy_assignment()),
             other).swap_force(*this);   // throw
         return *this;
@@ -1266,7 +1266,7 @@ public:
     {
         basic_stored_table(
             std::allocator_arg,
-            detail::select_allocator(*this, other,
+            detail::stored::select_allocator(*this, other,
                 typename at_t::propagate_on_container_move_assignment()),
             std::move(other)).swap_force(*this);    // throw
         return *this;
@@ -1352,7 +1352,7 @@ private:
         ForwardIterator new_value)
     {
         return rewrite_value_impl(value,
-            new_value, detail::null_termination<traits_type>());
+            new_value, detail::stored::null_termination<traits_type>());
     }
 
     value_type& rewrite_value_impl(value_type& value, const char* new_value)
@@ -1634,7 +1634,7 @@ void swap(
     left.swap(right);
 }
 
-namespace detail {
+namespace detail { namespace stored {
 
 template <class T, class = void>
 struct has_allocator_type :
@@ -1875,7 +1875,7 @@ auto plus_stored_table_impl(
     return std::move(left); // move is right for no copy elision would occur
 }
 
-} // end namespace detail
+}} // end namespace detail::stored
 
 template <class Content, class Allocator>
 template <class OtherContent>
@@ -1883,7 +1883,7 @@ void basic_stored_table<Content, Allocator>::append_no_singular(
     basic_stored_table<OtherContent, Allocator>&& other)
 {
     if (store_.get_allocator() == other.store_.get_allocator()) {
-        detail::append_stored_table_content(
+        detail::stored::append_stored_table_content(
             content(), std::move(other.content()));     // throw
         store_.merge(std::move(other.store_));
     } else {
@@ -1896,7 +1896,7 @@ auto operator+(
     const basic_stored_table<ContentL, AllocatorL>& left,
     const basic_stored_table<ContentR, AllocatorR>& right)
 {
-    return detail::plus_stored_table_impl(left, right);
+    return detail::stored::plus_stored_table_impl(left, right);
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
@@ -1904,7 +1904,7 @@ auto operator+(
     const basic_stored_table<ContentL, AllocatorL>& left,
     basic_stored_table<ContentR, AllocatorR>&& right)
 {
-    return detail::plus_stored_table_impl(left, std::move(right));
+    return detail::stored::plus_stored_table_impl(left, std::move(right));
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
@@ -1912,7 +1912,7 @@ auto operator+(
     basic_stored_table<ContentL, AllocatorL>&& left,
     const basic_stored_table<ContentR, AllocatorR>& right)
 {
-    return detail::plus_stored_table_impl(std::move(left), right);
+    return detail::stored::plus_stored_table_impl(std::move(left), right);
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
@@ -1920,7 +1920,8 @@ auto operator+(
     basic_stored_table<ContentL, AllocatorL>&& left,
     basic_stored_table<ContentR, AllocatorR>&& right)
 {
-    return detail::plus_stored_table_impl(std::move(left), std::move(right));
+    return detail::stored::plus_stored_table_impl(
+        std::move(left), std::move(right));
 }
 
 using stored_table  =
@@ -1937,7 +1938,7 @@ enum stored_table_builder_option : std::uint_fast8_t
     stored_table_builder_option_transpose = 1
 };
 
-namespace detail {
+namespace detail { namespace stored {
 
 template <class Content>
 struct arrange_as_is
@@ -2008,12 +2009,12 @@ using arrange = std::conditional_t<
     (Options & stored_table_builder_option_transpose) != 0U,
     arrange_transposing<Content>, arrange_as_is<Content>>;
 
-} // end namespace detail
+}} // end detail::stored
 
 template <class Content, class Allocator,
     std::underlying_type_t<stored_table_builder_option> Options = 0U>
 class stored_table_builder :
-    detail::arrange<Content, Options>
+    detail::stored::arrange<Content, Options>
 {
 public:
     using table_type = basic_stored_table<Content, Allocator>;
@@ -2033,14 +2034,14 @@ private:
 public:
     explicit stored_table_builder(table_type& table,
                                   std::size_t max_record_num = 0) :
-        detail::arrange<Content, Options>(table.content()),
+        detail::stored::arrange<Content, Options>(table.content()),
         current_buffer_holder_(nullptr), current_buffer_(nullptr),
         remaining_record_num_(max_record_num),
         field_begin_(nullptr), table_(std::addressof(table))
     {}
 
     stored_table_builder(stored_table_builder&& other) noexcept :
-        detail::arrange<Content, Options>(other),
+        detail::stored::arrange<Content, Options>(other),
         current_buffer_holder_(other.current_buffer_holder_),
         current_buffer_(other.current_buffer_),
         current_buffer_size_(other.current_buffer_size_),

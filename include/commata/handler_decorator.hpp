@@ -14,6 +14,8 @@
 namespace commata {
 namespace detail {
 
+namespace handler_decoration {
+
 struct has_get_buffer_impl
 {
     template <class T>
@@ -26,9 +28,84 @@ struct has_get_buffer_impl
     static auto check(...) -> std::false_type;
 };
 
+struct has_release_buffer_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().release_buffer(
+            std::declval<const typename T::char_type*>()),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+struct has_start_buffer_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().start_buffer(
+            std::declval<const typename T::char_type*>(),
+            std::declval<const typename T::char_type*>()),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+struct has_end_buffer_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().end_buffer(
+            std::declval<const typename T::char_type*>()),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+struct has_empty_physical_line_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().empty_physical_line(
+            std::declval<const typename T::char_type*>()),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+struct has_yield_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<bool&>() =
+            std::declval<T&>().yield(std::declval<std::size_t>()),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+struct has_yield_location_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<std::size_t&>() =
+            std::declval<const T&>().yield_location(),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+} // end handler_decoration
+
 template <class T>
 struct has_get_buffer :
-    decltype(has_get_buffer_impl::check<T>(nullptr))
+    decltype(handler_decoration::has_get_buffer_impl::check<T>(nullptr))
 {};
 
 template <class Handler, class D, class = void>
@@ -46,21 +123,9 @@ struct get_buffer_t<Handler, D,
     }
 };
 
-struct has_release_buffer_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<T&>().release_buffer(
-            std::declval<const typename T::char_type*>()),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
 template <class T>
 struct has_release_buffer :
-    decltype(has_release_buffer_impl::check<T>(nullptr))
+    decltype(handler_decoration::has_release_buffer_impl::check<T>(nullptr))
 {};
 
 template <class Handler, class D, class = void>
@@ -78,22 +143,9 @@ struct release_buffer_t<Handler, D,
     }
 };
 
-struct has_start_buffer_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<T&>().start_buffer(
-            std::declval<const typename T::char_type*>(),
-            std::declval<const typename T::char_type*>()),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
 template <class T>
 struct has_start_buffer :
-    decltype(has_start_buffer_impl::check<T>(nullptr))
+    decltype(handler_decoration::has_start_buffer_impl::check<T>(nullptr))
 {};
 
 template <class Handler, class D, class = void>
@@ -114,21 +166,9 @@ struct start_buffer_t<Handler, D,
     }
 };
 
-struct has_end_buffer_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<T&>().end_buffer(
-            std::declval<const typename T::char_type*>()),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
 template <class T>
 struct has_end_buffer :
-    decltype(has_end_buffer_impl::check<T>(nullptr))
+    decltype(handler_decoration::has_end_buffer_impl::check<T>(nullptr))
 {};
 
 template <class Handler, class D, class = void>
@@ -146,21 +186,10 @@ struct end_buffer_t<Handler, D,
     }
 };
 
-struct has_empty_physical_line_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<T&>().empty_physical_line(
-            std::declval<const typename T::char_type*>()),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
 template <class T>
 struct has_empty_physical_line :
-    decltype(has_empty_physical_line_impl::check<T>(nullptr))
+    decltype(handler_decoration::
+                has_empty_physical_line_impl::check<T>(nullptr))
 {};
 
 template <class Handler, class D, class = void>
@@ -178,21 +207,9 @@ struct empty_physical_line_t<Handler, D,
     }
 };
 
-struct has_yield_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<bool&>() =
-            std::declval<T&>().yield(std::declval<std::size_t>()),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
 template <class T>
 struct has_yield :
-    decltype(has_yield_impl::check<T>(nullptr))
+    decltype(handler_decoration::has_yield_impl::check<T>(nullptr))
 {};
 
 template <class Handler, class D, class = void>
@@ -209,21 +226,9 @@ struct yield_t<Handler, D, std::enable_if_t<has_yield<Handler>::value>>
     }
 };
 
-struct has_yield_location_impl
-{
-    template <class T>
-    static auto check(T*) -> decltype(
-        std::declval<std::size_t&>() =
-            std::declval<const T&>().yield_location(),
-        std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
 template <class T>
 struct has_yield_location :
-    decltype(has_yield_location_impl::check<T>(nullptr))
+    decltype(handler_decoration::has_yield_location_impl::check<T>(nullptr))
 {};
 
 template <class Handler, class D, class = void>

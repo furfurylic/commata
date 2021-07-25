@@ -27,7 +27,7 @@
 #include "write_ntmbs.hpp"
 
 namespace commata {
-namespace detail {
+namespace detail { namespace record_extraction {
 
 template <class Ch, class Tr, class Allocator>
 class string_eq
@@ -135,7 +135,7 @@ struct hollow_field_name_pred
     }
 };
 
-} // end namespace detail
+}} // end detail::record_extraction
 
 class record_extraction_error :
     public text_error
@@ -152,11 +152,11 @@ template <class FieldValuePred,
           class Ch, class Tr, class Allocator>
 class record_extractor_with_indexed_key;
 
-namespace detail {
+namespace detail { namespace record_extraction {
 
 template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr, class Allocator>
-class record_extractor_impl
+class impl
 {
     using alloc_t = detail::allocation_only_allocator<Allocator>;
 
@@ -205,13 +205,13 @@ public:
         std::enable_if_t<
             !std::is_integral<FieldNamePredR>::value,
             std::nullptr_t> = nullptr>
-    record_extractor_impl(
+    impl(
             std::allocator_arg_t, const Allocator& alloc,
             std::basic_streambuf<Ch, Tr>* out,
             FieldNamePredR&& field_name_pred,
             FieldValuePredR&& field_value_pred,
             bool includes_header, std::size_t max_record_num) :
-        record_extractor_impl(
+        impl(
             std::allocator_arg, alloc, out,
             std::forward<FieldNamePredR>(field_name_pred),
             std::forward<FieldValuePredR>(field_value_pred),
@@ -219,12 +219,12 @@ public:
     {}
 
     template <class FieldValuePredR>
-    record_extractor_impl(
+    impl(
             std::allocator_arg_t, const Allocator& alloc,
             std::basic_streambuf<Ch, Tr>* out,
             std::size_t target_field_index, FieldValuePredR&& field_value_pred,
             bool includes_header, std::size_t max_record_num) :
-        record_extractor_impl(
+        impl(
             std::allocator_arg, alloc, out,
             FieldNamePred(),
             std::forward<FieldValuePredR>(field_value_pred),
@@ -233,7 +233,7 @@ public:
 
 private:
     template <class FieldNamePredR, class FieldValuePredR>
-    record_extractor_impl(
+    impl(
         std::allocator_arg_t, const Allocator& alloc,
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
@@ -251,7 +251,7 @@ private:
     {}
 
 public:
-    record_extractor_impl(record_extractor_impl&& other)
+    impl(impl&& other)
             noexcept(
                 std::is_nothrow_move_constructible<FieldNamePred>::value
              && std::is_nothrow_move_constructible<FieldValuePred>::value) :
@@ -463,15 +463,15 @@ private:
     }
 };
 
-} // end namespace detail
+}} // end detail::record_extraction
 
 template <class FieldNamePred, class FieldValuePred, class Ch,
     class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>>
 class record_extractor :
-    public detail::record_extractor_impl<
+    public detail::record_extraction::impl<
         FieldNamePred, FieldValuePred, Ch, Tr, Allocator>
 {
-    using base = detail::record_extractor_impl<
+    using base = detail::record_extraction::impl<
         FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
 
 public:
@@ -506,11 +506,13 @@ public:
 template <class FieldValuePred, class Ch,
     class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>>
 class record_extractor_with_indexed_key :
-    public detail::record_extractor_impl<
-        detail::hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr, Allocator>
+    public detail::record_extraction::impl<
+        detail::record_extraction::hollow_field_name_pred<Ch>, FieldValuePred,
+        Ch, Tr, Allocator>
 {
-    using base = detail::record_extractor_impl<
-        detail::hollow_field_name_pred<Ch>, FieldValuePred, Ch, Tr, Allocator>;
+    using base = detail::record_extraction::impl<
+        detail::record_extraction::hollow_field_name_pred<Ch>, FieldValuePred,
+        Ch, Tr, Allocator>;
 
 public:
     template <class FieldValuePredR>
@@ -541,7 +543,7 @@ public:
     ~record_extractor_with_indexed_key() = default;
 };
 
-namespace detail {
+namespace detail { namespace record_extraction {
 
 struct has_const_iterator_impl
 {
@@ -612,14 +614,14 @@ auto make_string_pred(T&& s, const Allocator&)
 
 template <class TargetFieldIndex, class FieldValuePred,
     class Ch, class Tr, class Allocator, class... Appendices>
-auto make_record_extractor_impl(
+auto make_impl(
     std::true_type,
     std::allocator_arg_t, const Allocator& alloc,
     std::basic_streambuf<Ch, Tr>* out,
     TargetFieldIndex target_field_index, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
 {
-    auto fvp = detail::make_string_pred<Ch, Tr, Allocator>(
+    auto fvp = make_string_pred<Ch, Tr, Allocator>(
         std::forward<FieldValuePred>(field_value_pred), alloc);
     return record_extractor_with_indexed_key<decltype(fvp), Ch, Tr, Allocator>(
         std::allocator_arg, alloc, out,
@@ -629,16 +631,16 @@ auto make_record_extractor_impl(
 
 template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr, class Allocator, class... Appendices>
-auto make_record_extractor_impl(
+auto make_impl(
     std::false_type,
     std::allocator_arg_t, const Allocator& alloc,
     std::basic_streambuf<Ch, Tr>* out,
     FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
 {
-    auto fnp = detail::make_string_pred<Ch, Tr, Allocator>(
+    auto fnp = make_string_pred<Ch, Tr, Allocator>(
         std::forward<FieldNamePred>(field_name_pred), alloc);
-    auto fvp = detail::make_string_pred<Ch, Tr, Allocator>(
+    auto fvp = make_string_pred<Ch, Tr, Allocator>(
         std::forward<FieldValuePred>(field_value_pred), alloc);
     return record_extractor<decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
         std::allocator_arg, alloc, out,
@@ -646,7 +648,7 @@ auto make_record_extractor_impl(
         std::forward<Appendices>(appendices)...);
 }
 
-} // end namespace detail
+}} // end detail::record_extraction
 
 template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr, class Allocator, class... Appendices>
@@ -656,7 +658,7 @@ auto make_record_extractor(
     FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
 {
-    return detail::make_record_extractor_impl(
+    return detail::record_extraction::make_impl(
         std::is_integral<std::decay_t<FieldNamePred>>(),
         std::allocator_arg, alloc, out,
         std::forward<FieldNamePred>(field_name_pred),

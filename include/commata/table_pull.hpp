@@ -55,7 +55,7 @@ enum primitive_table_pull_handle : std::uint_fast8_t
     primitive_table_pull_handle_all = static_cast<std::uint_fast8_t>(-1)
 };
 
-namespace detail {
+namespace detail { namespace pull {
 
 struct has_get_physical_position_impl
 {
@@ -76,7 +76,7 @@ struct has_get_physical_position :
 
 template <class Ch, class Allocator,
     std::underlying_type_t<primitive_table_pull_handle> Handle>
-class pull_handler
+class handler
 {
 public:
     using char_type = Ch;
@@ -105,7 +105,7 @@ private:
     bool collects_data_;
 
 public:
-    explicit pull_handler(
+    explicit handler(
         std::allocator_arg_t, const Allocator& alloc,
         std::size_t buffer_size) :
         alloc_(alloc, sanitize_buffer_size(buffer_size, alloc)),
@@ -123,10 +123,10 @@ private:
     }
 
 public:
-    pull_handler(const pull_handler& other) = delete;
-    pull_handler(pull_handler&& other) = delete;
+    handler(const handler& other) = delete;
+    handler(handler&& other) = delete;
 
-    ~pull_handler()
+    ~handler()
     {
         at_t::deallocate(alloc_.base(), buffer_, alloc_.member());
     }
@@ -156,7 +156,7 @@ public:
         return !collects_data_;
     }
 
-    pull_handler& set_discarding_data(bool b = true) noexcept
+    handler& set_discarding_data(bool b = true) noexcept
     {
         collects_data_ = !b;
         return *this;
@@ -361,7 +361,7 @@ private:
     }
 };
 
-}
+}} // end detail::pull
 
 template <class TableSource,
     class Allocator = std::allocator<typename TableSource::char_type>,
@@ -377,7 +377,7 @@ public:
 private:
     using at_t = std::allocator_traits<Allocator>;
 
-    using handler_t = detail::pull_handler<char_type, Allocator, Handle>;
+    using handler_t = detail::pull::handler<char_type, Allocator, Handle>;
     using handler_a_t = detail::allocation_only_allocator<
         typename at_t::template rebind_alloc<handler_t>>;
     using handler_at_t = std::allocator_traits<handler_a_t>;
@@ -405,7 +405,7 @@ private:
 
 public:
     static constexpr bool physical_position_available =
-        detail::has_get_physical_position<parser_t>::value;
+        detail::pull::has_get_physical_position<parser_t>::value;
 
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
@@ -550,12 +550,12 @@ public:
     }
 
     std::pair<std::size_t, std::size_t> get_physical_position() const
-        noexcept((!detail::has_get_physical_position<parser_t>::value)
+        noexcept((!detail::pull::has_get_physical_position<parser_t>::value)
               || noexcept(std::declval<const parser_t&>()
                             .get_physical_position()))
     {
         return get_physical_position_impl(
-            detail::has_get_physical_position<parser_t>());
+            detail::pull::has_get_physical_position<parser_t>());
     }
 
 private:
@@ -613,7 +613,7 @@ enum class table_pull_state : std::uint_fast8_t
     record_end
 };
 
-namespace detail {
+namespace detail { namespace pull {
 
 template <class PrimitiveTablePull>
 class temporarily_discard
@@ -642,7 +642,7 @@ public:
     }
 };
 
-}
+}} // end detail::pull
 
 template <class TableSource,
     class Allocator = std::allocator<typename TableSource::char_type>>
@@ -773,7 +773,7 @@ public:
         }
         last_ = empty_string();
         value_.clear();
-        detail::temporarily_discard<decltype(p_)> d(p_);
+        detail::pull::temporarily_discard<decltype(p_)> d(p_);
         if (value_expiring_) {
             ++j_;
             value_expiring_ = false;
@@ -890,7 +890,7 @@ public:
         }
         last_ = empty_string();
         value_.clear();
-        detail::temporarily_discard<decltype(p_)> d(p_);
+        detail::pull::temporarily_discard<decltype(p_)> d(p_);
         if (value_expiring_) {
             ++j_;
             value_expiring_ = false;

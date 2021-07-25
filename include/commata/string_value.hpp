@@ -11,6 +11,8 @@
 
 namespace commata { namespace detail {
 
+namespace str_val {
+
 template <class T, class Ch, class Tr>
 struct is_std_string_of2 :
     std::false_type
@@ -21,11 +23,13 @@ struct is_std_string_of2<std::basic_string<Ch, Tr, Args...>, Ch, Tr> :
     std::true_type
 {};
 
+} // end str_val
+
 template <class Ch, class Tr, class T>
 struct is_comparable_with_string_value :
     std::integral_constant<bool,
         std::is_convertible<T, const Ch*>::value
-     || detail::is_std_string_of2<T, Ch, Tr>::value>
+     || detail::str_val::is_std_string_of2<T, Ch, Tr>::value>
 {};
 
 template <class T, class U>
