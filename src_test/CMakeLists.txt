@@ -26,6 +26,7 @@ endif()
 
 set(COMMATA_HEADERS
     ../include/commata/allocation_only_allocator.hpp
+    ../include/commata/buffer_control.hpp
     ../include/commata/buffer_size.hpp
     ../include/commata/char_input.hpp
     ../include/commata/empty_physical_line_aware_handler.hpp
