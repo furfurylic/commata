@@ -4930,7 +4930,8 @@ namespace commata {
     explicit arithmetic_field_translator(
              Sink sink, SkippingHandler handle_skipping = SkippingHandler(),
              ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
-    arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+    arithmetic_field_translator(const arithmetic_field_translator&amp;  other) noexcept(<nc>see below</nc>);
+    arithmetic_field_translator(      arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~arithmetic_field_translator();
 
     <c>// <n><xref id="arithmetic_field_translator.handler_access"/>, handler access:</n></c>
@@ -4962,6 +4963,15 @@ explicit arithmetic_field_translator(
           </code>
           <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds copies of <c>sink</c>, <c>handle_skipping</c> and <c>handle_conversion_error</c>
                    as the field translator sink object, the skipping handler object and the conversion error handler object respectively.</effects>
+          </code-item>
+
+          <code-item>
+            <code>
+arithmetic_field_translator(const arithmetic_field_translator;&amp; other) noexcept(<nc>see below</nc>);
+            </code>
+            <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>CopyConstructible</c>.</requires>
+            <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_copy_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_copy_constructible&lt;ConversionErrorHandler>::value</c>.</remark>
           </code-item>
 
           <code-item>
@@ -5141,7 +5151,9 @@ namespace commata {
              SkippingHandler handle_skipping = SkippingHandler(),
              ConversionErrorHandler handle_conversion_error = ConversionErrorHandler());
     locale_based_arithmetic_field_translator(
-      locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+      const locale_based_arithmetic_field_translator&amp;  other) noexcept(<nc>see below</nc>);
+    locale_based_arithmetic_field_translator(
+            locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~locale_based_arithmetic_field_translator();
 
     <c>// <n><xref id="locale_based_arithmetic_field_translator.handler_access"/>, handler access:</n></c>
@@ -5175,6 +5187,16 @@ explicit locale_based_arithmetic_field_translator(
             </code>
             <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds copies of <c>sink</c>, <c>loc</c>, <c>handle_skipping</c> and <c>handle_conversion_error</c>
                     as the field translator sink object, the locale object, the skipping handler object and the conversion error handler object respectively.</effects>
+          </code-item>
+
+          <code-item>
+            <code>
+locale_based_arithmetic_field_translator(
+  const locale_based_arithmetic_field_translator;&amp; other) noexcept(<nc>see below</nc>);
+            </code>
+            <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>CopyConstructible</c>.</requires>
+            <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_copy_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_copy_constructible&lt;ConversionErrorHandler>::value</c>.</remark>
           </code-item>
 
           <code-item>
@@ -5246,7 +5268,8 @@ namespace commata {
                                      SkippingHandler handle_skipping = SkippingHandler());
     string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink sink,
                             SkippingHandler handle_skipping = SkippingHandler());
-    string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+    string_field_translator(const string_field_translator&amp;  other) noexcept(<nc>see below</nc>);
+    string_field_translator(      string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~string_field_translator();
 
     <c>// <n><xref id="string_field_translator.allocator"/>, allocator access:</n></c>
@@ -5288,6 +5311,15 @@ string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink s
             </code>
             <effects>Initializes an object of <c>string_field_translator</c> that holds copies of <c>alloc</c>, <c>sink</c> and <c>handle_skipping</c>
                     as the allocator object, the field translator sink object and the skipping handler object respectively.</effects>
+          </code-item>
+
+          <code-item>
+            <code>
+string_field_translator(const string_field_translator;&amp; other) noexcept(<nc>see below</nc>);
+            </code>
+            <requires><c>Sink</c> and <c>SkippingHandler</c> shall be <c>CopyConstructible</c>.</requires>
+            <effects>Initializes an object of <c>string_field_translator</c> that holds a field translator sink object, a skipping handler object and an allocator object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_copy_constructible&lt;SkippingHandler>::value</c>.</remark>
           </code-item>
 
           <code-item>

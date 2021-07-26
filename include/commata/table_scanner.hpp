@@ -1976,12 +1976,6 @@ public:
         sink_(std::move(sink))
     {}
 
-    // VS2015 needs this ctor. I don't know why.
-    translator(translator&& other) :
-        member_like_base<SkippingHandler>(std::move(other.get())),
-        sink_(std::move(other.sink_))
-    {}
-
     const SkippingHandler& get_skipping_handler() const noexcept
     {
         return this->get();
@@ -2078,6 +2072,7 @@ public:
             translator_t(std::move(sink), std::move(handle_skipping)))
     {}
 
+    arithmetic_field_translator(const arithmetic_field_translator&) = default;
     arithmetic_field_translator(arithmetic_field_translator&&) = default;
     ~arithmetic_field_translator() = default;
 
@@ -2143,6 +2138,8 @@ public:
         decimal_point_c_(), mimics_()
     {}
 
+    locale_based_arithmetic_field_translator(
+        const locale_based_arithmetic_field_translator&) = default;
     locale_based_arithmetic_field_translator(
         locale_based_arithmetic_field_translator&&) = default;
     ~locale_based_arithmetic_field_translator() = default;
@@ -2253,6 +2250,7 @@ public:
         at_(alloc, translator_t(std::move(sink), std::move(handle_skipping)))
     {}
 
+    string_field_translator(const string_field_translator&) = default;
     string_field_translator(string_field_translator&&) = default;
     ~string_field_translator() = default;
 

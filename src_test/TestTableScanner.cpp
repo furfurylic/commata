@@ -320,6 +320,31 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     }
 }
 
+TYPED_TEST(TestFieldTranslatorForIntegralTypes, Copy)
+{
+    using char_t = typename TypeParam::first_type;
+    using value_t = typename TypeParam::second_type;
+
+    const auto str0 = char_helper<char_t>::str0;
+
+    const auto empty = str0("");
+    const auto ten = str0("10");
+    const auto twenty = str0("20");
+
+    std::vector<value_t> values;
+    auto t = make_field_translator(values,
+        replace_if_skipped<value_t>(static_cast<value_t>(1)),
+        replace_if_conversion_failed<value_t>(static_cast<value_t>(2)));
+    auto u = t;
+    t.field_value(ten.data(), ten.data() + (ten.size() - 1));
+    u.field_value(empty.data(), empty.data());
+    t.field_skipped();
+    u.field_value(twenty.data(), twenty.data() + (twenty.size() - 1));
+
+    const std::vector<value_t> expected = { 10, 2, 1, 20 };
+    ASSERT_EQ(expected, values);
+}
+
 struct TestFieldTranslatorForIntegralRestriction : BaseTest
 {};
 
@@ -500,6 +525,119 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
     ASSERT_EQ(str("ABC  "), values[0]);
     ASSERT_EQ(str("xy\rz"), values[1]);
     ASSERT_TRUE(values[2].empty()) << values[2];
+}
+
+TYPED_TEST(TestFieldTranslatorForStringTypes, Copy)
+{
+    using char_t = TypeParam;
+    using string_t = std::basic_string<TypeParam>;
+
+    const auto str = char_helper<char_t>::str;
+
+    std::vector<string_t> values;
+    auto t = make_field_translator(values,
+        replace_if_skipped<string_t>(str("1")));
+    auto u = t;
+    t.field_value(str("10"));
+    u.field_skipped();
+    t.field_value(str("20"));
+
+    const std::vector<string_t> expected = { str("10"), str("1"), str("20") };
+    ASSERT_EQ(expected, values);
+}
+
+namespace {
+
+template <class Ch>
+struct french_style_numpunct : std::numpunct<Ch>
+{
+    explicit french_style_numpunct(std::size_t r = 0) :
+        std::numpunct<Ch>(r)
+    {}
+
+protected:
+    Ch do_decimal_point() const override
+    {
+        return char_helper<Ch>::ch(',');
+    }
+
+    Ch do_thousands_sep() const override
+    {
+        return char_helper<Ch>::ch(' ');
+    }
+
+    std::string do_grouping() const override
+    {
+        return "\003";
+    }
+};
+
+}
+
+template <class Ch>
+struct TestLocaleBased : BaseTest
+{};
+
+TYPED_TEST_SUITE(TestLocaleBased, Chs);
+
+TYPED_TEST(TestLocaleBased, FrenchStyle)
+{
+    const auto str0 = char_helper<TypeParam>::str0;
+
+    int value0;
+    const auto f0 = [&value0](int n) {
+        value0 = n;
+    };
+
+    double value1;
+    const auto f1 = [&value1](double a) {
+        value1 = a;
+    };
+
+    std::locale loc(std::locale::classic(),
+        new french_style_numpunct<TypeParam>);
+
+    auto s0 = str0("100 000");
+    auto s1 = str0("12 345 678,5");
+
+    auto t = make_field_translator<int>(f0, loc);
+    auto u = make_field_translator<double>(f1, loc);
+
+    t.field_value(&s0[0], &s0[0] + (s0.size() - 1));
+    u.field_value(&s1[0], &s1[0] + (s1.size() - 1));
+
+    ASSERT_EQ(100000, value0);
+    ASSERT_EQ(12345678.5, value1);
+}
+
+TYPED_TEST(TestLocaleBased, Copy)
+{
+    const auto str0 = char_helper<TypeParam>::str0;
+
+    std::deque<double> values;
+    const auto f = [&values](double a) {
+        values.push_back(a);
+    };
+
+    std::locale loc(std::locale::classic(),
+        new french_style_numpunct<TypeParam>);
+
+    auto empty = str0("");
+    auto s0 = str0("12 345 678,5");
+    auto s1 = str0("-9 999");
+
+    auto t = make_field_translator<double>(f, loc,
+        replace_if_skipped<double>(33.33),
+        replace_if_conversion_failed<double>(777.77));
+    auto u = t;
+
+    t.field_value(&s0[0], &s0[0] + (s0.size() - 1));
+    u.field_skipped();
+    t.field_value(&empty[0], &empty[0]);
+    u.field_value(&s1[0], &s1[0] + (s1.size() - 1));
+
+    const std::deque<double> expected = { 12345678.5, 33.33, 777.77, -9999.0 };
+    ASSERT_EQ(expected, values);
 }
 
 static_assert(
@@ -945,59 +1083,6 @@ TYPED_TEST(TestTableScanner, IsInHeader)
     ASSERT_EQ(2U, currency_map.size());
     ASSERT_EQ(str("Hryvnia"), currency_map[str("Ukraine")]);
     ASSERT_EQ(str("Euro"), currency_map[str("Estonia")]);
-}
-
-namespace {
-
-template <class Ch>
-struct french_style_numpunct : std::numpunct<Ch>
-{
-    explicit french_style_numpunct(std::size_t r = 0) :
-        std::numpunct<Ch>(r)
-    {}
-
-protected:
-    Ch do_decimal_point() const override
-    {
-        return char_helper<Ch>::ch(',');
-    }
-
-    Ch do_thousands_sep() const override
-    {
-        return char_helper<Ch>::ch(' ');
-    }
-
-    std::string do_grouping() const override
-    {
-        return "\003";
-    }
-};
-
-}
-
-TYPED_TEST(TestTableScanner, LocaleBased)
-{
-    const auto str = char_helper<TypeParam>::str;
-
-    std::vector<int> values0;
-    std::deque<double> values1;
-
-    basic_table_scanner<TypeParam> h;
-    std::locale loc(std::locale::classic(),
-        new french_style_numpunct<TypeParam>);
-    h.set_field_scanner(0, make_field_translator(values0, loc));
-    h.set_field_scanner(1, make_field_translator<double>(
-        std::front_inserter(values1), loc));
-
-    std::basic_string<TypeParam> s = str("100 000,\"12 345 678,5\"");
-
-    try {
-        parse_csv(s, std::move(h));
-    } catch (const text_error& e) {
-        FAIL() << e.info();
-    }
-    ASSERT_EQ(100000, values0[0]);
-    ASSERT_EQ(12345678.5, values1[0]);
 }
 
 TYPED_TEST(TestTableScanner, BufferSize)
