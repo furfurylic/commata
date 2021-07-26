@@ -5288,9 +5288,9 @@ namespace commata {
         </codeblock>
 
         <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) whose target type is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.
-          Its target type (<xref id="scanner.builtin_body_field_scanners.general"/>) is <c>std::basic_string&lt;Ch, Tr, Alloc></c>.</p>
-        <p><c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for <c>std::basic_string&lt;Ch, Tr, Alloc></c> (<xref id="field_translator_sink.requirements"/>).
-          The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>std::basic_string&lt;Ch, Tr, Alloc></c> (<xref id="skipping_handler.requirements"/>).</p>
+          Its target type (<xref id="scanner.builtin_body_field_scanners.general"/>) is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
+        <p><c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for <c>std::basic_string&lt;Ch, Tr, Allocator></c> (<xref id="field_translator_sink.requirements"/>).
+          The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>std::basic_string&lt;Ch, Tr, Allocator></c> (<xref id="skipping_handler.requirements"/>).</p>
 
         <section id="string_field_translator.cons">
           <name><c>string_field_translator</c> construct/copy/destroy</name>
@@ -5359,12 +5359,12 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
             <code>
 void field_value(const Ch* begin, const Ch* end);
             </code>
-            <effects>Puts <c>std::basic_string&lt;Ch, Tr, Alloc>(begin, end, get_allocator())</c> into the field translator sink.</effects>
+            <effects>Puts <c>std::basic_string&lt;Ch, Tr, Allocator>(begin, end, get_allocator())</c> into the field translator sink.</effects>
           </code-item>
 
           <code-item>
             <code>
-void field_value(std::basic_string&lt;Ch, Tr, Alloc>&amp;&amp; value);
+void field_value(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; value);
             </code>
             <effects>If <c>value.get_allocator() == get_allocator()</c>, puts <c>std::move(value)</c> into the field translator sink. Otherwise, calls <c>field_value(value.c_str(), value.c_str() + value.size())</c>.</effects>
           </code-item>
