@@ -840,6 +840,11 @@ public:
         }
     }
 
+    explicit operator bool() const noexcept
+    {
+        return has_;
+    }
+
     const T* get() const noexcept
     {
         return has_ ? operator->() : nullptr;
@@ -1989,9 +1994,9 @@ public:
 
     void field_skipped()
     {
-        if (auto p = call_skipping_handler(
-                has_simple_call<SkippingHandler>()).get()) {
-            put(std::move(*p));
+        if (auto r = call_skipping_handler(
+                has_simple_call<SkippingHandler>())) {
+            put(std::move(*r));
         }
     }
 
