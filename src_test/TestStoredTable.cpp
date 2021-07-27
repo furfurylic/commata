@@ -1088,6 +1088,7 @@ TYPED_TEST(TestStoredTableMerge, WithMovedFroms)
 
 class TestStoredTableAllocator : public BaseTest
 {
+protected:
     template <class T>
     using TA = tracking_allocator<std::allocator<T>>;
 };
