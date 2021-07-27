@@ -3735,7 +3735,7 @@ template &lt;class Content, class Allocator, class... Args>
       <section id="header_field_scanner.requirements">
         <name><c>HeaderFieldScanner</c> requirements</name>
 
-        <p>A type <c>S</c> meets the <c>HeaderFieldScanner</c> requirements for a char-like type <c>Ch</c> if:</p>
+        <p>A type <c>S</c> meets the <c>HeaderFieldScanner</c> requirements for an instance of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) <c>T</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
           <li>the expression shown in <xref id="table.header_field_scanner.requirements"/> is valid and have the indicated semantics.</li>
@@ -3743,8 +3743,8 @@ template &lt;class Content, class Allocator, class... Args>
 
         <p>In <xref id="table.header_field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
            The type of <c>j</c> is <c>std::size_t</c>.
-           The type of <c>v</c> is <c>const std::pair&lt;Ch*, Ch*>*</c>.
-           <c>t</c> is an lvalue of the corresponding cv-unqualified instance of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>), whose first template argument is <c>Ch</c>.</p>
+           The type of <c>v</c> is <c>const std::pair&lt;T::char_type*, T::char_type*>*</c>.
+           <c>t</c> is an lvalue of cv-unqualified <c>T</c>.</p>
 
         <table id="table.header_field_scanner.requirements">
           <caption><c>HeaderFieldScanner</c> requirements</caption>
@@ -4084,7 +4084,7 @@ template &lt;class HeaderFieldScanner>
   basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
                       HeaderFieldScanner s, size_type buffer_size = 0);
           </code>
-          <requires><c>HeaderFieldScanner</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>Ch</c>.</requires>
+          <requires><c>HeaderFieldScanner</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>basic_table_scanner&lt;Ch, Tr, Allocator></c>.</requires>
           <effects>Constructs an object of <c>basic_table_scanner</c> with an header field scanner object installed.
                    The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
                    The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
