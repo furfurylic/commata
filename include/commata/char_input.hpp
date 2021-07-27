@@ -399,7 +399,7 @@ auto make_char_input(Streambuf&& in)
             Streambuf>::value,
         owned_streambuf_input<Streambuf>>
 {
-    return owned_streambuf_input<Streambuf>(std::forward<Streambuf>(in));
+    return owned_streambuf_input<Streambuf>(std::move(in));
 }
 
 template <class IStream>
@@ -415,7 +415,7 @@ auto make_char_input(IStream&& in)
             IStream>::value,
         owned_istream_input<IStream>>
 {
-    return owned_istream_input<IStream>(std::forward<IStream>(in));
+    return owned_istream_input<IStream>(std::move(in));
 }
 
 template <class Ch, class Tr>
