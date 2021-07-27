@@ -1004,16 +1004,8 @@ public:
         return static_cast<T*>(static_cast<void*>(store_));
     }
 
-private:
-    constexpr static bool is_nothrow_swappable()
-    {
-        using std::swap;
-        return noexcept(swap(std::declval<T&>(), std::declval<T&>()));
-    }
-
-public:
     void swap(replacement& other)
-        noexcept(is_nothrow_swappable()
+        noexcept(detail::is_nothrow_swappable<T>()
               && std::is_nothrow_constructible<T>::value)
     {
         if (const auto p = other.get()) {

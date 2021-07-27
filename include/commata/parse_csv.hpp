@@ -868,18 +868,8 @@ public:
             handler.get()), std::forward<Args>(args)...);
     }
 
-private:
-    // gcc 7.3 can not find this member function at swap's noexcept
-    // if it is placed after swap
-    constexpr static bool noexcept_swap()
-    {
-        using std::swap;
-        return noexcept(
-            swap(std::declval<CharInput&>(), std::declval<CharInput&>()));
-    }
-
-public:
-    void swap(csv_source& other) noexcept(noexcept_swap())
+    void swap(csv_source& other)
+        noexcept(detail::is_nothrow_swappable<CharInput>())
     {
         using std::swap;
         swap(in_, other.in_);

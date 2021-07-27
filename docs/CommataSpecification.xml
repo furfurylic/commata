@@ -1013,7 +1013,7 @@ void swap(owned_streambuf_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>Streambuf::swap</c> with one argument whose type is <c>Streambuf&amp;</c> is marked as <c>noexcept</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;Streambuf&amp;>(), std::declval&lt;Streambuf&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
         </code-item>
       </section>
 
@@ -1053,7 +1053,7 @@ namespace commata {
     size_type operator()(Ch* out, size_type n);
 
     <c>// <n><xref id="owned_istream_input.modifiers"/>, modifiers:</n></c>
-    void swap(owned_istream_input&amp; other) noexcept(<nc>see below and TODO</nc>);
+    void swap(owned_istream_input&amp; other) noexcept(<nc>see below</nc>);
 
   private:
     IStream in;     <c>// <n>exposition only</n></c>
@@ -1105,7 +1105,7 @@ void swap(owned_istream_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>Streambuf::swap</c> with one argument whose type is <c>IStream&amp;</c> is marked as <c>noexcept</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;IStream&amp;>(), std::declval&lt;IStream&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
         </code-item>
       </section>
 
@@ -1350,7 +1350,7 @@ size_type operator()(Ch* out, size_type n);
 void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>std::basic_string&lt;Ch, Tr, Allocator>::swap</c> with one argument whose type is <c>std::basic_string&lt;Ch, Tr, Allocator>&amp;</c> is marked as <c>noexcept</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;std::basic_string&lt;Ch, Tr, Allocator>&amp;>(), std::declval&lt;std::basic_string&lt;Ch, Tr, Allocator>&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
         </code-item>
       </section>
 
