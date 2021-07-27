@@ -1011,6 +1011,7 @@ size_type operator()(Ch* out, size_type n);
           <code>
 void swap(owned_streambuf_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
+          <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>Streambuf::swap</c> with one argument whose type is <c>Streambuf&amp;</c> is marked as <c>noexcept</c>.</remark>
         </code-item>
@@ -1102,6 +1103,7 @@ size_type operator()(Ch* out, size_type n);
           <code>
 void swap(owned_istream_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
+          <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>Streambuf::swap</c> with one argument whose type is <c>IStream&amp;</c> is marked as <c>noexcept</c>.</remark>
         </code-item>
@@ -1613,6 +1615,7 @@ template &lt;class Handler, class... Args>
           <code>
 void swap(csv_source&amp; other) noexcept(<nc>see below</nc>);
           </code>
+          <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
           <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;CharInput&amp;>(), std::declval&lt;CharInput&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
         </code-item>
