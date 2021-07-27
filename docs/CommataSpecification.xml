@@ -1349,7 +1349,7 @@ size_type operator()(Ch* out, size_type n);
           <code>
 void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
+          <effects>Exchanges <c>s</c> and <c>other.s</c>, and, <c>head</c> and <c>other.head</c>, respectively.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;std::basic_string&lt;Ch, Tr, Allocator>&amp;>(), std::declval&lt;std::basic_string&lt;Ch, Tr, Allocator>&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
         </code-item>
       </section>
