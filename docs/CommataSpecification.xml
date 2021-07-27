@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-07-26 (UTC)</signature>
+<signature>2021-07-31 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3950,6 +3950,7 @@ namespace commata {
 
   <c>// <n><xref id="replacement"/>, replacement:</n></c>
   template &lt;class T> class replacement;
+  template &lt;class T> void swap(replacement&lt;T>&amp; left, replacement&lt;T>&amp; right) noexcept(<nc>see below</nc>);
 
   struct replacement_fail_t {};
   constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
@@ -4335,11 +4336,18 @@ namespace commata {
 
     replacement() noexcept;
     replacement(replacement_ignore_t) noexcept;
-    explicit replacement(const T&amp; t);
-    explicit replacement(T&amp;&amp; t) noexcept(<nc>see below</nc>);
-    replacement(replacement&amp;&amp; other) noexcept(<nc>see below</nc>);
-    template &lt;class U> replacement(replacement&lt;U>&amp;&amp; other) noexcept(<nc>see below</nc>);
+    template &lt;class U> explicit replacement(U&amp;&amp; t) noexcept(<nc>see below</nc>);
+    replacement(const replacement&amp;  other) noexcept(<nc>see below</nc>);
+    replacement(      replacement&amp;&amp; other) noexcept(<nc>see below</nc>);
+    template &lt;class U> replacement(const replacement&lt;U>&amp;  other) noexcept(<nc>see below</nc>);
+    template &lt;class U> replacement(      replacement&lt;U>&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~replacement();
+    replacement&amp; operator=(replacement_ignore_t) noexcept;
+    template &lt;class U> replacement&amp; operator=(U&amp;&amp; t) noexcept(<nc>see below</nc>);
+    replacement&amp; operator=(const replacement&amp;  other) noexcept(<nc>see below</nc>);
+    replacement&amp; operator=(      replacement&amp;&amp; other) noexcept(<nc>see below</nc>);
+    template &lt;class U> replacement&amp; operator=(const replacement&lt;U>&amp;  other) noexcept(<nc>see below</nc>);
+    template &lt;class U> replacement&amp; operator=(      replacement&lt;U>&amp;&amp; other) noexcept(<nc>see below</nc>);
 
     explicit operator bool() const noexcept;
     const T* get() const noexcept;
@@ -4348,7 +4356,14 @@ namespace commata {
           T&amp; operator*();
     const T* operator->() const;
           T* operator->();
+
+    void swap(replacement&amp; other) noexcept(<nc>see below</nc>);
   };
+
+  template &lt;class T> void swap(replacement&lt;T>&amp; left, replacement&lt;T>&amp; right)
+      noexcept(noexcept(left.swap.right)) {
+    left.swap(right);
+  }
 }
       </codeblock>
 
@@ -4366,19 +4381,22 @@ replacement(replacement_ignore_t) noexcept;
 
       <code-item>
         <code>
-explicit replacement(const T&amp; t);
+template &lt;class U> explicit replacement(U&amp;&amp; t) noexcept(<nc>see below</nc>);
         </code>
-        <requires><c>T</c> shall be <c>CopyConstructible</c>.</requires>
-        <postcondition><c>*this</c> shall contain a value constructed from <c>t</c>.</postcondition>
+        <requires><c>std::is_constructible&lt;T, U&amp;&amp;>::value</c> shall be <c>true</c>.</requires>
+        <postcondition><c>*this</c> shall contain a value constructed from <c>std::forward&lt;U>(t)</c>.</postcondition>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;T, U&amp;&amp;>::value</c>.
+                This overload shall not participate in overload resolution if <c>std::decay_t&lt;U></c> is the same type as either of <c>replacement_ignore_t</c> or <c>replacement&lt;V></c> for a certain type <c>V</c>.</remark>
       </code-item>
 
       <code-item>
         <code>
-explicit replacement(T&amp;&amp; t) noexcept(<nc>see below</nc>);
+replacement(const replacement&amp; other) noexcept(<nc>see below</nc>);
         </code>
-        <requires><c>T</c> shall be <c>MoveConstructible</c>.</requires>
-        <postcondition><c>*this</c> shall contain a value constructed from <c>std::move(t)</c>.</postcondition>
-        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+        <requires><c>T</c> shall be <c>CopyConstructible</c>.</requires>
+        <postcondition>If <c>other</c> contains a value, <c>*this</c> shall contain a value constructed from <c>*other</c>.
+                       Otherwise, <c>*this</c> shall not contain a value.</postcondition>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;T>::value</c>.</remark>
       </code-item>
 
       <code-item>
@@ -4386,17 +4404,86 @@ explicit replacement(T&amp;&amp; t) noexcept(<nc>see below</nc>);
 replacement(replacement&amp;&amp; other) noexcept(<nc>see below</nc>);
         </code>
         <requires><c>T</c> shall be <c>MoveConstructible</c>.</requires>
-        <effects>If <c>other</c> contains a value, constructs the contained value of <c>*this</c> from <c>std::move(*other)</c>.</effects>
+        <postcondition>If <c>other</c> contains a value, <c>*this</c> shall contain a value constructed from <c>std::move(*other)</c>.
+                       Otherwise, <c>*this</c> shall not contain a value.</postcondition>
         <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class U> replacement(const replacement&lt;U>&amp; other) noexcept(<nc>see below</nc>);
+        </code>
+        <requires><c>std::is_constructible&lt;T, const U&amp;>::value</c> shall be <c>true</c>.</requires>
+        <postcondition>If <c>other</c> contains a value, <c>*this</c> shall contain a value constructed from <c>*other</c>.
+                       Otherwise, <c>*this</c> shall not contain a value.</postcondition>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;T, const U&amp;>::value</c>.</remark>
       </code-item>
 
       <code-item>
         <code>
 template &lt;class U> replacement(replacement&lt;U>&amp;&amp; other) noexcept(<nc>see below</nc>);
         </code>
-        <requires><c>std::is_constructible&lt;T, U&amp;&amp;>::value</c> shall be not <c>false</c>.</requires>
-        <effects>If <c>other</c> contains a value, constructs the contained value of <c>*this</c> from <c>std::move(*other)</c>.</effects>
+        <requires><c>std::is_constructible&lt;T, U&amp;&amp;>::value</c> shall be <c>true</c>.</requires>
+        <postcondition>If <c>other</c> contains a value, <c>*this</c> shall contain a value constructed from <c>std::move(*other)</c>.
+                       Otherwise, <c>*this</c> shall not contain a value.</postcondition>
         <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;T, U&amp;&amp;>::value</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+replacement&amp; operator=(replacement_ignore_t) noexcept;
+        </code>
+        <postcondition><c>*this</c> shall not contain a value.</postcondition>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class U> replacement&amp; operator=(U&amp;&amp; t) noexcept(<nc>see below</nc>);
+        </code>
+        <requires><c>std::is_constructible&lt;T, U&amp;&amp;>::value &amp;&amp; std::is_assignable&lt;T, U&amp;&amp;>::value</c> shall be <c>true</c>.</requires>
+        <postcondition><c>*this</c> shall contain a value constructed or assigned from <c>std::forward&lt;U>(t)</c>.</postcondition>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;T>::value</c>.
+                This overload shall not participate in overload resolution if <c>std::decay_t&lt;U></c> is the same type as either of <c>replacement_ignore_t</c> or <c>replacement&lt;V></c> for a certain type <c>V</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+replacement&amp; operator=(const replacement&amp; other) noexcept(<nc>see below</nc>);
+        </code>
+        <requires><c>T</c> shall be <c>CopyConstructible</c> and <c>CopyAssignable</c>.</requires>
+        <postcondition>If <c>other</c> contains a value, <c>*this</c> shall contain a value constructed or assigned from <c>*other</c>.
+                       Otherwise, <c>*this</c> shall not contain a value.</postcondition>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;T>::value &amp;&amp; std::is_nothrow_copy_assignable&lt;T>::value</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+replacement&amp; operator=(replacement&amp;&amp; other) noexcept(<nc>see below</nc>);
+        </code>
+        <requires><c>T</c> shall be <c>MoveConstructible</c> and <c>MoveAssignable</c>.</requires>
+        <postcondition>If <c>other</c> contains a value, <c>*this</c> shall contain a value constructed or assigned from <c>std::move(*other)</c>.
+                       Otherwise, <c>*this</c> shall not contain a value.</postcondition>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value &amp;&amp; std::is_nothrow_move_assignable&lt;T>::value</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class U> replacement&amp; operator=(const replacement&lt;U>&amp; other) noexcept(<nc>see below</nc>);
+        </code>
+        <requires><c>std::is_constructible&lt;T, const U&amp;>::value &amp;&amp; std::is_assignable&lt;T, const U&amp;>::value</c> shall be <c>true</c>.</requires>
+        <postcondition>If <c>other</c> contains a value, <c>*this</c> shall contain a value constructed or assigned from <c>std::move(*other)</c>.
+                       Otherwise, <c>*this</c> shall not contain a value.</postcondition>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;T, const U&amp;>::value &amp;&amp; std::is_nothrow_assignable&lt;T, const U&amp;>::value</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class U> replacement&amp; operator=(replacement&lt;U>&amp;&amp; other) noexcept(<nc>see below</nc>);
+        </code>
+        <requires><c>std::is_constructible&lt;T, U&amp;&amp;>::value &amp;&amp; std::is_assignable&lt;T, U&amp;&amp;>::value</c> shall be <c>true</c>.</requires>
+        <postcondition>If <c>other</c> contains a value, <c>*this</c> shall contain a value constructed or assigned from <c>std::move(*other)</c>.
+                       Otherwise, <c>*this</c> shall not contain a value.</postcondition>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;T, U&amp;&amp;>::value &amp;&amp; std::is_nothrow_assignable&lt;T, U&amp;&amp;>::value</c>.</remark>
       </code-item>
 
       <code-item>
@@ -4430,6 +4517,16 @@ const T* operator->() const;
         </code>
         <requires><c>get() == nullptr</c> shall be <c>false</c>.</requires>
         <returns><c>get()</c>.</returns>
+      </code-item>
+
+      <code-item>
+        <code>
+void swap(replacement&amp; other) noexcept(<nc>see below</nc>);
+        </code>
+        <requires><c>T</c> shall be <c>MmoveConstructible</c>.
+                  If both of <c>*this</c> and <c>other</c> contain values, they shall be swappable with each other.</requires>
+        <effects>Exchanges the contained values of <c>*this</c> and <c>other</c>.</effects>
+        <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;T&amp;>(), std::declval&lt;T&amp;>())) &amp;&amp; std::is_nothrow_move_constructible&lt;T>::value</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
       </code-item>
     </section>
 

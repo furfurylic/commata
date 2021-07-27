@@ -776,6 +776,21 @@ public:
 struct replacement_ignore_t {};
 constexpr replacement_ignore_t replacement_ignore = replacement_ignore_t{};
 
+template <class T>
+class replacement;
+
+namespace detail { namespace scanner {
+
+template <class X>
+struct is_replacement : std::false_type
+{};
+
+template <class T>
+struct is_replacement<replacement<T>> : std::true_type
+{};
+
+}} // end detail::scanner
+
 // In C++17, we can abolish this template and use std::optional instead
 template <class T>
 class replacement
@@ -797,49 +812,161 @@ public:
         has_(false)
     {}
 
-    explicit replacement(const T& t) :
+    template <class U,
+        std::enable_if_t<
+            !detail::scanner::is_replacement<std::decay_t<U>>::value
+         && !std::is_same<replacement_ignore_t, std::decay_t<U>>::value,
+            std::nullptr_t> = nullptr>
+    explicit replacement(U&& t)
+        noexcept(std::is_nothrow_constructible<T, U&&>::value) :
         has_(true)
     {
-        ::new(store_) T(t);
+        ::new(store_) T(std::forward<U>(t));        // throw
     }
 
-    explicit replacement(T&& t)
-        noexcept(std::is_nothrow_move_constructible<T>::value) :
-        has_(true)
-    {
-        ::new(store_) T(std::move(t));
-    }
+    replacement(const replacement& other)
+        noexcept(std::is_nothrow_copy_constructible<T>::value) :
+        replacement(privy_t(), other)
+    {}
 
     replacement(replacement&& other)
         noexcept(std::is_nothrow_move_constructible<T>::value) :
-        has_(other.has_)
-    {
-        if (const auto p = other.get()) {
-            ::new(store_) T(std::move(*p));
-            p->~T();
-            other.has_ = false;
-        }
-    }
+        replacement(privy_t(), std::move(other))
+    {}
+
+    template <class U>
+    replacement(const replacement<U>& other)
+        noexcept(std::is_nothrow_constructible<T, const U&>::value) :
+        replacement(privy_t(), other)
+    {}
 
     template <class U>
     replacement(replacement<U>&& other)
         noexcept(std::is_nothrow_constructible<T, U&&>::value) :
+        replacement(privy_t(), std::move(other))
+    {}
+
+private:
+    struct privy_t {};
+
+    template <class U>
+    replacement(privy_t, const replacement<U>& other)
+        noexcept(std::is_nothrow_constructible<T, const U&>::value) :
         has_(other.has_)
     {
         if (const auto p = other.get()) {
-            ::new(&store_) T(std::move(*p));
+            ::new(&store_) T(*p);                   // throw
+        }
+    }
+
+    template <class U>
+    replacement(privy_t, replacement<U>&& other)
+        noexcept(std::is_nothrow_constructible<T, U&&>::value) :
+        has_(other.has_)
+    {
+        if (const auto p = other.get()) {
+            ::new(&store_) T(std::move(*p));        // throw
             p->~U();
             other.has_ = false;
         }
     }
 
+public:
     ~replacement()
     {
+        destroy();
+    }
+
+    replacement& operator=(replacement_ignore_t) noexcept
+    {
+        destroy();
+        has_ = false;
+        return *this;
+    }
+
+    template <class U>
+    auto operator=(U&& t)
+        noexcept(std::is_nothrow_constructible<T, U&&>::value
+              && std::is_nothrow_assignable<T, U&&>::value)
+      -> std::enable_if_t<
+            !detail::scanner::is_replacement<std::decay_t<U>>::value
+         && !std::is_same<replacement_ignore_t, std::decay_t<U>>::value,
+            replacement&>
+    {
         if (has_) {
-            static_cast<const T*>(static_cast<const void*>(store_))->~T();
+            **this = std::forward<U>(t);            // throw
+        } else {
+            ::new(&store_) T(std::forward<U>(t));   // throw
+            has_ = true;
+        }
+        return *this;
+    }
+
+    replacement& operator=(const replacement& other)
+        noexcept(std::is_nothrow_copy_constructible<T>::value
+              && std::is_nothrow_copy_assignable<T>::value)
+    {
+        assign(other);
+        return *this;
+    }
+
+    replacement& operator=(replacement&& other)
+        noexcept(std::is_nothrow_move_constructible<T>::value
+              && std::is_nothrow_move_assignable<T>::value)
+    {
+        if (this != std::addressof(other)) {
+            // This branching is essential
+            assign(std::move(other));
+        }
+        return *this;
+    }
+
+    template <class U>
+    replacement& operator=(const replacement<U>& other)
+        noexcept(std::is_nothrow_constructible<T, const U&>::value
+              && std::is_nothrow_assignable<T, const U&>::value)
+    {
+        assign(other);
+        return *this;
+    }
+
+    template <class U>
+    replacement& operator=(replacement<U>&& other)
+        noexcept(std::is_nothrow_constructible<T, U&&>::value
+              && std::is_nothrow_assignable<T, U&&>::value)
+    {
+        assign(std::move(other));
+        return *this;
+    }
+
+private:
+    template <class U>
+    void assign(const replacement<U>& other)
+        noexcept(std::is_nothrow_constructible<T, const U&>::value
+              && std::is_nothrow_assignable<T, const U&>::value)
+    {
+        if (const auto p = other.get()) {
+            *this = *other;
+        } else {
+            *this = replacement_ignore;
         }
     }
 
+    template <class U>
+    void assign(replacement<U>&& other)
+        noexcept(std::is_nothrow_constructible<T, U&&>::value
+              && std::is_nothrow_assignable<T, U&&>::value)
+    {
+        if (const auto p = other.get()) {
+            *this = std::move(*other);
+            other = replacement_ignore;
+                // Requires: *this and other are different objects
+        } else {
+            *this = replacement_ignore;
+        }
+    }
+
+public:
     explicit operator bool() const noexcept
     {
         return has_;
@@ -876,7 +1003,49 @@ public:
         assert(has_);
         return static_cast<T*>(static_cast<void*>(store_));
     }
+
+private:
+    constexpr static bool is_nothrow_swappable()
+    {
+        using std::swap;
+        return noexcept(swap(std::declval<T&>(), std::declval<T&>()));
+    }
+
+public:
+    void swap(replacement& other)
+        noexcept(is_nothrow_swappable()
+              && std::is_nothrow_constructible<T>::value)
+    {
+        if (const auto p = other.get()) {
+            if (has_) {
+                using std::swap;
+                swap(**this, *p);                   // throw
+                swap(has_, other.has_);
+            } else {
+                *this = std::move(other);           // throw
+                    // No assignment of T will occur
+            }
+        } else {
+            other = std::move(*this);               // throw
+                    // ditto
+        }
+    }
+
+private:
+    void destroy() noexcept
+    {
+        if (has_) {
+            static_cast<const T*>(static_cast<const void*>(store_))->~T();
+        }
+    }
 };
+
+template <class T>
+void swap(replacement<T>& left, replacement<T>& right)
+    noexcept(noexcept(left.swap(right)))
+{
+    left.swap(right);
+}
 
 namespace detail { namespace scanner {
 

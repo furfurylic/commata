@@ -1357,17 +1357,146 @@ TEST_F(TestReplacement, Basics)
     ASSERT_STREQ(r.get()->c_str(), r->c_str());
     ASSERT_EQ(std::string("ABCDEFG"), *r);
 
-    const auto r2(std::move(r));
+    // Copy construction
+    const auto r2(r);
     ASSERT_NE(r2.get(), nullptr);
     ASSERT_STREQ("ABCDEFG", r2.get()->c_str());
     ASSERT_STREQ(r2.get()->c_str(), r2->c_str());
     ASSERT_EQ(std::string("ABCDEFG"), *r2);
+
+    // Move construction
+    const auto r3(std::move(r));
+    ASSERT_NE(r3.get(), nullptr);
+    ASSERT_STREQ("ABCDEFG", r3.get()->c_str());
+    ASSERT_STREQ(r3.get()->c_str(), r3->c_str());
+    ASSERT_EQ(std::string("ABCDEFG"), *r3);
+
+    // Moved-from state: these are not specified in the spec
+    ASSERT_EQ(nullptr, r.get());
+    ASSERT_FALSE(static_cast<bool>(r));
+}
+
+TEST_F(TestReplacement, HeterogeneousConstruction)
+{
+    replacement<char> r('1');
+
+    replacement<int> r1(r);
+    ASSERT_NE(r1.get(), nullptr);
+    ASSERT_EQ('1', *r1);
+
+    replacement<int> r2(std::move(r));
+    ASSERT_NE(r2.get(), nullptr);
+    ASSERT_EQ('1', *r2);
 }
 
 TEST_F(TestReplacement, None)
 {
-    replacement<std::string> r;
-    ASSERT_EQ(nullptr, r.get());
+    replacement<std::string> r1;
+    ASSERT_EQ(nullptr, r1.get());
+
+    replacement<std::string> r2(replacement_ignore);
+    ASSERT_EQ(nullptr, r2.get());
+}
+
+TEST_F(TestReplacement, Assignment)
+{
+    replacement<std::string> rs[2];
+
+    // Assignment from T to replacement with none
+    {
+        std::string s("ABCDEF");
+        rs[1] = s;
+        rs[0] = std::move(s);
+    }
+    for (std::size_t i : { 0, 1 }) {
+        const auto& r = rs[i];
+        ASSERT_NE(r.get(), nullptr) << i;
+        ASSERT_STREQ("ABCDEF", r.get()->c_str()) << i;
+        ASSERT_STREQ(r.get()->c_str(), r->c_str()) << i;
+        ASSERT_EQ(std::string("ABCDEF"), *r) << i;
+    }
+
+    // Assignment from replacement with T to replacement with T
+    {
+        replacement<std::string> r(std::string("123456"));
+        rs[1] = r;
+        rs[0] = std::move(r);
+        // Moved-from state: these are not specified in the spec
+        ASSERT_EQ(nullptr, r.get());
+        ASSERT_FALSE(static_cast<bool>(r));
+    }
+    for (std::size_t i : { 0, 1 }) {
+        const auto& r = rs[i];
+        ASSERT_NE(r.get(), nullptr) << i;
+        ASSERT_STREQ("123456", r.get()->c_str()) << i;
+        ASSERT_STREQ(r.get()->c_str(), r->c_str()) << i;
+        ASSERT_EQ(std::string("123456"), *r) << i;
+    }
+
+    // Assignment from replacement with replacement with U (convertible to T)
+    // to replacement with T
+    {
+        replacement<const char*> r("ijklmn");
+        rs[1] = r;
+        rs[0] = std::move(r);
+        // Moved-from state: these are not specified in the spec
+        ASSERT_EQ(nullptr, r.get());
+        ASSERT_FALSE(static_cast<bool>(r));
+    }
+    for (std::size_t i : { 0, 1 }) {
+        const auto& r = rs[i];
+        ASSERT_NE(r.get(), nullptr) << i;
+        ASSERT_STREQ("ijklmn", r.get()->c_str()) << i;
+        ASSERT_STREQ(r.get()->c_str(), r->c_str()) << i;
+        ASSERT_EQ(std::string("ijklmn"), *r) << i;
+    }
+
+    // Self-assignment
+    rs[0] = std::move(rs[0]);
+    // Strictly speaking, rs[0] can be placed in a moved-from state and there
+    // are no guarantees on its state, but we offer harmless self-assignment
+    ASSERT_NE(rs[0].get(), nullptr);
+    ASSERT_STREQ("ijklmn", rs[0].get()->c_str());
+    ASSERT_STREQ(rs[0].get()->c_str(), rs[0]->c_str());
+    ASSERT_EQ(std::string("ijklmn"), *rs[0]);
+
+    // Assignment from replacement with none to replacement with T
+    {
+        replacement<std::string> r;
+        rs[1] = r;
+        rs[0] = std::move(r);
+    }
+    for (std::size_t i : { 0, 1 }) {
+        const auto& r = rs[i];
+        ASSERT_EQ(nullptr, r.get()) << i;
+    }
+}
+
+TEST_F(TestReplacement, Swap)
+{
+    using std::swap;
+
+    replacement<int> rs[2];
+    rs[0] = 100;
+
+    static_assert(noexcept(swap(rs[0], rs[1])), "");
+
+    swap(rs[0], rs[1]);
+    ASSERT_EQ(nullptr, rs[0].get());
+    ASSERT_NE(rs[1].get(), nullptr);
+    ASSERT_EQ(100, *rs[1]);
+
+    swap(rs[0], rs[1]);
+    ASSERT_NE(rs[0].get(), nullptr);
+    ASSERT_EQ(100, *rs[0]);
+    ASSERT_EQ(nullptr, rs[1].get());
+
+    rs[1] = 200;
+    swap(rs[0], rs[1]);
+    ASSERT_NE(rs[0].get(), nullptr);
+    ASSERT_EQ(200, *rs[0]);
+    ASSERT_NE(rs[1].get(), nullptr);
+    ASSERT_EQ(100, *rs[1]);
 }
 
 struct TestReplaceIfConversionFailed : BaseTest
