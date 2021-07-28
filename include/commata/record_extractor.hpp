@@ -13,9 +13,10 @@
 #include <iterator>
 #include <memory>
 #include <ostream>
-#include <streambuf>
 #include <sstream>
 #include <stdexcept>
+#include <streambuf>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -29,31 +30,24 @@
 namespace commata {
 namespace detail::record_extraction {
 
-template <class Ch, class Tr = std::char_traits<Ch>>
+template <class Ch, class Tr>
 class range_eq
 {
-    const Ch* begin_;
-    std::size_t len_;
+    std::basic_string_view<Ch, Tr> s_;
 
 public:
-    template <class Allocator>
-    explicit range_eq(const std::basic_string<Ch, Tr, Allocator>& s) noexcept :
-        begin_(s.data()), len_(s.size())
-    {}
-
-    explicit range_eq(const Ch* s) :
-        begin_(s), len_(Tr::length(s))
+    explicit range_eq(std::basic_string_view<Ch, Tr> s) noexcept :
+        s_(s)
     {}
 
     bool operator()(const Ch* begin, const Ch* end) const noexcept
     {
-        const std::size_t rlen = end - begin;
-        return (len_ == rlen) && (Tr::compare(begin_, begin, rlen) == 0);
+        return s_ == decltype(s_)(begin, end - begin);
     }
 
-    std::pair<const Ch*, const Ch*> get() const noexcept
+    decltype(auto) get() const noexcept
     {
-        return std::make_pair(begin_, begin_ + len_);
+        return s_;
     }
 };
 
@@ -74,7 +68,7 @@ public:
             && (Tr::compare(s_.data(), begin, rlen) == 0);
     }
 
-    const std::basic_string<Ch, Tr, Allocator>& get() const noexcept
+    decltype(auto) get() const noexcept
     {
         return s_;
     }
@@ -148,7 +142,7 @@ void write_formatted_field_name_of(
     const range_eq<wchar_t, Tr>& t, const wchar_t*)
 {
     o.rdbuf()->sputn(prefix, std::strlen(prefix));
-    detail::write_ntmbs(o, t.get().first, t.get().second);
+    detail::write_ntmbs(o, t.get().cbegin(), t.get().cend());
 }
 
 template <class Tr, class Allocator>
@@ -617,60 +611,30 @@ template <class T>
 constexpr bool has_const_iterator_v =
     decltype(has_const_iterator_impl::check<T>(nullptr))::value;
 
-template <class Ch, class Tr, class Allocator, class OtherAllocator>
-auto make_string_pred(
-    std::basic_string<Ch, Tr, OtherAllocator>&& s, const Allocator&) noexcept
-{
-    return string_eq<Ch, Tr, OtherAllocator>(std::move(s));
-}
-
-template <class Ch, class Tr, class Allocator, class OtherAllocator>
-auto make_string_pred(const std::basic_string<Ch, Tr, OtherAllocator>&& s,
-                      const Allocator& a)
-{
-    return string_eq<Ch, Tr, Allocator>(
-        std::basic_string<Ch, Tr, Allocator>(s.cbegin(), s.cend(), a));
-}
-
-template <class Ch, class Tr, class OtherAllocator, class Allocator>
-auto make_string_pred(const std::basic_string<Ch, Tr, OtherAllocator>& s,
-                      const Allocator&) noexcept
-{
-    return range_eq<Ch, Tr>(s);
-}
-
-template <class Ch, class Tr, class Allocator>
-auto make_string_pred(const Ch* s, const Allocator&) noexcept
-{
-    return range_eq<Ch, Tr>(s);
-}
-
 template <class Ch, class Tr, class Allocator, class T>
 auto make_string_pred(T&& s, const Allocator& a)
- -> std::enable_if_t<
-        !detail::is_std_string_of_ch_tr_v<
-            std::remove_const_t<std::remove_reference_t<T>>, Ch, Tr>
-     && !std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>, Ch*>
-     && has_const_iterator_v<std::remove_reference_t<T>>,
-        string_eq<Ch, Tr, Allocator>>
 {
-    return string_eq<Ch, Tr, Allocator>(
-        std::basic_string<Ch, Tr, Allocator>(s.cbegin(), s.cend(), a));
-}
-
-// Watch out for the return type, which is not string_eq
-template <class Ch, class Tr, class Allocator, class T>
-auto make_string_pred(T&& s, const Allocator&)
- -> std::enable_if_t<
-        !detail::is_std_string_of_ch_tr_v<
-            std::remove_const_t<std::remove_reference_t<T>>, Ch, Tr>
-     && !std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>, Ch*>
-     && !has_const_iterator_v<std::remove_reference_t<T>>,
-        T&&>
-{
-    // This "not uses-allocator construction" is intentional because
-    // what we would like to do here is a mere move/copy by forwarding
-    return std::forward<T>(s);
+    if constexpr (detail::is_std_string_of_ch_tr_v<T, Ch, Tr>) {
+        // rvalue of std::basic_string only
+        return string_eq(std::move(s));
+    } else if constexpr (detail::is_std_string_of_ch_tr_v<
+            std::remove_const_t<T>, Ch, Tr>) {
+        // rvalue of const std::basic_string only
+        return string_eq(
+            std::basic_string<Ch, Tr, Allocator>(s.cbegin(), s.cend(), a));
+            // std::basic_string that comes with GCC 7.3 does not seem to
+            // accept s and a as arguments of its constructor
+    } else if constexpr (std::is_constructible_v<
+                            std::basic_string_view<Ch, Tr>, T&&>) {
+        return range_eq<Ch, Tr>(std::move(s));
+    } else if constexpr (has_const_iterator_v<std::remove_reference_t<T>>) {
+        return string_eq(
+            std::basic_string<Ch, Tr, Allocator>(s.cbegin(), s.cend(), a));
+    } else {
+        // This "not uses-allocator construction" is intentional because
+        // what we would like to do here is a mere move/copy by forwarding
+        return std::forward<T>(s);
+    }
 }
 
 template <class T, class Ch>
