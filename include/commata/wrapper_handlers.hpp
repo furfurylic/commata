@@ -41,7 +41,7 @@ public:
 template <class Handler>
 reference_handler<Handler> wrap_ref(Handler& handler) noexcept
 {
-    return reference_handler<Handler>(handler);
+    return reference_handler(handler);
 }
 
 template <class Handler>

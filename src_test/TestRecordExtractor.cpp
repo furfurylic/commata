@@ -415,7 +415,7 @@ TEST_F(TestRecordExtractorMiscellaneous, IsInHeader)
     std::stringbuf out;
 
     auto x = make_record_extractor(&out, "[instrument]", "clarinet");
-    parse_csv(s, record_extractor_wrapper<decltype(x)>(std::move(x)));
+    parse_csv(s, record_extractor_wrapper(std::move(x)));
 
     ASSERT_STREQ("[instrument],[type]\n"
                  "clarinet,woodwind\n", std::move(out).str().c_str());
@@ -429,7 +429,7 @@ TEST_F(TestRecordExtractorMiscellaneous, IsInHeaderIndexed)
     std::stringbuf out;
 
     auto x = make_record_extractor(&out, 1U, "woodwind");
-    parse_csv(s, record_extractor_wrapper<decltype(x)>(std::move(x)));
+    parse_csv(s, record_extractor_wrapper(std::move(x)));
 
     ASSERT_STREQ("[instrument],[type]\n"
                  "clarinet,woodwind\n", std::move(out).str().c_str());

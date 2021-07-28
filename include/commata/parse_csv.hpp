@@ -846,7 +846,7 @@ public:
     auto operator()(std::reference_wrapper<Handler> handler,
             Args&&... args) const&
         noexcept(std::is_nothrow_copy_constructible_v<CharInput>)
-     -> decltype((*this)(reference_handler<Handler>(
+     -> decltype((*this)(reference_handler(
             handler.get()), std::forward<Args>(args)...))
     {
         return (*this)(wrap_ref(handler.get()), std::forward<Args>(args)...);
@@ -856,7 +856,7 @@ public:
     auto operator()(std::reference_wrapper<Handler> handler,
             Args&&... args) &&
         noexcept(std::is_nothrow_move_constructible_v<CharInput>)
-     -> decltype(std::move(*this)(reference_handler<Handler>(
+     -> decltype(std::move(*this)(reference_handler(
             handler.get()), std::forward<Args>(args)...))
     {
         return std::move(*this)(wrap_ref(handler.get()),
