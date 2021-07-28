@@ -2065,7 +2065,7 @@ bool is_in_header() const noexcept;
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>
             whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
         <li>otherwise, if <c>std::remove_reference_t&lt;P>::const_iterator</c> is a type,
-            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object initialized with <c>std::forward&lt;P>(p).cbegin()</c>, <c>std::forward&lt;P>(p).cend()</c> and <c>alloc</c>,
+            a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object initialized with <c>p.cbegin()</c>, <c>p.cend()</c> and <c>alloc</c>,
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>
             whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
         <li>otherwise, if <c>p</c> is a binary predicate that takes two <c>const Ch*</c> paramters, <c>std::forward&lt;P>(p)</c>.</li>

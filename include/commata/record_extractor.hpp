@@ -592,8 +592,7 @@ auto make_string_pred(T&& s, const Allocator& a)
         string_eq<Ch, Tr, Allocator>>
 {
     return string_eq<Ch, Tr, Allocator>(
-        std::basic_string<Ch, Tr, Allocator>(
-            std::forward<T>(s).cbegin(), std::forward<T>(s).cend(), a));
+        std::basic_string<Ch, Tr, Allocator>(s.cbegin(), s.cend(), a));
 }
 
 // Watch out for the return type, which is not string_eq
