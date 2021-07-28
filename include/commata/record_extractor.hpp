@@ -29,6 +29,34 @@
 namespace commata {
 namespace detail { namespace record_extraction {
 
+template <class Ch, class Tr = std::char_traits<Ch>>
+class range_eq
+{
+    const Ch* begin_;
+    std::size_t len_;
+
+public:
+    template <class Allocator>
+    explicit range_eq(const std::basic_string<Ch, Tr, Allocator>& s) noexcept :
+        begin_(s.data()), len_(s.size())
+    {}
+
+    explicit range_eq(const Ch* s) :
+        begin_(s), len_(Tr::length(s))
+    {}
+
+    bool operator()(const Ch* begin, const Ch* end) const noexcept
+    {
+        const std::size_t rlen = end - begin;
+        return (len_ == rlen) && (Tr::compare(begin_, begin, rlen) == 0);
+    }
+
+    std::pair<const Ch*, const Ch*> get() const noexcept
+    {
+        return std::make_pair(begin_, begin_ + len_);
+    }
+};
+
 template <class Ch, class Tr, class Allocator>
 class string_eq
 {
@@ -115,6 +143,15 @@ void write_formatted_field_name_of(
     o.rdbuf()->sputn(prefix, std::strlen(prefix));
     using it_t = std::istreambuf_iterator<wchar_t>;
     detail::write_ntmbs(o, it_t(wo), it_t());
+}
+
+template <class Tr>
+void write_formatted_field_name_of(
+    std::ostream& o, const char* prefix,
+    const range_eq<wchar_t, Tr>& t, const wchar_t*)
+{
+    o.rdbuf()->sputn(prefix, std::strlen(prefix));
+    detail::write_ntmbs(o, t.get().first, t.get().second);
 }
 
 template <class Tr, class Allocator>
@@ -449,8 +486,8 @@ private:
 
     void flush_current(const Ch* end)
     {
-        assert(record_buffer().empty());
         if (out_) {
+            assert(record_buffer().empty());
             out_->sputn(current_begin_, end - current_begin_);
         }
     }
@@ -560,34 +597,41 @@ struct has_const_iterator :
     decltype(has_const_iterator_impl::check<T>(nullptr))
 {};
 
-template <class Ch, class Tr, class Allocator>
+template <class Ch, class Tr, class Allocator, class OtherAllocator>
 auto make_string_pred(
-    std::basic_string<Ch, Tr, Allocator>&& s, const Allocator&) noexcept
+    std::basic_string<Ch, Tr, OtherAllocator>&& s, const Allocator&) noexcept
+{
+    return string_eq<Ch, Tr, OtherAllocator>(std::move(s));
+}
+
+template <class Ch, class Tr, class Allocator, class OtherAllocator>
+auto make_string_pred(const std::basic_string<Ch, Tr, OtherAllocator>&& s,
+                      const Allocator& a)
 {
     return string_eq<Ch, Tr, Allocator>(
-        std::basic_string<Ch, Tr, Allocator>(std::move(s)));
+        std::basic_string<Ch, Tr, Allocator>(s.cbegin(), s.cend(), a));
+}
+
+template <class Ch, class Tr, class OtherAllocator, class Allocator>
+auto make_string_pred(const std::basic_string<Ch, Tr, OtherAllocator>& s,
+                      const Allocator&) noexcept
+{
+    return range_eq<Ch, Tr>(s);
+}
+
+template <class Ch, class Tr, class Allocator>
+auto make_string_pred(const Ch* s, const Allocator&) noexcept
+{
+    return range_eq<Ch, Tr>(s);
 }
 
 template <class Ch, class Tr, class Allocator, class T>
 auto make_string_pred(T&& s, const Allocator& a)
  -> std::enable_if_t<
-        std::is_constructible<
-            std::basic_string<Ch, Tr, Allocator>,
-            T&&,
-            const Allocator&>::value,
-        string_eq<Ch, Tr, Allocator>>
-{
-    return string_eq<Ch, Tr, Allocator>(
-        std::basic_string<Ch, Tr, Allocator>(std::forward<T>(s), a));
-}
-
-template <class Ch, class Tr, class Allocator, class T>
-auto make_string_pred(T&& s, const Allocator& a)
- -> std::enable_if_t<
-        !std::is_constructible<
-            std::basic_string<Ch, Tr, Allocator>,
-            T&&,
-            const Allocator&>::value
+        !detail::is_std_string_of_ch_tr<
+            std::remove_const_t<std::remove_reference_t<T>>, Ch, Tr>::value
+     && !std::is_same<
+            std::remove_const_t<std::remove_reference_t<T>>, Ch*>::value
      && has_const_iterator<std::remove_reference_t<T>>::value,
         string_eq<Ch, Tr, Allocator>>
 {
@@ -599,10 +643,10 @@ auto make_string_pred(T&& s, const Allocator& a)
 template <class Ch, class Tr, class Allocator, class T>
 auto make_string_pred(T&& s, const Allocator&)
  -> std::enable_if_t<
-        !std::is_constructible<
-            std::basic_string<Ch, Tr, Allocator>,
-            T&&,
-            const Allocator&>::value
+        !detail::is_std_string_of_ch_tr<
+            std::remove_const_t<std::remove_reference_t<T>>, Ch, Tr>::value
+     && !std::is_same<
+            std::remove_const_t<std::remove_reference_t<T>>, Ch*>::value
      && !has_const_iterator<std::remove_reference_t<T>>::value,
         T&&>
 {
@@ -620,7 +664,7 @@ auto make_impl(
     TargetFieldIndex target_field_index, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
 {
-    auto fvp = make_string_pred<Ch, Tr, Allocator>(
+    auto fvp = make_string_pred<Ch, Tr>(
         std::forward<FieldValuePred>(field_value_pred), alloc);
     return record_extractor_with_indexed_key<decltype(fvp), Ch, Tr, Allocator>(
         std::allocator_arg, alloc, out,
@@ -637,9 +681,9 @@ auto make_impl(
     FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
 {
-    auto fnp = make_string_pred<Ch, Tr, Allocator>(
+    auto fnp = make_string_pred<Ch, Tr>(
         std::forward<FieldNamePred>(field_name_pred), alloc);
-    auto fvp = make_string_pred<Ch, Tr, Allocator>(
+    auto fvp = make_string_pred<Ch, Tr>(
         std::forward<FieldValuePred>(field_value_pred), alloc);
     return record_extractor<decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
         std::allocator_arg, alloc, out,

@@ -25,12 +25,22 @@ struct is_std_string<std::basic_string<Args...>> :
 {};
 
 template <class T, class Ch>
-struct is_std_string_of :
+struct is_std_string_of_ch :
     std::false_type
 {};
 
 template <class Ch, class... Args>
-struct is_std_string_of<std::basic_string<Ch, Args...>, Ch> :
+struct is_std_string_of_ch<std::basic_string<Ch, Args...>, Ch> :
+    std::true_type
+{};
+
+template <class T, class Ch, class Tr>
+struct is_std_string_of_ch_tr :
+    std::false_type
+{};
+
+template <class Ch, class Tr, class... Args>
+struct is_std_string_of_ch_tr<std::basic_string<Ch, Tr, Args...>, Ch, Tr> :
     std::true_type
 {};
 

@@ -208,6 +208,25 @@ TEST_F(TestRecordExtractorIndexed, Basics)
               out.str());
 }
 
+TEST_F(TestRecordExtractorIndexed, ConstRValueRefString)
+{
+    std::wstringbuf out;
+    auto extractor = [&out] {
+        const std::wstring s = L"star";
+        return make_record_extractor(&out, 0, std::move(s), false);
+    }();
+    // If the range of the const rvalue of s has been grabbed in the lambda,
+    // extractor will have a dangling range here;
+    // below we'd like to assert that it is not the case
+
+    const wchar_t* s = L"category,example\n"
+                       L"fish,crucian\n"
+                       L"star,alnilam\n"
+                       L"vegetable,brassica\n";
+    parse_csv(s, std::move(extractor));
+    ASSERT_EQ(L"star,alnilam\n", out.str());
+}
+
 namespace {
 
 struct final_predicate_for_value final

@@ -101,12 +101,12 @@ class text_error :
 public:
     template <class T,
         std::enable_if_t<
-            detail::is_std_string_of<std::decay_t<T>, char>::value
+            detail::is_std_string_of_ch<std::decay_t<T>, char>::value
          || std::is_constructible<std::string, T>::value,
             std::nullptr_t> = nullptr>
     explicit text_error(T&& what_arg) :
         what_(create_what(
-            detail::is_std_string_of<std::decay_t<T>, char>(),
+            detail::is_std_string_of_ch<std::decay_t<T>, char>(),
             std::forward<T>(what_arg))),
         physical_position_(npos, npos)
     {}
