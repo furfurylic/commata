@@ -50,6 +50,7 @@ class streambuf_input
 public:
     static_assert(std::is_same<Ch, typename Tr::char_type>::value, "");
 
+    using streambuf_type = std::basic_streambuf<Ch, Tr>;
     using char_type = Ch;
     using traits_type = Tr;
     using size_type = std::make_unsigned_t<std::streamsize>;
@@ -112,6 +113,7 @@ public:
                 typename Streambuf::traits_type>,
             Streambuf>::value, "");
 
+    using streambuf_type = Streambuf;
     using char_type = typename Streambuf::char_type;
     using traits_type = typename Streambuf::traits_type;
     using size_type = std::make_unsigned_t<std::streamsize>;
@@ -161,6 +163,7 @@ public:
                 typename IStream::traits_type>,
             IStream>::value, "");
 
+    using istream_type = IStream;
     using char_type = typename IStream::char_type;
     using traits_type = typename IStream::traits_type;
     using size_type = std::make_unsigned_t<std::streamsize>;
@@ -277,7 +280,8 @@ template <class Ch, class Tr = std::char_traits<Ch>,
 class owned_string_input
 {
 public:
-    using size_type = typename std::basic_string<Ch, Tr, Allocator>::size_type;
+    using string_type = std::basic_string<Ch, Tr, Allocator>;
+    using size_type = typename string_type::size_type;
 
 private:
     std::basic_string<Ch, Tr, Allocator> s_;

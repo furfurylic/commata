@@ -834,9 +834,10 @@ namespace commata {
 namespace commata {
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class streambuf_input {
   public:
-    using char_type = Ch;
-    using traits_type = Tr;
-    using size_type = std::make_unsigned_t&lt;std::streamsize>;
+    using streambuf_type = std::basic_streambuf&lt;Ch, Tr>;
+    using char_type      = Ch;
+    using traits_type    = Tr;
+    using size_type      = std::make_unsigned_t&lt;std::streamsize>;
 
     <c>// <n><xref id="streambuf_input.cons"/>, construct/copy/destroy:</n></c>
     streambuf_input() noexcept : in(nullptr) {}
@@ -946,9 +947,10 @@ template &lt;class Ch, class Tr>
 namespace commata {
   template &lt;class Streambuf> class owned_streambuf_input {
   public:
-    using char_type   = typename Streambuf::char_type;
-    using traits_type = typename Streambuf::traits_type;
-    using size_type   = std::make_unsigned_t&lt;std::streamsize>;
+    using streambuf_type = Streambuf;
+    using char_type      = typename Streambuf::char_type;
+    using traits_type    = typename Streambuf::traits_type;
+    using size_type      = std::make_unsigned_t&lt;std::streamsize>;
 
     <c>// <n><xref id="owned_streambuf_input.cons"/>, construct/copy/destroy:</n></c>
     owned_streambuf_input() = default;
@@ -1038,9 +1040,10 @@ template &lt;class Streambuf>
 namespace commata {
   template &lt;class IStream> class owned_istream_input {
   public:
-    using char_type   = typename IStream::char_type;
-    using traits_type = typename IStream::traits_type;
-    using size_type   = std::make_unsigned_t&lt;std::streamsize>;
+    using istream_type = IStream;
+    using char_type    = typename IStream::char_type;
+    using traits_type  = typename IStream::traits_type;
+    using size_type    = std::make_unsigned_t&lt;std::streamsize>;
 
     <c>// <n><xref id="owned_istream_input.cons"/>, construct/copy/destroy:</n></c>
     owned_istream_input() = default;
@@ -1244,9 +1247,10 @@ namespace commata {
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class owned_string_input {
   public:
-    using char_type = Ch;
+    using string_type = std::basic_string&lt;Ch, Tr, Allocator>;
+    using char_type   = Ch;
     using traits_type = Tr;
-    using size_type = typename std::basic_string&lt;Ch, Tr, Allocator>::size_type;
+    using size_type   = typename string_type::size_type;
 
     <c>// <n><xref id="owned_string_input.cons"/>, construct/copy/destroy:</n></c>
     owned_string_input() noexcept(<nc>see below</nc>);
