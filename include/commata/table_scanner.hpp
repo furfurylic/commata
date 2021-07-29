@@ -18,7 +18,6 @@
 #include <cstring>
 #include <cwchar>
 #include <cwctype>
-#include <iomanip>
 #include <iterator>
 #include <limits>
 #include <locale>
@@ -37,6 +36,7 @@
 #include "text_error.hpp"
 #include "member_like_base.hpp"
 #include "typing_aid.hpp"
+#include "write_narrow.hpp"
 
 namespace commata {
 
@@ -1539,7 +1539,7 @@ struct fail_if_conversion_failed
     {
         assert(*end == Ch());
         std::ostringstream s;
-        narrow(s, begin, end);
+        detail::write_narrow(s, begin, end);
         s << ": cannot convert";
         write_name<T>(s, " to an instance of ");
         throw field_invalid_format(s.str());
@@ -1552,7 +1552,7 @@ struct fail_if_conversion_failed
     {
         assert(*end == Ch());
         std::ostringstream s;
-        narrow(s, begin, end);
+        detail::write_narrow(s, begin, end);
         s << ": out of range";
         write_name<T>(s, " of ");
         throw field_out_of_range(s.str());
@@ -1579,71 +1579,6 @@ private:
     template <class T>
     static std::ostream& write_name(std::ostream& os, ...)
     {
-        return os;
-    }
-
-    template <class Ch>
-    static void narrow(std::ostream& os, const Ch* begin, const Ch* end)
-    {
-        const auto& facet =
-            std::use_facet<std::ctype<Ch>>(std::locale());  // current global
-        while (begin != end) {
-            const auto c = *begin;
-            if (c == Ch()) {
-                os << '[' << set_hex << setw_char<Ch> << 0 << ']';
-            } else if (!facet.is(std::ctype<Ch>::print, c)) {
-                os << '[' << set_hex << setw_char<Ch> << (c + 0) << ']';
-            } else {
-                const auto d = facet.narrow(c, '\0');
-                if (d == '\0') {
-                    os << '[' << set_hex << setw_char<Ch> << (c + 0) << ']';
-                } else {
-                    os.rdbuf()->sputc(d);
-                }
-            }
-            ++begin;
-        }
-    }
-
-    static void narrow(std::ostream& os, const char* begin, const char* end)
-    {
-        // [begin, end] may be a NTMBS, so we cannot determine whether a char
-        // is an unprintable one or not easily
-        while (begin != end) {
-            const auto c = *begin;
-            if (c == '\0') {
-                os << '[' << set_hex << setw_char<char> << 0 << ']';
-            } else {
-                os.rdbuf()->sputc(c);
-            }
-            ++begin;
-        }
-    }
-
-    static std::ostream& set_hex(std::ostream& os)
-    {
-        return os << std::showbase << std::hex << std::setfill('0');
-    }
-
-    template <class Ch>
-    static std::ostream& setw_char(std::ostream& os)
-    {
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4127)
-#endif
-        constexpr auto m =
-            std::numeric_limits<std::make_unsigned_t<Ch>>::max();
-        if (m <= 0xff) {
-            os << std::setw(2);
-        } else if (m <= 0xffff) {
-            os << std::setw(4);
-        } else if (m <= 0xffffffff) {
-            os << std::setw(8);
-        }
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
         return os;
     }
 };
