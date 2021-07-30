@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-08-15 (UTC)</signature>
+<signature>2021-08-18 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3967,10 +3967,14 @@ namespace commata {
   <c>// <n><xref id="scanner.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
   struct fail_if_skipped;
   template &lt;class T> class replace_if_skipped;
+  template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
+                               replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
 
   <c>// <n><xref id="scanner.builtin.conversion_error_handlers"/>, default conversion error handler classes:</n></c>
   struct fail_if_conversion_failed;
   template &lt;class T> class replace_if_conversion_failed;
+  template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
+                               replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
 
   <c>// <n><xref id="arithmetic_field_translator"/>, arithmetic_field_translator:</n></c>
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
@@ -4015,6 +4019,7 @@ namespace commata {
     class basic_table_scanner {
   public:
     using char_type = Ch;
+    using traits_type = Tr;
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits&lt;Allocator>::size_type;
 
@@ -4574,18 +4579,27 @@ namespace commata {
     template &lt;class... Args> explicit replace_if_skipped(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
     explicit replace_if_skipped(replacement_fail_t) noexcept;
     explicit replace_if_skipped(replacement_ignore_t) noexcept;
-    replace_if_skipped(const replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
-    replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept;
+    replace_if_skipped(const replace_if_skipped&amp;  other) noexcept(<nc>see below</nc>);
+    replace_if_skipped(      replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~replace_if_skipped();
+    replace_if_skipped&amp; operator=(const replace_if_skipped&amp;  other) noexcept(<nc>see below</nc>);
+    replace_if_skipped&amp; operator=(      replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
 
     replacement&lt;T> operator()() const;
+
+    void swap(replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
   };
+
+  template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left, replace_if_skipped&lt;T>&amp; right)
+      noexcept(noexcept(left.swap(right))) {
+    left.swap(right);
+  }
 }
         </codeblock>
 
         <p>The class template <c>replace_if_skipped</c> offers types that meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) whose target type is the template parameter <c>T</c>.
            An object of them supplements the corresponding field that is not found in a record with a fixed value.</p>
-        <p><c>T</c> shall be <c>CopyConstructible</c>.</p>
+        <p><c>T</c> shall be <c>CopyConstructible</c> and <c>Destructible</c>.</p>
         <p>An object of an instance of <c>replace_if_skipped</c> has a <n>replacement action</n>.
            A replacement action can be configured to be either of the three types illustrated in <xref id="table.replace_if_skipped.replacement_actions"/>.</p>
 
@@ -4623,10 +4637,11 @@ namespace commata {
 template &lt;class... Args> explicit replace_if_skipped(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
           </code>
           <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Args>(args)...</c>.</effects>
-          <remark>This overload shall not participate in overload resolution unless <c>sizeof...(Args)</c> is not equal to <c>1</c> or
-                  all of <c>std::is_base_of&lt;replace_if_skipped&lt;T>, DF>::value</c>,
-                  <c>std::is_base_of&lt;replacement_fail_t, DF>::value</c> and
-                  <c>std::is_base_of&lt;replacement_ignore_t, DF>::value</c> are <c>false</c> where <c>DF</c> is <c>std::decay_t&lt;F></c> and <c>F</c> is the first type of <c>Args</c>.
+          <remark>Let <c>DF</c> be <c>std::decay_t&lt;F></c> where <c>F</c> is the first type of <c>Args</c>.
+                  This overload shall not participate in overload resolution if <c>sizeof...(Args)</c> is equal to <c>1</c> and
+                  any one of <c>std::is_base_of&lt;replace_if_skipped&lt;T>, DF>::value</c>,
+                  <c>std::is_base_of&lt;replacement_fail_t, DF>::value</c> or
+                  <c>std::is_base_of&lt;replacement_ignore_t, DF>::value</c> is <c>true</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value &amp;&amp; std::is_nothrow_constructible&lt;T, Args&amp;&amp;...>::value</c>.</remark>
         </code-item>
 
@@ -4648,25 +4663,45 @@ explicit replace_if_skipped(replacement_ignore_t) noexcept;
           <code>
 replace_if_skipped(const replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <postcondition>Member function <c>operator()</c> behaves the same as <c>other</c>'s.</postcondition>
-          <remark>The expression inside <c>noexcept</c> shall be <c>true</c> if <c>std::is_nothrow_copy_constructible&lt;T>::value</c> is not <c>false</c>.
-                  Note that this is a mere sufficient condition, that is, when it is not satisfied, the expression inside <c>noexcept</c> is unspecified.</remark>
+          <effects>Configures the replacement action to be the same as <c>other</c>'s.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;T>::value</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept;
+replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <postcondition>Member function <c>operator()</c> behaves like <c>other</c> would do before the call.</postcondition>
+          <effects>Configures the replacement action to be what <c>other</c> had as its replacement action before the call.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+replace_if_skipped&amp; operator=(const replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <requires><c>T</c> shall be <c>CopyAssignable</c>.</requires>
+          <effects>Configures the replacement action to be the same as <c>other</c>'s.</effects>
+          <returns><c>*this</c>.</returns>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;T>::value &amp;&amp; std::is_nothrow_copy_assignable&lt;T>::value</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+replace_if_skipped&amp; operator=(replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <requires><c>T</c> shall be <c>MoveAssignable</c>.</requires>
+          <effects>Configures the replacement action to be what <c>other</c> had as its replacement action before the call.</effects>
+          <returns><c>*this</c>.</returns>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value &amp;&amp; std::is_nothrow_move_assignable&lt;T>::value</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
 replacement&lt;T> operator()() const;
           </code>
-          <effects>Does as illustrated in <xref id="table.replace_if_skipped.invalid_format"/> in reference to the replacement action of <c>*this</c>.</effects>
+          <effects>Does as illustrated in <xref id="table.replace_if_skipped.skipped"/> in reference to the replacement action of <c>*this</c>.</effects>
 
-          <table id="table.replace_if_skipped.invalid_format">
+          <table id="table.replace_if_skipped.skipped">
             <caption>Effects of calling of <c>operator()</c></caption>
             <col width="13"/><col width="5"/><col width="18"/>
 
@@ -4694,6 +4729,16 @@ replacement&lt;T> operator()() const;
               <td>Throws an object of <c>field_not_found</c> (<xref id="field_not_found"/>).</td>
             </tr>
           </table>
+
+        </code-item>
+
+        <code-item>
+          <code>
+void swap(replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <requires>If both of the replacement action of <c>*this</c> and <c>other</c> are of the type <c>copy</c>, two lvalues of the object of type <c>T</c> installed with the replacement action shall be swappable with each onther.</requires>
+          <effects>Exchanges the replacement actions of <c>*this</c> and <c>other</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>std::is_nothrow_move_constructible&lt;T>::value &amp;&amp; noexcept(swap(std::declval&lt;T&amp;>(), std::declval&lt;T&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
         </code-item>
       </section>
     </section>
@@ -4776,20 +4821,32 @@ namespace commata {
                                    AboveUpperLimit&amp;&amp; on_above_upper_limit,
                                    BelowLowerLimit&amp;&amp; on_below_lower_limit,
                                    Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
-    replace_if_conversion_failed(const replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
-    replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept;
+    replace_if_conversion_failed(const replace_if_conversion_failed&amp;  other) noexcept(<nc>see below</nc>);
+    replace_if_conversion_failed(      replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~replace_if_conversion_failed();
+    replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&amp;  other)
+      noexcept(<nc>see below</nc>);
+    replace_if_conversion_failed&amp; operator=(      replace_if_conversion_failed&amp;&amp; other)
+      noexcept(<nc>see below</nc>);
 
     template &lt;class Ch> replacement&lt;T> invalid_format(const Ch*, const Ch*) const;
     template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int sign) const;
                         replacement&lt;T> empty() const;
+
+    void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
   };
+
+  template &lt;class T>
+    void swap(replace_if_conversion_failed&lt;T>&amp; left, replace_if_conversion_failed&lt;T>&amp; right)
+      noexcept(noexcept(left.swap(right))) {
+    left.swap(right);
+  }
 }
         </codeblock>
 
         <p>The class template <c>replace_if_conversion_failed</c> offers types that meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) whose target type is the template parameter <c>T</c>.
            On a conversion error, an object of them can make the parsing process fail or offer a substitution of the field value, depending on the category of the error.</p>
-        <p><c>T</c> shall be <c>CopyConstructible</c>.</p>
+        <p><c>T</c> shall be <c>CopyConstructible</c> and <c>Destructible</c>.</p>
         <p>An object of an instance of <c>replace_if_conversion_failed</c> has five replacement actions similarly to an object of <c>replace_if_skipped</c> (<xref id="replace_if_skipped"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
            Each of these replacement actions can be configured to be either of the three types illustrated in <xref id="table.replace_if_skipped.replacement_actions"/> independently on one object of <c>replace_if_conversion_failed</c>.</p>
 
@@ -4850,16 +4907,40 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
           <code>
 replace_if_conversion_failed(const replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <postcondition>Member functions <c>invalid_format</c>, <c>out_of_range</c> and <c>empty</c> behave the same as those of <c>other</c>.</postcondition>
-          <remark>The expression inside <c>noexcept</c> shall be <c>true</c> if <c>std::is_nothrow_copy_constructible&lt;T>::value</c> is not <c>false</c>.
-                  Note that this is a mere sufficient condition, that is, when it is not satisfied, the expression inside <c>noexcept</c> is unspecified.</remark>
+          <effects>Configures all the replacement actions to be the same as <c>other</c>'s.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;T>::value</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept;
+replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <postcondition>Member functions <c>invalid_format</c>, <c>out_of_range</c> and <c>empty</c> behave like <c>other</c> would do before the call.</postcondition>
+          <effects>Configures all the replacement actions to be what <c>other</c> had as its replacement actions before the call.</effects>
+          <remark>If an exception is thrown, <c>other</c> may be left in a valid but unspecified state.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&amp; other)
+  noexcept(<nc>see below</nc>);
+          </code>
+          <requires><c>T</c> shall be <c>CopyAssignable</c>.</requires>
+          <effects>Configures all the replacement actions to be the same as <c>other</c>'s.</effects>
+          <returns><c>*this</c>.</returns>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;T>::value &amp;&amp; std::is_nothrow_copy_assignable&lt;T>::value</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&amp; other)
+  noexcept(<nc>see below</nc>);
+          </code>
+          <requires><c>T</c> shall be <c>MoveAssignable</c>.</requires>
+          <effects>Configures all the replacement actions to be what <c>other</c> had as its replacement actions before the call.</effects>
+          <returns><c>*this</c>.</returns>
+          <remark>If an exception is thrown, <c>*this</c> and <c>other</c> may be left in a valid but unspecified state.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value &amp;&amp; std::is_nothrow_move_assignable&lt;T>::value</c>.</remark>
         </code-item>
 
         <code-item>
@@ -5016,6 +5097,17 @@ replacement&lt;T> empty() const;
               <td>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</td>
             </tr>
           </table>
+        </code-item>
+
+        <code-item>
+          <code>
+void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <requires>For each of at most five replacement actions (<c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>),
+                    if both of the replacement action of <c>*this</c> and <c>other</c> are of the type <c>copy</c>, two lvalues of the object of type <c>T</c> installed with the replacement action shall be swappable with each onther.</requires>
+          <effects>Exchanges all the replacement actions between <c>*this</c> and <c>other</c>.</effects>
+          <remark>If an exception is thrown, <c>*this</c> and <c>other</c> may be left in a valid but unspecified state.
+                  The expression inside <c>noexcept</c> is equivalent to the value of <c>std::is_nothrow_move_constructible&lt;T>::value &amp;&amp; noexcept(swap(std::declval&lt;T&amp;>(), std::declval&lt;T&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
         </code-item>
       </section>
     </section>

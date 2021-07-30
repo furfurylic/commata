@@ -7,6 +7,7 @@
 #define COMMATA_GUARD_555AFEA0_404A_4BF3_AF38_4F653A0B76E6
 
 #include <algorithm>
+#include <bitset>
 #include <cassert>
 #include <cctype>
 #include <cerrno>
@@ -1553,74 +1554,6 @@ struct converter<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
     {}
 };
 
-template <class T, class = void>
-class movable_store
-{
-    // we choose shared_ptr instead of unique_ptr because it is very
-    // difficult and expensive to define "moved-from" states
-    std::shared_ptr<T> t_;
-
-public:
-    template <class... Args,
-        std::enable_if_t<
-            (sizeof...(Args) != 1)
-         || !std::is_base_of<
-                movable_store,
-                first_t<std::decay_t<Args>...>>::value,
-            std::nullptr_t> = nullptr>
-    explicit movable_store(Args&&... args) :
-        t_(std::make_shared<T>(std::forward<Args>(args)...))
-    {}
-
-    movable_store(const movable_store& other) noexcept = default;
-    // move ctor is implicitly declared as "deleted" to make "moved-from" state
-    // equal to "copied-from" state, that is, no harmfully disturbed state
-
-    const T& operator*() const noexcept
-    {
-        return *t_;
-    }
-
-    const T* operator->() const noexcept
-    {
-        return t_.get();
-    }
-};
-
-template <class T>
-class movable_store<T,
-    std::enable_if_t<std::is_nothrow_move_constructible<T>::value>>
-{
-    T t_;
-
-public:
-    template <class... Args,
-        std::enable_if_t<
-            (sizeof...(Args) != 1)
-         || !std::is_base_of<
-                movable_store,
-                first_t<std::decay_t<Args>...>>::value,
-            std::nullptr_t> = nullptr>
-    explicit movable_store(Args&&... args)
-        noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
-        t_(std::forward<Args>(args)...)
-    {}
-
-    movable_store(const movable_store&)
-        noexcept(std::is_nothrow_copy_constructible<T>::value) = default;
-    movable_store(movable_store&&) noexcept = default;
-
-    const T& operator*() const noexcept
-    {
-        return t_;
-    }
-
-    const T* operator->() const noexcept
-    {
-        return std::addressof(t_);
-    }
-};
-
 }} // end detail::scanner
 
 struct replacement_fail_t {};
@@ -1646,8 +1579,8 @@ class replace_if_skipped
         ignore
     };
 
+    alignas(T) char value_[sizeof(T)];
     mode mode_;
-    detail::scanner::movable_store<T> default_value_;
 
 public:
     template <class... Args,
@@ -1664,11 +1597,11 @@ public:
                 detail::first_t<std::decay_t<Args>...>>::value),
             std::nullptr_t> = nullptr>
     replace_if_skipped(Args&&... args)
-        noexcept(std::is_nothrow_move_constructible<T>::value
-              && std::is_nothrow_constructible<T, Args&&...>::value) :
-        mode_(mode::replace),
-        default_value_(std::forward<Args>(args)...)
-    {}
+        noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
+        mode_(mode::replace)
+    {
+        ::new(value_) T(std::forward<Args>(args)...);               // throw
+    }
 
     explicit replace_if_skipped(replacement_fail_t) noexcept :
         mode_(mode::fail)
@@ -1678,16 +1611,81 @@ public:
         mode_(mode::ignore)
     {}
 
-    replace_if_skipped(const replace_if_skipped&)
-        noexcept(std::is_nothrow_copy_constructible<T>::value
-              || !std::is_nothrow_move_constructible<T>::value) = default;
-    replace_if_skipped(replace_if_skipped&&) noexcept = default;
+    replace_if_skipped(const replace_if_skipped& other)
+        noexcept(std::is_nothrow_copy_constructible<T>::value) :
+        mode_(other.mode_)
+    {
+        if (mode_ == mode::replace) {
+            ::new(value_) T(other.value());                         // throw
+        }
+    }
 
+    replace_if_skipped(replace_if_skipped&& other)
+        noexcept(std::is_nothrow_move_constructible<T>::value) :
+        mode_(other.mode_)
+    {
+        if (mode_ == mode::replace) {
+            ::new(value_) T(std::move(other.value()));              // throw
+        }
+    }
+
+    ~replace_if_skipped()
+    {
+        if (mode_ == mode::replace) {
+            value().~T();
+        }
+    }
+
+    replace_if_skipped& operator=(const replace_if_skipped& other)
+        noexcept(std::is_nothrow_copy_constructible<T>::value
+              && std::is_nothrow_copy_assignable<T>::value)
+    {
+        assign(other);
+        return *this;
+    }
+
+    replace_if_skipped& operator=(replace_if_skipped&& other)
+        noexcept(std::is_nothrow_move_constructible<T>::value
+              && std::is_nothrow_move_assignable<T>::value)
+    {
+        assign(std::move(other));
+        return *this;
+    }
+
+private:
+    template <class Other>
+    void assign(Other&& other)
+    {
+        using f_t = std::conditional_t<
+            std::is_lvalue_reference<Other>::value, const T&, T>;
+        if (mode_ == mode::replace) {
+            if (other.mode_ == mode::replace) {
+                if (this == std::addressof(other)) {
+                    // It seems that GCC 6.3's string move assignment op does
+                    // mess the content on self-assignment, which does not seem
+                    // to be a violation to the C++'s spec.
+                    // Anyway, we will avoid any harms of self-assignment.
+                    return;
+                }
+                value() = std::forward<f_t>(other.value());         // throw
+            } else {
+                value().~T();
+                mode_ = other.mode_;
+            }
+        } else {
+            if (other.mode_ == mode::replace) {
+                ::new(value_) T(std::forward<f_t>(other.value()));  // throw
+            }
+            mode_ = other.mode_;
+        }
+    }
+
+public:
     replacement<T> operator()() const
     {
         switch (mode_) {
         case mode::replace:
-            return replacement<T>(*default_value_);
+            return replacement<T>(value());
         case mode::fail:
             fail_if_skipped()(static_cast<T*>(nullptr));
             // fall through
@@ -1695,7 +1693,47 @@ public:
             return replacement<T>();
         }
     }
+
+    void swap(replace_if_skipped& other)
+        noexcept(detail::is_nothrow_swappable<T>()
+              && std::is_nothrow_move_constructible<T>::value)
+    {
+        using std::swap;
+        if (mode_ == mode::replace) {
+            if (other.mode_ == mode::replace) {
+                swap(value(), other.value());                       // throw
+                return;
+            } else {
+                ::new(other.value_) T(std::move(value()));          // throw
+                value().~T();
+            }
+        } else if (other.mode_ == mode::replace) {
+            ::new(value_) T(std::move(other.value()));              // throw
+            other.value().~T();
+        }
+        swap(mode_, other.mode_);
+    }
+
+private:
+    const T& value() const
+    {
+        assert(mode_ == mode::replace);
+        return *static_cast<const T*>(static_cast<const void*>(value_));
+    }
+
+    T& value()
+    {
+        assert(mode_ == mode::replace);
+        return *static_cast<T*>(static_cast<void*>(value_));
+    }
 };
+
+template <class T>
+void swap(replace_if_skipped<T>& left, replace_if_skipped<T>& right)
+    noexcept(noexcept(left.swap(right)))
+{
+    left.swap(right);
+}
 
 struct fail_if_conversion_failed
 {
@@ -1804,8 +1842,8 @@ class replace_if_conversion_failed
         // alignas(T) char replacements_[sizeof(T)][n];
         // ...correctly, so we introduce a new type "aligned"
         aligned replacements_[n];
-        std::uint_fast8_t has_;
-        std::uint_fast8_t skips_;
+        std::bitset<n> has_;
+        std::bitset<n> skips_;
 
         template <class Head, class... Tails,
             std::enable_if_t<!std::is_base_of<store,
@@ -1822,27 +1860,51 @@ class replace_if_conversion_failed
             store(std::integral_constant<std::size_t, Slot + 1>(),
                 std::forward<Tails>(tails)...)
         {
-            init(Slot, std::forward<Head>(head));
+            init<Slot>(std::forward<Head>(head));
         }
-
-        template <class Head, class... Tails,
-            std::enable_if_t<!std::is_base_of<store,
-                std::decay_t<Head>>::value, std::nullptr_t> = nullptr>
-        store(std::integral_constant<std::size_t, n>,
-                Head&&, Tails&&...) noexcept :
-            store(std::integral_constant<std::size_t, n>())
-        {}
 
         template <std::size_t Slot>
         store(std::integral_constant<std::size_t, Slot>) noexcept :
             store(std::integral_constant<std::size_t, Slot + 1>())
         {
-            init(Slot);
+            init<Slot>();
         }
 
-        store(std::integral_constant<std::size_t, n>) noexcept :
-            has_(0U), skips_(0U)
+        store(std::integral_constant<std::size_t, n>) noexcept
         {}
+
+    private:
+        template <unsigned Slot, class U = T, std::enable_if_t<
+            (!std::is_base_of<
+                replacement_fail_t, std::decay_t<U>>::value)
+         && (!std::is_base_of<
+                replacement_ignore_t, std::decay_t<U>>::value),
+            std::nullptr_t> = nullptr>
+        void init(U&& value = U())
+        {
+            static_assert(Slot < n, "");
+            assert(!has_[Slot]);
+            assert(!skips_[Slot]);
+            place_replacement(Slot, std::forward<U>(value));
+            has_[Slot] = true;
+        }
+
+        template <unsigned Slot>
+        void init(replacement_fail_t) noexcept
+        {
+            static_assert(Slot < n, "");
+            assert(!has_[Slot]);
+            assert(!skips_[Slot]);
+        }
+
+        template <unsigned Slot>
+        void init(replacement_ignore_t) noexcept
+        {
+            static_assert(Slot < n, "");
+            assert(!has_[Slot]);
+            assert(!skips_[Slot]);
+            skips_[Slot] = true;
+        }
 
     public:
         store(const store& other)
@@ -1856,66 +1918,24 @@ class replace_if_conversion_failed
         {}
 
     private:
-        store(const store& other, std::true_type) noexcept :
+        store(const store& other, std::true_type) :
             has_(other.has_), skips_(other.skips_)
         {
-            std::memcpy(&replacements_, &other.replacements_,
+            std::memcpy(replacements_, other.replacements_,
                 sizeof replacements_);
         }
 
         template <class Other>
-        store(Other&& other, std::false_type)
-            noexcept(std::conditional_t<
-                std::is_lvalue_reference<Other>::value,
-                std::is_nothrow_copy_constructible<T>,
-                std::is_nothrow_move_constructible<T>>::value) :
+        store(Other&& other, std::false_type) :
             has_(other.has_), skips_(other.skips_)
         {
             using f_t = std::conditional_t<
                 std::is_lvalue_reference<Other>::value, const T&, T>;
             for (unsigned r = 0; r < n; ++r) {
-                auto p = get_g(std::addressof(other), r);
-                if (p.first == mode::replace) {
-                    place_copy(r, std::forward<f_t>(*p.second));
+                if (has_[r]) {
+                    place_replacement(r, std::forward<f_t>(other[r]));
                 }
             }
-        }
-
-        template <class U = T, std::enable_if_t<
-            (!std::is_base_of<
-                replacement_fail_t, std::decay_t<U>>::value)
-         && (!std::is_base_of<
-                replacement_ignore_t, std::decay_t<U>>::value),
-            std::nullptr_t> = nullptr>
-        void init(unsigned r, U&& value = U())
-        {
-            assert(r < n);
-            assert(!has(r));
-            assert(!skips(r));
-            place_copy(r, std::forward<U>(value));
-            has_ |= 1U << r;
-        }
-
-        void init(unsigned r, replacement_fail_t) noexcept
-        {
-            static_cast<void>(r);
-            assert(r < n);
-            assert(!has(r));
-            assert(!skips(r));
-        }
-
-        void init(unsigned r, replacement_ignore_t) noexcept
-        {
-            assert(r < n);
-            assert(!has(r));
-            assert(!skips(r));
-            skips_ |= 1U << r;
-        }
-
-        template <class U>
-        void  place_copy(unsigned r, U&& value)
-        {
-            ::new(replacements_[r].m) T(std::forward<U>(value));
         }
 
     public:
@@ -1924,6 +1944,127 @@ class replace_if_conversion_failed
             destroy(std::is_trivially_destructible<T>());
         }
 
+    private:
+        void destroy(std::true_type) noexcept
+        {}
+
+        void destroy(std::false_type) noexcept
+        {
+            for (unsigned r = 0; r < n; ++r) {
+                if (has_[r]) {
+                    (*this)[r].~T();
+                }
+            }
+        }
+
+    public:
+        store& operator=(const store& other)
+            noexcept(std::is_nothrow_copy_constructible<T>::value
+                  && std::is_nothrow_copy_assignable<T>::value)
+        {
+            assign(std::is_trivially_copyable<T>(), other);
+            return *this;
+        }
+
+        store& operator=(store&& other)
+            noexcept(std::is_nothrow_move_constructible<T>::value
+                  && std::is_nothrow_move_assignable<T>::value)
+        {
+            assign(std::is_trivially_copyable<T>(), std::move(other));
+            return *this;
+        }
+
+    private:
+        void assign(std::true_type, const store& other)
+        {
+            if (this == std::addressof(other)) {
+                return; // essential for memcpy
+            }
+            std::memcpy(&replacements_, &other.replacements_,
+                sizeof replacements_);
+            has_ = other.has_;
+            skips_ = other.skips_;
+        }
+
+        template <class Other>
+        void assign(std::false_type, Other&& other)
+        {
+            if (this == std::addressof(other)) {
+                return; // see comments in replace_if_skipped
+            }
+            using f_t = std::conditional_t<
+                std::is_lvalue_reference<Other>::value, const T&, T>;
+            for (unsigned r = 0; r < n; ++r) {
+                if (has_[r]) {
+                    if (other.has_[r]) {
+                        (*this)[r] = std::forward<f_t>(other[r]);
+                        continue;
+                    } else {
+                        (*this)[r].~T();
+                    }
+                } else if (other.has_[r]) {
+                    place_replacement(r, std::forward<f_t>(other[r]));
+                }
+                has_[r] = other.has_[r];
+                skips_[r] = other.skips_[r];
+            }
+        }
+
+    public:
+        void swap(store& other)
+            noexcept(detail::is_nothrow_swappable<T>()
+                  && std::is_nothrow_constructible<T>::value)
+        {
+            swap(std::is_trivially_copyable<T>(), other);
+        }
+
+    private:
+        void swap(std::true_type, store& other)
+        {
+            using std::swap;
+            swap(replacements_, other.replacements_);
+            swap(has_, other.has_);
+            swap(skips_, other.skips_);
+        }
+
+        void swap(std::false_type, store& other)
+        {
+            for (unsigned r = 0; r < n; ++r) {
+                if (has_[r]) {
+                    if (other.has_[r]) {
+                        using std::swap;
+                        swap((*this)[r], other[r]);
+                        continue;
+                    } else {
+                        other.place_replacement(r, std::move((*this)[r]));
+                        (*this)[r].~T();
+                    }
+                } else if (other.has_[r]) {
+                    place_replacement(r, std::move(other[r]));
+                    other[r].~T();
+                }
+
+                {
+                    const bool t = has_[r];
+                    has_[r] = other.has_[r];
+                    other.has_[r] = t;
+                }
+                {
+                    const bool t = skips_[r];
+                    skips_[r] = other.skips_[r];
+                    other.skips_[r] = t;
+                }
+            }
+        }
+
+    private:
+        template <class U>
+        void  place_replacement(unsigned r, U&& value)
+        {
+            ::new(replacements_[r].m) T(std::forward<U>(value));
+        }
+
+    public:
         std::pair<mode, const T*> get(unsigned r) const noexcept
         {
             return get_g(this, r);
@@ -1935,45 +2076,29 @@ class replace_if_conversion_failed
         {
             using t_t = std::conditional_t<
                 std::is_const<ThisType>::value, const T, T>;
-            using v_t = std::conditional_t<
-                std::is_const<ThisType>::value, const void, void>;
             using pair_t = std::pair<mode, t_t*>;
-            if (me->has(r)) {
-                return pair_t(mode::replace,
-                    static_cast<t_t*>(
-                        static_cast<v_t*>(me->replacements_[r].m)));
-            } else if (me->skips(r)) {
+            if (me->has_[r]) {
+                return pair_t(mode::replace, std::addressof((*me)[r]));
+            } else if (me->skips_[r]) {
                 return pair_t(mode::ignore, nullptr);
             } else {
                 return pair_t(mode::fail, nullptr);
             }
         }
 
-        unsigned has(unsigned r) const noexcept
+        T& operator[](unsigned r)
         {
-            return has_ & (1U << r);
+            return *static_cast<T*>(static_cast<void*>(replacements_[r].m));
         }
 
-        unsigned skips(unsigned r) const noexcept
+        const T& operator[](unsigned r) const
         {
-            return skips_ & (1U << r);
-        }
-
-        void destroy(std::true_type) noexcept
-        {}
-
-        void destroy(std::false_type) noexcept
-        {
-            for (unsigned r = 0; r < n; ++r) {
-                if (has(r)) {
-                    static_cast<const T*>(
-                        static_cast<const void*>(replacements_[r].m))->~T();
-                }
-            }
+            return *static_cast<const T*>(
+                static_cast<const void*>(replacements_[r].m));
         }
     };
 
-    detail::scanner::movable_store<store> store_;
+    store store_;
 
 public:
     template <class Empty = T, class InvalidFormat = T,
@@ -2033,17 +2158,20 @@ public:
         static_assert(!std::is_integral<T>::value, "");
     }
 
-    replace_if_conversion_failed(const replace_if_conversion_failed&)
-        noexcept(std::is_nothrow_copy_constructible<T>::value
-             || !std::is_nothrow_move_constructible<T>::value) = default;
-    replace_if_conversion_failed(replace_if_conversion_failed&&) noexcept
-        = default;
+    replace_if_conversion_failed(
+        const replace_if_conversion_failed&) = default;
+    replace_if_conversion_failed(
+        replace_if_conversion_failed&&) = default;
     ~replace_if_conversion_failed() = default;
+    replace_if_conversion_failed& operator=(
+        const replace_if_conversion_failed&) = default;
+    replace_if_conversion_failed& operator=(
+        replace_if_conversion_failed&&) = default;
 
     template <class Ch>
     replacement<T> invalid_format(const Ch* begin, const Ch* end) const
     {
-        return unwrap(store_->get(store::invalid_format),
+        return unwrap(store_.get(store::invalid_format),
             [begin, end]() {
                 fail_if_conversion_failed().invalid_format<T>(begin, end);
             });
@@ -2056,20 +2184,27 @@ public:
             fail_if_conversion_failed().out_of_range<T>(begin, end, sign);
         };
         if (sign > 0) {
-            return unwrap(store_->get(store::above_upper_limit), fail);
+            return unwrap(store_.get(store::above_upper_limit), fail);
         } else if (sign < 0) {
-            return unwrap(store_->get(store::below_lower_limit), fail);
+            return unwrap(store_.get(store::below_lower_limit), fail);
         } else {
-            return unwrap(store_->get(store::underflow), fail);
+            return unwrap(store_.get(store::underflow), fail);
         }
     }
 
     replacement<T> empty() const
     {
-        return unwrap(store_->get(store::empty),
+        return unwrap(store_.get(store::empty),
             []() {
                 fail_if_conversion_failed().empty<T>();
             });
+    }
+
+    void swap(replace_if_conversion_failed& other)
+        noexcept(detail::is_nothrow_swappable<T>()
+              && std::is_nothrow_constructible<T>::value)
+    {
+        store_.swap(other.store_);
     }
 
 private:
@@ -2090,6 +2225,15 @@ private:
         return replacement<T>();
     }
 };
+
+template <class T>
+void swap(
+    replace_if_conversion_failed<T>& left,
+    replace_if_conversion_failed<T>& right)
+    noexcept(noexcept(left.swap(right)))
+{
+    left.swap(right);
+}
 
 namespace detail { namespace scanner {
 

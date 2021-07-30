@@ -1255,6 +1255,49 @@ TYPED_TEST(TestTableScanner, Fancy)
 
 namespace {
 
+template <class T>
+class calc_average
+{
+    T n_ = 0;
+    T sum_ = T();
+
+public:
+    void operator()(T n)
+    {
+        ++n_;
+        sum_ += n;
+    }
+
+    T yield() const
+    {
+        return sum_ / n_;
+    }
+};
+
+}
+
+TYPED_TEST(TestTableScanner, Ignored)
+{
+    replace_if_conversion_failed<int> r(
+        replacement_ignore, replacement_ignore);
+    calc_average<int> a;
+    basic_table_scanner<TypeParam> scanner;
+    scanner.set_field_scanner(0, make_field_translator<int>(
+        std::ref(a), fail_if_skipped(), std::move(r)));
+
+    const auto str = char_helper<TypeParam>::str;
+
+    try {
+        parse_csv(str("100\nn/a\n\n200"), std::move(scanner));
+    } catch (const text_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(150, a.yield());
+}
+
+namespace {
+
 struct stateful_header_scanner
 {
     std::size_t index = 0;
@@ -1499,113 +1542,771 @@ TEST_F(TestReplacement, Swap)
     ASSERT_EQ(100, *rs[1]);
 }
 
-struct TestReplaceIfConversionFailed : BaseTest
+struct TestReplaceIfSkipped : BaseTest
 {};
 
-TEST_F(TestReplaceIfConversionFailed, NonArithmeticNoThrowMoveConstructible)
+TEST_F(TestReplaceIfSkipped, ActionInstallmentWithCtors)
 {
-    using r_t = replace_if_conversion_failed<std::string>;
-    static_assert(std::is_nothrow_move_constructible<r_t>::value, "");
+    // default ctor
+    {
+        replace_if_skipped<std::string> r;
+        ASSERT_STREQ("", r()->c_str());
+    }
 
-    r_t r("E", replacement_fail, "U", replacement_ignore);
-    std::vector<r_t> rs;
-    rs.push_back(r);
-    rs.push_back(std::move(r));
-    for (const auto& r2 : rs) {
-        const char d[] = "dummy";
-        const auto de = d + sizeof d - 1;
-        ASSERT_STREQ("E", r2.empty()->c_str());
-        ASSERT_THROW(r2.invalid_format(d, de), field_invalid_format);
-        ASSERT_STREQ("U", r2.out_of_range(d, de, 1)->c_str());
-        ASSERT_EQ(nullptr, r2.out_of_range(d, de, -1).get());
-        ASSERT_STREQ("", r2.out_of_range(d, de, 0)->c_str());
+    // copy
+    {
+        replace_if_skipped<std::string> r(3, 'A');
+        ASSERT_STREQ("AAA", r()->c_str());
+    }
+
+    // ignore
+    {
+        replace_if_skipped<std::string> r(replacement_ignore);
+        ASSERT_TRUE(!r());
+    }
+
+    // fail
+    {
+        replace_if_skipped<std::string> r(replacement_fail);
+        ASSERT_THROW(r(), field_not_found);
     }
 }
 
-namespace {
-
-class char_holder
+TEST_F(TestReplaceIfSkipped, CopyCtor)
 {
-    char* n_;
-
-public:
-    explicit char_holder(char n) : n_(new char(n))
-    {}
-
-    char_holder(const char_holder& o) : n_(new char(*o.n_))
-    {}
-
-    ~char_holder()
+    // copy
     {
-        delete n_;
+        const replace_if_skipped<std::string> r0("XYZ");
+        replace_if_skipped<std::string> r(r0);
+        ASSERT_STREQ("XYZ", r()->c_str());
     }
 
-    char operator()() const
+    // ignore
     {
-        return *n_;
+        const replace_if_skipped<std::string> r0(replacement_ignore);
+        replace_if_skipped<std::string> r(r0);
+        ASSERT_TRUE(!r());
     }
+
+    // fail
+    {
+        const replace_if_skipped<std::string> r0(replacement_fail);
+        replace_if_skipped<std::string> r(r0);
+        ASSERT_THROW(r(), field_not_found);
+    }
+}
+
+TEST_F(TestReplaceIfSkipped, MoveCtor)
+{
+    // copy
+    {
+        replace_if_skipped<std::string> r0("XYZ");
+        replace_if_skipped<std::string> r(std::move(r0));
+        ASSERT_STREQ("XYZ", r()->c_str());
+    }
+
+    // ignore
+    {
+        replace_if_skipped<std::string> r0(replacement_ignore);
+        replace_if_skipped<std::string> r(std::move(r0));
+        ASSERT_TRUE(!r());
+    }
+
+    // fail
+    {
+        replace_if_skipped<std::string> r0(replacement_fail);
+        replace_if_skipped<std::string> r(std::move(r0));
+        ASSERT_THROW(r(), field_not_found);
+    }
+}
+
+TEST_F(TestReplaceIfSkipped, CopyAssign)
+{
+    using r_t = replace_if_skipped<std::vector<int>>;
+
+    // from copy
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(std::vector<int>{ -1, -2, -3 });
+
+        const std::vector<int> v = { 10, 20, 30 };
+        r_t r0(v);
+
+        rs[0] = r0;
+        rs[1] = r0;
+        rs[2] = r0;
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_EQ(v, *rs[i]()) << i;
+        }
+
+        r0 = r0;
+        ASSERT_EQ(v, *r0());
+    }
+
+    // from ignore
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(std::vector<int>{ -1, -2, -3 });
+
+        r_t r0(replacement_ignore);
+
+        rs[0] = r0;
+        rs[1] = r0;
+        rs[2] = r0;
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_TRUE(!rs[i]()) << i;
+        }
+
+        r0 = r0;
+        ASSERT_TRUE(!r0());
+    }
+
+    // from fail
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(std::vector<int>{ -1, -2, -3 });
+
+        r_t r0(replacement_fail);
+
+        rs[0] = r0;
+        rs[1] = r0;
+        rs[2] = r0;
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_THROW(rs[i](), field_not_found) << i;
+        }
+
+        r0 = r0;
+        ASSERT_THROW(r0(), field_not_found);
+    }
+}
+
+TEST_F(TestReplaceIfSkipped, MoveAssign)
+{
+    using r_t = replace_if_skipped<std::vector<int>>;
+
+    // from copy
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(std::vector<int>{ -1, -2, -3 });
+
+        const std::vector<int> v = { 10, 20, 30 };
+
+        rs[0] = r_t(v);
+        rs[1] = r_t(v);
+        rs[2] = r_t(v);
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_EQ(v, *rs[i]()) << i;
+        }
+
+        rs[0] = std::move(rs[0]);
+        ASSERT_EQ(v, *rs[0]());
+    }
+
+    // from ignore
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(std::vector<int>{ -1, -2, -3 });
+
+        rs[0] = r_t(replacement_ignore);
+        rs[1] = r_t(replacement_ignore);
+        rs[2] = r_t(replacement_ignore);
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_TRUE(!rs[i]()) << i;
+        }
+
+        rs[0] = std::move(rs[0]);
+        ASSERT_TRUE(!rs[0]());
+    }
+
+    // from fail
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(std::vector<int>{ -1, -2, -3 });
+
+        rs[0] = r_t(replacement_fail);
+        rs[1] = r_t(replacement_fail);
+        rs[2] = r_t(replacement_fail);
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_THROW(rs[i](), field_not_found) << i;
+        }
+
+        rs[0] = std::move(rs[0]);
+        ASSERT_THROW(rs[0](), field_not_found);
+    }
+}
+
+TEST_F(TestReplaceIfSkipped, Swap)
+{
+    std::vector<replace_if_skipped<std::string>> rs;
+    rs.emplace_back("ABC");
+    rs.emplace_back(replacement_ignore);
+    rs.emplace_back(replacement_fail);
+    rs.emplace_back("xyz");
+
+    using std::swap;
+
+    // copy vs ignore
+    swap(rs[0], rs[1]);
+    ASSERT_TRUE(!rs[0]());
+    ASSERT_STREQ("ABC", rs[1]()->c_str());
+    swap(rs[0], rs[1]);
+    ASSERT_STREQ("ABC", rs[0]()->c_str());
+    ASSERT_TRUE(!rs[1]());
+
+    // ignore vs fail
+    swap(rs[1], rs[2]);
+    ASSERT_TRUE(!rs[2]());
+    ASSERT_THROW(rs[1](), field_not_found);
+    swap(rs[1], rs[2]);
+    ASSERT_TRUE(!rs[1]());
+    ASSERT_THROW(rs[2](), field_not_found);
+
+    // fail vs copy
+    swap(rs[2], rs[3]);
+    ASSERT_STREQ("xyz", rs[2]()->c_str());
+    ASSERT_THROW(rs[3](), field_not_found);
+    swap(rs[2], rs[3]);
+    ASSERT_STREQ("xyz", rs[3]()->c_str());
+    ASSERT_THROW(rs[2](), field_not_found);
+
+    // copy vs copy
+    swap(rs[3], rs[0]);
+    ASSERT_STREQ("ABC", rs[3]()->c_str());
+    ASSERT_STREQ("xyz", rs[0]()->c_str());
+    swap(rs[3], rs[0]);
+    ASSERT_STREQ("xyz", rs[3]()->c_str());
+    ASSERT_STREQ("ABC", rs[0]()->c_str());
+
+    // swap with self
+    swap(rs[0], rs[0]);
+    ASSERT_STREQ("ABC", rs[0]()->c_str());
+    swap(rs[1], rs[1]);
+    ASSERT_TRUE(!rs[1]());
+    swap(rs[2], rs[2]);
+    ASSERT_THROW(rs[2](), field_not_found);
+}
+
+namespace replace_if_skipped_static_asserts {
+
+struct a_t : std::allocator<int>
+{
+    using propagate_on_container_swap = std::true_type;
 };
 
+using ri_t = replace_if_skipped<int>;
+using rv_t = replace_if_skipped<std::vector<int, a_t>>;
+using std::swap;
+
+static_assert(std::is_nothrow_copy_constructible<ri_t>::value, "");
+static_assert(std::is_nothrow_move_constructible<ri_t>::value, "");
+static_assert(std::is_nothrow_copy_assignable<ri_t>::value, "");
+static_assert(std::is_nothrow_move_assignable<ri_t>::value, "");
+static_assert(noexcept(
+    swap(std::declval<ri_t&>(), std::declval<ri_t&>())), "");
+
+static_assert(!std::is_nothrow_copy_constructible<rv_t>::value, "");
+static_assert(std::is_nothrow_move_constructible<rv_t>::value, "");
+static_assert(!std::is_nothrow_copy_assignable<rv_t>::value, "");
+static_assert(std::is_nothrow_move_assignable<rv_t>::value, "");
+static_assert(noexcept(
+    swap(std::declval<rv_t&>(), std::declval<rv_t&>())), "");
+
 }
-
-TEST_F(TestReplaceIfConversionFailed, NonArithmeticNonNoThrowMoveConstructible)
-{
-    using r_t = replace_if_conversion_failed<char_holder>;
-    static_assert(std::is_nothrow_move_constructible<r_t>::value, "");
-
-    r_t r(replacement_fail, char_holder('I'), replacement_fail,
-        char_holder('B'), replacement_ignore);
-    std::vector<r_t> rs;
-    rs.push_back(r);
-    rs.push_back(std::move(r));
-    for (const auto& r2 : rs) {
-        const char d[] = "dummy";
-        const auto de = d + sizeof d - 1;
-        ASSERT_THROW(r2.empty(), field_empty);
-        ASSERT_EQ('I', (*r2.invalid_format(d, de))());
-        ASSERT_THROW(r2.out_of_range(d, de, 1), field_out_of_range);
-        ASSERT_EQ('B', (*r2.out_of_range(d, de, -1))());
-        ASSERT_EQ(nullptr, r2.out_of_range(d, de, 0).get());
-    }
-}
-
-namespace {
 
 template <class T>
-class calc_average
+struct TestReplaceIfConversionFailed : BaseTestWithParam<T>
+{};
+
+typedef testing::Types<double, std::string> ReplacedTypes;
+
+TYPED_TEST_SUITE(TestReplaceIfConversionFailed, ReplacedTypes);
+
+TYPED_TEST(TestReplaceIfConversionFailed, CtorsCopy)
 {
-    T n_ = 0;
-    T sum_ = T();
+    using r_t = replace_if_conversion_failed<TypeParam>;
 
-public:
-    void operator()(T n)
-    {
-        ++n_;
-        sum_ += n;
+    char d[] = "dummy";
+    char* de = d + sizeof d - 1;
+
+    const auto from_str = [](const char* s) {
+        std::stringstream str;
+        str << s;
+        TypeParam num;
+        str >> num;
+        return num;
+    };
+
+    TypeParam num_1 = from_str("10");
+    TypeParam num_2 = from_str("15");
+    TypeParam num_3 = from_str("-35");
+    TypeParam num_4 = from_str("55");
+
+    std::deque<r_t> rs;
+    /*0*/rs.emplace_back(num_1, num_2, num_3, num_4);
+    /*1*/rs.emplace_back(rs[0]);
+    /*2*/rs.emplace_back(std::move(r_t(rs[0])));
+
+    for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+        const auto& r = rs[i];
+        ASSERT_EQ(num_1, *r.empty()) << i;
+        ASSERT_EQ(num_2, *r.invalid_format(d, de)) << i;
+        ASSERT_EQ(num_3, *r.out_of_range(d, de, 1)) << i;
+        ASSERT_EQ(num_4, *r.out_of_range(d, de, -1)) << i;
+        ASSERT_EQ(TypeParam(), *r.out_of_range(d, de, 0)) << i;
     }
-
-    T yield() const
-    {
-        return sum_ / n_;
-    }
-};
-
 }
 
-TEST_F(TestReplaceIfConversionFailed, Ignored)
+TYPED_TEST(TestReplaceIfConversionFailed, CtorsIgnore)
 {
-    replace_if_conversion_failed<int> r(
-        replacement_ignore, replacement_ignore);
-    calc_average<int> a;
-    table_scanner scanner;
-    scanner.set_field_scanner(0, make_field_translator<int>(
-        std::ref(a), fail_if_skipped(), std::move(r)));
+    using r_t = replace_if_conversion_failed<TypeParam>;
 
-    try {
-        parse_csv("100\nn/a\n\n200", std::move(scanner));
-    } catch (const text_error& e) {
-        FAIL() << e.info();
+    char d[] = "dummy";
+    char* de = d + sizeof d - 1;
+
+    std::deque<r_t> rs;
+    /*0*/rs.emplace_back(replacement_ignore, replacement_ignore,
+            replacement_ignore, replacement_ignore, replacement_ignore);
+    /*1*/rs.emplace_back(rs[0]);
+    /*2*/rs.emplace_back(std::move(r_t(rs[0])));
+
+    for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+        const auto& r = rs[i];
+        ASSERT_TRUE(!r.empty()) << i;
+        ASSERT_TRUE(!r.invalid_format(d, de)) << i;
+        ASSERT_TRUE(!r.out_of_range(d, de, 1)) << i;
+        ASSERT_TRUE(!r.out_of_range(d, de, -1)) << i;
+        ASSERT_TRUE(!r.out_of_range(d, de, 0)) << i;
+    }
+}
+
+TYPED_TEST(TestReplaceIfConversionFailed, CtorsFail)
+{
+    using r_t = replace_if_conversion_failed<TypeParam>;
+
+    char d[] = "dummy";
+    char* de = d + sizeof d - 1;
+
+    std::deque<r_t> rs;
+    /*0*/rs.emplace_back(replacement_fail, replacement_fail,
+            replacement_fail, replacement_fail, replacement_fail);
+    /*1*/rs.emplace_back(rs[0]);
+    /*2*/rs.emplace_back(std::move(r_t(rs[0])));
+
+    for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+        const auto& r = rs[i];
+        ASSERT_THROW(r.empty(), field_empty);
+        ASSERT_THROW(r.invalid_format(d, de), field_invalid_format) << i;
+        ASSERT_THROW(r.out_of_range(d, de, 1), field_out_of_range) << i;
+        ASSERT_THROW(r.out_of_range(d, de, -1), field_out_of_range) << i;
+        ASSERT_THROW(r.out_of_range(d, de, 0), field_out_of_range) << i;
+    }
+}
+
+TYPED_TEST(TestReplaceIfConversionFailed, CopyAssign)
+{
+    using r_t = replace_if_conversion_failed<TypeParam>;
+
+    char d[] = "dummy";
+    char* de = d + sizeof d - 1;
+
+    const auto from_str = [](const char* s) {
+        std::stringstream str;
+        str << s;
+        TypeParam num;
+        str >> num;
+        return num;
+    };
+
+    TypeParam num_1 = from_str("10");
+    TypeParam num_2 = from_str("15");
+    TypeParam num_3 = from_str("-35");
+    TypeParam num_4 = from_str("55");
+    TypeParam num_5 = from_str("-90");
+
+    // from copy
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(num_3, num_4, num_5, num_1, num_2);
+
+        r_t r0(num_1, num_2, num_3, num_4, num_5);
+
+        rs[0] = r0;
+        rs[1] = r0;
+        rs[2] = r0;
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            const auto& r = rs[i];
+            ASSERT_EQ(num_1, *r.empty()) << i;
+            ASSERT_EQ(num_2, *r.invalid_format(d, de)) << i;
+            ASSERT_EQ(num_3, *r.out_of_range(d, de, 1)) << i;
+            ASSERT_EQ(num_4, *r.out_of_range(d, de, -1)) << i;
+            ASSERT_EQ(num_5, *r.out_of_range(d, de, 0)) << i;
+        }
+
+        r0 = r0;
+        ASSERT_EQ(num_1, *r0.empty());
+        ASSERT_EQ(num_2, *r0.invalid_format(d, de));
+        ASSERT_EQ(num_3, *r0.out_of_range(d, de, 1));
+        ASSERT_EQ(num_4, *r0.out_of_range(d, de, -1));
+        ASSERT_EQ(num_5, *r0.out_of_range(d, de, 0));
     }
 
-    ASSERT_EQ(150, a.yield());
+    // from ignore
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(num_3, num_4, num_5, num_1, num_2);
+
+        r_t r0(replacement_ignore, replacement_ignore, replacement_ignore,
+               replacement_ignore, replacement_ignore);
+
+        rs[0] = r0;
+        rs[1] = r0;
+        rs[2] = r0;
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            const auto& r = rs[i];
+            ASSERT_TRUE(!r.empty()) << i;
+            ASSERT_TRUE(!r.invalid_format(d, de)) << i;
+            ASSERT_TRUE(!r.out_of_range(d, de, 1)) << i;
+            ASSERT_TRUE(!r.out_of_range(d, de, -1)) << i;
+            ASSERT_TRUE(!r.out_of_range(d, de, 0)) << i;
+        }
+
+        r0 = r0;
+        ASSERT_TRUE(!r0.empty());
+        ASSERT_TRUE(!r0.invalid_format(d, de));
+        ASSERT_TRUE(!r0.out_of_range(d, de, 1));
+        ASSERT_TRUE(!r0.out_of_range(d, de, -1));
+        ASSERT_TRUE(!r0.out_of_range(d, de, 0));
+    }
+
+    // from fail
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(num_3, num_4, num_5, num_1, num_2);
+
+        r_t r0(replacement_fail, replacement_fail, replacement_fail,
+               replacement_fail, replacement_fail);
+
+        rs[0] = r0;
+        rs[1] = r0;
+        rs[2] = r0;
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            const auto& r = rs[i];
+            ASSERT_THROW(r.empty(), field_empty) << i;
+            ASSERT_THROW(r.invalid_format(d, de), field_invalid_format) << i;
+            ASSERT_THROW(r.out_of_range(d, de, 1), field_out_of_range) << i;
+            ASSERT_THROW(r.out_of_range(d, de, -1), field_out_of_range) << i;
+            ASSERT_THROW(r.out_of_range(d, de, 0), field_out_of_range) << i;
+        }
+
+        r0 = r0;
+        ASSERT_THROW(r0.empty(), field_empty);
+        ASSERT_THROW(r0.invalid_format(d, de), field_invalid_format);
+        ASSERT_THROW(r0.out_of_range(d, de, 1), field_out_of_range);
+        ASSERT_THROW(r0.out_of_range(d, de, -1), field_out_of_range);
+        ASSERT_THROW(r0.out_of_range(d, de, 0), field_out_of_range);
+    }
+}
+
+TYPED_TEST(TestReplaceIfConversionFailed, MoveAssign)
+{
+    using r_t = replace_if_conversion_failed<TypeParam>;
+
+    char d[] = "dummy";
+    char* de = d + sizeof d - 1;
+
+    const auto from_str = [](const char* s) {
+        std::stringstream str;
+        str << s;
+        TypeParam num;
+        str >> num;
+        return num;
+    };
+
+    TypeParam num_1 = from_str("10");
+    TypeParam num_2 = from_str("15");
+    TypeParam num_3 = from_str("-35");
+    TypeParam num_4 = from_str("55");
+    TypeParam num_5 = from_str("-90");
+
+    // from copy
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(num_3, num_4, num_5, num_1, num_2);
+
+        r_t r0(num_1, num_2, num_3, num_4, num_5);
+
+        rs[0] = r_t(r0);
+        rs[1] = r_t(r0);
+        rs[2] = r_t(r0);
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            const auto& r = rs[i];
+            ASSERT_EQ(num_1, *r.empty()) << i;
+            ASSERT_EQ(num_2, *r.invalid_format(d, de)) << i;
+            ASSERT_EQ(num_3, *r.out_of_range(d, de, 1)) << i;
+            ASSERT_EQ(num_4, *r.out_of_range(d, de, -1)) << i;
+            ASSERT_EQ(num_5, *r.out_of_range(d, de, 0)) << i;
+        }
+
+        r0 = std::move(r0);
+        ASSERT_EQ(num_1, *r0.empty());
+        ASSERT_EQ(num_2, *r0.invalid_format(d, de));
+        ASSERT_EQ(num_3, *r0.out_of_range(d, de, 1));
+        ASSERT_EQ(num_4, *r0.out_of_range(d, de, -1));
+        ASSERT_EQ(num_5, *r0.out_of_range(d, de, 0));
+    }
+
+    // from ignore
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(num_3, num_4, num_5, num_1, num_2);
+
+        r_t r0(replacement_ignore, replacement_ignore, replacement_ignore,
+               replacement_ignore, replacement_ignore);
+
+        rs[0] = r_t(r0);
+        rs[1] = r_t(r0);
+        rs[2] = r_t(r0);
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            const auto& r = rs[i];
+            ASSERT_TRUE(!r.empty()) << i;
+            ASSERT_TRUE(!r.invalid_format(d, de)) << i;
+            ASSERT_TRUE(!r.out_of_range(d, de, 1)) << i;
+            ASSERT_TRUE(!r.out_of_range(d, de, -1)) << i;
+            ASSERT_TRUE(!r.out_of_range(d, de, 0)) << i;
+        }
+
+        r0 = std::move(r0);
+        ASSERT_TRUE(!r0.empty());
+        ASSERT_TRUE(!r0.invalid_format(d, de));
+        ASSERT_TRUE(!r0.out_of_range(d, de, 1));
+        ASSERT_TRUE(!r0.out_of_range(d, de, -1));
+        ASSERT_TRUE(!r0.out_of_range(d, de, 0));
+    }
+
+    // from fail
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(num_3, num_4, num_5, num_1, num_2);
+
+        r_t r0(replacement_fail, replacement_fail, replacement_fail,
+               replacement_fail, replacement_fail);
+
+        rs[0] = r_t(r0);
+        rs[1] = r_t(r0);
+        rs[2] = r_t(r0);
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            const auto& r = rs[i];
+            ASSERT_THROW(r.empty(), field_empty) << i;
+            ASSERT_THROW(r.invalid_format(d, de), field_invalid_format) << i;
+            ASSERT_THROW(r.out_of_range(d, de, 1), field_out_of_range) << i;
+            ASSERT_THROW(r.out_of_range(d, de, -1), field_out_of_range) << i;
+            ASSERT_THROW(r.out_of_range(d, de, 0), field_out_of_range) << i;
+        }
+
+        r0 = std::move(r0);
+        ASSERT_THROW(r0.empty(), field_empty);
+        ASSERT_THROW(r0.invalid_format(d, de), field_invalid_format);
+        ASSERT_THROW(r0.out_of_range(d, de, 1), field_out_of_range);
+        ASSERT_THROW(r0.out_of_range(d, de, -1), field_out_of_range);
+        ASSERT_THROW(r0.out_of_range(d, de, 0), field_out_of_range);
+    }
+}
+
+TYPED_TEST(TestReplaceIfConversionFailed, Swap)
+{
+    using r_t = replace_if_conversion_failed<TypeParam>;
+
+    char d[] = "dummy";
+    char* de = d + sizeof d - 1;
+
+    const auto from_str = [](const char* s) {
+        std::stringstream str;
+        str << s;
+        TypeParam num;
+        str >> num;
+        return num;
+    };
+
+    TypeParam num_1 = from_str("10");
+    TypeParam num_2 = from_str("15");
+    TypeParam num_3 = from_str("-35");
+    TypeParam num_4 = from_str("55");
+    TypeParam num_5 = from_str("-90");
+
+    std::vector<r_t> rs;
+    rs.emplace_back(num_1, num_2, num_3, num_4, num_5);
+    rs.emplace_back(replacement_ignore, replacement_ignore, replacement_ignore,
+                    replacement_ignore, replacement_ignore);
+    rs.emplace_back(replacement_fail, replacement_fail, replacement_fail,
+                    replacement_fail, replacement_fail);
+    rs.emplace_back(num_3, num_4, num_5, num_1, num_2);
+
+    using std::swap;
+
+    // copy vs ignore
+    swap(rs[0], rs[1]);
+    ASSERT_TRUE(!rs[0].empty());
+    ASSERT_TRUE(!rs[0].invalid_format(d, de));
+    ASSERT_TRUE(!rs[0].out_of_range(d, de, 1));
+    ASSERT_TRUE(!rs[0].out_of_range(d, de, -1));
+    ASSERT_TRUE(!rs[0].out_of_range(d, de, 0));
+    ASSERT_EQ(num_1, *rs[1].empty());
+    ASSERT_EQ(num_2, *rs[1].invalid_format(d, de));
+    ASSERT_EQ(num_3, *rs[1].out_of_range(d, de, 1));
+    ASSERT_EQ(num_4, *rs[1].out_of_range(d, de, -1));
+    ASSERT_EQ(num_5, *rs[1].out_of_range(d, de, 0));
+    swap(rs[0], rs[1]);
+    ASSERT_EQ(num_1, *rs[0].empty());
+    ASSERT_EQ(num_2, *rs[0].invalid_format(d, de));
+    ASSERT_EQ(num_3, *rs[0].out_of_range(d, de, 1));
+    ASSERT_EQ(num_4, *rs[0].out_of_range(d, de, -1));
+    ASSERT_EQ(num_5, *rs[0].out_of_range(d, de, 0));
+    ASSERT_TRUE(!rs[1].empty());
+    ASSERT_TRUE(!rs[1].invalid_format(d, de));
+    ASSERT_TRUE(!rs[1].out_of_range(d, de, 1));
+    ASSERT_TRUE(!rs[1].out_of_range(d, de, -1));
+    ASSERT_TRUE(!rs[1].out_of_range(d, de, 0));
+
+    // ignore vs fail
+    swap(rs[1], rs[2]);
+    ASSERT_THROW(rs[1].empty(), field_empty);
+    ASSERT_THROW(rs[1].invalid_format(d, de), field_invalid_format);
+    ASSERT_THROW(rs[1].out_of_range(d, de, 1), field_out_of_range);
+    ASSERT_THROW(rs[1].out_of_range(d, de, -1), field_out_of_range);
+    ASSERT_THROW(rs[1].out_of_range(d, de, 0), field_out_of_range);
+    ASSERT_TRUE(!rs[2].empty());
+    ASSERT_TRUE(!rs[2].invalid_format(d, de));
+    ASSERT_TRUE(!rs[2].out_of_range(d, de, 1));
+    ASSERT_TRUE(!rs[2].out_of_range(d, de, -1));
+    ASSERT_TRUE(!rs[2].out_of_range(d, de, 0));
+    swap(rs[1], rs[2]);
+    ASSERT_TRUE(!rs[1].empty());
+    ASSERT_TRUE(!rs[1].invalid_format(d, de));
+    ASSERT_TRUE(!rs[1].out_of_range(d, de, 1));
+    ASSERT_TRUE(!rs[1].out_of_range(d, de, -1));
+    ASSERT_TRUE(!rs[1].out_of_range(d, de, 0));
+    ASSERT_THROW(rs[2].empty(), field_empty);
+    ASSERT_THROW(rs[2].invalid_format(d, de), field_invalid_format);
+    ASSERT_THROW(rs[2].out_of_range(d, de, 1), field_out_of_range);
+    ASSERT_THROW(rs[2].out_of_range(d, de, -1), field_out_of_range);
+    ASSERT_THROW(rs[2].out_of_range(d, de, 0), field_out_of_range);
+
+    // fail vs copy
+    swap(rs[2], rs[3]);
+    ASSERT_EQ(num_3, *rs[2].empty());
+    ASSERT_EQ(num_4, *rs[2].invalid_format(d, de));
+    ASSERT_EQ(num_5, *rs[2].out_of_range(d, de, 1));
+    ASSERT_EQ(num_1, *rs[2].out_of_range(d, de, -1));
+    ASSERT_EQ(num_2, *rs[2].out_of_range(d, de, 0));
+    ASSERT_THROW(rs[3].empty(), field_empty);
+    ASSERT_THROW(rs[3].invalid_format(d, de), field_invalid_format);
+    ASSERT_THROW(rs[3].out_of_range(d, de, 1), field_out_of_range);
+    ASSERT_THROW(rs[3].out_of_range(d, de, -1), field_out_of_range);
+    ASSERT_THROW(rs[3].out_of_range(d, de, 0), field_out_of_range);
+    swap(rs[2], rs[3]);
+    ASSERT_THROW(rs[2].empty(), field_empty);
+    ASSERT_THROW(rs[2].invalid_format(d, de), field_invalid_format);
+    ASSERT_THROW(rs[2].out_of_range(d, de, 1), field_out_of_range);
+    ASSERT_THROW(rs[2].out_of_range(d, de, -1), field_out_of_range);
+    ASSERT_THROW(rs[2].out_of_range(d, de, 0), field_out_of_range);
+    ASSERT_EQ(num_3, *rs[3].empty());
+    ASSERT_EQ(num_4, *rs[3].invalid_format(d, de));
+    ASSERT_EQ(num_5, *rs[3].out_of_range(d, de, 1));
+    ASSERT_EQ(num_1, *rs[3].out_of_range(d, de, -1));
+    ASSERT_EQ(num_2, *rs[3].out_of_range(d, de, 0));
+
+    // copy vs copy
+    swap(rs[3], rs[0]);
+    ASSERT_EQ(num_1, *rs[3].empty());
+    ASSERT_EQ(num_2, *rs[3].invalid_format(d, de));
+    ASSERT_EQ(num_3, *rs[3].out_of_range(d, de, 1));
+    ASSERT_EQ(num_4, *rs[3].out_of_range(d, de, -1));
+    ASSERT_EQ(num_5, *rs[3].out_of_range(d, de, 0));
+    ASSERT_EQ(num_3, *rs[0].empty());
+    ASSERT_EQ(num_4, *rs[0].invalid_format(d, de));
+    ASSERT_EQ(num_5, *rs[0].out_of_range(d, de, 1));
+    ASSERT_EQ(num_1, *rs[0].out_of_range(d, de, -1));
+    ASSERT_EQ(num_2, *rs[0].out_of_range(d, de, 0));
+    swap(rs[3], rs[0]);
+    ASSERT_EQ(num_3, *rs[3].empty());
+    ASSERT_EQ(num_4, *rs[3].invalid_format(d, de));
+    ASSERT_EQ(num_5, *rs[3].out_of_range(d, de, 1));
+    ASSERT_EQ(num_1, *rs[3].out_of_range(d, de, -1));
+    ASSERT_EQ(num_2, *rs[3].out_of_range(d, de, 0));
+    ASSERT_EQ(num_1, *rs[0].empty());
+    ASSERT_EQ(num_2, *rs[0].invalid_format(d, de));
+    ASSERT_EQ(num_3, *rs[0].out_of_range(d, de, 1));
+    ASSERT_EQ(num_4, *rs[0].out_of_range(d, de, -1));
+    ASSERT_EQ(num_5, *rs[0].out_of_range(d, de, 0));
+
+    // swap with self
+    swap(rs[0], rs[0]);
+    ASSERT_EQ(num_1, *rs[0].empty());
+    ASSERT_EQ(num_2, *rs[0].invalid_format(d, de));
+    ASSERT_EQ(num_3, *rs[0].out_of_range(d, de, 1));
+    ASSERT_EQ(num_4, *rs[0].out_of_range(d, de, -1));
+    ASSERT_EQ(num_5, *rs[0].out_of_range(d, de, 0));
+    swap(rs[1], rs[1]);
+    ASSERT_TRUE(!rs[1].empty());
+    ASSERT_TRUE(!rs[1].invalid_format(d, de));
+    ASSERT_TRUE(!rs[1].out_of_range(d, de, 1));
+    ASSERT_TRUE(!rs[1].out_of_range(d, de, -1));
+    ASSERT_TRUE(!rs[1].out_of_range(d, de, 0));
+    swap(rs[2], rs[2]);
+    ASSERT_THROW(rs[2].empty(), field_empty);
+    ASSERT_THROW(rs[2].invalid_format(d, de), field_invalid_format);
+    ASSERT_THROW(rs[2].out_of_range(d, de, 1), field_out_of_range);
+    ASSERT_THROW(rs[2].out_of_range(d, de, -1), field_out_of_range);
+    ASSERT_THROW(rs[2].out_of_range(d, de, 0), field_out_of_range);
+}
+
+namespace replace_if_conversion_failed_static_asserts {
+
+struct a_t : std::allocator<int>
+{
+    using propagate_on_container_swap = std::true_type;
+};
+
+using ri_t = replace_if_conversion_failed<int>;
+using rv_t = replace_if_conversion_failed<std::vector<int, a_t>>;
+using std::swap;
+
+static_assert(std::is_nothrow_copy_constructible<ri_t>::value, "");
+static_assert(std::is_nothrow_move_constructible<ri_t>::value, "");
+static_assert(std::is_nothrow_copy_assignable<ri_t>::value, "");
+static_assert(std::is_nothrow_move_assignable<ri_t>::value, "");
+static_assert(noexcept(
+    swap(std::declval<ri_t&>(), std::declval<ri_t&>())), "");
+
+static_assert(!std::is_nothrow_copy_constructible<rv_t>::value, "");
+static_assert(std::is_nothrow_move_constructible<rv_t>::value, "");
+static_assert(!std::is_nothrow_copy_assignable<rv_t>::value, "");
+static_assert(std::is_nothrow_move_assignable<rv_t>::value, "");
+static_assert(noexcept(
+    swap(std::declval<rv_t&>(), std::declval<rv_t&>())), "");
+
 }
