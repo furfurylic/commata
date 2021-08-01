@@ -231,6 +231,7 @@
 <xsl:template match="th">
   <th>
     <xsl:if test="@rowspan"><xsl:attribute name="rowspan"><xsl:value-of select="@rowspan"/></xsl:attribute></xsl:if>
+    <xsl:if test="@colspan"><xsl:attribute name="colspan"><xsl:value-of select="@colspan"/></xsl:attribute></xsl:if>
     <xsl:apply-templates/>
   </th>
 </xsl:template>
@@ -238,6 +239,7 @@
 <xsl:template match="td">
   <td>
     <xsl:if test="@rowspan"><xsl:attribute name="rowspan"><xsl:value-of select="@rowspan"/></xsl:attribute></xsl:if>
+    <xsl:if test="@colspan"><xsl:attribute name="colspan"><xsl:value-of select="@colspan"/></xsl:attribute></xsl:if>
     <xsl:apply-templates/>
   </td>
 </xsl:template>
