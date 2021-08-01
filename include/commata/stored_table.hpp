@@ -1355,7 +1355,8 @@ private:
             new_value, detail::stored::null_termination<traits_type>());
     }
 
-    value_type& rewrite_value_impl(value_type& value, const char* new_value)
+    value_type& rewrite_value_impl(value_type& value,
+        const char_type* new_value)
     {
         return rewrite_value_n(value,
             new_value, traits_type::length(new_value));
