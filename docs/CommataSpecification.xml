@@ -2323,7 +2323,7 @@ namespace commata {
     basic_stored_value(const basic_stored_value&amp; other) noexcept = default;
     template &lt;class OtherCh>
       basic_stored_value(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
-
+   ~basic_stored_value() = default;
     basic_stored_value&amp; operator=(const basic_stored_value&amp; other) noexcept = default;
     template &lt;class OtherCh>
       basic_stored_value&amp; operator=(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;

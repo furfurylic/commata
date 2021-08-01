@@ -40,6 +40,9 @@ using namespace commata::test;
 
 static_assert(std::is_nothrow_copy_constructible<stored_value>::value, "");
 static_assert(std::is_nothrow_copy_assignable<stored_value>::value, "");
+static_assert(std::is_trivially_copyable<stored_value>::value, "");
+static_assert(std::is_trivially_copy_assignable<stored_value>::value, "");
+static_assert(std::is_trivially_destructible<stored_value>::value, "");
 static_assert(noexcept(std::declval<stored_value&>().begin()), "");
 static_assert(noexcept(std::declval<stored_value&>().end()), "");
 static_assert(noexcept(std::declval<stored_value&>().rbegin()), "");

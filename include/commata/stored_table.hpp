@@ -76,8 +76,9 @@ public:
         assert(*end_ == Ch());
     }
 
-    basic_stored_value(const basic_stored_value& other) = default;
-    basic_stored_value& operator=(const basic_stored_value& other) = default;
+    basic_stored_value(const basic_stored_value&) = default;
+    ~basic_stored_value() = default;
+    basic_stored_value& operator=(const basic_stored_value&) = default;
 
     template <
         class OtherCh,
