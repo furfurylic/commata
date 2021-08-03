@@ -2962,7 +2962,7 @@ namespace commata {
          To modify the size (that is, <c>e - b</c>), programs can use the store-accessing facilities (<xref id="basic_stored_table.rewrite"/>) of the <c>basic_stored_table</c> object concerned.</p>
       <p>On the types <c>basic_stored_value&lt;Ch, Tr>::iterator</c> and <c>basic_stored_value&lt;Ch, Tr>::const_iterator</c>, it shall be satisfied that:</p>
       <ul>
-        <li>they shall meet the random access iterator requirements,</li>
+        <li>they shall meet the requirements of a random access iterator and a contiguous iterator,</li>
         <li><c>basic_stored_value&lt;Ch, Tr>::iterator</c> shall be convertible to <c>basic_stored_value&lt;Ch, Tr>::const_iterator</c>, and</li>
         <li>each instance of <c>std::iterator_traits</c> on them shall have a set of member typedefs indicated in <xref id="table.basic_stored_value.iterator.typedefs"/>.</li>
       </ul>
