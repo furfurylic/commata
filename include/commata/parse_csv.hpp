@@ -769,6 +769,7 @@ private:
         }
     };
 
+public:
     template <class Handler, class Allocator>
     struct parser_type_class
     {
@@ -781,7 +782,6 @@ private:
         using type = typename without_allocator<Handler>::ret_t;
     };
 
-public:
     template <class Handler, class Allocator = void>
     using parser_type = typename parser_type_class<Handler, Allocator>::type;
 
@@ -896,7 +896,23 @@ auto make_csv_source(Args&&... args)
 
 namespace detail { namespace csv {
 
-struct are_make_csv_source_args_impl
+struct are_make_csv_source_args1_impl
+{
+    template <class Arg1>
+    static auto check(std::decay_t<Arg1>*) -> decltype(
+        make_csv_source(std::declval<Arg1>()),
+        std::true_type());
+
+    template <class Arg1>
+    static auto check(...) -> std::false_type;
+};
+
+template <class Arg1>
+struct are_make_csv_source_args1 :
+    decltype(are_make_csv_source_args1_impl::check<Arg1>(nullptr))
+{};
+
+struct are_make_csv_source_args2_impl
 {
     template <class Arg1, class Arg2>
     static auto check(std::decay_t<Arg1>*) -> decltype(
@@ -908,13 +924,13 @@ struct are_make_csv_source_args_impl
 };
 
 template <class Arg1, class Arg2>
-struct are_make_csv_source_args :
-    decltype(are_make_csv_source_args_impl::check<Arg1, Arg2>(nullptr))
+struct are_make_csv_source_args2 :
+    decltype(are_make_csv_source_args2_impl::check<Arg1, Arg2>(nullptr))
 {};
 
 template <class Arg1, class Arg2, class... Args>
 auto parse(Arg1&& arg1, Arg2&& arg2, Args&&... args)
- -> std::enable_if_t<are_make_csv_source_args<Arg1, Arg2>::value, bool>
+ -> std::enable_if_t<are_make_csv_source_args2<Arg1, Arg2>::value, bool>
 {
     return make_csv_source(std::forward<Arg1>(arg1), std::forward<Arg2>(arg2))
         (std::forward<Args>(args)...)();
@@ -922,16 +938,20 @@ auto parse(Arg1&& arg1, Arg2&& arg2, Args&&... args)
 
 template <class Arg1, class Arg2, class... Args>
 auto parse(Arg1&& arg1, Arg2&& arg2, Args&&... args)
- -> std::enable_if_t<!are_make_csv_source_args<Arg1, Arg2>::value, bool>
+ -> std::enable_if_t<!are_make_csv_source_args2<Arg1, Arg2>::value, bool>
 {
     return make_csv_source(std::forward<Arg1>(arg1))
         (std::forward<Arg2>(arg2), std::forward<Args>(args)...)();
 }
 
-}}
+}} // detail::csv
 
 template <class Arg1, class Arg2, class... OtherArgs>
-bool parse_csv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)
+auto parse_csv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)
+ -> std::enable_if_t<
+        detail::csv::are_make_csv_source_args1<Arg1>::value
+     || detail::csv::are_make_csv_source_args2<Arg1, Arg2>::value,
+        bool>
 {
     return detail::csv::parse(
         std::forward<Arg1>(arg1), std::forward<Arg2>(arg2),
