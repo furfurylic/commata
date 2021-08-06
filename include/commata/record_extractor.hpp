@@ -252,7 +252,7 @@ public:
             std::allocator_arg, alloc, out,
             std::forward<FieldNamePredR>(field_name_pred),
             std::forward<FieldValuePredR>(field_value_pred),
-            npos, includes_header, max_record_num)
+            npos, true, includes_header, max_record_num)
     {}
 
     template <class FieldValuePredR>
@@ -260,12 +260,13 @@ public:
             std::allocator_arg_t, const Allocator& alloc,
             std::basic_streambuf<Ch, Tr>* out,
             std::size_t target_field_index, FieldValuePredR&& field_value_pred,
-            bool includes_header, std::size_t max_record_num) :
+            bool has_header,
+            bool includes_header,std::size_t max_record_num) :
         impl(
             std::allocator_arg, alloc, out,
             FieldNamePred(),
             std::forward<FieldValuePredR>(field_value_pred),
-            target_field_index, includes_header, max_record_num)
+            target_field_index, has_header, includes_header, max_record_num)
     {}
 
 private:
@@ -274,7 +275,7 @@ private:
         std::allocator_arg_t, const Allocator& alloc,
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
-        std::size_t target_field_index,
+        std::size_t target_field_index, bool has_header,
         bool includes_header, std::size_t max_record_num) :
         record_num_to_include_(max_record_num),
         target_field_index_(target_field_index), field_index_(0), out_(out),
@@ -282,8 +283,10 @@ private:
             std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc))),
         vr_(std::forward<FieldValuePredR>(field_value_pred),
             std::basic_string<Ch, Tr, alloc_t>(alloc_t(alloc))),
-        header_mode_(includes_header ?
-            record_mode::include : record_mode::exclude),
+        header_mode_(has_header ?
+                        includes_header ?
+                            record_mode::include : record_mode::exclude :
+                        record_mode::unknown),
         record_mode_(record_mode::exclude)
     {}
 
@@ -502,6 +505,12 @@ private:
 
 }} // end detail::record_extraction
 
+enum header_forwarding : unsigned
+{
+    header_forwarding_yes = 1,
+    header_forwarding_no = 2
+};
+
 template <class FieldNamePred, class FieldValuePred, class Ch,
     class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>>
 class record_extractor :
@@ -516,12 +525,13 @@ public:
     record_extractor(
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
-        bool includes_header = true, std::size_t max_record_num = base::npos) :
+        header_forwarding header = header_forwarding_yes,
+        std::size_t max_record_num = base::npos) :
         record_extractor(
             std::allocator_arg, Allocator(), out,
             std::forward<FieldNamePredR>(field_name_pred),
             std::forward<FieldValuePredR>(field_value_pred),
-            includes_header, max_record_num)
+            header, max_record_num)
     {}
 
     template <class FieldNamePredR, class FieldValuePredR>
@@ -529,11 +539,12 @@ public:
         std::allocator_arg_t, const Allocator& alloc,
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
-        bool includes_header = true, std::size_t max_record_num = base::npos) :
+        header_forwarding header = header_forwarding_yes,
+        std::size_t max_record_num = base::npos) :
         base(std::allocator_arg, alloc, out,
             std::forward<FieldNamePredR>(field_name_pred),
             std::forward<FieldValuePredR>(field_value_pred),
-            includes_header, max_record_num)
+            (header == header_forwarding_yes), max_record_num)
     {}
 
     record_extractor(record_extractor&&) = default;
@@ -556,11 +567,13 @@ public:
     record_extractor_with_indexed_key(
         std::basic_streambuf<Ch, Tr>* out,
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
-        bool includes_header = true, std::size_t max_record_num = base::npos) :
+        std::underlying_type_t<header_forwarding> header
+            = header_forwarding_yes,
+        std::size_t max_record_num = base::npos) :
         record_extractor_with_indexed_key(
             std::allocator_arg, Allocator(), out, target_field_index,
             std::forward<FieldValuePredR>(field_value_pred),
-            includes_header, max_record_num)
+            header, max_record_num)
     {}
 
     template <class FieldValuePredR>
@@ -568,11 +581,13 @@ public:
         std::allocator_arg_t, const Allocator& alloc,
         std::basic_streambuf<Ch, Tr>* out,
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
-        bool includes_header = true, std::size_t max_record_num = base::npos) :
+        std::underlying_type_t<header_forwarding> header
+            = header_forwarding_yes,
+        std::size_t max_record_num = base::npos) :
         base(std::allocator_arg, alloc, out,
             target_field_index,
             std::forward<FieldValuePredR>(field_value_pred),
-            includes_header, max_record_num)
+            (header != 0U), (header == header_forwarding_yes), max_record_num)
     {}
 
     record_extractor_with_indexed_key(

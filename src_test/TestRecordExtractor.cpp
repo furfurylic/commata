@@ -125,13 +125,13 @@ TEST_P(TestRecordExtractor, MoveCtor)
 
 INSTANTIATE_TEST_SUITE_P(, TestRecordExtractor, testing::Values(1, 10, 1024));
 
-struct TestRecordExtractorLimit :
-    commata::test::BaseTestWithParam<std::tuple<bool, std::size_t>>
+struct TestRecordExtractorLimit : commata::test::BaseTestWithParam<
+                                    std::tuple<header_forwarding, std::size_t>>
 {};
 
 TEST_P(TestRecordExtractorLimit, Basics)
 {
-    const auto includes_header = std::get<0>(GetParam());
+    const auto header = std::get<0>(GetParam());
     const auto max_record_num = std::get<1>(GetParam());
     const char* s = "key_a,key_b,value_a,value_b\n"
                     "ka1,kb1,va1,vb1\r"
@@ -139,10 +139,10 @@ TEST_P(TestRecordExtractorLimit, Basics)
                     "ka1,kb3,vb3,vb3\n";
     std::stringbuf out;
     const auto result = parse_csv(s, make_record_extractor(&out,
-        "key_a", std::string("ka1"), includes_header, max_record_num), 2);
+        "key_a", std::string("ka1"), header, max_record_num), 2);
     ASSERT_EQ(max_record_num > 1, result);
     std::string expected;
-    if (includes_header) {
+    if (header == header_forwarding_yes) {
         expected += "key_a,key_b,value_a,value_b\n";
     }
     expected += "ka1,kb1,va1,vb1\n";
@@ -154,7 +154,7 @@ TEST_P(TestRecordExtractorLimit, Basics)
 
 INSTANTIATE_TEST_SUITE_P(, TestRecordExtractorLimit,
     testing::Combine(
-        testing::Bool(),
+        testing::Values(header_forwarding_no, header_forwarding_yes),
         testing::Values(1, std::numeric_limits<std::size_t>::max())));
 
 struct TestRecordExtractorLimit0 : BaseTest
@@ -166,7 +166,7 @@ TEST_F(TestRecordExtractorLimit0, IncludeHeader)
                     "ka1,kb1,va1,\"vb1\r";  // Ill-formed line, but not parsed
     std::stringbuf out;
     const auto result = parse_csv(s, make_record_extractor(
-            &out, std::string("key_a"), "ka1", true, 0), 64);
+            &out, std::string("key_a"), "ka1", header_forwarding_yes, 0), 64);
     ASSERT_FALSE(result);
     std::string expected;
     ASSERT_EQ("key_a,key_b,value_a,value_b\n", out.str());
@@ -179,7 +179,7 @@ TEST_F(TestRecordExtractorLimit0, ExcludeHeaderNoSuchKey)
     std::stringbuf out;
     try {
         parse_csv(s, make_record_extractor(
-            &out, "key_A", "ka1", false, 0), 64);
+            &out, "key_A", "ka1", header_forwarding_no, 0), 64);
         FAIL();
     } catch (const record_extraction_error& e) {
         ASSERT_NE(e.get_physical_position(), nullptr);
@@ -208,12 +208,28 @@ TEST_F(TestRecordExtractorIndexed, Basics)
               out.str());
 }
 
+TEST_F(TestRecordExtractorIndexed, FirstLineIncluded)
+{
+    const char* s = "assets,1100\n"
+                    "lialibities,600\n"
+                    "net assets,500\n";
+    std::ostringstream out;
+    parse_csv(s, make_record_extractor(out, 1,
+        [](const char* first, const char* last) {
+            const int value = std::stoi(std::string(first, last));
+            return value > 500;
+        }, 0U));
+    ASSERT_EQ("assets,1100\nlialibities,600\n",
+              out.str());
+}
+
 TEST_F(TestRecordExtractorIndexed, ConstRValueRefString)
 {
     std::wstringbuf out;
     auto extractor = [&out] {
         const std::wstring s = L"star";
-        return make_record_extractor(&out, 0, std::move(s), false);
+        return make_record_extractor(
+            &out, 0, std::move(s), header_forwarding_no);
     }();
     // If the range of the const rvalue of s has been grabbed in the lambda,
     // extractor will have a dangling range here;

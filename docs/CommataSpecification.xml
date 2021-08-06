@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-08-18 (UTC)</signature>
+<signature>2021-08-22 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1684,7 +1684,6 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
          The target field index can be given explicitly by the program (with <c>record_extractor_with_indexed_key</c>), or can be decided in reference to the first one record (with <c>record_extractor</c>).</p>
       <p>A record that can not be decided whether it is qualified to be forwarded or not due to non-existence of the field at the target field index shall cause an exception.</p>
       <p>An object of an instance of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
-      <p>In this subclause, the first one record of a CSV text is called its <n>header</n> record.</p>
     </section>
 
     <section id="record_extractor_hpp">
@@ -1696,12 +1695,18 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
 #include &lt;ostream>
 #include &lt;streambuf>
 #include &lt;string>
+#include &lt;type_traits>
 
 #include "text_error.hpp"
 
 namespace commata {
   <c>// <n><xref id="record_extraction_error"/>, record_extraction_error:</n></c>
   class record_extraction_error;
+
+  enum header_forwarding : unsigned {
+    header_forwarding_yes = 1,
+    header_forwarding_no  = 2
+  };
 
   <c>// <n><xref id="record_extractor"/>, record_extractor:</n></c>
   template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class Allocator>
@@ -1779,12 +1784,14 @@ namespace commata {
     template &lt;class FieldNamePredR, class FieldValuePredR>
       record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
-                       bool includes_header = true, std::size_t max_record_num = npos);
+                       header_forwarding header = header_forwarding_yes,
+                       std::size_t max_record_num = npos);
     template &lt;class FieldNamePredR, class FieldValuePredR>
       record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                        std::basic_streambuf&lt;Ch, Tr>* out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
-                       bool includes_header = true, std::size_t max_record_num = npos);
+                       header_forwarding header = header_forwarding_yes,
+                       std::size_t max_record_num = npos);
     record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~record_extractor();
 
@@ -1807,7 +1814,7 @@ namespace commata {
       </codeblock>
 
       <p>An instance of <c>record_extractor</c> is a type that meets <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
-      <p>An object of it first scans the header record to decide the target field index,
+      <p>An object of it first scans the first record (hereinafter called the <n>header record</n>) to decide the target field index,
          and then scan the all non-header records to decide whether the record is forwarded to the stream in terms of their values of the field at the target field index.</p>
       <p>When the target field index is left undecided after the scanning of the header record finished, an exception shall be thrown.</p>
       <p><c>FieldNamePred</c> and <c>FieldValuePred</c> shall be binary predicate types for two <c>const Ch*</c> parameters.
@@ -1824,12 +1831,14 @@ namespace commata {
 template &lt;class FieldNamePredR, class FieldValuePredR>
   record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
                    FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
-                   bool includes_header = true, std::size_t max_record_num = npos);
+                   header_forwarding header = header_forwarding_yes,
+                   std::size_t max_record_num = npos);
 template &lt;class FieldNamePredR, class FieldValuePredR>
   record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                    std::basic_streambuf&lt;Ch, Tr>* out,
                    FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
-                   bool includes_header = true, std::size_t max_record_num = npos);
+                   header_forwarding header = header_forwarding_yes,
+                   std::size_t max_record_num = npos);
           </code>
           <requires><c>out</c> shall be a valid pointer. For the first overload, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Constructs an object <c>record_extractor</c>. The parameters work as <xref id="table.record_extractor.cons"/> shows.
@@ -1860,8 +1869,10 @@ template &lt;class FieldNamePredR, class FieldValuePredR>
                   If returns a non-<c>false</c> value, then the record is qualified to be forwarded to <c>out</c>.</td>
             </tr>
             <tr>
-              <td><c>includes_header</c></td>
-              <td>If and only if <c>true</c>, the header record is forwarded to <c>out</c>.</td>
+              <td><c>header</c></td>
+              <td>If equal to <c>header_forwarding_yes</c>, the header record will always be forwarded to <c>out</c>.
+                  Otherwise, if equal to <c>header_forwarding_no</c>, it will never be forwarded to <c>out</c>.
+                  Otherwise, the behaviour is undefined.</td>
             </tr>
             <tr>
               <td><c>max_record_num</c></td>
@@ -1898,9 +1909,8 @@ allocator_type get_allocator() const noexcept;
 bool is_in_header() const noexcept;
           </code>
           <requires>Shall be invoked within a call of <c>parse_csv</c> (<xref id="parse_csv"/>).</requires>
-          <returns><c>true</c> if <c>*this</c> is configured to regard some first records as header records and
-                   <c>end_record</c> has not be called for the final header record; <c>false</c> otherwise.</returns>
-          <note>This member is useful to implement a table handler class whose object wraps a <c>record_extractor</c> object.</note>
+          <returns><c>true</c> if <c>end_record</c> has not be called for the header record; <c>false</c> otherwise.</returns>
+          <note>This member may be useful to implement a table handler class whose object wraps a <c>record_extractor</c> object.</note>
         </code-item>
       </section>
     </section>
@@ -1925,14 +1935,16 @@ namespace commata {
       record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
                                         std::size_t target_field_index,
                                         FieldValuePredR&amp;&amp; field_value_pred,
-                                        bool includes_header = true,
+                                        std::underlying_t&lt;header_forwarding> header
+                                          = header_forwarding_yes,
                                         std::size_t max_record_num = npos);
     template &lt;class FieldValuePredR>
       record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
                                         std::basic_streambuf&lt;Ch, Tr>* out,
                                         std::size_t target_field_index,
                                         FieldValuePredR&amp;&amp; field_value_pred,
-                                        bool includes_header = true,
+                                        std::underlying_t&lt;header_forwarding> header
+                                          = header_forwarding_yes,
                                         std::size_t max_record_num = npos);
     record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; other)
                                       noexcept(<nc>see below</nc>);
@@ -1957,7 +1969,8 @@ namespace commata {
       </codeblock>
 
       <p>An instance of <c>record_extractor_with_indexed_key</c> is a type that meets <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
-      <p>It scans the all non-header records to decide whether the record is forwarded to the stream in terms of their values of the field at the target field index instructed with a parameter of its constructor explicitly.</p>
+      <p>It regards the first at most one record as the <n>header record</n>.
+         It scans the all non-header records to decide whether the record is forwarded to the stream in terms of their values of the field at the target field index instructed with a parameter of its constructor explicitly.</p>
       <p><c>FieldValuePred</c> shall be a binary predicate type for two <c>const Ch*</c> parameters.
          <c>Ch</c> shall be a char-like type.
          <c>Tr</c> shall be a character traits type of <c>std::remove_const_t&lt;Ch></c>.
@@ -1972,14 +1985,16 @@ template &lt;class FieldValuePredR>
   record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
                                     std::size_t target_field_index,
                                     FieldValuePredR&amp;&amp; field_value_pred,
-                                    bool includes_header = true,
+                                    std::underlying_t&lt;header_forwarding> header
+                                      = header_forwarding_yes,
                                     std::size_t max_record_num = npos);
 template &lt;class FieldValuePredR>
   record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
                                     std::basic_streambuf&lt;Ch, Tr>* out,
                                     std::size_t target_field_index,
                                     FieldValuePredR&amp;&amp; field_value_pred,
-                                    bool includes_header = true,
+                                    std::underlying_t&lt;header_forwarding> header
+                                      = header_forwarding_yes,
                                     std::size_t max_record_num = npos);
           </code>
           <requires><c>out</c> shall be a valid pointer. For the first overload, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
@@ -2009,8 +2024,11 @@ template &lt;class FieldValuePredR>
                   If returns a non-<c>false</c> value, then the record is qualified to be forwarded to <c>out</c>.</td>
             </tr>
             <tr>
-              <td><c>includes_header</c></td>
-              <td>If and only if <c>true</c>, the header record is forwarded to <c>out</c>.</td>
+              <td><c>header</c></td>
+              <td>If equal to <c>0</c>, the first record of the text table will not be regarded as a header record, that is, it will be treated similarly to other records.
+                  Otherwise, if equal to <c>header_forwarding_yes</c>, it will be regarded as a header record and will always be forwarded to <c>out</c>.
+                  Otherwise, if equal to <c>header_forwarding_no</c>, it will be regarded as a header record and wiil never be forwarded to <c>out</c>.
+                  Otherwise, the behaviour is undefined.</td>
             </tr>
             <tr>
               <td><c>max_record_num</c></td>
@@ -2046,9 +2064,9 @@ allocator_type get_allocator() const noexcept;
 bool is_in_header() const noexcept;
           </code>
           <requires>Shall be invoked within a call of <c>parse_csv</c> (<xref id="parse_csv"/>).</requires>
-          <returns><c>true</c> if <c>*this</c> is configured to regard some first records as header records and
-                   <c>end_record</c> has not be called for the final header record; <c>false</c> otherwise.</returns>
-          <note>This member is useful to implement a table handler class whose object wraps a <c>record_extractor_with_indexed_key</c> object.</note>
+          <returns><c>true</c> if <c>*this</c> is configured to regard the first records as the header record and
+                   <c>end_record</c> has not be called for the header record; <c>false</c> otherwise.</returns>
+          <note>This member may be useful to implement a table handler class whose object wraps a <c>record_extractor_with_indexed_key</c> object.</note>
         </code-item>
       </section>
     </section>
@@ -4252,7 +4270,7 @@ bool is_in_header() const noexcept;
           <requires>Shall be invoked within a call of <c>parse_csv</c> (<xref id="parse_csv"/>).</requires>
           <returns><c>true</c> if <c>*this</c> is configured to regard some first records as header records and
                    <c>end_record</c> has not be called for the final header record; <c>false</c> otherwise.</returns>
-          <note>This member is useful to implement a table handler class whose object wraps a <c>basic_table_scanner</c> object.</note>
+          <note>This member may be useful to implement a table handler class whose object wraps a <c>basic_table_scanner</c> object.</note>
         </code-item>
       </section>
     </section>
