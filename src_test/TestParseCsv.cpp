@@ -135,7 +135,7 @@ check_handler<Ch, F> make_check_handler(F f)
     return check_handler<Ch, F>(f);
 }
 
-}
+} // unnamed
 
 struct TestParseCsvBasics :
     commata::test::BaseTestWithParam<std::size_t>
@@ -336,6 +336,8 @@ struct full_fledged
     void finalize(const Ch*, const Ch*) {}
 };
 
+} // unnamed
+
 struct TestCsvSource : commata::test::BaseTest
 {};
 
@@ -385,6 +387,4 @@ TEST_F(TestCsvSource, Swap)
     ASSERT_EQ(1, field_values.size());
     ASSERT_EQ(1, field_values[0].size());
     ASSERT_STREQ("XYZ", field_values[0][0].c_str());
-}
-
 }
