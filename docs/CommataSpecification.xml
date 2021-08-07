@@ -1816,7 +1816,7 @@ namespace commata {
       <p>An instance of <c>record_extractor</c> is a type that meets <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
       <p>An object of it first scans the first record (hereinafter called the <n>header record</n>) to decide the target field index,
          and then scan the all non-header records to decide whether the record is forwarded to the stream in terms of their values of the field at the target field index.</p>
-      <p>When the target field index is left undecided after the scanning of the header record finished, an exception shall be thrown.</p>
+      <p>When the target field index is left undecided after the scanning of <c>record_extractor_npos - 1</c> text fields in the header record finished, an exception shall be thrown.</p>
       <p><c>FieldNamePred</c> and <c>FieldValuePred</c> shall be binary predicate types for two <c>const Ch*</c> parameters.
          <c>Ch</c> shall be a char-like type.
          <c>Tr</c> shall be a character traits type of <c>std::remove_const_t&lt;Ch></c>.
