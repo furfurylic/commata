@@ -40,9 +40,9 @@ public:
         s_(s)
     {}
 
-    bool operator()(const Ch* begin, const Ch* end) const noexcept
+    bool operator()(std::basic_string_view<Ch, Tr> s) const noexcept
     {
-        return s_ == decltype(s_)(begin, end - begin);
+        return s_ == s;
     }
 
     decltype(auto) get() const noexcept
@@ -61,11 +61,9 @@ public:
         s_(std::move(s))
     {}
 
-    bool operator()(const Ch* begin, const Ch* end) const noexcept
+    bool operator()(std::basic_string_view<Ch, Tr> s) const noexcept
     {
-        const auto rlen = static_cast<decltype(s_.size())>(end - begin);
-        return (s_.size() == rlen)
-            && (Tr::compare(s_.data(), begin, rlen) == 0);
+        return s_ == s;
     }
 
     decltype(auto) get() const noexcept
@@ -89,11 +87,11 @@ template <class Stream, class T>
 constexpr bool is_stream_writable_v =
     decltype(is_stream_writable_impl::check<Stream, T>(nullptr))();
 
-template <class Ch, class T>
+template <class Ch, class Tr, class T>
 constexpr bool is_plain_field_name_pred_v =
     std::is_pointer_v<T>
         // to match with function pointer types
- || std::is_convertible_v<T, bool (*)(const Ch*, const Ch*)>;
+ || std::is_convertible_v<T, bool (*)(std::basic_string_view<Ch, Tr>)>;
         // to match with no-capture closure types,
         // with gcc 7.3, whose objects are converted to function pointers
         // and again converted to bool values to produce dull "1" outputs
@@ -101,18 +99,18 @@ constexpr bool is_plain_field_name_pred_v =
         // this treatment is apparently not sufficient but seems to be
         // better than never
 
-template <class Ch, class T,
+template <class Tr, class Ch, class T,
           std::enable_if_t<!(is_stream_writable_v<std::ostream, T>
                           || is_stream_writable_v<std::wostream, T>)
-                        || is_plain_field_name_pred_v<Ch, T>,
+                        || is_plain_field_name_pred_v<Ch, Tr, T>,
                            std::nullptr_t> = nullptr>
 void write_formatted_field_name_of(
     std::ostream&, const char*, const T&, const Ch*)
 {}
 
-template <class Ch, class T,
+template <class Tr, class Ch, class T,
           std::enable_if_t<is_stream_writable_v<std::ostream, T>
-                        && !is_plain_field_name_pred_v<Ch, T>,
+                        && !is_plain_field_name_pred_v<Ch, Tr, T>,
                            std::nullptr_t> = nullptr>
 void write_formatted_field_name_of(
     std::ostream& o, const char* prefix, const T& t, const Ch*)
@@ -121,10 +119,10 @@ void write_formatted_field_name_of(
     o << t;
 }
 
-template <class Ch, class T,
+template <class Tr, class Ch, class T,
           std::enable_if_t<!is_stream_writable_v<std::ostream, T>
                         && is_stream_writable_v<std::wostream, T>
-                        && !is_plain_field_name_pred_v<Ch, T>,
+                        && !is_plain_field_name_pred_v<Ch, Tr, T>,
                            std::nullptr_t> = nullptr>
 void write_formatted_field_name_of(
     std::ostream& o, const char* prefix, const T& t, const Ch*)
@@ -156,8 +154,8 @@ void write_formatted_field_name_of(
 
 struct hollow_field_name_pred
 {
-    template <class Ch>
-    bool operator()(const Ch*, const Ch*) const noexcept
+    template <class Ch, class Tr>
+    bool operator()(std::basic_string_view<Ch, Tr>) const noexcept
     {
         return true;
     }
@@ -393,10 +391,10 @@ private:
     {
         auto& b = field_buffer();
         if (b.empty()) {
-            return f(first, last);
+            return f(std::basic_string_view<Ch, Tr>(first, last - first));
         } else {
             b.append(first, last);
-            const auto r = f(b.data(), b.data() + b.size());
+            const auto r = f(std::basic_string_view<Ch, Tr>(b));
             b.clear();
             return r;
         }
@@ -408,7 +406,7 @@ private:
         try {
             std::ostringstream what;
             what << what_core;
-            write_formatted_field_name_of(what, " for ", nf_.base(),
+            write_formatted_field_name_of<Tr>(what, " for ", nf_.base(),
                 static_cast<const Ch*>(nullptr));
             return record_extraction_error(std::move(what).str());
         } catch (...) {
@@ -637,9 +635,9 @@ auto make_string_pred(T&& s, const Allocator& a)
     }
 }
 
-template <class T, class Ch>
+template <class T, class Ch, class Tr>
 constexpr bool is_string_pred_v =
-    std::is_invocable_r_v<bool, T, const Ch*, const Ch*>;
+    std::is_invocable_r_v<bool, T, std::basic_string_view<Ch, Tr>>;
 
 } // end detail::record_extraction
 
@@ -654,11 +652,11 @@ auto make_record_extractor(
         detail::record_extraction::is_string_pred_v<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
                 std::declval<FieldNamePred>(),
-                std::declval<Allocator>()))>, Ch>
+                std::declval<Allocator>()))>, Ch, Tr>
      && detail::record_extraction::is_string_pred_v<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
                 std::declval<FieldValuePred>(),
-                std::declval<Allocator>()))>, Ch>,
+                std::declval<Allocator>()))>, Ch, Tr>,
         record_extractor<
             std::decay_t<
                 decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
@@ -691,7 +689,7 @@ auto make_record_extractor(
         detail::record_extraction::is_string_pred_v<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
                 std::declval<FieldValuePred>(),
-                std::declval<Allocator>()))>, Ch>,
+                std::declval<Allocator>()))>, Ch, Tr>,
         record_extractor_with_indexed_key<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
                 std::declval<FieldValuePred>(),

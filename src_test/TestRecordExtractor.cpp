@@ -56,8 +56,8 @@ TEST_P(TestRecordExtractor, InnerKey)
                     R"(3",vb3)";
     std::ostringstream out;
     parse_csv(s, make_record_extractor(out, "key_b",
-        [](const char* first ,const char* last) {
-            return std::string(first, last).substr(0, 3) == "kb1";
+        [](std::string_view s) {
+            return s.substr(0, 3) == "kb1";
         }), GetParam());
     ASSERT_EQ(R"(key_a,key_b,value_a,value_b
 ka2,kb12,va2,vb2
@@ -178,8 +178,8 @@ TEST_F(TestRecordExtractorIndexed, Basics)
                     R"(3",vb3)";
     std::ostringstream out;
     parse_csv(s, make_record_extractor(out, 1,
-        [](const char* first ,const char* last) {
-            return std::string(first, last).substr(0, 3) == "kb1";
+        [](std::string_view s) {
+            return s.substr(0, 3) == "kb1";
         }), 1024);
     ASSERT_EQ(R"(key_a,key_b,value_a,value_b
 ka2,kb12,va2,vb2
@@ -196,8 +196,8 @@ TEST_F(TestRecordExtractorIndexed, FirstLineIncluded)
                     "net assets,500\n";
     std::ostringstream out;
     parse_csv(s, make_record_extractor(out, 1,
-        [](const char* first, const char* last) {
-            const int value = std::stoi(std::string(first, last));
+        [](std::string_view s) {
+            const int value = std::stoi(std::string(s));
             return value > 500;
         }, 0U));
     ASSERT_EQ("assets,1100\nlialibities,600\n",
@@ -236,9 +236,9 @@ namespace {
 
 struct final_predicate_for_value final
 {
-    bool operator()(const char* first, const char* last) const
+    bool operator()(std::string_view s) const
     {
-        return std::string(first, last).substr(0, 3) == "kb1";
+        return s.substr(0, 3) == "kb1";
     }
 };
 
@@ -279,12 +279,11 @@ TEST_F(TestRecordExtractorMiscellaneous, Reference)
                     "koto,string";
     std::stringbuf out;
 
-    const auto key_pred = [](auto begin, auto end) {
-        return ((end - begin) >= 3) && (std::strncmp(begin, "typ", 3) == 0);
+    const auto key_pred = [](auto s) {
+        return s.substr(0, 3) == "typ";
     };
-    const auto value_pred = [](auto begin, auto end) {
-        const std::string value(begin, end);
-        return (value == "brass") || (value == "woodwind");
+    const auto value_pred = [](auto s) {
+        return (s == "brass") || (s == "woodwind");
     };
 
     auto ex = make_record_extractor(
