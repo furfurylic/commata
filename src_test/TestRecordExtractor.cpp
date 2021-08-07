@@ -149,7 +149,7 @@ TEST_P(TestRecordExtractorLimit, Basics)
         "key_a", "ka1"s, header, max_record_num), 2);
     ASSERT_EQ(max_record_num > 1, result);
     std::string expected;
-    if (header == header_forwarding_yes) {
+    if (header == header_forwarding::yes) {
         expected += "key_a,key_b,value_a,value_b\n";
     }
     expected += "ka1,kb1,va1,vb1\n";
@@ -161,7 +161,7 @@ TEST_P(TestRecordExtractorLimit, Basics)
 
 INSTANTIATE_TEST_SUITE_P(, TestRecordExtractorLimit,
     testing::Combine(
-        testing::Values(header_forwarding_no, header_forwarding_yes),
+        testing::Values(header_forwarding::no, header_forwarding::yes),
         testing::Values(1, std::numeric_limits<std::size_t>::max())));
 
 struct TestRecordExtractorIndexed : BaseTest
@@ -199,7 +199,7 @@ TEST_F(TestRecordExtractorIndexed, FirstLineIncluded)
         [](std::string_view s) {
             const int value = std::stoi(std::string(s));
             return value > 500;
-        }, 0U));
+        }, std::nullopt));
     ASSERT_EQ("assets,1100\nlialibities,600\n",
               std::move(out).str());
 }
@@ -218,7 +218,7 @@ TEST_F(TestRecordExtractorIndexed, ConstRValueRefString)
     auto extractor = [&out] {
         const std::wstring s = L"star";
         return make_record_extractor(
-            &out, 0, std::move(s), header_forwarding_no);
+            &out, 0, std::move(s), header_forwarding::no);
     }();
     // If the range of the const rvalue of s has been grabbed in the lambda,
     // extractor will have a dangling range here;

@@ -12,6 +12,7 @@
 #include <functional>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
@@ -475,10 +476,9 @@ private:
 
 } // end detail::record_extraction
 
-enum header_forwarding : unsigned
+enum class header_forwarding : std::uint_fast8_t
 {
-    header_forwarding_yes = 1,
-    header_forwarding_no = 2
+    yes, no
 };
 
 template <class FieldNamePred, class FieldValuePred, class Ch,
@@ -499,7 +499,7 @@ public:
     record_extractor(
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
-        header_forwarding header = header_forwarding_yes,
+        header_forwarding header = header_forwarding::yes,
         std::size_t max_record_num = 0) :
         record_extractor(
             std::allocator_arg, Allocator(), out,
@@ -517,12 +517,12 @@ public:
         std::allocator_arg_t, const Allocator& alloc,
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
-        header_forwarding header = header_forwarding_yes,
+        header_forwarding header = header_forwarding::yes,
         std::size_t max_record_num = 0) :
         base(std::allocator_arg, alloc, out,
             std::forward<FieldNamePredR>(field_name_pred),
             std::forward<FieldValuePredR>(field_value_pred),
-            (header == header_forwarding_yes), max_record_num)
+            (header == header_forwarding::yes), max_record_num)
     {}
 
     record_extractor(record_extractor&&) = default;
@@ -548,8 +548,7 @@ public:
     record_extractor_with_indexed_key(
         std::basic_streambuf<Ch, Tr>* out,
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
-        std::underlying_type_t<header_forwarding> header
-            = header_forwarding_yes,
+        std::optional<header_forwarding> header = header_forwarding::yes,
         std::size_t max_record_num = 0) :
         record_extractor_with_indexed_key(
             std::allocator_arg, Allocator(), out, target_field_index,
@@ -565,14 +564,15 @@ public:
         std::allocator_arg_t, const Allocator& alloc,
         std::basic_streambuf<Ch, Tr>* out,
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
-        std::underlying_type_t<header_forwarding> header
-            = header_forwarding_yes,
+        std::optional<header_forwarding> header = header_forwarding::yes,
         std::size_t max_record_num = 0) :
         base(
             std::allocator_arg, alloc, out,
             sanitize_target_field_index(target_field_index),
             std::forward<FieldValuePredR>(field_value_pred),
-            (header != 0U), (header == header_forwarding_yes), max_record_num)
+            (header.has_value()),
+            (header.has_value() && (*header == header_forwarding::yes)),
+            max_record_num)
     {}
 
     record_extractor_with_indexed_key(

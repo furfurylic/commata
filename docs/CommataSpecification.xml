@@ -2149,10 +2149,10 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
       <codeblock>
 #include &lt;cstddef>
 #include &lt;memory>
+#include &lt;optional>
 #include &lt;ostream>
 #include &lt;streambuf>
 #include &lt;string>
-#include &lt;type_traits>
 
 #include "text_error.hpp"
 
@@ -2160,9 +2160,8 @@ namespace commata {
   <c>// <n><xref id="record_extraction_error"/>, record_extraction_error:</n></c>
   class record_extraction_error;
 
-  enum header_forwarding : unsigned {
-    header_forwarding_yes = 1,
-    header_forwarding_no  = 2
+  enum class header_forwarding : <nc>unspecified unsigned integer type</nc> {
+    yes, no
   };
 
   constexpr std::size_t record_extractor_npos = -1;
@@ -2237,13 +2236,13 @@ namespace commata {
     template &lt;class FieldNamePredR, class FieldValuePredR>
       record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
-                       header_forwarding header = header_forwarding_yes,
+                       header_forwarding header = header_forwarding::yes,
                        std::size_t max_record_num = 0);
     template &lt;class FieldNamePredR, class FieldValuePredR>
       record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                        std::basic_streambuf&lt;Ch, Tr>* out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
-                       header_forwarding header = header_forwarding_yes,
+                       header_forwarding header = header_forwarding::yes,
                        std::size_t max_record_num = 0);
     record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~record_extractor();
@@ -2284,13 +2283,13 @@ namespace commata {
 template &lt;class FieldNamePredR, class FieldValuePredR>
   record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
                    FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
-                   header_forwarding header = header_forwarding_yes,
+                   header_forwarding header = header_forwarding::yes,
                    std::size_t max_record_num = record_extractor_npos);
 template &lt;class FieldNamePredR, class FieldValuePredR>
   record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                    std::basic_streambuf&lt;Ch, Tr>* out,
                    FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
-                   header_forwarding header = header_forwarding_yes,
+                   header_forwarding header = header_forwarding::yes,
                    std::size_t max_record_num = record_extractor_npos);
           </code>
           <requires><c>out</c> shall be a valid pointer. For the first form, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
@@ -2324,8 +2323,8 @@ template &lt;class FieldNamePredR, class FieldValuePredR>
             </tr>
             <tr>
               <td><c>header</c></td>
-              <td>If equal to <c>header_forwarding_yes</c>, the header record will always be forwarded to <c>out</c>.
-                  Otherwise, if equal to <c>header_forwarding_no</c>, it will never be forwarded to <c>out</c>.
+              <td>If equal to <c>header_forwarding::yes</c>, the header record will always be forwarded to <c>out</c>.
+                  Otherwise, if equal to <c>header_forwarding::no</c>, it will never be forwarded to <c>out</c>.
                   Otherwise, the behaviour is undefined.</td>
             </tr>
             <tr>
@@ -2386,16 +2385,16 @@ namespace commata {
       record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
                                         std::size_t target_field_index,
                                         FieldValuePredR&amp;&amp; field_value_pred,
-                                        std::underlying_t&lt;header_forwarding> header
-                                          = header_forwarding_yes,
+                                        std::optional&lt;header_forwarding> header
+                                          = header_forwarding::yes,
                                         std::size_t max_record_num = 0);
     template &lt;class FieldValuePredR>
       record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
                                         std::basic_streambuf&lt;Ch, Tr>* out,
                                         std::size_t target_field_index,
                                         FieldValuePredR&amp;&amp; field_value_pred,
-                                        std::underlying_t&lt;header_forwarding> header
-                                          = header_forwarding_yes,
+                                        std::optional&lt;header_forwarding> header
+                                          = header_forwarding::yes,
                                         std::size_t max_record_num = 0);
     record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; other)
                                       noexcept(<nc>see below</nc>);
@@ -2436,16 +2435,16 @@ template &lt;class FieldValuePredR>
   record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
                                     std::size_t target_field_index,
                                     FieldValuePredR&amp;&amp; field_value_pred,
-                                    std::underlying_t&lt;header_forwarding> header
-                                      = header_forwarding_yes,
+                                    std::optional&lt;header_forwarding> header
+                                      = header_forwarding::yes,
                                     std::size_t max_record_num = record_extractor_npos);
 template &lt;class FieldValuePredR>
   record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
                                     std::basic_streambuf&lt;Ch, Tr>* out,
                                     std::size_t target_field_index,
                                     FieldValuePredR&amp;&amp; field_value_pred,
-                                    std::underlying_t&lt;header_forwarding> header
-                                      = header_forwarding_yes,
+                                    std::optional&lt;header_forwarding> header
+                                      = header_forwarding::yes,
                                     std::size_t max_record_num = record_extractor_npos);
           </code>
           <requires><c>out</c> shall be a valid pointer. For the first form, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
@@ -2477,9 +2476,9 @@ template &lt;class FieldValuePredR>
             </tr>
             <tr>
               <td><c>header</c></td>
-              <td>If equal to <c>0</c>, the first record of the text table will not be regarded as a header record, that is, it will be treated similarly to other records.
-                  Otherwise, if equal to <c>header_forwarding_yes</c>, it will be regarded as a header record and will always be forwarded to <c>out</c>.
-                  Otherwise, if equal to <c>header_forwarding_no</c>, it will be regarded as a header record and will never be forwarded to <c>out</c>.
+              <td>If does not have value, the first record of the text table will not be regarded as a header record, that is, it will be treated similarly to other records.
+                  Otherwise, if the value is <c>header_forwarding::yes</c>, it will be regarded as a header record and will always be forwarded to <c>out</c>.
+                  Otherwise, if the value is <c>header_forwarding::no</c>, it will be regarded as a header record and will never be forwarded to <c>out</c>.
                   Otherwise, the behaviour is undefined.</td>
             </tr>
             <tr>
