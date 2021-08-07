@@ -163,9 +163,9 @@ void write_formatted_field_name_of(
     detail::write_ntmbs(o, t.get().cbegin(), t.get().cend());
 }
 
-template <class Ch>
 struct hollow_field_name_pred
 {
+    template <class Ch>
     bool operator()(const Ch*, const Ch*) const noexcept
     {
         return true;
@@ -556,11 +556,11 @@ template <class FieldValuePred, class Ch,
     class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>>
 class record_extractor_with_indexed_key :
     public detail::record_extraction::impl<
-        detail::record_extraction::hollow_field_name_pred<Ch>, FieldValuePred,
+        detail::record_extraction::hollow_field_name_pred, FieldValuePred,
         Ch, Tr, Allocator>
 {
     using base = detail::record_extraction::impl<
-        detail::record_extraction::hollow_field_name_pred<Ch>, FieldValuePred,
+        detail::record_extraction::hollow_field_name_pred, FieldValuePred,
         Ch, Tr, Allocator>;
 
 public:
