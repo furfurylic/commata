@@ -43,7 +43,7 @@
 
     <p>Users of Commata process texts coordinating two kinds of objects below:</p>
     <ul>
-      <li><n>table parsers</n> (<xref id="table_parser.requirements"/>), which retrieve a sequence of char-like objects in a certain format such as a CSV text (<xref id="definitions.csv_text"/>) from a stream or a stream buffer and emits events to their tied table handlers, and</li>
+      <li><n>table parsers</n> (<xref id="table_parser.requirements"/>), which retrieve a sequence of char-like objects in a certain format such as a CSV text (<xref id="definitions.csv_text"/>) from an input, which is, for example, a stream or a stream buffer, and emits events to their tied table handlers, and</li>
       <li><n>table handlers</n> (<xref id="table_handler.requirements"/>), which receive events from the table parser and do some operation on them.</li>
     </ul>
     <p>Commata offers some default implementations of above two kinds of concepts.
@@ -179,7 +179,9 @@
           <td>(Not used)</td>
           <td><p>Called when the parser starts using its buffer.
                  Calling of this shall occur after a call of (2) and before its corresponding call of (3).</p>
-              <p><c>bb</c> is a pointer to const-qualified <c>*gb.first</c> and <c>be</c> is of const-qualified <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest call of (2).</p></td>
+              <p><c>bb</c> is a pointer to const-qualified <c>*gb.first</c> and <c>be</c> is of const-qualified <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest call of (2).</p>
+              <p>Just after a call of this, the parser shall make an intact copy of a sequence of char-like objects retrieved from its input into the range [<c>bb</c>, <c>bm</c>) where <c>bm</c> is a pointer that resides in [<c>bb</c>, <c>be</c>] and reported with (5) later.
+                 After a call of this and before the corresponding call of (5), the parser shall report (possibly past-the-end) pointers on this copy.</p></td>
           <td>Does nothing.</td>
         </tr>
 
@@ -208,9 +210,9 @@
           <td>(7)</td>
           <td><c>t.start_record(rb)</c></td>
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-          <td><p>Called when the parser begin to process a record.
+          <td><p>Called when the parser begins to process a record.
                  Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
-              <p><c>rb</c> is a pointer to the const-qualified first character of the record. If the first field of the records is quoted, <c>*rb</c> shall be a double quote.</p>
+              <p><c>rb</c> is a pointer to the const-qualified first character of the record, not of the text value of the first field of the record. To be specific, if the text table follows the CSV text model (<xref id="definitions.csv_text"/>) and the first field of the records is quoted, <c>*rb</c> shall be a double quote.</p>
               <p><c>rb</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>) where <c>bb</c> is the argument of the latest call of (4) and gb is the return value of the latest call of (2).</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
@@ -222,7 +224,7 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Called when the parser finishes processing a record.
                  Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
-              <p><c>re</c> is the past-the-end pointer of the const-qualified characters that forms the record. If the last field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</p>
+              <p><c>re</c> is the past-the-end pointer of the const-qualified characters that forms the record, not of the text value of the final field of the record. To be specific, if the text table follows the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</p>
               <p><c>re</c> resides in [<c>vb</c>, <c>be</c>] where vb is an argument of the latest call of (4) (first argument), (7) (first argument), (9) (second argument) or (10) (second argument), and
                  <c>be</c> is the second argument of the latest call of (4).</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
@@ -246,7 +248,7 @@
           <td>(10)</td>
           <td><c>t.finalize(f, l)</c></td>
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-          <td><p>Called when the parser found a final chunk of a field value.
+          <td><p>Called when the parser finds a final chunk of a field value.
                  Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
               <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified  and resides in [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
                  (4) (first argument), (7) (first argument), (9) (second argument) or this (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
