@@ -223,6 +223,14 @@ TEST_F(TestRecordExtractorIndexed, FirstLineIncluded)
               out.str());
 }
 
+TEST_F(TestRecordExtractorIndexed, TooLargeTargetFieldIndex)
+{
+    std::stringbuf out;
+    ASSERT_THROW(
+        make_record_extractor(&out, static_cast<std::size_t>(-1), "ABC"),
+        std::out_of_range);
+}
+
 TEST_F(TestRecordExtractorIndexed, ConstRValueRefString)
 {
     std::wstringbuf out;

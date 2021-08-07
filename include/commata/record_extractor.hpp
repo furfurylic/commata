@@ -584,8 +584,9 @@ public:
         std::underlying_type_t<header_forwarding> header
             = header_forwarding_yes,
         std::size_t max_record_num = base::npos) :
-        base(std::allocator_arg, alloc, out,
-            target_field_index,
+        base(
+            std::allocator_arg, alloc, out,
+            sanitize_target_field_index(target_field_index),
             std::forward<FieldValuePredR>(field_value_pred),
             (header != 0U), (header == header_forwarding_yes), max_record_num)
     {}
@@ -593,6 +594,18 @@ public:
     record_extractor_with_indexed_key(
         record_extractor_with_indexed_key&&) = default;
     ~record_extractor_with_indexed_key() = default;
+
+private:
+    static std::size_t sanitize_target_field_index(std::size_t i)
+    {
+        if (i < npos) {
+            return i;
+        } else {
+            std::ostringstream str;
+            str << "Target field index too large: " << i;
+            throw std::out_of_range(str.str());
+        }
+    }
 };
 
 namespace detail { namespace record_extraction {

@@ -2015,7 +2015,7 @@ template &lt;class FieldValuePredR>
             </tr>
             <tr>
               <td><c>target_field_index</c></td>
-              <td>Tells the zero-based target field index, which <c>field_value_pred</c> is applied.</td>
+              <td>Tells the zero-based target field index, which <c>field_value_pred</c> is applied. If equal to <c>npos</c>, this constructor exits with <c>std::out_of_range</c>.</td>
             </tr>
             <tr>
               <td><c>field_value_pred</c></td>
