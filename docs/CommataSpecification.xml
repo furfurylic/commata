@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-08-22 (UTC)</signature>
+<signature>2021-09-05 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -871,7 +871,7 @@ namespace commata {
       <p>An instance of <c>streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
 
       <section id="streambuf_input.cons">
-        <name><c>streambuf_input</c> costruct/copy/destroy</name>
+        <name><c>streambuf_input</c> construct/copy/destroy</name>
 
         <code-item>
           <code>
@@ -983,7 +983,7 @@ namespace commata {
       <p>An instance of <c>owned_streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
 
       <section id="owned_streambuf_input.cons">
-        <name><c>owned_streambuf_input</c> costruct/copy/destroy</name>
+        <name><c>owned_streambuf_input</c> construct/copy/destroy</name>
 
         <code-item>
           <code>
@@ -1076,7 +1076,7 @@ namespace commata {
       <p>An instance of <c>owned_istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
 
       <section id="owned_istream_input.cons">
-        <name><c>owned_istream_input</c> costruct/copy/destroy</name>
+        <name><c>owned_istream_input</c> construct/copy/destroy</name>
 
         <code-item>
           <code>
@@ -1172,7 +1172,7 @@ namespace commata {
       <p>An instance of <c>string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
 
       <section id="string_input.cons">
-        <name><c>string_input</c> costruct/copy/destroy</name>
+        <name><c>string_input</c> construct/copy/destroy</name>
 
         <code-item>
           <code>
@@ -1286,7 +1286,7 @@ namespace commata {
       <p>An instance of <c>owned_string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
 
       <section id="owned_string_input.cons">
-        <name><c>owned_string_input</c> costruct/copy/destroy</name>
+        <name><c>owned_string_input</c> construct/copy/destroy</name>
 
         <code-item>
           <code>
@@ -1532,7 +1532,7 @@ namespace commata {
       <p><c>csv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c>.</p>
 
       <section id="csv_source.cons">
-        <name><c>csv_source</c> costruct/copy/destroy</name>
+        <name><c>csv_source</c> construct/copy/destroy</name>
 
         <code-item>
           <code>
@@ -3500,7 +3500,7 @@ template &lt;class OtherContent>
           </code>
           <requires><c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
                     If an exception is thrown by a call of <c>emplace</c> of <c>content()</c> at the end, there shall be no effects on the before-end elements.
-                    Neither of calls of <c>erase</c> of <c>content()</c> at the end and <c>erase</c> of <c>other.content()</c> at the end shall exit via an exception.
+                    Neither calls of <c>erase</c> of <c>content()</c> at the end nor <c>erase</c> of <c>other.content()</c> at the end shall exit via an exception.
                     If <c>content_type</c> and <c>OtherContent</c> is the same type which has a nested <c>allocator_type</c> type, their type shall be an allocator-aware container type and any calls of its <c>swap</c> on two objects with equal allocators shall not exit via exception.</requires>
           <postcondition>Let <c>lsize</c> be the value that <c>size()</c> returned before the call.
                          <c>size() == lsize + other.size()</c> shall be <c>true</c>.
@@ -5233,7 +5233,7 @@ explicit arithmetic_field_translator(
 
           <code-item>
             <code>
-arithmetic_field_translator(const arithmetic_field_translator;&amp; other) noexcept(<nc>see below</nc>);
+arithmetic_field_translator(const arithmetic_field_translator&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>CopyConstructible</c>.</requires>
             <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
@@ -5458,7 +5458,7 @@ explicit locale_based_arithmetic_field_translator(
           <code-item>
             <code>
 locale_based_arithmetic_field_translator(
-  const locale_based_arithmetic_field_translator;&amp; other) noexcept(<nc>see below</nc>);
+  const locale_based_arithmetic_field_translator&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>CopyConstructible</c>.</requires>
             <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
@@ -5505,7 +5505,7 @@ template &lt;class Ch> void field_value(Ch* begin, Ch* end);
             <effects>Let <c>npf</c> be <c>std::use_facet&lt;std::numpunct&lt;Ch>>(loc)</c> where <c>loc</c> is the specified locale.
                      First, if <c>npf.grouping().empty()</c> is <c>false</c>, removes all occurrences of <c>npf.thousands_sep()</c> in the range [<c>begin</c>, <c>end</c>) in place.
                      Second, replaces the first occurrence of <c>npf.decimal_point()</c> in the resulted range with <c>*std::localeconv()->decimal_point</c> conditionally widen with <c>std::btowc</c> to get a value of the type <c>Ch</c> in place.
-                     Then calls a parsing function with the resulted range and put a value into the field translator sink as if a <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>) object does.</effects>
+                     Then calls a parsing function with the resulted range and puts a value into the field translator sink as if a <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>) object does.</effects>
           </code-item>
 
           <code-item>
@@ -5581,7 +5581,7 @@ string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink s
 
           <code-item>
             <code>
-string_field_translator(const string_field_translator;&amp; other) noexcept(<nc>see below</nc>);
+string_field_translator(const string_field_translator&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <requires><c>Sink</c> and <c>SkippingHandler</c> shall be <c>CopyConstructible</c>.</requires>
             <effects>Initializes an object of <c>string_field_translator</c> that holds a field translator sink object, a skipping handler object and an allocator object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
