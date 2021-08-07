@@ -227,7 +227,7 @@ TEST_F(TestRecordExtractorIndexed, TooLargeTargetFieldIndex)
 {
     std::stringbuf out;
     ASSERT_THROW(
-        make_record_extractor(&out, static_cast<std::size_t>(-1), "ABC"),
+        make_record_extractor(&out, record_extractor_npos, "ABC"),
         std::out_of_range);
 }
 

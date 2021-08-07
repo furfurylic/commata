@@ -1708,6 +1708,8 @@ namespace commata {
     header_forwarding_no  = 2
   };
 
+  constexpr std::size_t record_extractor_npos = -1;
+
   <c>// <n><xref id="record_extractor"/>, record_extractor:</n></c>
   template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class Allocator>
     class record_extractor;
@@ -1774,8 +1776,6 @@ namespace commata {
             class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class record_extractor {
   public:
-    static constexpr std::size_t npos = -1;
-
     using char_type = Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
@@ -1785,13 +1785,13 @@ namespace commata {
       record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                        header_forwarding header = header_forwarding_yes,
-                       std::size_t max_record_num = npos);
+                       std::size_t max_record_num = record_extractor_npos);
     template &lt;class FieldNamePredR, class FieldValuePredR>
       record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                        std::basic_streambuf&lt;Ch, Tr>* out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                        header_forwarding header = header_forwarding_yes,
-                       std::size_t max_record_num = npos);
+                       std::size_t max_record_num = record_extractor_npos);
     record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~record_extractor();
 
@@ -1832,13 +1832,13 @@ template &lt;class FieldNamePredR, class FieldValuePredR>
   record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
                    FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                    header_forwarding header = header_forwarding_yes,
-                   std::size_t max_record_num = npos);
+                   std::size_t max_record_num = record_extractor_npos);
 template &lt;class FieldNamePredR, class FieldValuePredR>
   record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                    std::basic_streambuf&lt;Ch, Tr>* out,
                    FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                    header_forwarding header = header_forwarding_yes,
-                   std::size_t max_record_num = npos);
+                   std::size_t max_record_num = record_extractor_npos);
           </code>
           <requires><c>out</c> shall be a valid pointer. For the first overload, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Constructs an object <c>record_extractor</c>. The parameters work as <xref id="table.record_extractor.cons"/> shows.
@@ -1924,8 +1924,6 @@ namespace commata {
             class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class record_extractor_with_indexed_key {
   public:
-    static constexpr std::size_t npos = -1;
-
     using char_type = Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
@@ -1937,7 +1935,7 @@ namespace commata {
                                         FieldValuePredR&amp;&amp; field_value_pred,
                                         std::underlying_t&lt;header_forwarding> header
                                           = header_forwarding_yes,
-                                        std::size_t max_record_num = npos);
+                                        std::size_t max_record_num = record_extractor_npos);
     template &lt;class FieldValuePredR>
       record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
                                         std::basic_streambuf&lt;Ch, Tr>* out,
@@ -1945,7 +1943,7 @@ namespace commata {
                                         FieldValuePredR&amp;&amp; field_value_pred,
                                         std::underlying_t&lt;header_forwarding> header
                                           = header_forwarding_yes,
-                                        std::size_t max_record_num = npos);
+                                        std::size_t max_record_num = record_extractor_npos);
     record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; other)
                                       noexcept(<nc>see below</nc>);
    ~record_extractor_with_indexed_key();
@@ -1987,7 +1985,7 @@ template &lt;class FieldValuePredR>
                                     FieldValuePredR&amp;&amp; field_value_pred,
                                     std::underlying_t&lt;header_forwarding> header
                                       = header_forwarding_yes,
-                                    std::size_t max_record_num = npos);
+                                    std::size_t max_record_num = record_extractor_npos);
 template &lt;class FieldValuePredR>
   record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
                                     std::basic_streambuf&lt;Ch, Tr>* out,
@@ -1995,7 +1993,7 @@ template &lt;class FieldValuePredR>
                                     FieldValuePredR&amp;&amp; field_value_pred,
                                     std::underlying_t&lt;header_forwarding> header
                                       = header_forwarding_yes,
-                                    std::size_t max_record_num = npos);
+                                    std::size_t max_record_num = record_extractor_npos);
           </code>
           <requires><c>out</c> shall be a valid pointer. For the first overload, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Constructs an object <c>record_extractor_with_indexed_key</c>. The parameters work as <xref id="table.record_extractor_with_indexed_key.cons"/> shows.
@@ -2015,7 +2013,7 @@ template &lt;class FieldValuePredR>
             </tr>
             <tr>
               <td><c>target_field_index</c></td>
-              <td>Tells the zero-based target field index, which <c>field_value_pred</c> is applied. If equal to <c>npos</c>, this constructor exits with <c>std::out_of_range</c>.</td>
+              <td>Tells the zero-based target field index, which <c>field_value_pred</c> is applied. If equal to <c>record_extractor_npos</c>, this constructor exits with <c>std::out_of_range</c>.</td>
             </tr>
             <tr>
               <td><c>field_value_pred</c></td>

@@ -189,6 +189,8 @@ template <class FieldValuePred,
           class Ch, class Tr, class Allocator>
 class record_extractor_with_indexed_key;
 
+constexpr std::size_t record_extractor_npos = static_cast<std::size_t>(-1);
+
 namespace detail { namespace record_extraction {
 
 template <class FieldNamePred, class FieldValuePred,
@@ -203,8 +205,6 @@ class impl
         include,
         exclude
     };
-
-    static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
     std::size_t record_num_to_include_;
     std::size_t target_field_index_;
@@ -252,7 +252,7 @@ public:
             std::allocator_arg, alloc, out,
             std::forward<FieldNamePredR>(field_name_pred),
             std::forward<FieldValuePredR>(field_value_pred),
-            npos, true, includes_header, max_record_num)
+            record_extractor_npos, true, includes_header, max_record_num)
     {}
 
     template <class FieldValuePredR>
@@ -343,7 +343,7 @@ public:
 
     void update(const Ch* first, const Ch* last)
     {
-        if ((is_in_header() && (target_field_index_ == npos))
+        if ((is_in_header() && (target_field_index_ == record_extractor_npos))
          || (field_index_ == target_field_index_)) {
             field_buffer().append(first, last);
         }
@@ -353,13 +353,13 @@ public:
     {
         using namespace std::placeholders;
         if (is_in_header()) {
-            if ((target_field_index_ == npos)
+            if ((target_field_index_ == record_extractor_npos)
              && with_field_buffer_appended(
                     first, last, std::ref(nf_.base()))) {
                 target_field_index_ = field_index_;
             }
             ++field_index_;
-            if (field_index_ >= npos) {
+            if (field_index_ >= record_extractor_npos) {
                 throw no_matching_field();
             }
         } else {
@@ -373,7 +373,7 @@ public:
                 }
             }
             ++field_index_;
-            if (field_index_ >= npos) {
+            if (field_index_ >= record_extractor_npos) {
                 exclude();
             }
         }
@@ -382,7 +382,7 @@ public:
     bool end_record(const Ch* record_end)
     {
         if (is_in_header()) {
-            if (target_field_index_ == npos) {
+            if (target_field_index_ == record_extractor_npos) {
                 throw no_matching_field();
             }
             flush_record(record_end);
@@ -526,7 +526,7 @@ public:
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
         header_forwarding header = header_forwarding_yes,
-        std::size_t max_record_num = base::npos) :
+        std::size_t max_record_num = record_extractor_npos) :
         record_extractor(
             std::allocator_arg, Allocator(), out,
             std::forward<FieldNamePredR>(field_name_pred),
@@ -540,7 +540,7 @@ public:
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
         header_forwarding header = header_forwarding_yes,
-        std::size_t max_record_num = base::npos) :
+        std::size_t max_record_num = record_extractor_npos) :
         base(std::allocator_arg, alloc, out,
             std::forward<FieldNamePredR>(field_name_pred),
             std::forward<FieldValuePredR>(field_value_pred),
@@ -569,7 +569,7 @@ public:
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
         std::underlying_type_t<header_forwarding> header
             = header_forwarding_yes,
-        std::size_t max_record_num = base::npos) :
+        std::size_t max_record_num = record_extractor_npos) :
         record_extractor_with_indexed_key(
             std::allocator_arg, Allocator(), out, target_field_index,
             std::forward<FieldValuePredR>(field_value_pred),
@@ -583,7 +583,7 @@ public:
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
         std::underlying_type_t<header_forwarding> header
             = header_forwarding_yes,
-        std::size_t max_record_num = base::npos) :
+        std::size_t max_record_num = record_extractor_npos) :
         base(
             std::allocator_arg, alloc, out,
             sanitize_target_field_index(target_field_index),
@@ -598,7 +598,7 @@ public:
 private:
     static std::size_t sanitize_target_field_index(std::size_t i)
     {
-        if (i < npos) {
+        if (i < record_extractor_npos) {
             return i;
         } else {
             std::ostringstream str;
