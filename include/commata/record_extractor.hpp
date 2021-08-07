@@ -393,8 +393,9 @@ public:
         } else if (flush_record(record_end)) {
             if (record_num_to_include_ == 1) {
                 return false;
+            } else if (record_num_to_include_ != record_extractor_npos) {
+                --record_num_to_include_;
             }
-            --record_num_to_include_;
         }
         return true;
     }

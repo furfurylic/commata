@@ -1876,8 +1876,7 @@ template &lt;class FieldNamePredR, class FieldValuePredR>
             </tr>
             <tr>
               <td><c>max_record_num</c></td>
-              <td>At most <c>max_record_num</c> non-header records are forwarded to <c>out</c>.
-                  After <c>max_record_num</c> are forwarded, the parsing will be aborted.</td>
+              <td>If not equal to <c>record_extractor_npos</c>, at most <c>max_record_num</c> non-header records are forwarded to <c>out</c>, and parsing will be aborted after <c>max_record_num</c> are forwarded.</td>
             </tr>
           </table>
         </code-item>
@@ -2030,8 +2029,7 @@ template &lt;class FieldValuePredR>
             </tr>
             <tr>
               <td><c>max_record_num</c></td>
-              <td>At most <c>max_record_num</c> non-header records are forwarded to <c>out</c>.
-                  After <c>max_record_num</c> records are forwarded, the parsing will be aborted.</td>
+              <td>If not equal to <c>record_extractor_npos</c>, at most <c>max_record_num</c> non-header records are forwarded to <c>out</c>, and parsing will be aborted after <c>max_record_num</c> are forwarded.</td>
             </tr>
           </table>
         </code-item>
