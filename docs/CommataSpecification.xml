@@ -404,6 +404,7 @@ namespace commata {
     static constexpr std::size_t npos = -1;
 
     <c>// <n><xref id="text_error.cons"/>, constructors and assignment operators:</n></c>
+    text_error() noexcept;
     template &lt;class T> explicit text_error(T&amp;&amp; what_arg);
     text_error(const text_error&amp; other) noexcept;
     text_error(text_error&amp;&amp; other) noexcept;
@@ -428,6 +429,14 @@ namespace commata {
 
       <section id="text_error.cons">
         <name><c>text_error</c> constructors and assignment operators</name>
+
+        <code-item>
+          <code>
+text_error() noexcept;
+          </code>
+          <effects>Constructs an object of <c>text_error</c>.</effects>
+          <postcondition><c>(*what() == '\0') &amp;&amp; !get_physical_position()</c> shall not be <c>false</c>.</postcondition>
+        </code-item>
 
         <code-item>
           <code>
@@ -631,23 +640,12 @@ namespace commata {
 namespace commata {
   class parse_error : public text_error {
   public:
-    template &lt;class T>
-      explicit parse_error(T&amp;&amp; what_arg);
+    using text_error::text_error;
   };
 }
       </codeblock>
 
       <p>An exception of type <c>parse_error</c> is thrown by the parser, for example by <c>parse_csv</c> (<xref id="parse_csv"/>), when the text does not have an appropriate format.</p>
-
-      <code-item>
-        <code>
-template &lt;class T>
-  explicit parse_error(T&amp;&amp; what_arg);
-        </code>
-        <effects>Constructs an object of parse_error.</effects>
-        <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-        <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
-      </code-item>
     </section>
   </section>
 
@@ -1750,23 +1748,12 @@ namespace commata {
 namespace commata {
   class record_extraction_error : public text_error {
   public:
-    template &lt;class T>
-      explicit record_extraction_error(T&amp;&amp; what_arg);
+    using text_error::text_error;
   };
 }
       </codeblock>
 
       <p>The class <c>record_extraction_error</c> defines a type of the objects thrown by <c>record_extractor</c> objects and <c>record_extractor_with_indexed_key</c> objects during the parsing.</p>
-
-      <code-item>
-        <code>
-template &lt;class T>
-  explicit record_extraction_error(T&amp;&amp; what_arg);
-        </code>
-        <effects>Constructs an object of <c>record_extraction_error</c>.</effects>
-        <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-        <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
-      </code-item>
     </section>
 
     <section id="record_extractor">
@@ -4283,23 +4270,12 @@ bool is_in_header() const noexcept;
 namespace commata {
   class field_translation_error : public text_error {
   public:
-    template &lt;class T>
-      explicit field_translation_error(T&amp;&amp; what_arg);
+    using text_error::text_error;
   };
 }
         </codeblock>
 
         <p>The class <c>field_translation_error</c> defines the type of the objects thrown by default field scanners of Commata library.</p>
-
-        <code-item>
-          <code>
-template &lt;class T>
-  explicit field_translation_error(T&amp;&amp; what_arg);
-          </code>
-          <effects>Constructs an object of <c>field_translation_error</c>.</effects>
-          <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
-        </code-item>
       </section>
 
       <section id="field_not_found">
@@ -4309,23 +4285,12 @@ template &lt;class T>
 namespace commata {
   class field_not_found : public field_translation_error {
   public:
-    template &lt;class T>
-      explicit field_not_found(T&amp;&amp; what_arg);
+    using field_translation_error::field_translation_error;
   };
 }
         </codeblock>
 
         <p>The class <c>field_not_found</c> defines the type of the objects thrown by default field scanners of Commata library to report that a record that has too few fields to reach the field scanner concerned was found.</p>
-
-        <code-item>
-          <code>
-template &lt;class T>
-  explicit field_not_found(T&amp;&amp; what_arg);
-          </code>
-          <effects>Constructs an object of <c>field_not_found</c>.</effects>
-          <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-            <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
-        </code-item>
       </section>
 
       <section id="field_invalid_format">
@@ -4335,23 +4300,12 @@ template &lt;class T>
 namespace commata {
   class field_invalid_format : public field_translation_error {
   public:
-    template &lt;class T>
-      explicit field_invalid_format(T&amp;&amp; what_arg);
+    using field_translation_error::field_translation_error;
   };
 }
         </codeblock>
 
         <p>The class <c>field_invalid_format</c> defines the type of the objects thrown by default field scanners of Commata library to report field format errors.</p>
-
-        <code-item>
-          <code>
-template &lt;class T>
-  explicit field_invalid_format(T&amp;&amp; what_arg);
-          </code>
-          <effects>Constructs an object of <c>field_invalid_format</c>.</effects>
-          <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
-        </code-item>
       </section>
 
       <section id="field_empty">
@@ -4361,23 +4315,12 @@ template &lt;class T>
 namespace commata {
   class field_empty : public field_invalid_format {
   public:
-    template &lt;class T>
-      explicit field_empty(T&amp;&amp; what_arg);
+    using field_invalid_format::field_invalid_format;
   };
 }
         </codeblock>
 
         <p>The class <c>field_empty</c> defines the type of the objects thrown by default field scanners of Commata library to report an empty field.</p>
-
-        <code-item>
-          <code>
-template &lt;class T>
-  explicit field_empty(T&amp;&amp; what_arg);
-          </code>
-          <effects>Constructs an object of <c>field_empty</c>.</effects>
-          <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
-        </code-item>
       </section>
 
       <section id="field_out_of_range">
@@ -4387,23 +4330,12 @@ template &lt;class T>
 namespace commata {
   class field_out_of_range : public field_translation_error {
   public:
-    template &lt;class T>
-      explicit field_out_of_range(T&amp;&amp; what_arg);
+    using field_translation_error::field_translation_error;
   };
 }
         </codeblock>
 
         <p>The class <c>field_out_of_range</c> defines the type of the objects thrown by default field scanners of Commata library to report they found a translated field value out of its domain.</p>
-
-        <code-item>
-          <code>
-template &lt;class T>
-  explicit field_out_of_range(T&amp;&amp; what_arg);
-          </code>
-          <effects>Constructs an object of <c>field_out_of_range</c>.</effects>
-          <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; (get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>w</c> is an object that would be constructed by <c>std::string(std::forward&lt;T>(what_arg>))</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;std::string, T&amp;&amp;>::value</c> is not <c>false</c>.</remark>
-        </code-item>
       </section>
     </section>
 

@@ -99,6 +99,10 @@ class text_error :
     std::pair<std::size_t, std::size_t> physical_position_;
 
 public:
+    text_error() noexcept :
+        physical_position_(npos, npos)
+    {}
+
     template <class T,
         std::enable_if_t<
             detail::is_std_string_of_ch<std::decay_t<T>, char>::value
@@ -151,7 +155,7 @@ public:
 
     const char* what() const noexcept override
     {
-        return what_->what();
+        return what_ ? what_->what() : "";
     }
 
     text_error& set_physical_position(
