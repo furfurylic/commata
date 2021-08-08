@@ -463,7 +463,7 @@ text_error(const text_error&amp; other) noexcept;
           <code>
 text_error(text_error&amp;&amp; other) noexcept;
           </code>
-          <effects>Constructs an object of <c>text_error</c> from another object of <c>text_error</c> placing <c>other</c> in an unspecified state.</effects>
+          <effects>Constructs an object of <c>text_error</c> from another object of <c>text_error</c> placing <c>other</c> in a valid but unspecified state.</effects>
           <postcondition><c>(std::strcmp(c.what(), what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be not <c>false</c> where <c>c</c> is an object that would be copy constructed from <c>other</c> before the call.</postcondition>
         </code-item>
 
@@ -480,7 +480,7 @@ text_error&amp; operator=(const text_error&amp; other) noexcept;
           <code>
 text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
           </code>
-          <effects>Assigns an object of <c>text_error</c> from another object of <c>text_error</c> placing <c>other</c> in an unspecified state.</effects>
+          <effects>Assigns an object of <c>text_error</c> from another object of <c>text_error</c> placing <c>other</c> in a valid but unspecified state.</effects>
           <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>c</c> is an object that would be copy constructed from <c>other</c> before the call.</postcondition>
           <returns><c>*this</c>.</returns>
         </code-item>
@@ -1876,7 +1876,7 @@ record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Move constructs from an rvalue <c>other</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;FieldNamePred>::value &amp;&amp; std::is_nothrow_move_constructible&lt;FieldValuePred>::value</c>.
-                  When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
+                  When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
         </code-item>
       </section>
 
@@ -5178,7 +5178,7 @@ arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcep
             </code>
             <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
-                    When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
+                    When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
           </code-item>
         </section>
 
@@ -5404,7 +5404,7 @@ locale_based_arithmetic_field_translator(
             </code>
             <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value &amp;&amp; std::is_nothrow_move_constructible&lt;ConversionErrorHandler>::value</c>.
-                    When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
+                    When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
           </code-item>
         </section>
 
@@ -5526,7 +5526,7 @@ string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>se
             </code>
             <effects>Initializes an object of <c>string_field_translator</c> that holds an allocator object, a field translator sink object, and a skipping handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_move_constructible&lt;SkippingHandler>::value</c>.
-                    When this constructor exits via an exception, <c>other</c> will be placed in an unspecified state.</remark>
+                    When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
           </code-item>
         </section>
 
