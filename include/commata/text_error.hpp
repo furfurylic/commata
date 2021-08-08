@@ -39,31 +39,7 @@ constexpr T npos_impl<T>::npos;
 
 }} // end detail::ex
 
-class text_error;
-
-class text_error_info
-{
-    const text_error* ex_;
-    std::size_t base_;
-
-public:
-    text_error_info(const text_error& ex, std::size_t base) noexcept :
-        ex_(std::addressof(ex)), base_(base)
-    {}
-
-    text_error_info(const text_error_info& ex) = default;
-    text_error_info& operator=(const text_error_info& ex) = default;
-
-    const text_error& error() const noexcept
-    {
-        return *ex_;
-    }
-
-    std::size_t get_base() const noexcept
-    {
-        return base_;
-    }
-};
+class text_error_info;
 
 class text_error :
     public std::exception, public detail::ex::npos_impl<std::size_t>
@@ -172,11 +148,37 @@ public:
             &physical_position_ : nullptr;
     }
 
-    text_error_info info(std::size_t base = 1U) const noexcept
+    text_error_info info(std::size_t base = 1U) const noexcept;
+};
+
+class text_error_info
+{
+    const text_error* ex_;
+    std::size_t base_;
+
+public:
+    text_error_info(const text_error& ex, std::size_t base) noexcept :
+        ex_(std::addressof(ex)), base_(base)
+    {}
+
+    text_error_info(const text_error_info& ex) = default;
+    text_error_info& operator=(const text_error_info& ex) = default;
+
+    const text_error& error() const noexcept
     {
-        return text_error_info(*this, base);
+        return *ex_;
+    }
+
+    std::size_t get_base() const noexcept
+    {
+        return base_;
     }
 };
+
+inline text_error_info text_error::info(std::size_t base) const noexcept
+{
+    return text_error_info(*this, base);
+}
 
 namespace detail { namespace ex {
 
