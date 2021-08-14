@@ -5121,6 +5121,14 @@ void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
     <section id="default_body_field_scanner_classes">
       <name>Default body field scanner classes</name>
 
+      <p>This subclause describes the body field scanner classes (<xref id="field_scanner.requirements"/>) built-in to Commata.</p>
+      <p>In this subclause, terms on the possible target types of these built-in body field scanner classes are used as follows:</p>
+      <ul>
+        <li>A type <c>T</c> is a <n>default translatable arithmeric type</n> if <c>T</c> is the same type as either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, <c>double</c>, or <c>long double</c>.</li>
+        <li>A type <c>T</c> is a <n>default translatable string type</n> if <c>T</c> is the same type as <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain combination of <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>.</li>
+        <li>A type <c>T</c> is a <n>default translatable type</n> if <c>T</c> is a default translatable arithmeric type or a default translatable string type.</li>
+      </ul>
+
       <section id="arithmetic_field_translator">
         <name>Class template <c>arithmetic_field_translator</c></name>
 
@@ -5152,7 +5160,7 @@ namespace commata {
         </codeblock>
 
         <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
-        <p><c>T</c> is the target type (<xref id="scanner.builtin_body_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, <c>double</c>, or <c>long double</c>.
+        <p><c>T</c> is the target type (<xref id="scanner.builtin_body_field_scanners.general"/>) and shall be a default translatable arithmeric type.
            <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
            The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
            The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
@@ -5375,7 +5383,7 @@ namespace commata {
 
         <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) whose target type is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
           The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C-language locale.</p>
-        <p><c>T</c> is the target type (<xref id="scanner.builtin_body_field_scanners.general"/>) and shall be either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, or <c>double</c>.
+        <p><c>T</c> is the target type (<xref id="scanner.builtin_body_field_scanners.general"/>) and shall be a default translatable arithmeric type.
           <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
           The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
           The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
@@ -5591,20 +5599,29 @@ void field_skipped();
           <li><c>s(t)</c> is a valid expression where <c>s</c> is an lvalue of <c>S</c> and <c>t</c> is an rvalue of <c>T</c>.</li>
         </ul>
 
+        <p>In addition, an expression <c><n>INSERTER</n>(s)</c> for an lvalue <c>s</c> of a cv-unqualified type <c>S</c> is defined as follows:</p>
+         <ul>
+           <li>if <c>s.push_back(std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand., <c>std::back_inserter(s)</c>,</li>
+           <li>otherwise, if <c>s.insert(s.end(), std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::inserter(s, s.end())</c>,</li>
+           <li>otherwise, the program is ill-formed.</li>
+         </ul>
+
         <code-item>
           <code>
 template &lt;class T, class Sink, class... Appendices>
   <nc>see below</nc> make_field_translator(Sink sink, Appendices&amp;&amp;... appendices);
           </code>
-          <returns><p><c>R(std::move(sink), std::forward&lt;Appendices>(appendices)...)</c> where the type <c>R</c> is decided as follows:</p>
+          <effects><p>Equivalent to:</p>
+                   <code>return <n>R</n>(std::move(sink), std::forward&lt;Appendices>(appendices)...);</code>
+                   <p>where <c><n>R</n></c> is a type decided as follows:</p>
                    <ul>
-                     <li>If <c>T</c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain combination of <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>, <c>string_field_translator&lt;Sink, Ch, Tr, Allocator, Appendices...></c>,</li>
+                     <li>if <c>T</c> is a default translatable string type, <c>string_field_translator&lt;Sink, Ch, Tr, Allocator, Appendices...></c>,</li>
                      <li>otherwise, if the reference-removed type of the first type of <c>Appendices</c> is possibly cv-qualified <c>std::locale</c> or its derived type,
                          <c>locale_based_arithmetic_field_translator&lt;T, Sink, TailOfAppendices...></c> where <c>TailOfAppendices...</c> represents the types of <c>Appendices...</c> without its first type,</li>
                      <li>otherwise, <c>arithmetic_field_translator&lt;T, Sink, Appendices...></c>.</li>
                    </ul>
-          </returns>
-          <remark>This overload shall not participate in overload resolution unless <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
+          </effects>
+          <remark>This overload shall not participate in overload resolution unless <c>T</c> is a default translatable type and <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
         </code-item>
 
         <code-item>
@@ -5613,27 +5630,38 @@ template &lt;class T, class Allocator, class Sink, class... Appendices>
   <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
                                   Sink sink, Appendices&amp;&amp;... appendices);
           </code>
-          <returns><c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, Allocator, Appendices...>(std::allocator_arg, alloc, std::move(sink), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
-          <remark>This overload shall not participate in overload resolution unless <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
+          <effects><p>Equivalent to:</p>
+                   <code>return string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type,
+                               Allocator, Appendices...>(
+         std::allocator_arg, alloc, std::move(sink), std::forward&lt;Appendices>(appendices)...);</code>
+          </effects>
+          <remark>This overload shall not participate in overload resolution unless <c>T</c> is a default translatable string type and <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
 template &lt;class Container, class... Appendices>
   <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
+          </code>
+          <effects><p>Equivalent to:</p>
+                   <code>return make_field_translator&lt;typename Container::value_type>(
+         <n>INSERTER</n>(values), std::forward&lt;Appendices>(appendices)...);</code>
+          </effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is a default translatable type and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
 template &lt;class Allocator, class Container, class... Appendices>
   <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
                                   Container&amp; values, Appendices&amp;&amp;... appendices);
           </code>
-          <preface>Let <c>V</c> be <c>typename Container::value_type</c>.</preface>
-          <returns><p><c>make_field_translator&lt;V>(std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (first overload) or
-                      <c>make_field_translator&lt;V>(std::allocator_arg, alloc, std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (second overload) where <c>s</c> is an object constructed as follows:</p>
-                   <ul>
-                     <li>if <c>values.push_back(t)</c> is a valid expression where <c>t</c> is an rvalue of <c>V</c>, <c>std::back_inserter(values)</c>,</li>
-                     <li>otherwise, <c>std::inserter(values, values.end())</c>.</li>
-                   </ul>
-          </returns>
-          <remark>These overloads shall not participate in overload resolution unless either <c>c.push_back(t)</c> or <c>c.insert(c.end(), t)</c> is a valid expression where <c>c</c> is an lvalue of <c>Container</c> and <c>t</c> is an rvalue of <c>typename Container::value_type</c>.</remark>
+          <effects><p>Equivalent to:</p>
+                   <code>return make_field_translator&lt;typename Container::value_type>(
+         std::allocator_arg, alloc,
+         <n>INSERTER</n>(values), std::forward&lt;Appendices>(appendices)...);</code>
+          </effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is a default translatable string type and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
         </code-item>
       </section>
     </section>

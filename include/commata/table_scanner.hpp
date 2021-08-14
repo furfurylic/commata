@@ -1154,6 +1154,21 @@ struct numeric_type_traits<long double>
     static constexpr const long double huge = HUGE_VALL;
 };
 
+struct is_convertible_numeric_type_impl
+{
+    template <class T>
+    static auto check(T* = nullptr)
+     -> decltype(numeric_type_traits<T>::name, std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+struct is_convertible_numeric_type :
+    decltype(is_convertible_numeric_type_impl::check<T>(nullptr))
+{};
+
 // D must derive from raw_converter_base<D, H> (CRTP)
 // and must have member functions "engine" for const char* and const wchar_t*
 template <class D, class H>
@@ -2645,8 +2660,10 @@ struct is_callable :
 template <class T, class Sink, class... Appendices>
 auto make_field_translator(Sink sink, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::scanner::is_output_iterator<Sink>::value
-     || detail::scanner::is_callable<Sink, T>::value,
+        (detail::scanner::is_convertible_numeric_type<T>::value
+      || detail::is_std_string<T>::value)
+     && (detail::scanner::is_output_iterator<Sink>::value
+      || detail::scanner::is_callable<Sink, T>::value),
         decltype(detail::scanner::make_field_translator_na<T>(
             std::move(sink), std::forward<Appendices>(appendices)...))>
 {
@@ -2659,8 +2676,9 @@ template <class T, class Allocator, class Sink, class... Appendices>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Sink sink, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::scanner::is_output_iterator<Sink>::value
-     || detail::scanner::is_callable<Sink, T>::value,
+        detail::is_std_string<T>::value
+     && (detail::scanner::is_output_iterator<Sink>::value
+      || detail::scanner::is_callable<Sink, T>::value),
         string_field_translator<Sink,
             typename T::value_type, typename T::traits_type,
             Allocator, Appendices...>>
@@ -2744,7 +2762,11 @@ using back_insert_iterator_t = typename back_insert_iterator<Container>::type;
 template <class Container, class... Appendices>
 auto make_field_translator(Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::scanner::is_insertable<Container>::value,
+        (detail::scanner::is_convertible_numeric_type<
+            typename Container::value_type>::value
+      || detail::is_std_string<typename Container::value_type>::value)
+     && (detail::scanner::is_back_insertable<Container>::value
+      || detail::scanner::is_insertable<Container>::value),
         decltype(
             detail::scanner::make_field_translator_na<
                     typename Container::value_type>(
@@ -2761,8 +2783,9 @@ template <class Allocator, class Container, class... Appendices>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
     Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::scanner::is_back_insertable<Container>::value
-     || detail::scanner::is_insertable<Container>::value,
+        detail::is_std_string<typename Container::value_type>::value
+     && (detail::scanner::is_back_insertable<Container>::value
+      || detail::scanner::is_insertable<Container>::value),
         string_field_translator<
             detail::scanner::back_insert_iterator_t<Container>,
             typename Container::value_type::value_type,
