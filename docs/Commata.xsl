@@ -48,10 +48,15 @@
         caption { text-align: left }
 
         div.code-item { margin-top: 1.2em }
+        div.code-item > pre { margin: 0.4em 0 }
         div.code-item > div.code-item-desc { margin-left: 3em }
-        div.code-item pre { margin: 0.4em 0 }
-        div.code-item p { margin-top: 0.4em; margin-bottom: 0.4em }
-        div.code-item p span.code-item-heading { text-transform: capitalize; font-style: italic }
+        div.code-item > div.code-item-desc > p { margin-top: 0.5em; margin-bottom: 0.5em }
+        div.code-item > div.code-item-desc p span.code-item-heading { text-transform: capitalize; font-style: italic }
+        div.code-item > div.code-item-desc > div.elaborated-desc { margin: 0.5em 0 }
+        div.code-item > div.code-item-desc > div.elaborated-desc > p { margin: 0 }
+        div.code-item > div.code-item-desc > div.elaborated-desc > pre { margin: 0 0 0 2em }
+        div.code-item > div.code-item-desc > div.elaborated-desc > ol, ul { margin: 0 }
+        div.code-item > div.code-item-desc > div.elaborated-desc li { margin: 0.2em 0 }
 
         p#toc-heading { font-size: 150%; margin-bottom: 0.8em }
         div#toc ul { list-style-type: none; margin: 0 }
@@ -175,18 +180,33 @@
         <p><xsl:apply-templates/></p>
       </xsl:for-each>
       <xsl:for-each select="effects|postcondition|requires|returns|remark|note|throws">
-        <p><span class="code-item-heading"><xsl:value-of select="local-name(.)"/>: </span><xsl:apply-templates/></p>
+        <xsl:choose>
+          <xsl:when test="p|code|ul|ol">
+            <div class="elaborated-desc">
+              <p><span class="code-item-heading"><xsl:value-of select="local-name(.)"/>: </span><xsl:apply-templates select="p[1]/node()"/></p>
+              <xsl:for-each select="p[1]/following-sibling::*">
+                <xsl:choose>
+                  <xsl:when test="local-name(.) = 'p'"><p><xsl:apply-templates/></p></xsl:when>
+                  <xsl:when test="local-name(.) = 'code'"><pre><code><xsl:apply-templates mode="code"/></code></pre></xsl:when>
+                  <xsl:when test="local-name(.) = 'ul' or local-name(.) = 'ol'"><xsl:apply-templates select="."/></xsl:when>
+                </xsl:choose>
+              </xsl:for-each>
+            </div>
+          </xsl:when>
+          <xsl:otherwise><p><span class="code-item-heading"><xsl:value-of select="local-name(.)"/>: </span><xsl:apply-templates/></p></xsl:otherwise>
+        </xsl:choose>
       </xsl:for-each>
       <xsl:apply-templates select="table"/>
     </div>
   </div>
 </xsl:template>
 
-<xsl:template match="c" mode="code"><span class="comment"><xsl:apply-templates mode="code"/></span></xsl:template>
-
 <xsl:template match="codeblock"><pre class="codeblock"><code><xsl:apply-templates mode="code"/></code></pre></xsl:template>
+
+<xsl:template match="c" mode="code"><span class="comment"><xsl:apply-templates mode="code"/></span></xsl:template>
 <xsl:template match="c/n" mode="code"><span class="note"><xsl:apply-templates/></span></xsl:template>
 <xsl:template match="nc" mode="code"><span class="not-a-code"><xsl:apply-templates/></span></xsl:template>
+<xsl:template match="n" mode="code"><span class="name"><xsl:apply-templates/></span></xsl:template>
 
 <xsl:template match="text()" mode="code">
   <xsl:choose>

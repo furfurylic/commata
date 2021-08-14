@@ -682,14 +682,15 @@ template &lt;class Handler>
     make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
         </code>
         <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements, except that in the second overload it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
-        <returns>An object of an unspecified type whose type meets the <c>TableHandler</c> requirements and that holds an object <c>h</c> that is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
-                 It forwards calls of its member functions to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
-                 it first calls <c>h.start_record(where)</c>, and if its contextually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
-                 Its return type and the return value are as follows:
+        <returns><p>An object of an unspecified type whose type meets the <c>TableHandler</c> requirements and that holds an object <c>h</c> that is a copy of <c>handler</c> (first overload) or a reference to <c>handler.get()</c> (second overload).
+                    It forwards calls of its member functions to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
+                    it first calls <c>h.start_record(where)</c>, and if its contextually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
+                    Its return type and the return value are as follows:</p>
                  <ul>
                    <li>if both of the return types of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>,</li>
                    <li>otherwise, the return type shall be <c>bool</c>, and the return value shall be <c>true</c> if and only if none of the the return values contextually converted to <c>bool</c> of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> is <c>false</c>.</li>
-                 </ul></returns>
+                 </ul>
+        </returns>
         <remark>The first overload shall not participate in overload resolution unless <c>std::decay_t&lt;Handler></c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
                 The expression inside <c>noexcept</c> of the first overload is equivalent to <c>std::is_nothrow_move_constructible&lt;std::decay_t&lt;Handler>>::value</c>.</remark>
       </code-item>
@@ -5208,9 +5209,9 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
 template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
             </code>
             <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
-            <effects>First calls a parsing function indicated in <xref id="table.arithmetic_field_translator.parsing_functions"/> for <c>T</c> and <c>Ch</c> to get an arithmetic value <c>v</c> of the range [<c>begin</c>, <c>end</c>).
-                     Then does an action indicated in <xref id="table.arithmetic_field_translator.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
-                     In <xref id="table.arithmetic_field_translator.branching"/>,
+            <effects><p>First calls a parsing function indicated in <xref id="table.arithmetic_field_translator.parsing_functions"/> for <c>T</c> and <c>Ch</c> to get an arithmetic value <c>v</c> of the range [<c>begin</c>, <c>end</c>).
+                        Then does an action indicated in <xref id="table.arithmetic_field_translator.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
+                        In <xref id="table.arithmetic_field_translator.branching"/>,</p>
                      <ul>
                        <li><c>ceh</c> is the conversion error handler,</li>
                        <li><c>n</c> is a null pointer of type <c>T*</c>,</li>
@@ -5590,13 +5591,13 @@ void field_skipped();
 template &lt;class T, class Sink, class... Appendices>
   <nc>see below</nc> make_field_translator(Sink sink, Appendices&amp;&amp;... appendices);
           </code>
-          <returns><c>R(std::move(sink), std::forward&lt;Appendices>(appendices)...)</c> where the type <c>R</c> is decided as follows:
-                  <ul>
-                    <li>If <c>T</c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain combination of <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>, <c>string_field_translator&lt;Sink, Ch, Tr, Allocator, Appendices...></c>,</li>
-                    <li>otherwise, if the reference-removed type of the first type of <c>Appendices</c> is possibly cv-qualified <c>std::locale</c> or its derived type,
-                        <c>locale_based_arithmetic_field_translator&lt;T, Sink, TailOfAppendices...></c> where <c>TailOfAppendices...</c> represents the types of <c>Appendices...</c> without its first type,</li>
-                    <li>otherwise, <c>arithmetic_field_translator&lt;T, Sink, Appendices...></c>.</li>
-                  </ul>
+          <returns><p><c>R(std::move(sink), std::forward&lt;Appendices>(appendices)...)</c> where the type <c>R</c> is decided as follows:</p>
+                   <ul>
+                     <li>If <c>T</c> is <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain combination of <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>, <c>string_field_translator&lt;Sink, Ch, Tr, Allocator, Appendices...></c>,</li>
+                     <li>otherwise, if the reference-removed type of the first type of <c>Appendices</c> is possibly cv-qualified <c>std::locale</c> or its derived type,
+                         <c>locale_based_arithmetic_field_translator&lt;T, Sink, TailOfAppendices...></c> where <c>TailOfAppendices...</c> represents the types of <c>Appendices...</c> without its first type,</li>
+                     <li>otherwise, <c>arithmetic_field_translator&lt;T, Sink, Appendices...></c>.</li>
+                   </ul>
           </returns>
           <remark>This overload shall not participate in overload resolution unless <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
         </code-item>
@@ -5620,12 +5621,12 @@ template &lt;class Allocator, class Container, class... Appendices>
                                   Container&amp; values, Appendices&amp;&amp;... appendices);
           </code>
           <preface>Let <c>V</c> be <c>typename Container::value_type</c>.</preface>
-          <returns><c>make_field_translator&lt;V>(std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (first overload) or
-                  <c>make_field_translator&lt;V>(std::allocator_arg, alloc, std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (second overload) where <c>s</c> is an object constructed as follows:
-                  <ul>
-                    <li>if <c>values.push_back(t)</c> is a valid expression where <c>t</c> is an rvalue of <c>V</c>, <c>std::back_inserter(values)</c>,</li>
-                    <li>otherwise, <c>std::inserter(values, values.end())</c>.</li>
-                  </ul>
+          <returns><p><c>make_field_translator&lt;V>(std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (first overload) or
+                      <c>make_field_translator&lt;V>(std::allocator_arg, alloc, std::move(s), std::forward&lt;Appendices>(appendices)...)</c> (second overload) where <c>s</c> is an object constructed as follows:</p>
+                   <ul>
+                     <li>if <c>values.push_back(t)</c> is a valid expression where <c>t</c> is an rvalue of <c>V</c>, <c>std::back_inserter(values)</c>,</li>
+                     <li>otherwise, <c>std::inserter(values, values.end())</c>.</li>
+                   </ul>
           </returns>
           <remark>These overloads shall not participate in overload resolution unless either <c>c.push_back(t)</c> or <c>c.insert(c.end(), t)</c> is a valid expression where <c>c</c> is an lvalue of <c>Container</c> and <c>t</c> is an rvalue of <c>typename Container::value_type</c>.</remark>
         </code-item>
