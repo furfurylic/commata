@@ -6978,7 +6978,9 @@ template &lt;class TableSource, class... Appendices>
   table_pull&lt;std::decay_t&lt;TableSource>>
     make_table_pull(TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
           </code>
-          <returns><c>table_pull&lt;std::decay_t&lt;TableSource>>(std::forward&lt;TableSource>(in), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>return table_pull&lt;std::decay_t&lt;TableSource>>(std::forward&lt;TableSource>(in),
+                                             std::forward&lt;Appendices>(appendices)...);</code></effects>
         </code-item>
 
         <code-item>
@@ -6988,7 +6990,10 @@ template &lt;class TableSource, class Allocator, class... Appendices>
     make_table_pull(std::allocator_arg_t, const Allocator&amp; alloc,
                     TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
           </code>
-          <returns><c>table_pull&lt;std::decay_t&lt;TableSource>, Allocator>(std::allocator_arg, alloc, std::forward&lt;TableSource>(in), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>return table_pull&lt;std::decay_t&lt;TableSource>, Allocator>(std::allocator_arg, alloc,
+                                                        std::forward&lt;TableSource>(in),
+                                                        std::forward&lt;Appendices>(appendices)...);</code></effects>
         </code-item>
       </section>
     </section>
