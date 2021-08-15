@@ -1725,11 +1725,18 @@ namespace commata {
     class record_extractor_with_indexed_key;
 
   <c>// <n><xref id="record_extractor.creation"/>, creation functions:</n></c>
-  template &lt;class FieldIdentifier, class FieldValuePred,
+  template &lt;class FieldNamePred, class FieldValuePred,
             class Ch, class Tr, class Allocator, class... Appendices>
     <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                                     std::basic_streambuf&lt;Ch, Tr>* out,
-                                    FieldIdentifier&amp;&amp; field_id,
+                                    FieldNamePred&amp;&amp; field_name_pred,
+                                    FieldValuePred&amp;&amp; field_value_pred,
+                                    Appendices&amp;&amp;... appendices);
+  template &lt;class FieldValuePred,
+            class Ch, class Tr, class Allocator, class... Appendices>
+    <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                    std::basic_streambuf&lt;Ch, Tr>* out,
+                                    std::size_t target_field_index,
                                     FieldValuePred&amp;&amp; field_value_pred,
                                     Appendices&amp;&amp;... appendices);
   template &lt;class Ch, class Tr, class Allocator, class... Appendices>
@@ -2069,38 +2076,62 @@ bool is_in_header() const noexcept;
       <ul>
         <li>if <c>p</c> is an rvalue of cv-unqualified <c>std::basic_string&lt;Ch, Tr, A></c> for a certain <c>A</c>,
             a prvalue of a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, A></c> object (hereinafter called <c>s</c>) initialized with <c>std::move(p)</c>,
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>
-            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>,
+            and whose type <c>T</c> is unspecified but satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
         <li>otherwise, if <c>p</c> is an lvalue of possibly const-qualified and volatile-unqualified <c>std::basic_string&lt;Ch, Tr, A></c> for a certain <c>A</c>,
             a prvalue of a binary predicate object that holds copies of the return values of the calls of <c>p.data()</c> (hereinafter called <c>s</c>) and <c>p.size()</c> (hereinafter called <c>len</c>),
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to [<c>s</c>, <c>s + len</c>) in terms of <c>Tr::eq</c>
-            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to [<c>s</c>, <c>s + len</c>) in terms of <c>Tr::eq</c>,
+            and whose type <c>T</c> is unspecified but satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
         <li>otherwise, if <c>p</c> is an expression whose type is possibly const-qualified <c>Ch*</c>,
             a prvalue of a binary predicate object that holds copies of <c>p</c> and the return value of of the call of <c>std::strlen(p)</c> (hereinafter called <c>len</c>),
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to [<c>p</c>, <c>p + len</c>) in terms of <c>Tr::eq</c>
-            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to [<c>p</c>, <c>p + len</c>) in terms of <c>Tr::eq</c>,
+            and whose type <c>T</c> is unspecified but satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
         <li>otherwise, if <c>P::const_iterator</c> denotes a type where <c>P</c> is the type of <c>p</c>,
             a prvalue of a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object (hereinafter called <c>s</c>) initialized with <c>p.cbegin()</c>, <c>p.cend()</c> and <c>a</c>,
-            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>
-            whose type <c>T</c> satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
+            and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>,
+            and whose type <c>T</c> is unspecified but satisfies <c>std::is_nothrow_move_constructible&lt;T>::value == true</c>,</li>
         <li>otherwise, if <c>p</c> is a binary predicate that takes two <c>const Ch*</c> paramters, <c>p</c> itself,</li>
         <li>otherwise, the program is ill-formed.</li>
       </ul>
 
       <code-item>
         <code>
-template &lt;class FieldIdentifier, class FieldValuePred,
+template &lt;class FieldNamePred, class FieldValuePred,
           class Ch, class Tr, class Allocator, class... Appendices>
   <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                                   std::basic_streambuf&lt;Ch, Tr>* out,
-                                  FieldIdentifier&amp;&amp; field_id,
+                                  FieldNamePred&amp;&amp; field_name_pred,
                                   FieldValuePred&amp;&amp; field_value_pred,
                                   Appendices&amp;&amp;... appendices);
         </code>
-        <effects>First makes a non-reference and cv-unqualified type variable <c>fvp</c> initialized with <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred), alloc)</c>.
-                 Then if the reference-removed type of <c>FieldIdentifier</c> is an integral type, returns <c>record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(std::allocator_arg, alloc, out, field_id, std::move(fvp), std::forward&lt;Appendices>(appendices)...)</c>.
-                 Otherwise, makes one more non-reference and cv-unqualified type variable <c>fnp</c> initialized with <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(std::forward&lt;FieldIdentifier>(field_id), alloc)</c>,
-                 and then returns <c>record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(std::allocator_arg, alloc, out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...)</c>.</effects>
+        <effects><p>Equivalent to:</p>
+                 <code>auto fnp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred), alloc);
+auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred), alloc);
+return record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
+         std::allocator_arg, alloc,
+         out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
+        </effects>
+        <remark>This overload shall not participate in overload resolution unless both of <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldNamePred>(), std::declval&lt;Allocator>())</c> and
+                <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>(), std::declval&lt;Allocator>())</c> are well-formed when treated as unevaluated operands.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class FieldValuePred,
+          class Ch, class Tr, class Allocator, class... Appendices>
+  <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                  std::basic_streambuf&lt;Ch, Tr>* out,
+                                  std::size_t target_field_index,
+                                  FieldValuePred&amp;&amp; field_value_pred,
+                                  Appendices&amp;&amp;... appendices);
+        </code>
+        <effects><p>Equivalent to:</p>
+                 <code>auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred), alloc);
+return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(
+         std::allocator_arg, alloc,
+         out, target_field_index, std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
+        </effects>
+        <remark>This overload shall not participate in overload resolution unless <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>(), std::declval&lt;Allocator>())</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
 
       <code-item>
@@ -2109,7 +2140,17 @@ template &lt;class Ch, class Tr, class Allocator, class... Appendices>
   <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                                   std::basic_ostream&lt;Ch, Tr>&amp; out, Appendices&amp;&amp;... appendices);
         </code>
-        <returns><c>make_record_extractor(std::allocator_arg, alloc, out.rdbuf(), std::forward&lt;Appendices>(appendices)...)</c>.</returns>
+        <effects><p>Equivalent to:</p>
+                 <code>return make_record_extractor(std::allocator_arg, alloc,
+                             out.rdbuf(), std::forward&lt;Appendices>(appendices)...);</code>
+        </effects>
+        <remark><p>Let <c>Ts</c> be <c>std::tuple&lt;Appendices...></c> and <c>T&lt;N></c> be <c>typename std::tuple_element&lt;N, Ts>::type</c>.
+                   This overload shall not participate in overload resolution unless <c>std::tuple_size&lt;Ts> > 1</c> is <c>true</c> and:</p>
+                <ul>
+                  <li>both of <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;T&lt;0>>(), std::declval&lt;Allocator>())</c> and <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;T&lt;1>>(), std::declval&lt;Allocator>())</c> are well-formed when treated as unevaluated operands, or</li>
+                  <li><c>std::is_convertible&lt;T&lt;1>, std::size_t>::value</c> is <c>true</c> and <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;T&lt;1>>(), std::declval&lt;Allocator>())</c> is well-formed when treated as an unevaluated operand.</li>
+                </ul>
+        </remark>
       </code-item>
 
       <code-item>
@@ -2119,9 +2160,19 @@ template &lt;class Ch, class Tr, class... Appendices>
                                   Appendices&amp;&amp;... appendices);
 template &lt;class Ch, class Tr, class... Appendices>
   <nc>see below</nc> make_record_extractor(std::basic_ostream&lt;Ch, Tr>&amp; out,
-                                  Appendices&amp;... appendices);
+                                  Appendices&amp;&amp;... appendices);
         </code>
-        <returns><c>make_record_extractor(std::allocator_arg, std::allocator&lt;Ch>(), out, std::forward&lt;Appendices>(appendices)...)</c>.</returns>
+        <effects><p>Equivalent to:</p>
+                 <code>return make_record_extractor(std::allocator_arg, std::allocator&lt;Ch>(),
+                             out, std::forward&lt;Appendices>(appendices)...);</code>
+        </effects>
+        <remark><p>Let <c>Ts</c> be <c>std::tuple&lt;Appendices...></c> and <c>T&lt;N></c> be <c>typename std::tuple_element&lt;N, Ts>::type</c>.
+                   These overloads shall not participate in overload resolution unless <c>std::tuple_size&lt;Ts> > 1</c> is <c>true</c> and:</p>
+                <ul>
+                  <li>both of <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;T&lt;0>>(), std::declval&lt;Allocator>())</c> and <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;T&lt;1>>(), std::declval&lt;Allocator>())</c> are well-formed when treated as unevaluated operands, or</li>
+                  <li><c>std::is_convertible&lt;T&lt;1>, std::size_t>::value</c> is <c>true</c> and <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;T&lt;1>>(), std::declval&lt;Allocator>())</c> is well-formed when treated as an unevaluated operand.</li>
+                </ul>
+        </remark>
       </code-item>
     </section>
   </section>

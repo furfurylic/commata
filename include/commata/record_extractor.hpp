@@ -684,41 +684,22 @@ auto make_string_pred(T&& s, const Allocator&)
     return std::forward<T>(s);
 }
 
-template <class TargetFieldIndex, class FieldValuePred,
-    class Ch, class Tr, class Allocator, class... Appendices>
-auto make_impl(
-    std::true_type,
-    std::allocator_arg_t, const Allocator& alloc,
-    std::basic_streambuf<Ch, Tr>* out,
-    TargetFieldIndex target_field_index, FieldValuePred&& field_value_pred,
-    Appendices&&... appendices)
+struct is_string_pred_impl
 {
-    auto fvp = make_string_pred<Ch, Tr>(
-        std::forward<FieldValuePred>(field_value_pred), alloc);
-    return record_extractor_with_indexed_key<decltype(fvp), Ch, Tr, Allocator>(
-        std::allocator_arg, alloc, out,
-        static_cast<std::size_t>(target_field_index), std::move(fvp),
-        std::forward<Appendices>(appendices)...);
-}
+    template <class T, class Ch>
+    static auto check(T*) ->
+        decltype(
+            std::declval<bool&>() = std::declval<T>()(
+                std::declval<const Ch*>(), std::declval<const Ch*>()),
+            std::true_type());
 
-template <class FieldNamePred, class FieldValuePred,
-    class Ch, class Tr, class Allocator, class... Appendices>
-auto make_impl(
-    std::false_type,
-    std::allocator_arg_t, const Allocator& alloc,
-    std::basic_streambuf<Ch, Tr>* out,
-    FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
-    Appendices&&... appendices)
-{
-    auto fnp = make_string_pred<Ch, Tr>(
-        std::forward<FieldNamePred>(field_name_pred), alloc);
-    auto fvp = make_string_pred<Ch, Tr>(
-        std::forward<FieldValuePred>(field_value_pred), alloc);
-    return record_extractor<decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
-        std::allocator_arg, alloc, out,
-        std::move(fnp), std::move(fvp),
-        std::forward<Appendices>(appendices)...);
-}
+    template <class T, class Ch>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T, class Ch>
+struct is_string_pred : decltype(is_string_pred_impl::check<T, Ch>(nullptr))
+{};
 
 }} // end detail::record_extraction
 
@@ -729,12 +710,59 @@ auto make_record_extractor(
     std::basic_streambuf<Ch, Tr>* out,
     FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
+ -> std::enable_if_t<
+        detail::record_extraction::is_string_pred<std::decay_t<
+            decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
+                std::declval<FieldNamePred>(),
+                std::declval<Allocator>()))>, Ch>::value
+     && detail::record_extraction::is_string_pred<std::decay_t<
+            decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
+                std::declval<FieldValuePred>(),
+                std::declval<Allocator>()))>, Ch>::value,
+        record_extractor<
+            std::decay_t<
+                decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
+                    std::declval<FieldNamePred>(),
+                    std::declval<Allocator>()))>,
+            std::decay_t<
+                decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
+                    std::declval<FieldValuePred>(),
+                    std::declval<Allocator>()))>,
+            Ch, Tr, Allocator>>
 {
-    return detail::record_extraction::make_impl(
-        std::is_integral<std::decay_t<FieldNamePred>>(),
+    auto fnp = detail::record_extraction::make_string_pred<Ch, Tr>(
+        std::forward<FieldNamePred>(field_name_pred), alloc);
+    auto fvp = detail::record_extraction::make_string_pred<Ch, Tr>(
+        std::forward<FieldValuePred>(field_value_pred), alloc);
+    return record_extractor<decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
         std::allocator_arg, alloc, out,
-        std::forward<FieldNamePred>(field_name_pred),
-        std::forward<FieldValuePred>(field_value_pred),
+        std::move(fnp), std::move(fvp),
+        std::forward<Appendices>(appendices)...);
+}
+
+template <class FieldValuePred,
+    class Ch, class Tr, class Allocator, class... Appendices>
+auto make_record_extractor(
+    std::allocator_arg_t, const Allocator& alloc,
+    std::basic_streambuf<Ch, Tr>* out,
+    std::size_t target_field_index, FieldValuePred&& field_value_pred,
+    Appendices&&... appendices)
+ -> std::enable_if_t<
+        detail::record_extraction::is_string_pred<std::decay_t<
+            decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
+                std::declval<FieldValuePred>(),
+                std::declval<Allocator>()))>, Ch>::value,
+        record_extractor_with_indexed_key<std::decay_t<
+            decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
+                std::declval<FieldValuePred>(),
+                std::declval<Allocator>()))>,
+            Ch, Tr, Allocator>>
+{
+    auto fvp = detail::record_extraction::make_string_pred<Ch, Tr>(
+        std::forward<FieldValuePred>(field_value_pred), alloc);
+    return record_extractor_with_indexed_key<decltype(fvp), Ch, Tr, Allocator>(
+        std::allocator_arg, alloc, out,
+        static_cast<std::size_t>(target_field_index), std::move(fvp),
         std::forward<Appendices>(appendices)...);
 }
 
@@ -742,6 +770,9 @@ template <class Ch, class Tr, class Allocator, class... Appendices>
 auto make_record_extractor(
     std::allocator_arg_t, const Allocator& alloc,
     std::basic_ostream<Ch, Tr>& out, Appendices&&... appendices)
+ -> decltype(make_record_extractor(
+        std::allocator_arg, alloc, out.rdbuf(),
+        std::forward<Appendices>(appendices)...))
 {
     return make_record_extractor(
         std::allocator_arg, alloc, out.rdbuf(),
@@ -751,6 +782,8 @@ auto make_record_extractor(
 template <class Ch, class Tr, class... Appendices>
 auto make_record_extractor(
     std::basic_streambuf<Ch, Tr>* out, Appendices&&... appendices)
+ -> decltype(make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
+        out, std::forward<Appendices>(appendices)...))
 {
     return make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
         out, std::forward<Appendices>(appendices)...);
@@ -759,6 +792,8 @@ auto make_record_extractor(
 template <class Ch, class Tr, class... Appendices>
 auto make_record_extractor(
     std::basic_ostream<Ch, Tr>& out, Appendices&&... appendices)
+ -> decltype(make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
+        out, std::forward<Appendices>(appendices)...))
 {
     return make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
         out, std::forward<Appendices>(appendices)...);
