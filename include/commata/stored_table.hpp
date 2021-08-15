@@ -2183,7 +2183,7 @@ public:
 
 template <class Content, class Allocator, class... Args>
 auto make_stored_table_builder(
-    basic_stored_table<Content, Allocator>& table, Args... args)
+    basic_stored_table<Content, Allocator>& table, Args&&... args)
 {
     return stored_table_builder<Content, Allocator>(
         table, std::forward<Args>(args)...);
@@ -2191,7 +2191,7 @@ auto make_stored_table_builder(
 
 template <class Content, class Allocator, class... Args>
 auto make_transposed_stored_table_builder(
-    basic_stored_table<Content, Allocator>& table, Args... args)
+    basic_stored_table<Content, Allocator>& table, Args&&... args)
 {
     return stored_table_builder<Content, Allocator,
         stored_table_builder_option_transpose>(

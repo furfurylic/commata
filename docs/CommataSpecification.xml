@@ -2289,10 +2289,10 @@ namespace commata {
 
   template &lt;class Content, class Allocator, class... Args>
     <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                        Args... args);
+                                        Args&amp;&amp;... args);
   template &lt;class Content, class Allocator, class... Args>
     <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                                   Args... args);
+                                                   Args&amp;&amp;... args);
 }
 
 namespace std {
@@ -3603,10 +3603,10 @@ namespace commata {
   <c>// <n><xref id="stored_table_builder.creation"/>, creation functions:</n></c>
   template &lt;class Content, class Allocator, class... Args>
     <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                        Args... args);
+                                        Args&amp;&amp;... args);
   template &lt;class Content, class Allocator, class... Args>
     <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                                   Args... args);
+                                                   Args&amp;&amp;... args);
 }
       </codeblock>
 
@@ -3681,18 +3681,24 @@ stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
           <code>
 template &lt;class Content, class Allocator, class... Args>
   <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                      Args... args);
+                                      Args&amp;&amp;... args);
           </code>
-          <returns><c>stored_table_builder&lt;Content, Allocator>(table, std::forward&lt;Args>(args)...)</c>.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>return stored_table_builder&lt;Content, Allocator>(
+         table, std::forward&lt;Args>(args)...);</code>
+          </effects>
         </code-item>
 
         <code-item>
           <code>
 template &lt;class Content, class Allocator, class... Args>
   <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                                 Args... args);
+                                                 Args&amp;&amp;... args);
           </code>
-          <returns><c>stored_table_builder&lt;Content, Allocator, stored_table_builder_option_transpose>(table, std::forward&lt;Args>(args)...))</c>.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>return stored_table_builder&lt;Content, Allocator, stored_table_builder_option_transpose>(
+         table, std::forward&lt;Args>(args)...));</code>
+          </effects>
         </code-item>
       </section>
     </section>
