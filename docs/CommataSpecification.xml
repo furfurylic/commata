@@ -4045,7 +4045,7 @@ namespace commata {
   <c>// <n><xref id="string_field_translator"/>, string_field_translator:</n></c>
   template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
             class Allocator = std::allocator&lt;Ch>,
-            class SkippingHandler = fail_if_skipped&lt;std::basic_string&lt;Ch, Tr, Allocator>>>
+            class SkippingHandler = fail_if_skipped>
     class string_field_translator;
 
   <c>// <n><xref id="make_field_translator"/>, creation of default field scanners:</n></c>
@@ -5457,7 +5457,7 @@ void field_skipped();
 namespace commata {
   template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
             class Allocator = std::allocator&lt;Ch>,
-            class SkippingHandler = fail_if_skipped&lt;std::basic_string&lt;Ch, Tr, Allocator>>>
+            class SkippingHandler = fail_if_skipped>
     class string_field_translator {
   public:
     using allocator_type = Allocator;
