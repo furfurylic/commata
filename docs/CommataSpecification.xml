@@ -799,9 +799,9 @@ namespace commata {
   <c>// <n><xref id="owned_string_input"/>, owned_string_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class owned_string_input;
-  template &lt;class Ch, class Tr>
-    void swap(owned_string_input&lt;Ch, Tr>&amp; left,
-              owned_string_input&lt;Ch, Tr>&amp; right) noexcept(<nc>see below</nc>);
+  template &lt;class Ch, class Tr, class Allocator>
+    void swap(owned_string_input&lt;Ch, Tr, Allocator>&amp; left,
+              owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(<nc>see below</nc>);
 
   <c>// <n><xref id="char_input.creation"/>, CharInput creation functions:</n></c>
   template &lt;class Ch, class Tr>
@@ -1276,9 +1276,9 @@ namespace commata {
   };
 
   <c>// <n><xref id="owned_string_input.special"/>, specialized algorithms:</n></c>
-  template &lt;class Ch, class Tr>
-    void swap(owned_string_input&lt;Ch, Tr>&amp; left,
-              owned_string_input&lt;Ch, Tr>&amp; right) noexcept(<nc>see below</nc>);
+  template &lt;class Ch, class Tr, class Allocator>
+    void swap(owned_string_input&lt;Ch, Tr, Allocator>&amp; left,
+              owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(<nc>see below</nc>);
 }
       </codeblock>
 
@@ -1366,9 +1366,9 @@ void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
 
         <code-item>
           <code>
-template &lt;class Ch, class Tr>
-  void swap(owned_string_input&lt;Ch, Tr>&amp; left,
-            owned_string_input&lt;Ch, Tr>&amp; right) noexcept(<nc>see below</nc>);
+template &lt;class Ch, class Tr, class Allocator>
+  void swap(owned_string_input&lt;Ch, Tr, Allocator>&amp; left,
+            owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>

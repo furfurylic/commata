@@ -376,9 +376,9 @@ public:
     }
 };
 
-template <class Ch, class Tr>
-void swap(owned_string_input<Ch, Tr>& left,
-          owned_string_input<Ch, Tr>& right)
+template <class Ch, class Tr, class Allocator>
+void swap(owned_string_input<Ch, Tr, Allocator>& left,
+          owned_string_input<Ch, Tr, Allocator>& right)
     noexcept(noexcept(left.swap(right)))
 {
     left.swap(right);
