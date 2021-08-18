@@ -1791,13 +1791,13 @@ namespace commata {
       record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                        header_forwarding header = header_forwarding_yes,
-                       std::size_t max_record_num = record_extractor_npos);
+                       std::size_t max_record_num = 0);
     template &lt;class FieldNamePredR, class FieldValuePredR>
       record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                        std::basic_streambuf&lt;Ch, Tr>* out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                        header_forwarding header = header_forwarding_yes,
-                       std::size_t max_record_num = record_extractor_npos);
+                       std::size_t max_record_num = 0);
     record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~record_extractor();
 
@@ -1882,7 +1882,7 @@ template &lt;class FieldNamePredR, class FieldValuePredR>
             </tr>
             <tr>
               <td><c>max_record_num</c></td>
-              <td>If not equal to <c>record_extractor_npos</c>, at most <c>max_record_num</c> non-header records are forwarded to <c>out</c>, and parsing will be aborted after <c>max_record_num</c> are forwarded.</td>
+              <td>If not equal to <c>0</c>, at most <c>max_record_num</c> non-header records are forwarded to <c>out</c>, and parsing will be aborted after <c>max_record_num</c> are forwarded.</td>
             </tr>
           </table>
         </code-item>
@@ -1940,7 +1940,7 @@ namespace commata {
                                         FieldValuePredR&amp;&amp; field_value_pred,
                                         std::underlying_t&lt;header_forwarding> header
                                           = header_forwarding_yes,
-                                        std::size_t max_record_num = record_extractor_npos);
+                                        std::size_t max_record_num = 0);
     template &lt;class FieldValuePredR>
       record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
                                         std::basic_streambuf&lt;Ch, Tr>* out,
@@ -1948,7 +1948,7 @@ namespace commata {
                                         FieldValuePredR&amp;&amp; field_value_pred,
                                         std::underlying_t&lt;header_forwarding> header
                                           = header_forwarding_yes,
-                                        std::size_t max_record_num = record_extractor_npos);
+                                        std::size_t max_record_num = 0);
     record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; other)
                                       noexcept(<nc>see below</nc>);
    ~record_extractor_with_indexed_key();
@@ -2035,7 +2035,7 @@ template &lt;class FieldValuePredR>
             </tr>
             <tr>
               <td><c>max_record_num</c></td>
-              <td>If not equal to <c>record_extractor_npos</c>, at most <c>max_record_num</c> non-header records are forwarded to <c>out</c>, and parsing will be aborted after <c>max_record_num</c> are forwarded.</td>
+              <td>If not equal to <c>0</c>, at most <c>max_record_num</c> non-header records are forwarded to <c>out</c>, and parsing will be aborted after <c>max_record_num</c> are forwarded.</td>
             </tr>
           </table>
         </code-item>

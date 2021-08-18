@@ -157,36 +157,6 @@ INSTANTIATE_TEST_SUITE_P(, TestRecordExtractorLimit,
         testing::Values(header_forwarding_no, header_forwarding_yes),
         testing::Values(1, std::numeric_limits<std::size_t>::max())));
 
-struct TestRecordExtractorLimit0 : BaseTest
-{};
-
-TEST_F(TestRecordExtractorLimit0, IncludeHeader)
-{
-    const char* s = "key_a,key_b,value_a,value_b\r"
-                    "ka1,kb1,va1,\"vb1\r";  // Ill-formed line, but not parsed
-    std::stringbuf out;
-    const auto result = parse_csv(s, make_record_extractor(
-            &out, std::string("key_a"), "ka1", header_forwarding_yes, 0), 64);
-    ASSERT_FALSE(result);
-    std::string expected;
-    ASSERT_EQ("key_a,key_b,value_a,value_b\n", out.str());
-}
-
-TEST_F(TestRecordExtractorLimit0, ExcludeHeaderNoSuchKey)
-{
-    const char* s = "key_a,key_b,value_a,value_b\r"
-                    "ka1,kb1,va1,vb1\r";
-    std::stringbuf out;
-    try {
-        parse_csv(s, make_record_extractor(
-            &out, "key_A", "ka1", header_forwarding_no, 0), 64);
-        FAIL();
-    } catch (const record_extraction_error& e) {
-        ASSERT_NE(e.get_physical_position(), nullptr);
-        ASSERT_EQ(0U, e.get_physical_position()->first);
-    }
-}
-
 struct TestRecordExtractorIndexed : BaseTest
 {};
 

@@ -386,14 +386,12 @@ public:
                 throw no_matching_field();
             }
             flush_record(record_end);
-            if (record_num_to_include_ == 0) {
-                return false;
-            }
             header_mode_ = record_mode::unknown;
         } else if (flush_record(record_end)) {
-            if (record_num_to_include_ == 1) {
-                return false;
-            } else if (record_num_to_include_ != record_extractor_npos) {
+            if (record_num_to_include_ > 0) {
+                if (record_num_to_include_ == 1) {
+                    return false;
+                }
                 --record_num_to_include_;
             }
         }
@@ -527,7 +525,7 @@ public:
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
         header_forwarding header = header_forwarding_yes,
-        std::size_t max_record_num = record_extractor_npos) :
+        std::size_t max_record_num = 0) :
         record_extractor(
             std::allocator_arg, Allocator(), out,
             std::forward<FieldNamePredR>(field_name_pred),
@@ -541,7 +539,7 @@ public:
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
         header_forwarding header = header_forwarding_yes,
-        std::size_t max_record_num = record_extractor_npos) :
+        std::size_t max_record_num = 0) :
         base(std::allocator_arg, alloc, out,
             std::forward<FieldNamePredR>(field_name_pred),
             std::forward<FieldValuePredR>(field_value_pred),
@@ -570,7 +568,7 @@ public:
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
         std::underlying_type_t<header_forwarding> header
             = header_forwarding_yes,
-        std::size_t max_record_num = record_extractor_npos) :
+        std::size_t max_record_num = 0) :
         record_extractor_with_indexed_key(
             std::allocator_arg, Allocator(), out, target_field_index,
             std::forward<FieldValuePredR>(field_value_pred),
@@ -584,7 +582,7 @@ public:
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
         std::underlying_type_t<header_forwarding> header
             = header_forwarding_yes,
-        std::size_t max_record_num = record_extractor_npos) :
+        std::size_t max_record_num = 0) :
         base(
             std::allocator_arg, alloc, out,
             sanitize_target_field_index(target_field_index),
