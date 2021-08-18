@@ -875,8 +875,9 @@ template <class TextInput>
 csv_source(TextInput) -> csv_source<TextInput>;
 
 template <class CharInput>
-void swap(csv_source<CharInput>& left, csv_source<CharInput>& right)
+auto swap(csv_source<CharInput>& left, csv_source<CharInput>& right)
     noexcept(noexcept(left.swap(right)))
+ -> std::enable_if_t<std::is_swappable_v<CharInput>>
 {
     left.swap(right);
 }

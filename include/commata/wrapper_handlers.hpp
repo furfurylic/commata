@@ -141,12 +141,13 @@ empty_physical_line_aware_handler(Handler)
  -> empty_physical_line_aware_handler<Handler>;
 
 template <class Handler>
-void swap(
+auto swap(
     empty_physical_line_aware_handler<Handler>& left,
     empty_physical_line_aware_handler<Handler>& right)
     noexcept(noexcept(left.swap(right)))
+ -> std::enable_if_t<std::is_swappable_v<Handler>>
 {
-    return left.swap(right);
+    left.swap(right);
 }
 
 template <class Handler>

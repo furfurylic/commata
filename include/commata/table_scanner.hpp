@@ -1454,8 +1454,9 @@ public:
 };
 
 template <class T>
-void swap(replace_if_skipped<T>& left, replace_if_skipped<T>& right)
+auto swap(replace_if_skipped<T>& left, replace_if_skipped<T>& right)
     noexcept(noexcept(left.swap(right)))
+ -> std::enable_if_t<std::is_swappable_v<T>>
 {
     left.swap(right);
 }
@@ -2125,10 +2126,11 @@ private:
 };
 
 template <class T>
-void swap(
+auto swap(
     replace_if_conversion_failed<T>& left,
     replace_if_conversion_failed<T>& right)
     noexcept(noexcept(left.swap(right)))
+ -> std::enable_if_t<std::is_swappable_v<T>>
 {
     left.swap(right);
 }

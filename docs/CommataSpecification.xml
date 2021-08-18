@@ -1182,7 +1182,8 @@ template &lt;class Handler> void swap(
   empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;Handler></c> is <c>true</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
         </code-item>
       </section>
 
@@ -1495,7 +1496,8 @@ template &lt;class Streambuf>
             owned_streambuf_input&lt;Ch, Tr>&amp; right) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;Streambuf></c> is <c>true</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
         </code-item>
       </section>
     </section>
@@ -1589,7 +1591,8 @@ template &lt;class Ch, class Tr>
             owned_istream_input&lt;Ch, Tr>&amp; right) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;IStream></c> is <c>true</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
         </code-item>
       </section>
     </section>
@@ -1800,7 +1803,8 @@ template &lt;class Ch, class Tr, class Allocator>
             owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;basic_string&lt;Ch, Tr, Allocator>></c> is <c>true</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
         </code-item>
       </section>
     </section>
@@ -2093,7 +2097,8 @@ template &lt;class CharInput>
   void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;CharInput></c> is <c>true</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
         </code-item>
       </section>
 
@@ -5110,7 +5115,8 @@ template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
                              replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
             </code>
             <effects>Equivalent to: <c>left.swap(right);</c></effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;T></c> is <c>true</c>.
+                    The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
           </code-item>
         </section>
       </section>
@@ -5547,7 +5553,8 @@ template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
                              replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
             </code>
             <effects>Equivalent to: <c>left.swap(right);</c></effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;T></c> is <c>true</c>.
+                    The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
           </code-item>
         </section>
       </section>

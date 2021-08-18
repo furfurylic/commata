@@ -119,9 +119,10 @@ public:
 };
 
 template <class Streambuf>
-void swap(owned_streambuf_input<Streambuf>& left,
+auto swap(owned_streambuf_input<Streambuf>& left,
           owned_streambuf_input<Streambuf>& right)
     noexcept(noexcept(left.swap(right)))
+ -> std::enable_if_t<std::is_swappable_v<Streambuf>>
 {
     left.swap(right);
 }
@@ -169,9 +170,10 @@ public:
 };
 
 template <class IStream>
-void swap(owned_istream_input<IStream>& left,
+auto swap(owned_istream_input<IStream>& left,
           owned_istream_input<IStream>& right)
     noexcept(noexcept(left.swap(right)))
+ -> std::enable_if_t<std::is_swappable_v<IStream>>
 {
     left.swap(right);
 }
@@ -314,9 +316,10 @@ public:
 };
 
 template <class Ch, class Tr, class Allocator>
-void swap(owned_string_input<Ch, Tr, Allocator>& left,
+auto swap(owned_string_input<Ch, Tr, Allocator>& left,
           owned_string_input<Ch, Tr, Allocator>& right)
     noexcept(noexcept(left.swap(right)))
+ -> std::enable_if_t<std::is_swappable_v<std::basic_string<Ch, Tr, Allocator>>>
 {
     left.swap(right);
 }
