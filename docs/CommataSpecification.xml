@@ -2799,7 +2799,7 @@ iterator erase(const_iterator position);
           </code>
           <requires><c>position</c> shall point an object in [<c>cbegin()</c>, <c>cend()</c>).</requires>
           <throws>Nothing.</throws>
-          <effects>Equivalent to call <c>erase(position, position + 1)</c>.</effects>
+          <effects>Calls <c>erase(position, position + 1)</c>.</effects>
           <returns><c>begin() + off</c> where <c>off</c> is the value of <c>position - cbegin()</c> before the call.</returns>
         </code-item>
 
@@ -2808,7 +2808,7 @@ iterator erase(const_iterator position);
 basic_stored_value&amp; erase(size_type pos = 0, size_type n = npos);
           </code>
           <throws><c>std::out_of_range</c> if <c>pos > size()</c>.</throws>
-          <effects>Equivalent to call <c>erase(cbegin() + pos, cbegin() + pos + xlen)</c> where <c>xlen</c> is the smaller of <c>n</c> and <c>size() - pos</c>.</effects>
+          <effects>Call <c>erase(cbegin() + pos, cbegin() + pos + xlen)</c> where <c>xlen</c> is the smaller of <c>n</c> and <c>size() - pos</c>.</effects>
           <returns><c>*this</c>.</returns>
         </code-item>
 
@@ -2818,7 +2818,7 @@ void pop_front();
           </code>
           <requires><c>empty()</c> shall not be <c>false</c>.</requires>
           <throws>Nothing.</throws>
-          <effects>Equivalent to call <c>erase(cbegin())</c>.</effects>
+          <effects>Calls <c>erase(cbegin())</c>.</effects>
         </code-item>
 
         <code-item>
@@ -3033,7 +3033,7 @@ template &lt;class ChC, class Tr, class Allocator>
     std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;       left,
     const basic_stored_value&lt;ChC, Tr>&amp;                                right);
           </code>
-          <effects>Equivalent to call <c>left.append(right.cbegin(), right.cend())</c>.</effects>
+          <effects>Calls <c>left.append(right.cbegin(), right.cend())</c>.</effects>
           <returns><c>left</c>.</returns>
           <remark>If an exception is thrown by an instance of these function templates, the invocation shall have no effect.</remark>
         </code-item>
