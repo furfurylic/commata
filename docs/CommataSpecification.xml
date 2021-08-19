@@ -3044,7 +3044,11 @@ template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove
   std::basic_string&lt;std::remove_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>, Allocator>
     to_string(basic_stored_value&lt;Ch, Tr>&amp; o, const Allocator&amp; alloc = Allocator());
           </code>
-          <returns><c>std::basic_string&lt;std::remote_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>, Allocator>(o.cbegin(), o.cend(), alloc)</c>.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>return std::basic_string&lt;std::remote_const_t&lt;Ch>,
+                         std::char_traits&lt;std::remove_const_t&lt;Ch>>,
+                         Allocator>(o.cbegin(), o.cend(), alloc);</code>
+          </effects>
         </code-item>
       </section>
 
