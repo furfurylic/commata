@@ -1442,7 +1442,8 @@ public:
     value_type import_value(Args&&... args)
     {
         value_type value;
-        return rewrite_value(value, std::forward<Args>(args)...);   // throw
+        rewrite_value(value, std::forward<Args>(args)...);  // throw
+        return value;
     }
 
     template <class F>

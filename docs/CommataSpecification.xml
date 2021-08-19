@@ -3443,9 +3443,9 @@ template &lt;class ForwardIterator>
 template &lt;class OtherValue>
   value_type&amp; rewrite_value(value_type&amp; value, const OtherValue&amp; new_value);
           </code>
-          <requires><c>value</c> shall be backed by <c>*this</c>.</requires>
-          <effects>Calls <c>rewrite_value(value, new_value.cbegin(), new_value.cend())</c>.</effects>
-          <returns><c>value</c>.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>return rewrite_value(value, new_value.cbegin(), new_value.cend());</code>
+          </effects>
           <remark>This overload shall not participate in overload resolution unless <c>OtherValue::const_iterator</c> is a type.</remark>
         </code-item>
 
@@ -3453,9 +3453,11 @@ template &lt;class OtherValue>
           <code>
 template &lt;class... Args> value_type import_value(Args&amp;&amp;... args);
           </code>
-          <effects>Constructs an object of <c>value_type</c> with no arguments, which is named <c>value</c>.
-                   Then calls <c>rewrite_value(value, std::forward&lt;Args>(args)...)</c>.</effects>
-          <returns><c>value</c> above.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>value_type value;
+rewrite_value(value, std::forward&lt;Args>(args)...);
+return value;</code>
+          </effects>
         </code-item>
 
         <code-item>
@@ -3577,8 +3579,11 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
     operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp; left,
               const basic_stored_table&lt;ContentR, AllocatorR>&amp; right);
           </code>
-          <effects>Makes a copy of <c>left</c> with the copy constructor of <c>basic_stored_table&lt;ContentL, AllocatorL></c>, which is named <c>t</c>. Then evaluates <c>t += right</c>.</effects>
-          <returns><c>t</c> above.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>basic_stored_table&lt;ContentL, AllocatorL> t(left);
+t += right;
+return t;</code>
+          </effects>
         </code-item>
 
         <code-item>
@@ -3588,8 +3593,11 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
     operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
                     basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
           </code>
-          <effects>Makes a copy of <c>left</c> with the copy constructor of <c>basic_stored_table&lt;ContentL, AllocatorL></c>, which is named <c>t</c>. Then evaluates <c>t += std::move(right)</c>.</effects>
-          <returns><c>t</c> above.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>basic_stored_table&lt;ContentL, AllocatorL> t(left);
+t += std::move(right);
+return t;</code>
+          </effects>
         </code-item>
 
         <code-item>
@@ -3599,7 +3607,9 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
     operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
               const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
           </code>
-          <returns><c>basic_stored_table&lt;ContentL, AllocatorL>(std::move(left += right))</c>.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>return basic_stored_table&lt;ContentL, AllocatorL>(std::move(left += right));</code>
+          </effects>
         </code-item>
 
         <code-item>
@@ -3609,7 +3619,9 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
     operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
                     basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
           </code>
-          <returns><c>basic_stored_table&lt;ContentL, AllocatorL>(std::move(left += std::move(right)))</c>.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>return basic_stored_table&lt;ContentL, AllocatorL>(std::move(left += std::move(right)));</code>
+          </effects>
         </code-item>
       </section>
 
