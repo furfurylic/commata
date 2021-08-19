@@ -6460,8 +6460,8 @@ namespace commata {
     bool empty() const noexcept;
 
     template &lt;class OtherTr = std::char_traits&lt;char_type>,
-      class OtherAllocator = std::allocator&lt;char_type>>
-        explicit operator std::basic_string&lt;char_type, OtherTr, OtherAllocator>() const;
+              class OtherAllocator = std::allocator&lt;char_type>>
+      explicit operator std::basic_string&lt;char_type, OtherTr, OtherAllocator>() const;
   };
 
   <c>// <n><xref id="table_pull.comparison"/>, table_pull comparison functions:</n></c>
@@ -6918,8 +6918,8 @@ bool empty() const noexcept;
         <code-item>
           <code>
 template &lt;class OtherTr = std::char_traits&lt;char_type>,
-  class OtherAllocator = std::allocator&lt;char_type>>
-    explicit operator std::basic_string&lt;char_type, OtherTr, OtherAllocator>() const;
+          class OtherAllocator = std::allocator&lt;char_type>>
+  explicit operator std::basic_string&lt;char_type, OtherTr, OtherAllocator>() const;
           </code>
           <returns><c>std::basic_string&lt;char_type, OtherTr, OtherAllocator>(cbegin(), cend())</c>.</returns>
         </code-item>
@@ -7137,7 +7137,7 @@ template &lt;class TableSource, class Allocator, class OtherAllocator>
                                  typename TableSource::traits_type, OtherAllocator>&amp; left,
                const table_pull&lt;TableSource, Allocator>&amp; right);
           </code>
-          <effects>Equivalent to call <c>left.append(right.cbegin(), right.cend())</c>.</effects>
+          <effects>Calls <c>left.append(right.cbegin(), right.cend())</c>.</effects>
           <returns><c>left</c>.</returns>
           <remark>If an exception is thrown by an instance of these function templates, the invocation shall have no effect.</remark>
         </code-item>
@@ -7150,9 +7150,13 @@ template &lt;class TableSource, class Allocator,
                     std::char_traits&lt;typename TableSource::char_type>,
                     OtherAllocator>
     to_string(const table_pull&lt;TableSource, Allocator>&amp; o,
-              const OtherAllocator&amp; alloc = Allocator());
+              const OtherAllocator&amp; alloc = OtherAllocator());
           </code>
-          <returns><c>std::basic_string&lt;typename TableSource::char_type, std::char_traits&lt;typename TableSource::char_type>, OtherAllocator>(o.cbegin(), o.cend(), alloc)</c>.</returns>
+          <effects><p>Equivalent to:</p>
+                   <code>return std::basic_string&lt;typename TableSource::char_type,
+                         std::char_traits&lt;typename TableSource::char_type>,
+                         OtherAllocator>(o.cbegin(), o.cend(), alloc);</code>
+          </effects>
         </code-item>
       </section>
 

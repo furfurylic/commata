@@ -1385,7 +1385,7 @@ std::basic_string<typename TableSource::char_type,
                   std::char_traits<typename TableSource::char_type>,
                   OtherAllocator> to_string(
     const table_pull<TableSource, Allocator>& p,
-    const OtherAllocator& alloc = Allocator())
+    const OtherAllocator& alloc = OtherAllocator())
 {
     return { p.cbegin(), p.cend(), alloc };
 }
