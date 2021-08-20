@@ -3127,6 +3127,8 @@ namespace commata {
     void shrink_to_fit();
 
     <c>// <n><xref id="basic_stored_table.rewrite"/>, store operations:</n></c>
+    value_type&amp; resize_value(value_type&amp; value, typename value_type::size_type n);
+    value_type make_value(typename value_type::size_type n);
     template &lt;class ForwardIterator, class ForwardIteratorEnd>
       value_type&amp;
         rewrite_value(value_type&amp; value,
@@ -3408,6 +3410,30 @@ void shrink_to_fit();
 
       <section id="basic_stored_table.rewrite">
         <name><c>basic_stored_table</c> store operations</name>
+
+        <code-item>
+          <code>
+value_type&amp; resize_value(value_type&amp; value, typename value_type::size_type n);
+          </code>
+          <requires><c>value</c> shall be backed by <c>*this</c>.</requires>
+          <postcondition>Let <c>m</c> be <c>value.size()</c> before the call and <c>rlen</c> be the smaller of <c>m</c> and <c>n</c>.
+                         <c>value</c> shall be unchangedly backed by <c>*this</c>.
+                         <c>value.size()</c> shall be equal to <c>n</c>.
+                         The values in the range [<c>value.data()</c>, <c>value.data() + rlen</c>) shall be the same as before the call.
+                         For each <c>i</c> in the range [<c>m</c>, <c>n</c>], <c>v[i]</c> shall be equal to <c>char_type()</c>.</postcondition>
+          <returns><c>value</c>.</returns>
+        </code-item>
+
+        <code-item>
+          <code>
+value_type make_value(typename value_type::size_type n);
+          </code>
+          <effects><p>Equivalent to:</p>
+                   <code>value_type value;
+resize_value(value, n);
+return value;</code>
+          </effects>
+        </code-item>
 
         <code-item>
           <code>

@@ -735,6 +735,56 @@ static_assert(std::is_nothrow_move_constructible<stored_table>::value, "");
 struct TestStoredTable : BaseTest
 {};
 
+TEST_F(TestStoredTable, ResizeValue)
+{
+    stored_table table;
+    stored_value v;
+
+    {
+        const auto& rv = table.resize_value(v, 5);
+        ASSERT_EQ(std::addressof(v), std::addressof(rv));
+    }
+    ASSERT_EQ(5, v.size());
+    for (std::size_t i = 0; i < 6; ++i) {
+        ASSERT_EQ('\0', v[i]) << i;
+    }
+
+    std::strcpy(v.c_str(), "abyss");
+
+    {
+        const auto p = &v[0];
+        const auto& rv = table.resize_value(v, 2);
+        ASSERT_EQ(std::addressof(v), std::addressof(rv));
+        ASSERT_EQ(p, &v[0]);    // no reallocation
+    }
+    ASSERT_EQ(2, v.size());
+    ASSERT_STREQ("ab", v.c_str());
+
+    {
+        const auto p = &v[0];
+        const auto& rv = table.resize_value(v, 6);
+        ASSERT_EQ(std::addressof(v), std::addressof(rv));
+        ASSERT_NE(&v[0], p);    // reallocation
+    }
+    ASSERT_EQ(6, v.size());
+    ASSERT_STREQ("ab", v.c_str());
+    for (std::size_t i = 3; i < 6; ++i) {
+        ASSERT_EQ('\0', v[i]) << i;
+    }
+}
+
+TEST_F(TestStoredTable, MakeValue)
+{
+    stored_table table;
+    stored_value v = table.make_value(8);
+    std::strcpy(v.c_str(), "aboard");
+    ASSERT_EQ(8, v.size());
+    ASSERT_STREQ("aboard", v.c_str());
+    for (std::size_t i = 6; i < 9; ++i) {
+        ASSERT_EQ('\0', v[i]) << i;
+    }
+}
+
 TEST_F(TestStoredTable, RewriteValueBasics)
 {
     wstored_table table(10U);

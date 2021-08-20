@@ -1306,6 +1306,28 @@ public:
         return content()[record_index];
     }
 
+    value_type& resize_value(value_type& value,
+        typename value_type::size_type n)
+    {
+        if (n <= value.size()) {
+            value.erase(value.cbegin() + n, value.cend());
+        } else {
+            const auto secured = secure_n(n + 1);   // throw
+            move_chs(value.data(), value.size(), secured);
+            traits_type::assign(secured + value.size(), n + 1 - value.size(),
+                char_type());
+            value = value_type(secured, secured + n);
+        }
+        return value;
+    }
+
+    value_type make_value(typename value_type::size_type n)
+    {
+        value_type value;
+        resize_value(value, n); // throw
+        return value;
+    }
+
     template <class ForwardIterator, class ForwardIteratorEnd>
     value_type& rewrite_value(value_type& value,
         ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end)
@@ -1412,20 +1434,26 @@ private:
     value_type& rewrite_value_n_secure(value_type& value,
         InputIterator new_value_begin, std::size_t new_value_size)
     {
-        auto secured = store_.secure_any(new_value_size + 1);
+        const auto secured = secure_n(new_value_size + 1);
+        move_chs(new_value_begin, new_value_size, secured);
+        traits_type::assign(secured[new_value_size], char_type());
+        value = value_type(secured, secured + new_value_size);
+        return value;
+    }
+
+    char_type* secure_n(std::size_t n)
+    {
+        auto secured = store_.secure_any(n);
         if (!secured) {
-            auto alloc_size = std::max(new_value_size + 1, buffer_size_);
+            auto alloc_size = std::max(n, buffer_size_);
             std::tie(secured, alloc_size) = generate_buffer(alloc_size);
                                                 // throw
             add_buffer(secured, alloc_size);    // throw
             // No need to deallocate secured even when an exception is
             // thrown by add_buffer because add_buffer consumes secured
-            secure_current_upto(secured + new_value_size + 1);
+            secure_current_upto(secured + n);
         }
-        move_chs(new_value_begin, new_value_size, secured);
-        traits_type::assign(secured[new_value_size], char_type());
-        value = value_type(secured, secured + new_value_size);
-        return value;
+        return secured;
     }
 
 public:
