@@ -3264,7 +3264,7 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t
 basic_stored_table(const basic_stored_table&amp; other);
           </code>
           <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c> where <c>CAT</c> is equal to <c>std::allocator_traits&lt;Allocator>::template rebind_alloc&lt;char_type></c>.
-                         If defined, also <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
+                         If not undefined, also <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -3272,7 +3272,7 @@ basic_stored_table(const basic_stored_table&amp; other);
 basic_stored_table(basic_stored_table&amp;&amp; other) noexcept;
           </code>
           <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and the value of <c>other.get_buffer_size()</c> before this construction.
-                         If defined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
+                         If not undefined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
         </code-item>
 
         <code-item>
@@ -3292,7 +3292,7 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                    const basic_stored_table&amp; other);
           </code>
           <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(alloc))</c> and <c>other.get_buffer_size()</c>.
-                         If defined, <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
+                         If not undefined, <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -3301,7 +3301,7 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                    basic_stored_table&amp;&amp; other);
           </code>
           <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(alloc))</c> and <c>other.get_buffer_size()</c>.
-                         If defined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
+                         If not undefined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
         </code-item>
 
         <code-item>
@@ -3316,7 +3316,7 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
 basic_stored_table&amp; operator=(const basic_stored_table&amp; other);
           </code>
           <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
-                         If defined, <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
+                         If not undefined, <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -3325,7 +3325,7 @@ basic_stored_table&amp; operator=(basic_stored_table&amp;&amp; other)
   noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment::value);
           </code>
           <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and the value of <c>other.get_buffer_size()</c> before this assignment.
-                         If defined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this assignment.</postcondition>
+                         If not undefined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this assignment.</postcondition>
         </code-item>
       </section>
 
@@ -3396,7 +3396,7 @@ void clear() noexcept(<nc>see below</nc>);
           <code>
 void shrink_to_fit();
           </code>
-          <postcondition>The values of <c>content()</c> (if defined), <c>get_allocator()</c> and <c>get_buffer_size()</c> shall be equal to the values that those had before this call.</postcondition>
+          <postcondition>The values of <c>content()</c> (if not undefined), <c>get_allocator()</c> and <c>get_buffer_size()</c> shall be equal to the values that those had before this call.</postcondition>
           <remark>This is a non-binding request to reduce memory use.</remark>
         </code-item>
       </section>
