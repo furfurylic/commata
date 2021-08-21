@@ -137,6 +137,14 @@ check_handler<Ch, F> make_check_handler(F f)
 
 } // unnamed
 
+static_assert(
+    std::is_same<
+        typename csv_source<string_input<char>>::template
+            parser_type<test_collector<char>>,
+        typename csv_source<string_input<char>>::template
+            parser_type<test_collector<char>, std::allocator<char>>>::value,
+    "");
+
 struct TestParseCsvBasics :
     commata::test::BaseTestWithParam<std::size_t>
 {};

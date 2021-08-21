@@ -52,6 +52,7 @@
         div.code-item > div.code-item-desc { margin-left: 3em }
         div.code-item > div.code-item-desc > p { margin-top: 0.5em; margin-bottom: 0.5em }
         div.code-item > div.code-item-desc p span.code-item-heading { text-transform: capitalize; font-style: italic }
+        div.code-item > div.code-item-desc p span.code-item-heading-nocap { font-style: italic }
         div.code-item > div.code-item-desc > div.elaborated-desc { margin: 0.5em 0 }
         div.code-item > div.code-item-desc > div.elaborated-desc > p { margin: 0 }
         div.code-item > div.code-item-desc > div.elaborated-desc > pre { margin: 0 0 0 2em }
@@ -177,11 +178,17 @@
       <xsl:for-each select="preface">
         <p><xsl:apply-templates/></p>
       </xsl:for-each>
-      <xsl:for-each select="effects|postcondition|requires|returns|remark|note|throws">
+      <xsl:for-each select="effects|postcondition|requires|returns|remark|note|throws|alias-template">
+        <xsl:variable name="heading">
+          <xsl:choose>
+            <xsl:when test="local-name(.) = 'alias-template'"><span class="code-item-heading-nocap">Alias template: </span></xsl:when>
+            <xsl:otherwise><span class="code-item-heading"><xsl:value-of select="local-name(.)"/>: </span></xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
         <xsl:choose>
           <xsl:when test="p|code|ul|ol">
             <div class="elaborated-desc">
-              <p><span class="code-item-heading"><xsl:value-of select="local-name(.)"/>: </span><xsl:apply-templates select="p[1]/node()"/></p>
+              <p><xsl:copy-of select="$heading"/><xsl:apply-templates select="p[1]/node()"/></p>
               <xsl:for-each select="p[1]/following-sibling::*">
                 <xsl:choose>
                   <xsl:when test="local-name(.) = 'p'"><p><xsl:apply-templates/></p></xsl:when>
@@ -191,7 +198,7 @@
               </xsl:for-each>
             </div>
           </xsl:when>
-          <xsl:otherwise><p><span class="code-item-heading"><xsl:value-of select="local-name(.)"/>: </span><xsl:apply-templates/></p></xsl:otherwise>
+          <xsl:otherwise><p><xsl:copy-of select="$heading"/><xsl:apply-templates/></p></xsl:otherwise>
         </xsl:choose>
       </xsl:for-each>
       <xsl:apply-templates select="table"/>

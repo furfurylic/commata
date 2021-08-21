@@ -770,20 +770,16 @@ private:
     };
 
 public:
-    template <class Handler, class Allocator>
-    struct parser_type_class
-    {
-        using type = typename with_allocator<Handler, Allocator>::ret_t;
-    };
-
-    template <class Handler>
-    struct parser_type_class<Handler, void>
-    {
-        using type = typename without_allocator<Handler>::ret_t;
-    };
-
     template <class Handler, class Allocator = void>
-    using parser_type = typename parser_type_class<Handler, Allocator>::type;
+    using parser_type = std::conditional_t<
+            without_allocator<Handler>::enabled,
+            typename without_allocator<Handler>::ret_t,
+            typename with_allocator<
+                Handler,
+                std::conditional_t<
+                    std::is_same<Allocator, void>::value,
+                    std::allocator<char_type>,
+                    Allocator>>::ret_t>;
 
     template <class Handler>
     using reference_handler_type = detail::wrapper_handler<Handler>;
@@ -793,7 +789,6 @@ public:
         noexcept(
             std::is_nothrow_constructible<
                 std::decay_t<Handler>, Handler>::value
-         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
          && std::is_nothrow_copy_constructible<CharInput>::value)
      -> std::enable_if_t<without_allocator<Handler>::enabled,
             parser_type<std::decay_t<Handler>>>
@@ -807,7 +802,6 @@ public:
         noexcept(
             std::is_nothrow_constructible<
                 std::decay_t<Handler>, Handler>::value
-         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
          && std::is_nothrow_move_constructible<CharInput>::value)
      -> std::enable_if_t<without_allocator<Handler>::enabled,
             parser_type<std::decay_t<Handler>>>
@@ -822,7 +816,6 @@ public:
         noexcept(
             std::is_nothrow_constructible<
                 std::decay_t<Handler>, Handler>::value
-         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
          && std::is_nothrow_copy_constructible<CharInput>::value)
      -> std::enable_if_t<
             with_allocator<Handler, Allocator>::enabled,
@@ -839,7 +832,6 @@ public:
         noexcept(
             std::is_nothrow_constructible<
                 std::decay_t<Handler>, Handler>::value
-         && std::is_nothrow_move_constructible<std::decay_t<Handler>>::value
          && std::is_nothrow_move_constructible<CharInput>::value)
      -> std::enable_if_t<
             with_allocator<Handler, Allocator>::enabled,
@@ -854,6 +846,8 @@ public:
     auto operator()(const std::reference_wrapper<Handler>& handler,
             Args&&... args) const&
         noexcept(std::is_nothrow_copy_constructible<CharInput>::value)
+     -> decltype((*this)(detail::wrapper_handler<Handler>(
+            handler.get()), std::forward<Args>(args)...))
     {
         return (*this)(detail::wrapper_handler<Handler>(
             handler.get()), std::forward<Args>(args)...);
@@ -863,6 +857,8 @@ public:
     auto operator()(const std::reference_wrapper<Handler>& handler,
             Args&&... args) &&
         noexcept(std::is_nothrow_move_constructible<CharInput>::value)
+     -> decltype(std::move(*this)(detail::wrapper_handler<Handler>(
+            handler.get()), std::forward<Args>(args)...))
     {
         return std::move(*this)(detail::wrapper_handler<Handler>(
             handler.get()), std::forward<Args>(args)...);

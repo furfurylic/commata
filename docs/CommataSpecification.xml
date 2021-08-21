@@ -1472,9 +1472,10 @@ namespace commata {
 namespace commata {
   template &lt;class CharInput> class csv_source {
   public:
+    <c>// <n><xref id="csv_source.types"/>, member types:</n></c>
     using char_type = typename CharInput::char_type;
     using traits_type = typename CharInput::traits_type;
-    template &lt;class Handler, class Allocator = void> using parser_type = <nc>unspecified</nc>;
+    template &lt;class Handler, class Allocator = void> using parser_type = <nc>see below</nc>;
     template &lt;class Handler> using reference_handler_type = <nc>unspecified</nc>;
   
     <c>// <n><xref id="csv_source.cons"/>, construct/copy/destroy:</n></c>
@@ -1489,7 +1490,7 @@ namespace commata {
     template &lt;class HandlerR>
       parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
     template &lt;class HandlerR>
-      parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) &amp;&amp; noexcept(<nc>see below</nc>);
+      parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler)     &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
       parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
         operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
@@ -1497,13 +1498,13 @@ namespace commata {
     template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
       parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
         operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
-                   const Allocator&amp; alloc = Allocator()) &amp;&amp; noexcept(<nc>see below</nc>);
+                   const Allocator&amp; alloc = Allocator())     &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
       <nc>see below</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
                            Args&amp;&amp;... args) const&amp; noexcept;
     template &lt;class Handler, class... Args>
       <nc>see below</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
-                           Args&amp;&amp;... args) &amp;&amp; noexcept;
+                           Args&amp;&amp;... args)     &amp;&amp; noexcept;
 
     <c>// <n><xref id="csv_source.modifiers"/>, modifiers:</n></c>
     void swap(csv_source&amp; other) noexcept(<nc>see below</nc>);
@@ -1525,6 +1526,38 @@ namespace commata {
       <p>The class template <c>csv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TableParser</c> objects (<xref id="table_parser.requirements"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for a certain char-like type.</p>
       <p><c>csv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c>.</p>
+      <p>In this subclause, a type that meets the <c>TableHandler</c> requirements for a certain char-like type is <n>deemed to have buffer control</n> if it has both of <c>get_buffer</c> and <c>release_buffer</c> member functions that have signatures and return types compatible with the <c>TableHandler</c> requirements for the char-like type, or is <n>deemed to have no buffer control</n> if it has neither.</p>
+
+      <section id="csv_source.types">
+        <name><c>csv_source</c> member types</name>
+
+        <code-item>
+          <code>
+template &lt;class Handler, class Allocator = void> using parser_type = <nc>see below</nc>;
+          </code>
+          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
+                    If <c>Handler</c> is deemed to have buffer control, <c>Allocator</c> shall be <c>void</c>.
+                    Otherwise, <c>Allocator</c> shall be <c>void</c> or meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
+          <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c>.
+                          <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.
+                          <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if <c>std::nothrow_move_constructible&lt;CharInput>::value &amp;&amp; std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
+                          An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character input and an object of <c>Handler</c> as its tied table handler.
+                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it.
+                          Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character input object, its tied table handler object, and the allocator object held by it if any.</alias-template>
+          <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>>::value</c> shall be <c>true</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class Handler> using reference_handler_type = <nc>see below</nc>;
+          </code>
+          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>,
+                    except that it need not meet either the <c>MoveConstructible</c> requirement or the <c>Destructible</c> requirements.</requires>
+          <alias-template>An unspecified type (hereinafter called <c>H</c>) which meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
+                          <c>std::nothrow_move_constructible&lt;H>::value</c> shall be <c>true</c>.
+                          An object of <c>H</c> wraps a reference to an object of <c>Handler</c> and forwards calls of its member functions to the referenced object.</alias-template>
+        </code-item>
+      </section>
 
       <section id="csv_source.cons">
         <name><c>csv_source</c> construct/copy/destroy</name>
@@ -1533,10 +1566,11 @@ namespace commata {
           <code>
 template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
           </code>
+          <requires><c>std::is_constructible&lt;CharInput, Args...>::value</c> shall be <c>true</c>.</requires>
           <effects>Initializes <c>in</c> with <c>std::forward&lt;Args>(args)...</c>.</effects>
           <remark>This constructor shall not participate in overload resolution if <c>sizeof...(Args)</c> is equal to <c>1</c> and
                   <c>csv_source&lt;CharInput></c> is a base class of or the same type as the reference-removed and cv-unqualified type of the first type of <c>args</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;CharInput, Args&amp;&amp;...>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;CharInput, Args...>::value</c>.</remark>
         </code-item>
       </section>
 
@@ -1548,19 +1582,17 @@ template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept
 template &lt;class HandlerR>
   parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
 template &lt;class HandlerR>
-  parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) &amp;&amp; noexcept(<nc>see below</nc>);
+  parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler)     &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.</requires>
-          <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type (hereinafter called <c>P</c>) meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c>.
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (<c>&amp;</c> ref-qualifier version) or <c>std::move(in)</c> (<c>&amp;&amp;</c> ref-qualifier version) as its tied character input
-                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler.
-                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
-                   Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied table handler object.
-                   <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
-          <remark>These member function templates shall not participate in overload resolution unless the reference-removed and cv-unqualified type of <c>HandlerR</c> is not an instance of <c>std::reference_wrapper</c> and has both of <c>get_buffer</c> and <c>release_buffer</c> member functions
-                  that have signatures and return types compatible with <c>TableHandler</c> requirements.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value &amp;&amp; std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
+          <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>).
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character input
+                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler.</returns>
+          <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is deemed to have buffer control.
+                  The expression inside <c>noexcept</c> is equivalent to
+                  <c>std::is_nothrow_constructible&lt;Handler, HandlerR>::value &amp;&amp; std::is_nothrow_copy_constructible&lt;CharInput>::value</c> (first form) or
+                  <c>std::is_nothrow_constructible&lt;Handler, HandlerR>::value &amp;&amp; std::is_nothrow_move_constructible&lt;CharInput>::value</c> (second form).</remark>
         </code-item>
 
         <code-item>
@@ -1572,22 +1604,19 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
 template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
   parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
     operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
-               const Allocator&amp; alloc = Allocator()) &amp;&amp; noexcept(<nc>see below</nc>);
+               const Allocator&amp; alloc = Allocator())     &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
                     <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
-          <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>) whose type (hereinafter called <c>P</c>) meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c>.
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (<c>&amp;</c> ref-qualifier version) or <c>std::move(in)</c> (<c>&amp;&amp;</c> ref-qualifier version) as its tied character input
-                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler,
-                   and allocates and deallocates character buffers with a copy of <c>alloc</c>.
-                   The length of the buffer is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
-                   <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
-                   Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied table handler object and the copy of <c>alloc</c>.
-                   <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
-          <remark>These member function templates shall not participate in overload resolution unless the reference-removed and cv-unqualified type of <c>HandlerR</c> is not an instance of <c>std::reference_wrapper</c> and have neither of <c>get_buffer</c> nor <c>release_buffer</c> member function
-                  that has a signature and a return type compatible with <c>TableHandler</c> requirements.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value &amp;&amp; std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
+          <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>).
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (<c>&amp;</c> ref-qualifier version) or <c>std::move(in)</c> (<c>&amp;&amp;</c> ref-qualifier version) as its tied character input,
+                   an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
+                   The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
+          <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
+                  The expression inside <c>noexcept</c> is equivalent to
+                  <c>std::is_nothrow_constructible&lt;Handler, HandlerR>::value &amp;&amp; std::is_nothrow_copy_constructible&lt;CharInput>::value</c> (first form) or
+                  <c>std::is_nothrow_constructible&lt;Handler, HandlerR>::value &amp;&amp; std::is_nothrow_move_constructible&lt;CharInput>::value</c> (second form).</remark>
         </code-item>
 
         <code-item>
@@ -1597,15 +1626,17 @@ template &lt;class Handler, class... Args>
                        Args&amp;&amp;... args) const&amp; noexcept;
 template &lt;class Handler, class... Args>
   <nc>see below</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
-                       Args&amp;&amp;... args) &amp;&amp; noexcept;
+                       Args&amp;&amp;... args)     &amp;&amp; noexcept;
           </code>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>,
                     except that it need not meet either the <c>MoveConstructible</c> requirement or the <c>Destructible</c> requirements.</requires>
-          <effects>Creates an object <c>h</c> whose type <c>H</c> is equal to <c>reference_handler_type&lt;Handler></c> and meets the <c>TableHandler</c> requirements.
-                   <c>h</c> wraps <c>handler.get()</c> and forwards calls to <c>handler.get()</c>.
-                   <c>std::is_nothrow_move_constructible&lt;H>::value</c> is <c>true</c>.
-                   Then forwards the call with the arguments being <c>std::move(h), args...</c> to the other <c>operator()</c> member function templates that have the same ref-qualifier.</effects>
+          <effects>Creates an object <c>h</c> of <c>reference_handler_type&lt;Handler></c> which wraps a reference to <c>handler.get()</c>.
+                   Then forwards the call with the arguments being <c>std::move(h), std::forward&lt;Args>(args)...</c> to another <c>operator()</c> member function template that has the same ref-qualifier.</effects>
           <returns>The return value of the forwarded call above.</returns>
+          <remark>These operators shall not participate in overload resolution unless a function call expression to <c>std::declval&lt;const csv_source&amp;>()</c> (first form) or <c>std::declval&lt;csv_source>()</c> (second form) with the arguments being <c>std::declval&lt;reference_handler_type&lt;Handler>>(), std::declval&lt;Args>()...</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to
+                  <c>std::is_nothrow_copy_constructible&lt;CharInput>::value</c> (first form) or
+                  <c>std::is_nothrow_move_constructible&lt;CharInput>::value</c> (second form).</remark>
         </code-item>
       </section>
 
