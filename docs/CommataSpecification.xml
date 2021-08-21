@@ -1585,7 +1585,7 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
                    <c>std::nothrow_move_constructible&lt;P>::value</c> shall be <c>true</c> if <c>std::nothrow_move_constructible&lt;Handler>::value</c> is <c>true</c>.
                    Invocation of <c>p()</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by the tied table handler object and the copy of <c>alloc</c>.
                    <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.</returns>
-          <remark>These member function templates shall not participate in overload resolution unless the reference-removed and cv-unqualified type of <c>HandlerR</c> is not an instance of <c>std::reference_wrapper</c> and does not have both of <c>get_buffer</c> and <c>release_buffer</c> member function
+          <remark>These member function templates shall not participate in overload resolution unless the reference-removed and cv-unqualified type of <c>HandlerR</c> is not an instance of <c>std::reference_wrapper</c> and have neither of <c>get_buffer</c> nor <c>release_buffer</c> member function
                   that has a signature and a return type compatible with <c>TableHandler</c> requirements.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value &amp;&amp; std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
         </code-item>
