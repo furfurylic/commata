@@ -3090,7 +3090,7 @@ namespace commata {
 
     <c>// <n><xref id="basic_stored_table.cons"/>, construct/copy/destroy:</n></c>
     explicit basic_stored_table(std::size_t buffer_size = 0) :
-      basic_stored_table(std::allocator_arg, Allocator(), buffer_size);
+      basic_stored_table(std::allocator_arg, Allocator(), buffer_size) {}
     basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t buffer_size = 0U);
     basic_stored_table(const basic_stored_table&amp;  other);
     basic_stored_table(      basic_stored_table&amp;&amp; other) noexcept;
