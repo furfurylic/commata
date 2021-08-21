@@ -365,7 +365,7 @@
       <p>This subclause describes an exception class <c>text_error</c> (<xref id="text_error"/>), which defines the base class for the types of objects thrown while the parsers are comsuming the texts, and some facilities to access information that <c>text_error</c> objects hold.</p>
     </section>
 
-    <section id="header_text_error_hpp">
+    <section id="hpp.text_error.syn">
       <name>Header <c>"commama/text_error.hpp"</c> synopsis</name>
       <codeblock>
 #include &lt;cstddef>
@@ -621,7 +621,7 @@ std::wstring to_wstring(const text_error_info&amp; i);
       </section>
     </section>
 
-    <section id="header_parse_error_hpp">
+    <section id="hpp.parse_error.syn">
       <name>Header <c>"commama/parse_error.hpp"</c> synopsis</name>
       <codeblock>
 #include "text_error.hpp"
@@ -652,7 +652,7 @@ namespace commata {
   <section id="handler_wrappers">
     <name>Wrappers of table handlers</name>
 
-    <section id="header_empty_physical_line_aware_handler">
+    <section id="hpp_empty_physical_line_aware_handler.syn">
       <name>Header <c>"commama/empty_physical_line_aware_handler.hpp"</c> synopsis</name>
       <codeblock>
 #include &lt;functional>
@@ -704,11 +704,7 @@ template &lt;class Handler>
   <section id="parser.input">
     <name>Input texts of parsing</name>
 
-    <section id="parser.input.general">
-      <name>General</name>
-
-      <p>This subclause describes the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>), which is an abstraction of text inputs to be parsed, and its built-in implementations.</p>
-    </section>
+    <p>This subclause describes the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>), which is an abstraction of text inputs to be parsed, and its built-in implementations.</p>
 
     <section id="char_input.requirements">
       <name><c>CharInput</c> requirements</name>
@@ -763,7 +759,7 @@ template &lt;class Handler>
       </table>
     </section>
 
-    <section id="header_char_input_hpp">
+    <section id="hpp.char_input.syn">
       <name>Header <c>"commama/char_input.hpp"</c> synopsis</name>
       <codeblock>
 #include &lt;cstddef>
@@ -1441,12 +1437,9 @@ template &lt;class Ch, class Tr, class Allocator>
   <section id="parser.csv">
     <name>Parsing CSV format texts</name>
 
-    <section id="parser.csv.general">
-      <name>General</name>
-      <p>This subclause describes facilities to create or utilize the table parser (<xref id="concepts"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
-    </section>
+    <p>This subclause describes facilities to create or utilize the table parser (<xref id="concepts"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
 
-    <section id="header_parse_csv_hpp">
+    <section id="hpp.parse_csv.syn">
       <name>Header <c>"commama/parse_csv.hpp"</c> synopsis</name>
       <codeblock>
 #include &lt;cstddef>
@@ -1679,7 +1672,7 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
   </section>
 </section>
 
-<section id="built-in_handlers">
+<section id="builtin.handlers">
   <name>Default table handlers</name>
 
   <section id="extractor">
@@ -1696,7 +1689,7 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
       <p>An object of an instance of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
     </section>
 
-    <section id="record_extractor_hpp">
+    <section id="hpp.record_extractor.syn">
       <name>Header <c>"commama/record_extractor.hpp"</c> synopsis</name>
 
       <codeblock>
@@ -2181,10 +2174,10 @@ template &lt;class Ch, class Tr, class... Appendices>
     </section>
   </section>
 
-  <section id="table">
+  <section id="stored">
     <name>Creation of a whole table image in memory</name>
 
-    <section id="table.general">
+    <section id="stored.general">
       <name>General</name>
 
       <p>Commata offers class template <c>basic_stored_table</c> (<xref id="basic_stored_table"/>), which is an implementation of a in-memory text table (<xref id="definitions.text_table"/>).
@@ -2193,7 +2186,7 @@ template &lt;class Ch, class Tr, class... Appendices>
       <p>A text table is built by an object of an instance of <c>stored_table_builder</c> (<xref id="stored_table_builder"/>), whose instances meet <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</p>
     </section>
 
-    <section id="stored_table_hpp">
+    <section id="hpp.stored_table.syn">
       <name>Header <c>"commama/stored_table.hpp"</c> synopsis</name>
 
       <codeblock>
@@ -2544,7 +2537,7 @@ namespace commata {
     std::basic_string&lt;std::remove_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>, Allocator>
       to_string(basic_stored_value&lt;Ch, Tr>&amp; o, const Allocator&amp; alloc = Allocator());
 
-  <c>// <n><xref id="basic_stored_value.swap"/>, specialized algorithms:</n></c>
+  <c>// <n><xref id="basic_stored_value.special"/>, specialized algorithms:</n></c>
   template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; left,
                                           basic_stored_value&lt;Ch, Tr>&amp; right) noexcept;
 }
@@ -3052,7 +3045,7 @@ template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove
         </code-item>
       </section>
 
-      <section id="basic_stored_value.swap">
+      <section id="basic_stored_value.special">
         <name><c>basic_stored_value</c> specialized algorithms</name>
 
         <code-item>
@@ -3183,7 +3176,7 @@ namespace commata {
       operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
                       basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
 
-  <c>// <n><xref id="basic_stored_table.swap"/>, specialized algorithms:</n></c>
+  <c>// <n><xref id="basic_stored_table.special"/>, specialized algorithms:</n></c>
   template &lt;class Content, class Allocator>
     void swap(basic_stored_table&lt;Content, Allocator>&amp; left,
               basic_stored_table&lt;Content, Allocator>&amp; right)
@@ -3234,7 +3227,7 @@ namespace commata {
         <section id="basic_stored_table.conds">
           <name>General requirements and postconditions</name>
 
-          <p>All member functions of <c>basic_stored_table</c> and all instances of non-member function templates declared in this header (<xref id="stored_table_hpp"/>) that take at least one parameter whose reference-removed and cv-unqualified type is an instance of <c>basic_stored_table</c> require that the following conditions meet:</p>
+          <p>All member functions of <c>basic_stored_table</c> and all instances of non-member function templates declared in this header (<xref id="hpp.stored_table.syn"/>) that take at least one parameter whose reference-removed and cv-unqualified type is an instance of <c>basic_stored_table</c> require that the following conditions meet:</p>
           <ul>
              <li>all participating <c>basic_stored_table</c> objects are complete, and</li>
              <li>no two of the contained values of the participating <c>basic_stored_table</c> objects overlap.</li>
@@ -3246,7 +3239,7 @@ namespace commata {
              <li>the states of the participating <c>basic_stored_table</c> objects are not changed if the call exits via an exception.</li>
           </ul>
 
-          <p>All non-const member functions of <c>basic_stored_table</c> and all instances of non-member function templates declared in this header (<xref id="stored_table_hpp"/>) that take at least one parameter whose type is a reference to a non-const <c>basic_stored_table&lt;Ch, Tr></c> for some <c>Ch</c> and <c>Tr</c> may change the current buffer marks of the participating non-const <c>basic_stored_table</c> objects.</p>
+          <p>All non-const member functions of <c>basic_stored_table</c> and all instances of non-member function templates declared in this header (<xref id="hpp.stored_table.syn"/>) that take at least one parameter whose type is a reference to a non-const <c>basic_stored_table&lt;Ch, Tr></c> for some <c>Ch</c> and <c>Tr</c> may change the current buffer marks of the participating non-const <c>basic_stored_table</c> objects.</p>
         </section>
       </section>
 
@@ -3655,7 +3648,7 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
         </code-item>
       </section>
 
-      <section id="basic_stored_table.swap">
+      <section id="basic_stored_table.special">
         <name><c>basic_stored_table</c> specialized algorithms</name>
 
         <code-item>
@@ -3801,13 +3794,13 @@ template &lt;class Content, class Allocator, class... Args>
     </section>
   </section>
 
-  <section id="scanner">
+  <section id="scan">
     <name>One-pass scanning operation</name>
 
-    <section id="scanner.table">
+    <section id="scan.scanner">
       <name>The table scanner</name>
 
-      <section id="scanner.table.general">
+      <section id="scan.scanner.general">
         <name>General</name>
 
         <p>Commata offers a <n>table scanner</n> class template, whose name is <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>), whose instances meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) as a simple facility for one-pass scanning of texts.</p>
@@ -3817,7 +3810,7 @@ template &lt;class Content, class Allocator, class... Args>
            the <c>BodyFieldScanner</c>, the <c>RecordEndScanner</c> and the <c>HeaderFieldScanner</c> requirements respectively.</p>
       </section>
 
-      <section id="field_scanner.requirements">
+      <section id="body_field_scanner.requirements">
         <name><c>BodyFieldScanner</c> requirements</name>
 
         <p>A type <c>S</c> meets the <c>BodyFieldScanner</c> requirements for <c>Ch</c> that is a char-like type, <c>Tr</c> that is a character traits type of <c>Ch</c>, and <c>Allocator</c> that is an allocator type of <c>Ch</c> if:</p>
@@ -3948,13 +3941,13 @@ template &lt;class Content, class Allocator, class... Args>
       </section>
     </section>
 
-    <section id="scanner.builtin_body_field_scanners">
+    <section id="scan.builtin.body_field_scanners.requirements">
       <name>Default body field scanners</name>
 
-      <section id="scanner.builtin_body_field_scanners.general">
+      <section id="scan.builtin.body_field_scanners.requirements.general">
         <name>General</name>
 
-        <p>The Commata library offers three default body field scanner types that meet the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>):
+        <p>The Commata library offers three default body field scanner types that meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>):
            <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>), <c>locale_based_arithmetic_field_translator</c> (<xref id="locale_based_arithmetic_field_translator"/>) and <c>string_field_translator</c> (<xref id="string_field_translator"/>).</p>
         <p>An object of these types <n>translates</n> a field value into a value of its <n>target type</n> and forwards it into its installed <n>sink</n>.</p>
         <p>Behaviours of these default body scanner objects can be customized through the three concepts: <c>FieldTranslatorSink</c> (<xref id="field_translator_sink.requirements"/>), <c>SkippingHandler</c> (<xref id="skipping_handler.requirements"/>) and <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>).</p>
@@ -4090,7 +4083,7 @@ template &lt;class Content, class Allocator, class... Args>
       </section>
     </section>
 
-    <section id="table_scanner_hpp">
+    <section id="hpp.table_scanner.syn">
       <name>Header <c>"commama/table_scanner.hpp"</c> synopsis</name>
 
       <codeblock>
@@ -4111,7 +4104,7 @@ namespace commata {
   using table_scanner = basic_table_scanner&lt;char>;
   using wtable_scanner = basic_table_scanner&lt;wchar_t>;
 
-  <c>// <n><xref id="scanner.builtin.exceptions"/>, exception classes:</n></c>
+  <c>// <n><xref id="scan.builtin.exceptions"/>, exception classes:</n></c>
   class field_translation_error : public text_error;
     class field_not_found : public field_translation_error;
     class field_invalid_format : public field_translation_error;
@@ -4129,13 +4122,13 @@ namespace commata {
   struct replacement_fail_t {};
   constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
 
-  <c>// <n><xref id="scanner.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
+  <c>// <n><xref id="scan.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
   struct fail_if_skipped;
   template &lt;class T> class replace_if_skipped;
   template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
                                replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
 
-  <c>// <n><xref id="scanner.builtin.conversion_error_handlers"/>, default conversion error handler classes:</n></c>
+  <c>// <n><xref id="scan.builtin.conversion_error_handlers"/>, default conversion error handler classes:</n></c>
   struct fail_if_conversion_failed;
   template &lt;class T> class replace_if_conversion_failed;
   template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
@@ -4157,7 +4150,7 @@ namespace commata {
             class SkippingHandler = fail_if_skipped>
     class string_field_translator;
 
-  <c>// <n><xref id="make_field_translator"/>, creation of default field scanners:</n></c>
+  <c>// <n><xref id="scan.builtin.body_field_scanners.creation"/>, creation of default field scanners:</n></c>
   template &lt;class T, class Sink, class... Appendices>
     <nc>see below</nc> make_field_translator(Sink sink, Appendices&amp;&amp;... appendices);
   template &lt;class T, class Allocator, class Sink, class... Appendices>
@@ -4233,7 +4226,7 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The class template <c>basic_table_scanner</c> describes the table scanner objects (<xref id="scanner.table.general"/>).
+        <p>The class template <c>basic_table_scanner</c> describes the table scanner objects (<xref id="scan.scanner.general"/>).
            An instantiation of it satisfies the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.
            An object of an instantiation of it can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
         <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements and <c>Allocator::value_type</c> shall be a type identical to <c>Ch</c>.</p>
@@ -4290,7 +4283,7 @@ allocator_type get_allocator() const noexcept;
 template &lt;class T = std::nullptr_t> void set_field_scanner(std::size_t j, T s = T());
           </code>
           <requires><c>T</c> shall either be (possibly cv-qualified) <c>std::nullptr_t</c>,
-                    meet the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) for <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>, or
+                    meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) for <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>, or
                     be (possibly cv-qualified) <c>std::reference_wrapper&lt;U></c> where <c>U</c> shall be a type that meets the <c>BodyFieldScanner</c> requirements for <c>Ch</c> and <c>Tr</c> except that it need not be either <c>MoveConstructible</c> or <c>Destructible</c>.</requires>
           <effects>If <c>T</c> is (possibly cv-qualified) <c>std::nullptr_t</c>, uninstalls the body field scanner installed at zero-based field index <c>j</c> if any.
                    Otherwise, uninstalls the body field scanner installed there if any, and installs a copy of <c>s</c> as a body field scanner in place of it.</effects>
@@ -4370,7 +4363,7 @@ bool is_in_header() const noexcept;
       </section>
     </section>
 
-    <section id="scanner.builtin.exceptions">
+    <section id="scan.builtin.exceptions">
       <name>Exception classes</name>
 
       <section id="field_translation_error">
@@ -4681,7 +4674,7 @@ template &lt;class T> void swap(replacement&lt;T>&amp; left,
       </section>
     </section>
 
-    <section id="scanner.builtin.skipping_handlers">
+    <section id="scan.builtin.skipping_handlers">
       <name>Default skipping handler classes</name>
 
       <section id="fail_if_skipped">
@@ -4907,10 +4900,10 @@ template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
       </section>
     </section>
 
-    <section id="scanner.builtin.conversion_error_handlers">
+    <section id="scan.builtin.conversion_error_handlers">
       <name>Default conversion error handler classes</name>
 
-      <section id="scanner.builtin.conversion_error_handlers.general">
+      <section id="scan.builtin.conversion_error_handlers.general">
         <name>General</name>
 
         <p>This subclause describes struct <c>fail_if_conversion_failed</c> (<xref id="fail_if_conversion_failed"/>) and class template <c>replace_if_conversion_failed</c> (<xref id="replace_if_conversion_failed"/>),
@@ -5302,10 +5295,10 @@ template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
       </section>
     </section>
 
-    <section id="default_body_field_scanner_classes">
+    <section id="scan.builtin.body_field_scanners">
       <name>Default body field scanner classes</name>
 
-      <p>This subclause describes the body field scanner classes (<xref id="field_scanner.requirements"/>) built-in to Commata.</p>
+      <p>This subclause describes the body field scanner classes (<xref id="body_field_scanner.requirements"/>) built-in to Commata.</p>
       <p>In this subclause, terms on the possible target types of these built-in body field scanner classes are used as follows:</p>
       <ul>
         <li>A type <c>T</c> is a <n>default translatable arithmeric type</n> if <c>T</c> is the same type as either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, <c>double</c>, or <c>long double</c>.</li>
@@ -5330,21 +5323,21 @@ namespace commata {
     arithmetic_field_translator(      arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~arithmetic_field_translator();
 
-    <c>// <n><xref id="arithmetic_field_translator.handler_access"/>, handler access:</n></c>
+    <c>// <n><xref id="arithmetic_field_translator.handler"/>, handler access:</n></c>
     const SkippingHandler&amp; get_skipping_handler() const noexcept;
           SkippingHandler&amp; get_skipping_handler() noexcept;
     const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
           ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
 
-    <c>// <n><xref id="arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="field_scanner.requirements"/>):</n></c>
+    <c>// <n><xref id="arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="body_field_scanner.requirements"/>):</n></c>
     template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
     void field_skipped();
   };
 }
         </codeblock>
 
-        <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
-        <p><c>T</c> is the target type (<xref id="scanner.builtin_body_field_scanners.general"/>) and shall be a default translatable arithmeric type.
+        <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
+        <p><c>T</c> is the target type (<xref id="scan.builtin.body_field_scanners.requirements.general"/>) and shall be a default translatable arithmeric type.
            <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
            The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
            The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
@@ -5380,7 +5373,7 @@ arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcep
           </code-item>
         </section>
 
-        <section id="arithmetic_field_translator.handler_access">
+        <section id="arithmetic_field_translator.handler">
           <name><c>arithmetic_field_translator</c> handler access</name>
           <code-item>
             <code>
@@ -5552,22 +5545,22 @@ namespace commata {
             locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~locale_based_arithmetic_field_translator();
 
-    <c>// <n><xref id="locale_based_arithmetic_field_translator.handler_access"/>, handler access:</n></c>
+    <c>// <n><xref id="locale_based_arithmetic_field_translator.handler"/>, handler access:</n></c>
     const SkippingHandler&amp; get_skipping_handler() const noexcept;
           SkippingHandler&amp; get_skipping_handler() noexcept;
     const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
           ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
 
-    <c>// <n><xref id="locale_based_arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="field_scanner.requirements"/>):</n></c>
+    <c>// <n><xref id="locale_based_arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="body_field_scanner.requirements"/>):</n></c>
     template &lt;class Ch> void field_value(Ch* begin, Ch* end);
     void field_skipped();
   };
 }
         </codeblock>
 
-        <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) whose target type is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
+        <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
           The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C-language locale.</p>
-        <p><c>T</c> is the target type (<xref id="scanner.builtin_body_field_scanners.general"/>) and shall be a default translatable arithmeric type.
+        <p><c>T</c> is the target type (<xref id="scan.builtin.body_field_scanners.requirements.general"/>) and shall be a default translatable arithmeric type.
           <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
           The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
           The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
@@ -5606,7 +5599,7 @@ locale_based_arithmetic_field_translator(
           </code-item>
         </section>
 
-        <section id="locale_based_arithmetic_field_translator.handler_access">
+        <section id="locale_based_arithmetic_field_translator.handler">
           <name><c>locale_based_arithmetic_field_translator</c> handler access</name>
           <code-item>
             <code>
@@ -5671,11 +5664,11 @@ namespace commata {
     <c>// <n><xref id="string_field_translator.allocator"/>, allocator access:</n></c>
     allocator_type get_allocator() const noexcept;
 
-    <c>// <n><xref id="string_field_translator.handler_access"/>, handler access:</n></c>
+    <c>// <n><xref id="string_field_translator.handler"/>, handler access:</n></c>
     const SkippingHandler&amp; get_skipping_handler() const noexcept;
           SkippingHandler&amp; get_skipping_handler() noexcept;
 
-    <c>// <n><xref id="string_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="field_scanner.requirements"/>):</n></c>
+    <c>// <n><xref id="string_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="body_field_scanner.requirements"/>):</n></c>
     void field_value(const Ch* begin, const Ch* end);
     void field_value(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; value);
     void field_skipped();
@@ -5683,8 +5676,8 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="field_scanner.requirements"/>) whose target type is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.
-          Its target type (<xref id="scanner.builtin_body_field_scanners.general"/>) is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
+        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.
+          Its target type (<xref id="scan.buitin.body_field_scanners.requirements.general"/>) is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
         <p><c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for <c>std::basic_string&lt;Ch, Tr, Allocator></c> (<xref id="field_translator_sink.requirements"/>).
           The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>std::basic_string&lt;Ch, Tr, Allocator></c> (<xref id="skipping_handler.requirements"/>).</p>
 
@@ -5738,7 +5731,7 @@ allocator_type get_allocator() const noexcept;
           </code-item>
         </section>
 
-        <section id="string_field_translator.handler_access">
+        <section id="string_field_translator.handler">
           <name><c>string_field_translator</c> handler access</name>
           <code-item>
             <code>
@@ -5774,7 +5767,7 @@ void field_skipped();
         </section>
       </section>
 
-      <section id="make_field_translator">
+      <section id="scan.builtin.body_field_scanners.creation">
         <name>Creation of default field scanners</name>
 
         <p>In this subclause, a type <c>S</c> is <n>deemed to be an acceptable sink</n> of type <c>T</c> if:</p>
@@ -5854,7 +5847,7 @@ template &lt;class Allocator, class Container, class... Appendices>
   <section id="pull">
     <name>Pull parsing</name>
 
-    <section id="table_source.general">
+    <section id="pull.general">
       <name>General</name>
 
       <p>Commata offers some tools to perform <n>pull parsing</n>, in which the users can immediately access the results of parsing text tables
@@ -5917,7 +5910,7 @@ template &lt;class Allocator, class Container, class... Appendices>
       </section>
     </section>
 
-    <section id="table_pull_hpp">
+    <section id="hpp.table_pull.syn">
       <name>Header <c>"commama/table_pull.hpp"</c> synopsis</name>
 
       <codeblock>

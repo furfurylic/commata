@@ -158,13 +158,11 @@
 </xsl:template>
 
 <xsl:template match="xref">
-  <xsl:variable name="id" select="string(@id)"/>
-  <a href="#{$id}"><xsl:apply-templates select="//*[@id = $id]" mode="outline"/></a>
+  <a href="#{@id}"><xsl:apply-templates select="//*[@id = current()/@id]" mode="outline"/></a>
 </xsl:template>
 
 <xsl:template name="toc-xref">
-  <xsl:variable name="id" select="string(@id)"/>
-  <a href="#{$id}"><xsl:apply-templates select="//*[@id = $id]" mode="heading"/></a>
+  <a href="#{@id}"><xsl:apply-templates select="//*[@id = current()/@id]" mode="heading"/></a>
 </xsl:template>
 
 <xsl:template match="c"><code><xsl:apply-templates/></code></xsl:template>
