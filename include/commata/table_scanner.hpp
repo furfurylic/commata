@@ -1578,7 +1578,7 @@ struct fail_if_skipped
 {
     template <class T>
     [[noreturn]]
-    replacement<T> operator()(T*) const
+    replacement<T> operator()(T* = nullptr) const
     {
         throw field_not_found("This field did not appear in this record");
     }
@@ -1702,7 +1702,7 @@ public:
         case mode::replace:
             return replacement<T>(value());
         case mode::fail:
-            fail_if_skipped()(static_cast<T*>(nullptr));
+            fail_if_skipped().operator()<T>();
             // fall through
         default:
             return replacement<T>();

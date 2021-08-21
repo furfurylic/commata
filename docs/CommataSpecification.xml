@@ -4690,7 +4690,7 @@ template &lt;class T> void swap(replacement&lt;T>&amp; left,
         <codeblock>
 namespace commata {
   struct fail_if_skipped {
-    template &lt;class T> [[noreturn]] replacement&lt;T> operator()(T*) const;
+    template &lt;class T> [[noreturn]] replacement&lt;T> operator()(T* = nullptr) const;
   };
 }
         </codeblock>
@@ -4700,7 +4700,7 @@ namespace commata {
 
         <code-item>
           <code>
-template &lt;class T> [[noreturn]] replacement&lt;T> operator()(T*) const;
+template &lt;class T> [[noreturn]] replacement&lt;T> operator()(T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_not_found</c> (<xref id="field_not_found"/>).</effects>
         </code-item>
