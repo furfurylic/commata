@@ -4805,6 +4805,7 @@ namespace commata {
             <code>
 template &lt;class... Args> explicit replace_if_skipped(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
             </code>
+            <requires><c>std::is_constructible&lt;T, Args...>::value</c> shall be <c>true</c>.</requires>
             <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Args>(args)...</c>.</effects>
             <remark>Let <c>DF</c> be <c>std::decay_t&lt;F></c> where <c>F</c> is the first type of <c>Args</c>.
                     This overload shall not participate in overload resolution if <c>sizeof...(Args)</c> is equal to <c>1</c> and
@@ -5054,6 +5055,14 @@ template &lt;class Empty = T, class InvalidFormat = T, class AboveUpperLimit = T
                                  AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
       noexcept(<nc>see below</nc>);
             </code>
+            <requires><p>For each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>, the following condition shall meet:</p>
+                      <ul>
+                        <li><c>std::is_base_of&lt;replacement_fail_t, std::decay_t&lt;U>>::value</c> is <c>true</c>,</li>
+                        <li><c>std::is_base_of&lt;replacement_ignore_t, std::decay_t&lt;U>>::value</c> is <c>true</c>, or</li>
+                        <li><c>std::is_constructible&lt;T, U>::value</c> is <c>true</c>.</li>
+                      </ul>
+                      <p>In addition, <c>std::is_default_constructible&lt;T>::value</c> shall be <c>true</c>.</p>
+            </requires>
             <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
                      Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
                      Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
@@ -5071,6 +5080,14 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                                AboveUpperLimit&amp;&amp; on_above_upper_limit,
                                BelowLowerLimit&amp;&amp; on_below_lower_limit) noexcept(<nc>see below</nc>);
             </code>
+            <requires><p>For each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>, the following condition shall meet:</p>
+                      <ul>
+                        <li><c>std::is_base_of&lt;replacement_fail_t, std::decay_t&lt;U>>::value</c> is <c>true</c>,</li>
+                        <li><c>std::is_base_of&lt;replacement_ignore_t, std::decay_t&lt;U>>::value</c> is <c>true</c>, or</li>
+                        <li><c>std::is_constructible&lt;T, U>::value</c> is <c>true</c>.</li>
+                      </ul>
+                      <p>In addition, <c>std::is_default_constructible&lt;T>::value</c> shall be <c>true</c>.</p>
+            </requires>
             <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
                      Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
                      Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
@@ -5090,6 +5107,13 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                                BelowLowerLimit&amp;&amp; on_below_lower_limit,
                                Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
             </code>
+            <requires><p>For each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>, the following condition shall meet:</p>
+                      <ul>
+                        <li><c>std::is_base_of&lt;replacement_fail_t, std::decay_t&lt;U>>::value</c> is <c>true</c>,</li>
+                        <li><c>std::is_base_of&lt;replacement_ignore_t, std::decay_t&lt;U>>::value</c> is <c>true</c>, or</li>
+                        <li><c>std::is_constructible&lt;T, U>::value</c> is <c>true</c>.</li>
+                      </ul>
+            </requires>
             <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
                      Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
                      Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
