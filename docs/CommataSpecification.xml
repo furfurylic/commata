@@ -6239,7 +6239,8 @@ template &lt;class TableSourceR>
   explicit primitive_table_pull(TableSourceR&amp;&amp; in,
                                 std::size_t buffer_size = 0);
           </code>
-          <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
+          <requires><c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.
+                    <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>First default constructs an <c>Allocator</c> object <c>a</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
                    Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
@@ -6255,7 +6256,7 @@ template &lt;class TableSourceR>
   primitive_table_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
                        std::size_t buffer_size = 0);
           </code>
-          <requires><c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</requires>
+          <requires><c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.</requires>
           <effects>First constructs an <c>Allocator</c> object <c>a</c> with <c>alloc</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
                    Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
@@ -6693,7 +6694,8 @@ static constexpr bool physical_position_available = <nc>see below</nc>;
 template &lt;class TableSourceR>
   explicit table_pull(TableSourceR&amp;&amp; in, std::size_t buffer_size = 0);
           </code>
-          <requires><c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
+          <requires><c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.
+                    <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Initializes an object of <c>table_pull</c> with a default constructed <c>Allocator</c> object as its allocator object and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
@@ -6707,7 +6709,7 @@ template &lt;class TableSourceR>
   table_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
              std::size_t buffer_size = 0);
           </code>
-          <requires><c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</requires>
+          <requires><c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.</requires>
           <effects>Initializes an object of <c>table_pull</c> with an allocator object constructed from <c>alloc</c> and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
