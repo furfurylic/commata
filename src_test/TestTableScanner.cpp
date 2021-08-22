@@ -549,6 +549,31 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Copy)
     ASSERT_EQ(expected, values);
 }
 
+TYPED_TEST(TestFieldTranslatorForStringTypes, View)
+{
+    using char_t = TypeParam;
+    using string_t = std::basic_string<TypeParam>;
+    using string_view_t = std::basic_string_view<TypeParam>;
+
+    const auto str = char_helper<char_t>::str;
+
+    std::basic_ostringstream<char_t> stream;
+    string_t replacement = str("!!!");
+    auto t = make_field_translator<string_view_t>(
+        std::ostream_iterator<string_view_t, char_t>(stream),
+        replace_if_skipped<string_view_t>(replacement));
+    basic_table_scanner<char_t> scanner;
+    scanner.set_field_scanner(1, std::move(t));
+
+    try {
+        parse_csv(str("1,ABC\n2\n3,XYZ"), std::move(scanner));
+    } catch (const text_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(str("ABC!!!XYZ"), stream.str());
+}
+
 namespace {
 
 template <class Ch>

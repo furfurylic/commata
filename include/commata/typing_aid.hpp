@@ -32,6 +32,12 @@ template <class Ch, class Tr, class... Args>
 constexpr bool is_std_string_of_ch_tr_v<std::basic_string<Ch, Tr, Args...>,
                                         Ch, Tr> = true;
 
+template <class T>
+constexpr bool is_std_string_view_v = false;
+
+template <class... Args>
+constexpr bool is_std_string_view_v<std::basic_string_view<Args...>> = true;
+
 template <class W>
 constexpr bool is_std_reference_wrapper_v = false;
 

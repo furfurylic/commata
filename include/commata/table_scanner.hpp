@@ -2507,6 +2507,57 @@ public:
     }
 };
 
+template <class Sink, class Ch, class Tr = std::char_traits<Ch>,
+    class SkippingHandler = fail_if_skipped>
+class string_view_field_translator :
+    detail::member_like_base<
+        detail::scanner::translator<
+            std::basic_string_view<Ch, Tr>, Sink, SkippingHandler>>
+{
+    using translator_t = detail::scanner::translator<
+        std::basic_string_view<Ch, Tr>, Sink, SkippingHandler>;
+    using base_t = detail::member_like_base<translator_t>;
+
+public:
+    template <class SinkR, class SkippingHandlerR = SkippingHandler,
+              std::enable_if_t<
+                !std::is_base_of_v<
+                    string_view_field_translator, std::decay_t<SinkR>>,
+                std::nullptr_t> = nullptr>
+    explicit string_view_field_translator(
+        SinkR&& sink,
+        SkippingHandlerR&& handle_skipping =
+            std::decay_t<SkippingHandlerR>()) :
+        base_t(std::forward<SinkR>(sink),
+               std::forward<SkippingHandlerR>(handle_skipping))
+    {}
+
+    string_view_field_translator(const string_view_field_translator&)
+        = default;
+    string_view_field_translator(string_view_field_translator&&) = default;
+    ~string_view_field_translator() = default;
+
+    const SkippingHandler& get_skipping_handler() const noexcept
+    {
+        return this->get().get_skipping_handler();
+    }
+
+    SkippingHandler& get_skipping_handler() noexcept
+    {
+        return this->get().get_skipping_handler();
+    }
+
+    void operator()()
+    {
+        this->get().field_skipped();
+    }
+
+    void operator()(const Ch* begin, const Ch* end)
+    {
+        this->get().put(std::basic_string_view<Ch, Tr>(begin, end - begin));
+    }
+};
+
 namespace detail::scanner {
 
 template <class T, class Sink, class... As,
@@ -2517,6 +2568,7 @@ arithmetic_field_translator<T, Sink, fail_if_skipped, As...>
 template <class T, class Sink, class ReplaceIfSkipped, class... As,
     std::enable_if_t<
         !detail::is_std_string_v<T>
+     && !detail::is_std_string_view_v<T>
      && !std::is_base_of_v<std::locale, std::decay_t<ReplaceIfSkipped>>
      && !std::is_base_of_v<replacement_fail_t,std::decay_t<ReplaceIfSkipped>>
      && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
@@ -2527,6 +2579,7 @@ arithmetic_field_translator<T, Sink, replace_if_skipped<T>, As...>
 template <class T, class Sink, class... As,
     std::enable_if_t<
         !detail::is_std_string_v<T>
+     && !detail::is_std_string_view_v<T>
      && ((sizeof...(As) == 0)
       || !(std::is_base_of_v<std::locale, std::decay_t<detail::first_t<As...>>>
         || std::is_constructible_v<replace_if_skipped<T>,
@@ -2592,13 +2645,42 @@ string_field_translator<Sink,
         typename T::allocator_type, std::decay_t<As>...>
     make_field_translator_na(Sink, As&&...);
 
+template <class T, class Sink,
+    std::enable_if_t<detail::is_std_string_view_v<T>, std::nullptr_t>
+        = nullptr>
+string_view_field_translator<Sink,
+        typename T::value_type, typename T::traits_type, fail_if_skipped>
+    make_field_translator_na(Sink, replacement_fail_t);
+
+template <class T, class Sink, class ReplaceIfSkipped,
+    std::enable_if_t<
+        detail::is_std_string_view_v<T>
+     && !std::is_base_of_v<replacement_fail_t, std::decay_t<ReplaceIfSkipped>>
+     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
+        std::nullptr_t> = nullptr>
+string_view_field_translator<Sink,
+        typename T::value_type, typename T::traits_type, replace_if_skipped<T>>
+    make_field_translator_na(Sink, ReplaceIfSkipped&&);
+
+template <class T, class Sink, class... As,
+    std::enable_if_t<
+        detail::is_std_string_view_v<T>
+     && ((sizeof...(As) == 0)
+      || !std::is_constructible_v<replace_if_skipped<T>,
+                                  detail::first_t<As...>>),
+        std::nullptr_t> = nullptr>
+string_view_field_translator<Sink,
+        typename T::value_type, typename T::traits_type, std::decay_t<As>...>
+    make_field_translator_na(Sink, As&&...);
+
 } // end detail::scanner
 
 template <class T, class Sink, class... Appendices>
 auto make_field_translator(Sink&& sink, Appendices&&... appendices)
  -> std::enable_if_t<
         (detail::scanner::is_convertible_numeric_type_v<T>
-      || detail::is_std_string_v<T>)
+      || detail::is_std_string_v<T>
+      || detail::is_std_string_view_v<T>)
      && (detail::scanner::is_output_iterator_v<std::decay_t<Sink>>
       || std::is_invocable_v<std::decay_t<Sink>&, T>),
         decltype(detail::scanner::make_field_translator_na<T>(

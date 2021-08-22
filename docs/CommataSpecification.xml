@@ -4588,6 +4588,11 @@ namespace commata {
             class SkippingHandler = fail_if_skipped>
     class string_field_translator;
 
+  <c>// <n><xref id="string_view_field_translator"/>, string_view_field_translator:</n></c>
+  template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
+            class SkippingHandler = fail_if_skipped>
+    class string_view_field_translator;
+
   <c>// <n><xref id="scan.builtin.body_field_scanners.creation"/>, creation of default field scanners:</n></c>
   template &lt;class T, class SinkR, class... Appendices>
     <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
@@ -5568,7 +5573,8 @@ template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
       <ul>
         <li>A type <c>T</c> is a <n>default translatable arithmeric type</n> if <c>T</c> is the same type as either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, <c>double</c>, or <c>long double</c>.</li>
         <li>A type <c>T</c> is a <n>default translatable string type</n> if <c>T</c> is the same type as <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain combination of <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>.</li>
-        <li>A type <c>T</c> is a <n>default translatable type</n> if <c>T</c> is a default translatable arithmeric type or a default translatable string type.</li>
+        <li>A type <c>T</c> is a <n>default translatable string view type</n> if <c>T</c> is the same type as <c>std::basic_string_view&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</li>
+        <li>A type <c>T</c> is a <n>default translatable type</n> if <c>T</c> is a default translatable arithmeric type, a default translatable string type or a default translatable string view type.</li>
       </ul>
 
       <section id="arithmetic_field_translator">
@@ -6055,6 +6061,99 @@ void operator()();
         </section>
       </section>
 
+      <section id="string_view_field_translator">
+        <name>Class template <c>string_view_field_translator</c></name>
+
+        <codeblock>
+namespace commata {
+  template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
+            class SkippingHandler = fail_if_skipped>
+    class string_view_field_translator {
+  public:
+    <c>// <n><xref id="string_view_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
+      explicit string_view_field_translator(
+        SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
+    string_view_field_translator(const string_view_field_translator&amp;  other) noexcept(<nc>see below</nc>);
+    string_view_field_translator(      string_view_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+   ~string_view_field_translator();
+
+    <c>// <n><xref id="string_view_field_translator.handler"/>, handler access:</n></c>
+    const SkippingHandler&amp; get_skipping_handler() const noexcept;
+          SkippingHandler&amp; get_skipping_handler()       noexcept;
+
+    <c>// <n><xref id="string_view_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="body_field_scanner.requirements"/>):</n></c>
+    void operator()(const Ch* begin, const Ch* end);
+    void operator()();
+  };
+}
+        </codeblock>
+
+        <p>The <c>string_view_field_translator</c> class template provides a simple implementation for the standard string view type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is <c>std::basic_string_view&lt;Ch, Tr></c>.</p>
+        <p><c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for <c>std::basic_string_view&lt;Ch, Tr></c> (<xref id="field_translator_sink.requirements"/>).
+          The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>std::basic_string_view&lt;Ch, Tr></c> (<xref id="skipping_handler.requirements"/>).</p>
+
+        <section id="string_view_field_translator.cons">
+          <name><c>string_view_field_translator</c> construct/copy/destroy</name>
+          <code-item>
+            <code>
+template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
+  explicit string_view_field_translator(
+    SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
+            </code>
+            <requires>Both of <c>std::is_constructible_v&lt;Sink, SinkR></c> and <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR></c> shall be <c>true</c>.</requires>
+            <effects>Initializes an object of <c>string_field_translator</c> that holds objects of <c>Sink</c> and <c>SkippingHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c> and <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> as the field translator sink object and the skipping handler object respectively.</effects>
+            <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;string_view_field_translator&lt;Sink, Ch, Tr, SkippingHandler>, std::decay_t&lt;SinkR>></c> is <c>false</c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+string_view_field_translator(const string_view_field_translator;&amp; other) noexcept(<nc>see below</nc>);
+            </code>
+            <requires><c>Sink</c> and <c>SkippingHandler</c> shall be <c>CopyConstructible</c>.</requires>
+            <effects>Initializes an object of <c>string_view_field_translator</c> that holds a field translator sink object and a skipping handler object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;SkippingHandler></c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+string_view_field_translator(string_view_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>Initializes an object of <c>string_view_field_translator</c> that holds a field translator sink object and a skipping handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_move_constructible_v&lt;SkippingHandler></c>.
+                    When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
+          </code-item>
+        </section>
+
+        <section id="string_view_field_translator.handler">
+          <name><c>string_view_field_translator</c> handler access</name>
+          <code-item>
+            <code>
+const SkippingHandler&amp; get_skipping_handler() const noexcept;
+      SkippingHandler&amp; get_skipping_handler()       noexcept;
+            </code>
+            <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
+          </code-item>
+        </section>
+
+        <section id="string_view_field_translator.scanner">
+          <name><c>string_view_field_translator</c> members to meet the <c>BodyFieldScanner</c> requirements</name>
+          <code-item>
+            <code>
+void operator()(const Ch* begin, const Ch* end);
+            </code>
+            <effects>Puts <c>std::basic_string_view&lt;Ch, Tr>(begin, end - begin)</c> into the field translator sink.</effects>
+          </code-item>
+
+          <code-item>
+            <code>
+void operator()();
+            </code>
+            <effects>Evaluates <c>get_skipping_handler()()</c> and puts the result into the field translator sink.</effects>
+          </code-item>
+        </section>
+      </section>
+
       <section id="scan.builtin.body_field_scanners.creation">
         <name>Creation of default field scanners</name>
 
@@ -6088,6 +6187,18 @@ template &lt;class T, class SinkR, class... Appendices>
                              <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, Appendices1...></c>,</li>
                              <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
                              <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, Appendices...></c>;</li>
+                           </ul>
+                         </li>
+                       </ul>
+                     </li>
+                     <li>otherwise, if <c>T</c> is a default translatable string view type:
+                       <ul>
+                         <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type></c>,</li>
+                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
+                           <ul>
+                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, fail_if_skipped, Appendices1...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F></c> is <c>true</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
+                             <li>otherwise, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, Appendices...></c>;</li>
                            </ul>
                          </li>
                        </ul>
@@ -6153,7 +6264,7 @@ template &lt;class Container, class... Appendices>
                    <code>return make_field_translator&lt;typename Container::value_type>(
          <n>INSERTER</n>(values), std::forward&lt;Appendices>(appendices)...);</code>
           </effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is a default translatable type and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is either of a default translatable arithmetic type or a default translatable string type, and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
         </code-item>
 
         <code-item>
@@ -6167,7 +6278,7 @@ template &lt;class Allocator, class Container, class... Appendices>
          std::allocator_arg, alloc,
          <n>INSERTER</n>(values), std::forward&lt;Appendices>(appendices)...);</code>
           </effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is a default translatable string type and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is either of a default translatable arithmetic type or a default translatable string type, and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
         </code-item>
       </section>
     </section>
