@@ -1676,8 +1676,8 @@ template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcep
   -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
         </code>
         <preface>Let <c>CI</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
-        <returns><c>csv_source&lt;CI>(make_char_input(std::forward&lt;Args>(args)...))</c>.</returns>
-        <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(make_char_input(std::forward&lt;Args>(args)...)) &amp;&amp; std::is_nothrow_move_constructible&lt;CI>::value</c>.</remark>
+        <returns><c>csv_source&lt;CI>(std::forward&lt;Args>(args)...)</c>.</returns>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;CI, Args...>::value</c>.</remark>
       </code-item>
     </section>
 
