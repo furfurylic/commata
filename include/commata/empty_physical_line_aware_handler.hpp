@@ -127,7 +127,7 @@ template <class Handler>
 auto make_empty_physical_line_aware(Handler&& handler)
     noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
  -> std::enable_if_t<
-        !detail::is_std_reference_wrapper<Handler>::value,
+        !detail::is_std_reference_wrapper<std::decay_t<Handler>>::value,
         detail::empty_physical_line_aware::handler<std::decay_t<Handler>>>
 {
     return detail::empty_physical_line_aware::handler<
