@@ -121,7 +121,7 @@ public:
             std::nullptr_t> = nullptr>
     explicit full_fledged_handler(HandlerR&& handler,
         BufferControl&& buffer_engine = BufferControl())
-        noexcept(std::is_nothrow_constructible<Handler, HandlerR&&>::value) :
+        noexcept(std::is_nothrow_constructible<Handler, HandlerR>::value) :
         BufferControl(std::move(buffer_engine)),
         handler_(std::move(handler))
     {}

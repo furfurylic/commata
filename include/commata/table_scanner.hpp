@@ -819,7 +819,7 @@ public:
          && !std::is_same<replacement_ignore_t, std::decay_t<U>>::value,
             std::nullptr_t> = nullptr>
     explicit replacement(U&& t)
-        noexcept(std::is_nothrow_constructible<T, U&&>::value) :
+        noexcept(std::is_nothrow_constructible<T, U>::value) :
         has_(true)
     {
         ::new(store_) T(std::forward<U>(t));        // throw
@@ -843,7 +843,7 @@ public:
 
     template <class U>
     replacement(replacement<U>&& other)
-        noexcept(std::is_nothrow_constructible<T, U&&>::value) :
+        noexcept(std::is_nothrow_constructible<T, U>::value) :
         replacement(privy_t(), std::move(other))
     {}
 
@@ -862,7 +862,7 @@ private:
 
     template <class U>
     replacement(privy_t, replacement<U>&& other)
-        noexcept(std::is_nothrow_constructible<T, U&&>::value) :
+        noexcept(std::is_nothrow_constructible<T, U>::value) :
         has_(other.has_)
     {
         if (const auto p = other.get()) {
@@ -887,8 +887,8 @@ public:
 
     template <class U>
     auto operator=(U&& t)
-        noexcept(std::is_nothrow_constructible<T, U&&>::value
-              && std::is_nothrow_assignable<T, U&&>::value)
+        noexcept(std::is_nothrow_constructible<T, U>::value
+              && std::is_nothrow_assignable<T, U>::value)
       -> std::enable_if_t<
             !detail::scanner::is_replacement<std::decay_t<U>>::value
          && !std::is_same<replacement_ignore_t, std::decay_t<U>>::value,
@@ -933,8 +933,8 @@ public:
 
     template <class U>
     replacement& operator=(replacement<U>&& other)
-        noexcept(std::is_nothrow_constructible<T, U&&>::value
-              && std::is_nothrow_assignable<T, U&&>::value)
+        noexcept(std::is_nothrow_constructible<T, U>::value
+              && std::is_nothrow_assignable<T, U>::value)
     {
         assign(std::move(other));
         return *this;
@@ -955,8 +955,8 @@ private:
 
     template <class U>
     void assign(replacement<U>&& other)
-        noexcept(std::is_nothrow_constructible<T, U&&>::value
-              && std::is_nothrow_assignable<T, U&&>::value)
+        noexcept(std::is_nothrow_constructible<T, U>::value
+              && std::is_nothrow_assignable<T, U>::value)
     {
         if (const auto p = other.get()) {
             *this = std::move(*other);
