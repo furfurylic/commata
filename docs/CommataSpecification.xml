@@ -1133,9 +1133,9 @@ template &lt;class Ch, class Tr>
 namespace commata {
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class string_input {
   public:
-    using char_type = Ch;
+    using char_type   = Ch;
     using traits_type = Tr;
-    using size_type = std::size_t;
+    using size_type   = std::size_t;
 
     <c>// <n><xref id="string_input.cons"/>, construct/copy/destroy:</n></c>
     string_input() noexcept : begin(nullptr), end(nullptr) {}
