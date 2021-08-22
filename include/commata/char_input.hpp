@@ -25,7 +25,7 @@ template <class Ch, class Tr>
 auto read(std::basic_streambuf<Ch, Tr>& in,
     Ch* out, std::make_unsigned_t<std::streamsize> n)
 {
-    decltype(n) nmax = std::numeric_limits<std::streamsize>::max();
+    constexpr decltype(n) nmax = std::numeric_limits<std::streamsize>::max();
     decltype(n) m = 0;
     while (n > nmax) {
         const auto mm = in.sgetn(out, nmax);
