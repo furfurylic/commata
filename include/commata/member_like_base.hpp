@@ -9,6 +9,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "typing_aid.hpp"
+
 namespace commata {
 namespace detail {
 
@@ -23,18 +25,13 @@ class member_like_base<F,
     F f_;
 
 public:
-    member_like_base()
-        noexcept(std::is_nothrow_default_constructible<F>::value)
-    {}
-
-    explicit member_like_base(const F& f)
-        noexcept(std::is_nothrow_copy_constructible<F>::value) :
-        f_(f)
-    {}
-
-    explicit member_like_base(F&& f)
-        noexcept(std::is_nothrow_move_constructible<F>::value) :
-        f_(std::move(f))
+    template <class... Args,
+        std::enable_if_t<
+            !std::is_base_of<member_like_base, first_t<Args...>>::value,
+            std::nullptr_t> = nullptr>
+    explicit member_like_base(Args&&... args)
+        noexcept(std::is_nothrow_constructible<F, Args...>::value) :
+        f_(std::forward<Args>(args)...)
     {}
 
     F& get() noexcept
@@ -55,18 +52,13 @@ class member_like_base<F,
     F
 {
 public:
-    member_like_base()
-        noexcept(std::is_nothrow_default_constructible<F>::value)
-    {}
-
-    explicit member_like_base(const F& f)
-        noexcept(std::is_nothrow_copy_constructible<F>::value) :
-        F(f)
-    {}
-
-    explicit member_like_base(F&& f)
-        noexcept(std::is_nothrow_move_constructible<F>::value) :
-        F(std::move(f))
+    template <class... Args,
+        std::enable_if_t<
+            !std::is_base_of<member_like_base, first_t<Args...>>::value,
+            std::nullptr_t> = nullptr>
+    explicit member_like_base(Args&&... args)
+        noexcept(std::is_nothrow_constructible<F, Args...>::value) :
+        F(std::forward<Args>(args)...)
     {}
 
     F& get() noexcept
@@ -87,10 +79,7 @@ class base_member_pair
     {
         M m;
 
-        template <class BR, class MR,
-            class = std::enable_if_t<
-                std::is_constructible<B, BR>::value
-             && std::is_constructible<M, MR>::value>>
+        template <class BR, class MR>
         pair(BR&& base, MR&& member)
             noexcept(std::is_nothrow_constructible<B, BR>::value
                   && std::is_nothrow_constructible<M, MR>::value) :
@@ -102,11 +91,7 @@ class base_member_pair
     pair p_;
 
 public:
-    template <class BR, class MR,
-        std::enable_if_t<
-            std::is_constructible<B, BR>::value
-         && std::is_constructible<M, MR>::value,
-            std::nullptr_t> = nullptr>
+    template <class BR, class MR>
     base_member_pair(BR&& first, MR&& second)
         noexcept(std::is_nothrow_constructible<B, BR>::value
               && std::is_nothrow_constructible<M, MR>::value) :

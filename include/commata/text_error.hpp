@@ -57,7 +57,9 @@ class text_error :
 
     public:
         template <class T,
-            class = std::enable_if_t<std::is_constructible<S, T>::value>>
+            std::enable_if_t<
+                std::is_constructible<S, T>::value,
+                std::nullptr_t> = nullptr>
         string_holder(T&& s) : s_(std::forward<T>(s))
         {}
 

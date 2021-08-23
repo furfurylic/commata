@@ -76,8 +76,9 @@ class handler :
 
 public:
     template <class A,
-        class = std::enable_if_t<
-            std::is_constructible<Handler, A>::value>>
+        std::enable_if_t<
+            std::is_constructible<Handler, A>::value,
+            std::nullptr_t> = nullptr>
     explicit handler(A&& h)
         noexcept(std::is_nothrow_constructible<Handler, A>::value) :
         handler_(std::forward<A>(h))

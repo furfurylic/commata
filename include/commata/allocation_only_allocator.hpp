@@ -94,14 +94,14 @@ public:
     template <class OtherAllocator>
     explicit allocation_only_allocator(
         const allocation_only_allocator<OtherAllocator>& other) noexcept :
-        member_like_base<Allocator>(Allocator(other.base()))
+        member_like_base<Allocator>(other.base())
     {}
 
     // ditto
     template <class OtherAllocator>
     explicit allocation_only_allocator(
         allocation_only_allocator<OtherAllocator>&& other) noexcept :
-        member_like_base<Allocator>(Allocator(std::move(other.base())))
+        member_like_base<Allocator>(std::move(other.base()))
     {}
 
     // C++14 standard does not require this

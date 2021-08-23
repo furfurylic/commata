@@ -329,9 +329,10 @@ public:
             header_record_count, buffer_size)
     {}
 
-    template <
-        class HeaderFieldScanner,
-        class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
+    template <class HeaderFieldScanner,
+        std::enable_if_t<
+            !std::is_integral<HeaderFieldScanner>::value,
+            std::nullptr_t> = nullptr>
     explicit basic_table_scanner(
         HeaderFieldScanner s,
         size_type buffer_size = 0U) :
@@ -350,9 +351,10 @@ public:
         end_scanner_(nullptr)
     {}
 
-    template <
-        class HeaderFieldScanner,
-        class = std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>>
+    template <class HeaderFieldScanner,
+        std::enable_if_t<
+            !std::is_integral<HeaderFieldScanner>::value,
+            std::nullptr_t> = nullptr>
     basic_table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
         HeaderFieldScanner s,

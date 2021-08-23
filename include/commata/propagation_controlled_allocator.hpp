@@ -47,7 +47,7 @@ public:
     explicit propagation_controlled_allocator(
         const propagation_controlled_allocator<U, POCCA, POCMA, POCS>& other)
             noexcept :
-        member_like_base<A>(A(other.base()))
+        member_like_base<A>(other.base())
     {}
 
     // ditto
@@ -55,7 +55,7 @@ public:
     explicit propagation_controlled_allocator(
         propagation_controlled_allocator<U, POCCA, POCMA, POCS>&& other)
             noexcept :
-        member_like_base<A>(A(std::move(other.base())))
+        member_like_base<A>(std::move(other.base()))
     {}
 
     // copy/move ctor/assignment ops are defaulted
