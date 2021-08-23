@@ -5765,7 +5765,7 @@ string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, Sink s
 string_field_translator(const string_field_translator&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <requires><c>Sink</c> and <c>SkippingHandler</c> shall be <c>CopyConstructible</c>.</requires>
-            <effects>Initializes an object of <c>string_field_translator</c> that holds a field translator sink object, a skipping handler object and an allocator object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
+            <effects>Initializes an object of <c>string_field_translator</c> that holds an allocator object, a field translator sink object and a skipping handler object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;Sink>::value &amp;&amp; std::is_nothrow_copy_constructible&lt;SkippingHandler>::value</c>.</remark>
           </code-item>
 
@@ -5850,7 +5850,7 @@ template &lt;class T, class Sink, class... Appendices>
                    <code>return <n>R</n>(std::move(sink), std::forward&lt;Appendices>(appendices)...);</code>
                    <p>where <c><n>R</n></c> is a type decided as follows:</p>
                    <ul>
-                     <li>if <c>T</c> is a default translatable string type, <c>string_field_translator&lt;Sink, Ch, Tr, Allocator, Appendices...></c>,</li>
+                     <li>if <c>T</c> is a default translatable string type, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, Appendices...></c>,</li>
                      <li>otherwise, if the reference-removed type of the first type of <c>Appendices</c> is possibly cv-qualified <c>std::locale</c> or its derived type,
                          <c>locale_based_arithmetic_field_translator&lt;T, Sink, TailOfAppendices...></c> where <c>TailOfAppendices...</c> represents the types of <c>Appendices...</c> without its first type,</li>
                      <li>otherwise, <c>arithmetic_field_translator&lt;T, Sink, Appendices...></c>.</li>
