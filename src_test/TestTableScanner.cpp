@@ -287,7 +287,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
         replace_if_conversion_failed<value_t>(
             static_cast<value_t>(34))));
     h.set_field_scanner(1, make_field_translator(values1,
-        fail_if_skipped(),
+        replacement_fail,
         replace_if_conversion_failed<value_t>(
             replacement_fail, static_cast<value_t>(42))));
     h.set_field_scanner(2, make_field_translator(values2,
@@ -333,7 +333,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Copy)
 
     std::vector<value_t> values;
     auto t = make_field_translator(values,
-        replace_if_skipped<value_t>(static_cast<value_t>(1)),
+        static_cast<value_t>(1),
         replace_if_conversion_failed<value_t>(static_cast<value_t>(2)));
     auto u = t;
     t.field_value(ten.data(), ten.data() + (ten.size() - 1));
@@ -584,15 +584,8 @@ TYPED_TEST(TestLocaleBased, FrenchStyle)
 {
     const auto str0 = char_helper<TypeParam>::str0;
 
-    int value0;
-    const auto f0 = [&value0](int n) {
-        value0 = n;
-    };
-
-    double value1;
-    const auto f1 = [&value1](double a) {
-        value1 = a;
-    };
+    std::vector<int> values0;
+    std::deque<double> values1;
 
     std::locale loc(std::locale::classic(),
         new french_style_numpunct<TypeParam>);
@@ -600,14 +593,18 @@ TYPED_TEST(TestLocaleBased, FrenchStyle)
     auto s0 = str0("100 000");
     auto s1 = str0("12 345 678,5");
 
-    auto t = make_field_translator<int>(f0, loc);
-    auto u = make_field_translator<double>(f1, loc);
+    auto t = make_field_translator(values0, loc, replacement_ignore);
+    auto u = make_field_translator(values1, loc, replacement_fail);
 
     t.field_value(&s0[0], &s0[0] + (s0.size() - 1));
+    t.field_skipped();
     u.field_value(&s1[0], &s1[0] + (s1.size() - 1));
+    ASSERT_THROW(u.field_skipped(), field_not_found);
 
-    ASSERT_EQ(100000, value0);
-    ASSERT_EQ(12345678.5, value1);
+    ASSERT_EQ(1U, values0.size());
+    ASSERT_EQ(100000, values0.back());
+    ASSERT_EQ(1U, values1.size());
+    ASSERT_EQ(12345678.5, values1.back());
 }
 
 TYPED_TEST(TestLocaleBased, Copy)
@@ -626,8 +623,7 @@ TYPED_TEST(TestLocaleBased, Copy)
     auto s0 = str0("12 345 678,5");
     auto s1 = str0("-9 999");
 
-    auto t = make_field_translator<double>(f, loc,
-        replace_if_skipped<double>(33.33),
+    auto t = make_field_translator<double>(f, loc, 33.33,
         replace_if_conversion_failed<double>(777.77));
     auto u = t;
 

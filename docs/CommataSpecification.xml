@@ -4185,11 +4185,11 @@ namespace commata {
     class string_field_translator;
 
   <c>// <n><xref id="scan.builtin.body_field_scanners.creation"/>, creation of default field scanners:</n></c>
-  template &lt;class T, class Sink, class... Appendices>
-    <nc>see below</nc> make_field_translator(Sink sink, Appendices&amp;&amp;... appendices);
-  template &lt;class T, class Allocator, class Sink, class... Appendices>
+  template &lt;class T, class SinkR, class... Appendices>
+    <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
+  template &lt;class T, class Allocator, class SinkR, class... Appendices>
     <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    Sink sink, Appendices&amp;&amp;... appendices);
+                                    SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
   template &lt;class Container, class... Appendices>
     <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
   template &lt;class Allocator, class Container, class... Appendices>
@@ -4717,6 +4717,7 @@ template &lt;class T> void swap(replacement&lt;T>&amp; left,
         <codeblock>
 namespace commata {
   struct fail_if_skipped {
+    explicit fail_if_skipped(replacement_fail_t = replacement_fail) {}
     template &lt;class T> [[noreturn]] replacement&lt;T> operator()(T* = nullptr) const;
   };
 }
@@ -4805,14 +4806,14 @@ namespace commata {
             <code>
 template &lt;class... Args> explicit replace_if_skipped(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
             </code>
-            <requires><c>std::is_constructible&lt;T, Args...>::value</c> shall be <c>true</c>.</requires>
             <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Args>(args)...</c>.</effects>
-            <remark>Let <c>DF</c> be <c>std::decay_t&lt;F></c> where <c>F</c> is the first type of <c>Args</c>.
-                    This overload shall not participate in overload resolution if <c>sizeof...(Args)</c> is equal to <c>1</c> and
-                    any one of <c>std::is_base_of&lt;replace_if_skipped&lt;T>, DF>::value</c>,
+            <remark>Let <c>DF</c> be <c>std::decay_t&lt;F></c> where <c>F</c> is the first type of <c>Args</c> when <c>sizeof...(Args)</c> is equal to <c>1</c>.
+                    This constrcutor shall not participate in overload resolution unless <c>std::is_constructible&lt;T, Args...>::value</c> is <c>true</c> and,
+                    <c>sizeof...(Args)</c> is not equal to <c>1</c> or
+                    none of <c>std::is_base_of&lt;replace_if_skipped&lt;T>, DF>::value</c>,
                     <c>std::is_base_of&lt;replacement_fail_t, DF>::value</c> or
                     <c>std::is_base_of&lt;replacement_ignore_t, DF>::value</c> is <c>true</c>.
-                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value &amp;&amp; std::is_nothrow_constructible&lt;T, Args...>::value</c>.</remark>
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;T, Args...>::value</c>.</remark>
           </code-item>
 
           <code-item>
@@ -5859,17 +5860,49 @@ void field_skipped();
 
         <code-item>
           <code>
-template &lt;class T, class Sink, class... Appendices>
-  <nc>see below</nc> make_field_translator(Sink sink, Appendices&amp;&amp;... appendices);
+template &lt;class T, class SinkR, class... Appendices>
+  <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>return <n>R</n>(std::move(sink), std::forward&lt;Appendices>(appendices)...);</code>
-                   <p>where <c><n>R</n></c> is a type decided as follows:</p>
+                   <code>return <n>R</n>(std::forward&lt;SinkR>(sink), std::forward&lt;Appendices>(appendices)...);</code>
+                   <p>where <c><n>R</n></c> is a type decided as follows with <c>Sink</c> being <c>std::decay_t&lt;SinkR></c>:</p>
                    <ul>
-                     <li>if <c>T</c> is a default translatable string type, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, Appendices...></c>,</li>
-                     <li>otherwise, if the reference-removed type of the first type of <c>Appendices</c> is possibly cv-qualified <c>std::locale</c> or its derived type,
-                         <c>locale_based_arithmetic_field_translator&lt;T, Sink, TailOfAppendices...></c> where <c>TailOfAppendices...</c> represents the types of <c>Appendices...</c> without its first type,</li>
-                     <li>otherwise, <c>arithmetic_field_translator&lt;T, Sink, Appendices...></c>.</li>
+                     <li>if <c>T</c> is a default translatable string type:
+                       <ul>
+                         <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
+                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
+                           <ul>
+                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, Appendices1...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible&lt;replace_if_skipped&lt;T>, F>::value</c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
+                             <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, Appendices...></c>;</li>
+                           </ul>
+                         </li>
+                       </ul>
+                     </li>
+                     <li>otherwise, if <c>sizeof...(Appendices)</c> is greater than <c>0</c> and the reference-removed type of the first type of <c>Appendices</c> is possibly cv-qualified <c>std::locale</c> or its derived type:
+                       <ul>
+                         <li>if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T></c>,</li>
+                         <li>otherwise, with <c>F</c> being the second type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices2...</c> representing the types of <c>Appendices...</c> without its first two types:
+                           <ul>
+                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, fail_if_skipped, Appendices2...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible&lt;replace_if_skipped&lt;T>, F>::value</c> is <c>true</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, Appendices2...></c>,</li>
+                             <li>otherwise, <c>locale_based_arithmetic_field_translator&lt;Sink, T, Appendices2...></c>;</li>
+                           </ul>
+                         </li>
+                       </ul>
+                     </li>
+                     <li>otherwise:
+                       <ul>
+                         <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>arithmetic_field_translator&lt;Sink, T></c>,</li>
+                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
+                           <ul>
+                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>arithmetic_field_translator&lt;Sink, T, fail_if_skipped, Appendices1...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible&lt;replace_if_skipped&lt;T>, F>::value</c> is <c>true</c>, <c>arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
+                             <li>otherwise, <c>arithmetic_field_translator&lt;Sink, T, Appendices...></c>.</li>
+                           </ul>
+                         </li>
+                       </ul>
+                     </li>
                    </ul>
           </effects>
           <remark>This overload shall not participate in overload resolution unless <c>T</c> is a default translatable type and <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
@@ -5877,16 +5910,25 @@ template &lt;class T, class Sink, class... Appendices>
 
         <code-item>
           <code>
-template &lt;class T, class Allocator, class Sink, class... Appendices>
+template &lt;class T, class Allocator, class SinkR, class... Appendices>
   <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                                  Sink sink, Appendices&amp;&amp;... appendices);
+                                  SinkR&amp;&amp;&amp;&amp; sink, Appendices&amp;&amp;... appendices);
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>return string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type,
-                               Allocator, Appendices...>(
-         std::allocator_arg, alloc, std::move(sink), std::forward&lt;Appendices>(appendices)...);</code>
+                   <code>return R(std::allocator_arg, alloc, std::forward&lt;SinkR>(sink), std::forward&lt;Appendices>(appendices)...);</code>
+                   <p>where <c><n>R</n></c> is a type decided as follows with <c>Sink</c> being <c>std::decay_t&lt;SinkR></c>:</p>
+                     <ul>
+                       <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
+                       <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
+                         <ul>
+                           <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, Appendices1...></c>,</li>
+                           <li>otherwise, if <c>std::is_constructible&lt;replace_if_skipped&lt;T>, F>::value</c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
+                           <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, Appendices...></c>;</li>
+                         </ul>
+                       </li>
+                     </ul>
           </effects>
-          <remark>This overload shall not participate in overload resolution unless <c>T</c> is a default translatable string type and <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>T</c> is a default translatable string type with its <c>allocator_type</c> member typedef naming <c>Allocator</c>, and <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
         </code-item>
 
         <code-item>

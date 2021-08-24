@@ -1567,6 +1567,9 @@ constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
 
 struct fail_if_skipped
 {
+    explicit fail_if_skipped(replacement_fail_t = replacement_fail)
+    {}
+
     template <class T>
     [[noreturn]]
     replacement<T> operator()(T* = nullptr) const
@@ -1591,18 +1594,16 @@ class replace_if_skipped
 public:
     template <class... Args,
         std::enable_if_t<
-            (sizeof...(Args) != 1)
-         || !(std::is_base_of<
-                replace_if_skipped,
+            std::is_constructible<T, Args...>::value
+         && !((sizeof...(Args) == 1)
+           && (std::is_base_of<replace_if_skipped,
                 detail::first_t<std::decay_t<Args>...>>::value
-           || std::is_base_of<
-                replacement_ignore_t,
+            || std::is_base_of<replacement_ignore_t,
                 detail::first_t<std::decay_t<Args>...>>::value
-           || std::is_base_of<
-                replacement_fail_t,
-                detail::first_t<std::decay_t<Args>...>>::value),
+            || std::is_base_of<replacement_fail_t,
+                detail::first_t<std::decay_t<Args>...>>::value)),
             std::nullptr_t> = nullptr>
-    replace_if_skipped(Args&&... args)
+    explicit replace_if_skipped(Args&&... args)
         noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
         mode_(mode::replace)
     {
@@ -2631,29 +2632,94 @@ public:
 
 namespace detail { namespace scanner {
 
-template <class T, class Sink, class... Appendices,
+template <class T, class Sink, class... As,
+    std::enable_if_t<
+        !detail::is_std_string<T>::value,
+        std::nullptr_t> = nullptr>
+arithmetic_field_translator<T, Sink, fail_if_skipped, As...>
+    make_field_translator_na(Sink, replacement_fail_t, As...);
+
+template <class T, class Sink, class ReplaceIfSkipped, class... As,
     std::enable_if_t<
         !detail::is_std_string<T>::value
-     && !std::is_base_of<
-            std::locale, std::decay_t<detail::first_t<Appendices...>>>::value,
+     && !std::is_base_of<std::locale, std::decay_t<ReplaceIfSkipped>>::value
+     && !std::is_base_of<replacement_fail_t,
+                         std::decay_t<ReplaceIfSkipped>>::value
+     && std::is_constructible<replace_if_skipped<T>, ReplaceIfSkipped>::value,
         std::nullptr_t> = nullptr>
-arithmetic_field_translator<T, Sink, Appendices...>
-    make_field_translator_na(Sink sink, Appendices&&... appendices);
+arithmetic_field_translator<T, Sink, replace_if_skipped<T>, As...>
+    make_field_translator_na(Sink, ReplaceIfSkipped&&, As...);
 
-template <class T, class Sink, class... Appendices,
-    std::enable_if_t<!detail::is_std_string<T>::value, std::nullptr_t>
-        = nullptr>
-locale_based_arithmetic_field_translator<T, Sink, Appendices...>
-    make_field_translator_na(
-        Sink sink, const std::locale& loc, Appendices&&... appendices);
+template <class T, class Sink, class... As,
+    std::enable_if_t<
+        !detail::is_std_string<T>::value
+     && ((sizeof...(As) == 0)
+      || !(std::is_base_of<std::locale,
+                           std::decay_t<detail::first_t<As...>>>::value
+        || std::is_constructible<replace_if_skipped<T>,
+                                 detail::first_t<As...>>::value)),
+        std::nullptr_t> = nullptr>
+arithmetic_field_translator<T, Sink, std::decay_t<As>...>
+    make_field_translator_na(Sink, As&&...);
 
-template <class T, class Sink, class... Appendices,
+template <class T, class Sink, class... As,
+    std::enable_if_t<
+        !detail::is_std_string<T>::value,
+        std::nullptr_t> = nullptr>
+locale_based_arithmetic_field_translator<T, Sink, fail_if_skipped, As...>
+    make_field_translator_na(Sink, std::locale, replacement_fail_t, As...);
+
+template <class T, class Sink, class ReplaceIfSkipped, class... As,
+    std::enable_if_t<
+        !detail::is_std_string<T>::value
+     && !std::is_base_of<replacement_fail_t,
+                         std::decay_t<ReplaceIfSkipped>>::value
+     && std::is_constructible<replace_if_skipped<T>, ReplaceIfSkipped>::value,
+        std::nullptr_t> = nullptr>
+locale_based_arithmetic_field_translator<T, Sink, replace_if_skipped<T>, As...>
+    make_field_translator_na(Sink, std::locale, ReplaceIfSkipped&&, As...);
+
+template <class T, class Sink, class... As,
+    std::enable_if_t<
+        !detail::is_std_string<T>::value
+     && ((sizeof...(As) == 0)
+      || !std::is_constructible<replace_if_skipped<T>,
+                                detail::first_t<As...>>::value),
+        std::nullptr_t> = nullptr>
+locale_based_arithmetic_field_translator<T, Sink, std::decay_t<As>...>
+    make_field_translator_na(Sink, std::locale, As&&... as);
+
+template <class T, class Sink,
     std::enable_if_t<detail::is_std_string<T>::value, std::nullptr_t>
         = nullptr>
 string_field_translator<Sink,
         typename T::value_type, typename T::traits_type,
-        typename T::allocator_type, Appendices...>
-    make_field_translator_na(Sink sink, Appendices&&... appendices);
+        typename T::allocator_type, fail_if_skipped>
+    make_field_translator_na(Sink, replacement_fail_t);
+
+template <class T, class Sink, class ReplaceIfSkipped,
+    std::enable_if_t<
+        detail::is_std_string<T>::value
+     && !std::is_base_of<replacement_fail_t,
+                         std::decay_t<ReplaceIfSkipped>>::value
+     && std::is_constructible<replace_if_skipped<T>, ReplaceIfSkipped>::value,
+        std::nullptr_t> = nullptr>
+string_field_translator<Sink,
+        typename T::value_type, typename T::traits_type,
+        typename T::allocator_type, replace_if_skipped<T>>
+    make_field_translator_na(Sink, ReplaceIfSkipped&&);
+
+template <class T, class Sink, class... As,
+    std::enable_if_t<
+        detail::is_std_string<T>::value
+     && ((sizeof...(As) == 0)
+      || !std::is_constructible<replace_if_skipped<T>,
+                                detail::first_t<As...>>::value),
+        std::nullptr_t> = nullptr>
+string_field_translator<Sink,
+        typename T::value_type, typename T::traits_type,
+        typename T::allocator_type, std::decay_t<As>...>
+    make_field_translator_na(Sink, As&&...);
 
 template <class A>
 struct is_callable_impl
@@ -2675,36 +2741,38 @@ struct is_callable :
 }} // end detail::scanner
 
 template <class T, class Sink, class... Appendices>
-auto make_field_translator(Sink sink, Appendices&&... appendices)
+auto make_field_translator(Sink&& sink, Appendices&&... appendices)
  -> std::enable_if_t<
         (detail::scanner::is_convertible_numeric_type<T>::value
       || detail::is_std_string<T>::value)
-     && (detail::scanner::is_output_iterator<Sink>::value
-      || detail::scanner::is_callable<Sink, T>::value),
+     && (detail::scanner::is_output_iterator<std::decay_t<Sink>>::value
+      || detail::scanner::is_callable<std::decay_t<Sink>, T>::value),
         decltype(detail::scanner::make_field_translator_na<T>(
-            std::move(sink), std::forward<Appendices>(appendices)...))>
+                    std::forward<Sink>(sink),
+                    std::forward<Appendices>(appendices)...))>
 {
     using t = decltype(detail::scanner::make_field_translator_na<T>(
-        std::move(sink), std::forward<Appendices>(appendices)...));
-    return t(std::move(sink), std::forward<Appendices>(appendices)...);
+        std::forward<Sink>(sink), std::forward<Appendices>(appendices)...));
+    return t(std::forward<Sink>(sink),
+             std::forward<Appendices>(appendices)...);
 }
 
 template <class T, class Allocator, class Sink, class... Appendices>
 auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
-    Sink sink, Appendices&&... appendices)
+    Sink&& sink, Appendices&&... appendices)
  -> std::enable_if_t<
         detail::is_std_string<T>::value
-     && (detail::scanner::is_output_iterator<Sink>::value
-      || detail::scanner::is_callable<Sink, T>::value),
-        string_field_translator<Sink,
-            typename T::value_type, typename T::traits_type,
-            Allocator, Appendices...>>
+     && std::is_same<Allocator, typename T::allocator_type>::value
+     && (detail::scanner::is_output_iterator<std::decay_t<Sink>>::value
+      || detail::scanner::is_callable<std::decay_t<Sink>, T>::value),
+        decltype(detail::scanner::make_field_translator_na<T>(
+                    std::forward<Sink>(sink),
+                    std::forward<Appendices>(appendices)...))>
 {
-    return string_field_translator<Sink,
-            typename T::value_type, typename T::traits_type,
-            Allocator, Appendices...>(
-        std::allocator_arg, alloc,
-        std::move(sink), std::forward<Appendices>(appendices)...);
+    using t = decltype(detail::scanner::make_field_translator_na<T>(
+        std::forward<Sink>(sink), std::forward<Appendices>(appendices)...));
+    return t(std::allocator_arg, alloc,
+        std::forward<Sink>(sink), std::forward<Appendices>(appendices)...);
 }
 
 namespace detail { namespace scanner {
