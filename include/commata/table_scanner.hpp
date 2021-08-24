@@ -1453,14 +1453,12 @@ template <class T, class H, class = void>
 struct converter :
     private raw_converter<T, typed_conversion_error_handler<T, H>>
 {
-    converter(const H& h) :
+    template <class K,
+        std::enable_if_t<!std::is_base_of<converter, std::decay_t<K>>::value,
+                         std::nullptr_t> = nullptr>
+    converter(K&& h) :
         raw_converter<T, typed_conversion_error_handler<T, H>>(
-            typed_conversion_error_handler<T, H>(h))
-    {}
-
-    converter(H&& h) :
-        raw_converter<T, typed_conversion_error_handler<T, H>>(
-            typed_conversion_error_handler<T, H>(std::move(h)))
+            typed_conversion_error_handler<T, H>(std::forward<K>(h)))
     {}
 
     using raw_converter<T, typed_conversion_error_handler<T, H>>::
@@ -1558,17 +1556,8 @@ struct converter<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
     restrained_converter<T, typed_conversion_error_handler<T, H>,
         typename numeric_type_traits<T>::raw_type>
 {
-    converter(const H& h) :
-        restrained_converter<T, typed_conversion_error_handler<T, H>,
-            typename numeric_type_traits<T>::raw_type>(
-                typed_conversion_error_handler<T, H>(h))
-    {}
-
-    converter(H&& h) :
-        restrained_converter<T, typed_conversion_error_handler<T, H>,
-            typename numeric_type_traits<T>::raw_type>(
-                typed_conversion_error_handler<T, H>(std::move(h)))
-    {}
+    using restrained_converter<T, typed_conversion_error_handler<T, H>,
+        typename numeric_type_traits<T>::raw_type>::restrained_converter;
 };
 
 }} // end detail::scanner
@@ -2293,9 +2282,11 @@ class translator :
     Sink sink_;
 
 public:
-    translator(Sink&& sink, SkippingHandler&& handle_skipping) :
-        member_like_base<SkippingHandler>(std::move(handle_skipping)),
-        sink_(std::move(sink))
+    template <class SinkR, class SkippingHandlerR>
+    translator(SinkR&& sink, SkippingHandlerR&& handle_skipping) :
+        member_like_base<SkippingHandler>(
+            std::forward<SkippingHandlerR>(handle_skipping)),
+        sink_(std::forward<SinkR>(sink))
     {}
 
     const SkippingHandler& get_skipping_handler() const noexcept
@@ -2385,13 +2376,21 @@ class arithmetic_field_translator
     detail::base_member_pair<converter_t, translator_t> ct_;
 
 public:
+    template <class SinkR, class SkippingHandlerR = SkippingHandler,
+              class ConversionErrorHandlerR = ConversionErrorHandler,
+              std::enable_if_t<
+                !std::is_base_of<
+                    arithmetic_field_translator, std::decay_t<SinkR>>::value,
+                std::nullptr_t> = nullptr>
     explicit arithmetic_field_translator(
-        Sink sink,
-        SkippingHandler handle_skipping = SkippingHandler(),
-        ConversionErrorHandler handle_conversion_error
+        SinkR&& sink,
+        SkippingHandlerR&& handle_skipping = SkippingHandler(),
+        ConversionErrorHandlerR&& handle_conversion_error
             = ConversionErrorHandler()) :
-        ct_(converter_t(std::move(handle_conversion_error)),
-            translator_t(std::move(sink), std::move(handle_skipping)))
+        ct_(converter_t(std::forward<ConversionErrorHandlerR>(
+                            handle_conversion_error)),
+            translator_t(std::forward<SinkR>(sink),
+                         std::forward<SkippingHandlerR>(handle_skipping)))
     {}
 
     arithmetic_field_translator(const arithmetic_field_translator&) = default;
@@ -2449,14 +2448,22 @@ class locale_based_arithmetic_field_translator
     bool mimics_;
 
 public:
+    template <class SinkR, class SkippingHandlerR = SkippingHandler,
+              class ConversionErrorHandlerR = ConversionErrorHandler,
+              std::enable_if_t<
+                !std::is_base_of<
+                    locale_based_arithmetic_field_translator,
+                    std::decay_t<SinkR>>::value,
+                std::nullptr_t> = nullptr>
     locale_based_arithmetic_field_translator(
-        Sink sink, const std::locale& loc,
-        SkippingHandler handle_skipping = SkippingHandler(),
-        ConversionErrorHandler handle_conversion_error
+        SinkR&& sink, const std::locale& loc,
+        SkippingHandlerR&& handle_skipping = SkippingHandler(),
+        ConversionErrorHandlerR&& handle_conversion_error
             = ConversionErrorHandler()) :
         loc_(loc),
-        out_(std::move(sink), std::move(handle_skipping),
-             std::move(handle_conversion_error)),
+        out_(std::forward<SinkR>(sink),
+             std::forward<SkippingHandlerR>(handle_skipping),
+             std::forward<ConversionErrorHandlerR>(handle_conversion_error)),
         decimal_point_c_(), mimics_()
     {}
 
@@ -2559,17 +2566,25 @@ class string_field_translator
 public:
     using allocator_type = Allocator;
 
+    template <class SinkR, class SkippingHandlerR = SkippingHandler,
+              std::enable_if_t<
+                !std::is_base_of<
+                    string_field_translator, std::decay_t<SinkR>>::value,
+                std::nullptr_t> = nullptr>
     explicit string_field_translator(
-        Sink sink,
-        SkippingHandler handle_skipping = SkippingHandler()) :
+        SinkR&& sink, SkippingHandlerR&& handle_skipping = SkippingHandler()) :
         at_(Allocator(),
-            translator_t(std::move(sink), std::move(handle_skipping)))
+            translator_t(std::forward<SinkR>(sink),
+                         std::forward<SkippingHandlerR>(handle_skipping)))
     {}
 
+    template <class SinkR, class SkippingHandlerR = SkippingHandler>
     string_field_translator(
-        std::allocator_arg_t, const Allocator& alloc, Sink sink,
-        SkippingHandler handle_skipping = SkippingHandler()) :
-        at_(alloc, translator_t(std::move(sink), std::move(handle_skipping)))
+        std::allocator_arg_t, const Allocator& alloc, SinkR&& sink,
+        SkippingHandlerR&& handle_skipping = SkippingHandler()) :
+        at_(alloc,
+            translator_t(std::forward<SinkR>(sink),
+                         std::forward<SkippingHandlerR>(handle_skipping)))
     {}
 
     string_field_translator(const string_field_translator&) = default;
