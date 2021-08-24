@@ -5383,9 +5383,9 @@ namespace commata {
 
     <c>// <n><xref id="arithmetic_field_translator.handler"/>, handler access:</n></c>
     const SkippingHandler&amp; get_skipping_handler() const noexcept;
-          SkippingHandler&amp; get_skipping_handler() noexcept;
+          SkippingHandler&amp; get_skipping_handler()       noexcept;
     const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
-          ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
+          ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
 
     <c>// <n><xref id="arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="body_field_scanner.requirements"/>):</n></c>
     template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
@@ -5436,7 +5436,7 @@ arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcep
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
-      SkippingHandler&amp; get_skipping_handler() noexcept;
+      SkippingHandler&amp; get_skipping_handler()       noexcept;
             </code>
             <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
           </code-item>
@@ -5444,7 +5444,7 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
           <code-item>
             <code>
 const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
-      ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
+      ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
             </code>
             <returns>A reference of the conversion error handler held by <c>*this</c>.</returns>
           </code-item>
@@ -5605,9 +5605,9 @@ namespace commata {
 
     <c>// <n><xref id="locale_based_arithmetic_field_translator.handler"/>, handler access:</n></c>
     const SkippingHandler&amp; get_skipping_handler() const noexcept;
-          SkippingHandler&amp; get_skipping_handler() noexcept;
+          SkippingHandler&amp; get_skipping_handler()       noexcept;
     const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
-          ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
+          ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
 
     <c>// <n><xref id="locale_based_arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="body_field_scanner.requirements"/>):</n></c>
     template &lt;class Ch> void field_value(Ch* begin, Ch* end);
@@ -5662,7 +5662,7 @@ locale_based_arithmetic_field_translator(
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
-      SkippingHandler&amp; get_skipping_handler() noexcept;
+      SkippingHandler&amp; get_skipping_handler()       noexcept;
             </code>
             <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
           </code-item>
@@ -5670,7 +5670,7 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
           <code-item>
             <code>
 const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
-      ConversionErrorHandler&amp; get_conversion_error_handler() noexcept;
+      ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
             </code>
             <returns>A reference of the conversion error handler held by <c>*this</c>.</returns>
           </code-item>
@@ -5724,7 +5724,7 @@ namespace commata {
 
     <c>// <n><xref id="string_field_translator.handler"/>, handler access:</n></c>
     const SkippingHandler&amp; get_skipping_handler() const noexcept;
-          SkippingHandler&amp; get_skipping_handler() noexcept;
+          SkippingHandler&amp; get_skipping_handler()       noexcept;
 
     <c>// <n><xref id="string_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="body_field_scanner.requirements"/>):</n></c>
     void field_value(const Ch* begin, const Ch* end);
@@ -5734,8 +5734,7 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.
-          Its target type (<xref id="scan.buitin.body_field_scanners.requirements.general"/>) is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
+        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
         <p><c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for <c>std::basic_string&lt;Ch, Tr, Allocator></c> (<xref id="field_translator_sink.requirements"/>).
           The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>std::basic_string&lt;Ch, Tr, Allocator></c> (<xref id="skipping_handler.requirements"/>).</p>
 
@@ -5794,7 +5793,7 @@ allocator_type get_allocator() const noexcept;
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
-      SkippingHandler&amp; get_skipping_handler() noexcept;
+      SkippingHandler&amp; get_skipping_handler()       noexcept;
             </code>
             <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
           </code-item>
