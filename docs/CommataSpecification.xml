@@ -405,7 +405,11 @@ namespace commata {
 
     <c>// <n><xref id="text_error.cons"/>, constructors and assignment operators:</n></c>
     text_error() noexcept;
-    template &lt;class T> explicit text_error(T&amp;&amp; what_arg);
+    template &lt;class Tr, class Allocator>
+      explicit text_error(const std::basic_string&lt;char, Tr, Allocator>&amp; what_arg);
+    template &lt;class Tr, class Allocator>
+      explicit text_error(std::basic_string&lt;char, Tr, Allocator>&amp;&amp; what_arg);
+    explicit text_error(const char* what_arg);
     text_error(const text_error&amp; other) noexcept;
     text_error(text_error&amp;&amp; other) noexcept;
     text_error&amp; operator=(const text_error&amp; other) noexcept;
@@ -434,45 +438,52 @@ namespace commata {
           <code>
 text_error() noexcept;
           </code>
-          <effects>Constructs an object of <c>text_error</c>.</effects>
-          <postcondition><c>(*what() == '\0') &amp;&amp; !get_physical_position()</c> shall not be <c>false</c>.</postcondition>
+          <postcondition><c>(*what() == '\0') &amp;&amp; !get_physical_position()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class T> explicit text_error(T&amp;&amp; what_arg);
+template &lt;class Tr, class Allocator>
+  explicit text_error(const std::basic_string&lt;char, Tr, Allocator>&amp; what_arg);
           </code>
-          <effects>Constructs an object of <c>text_error</c>.</effects>
-          <postcondition><c>(std::strcmp(w.c_str(), what()) == 0) &amp;&amp; !get_physical_position()</c> shall not be <c>false</c>
-                         where <c>w</c> is an object of <c>std::basic_string&lt;char, Tr, Allocator></c> for a certain combination of <c>Tr</c> and <c>Allocator</c>
-                         that would be constructed with <c>std::forward&lt;T>(what_arg)</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless
-                  <c>std::decay_t&lt;T></c> is the same type as <c>std::basic_string&lt;char, Tr, Allocator></c> for a certain combination of <c>Tr</c> and <c>Allocator</c>, or
-                  <c>std::is_constructible&lt;std::string, T>::value</c> is not <c>false</c>.</remark>
+          <postcondition><c>(std::strcmp(what(), what_arg.c_str()) == 0) &amp;&amp; !get_physical_position()</c> shall be <c>true</c>.</postcondition>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class Tr, class Allocator>
+  explicit text_error(std::basic_string&lt;char, Tr, Allocator>&amp;&amp; what_arg);
+          </code>
+          <postcondition><c>(std::strcmp(what(), w.c_str()) == 0) &amp;&amp; !get_physical_position()</c> shall be <c>true</c> where <c>w</c> is an object that would be copy constructed from <c>what_arg</c> before the call.</postcondition>
+        </code-item>
+
+        <code-item>
+          <code>
+explicit text_error(const char* what_arg);
+          </code>
+          <requires><c>what_arg</c> shall be a valid pointer to an element in a null terminated sequence.</requires>
+          <postcondition><c>(std::strcmp(what(), what_arg) == 0) &amp;&amp; !get_physical_position()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
           <code>
 text_error(const text_error&amp; other) noexcept;
           </code>
-          <effects>Constructs an object of <c>text_error</c> from another object of <c>text_error</c>.</effects>
-          <postcondition><c>(std::strcmp(other.what(), what() == 0) &amp;&amp; (other.get_physical_position() ? (*other.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> is not <c>false</c>.</postcondition>
+          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (other.get_physical_position() ? (*other.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> is <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
           <code>
 text_error(text_error&amp;&amp; other) noexcept;
           </code>
-          <effects>Constructs an object of <c>text_error</c> from another object of <c>text_error</c> placing <c>other</c> in a valid but unspecified state.</effects>
-          <postcondition><c>(std::strcmp(c.what(), what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be not <c>false</c> where <c>c</c> is an object that would be copy constructed from <c>other</c> before the call.</postcondition>
+          <postcondition><c>(std::strcmp(what(), c.what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be <c>true</c> where <c>c</c> is an object that should be copy constructed from <c>other</c> before the call.</postcondition>
         </code-item>
 
         <code-item>
           <code>
 text_error&amp; operator=(const text_error&amp; other) noexcept;
           </code>
-          <effects>Assigns an object of <c>text_error</c> from another object of <c>text_error</c>.</effects>
-          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (other.get_physical_position() ? (*other.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be not <c>false</c>.</postcondition>
+          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (other.get_physical_position() ? (*other.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be <c>true</c>.</postcondition>
           <returns><c>*this</c>.</returns>
         </code-item>
 
@@ -480,8 +491,7 @@ text_error&amp; operator=(const text_error&amp; other) noexcept;
           <code>
 text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
           </code>
-          <effects>Assigns an object of <c>text_error</c> from another object of <c>text_error</c> placing <c>other</c> in a valid but unspecified state.</effects>
-          <postcondition><c>(std::strcmp(ow, what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position() == nullptr)</c> shall not be <c>false</c> where <c>c</c> is an object that would be copy constructed from <c>other</c> before the call.</postcondition>
+          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position() == nullptr)</c> shall be <c>true</c> where <c>c</c> is an object that should be copy constructed from <c>other</c> before the call.</postcondition>
           <returns><c>*this</c>.</returns>
         </code-item>
       </section>
@@ -493,8 +503,7 @@ text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
           <code>
 text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col = npos) noexcept;
           </code>
-          <effects>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, removes the position information if it exists. Otherwise, sets the position information whose line number and column number are <c>line</c> and <c>col</c> respectively.</effects>
-          <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>get_physical_position() == nullptr</c> shall not be <c>false</c>. Otherwise, <c>*get_physical_position() == std::make_pair(line, col)</c> shall not be <c>false</c>.</postcondition>
+          <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>*this</c> holds a physical position information and <c>get_physical_position() == nullptr</c> shall be <c>true</c>. Otherwise, <c>*this</c> holds no physical position information and <c>*get_physical_position() == std::make_pair(line, col)</c> shall be <c>true</c>.</postcondition>
           <returns><c>*this</c>.</returns>
           <remark><c>line</c> and <c>col</c> shall be <c>npos</c> or zero-based numbers of the row and the column.
                   <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
@@ -504,7 +513,7 @@ text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col =
           <code>
 const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noexcept;
           </code>
-          <returns>If <c>*this</c> holds a physical position information, a pointer to an pair of its line number and column number. Otherwise, <c>nullptr</c>.</returns>
+          <returns>If <c>*this</c> holds a physical position information possibly set by the last invocation of <c>set_physical_position</c>, a pointer to an pair of its line number and column number. Otherwise, <c>nullptr</c>.</returns>
           <remark><c>p->first</c> and <c>p->second</c> shall be <c>npos</c> or zero-based numbers of the row and the column where <c>p</c> is the return value that is not equal to <c>nullptr</c>.
                   <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
         </code-item>

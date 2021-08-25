@@ -50,65 +50,75 @@ class text_error :
         virtual const char* what() const noexcept = 0;
     };
 
-    template <class S>
+    template <class Tr = std::char_traits<char>,
+              class Allocator = std::allocator<char>>
     class string_holder : public what_holder
     {
-        S s_;
+        std::basic_string<char, Tr, Allocator> s_;
 
     public:
-        template <class T,
-            std::enable_if_t<
-                std::is_constructible<S, T>::value,
-                std::nullptr_t> = nullptr>
-        string_holder(T&& s) : s_(std::forward<T>(s))
+        template <class T>
+        explicit string_holder(T&& s) : s_(std::forward<T>(s))
         {}
 
-        ~string_holder() = default;
         string_holder(const string_holder&) = delete;
+        ~string_holder() = default;
 
         const char* what() const noexcept override
         {
             return s_.c_str();
-                // std::basic_string<Ch, Tr, Allocator>::c_str is noexcept
+        }
+    };
+
+    class chars_holder : public what_holder
+    {
+        std::unique_ptr<char[]> s_;
+
+    public:
+        explicit chars_holder(const char* s)
+        {
+            std::size_t len = std::strlen(s);
+            s_.reset(new char[len + 1]);
+            std::memcpy(s_.get(), s, len);
+            s_[len] = '\0';
+        }
+
+        chars_holder(const chars_holder&) = delete;
+        ~chars_holder() = default;
+
+        const char* what() const noexcept override
+        {
+            return s_.get();
         }
     };
 
     std::shared_ptr<what_holder> what_;
-    std::pair<std::size_t, std::size_t> physical_position_;
+    std::pair<std::size_t, std::size_t> pos_;
 
 public:
     text_error() noexcept :
-        physical_position_(npos, npos)
+        pos_(npos, npos)
     {}
 
-    template <class T,
-        std::enable_if_t<
-            detail::is_std_string_of_ch<std::decay_t<T>, char>::value
-         || std::is_constructible<std::string, T>::value,
-            std::nullptr_t> = nullptr>
-    explicit text_error(T&& what_arg) :
-        what_(create_what(
-            detail::is_std_string_of_ch<std::decay_t<T>, char>(),
-            std::forward<T>(what_arg))),
-        physical_position_(npos, npos)
+    template <class Tr, class Allocator>
+    explicit text_error(
+        const std::basic_string<char, Tr, Allocator>& what_arg) :
+        what_(std::make_shared<string_holder<Tr, Allocator>>(what_arg)),
+        pos_(npos, npos)
     {}
 
-private:
-    template <class T>
-    static auto create_what(std::true_type, T&& what_arg)
-    {
-        return std::allocate_shared<string_holder<std::decay_t<T>>>(
-            what_arg.get_allocator(), std::forward<T>(what_arg));
-    }
+    template <class Tr, class Allocator>
+    explicit text_error(std::basic_string<char, Tr, Allocator>&& what_arg) :
+        what_(std::make_shared<string_holder<Tr, Allocator>>(
+                std::move(what_arg))),
+        pos_(npos, npos)
+    {}
 
-    template <class T>
-    static auto create_what(std::false_type, T&& what_arg)
-    {
-        return std::make_shared<string_holder<std::string>>(
-            std::forward<T>(what_arg));
-    }
+    explicit text_error(const char* what_arg) :
+        what_(std::make_shared<chars_holder>(what_arg)),
+        pos_(npos, npos)
+    {}
 
-public:
     text_error(const text_error& other) = default;
     text_error(text_error&& other) = default;
 
@@ -116,7 +126,7 @@ public:
     {
         std::exception::operator=(other);
         what_ = other.what_;
-        physical_position_ = other.physical_position_;
+        pos_ = other.pos_;
         // According to C++14 20.3.2 (1), pair's assignments do not throw
         // but are not declared as noexcept
         return *this;
@@ -126,7 +136,7 @@ public:
     {
         std::exception::operator=(std::move(other));
         what_ = std::move(other.what_);
-        physical_position_ = other.physical_position_;
+        pos_ = other.pos_;
         // ditto
         return *this;
     }
@@ -139,15 +149,15 @@ public:
     text_error& set_physical_position(
         std::size_t line = npos, std::size_t col = npos) noexcept
     {
-        physical_position_ = std::make_pair(line, col);
+        pos_ = std::make_pair(line, col);
         return *this;
     }
 
     const std::pair<std::size_t, std::size_t>* get_physical_position() const
         noexcept
     {
-        return (physical_position_ != std::make_pair(npos, npos)) ?
-            &physical_position_ : nullptr;
+        return (pos_ != std::make_pair(npos, npos)) ?
+            &pos_ : nullptr;
     }
 
     text_error_info info(std::size_t base = 1U) const noexcept;

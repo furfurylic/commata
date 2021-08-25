@@ -163,9 +163,6 @@ TEST_F(TestTextError, Info)
 
 TEST_F(TestTextError, Allocators)
 {
-    // std::allocate_shared which comes with Visual Studio 2015 does not seem
-    // to support fancy pointers, so we do not test the fancy cases
-
     std::vector<std::pair<char*, char*>> allocated;
     tracking_allocator<std::allocator<char>> a(allocated);
 
@@ -182,12 +179,4 @@ TEST_F(TestTextError, Allocators)
     auto e3(std::move(e1));
     ASSERT_TRUE(a.tracks(e2.what()));
     ASSERT_TRUE(a.tracks(e3.what()));
-
-    // Short strings might be stored string's internal structure
-    // so a short-string case seems worthy of a test
-
-    string_t message2("!", a);
-    text_error e4(message2);
-    ASSERT_STREQ(message2.c_str(), e4.what());
-    ASSERT_TRUE(a.tracks(e4.what()));
 }
