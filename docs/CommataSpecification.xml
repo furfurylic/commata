@@ -1873,10 +1873,10 @@ template &lt;class FieldNamePredR, class FieldValuePredR>
                    header_forwarding header = header_forwarding_yes,
                    std::size_t max_record_num = record_extractor_npos);
           </code>
-          <requires><c>out</c> shall be a valid pointer. For the first overload, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
+          <requires><c>out</c> shall be a valid pointer. For the first form, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Constructs an object <c>record_extractor</c>. The parameters work as <xref id="table.record_extractor.cons"/> shows.
-                   An object constructed by the first overload uses a default constructed <c>Allocator</c> object to allocate memory.
-                   One constructed by the second overload uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
+                   An object constructed by the first form uses a default constructed <c>Allocator</c> object to allocate memory.
+                   One constructed by the second form uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
 
           <table id="table.record_extractor.cons">
             <caption>Principal parameters of the constructors of <c>record_extractor</c> and the behaviour of the constructed object</caption>
@@ -2027,10 +2027,10 @@ template &lt;class FieldValuePredR>
                                       = header_forwarding_yes,
                                     std::size_t max_record_num = record_extractor_npos);
           </code>
-          <requires><c>out</c> shall be a valid pointer. For the first overload, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
+          <requires><c>out</c> shall be a valid pointer. For the first form, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Constructs an object <c>record_extractor_with_indexed_key</c>. The parameters work as <xref id="table.record_extractor_with_indexed_key.cons"/> shows.
-                   An object constructed by the first overload uses a default constructed <c>Allocator</c> object to allocate memory.
-                   One constructed by the second overload uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
+                   An object constructed by the first form uses a default constructed <c>Allocator</c> object to allocate memory.
+                   One constructed by the second form uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
 
           <table id="table.record_extractor_with_indexed_key.cons">
             <caption>Principal parameters of the constructors of <c>record_extractor_with_indexed_key</c> and the behaviour of the constructed object</caption>
@@ -4278,7 +4278,7 @@ basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
           <effects>Constructs an object of <c>basic_table_scanner</c>.
                    The scanner shall ignore the first <c>header_record_count</c> records as header records.
                    The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
-                   The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
+                   The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first form) or a copy of <c>alloc</c> (second form).</effects>
           <postcondition><c>*this</c> has neither a header field scanner nor any body field scanners installed.</postcondition>
         </code-item>
 
@@ -4293,7 +4293,7 @@ template &lt;class HeaderFieldScanner>
           <requires><c>HeaderFieldScanner</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>basic_table_scanner&lt;Ch, Tr, Allocator></c>.</requires>
           <effects>Constructs an object of <c>basic_table_scanner</c> with an header field scanner object installed.
                    The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
-                   The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first overload) or a copy of <c>alloc</c> (second overload).</effects>
+                   The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first form) or a copy of <c>alloc</c> (second form).</effects>
           <postcondition><c>*this</c> has a header field scanner constructed as a copy of <c>s</c> installed and no body field scanners installed.</postcondition>
           <remark>These constructors shall not participate in overload resolution unless <c>std::is_integral&lt;HeaderFieldScanner>::value</c> is <c>false</c>.</remark>
         </code-item>
