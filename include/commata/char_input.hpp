@@ -390,10 +390,16 @@ streambuf_input<Ch, Tr> make_char_input(std::basic_streambuf<Ch, Tr>* in)
     return streambuf_input<Ch, Tr>(in);
 }
 
+template <class Ch, class Tr>
+streambuf_input<Ch, Tr> make_char_input(
+    std::basic_istream<Ch, Tr>& in) noexcept
+{
+    return streambuf_input<Ch, Tr>(in);
+}
+
 template <class Streambuf>
 auto make_char_input(Streambuf&& in)
-    noexcept(std::is_nothrow_constructible<
-        owned_streambuf_input<Streambuf>, Streambuf>::value)
+    noexcept(std::is_nothrow_move_constructible<Streambuf>::value)
  -> std::enable_if_t<
         !std::is_lvalue_reference<Streambuf>::value
      && std::is_base_of<
@@ -408,8 +414,7 @@ auto make_char_input(Streambuf&& in)
 
 template <class IStream>
 auto make_char_input(IStream&& in)
-    noexcept(std::is_nothrow_constructible<
-        owned_istream_input<IStream>, IStream>::value)
+    noexcept(std::is_nothrow_move_constructible<IStream>::value)
  -> std::enable_if_t<
         !std::is_lvalue_reference<IStream>::value
      && std::is_base_of<
@@ -420,13 +425,6 @@ auto make_char_input(IStream&& in)
         owned_istream_input<IStream>>
 {
     return owned_istream_input<IStream>(std::move(in));
-}
-
-template <class Ch, class Tr>
-streambuf_input<Ch, Tr> make_char_input(
-    std::basic_istream<Ch, Tr>& in) noexcept
-{
-    return streambuf_input<Ch, Tr>(in);
 }
 
 template <class Ch, class Tr = std::char_traits<Ch>>

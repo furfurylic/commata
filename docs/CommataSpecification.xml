@@ -1397,7 +1397,7 @@ template &lt;class Streambuf>
         </code>
         <returns><c>owned_streambuf_input&lt;Streambuf>(std::move(in))</c>.</returns>
         <remark>This overload shall not participate in overload resolution unless the template parameter <c>Streambuf</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.
-                The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;owned_streambuf_input&lt;Streambuf>, Streambuf>::value</c>.</remark>
+                The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Streambuf>::value</c>.</remark>
       </code-item>
 
       <code-item>
@@ -1407,7 +1407,7 @@ template &lt;class IStream>
         </code>
         <returns><c>owned_istream_input&lt;IStream>(std::move(in))</c>.</returns>
         <remark>This overload shall not participate in overload resolution unless the template parameter <c>IStream</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.
-                The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;owned_istream_input&lt;IStream>, IStream>::value</c>.</remark>
+                The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;IStream>::value</c>.</remark>
       </code-item>
 
       <code-item>
