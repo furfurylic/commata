@@ -3471,7 +3471,7 @@ template &lt;class ForwardIterator, class ForwardIteratorEnd>
           </code>
           <requires>The template parameter <c>ForwardIterator</c> shall meet the <c>ForwardIterator</c> requirements for <c>char_type</c>.
                     The template parameter <c>ForwardIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
-                    <c>std::declval&lt;const ForwardIterator&amp;>() != std::declval&lt;const ForwardIteratorEnd&amp;>()</c> shall be a valid expression whose value can be contextually converted to <c>bool</c>.
+                    <c>std::declval&lt;const ForwardIterator&amp;>() != std::declval&lt;const ForwardIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.
                     <c>value</c> shall be backed by <c>*this</c>.
                     <c>new_value_begin</c> shall point an element in, or be a past-the-end iterator of, a valid range.</requires>
           <postcondition><c>value</c> shall be unchangedly backed by <c>*this</c>.
