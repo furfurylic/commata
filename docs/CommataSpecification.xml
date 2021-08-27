@@ -5484,8 +5484,8 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
                        <li><c>x</c> denotes <c>std::numeric_limits&lt;T>::max()</c>, and</li>
                        <li>the domain of <c>T</c> denotes
                          <ul>
-                           <li>The range [<c>-x</c>, <c>x</c>] in <c>SV</c> mapped by a conversion to <c>V</c> if <c>T</c> is an unsigned integer type,</li>
-                           <li>[<c>std::numeric_limits&lt;T>::min()</c>, <c>x</c>] otherwise.</li>
+                           <li>the range [<c>-x</c>, <c>x</c>] in <c>SV</c> mapped by a conversion to <c>V</c> if <c>T</c> is an unsigned integer type,</li>
+                           <li>a union of the range [<c>std::numeric_limits&lt;T>::lowest()</c>, <c>x</c>] and a set of other non-finite values (for example, positive or negative infinities and &#x2018;Not-a-Number&#x2019; values) otherwise.</li>
                          </ul>
                        </li>
                      </ul>
@@ -5526,7 +5526,13 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
               </tr>
 
               <tr>
-                <td><c>float</c> or <c>double</c></td>
+                <td><c>float</c></td>
+                <td><c>std::strtof</c></td>
+                <td><c>std::wcstof</c></td>
+              </tr>
+
+              <tr>
+                <td><c>double</c></td>
                 <td><c>std::strtod</c></td>
                 <td><c>std::wcstod</c></td>
               </tr>

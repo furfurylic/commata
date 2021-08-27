@@ -1475,6 +1475,8 @@ template <class T, class H, class U, class = void>
 struct restrained_converter :
     private raw_converter<U, H>
 {
+    static_assert(!std::is_floating_point<T>::value, "");
+
     using raw_converter<U, H>::raw_converter;
     using raw_converter<U, H>::get_conversion_error_handler;
 
@@ -1504,6 +1506,8 @@ struct restrained_converter<T, H, U,
         std::enable_if_t<std::is_unsigned<T>::value>> :
     private raw_converter<U, H>
 {
+    static_assert(!std::is_floating_point<T>::value, "");
+
     using raw_converter<U, H>::raw_converter;
     using raw_converter<U, H>::get_conversion_error_handler;
 
