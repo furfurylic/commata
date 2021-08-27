@@ -497,7 +497,7 @@ private:
     void flush_lf()
     {
         if (out_) {
-            out_->sputc(key_chars<Ch>::LF);
+            out_->sputc(key_chars<Ch>::lf_c);
         }
     }
 };

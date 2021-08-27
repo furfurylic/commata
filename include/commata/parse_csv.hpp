@@ -81,20 +81,20 @@ struct parse_step<state::after_comma>
     void normal(Parser& parser, const typename Parser::char_type* p, ...) const
     {
         switch (*p) {
-        case key_chars<typename Parser::char_type>::COMMA:
+        case key_chars<typename Parser::char_type>::comma_c:
             parser.set_first_last();
             parser.finalize();
             break;
-        case key_chars<typename Parser::char_type>::DQUOTE:
+        case key_chars<typename Parser::char_type>::dquote_c:
             parser.change_state(state::right_of_open_quote);
             break;
-        case key_chars<typename Parser::char_type>::CR:
+        case key_chars<typename Parser::char_type>::cr_c:
             parser.set_first_last();
             parser.finalize();
             parser.end_record();
             parser.change_state(state::after_cr);
             break;
-        case key_chars<typename Parser::char_type>::LF:
+        case key_chars<typename Parser::char_type>::lf_c:
             parser.set_first_last();
             parser.finalize();
             parser.end_record();
@@ -128,19 +128,19 @@ struct parse_step<state::in_value>
     {
         while (p < pe) {
             switch (*p) {
-            case key_chars<typename Parser::char_type>::COMMA:
+            case key_chars<typename Parser::char_type>::comma_c:
                 parser.finalize();
                 parser.change_state(state::after_comma);
                 return;
-            case key_chars<typename Parser::char_type>::DQUOTE:
+            case key_chars<typename Parser::char_type>::dquote_c:
                 throw parse_error(
                     "A quotation mark found in a non-escaped value");
-            case key_chars<typename Parser::char_type>::CR:
+            case key_chars<typename Parser::char_type>::cr_c:
                 parser.finalize();
                 parser.end_record();
                 parser.change_state(state::after_cr);
                 return;
-            case key_chars<typename Parser::char_type>::LF:
+            case key_chars<typename Parser::char_type>::lf_c:
                 parser.finalize();
                 parser.end_record();
                 parser.change_state(state::after_lf);
@@ -174,7 +174,7 @@ struct parse_step<state::right_of_open_quote>
     void normal(Parser& parser, const typename Parser::char_type* p, ...) const
     {
         parser.set_first_last();
-        if (*p == key_chars<typename Parser::char_type>::DQUOTE) {
+        if (*p == key_chars<typename Parser::char_type>::dquote_c) {
             parser.change_state(state::in_quoted_value_after_quote);
         } else {
             parser.renew_last();
@@ -201,7 +201,7 @@ struct parse_step<state::in_quoted_value>
         const typename Parser::char_type* pe) const
     {
         while (p < pe) {
-            if (*p == key_chars<typename Parser::char_type>::DQUOTE) {
+            if (*p == key_chars<typename Parser::char_type>::dquote_c) {
                 parser.update();
                 parser.set_first_last();
                 parser.change_state(state::in_quoted_value_after_quote);
@@ -234,21 +234,21 @@ struct parse_step<state::in_quoted_value_after_quote>
     void normal(Parser& parser, const typename Parser::char_type* p, ...) const
     {
         switch (*p) {
-        case key_chars<typename Parser::char_type>::COMMA:
+        case key_chars<typename Parser::char_type>::comma_c:
             parser.finalize();
             parser.change_state(state::after_comma);
             break;
-        case key_chars<typename Parser::char_type>::DQUOTE:
+        case key_chars<typename Parser::char_type>::dquote_c:
             parser.set_first_last();
             parser.renew_last();
             parser.change_state(state::in_quoted_value);
             break;
-        case key_chars<typename Parser::char_type>::CR:
+        case key_chars<typename Parser::char_type>::cr_c:
             parser.finalize();
             parser.end_record();
             parser.change_state(state::after_cr);
             break;
-        case key_chars<typename Parser::char_type>::LF:
+        case key_chars<typename Parser::char_type>::lf_c:
             parser.finalize();
             parser.end_record();
             parser.change_state(state::after_lf);
@@ -277,22 +277,22 @@ struct parse_step<state::after_cr>
     void normal(Parser& parser, const typename Parser::char_type* p, ...) const
     {
         switch (*p) {
-        case key_chars<typename Parser::char_type>::COMMA:
+        case key_chars<typename Parser::char_type>::comma_c:
             parser.new_physical_line();
             parser.set_first_last();
             parser.finalize();
             parser.change_state(state::after_comma);
             break;
-        case key_chars<typename Parser::char_type>::DQUOTE:
+        case key_chars<typename Parser::char_type>::dquote_c:
             parser.new_physical_line();
             parser.force_start_record();
             parser.change_state(state::right_of_open_quote);
             break;
-        case key_chars<typename Parser::char_type>::CR:
+        case key_chars<typename Parser::char_type>::cr_c:
             parser.new_physical_line();
             parser.empty_physical_line();
             break;
-        case key_chars<typename Parser::char_type>::LF:
+        case key_chars<typename Parser::char_type>::lf_c:
             parser.change_state(state::after_lf);
             break;
         default:
@@ -320,23 +320,23 @@ struct parse_step<state::after_lf>
     void normal(Parser& parser, const typename Parser::char_type* p, ...) const
     {
         switch (*p) {
-        case key_chars<typename Parser::char_type>::COMMA:
+        case key_chars<typename Parser::char_type>::comma_c:
             parser.new_physical_line();
             parser.set_first_last();
             parser.finalize();
             parser.change_state(state::after_comma);
             break;
-        case key_chars<typename Parser::char_type>::DQUOTE:
+        case key_chars<typename Parser::char_type>::dquote_c:
             parser.new_physical_line();
             parser.force_start_record();
             parser.change_state(state::right_of_open_quote);
             break;
-        case key_chars<typename Parser::char_type>::CR:
+        case key_chars<typename Parser::char_type>::cr_c:
             parser.new_physical_line();
             parser.empty_physical_line();
             parser.change_state(state::after_cr);
             break;
-        case key_chars<typename Parser::char_type>::LF:
+        case key_chars<typename Parser::char_type>::lf_c:
             parser.new_physical_line();
             parser.empty_physical_line();
             break;

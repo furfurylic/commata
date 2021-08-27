@@ -15,7 +15,7 @@
 namespace commata {
 namespace detail {
 
-template <class A, bool POCCA, bool POCMA, bool POCS>
+template <class A, bool Pocca, bool Pocma, bool Pocs>
 class propagation_controlled_allocator :
     member_like_base<A>
 {
@@ -35,7 +35,7 @@ public:
     {
         using other = propagation_controlled_allocator<
             typename base_traits_t::template rebind_alloc<U>,
-            POCCA, POCMA, POCS>;
+            Pocca, Pocma, Pocs>;
     };
 
     explicit propagation_controlled_allocator(const A& alloc) noexcept :
@@ -45,7 +45,7 @@ public:
     // To make rebound copies
     template <class U>
     explicit propagation_controlled_allocator(
-        const propagation_controlled_allocator<U, POCCA, POCMA, POCS>& other)
+        const propagation_controlled_allocator<U, Pocca, Pocma, Pocs>& other)
             noexcept :
         member_like_base<A>(other.base())
     {}
@@ -53,7 +53,7 @@ public:
     // ditto
     template <class U>
     explicit propagation_controlled_allocator(
-        propagation_controlled_allocator<U, POCCA, POCMA, POCS>&& other)
+        propagation_controlled_allocator<U, Pocca, Pocma, Pocs>&& other)
             noexcept :
         member_like_base<A>(std::move(other.base()))
     {}
@@ -80,14 +80,14 @@ public:
 
     template <class U>
     bool operator==(const propagation_controlled_allocator<
-        U, POCCA, POCMA, POCS>& other) const noexcept
+        U, Pocca, Pocma, Pocs>& other) const noexcept
     {
         return base() == other.base();
     }
 
     template <class U>
     bool operator!=(const propagation_controlled_allocator<
-        U, POCCA, POCMA, POCS>& other) const noexcept
+        U, Pocca, Pocma, Pocs>& other) const noexcept
     {
         return base() != other.base();
     }
@@ -114,10 +114,10 @@ public:
     }
 
     using propagate_on_container_copy_assignment =
-        std::integral_constant<bool, POCCA>;
+        std::integral_constant<bool, Pocca>;
     using propagate_on_container_move_assignment =
-        std::integral_constant<bool, POCMA>;
-    using propagate_on_container_swap = std::integral_constant<bool, POCS>;
+        std::integral_constant<bool, Pocma>;
+    using propagate_on_container_swap = std::integral_constant<bool, Pocs>;
 
     decltype(auto) base() noexcept
     {

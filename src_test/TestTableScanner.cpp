@@ -738,7 +738,7 @@ TYPED_TEST(TestTableScanner, RecordEndScanner)
         std::basic_stringstream<TypeParam> s;
         s << "Word\r"
              "\"aban\ndon\"\n"
-             "Abbott";  // elaborately does not end with CR/LF
+             "Abbott";  // elaborately does not end with CR/lf_c
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
         FAIL() << e.info();

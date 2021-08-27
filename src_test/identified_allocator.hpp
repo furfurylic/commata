@@ -11,7 +11,7 @@
 
 namespace commata { namespace test {
 
-template <class T, bool POCCA, bool POCMA, bool POCS, bool IAE = false>
+template <class T, bool Pocca, bool Pocma, bool Pocs, bool Iae = false>
 class identified_allocator
 {
     std::size_t id_;
@@ -20,7 +20,7 @@ public:
     template <class U>
     struct rebind
     {
-        using other = identified_allocator<U, POCCA, POCMA, POCS, IAE>;
+        using other = identified_allocator<U, Pocca, Pocma, Pocs, Iae>;
     };
 
     using value_type = T;
@@ -36,7 +36,7 @@ public:
     // To make a rebound copy
     template <class U>
     explicit identified_allocator(
-            const identified_allocator<U, POCCA, POCMA, POCS, IAE>& other)
+            const identified_allocator<U, Pocca, Pocma, Pocs, Iae>& other)
         noexcept :
         id_(other.id())
     {}
@@ -59,9 +59,9 @@ public:
 #endif
     template <class U>
     bool operator==(const identified_allocator<
-        U, POCCA, POCMA, POCS, IAE>& other) const noexcept
+        U, Pocca, Pocma, Pocs, Iae>& other) const noexcept
     {
-        return IAE || (id() == other.id());
+        return Iae || (id() == other.id());
     }
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -69,17 +69,17 @@ public:
 
     template <class U>
     bool operator!=(const identified_allocator<
-        U, POCCA, POCMA, POCS, IAE>& other) const noexcept
+        U, Pocca, Pocma, Pocs, Iae>& other) const noexcept
     {
         return !(*this == other);
     }
 
     using propagate_on_container_copy_assignment =
-        std::integral_constant<bool, POCCA>;
+        std::integral_constant<bool, Pocca>;
     using propagate_on_container_move_assignment =
-        std::integral_constant<bool, POCMA>;
+        std::integral_constant<bool, Pocma>;
     using propagate_on_container_swap =
-        std::integral_constant<bool, POCS>;
+        std::integral_constant<bool, Pocs>;
 
     std::size_t id() const noexcept
     {
