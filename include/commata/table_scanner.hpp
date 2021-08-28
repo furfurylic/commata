@@ -43,38 +43,28 @@ namespace commata {
 
 namespace detail { namespace scanner {
 
-struct accepts_range_impl
+template <class... As>
+struct is_callable_impl
 {
-    template <class T, class Ch>
-    static auto check(T*) -> decltype(
-        std::declval<T&>().field_value(
-            static_cast<Ch*>(nullptr), static_cast<Ch*>(nullptr)),
+    template <class F>
+    static auto check(F*) -> decltype(
+        std::declval<F>()(std::declval<As>()...),
         std::true_type());
 
-    template <class T, class Ch>
+    template <class F>
     static auto check(...) -> std::false_type;
 };
+
+template <class F, class... As>
+struct is_callable :
+    decltype(is_callable_impl<As...>::template check<F>(nullptr))
+{};
 
 template <class T, class Ch>
-struct accepts_range :
-    decltype(accepts_range_impl::check<T, Ch>(nullptr))
-{};
-
-struct accepts_x_impl
-{
-    template <class T, class X>
-    static auto check(T*) -> decltype(
-        std::declval<T&>().field_value(std::declval<X>()),
-        std::true_type());
-
-    template <class T, class Ch>
-    static auto check(...) -> std::false_type;
-};
+using accepts_range = is_callable<T, Ch*, Ch*>;
 
 template <class T, class X>
-struct accepts_x :
-    decltype(accepts_x_impl::check<T, X>(nullptr))
-{};
+using accepts_x = is_callable<T, X>;
 
 struct typable
 {
@@ -196,7 +186,7 @@ class basic_table_scanner
 
         void field_skipped() override
         {
-            scanner().field_skipped();
+            scanner()();
         }
 
         const std::type_info& get_type() const noexcept override
@@ -209,26 +199,25 @@ class basic_table_scanner
         void field_value_r(std::true_type,
             Ch* begin, Ch* end, basic_table_scanner&)
         {
-            scanner().field_value(begin, end);
+            scanner()(begin, end);
         }
 
         void field_value_r(std::false_type,
             Ch* begin, Ch* end, basic_table_scanner& me)
         {
-            scanner().field_value(string_t(begin, end, me.get_allocator()));
+            scanner()(string_t(begin, end, me.get_allocator()));
         }
 
         void field_value_s(std::true_type,
             string_t&& value, basic_table_scanner&)
         {
-            scanner().field_value(std::move(value));
+            scanner()(std::move(value));
         }
 
         void field_value_s(std::false_type,
             string_t&& value, basic_table_scanner&)
         {
-            scanner().field_value(
-                &*value.begin(), &*value.begin() + value.size());
+            scanner()(&*value.begin(), &*value.begin() + value.size());
         }
 
         const void* get_target_v() const noexcept override
@@ -243,19 +232,7 @@ class basic_table_scanner
 
         decltype(auto) scanner() noexcept
         {
-            return scanner_impl(
-                detail::is_std_reference_wrapper<FieldScanner>());
-        }
-
-    private:
-        decltype(auto) scanner_impl(std::false_type) noexcept
-        {
             return this->get();
-        }
-
-        decltype(auto) scanner_impl(std::true_type) noexcept
-        {
-            return this->get().get();
         }
     };
 
@@ -2412,7 +2389,7 @@ public:
         return ct_.member().get_skipping_handler();
     }
 
-    void field_skipped()
+    void operator()()
     {
         ct_.member().field_skipped();
     }
@@ -2428,7 +2405,7 @@ public:
     }
 
     template <class Ch>
-    void field_value(const Ch* begin, const Ch* end)
+    void operator()(const Ch* begin, const Ch* end)
     {
         assert(*end == Ch());
         ct_.member().put(ct_.base().convert(begin, end));
@@ -2488,9 +2465,9 @@ public:
         return out_.get_skipping_handler();
     }
 
-    void field_skipped()
+    void operator()()
     {
-        out_.field_skipped();
+        out_();
     }
 
     ConversionErrorHandler& get_conversion_error_handler() noexcept
@@ -2504,7 +2481,7 @@ public:
     }
 
     template <class Ch>
-    void field_value(Ch* begin, Ch* end)
+    void operator()(Ch* begin, Ch* end)
     {
         if (decimal_point_c_ == wchar_t()) {
             decimal_point_c_ = widen(*std::localeconv()->decimal_point, Ch());
@@ -2539,9 +2516,9 @@ public:
                 ++head;
             }
             *head = Ch();
-            out_.field_value(begin, head);
+            out_(begin, head);
         } else {
-            out_.field_value(begin, end);
+            out_(begin, end);
         }
     }
 
@@ -2611,25 +2588,25 @@ public:
         return at_.member().get_skipping_handler();
     }
 
-    void field_skipped()
+    void operator()()
     {
         at_.member().field_skipped();
     }
 
-    void field_value(const Ch* begin, const Ch* end)
+    void operator()(const Ch* begin, const Ch* end)
     {
         at_.member().put(std::basic_string<Ch, Tr, Allocator>(
             begin, end, get_allocator()));
     }
 
-    void field_value(std::basic_string<Ch, Tr, Allocator>&& value)
+    void operator()(std::basic_string<Ch, Tr, Allocator>&& value)
     {
         // std::basic_string which comes with gcc 7.3.1 does not seem to have
         // "move-with-specified-allocator" ctor
         if (value.get_allocator() == get_allocator()) {
             at_.member().put(std::move(value));
         } else {
-            field_value(value.data(), value.data() + value.size());
+            (*this)(value.data(), value.data() + value.size());
         }
     }
 };
@@ -2724,23 +2701,6 @@ string_field_translator<Sink,
         typename T::value_type, typename T::traits_type,
         typename T::allocator_type, std::decay_t<As>...>
     make_field_translator_na(Sink, As&&...);
-
-template <class A>
-struct is_callable_impl
-{
-    template <class F>
-    static auto check(F*) -> decltype(
-        std::declval<F>()(std::declval<A>()),
-        std::true_type());
-
-    template <class F>
-    static auto check(...) -> std::false_type;
-};
-
-template <class F, class A>
-struct is_callable :
-    decltype(is_callable_impl<A>::template check<F>(nullptr))
-{};
 
 }} // end detail::scanner
 

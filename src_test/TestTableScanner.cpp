@@ -336,10 +336,10 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Copy)
         static_cast<value_t>(1),
         replace_if_conversion_failed<value_t>(static_cast<value_t>(2)));
     auto u = t;
-    t.field_value(ten.data(), ten.data() + (ten.size() - 1));
-    u.field_value(empty.data(), empty.data());
-    t.field_skipped();
-    u.field_value(twenty.data(), twenty.data() + (twenty.size() - 1));
+    t(ten.data(), ten.data() + (ten.size() - 1));
+    u(empty.data(), empty.data());
+    t();
+    u(twenty.data(), twenty.data() + (twenty.size() - 1));
 
     const std::vector<value_t> expected = { 10, 2, 1, 20 };
     ASSERT_EQ(expected, values);
@@ -538,9 +538,9 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Copy)
     auto t = make_field_translator(values,
         replace_if_skipped<string_t>(str("1")));
     auto u = t;
-    t.field_value(str("10"));
-    u.field_skipped();
-    t.field_value(str("20"));
+    t(str("10"));
+    u();
+    t(str("20"));
 
     const std::vector<string_t> expected = { str("10"), str("1"), str("20") };
     ASSERT_EQ(expected, values);
@@ -596,10 +596,10 @@ TYPED_TEST(TestLocaleBased, FrenchStyle)
     auto t = make_field_translator(values0, loc, replacement_ignore);
     auto u = make_field_translator(values1, loc, replacement_fail);
 
-    t.field_value(&s0[0], &s0[0] + (s0.size() - 1));
-    t.field_skipped();
-    u.field_value(&s1[0], &s1[0] + (s1.size() - 1));
-    ASSERT_THROW(u.field_skipped(), field_not_found);
+    t(&s0[0], &s0[0] + (s0.size() - 1));
+    t();
+    u(&s1[0], &s1[0] + (s1.size() - 1));
+    ASSERT_THROW(u(), field_not_found);
 
     ASSERT_EQ(1U, values0.size());
     ASSERT_EQ(100000, values0.back());
@@ -627,10 +627,10 @@ TYPED_TEST(TestLocaleBased, Copy)
         replace_if_conversion_failed<double>(777.77));
     auto u = t;
 
-    t.field_value(&s0[0], &s0[0] + (s0.size() - 1));
-    u.field_skipped();
-    t.field_value(&empty[0], &empty[0]);
-    u.field_value(&s1[0], &s1[0] + (s1.size() - 1));
+    t(&s0[0], &s0[0] + (s0.size() - 1));
+    u();
+    t(&empty[0], &empty[0]);
+    u(&s1[0], &s1[0] + (s1.size() - 1));
 
     const std::deque<double> expected = { 12345678.5, 33.33, 777.77, -9999.0 };
     ASSERT_EQ(expected, values);
@@ -1210,9 +1210,9 @@ class check_scanner
 public:
     explicit check_scanner(F f) : f_(f) {}
 
-    void field_value(Ch* b, Ch* e) { f_(b); f_(e - 1); }
+    void operator()(Ch* b, Ch* e) { f_(b); f_(e - 1); }
 
-    void field_skipped() {}
+    void operator()() {}
 };
 
 template <class Ch, class F>

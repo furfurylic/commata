@@ -3882,7 +3882,7 @@ template &lt;class Content, class Allocator, class... Args>
 
           <tr>
             <td>(1)</td>
-            <td><c>s.field_value(b, e)</c></td>
+            <td><c>s(b, e)</c></td>
             <td>(Not used)</td>
             <td>Called when the table scanner has finalized a text value of the field of a body record.
                 Any pointers in the range [<c>b</c>, <c>e</c>] are dereferenceable and any values stored at them are modifiable.
@@ -3894,7 +3894,7 @@ template &lt;class Content, class Allocator, class... Args>
 
           <tr>
             <td>(2)</td>
-            <td><c>s.field_value(rv)</c></td>
+            <td><c>s(rv)</c></td>
             <td>(Not used)</td>
             <td>Called when the table scanner has finalized a text value of the field of a body record. The value of the field is <c>rv</c>.</td>
             <td>Calls (1) with <c>&amp;*rv.begin()</c> and <c>&amp;*rv.begin() + rv.size()</c>.</td>
@@ -3902,7 +3902,7 @@ template &lt;class Content, class Allocator, class... Args>
 
           <tr>
             <td>(3)</td>
-            <td><c>s.field_skipped()</c></td>
+            <td><c>s()</c></td>
             <td>(Not used)</td>
             <td>Called when the table scanner has found that the field does not appear in the body record, that is, the record has too few fields to reach the field.</td>
             <td></td>
@@ -4325,9 +4325,8 @@ allocator_type get_allocator() const noexcept;
           <code>
 template &lt;class T = std::nullptr_t> void set_field_scanner(std::size_t j, T s = T());
           </code>
-          <requires><c>T</c> shall either be (possibly cv-qualified) <c>std::nullptr_t</c>,
-                    meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) for <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>, or
-                    be (possibly cv-qualified) <c>std::reference_wrapper&lt;U></c> where <c>U</c> shall be a type that meets the <c>BodyFieldScanner</c> requirements for <c>Ch</c> and <c>Tr</c> except that it need not be either <c>MoveConstructible</c> or <c>Destructible</c>.</requires>
+          <requires><c>T</c> shall either be (possibly cv-qualified) <c>std::nullptr_t</c> or
+                    meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) for <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>.</requires>
           <effects>If <c>T</c> is (possibly cv-qualified) <c>std::nullptr_t</c>, uninstalls the body field scanner installed at zero-based field index <c>j</c> if any.
                    Otherwise, uninstalls the body field scanner installed there if any, and installs a copy of <c>s</c> as a body field scanner in place of it.</effects>
           <remark>If an exception is thrown by this function, this function has no effects.</remark>
@@ -5399,9 +5398,9 @@ namespace commata {
     const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
           ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
 
-    <c>// <n><xref id="arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="body_field_scanner.requirements"/>):</n></c>
-    template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
-    void field_skipped();
+    <c>// <n><xref id="arithmetic_field_translator.inv"/>, invocation:</n></c>
+    template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
+                        void operator()();
   };
 }
         </codeblock>
@@ -5466,11 +5465,11 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
           </code-item>
         </section>
 
-        <section id="arithmetic_field_translator.scanner">
-          <name><c>arithmetic_field_translator</c> members to meet the <c>BodyFieldScanner</c> requirements</name>
+        <section id="arithmetic_field_translator.inv">
+          <name><c>arithmetic_field_translator</c> invocation</name>
           <code-item>
             <code>
-template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
+template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
             </code>
             <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
             <effects><p>First calls a parsing function indicated in <xref id="table.arithmetic_field_translator.parsing_functions"/> for <c>T</c> and <c>Ch</c> to get an arithmetic value <c>v</c> of the range [<c>begin</c>, <c>end</c>).
@@ -5598,7 +5597,7 @@ template &lt;class Ch> void field_value(const Ch* begin, const Ch* end);
 
           <code-item>
             <code>
-void field_skipped();
+void operator()();
             </code>
             <effects>Evaluates <c>get_skipping_handler()()</c> and puts the result into the field translator sink.</effects>
           </code-item>
@@ -5633,9 +5632,9 @@ namespace commata {
     const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
           ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
 
-    <c>// <n><xref id="locale_based_arithmetic_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="body_field_scanner.requirements"/>):</n></c>
-    template &lt;class Ch> void field_value(Ch* begin, Ch* end);
-    void field_skipped();
+    <c>// <n><xref id="locale_based_arithmetic_field_translator.inv"/>, invocation:</n></c>
+    template &lt;class Ch> void operator()(Ch* begin, Ch* end);
+                        void operator()();
   };
 }
         </codeblock>
@@ -5704,11 +5703,11 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
           </code-item>
         </section>
 
-        <section id="locale_based_arithmetic_field_translator.scanner">
-          <name><c>locale_based_arithmetic_field_translator</c> members to meet the <c>BodyFieldScanner</c> requirements</name>
+        <section id="locale_based_arithmetic_field_translator.inv">
+          <name><c>locale_based_arithmetic_field_translator</c> invocation</name>
           <code-item>
             <code>
-template &lt;class Ch> void field_value(Ch* begin, Ch* end);
+template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             </code>
             <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
             <effects>Let <c>npf</c> be <c>std::use_facet&lt;std::numpunct&lt;Ch>>(loc)</c> where <c>loc</c> is the specified locale.
@@ -5719,7 +5718,7 @@ template &lt;class Ch> void field_value(Ch* begin, Ch* end);
 
           <code-item>
             <code>
-void field_skipped();
+void operator()();
             </code>
             <effects>Evaluates <c>get_skipping_handler()()</c> and puts the result into the field translator sink.</effects>
           </code-item>
@@ -5756,10 +5755,10 @@ namespace commata {
     const SkippingHandler&amp; get_skipping_handler() const noexcept;
           SkippingHandler&amp; get_skipping_handler()       noexcept;
 
-    <c>// <n><xref id="string_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="body_field_scanner.requirements"/>):</n></c>
-    void field_value(const Ch* begin, const Ch* end);
-    void field_value(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; value);
-    void field_skipped();
+    <c>// <n><xref id="string_field_translator.inv"/>, invocation:</n></c>
+    void operator()(const Ch* begin, const Ch* end);
+    void operator()(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; value);
+    void operator()();
   };
 }
         </codeblock>
@@ -5832,25 +5831,25 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
           </code-item>
         </section>
 
-        <section id="string_field_translator.scanner">
-          <name><c>string_field_translator</c> members to meet the <c>BodyFieldScanner</c> requirements</name>
+        <section id="string_field_translator.inv">
+          <name><c>string_field_translator</c> invocation</name>
           <code-item>
             <code>
-void field_value(const Ch* begin, const Ch* end);
+void operator()(const Ch* begin, const Ch* end);
             </code>
             <effects>Puts <c>std::basic_string&lt;Ch, Tr, Allocator>(begin, end, get_allocator())</c> into the field translator sink.</effects>
           </code-item>
 
           <code-item>
             <code>
-void field_value(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; value);
+void operator()(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; value);
             </code>
-            <effects>If <c>value.get_allocator() == get_allocator()</c>, puts <c>std::move(value)</c> into the field translator sink. Otherwise, calls <c>field_value(value.c_str(), value.c_str() + value.size())</c>.</effects>
+            <effects>If <c>value.get_allocator() == get_allocator()</c>, puts <c>std::move(value)</c> into the field translator sink. Otherwise, calls <c>(*this)(value.c_str(), value.c_str() + value.size())</c>.</effects>
           </code-item>
 
           <code-item>
             <code>
-void field_skipped();
+void operator()();
             </code>
             <effects>Evaluates <c>get_skipping_handler()()</c> and puts the result into the field translator sink.</effects>
           </code-item>
