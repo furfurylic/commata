@@ -84,7 +84,7 @@ public:
         return *this;
     }
 
-    auto allocate(typename base_traits::size_type n)
+    [[nodiscard]] auto allocate(typename base_traits::size_type n)
     {
         if (allocated_) {
             allocated_->emplace_back();                         // throw

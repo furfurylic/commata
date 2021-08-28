@@ -43,7 +43,7 @@ public:
 
     // Copy/move ops are defaulted
 
-    auto allocate(std::size_t n)
+    [[nodiscard]] auto allocate(std::size_t n)
     {
         return reinterpret_cast<T*>(new char[sizeof(T) * n]);   // throw
     }

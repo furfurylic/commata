@@ -145,7 +145,7 @@ public:
         return *this;
     }
 
-    std::pair<char_type*, std::size_t> get_buffer()
+    [[nodiscard]] std::pair<char_type*, std::size_t> get_buffer()
     {
         return { std::addressof(*buffer_), alloc_.member() };
     }
@@ -516,7 +516,8 @@ public:
     }
 
 private:
-     template <class... Args>
+    template <class... Args>
+    [[nodiscard]]
     static auto create_handler(const Allocator& alloc, Args&&... args)
     {
         handler_a_t a(alloc);

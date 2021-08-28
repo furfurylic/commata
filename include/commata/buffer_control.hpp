@@ -122,7 +122,7 @@ public:
         handler_(std::forward<HandlerR>(handler))
     {}
 
-    std::pair<char_type*, std::size_t> get_buffer()
+    [[nodiscard]] std::pair<char_type*, std::size_t> get_buffer()
     {
         return this->do_get_buffer(std::addressof(handler_));
     }

@@ -388,7 +388,7 @@ struct full_fledged
     Ch c;
 
     using char_type = Ch;
-    std::pair<Ch*, std::size_t> get_buffer()
+    [[nodiscard]] std::pair<Ch*, std::size_t> get_buffer()
         { return std::make_pair(&c, 1); }
     void release_buffer(const Ch*) {}
     void start_buffer(const Ch*, const Ch*) {}

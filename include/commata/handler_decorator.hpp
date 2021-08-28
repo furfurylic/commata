@@ -114,6 +114,7 @@ template <class Handler, class D>
 struct get_buffer_t<Handler, D,
     std::enable_if_t<has_get_buffer_v<Handler>>>
 {
+    [[nodiscard]]
     auto get_buffer() noexcept(noexcept(std::declval<Handler&>().get_buffer()))
      -> decltype(std::declval<Handler&>().get_buffer())
     {

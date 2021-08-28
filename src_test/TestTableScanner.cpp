@@ -1049,7 +1049,7 @@ public:
         s_(std::move(s))
     {}
 
-    std::pair<Ch*, std::size_t> get_buffer()
+    [[nodiscard]] std::pair<Ch*, std::size_t> get_buffer()
     {
         return s_.get_buffer();
     }

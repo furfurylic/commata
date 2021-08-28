@@ -389,7 +389,7 @@ private:
             it->first = p;
         } else {
             try {
-                scanners_.emplace(it, p, j);                       // throw
+                scanners_.emplace(it, p, j);                        // throw
             } catch (...) {
                 destroy_deallocate(p);
                 throw;
@@ -519,7 +519,7 @@ private:
     }
 
 public:
-    std::pair<Ch*, std::size_t> get_buffer()
+    [[nodiscard]] std::pair<Ch*, std::size_t> get_buffer()
     {
         if (!buffer_) {
             auto a = get_allocator();
@@ -623,7 +623,7 @@ private:
     }
 
     template <class T, class... Args>
-    auto allocate_construct(Args&&... args)
+    [[nodiscard]] auto allocate_construct(Args&&... args)
     {
         using t_alloc_traits_t =
             typename at_t::template rebind_traits<T>;

@@ -106,7 +106,7 @@ public:
     // copy/move ctor/assignment ops are defaulted
 
     template <class... Args>
-    auto allocate(size_type n, Args&&... args)
+    [[nodiscard]] auto allocate(size_type n, Args&&... args)
     {
         return base_traits_t::allocate(base(), n, std::forward<Args>(args)...);
     }

@@ -177,7 +177,7 @@ struct fancy_allocator
     template <class U>
     fancy_allocator(const fancy_allocator<U>&) noexcept {}
 
-    pointer allocate(size_type n)
+    [[nodiscard]] pointer allocate(size_type n)
     {
         const auto p = ::operator new(n * sizeof(T));
         return fancy_ptr<T>::pointer_to(*static_cast<T*>(p));

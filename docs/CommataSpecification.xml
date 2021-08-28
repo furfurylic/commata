@@ -3534,7 +3534,7 @@ namespace commata {
     record_type&amp;       operator[](size_type record_index);
     const record_type&amp; operator[](size_type record_index) const;
     size_type size() const noexcept(<nc>see below</nc>);
-    bool empty() const noexcept(<nc>see below</nc>);
+    [[nodiscard]] bool empty() const noexcept(<nc>see below</nc>);
     void clear() noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="basic_stored_table.capacity"/>, capacity:</n></c>
@@ -3554,7 +3554,7 @@ namespace commata {
     template &lt;class F> auto guard_rewrite(F f) -> decltype(f(*this));
 
     <c>// <n><xref id="basic_stored_table.primitives"/>, primitive store operations:</n></c>
-    std::pair&lt;char_type*, std::size_t> generate_buffer(std::size_t min_size);
+    [[nodiscard]] std::pair&lt;char_type*, std::size_t> generate_buffer(std::size_t min_size);
     void consume_buffer(char_type* buffer, std::size_t size) const;
     void add_buffer(char_type* buffer, std::size_t size);
     void secure_current_upto(char_type* secured_last);
@@ -3790,7 +3790,7 @@ size_type size() const noexcept(<nc>see below</nc>);
 
         <code-item>
           <code>
-bool empty() const noexcept(<nc>see below</nc>);
+[[nodiscard]] bool empty() const noexcept(<nc>see below</nc>);
           </code>
           <returns><c>true</c> if the content container is empty; <c>content().empty()</c> otherwise.</returns>
           <remark>The expression inside <c>noexcept</c> is <c>false</c> if and only if <c>Content::empty</c> with no parameters is not marked as <c>noexcept</c>.</remark>
@@ -3908,7 +3908,7 @@ template &lt;class F> auto guard_rewrite(F f) -> decltype(f(*this));
 
         <code-item>
           <code>
-std::pair&lt;char_type*, std::size_t> generate_buffer(std::size_t min_size);
+[[nodiscard]] std::pair&lt;char_type*, std::size_t> generate_buffer(std::size_t min_size);
           </code>
           <effects>Optionally finds a buffer in the store whose length is not less than <c>min_size</c> and whose absence does not have any effects on the completeness of the table.
                    If a suitable buffer is found, then makes the store release the ownership of it.
@@ -4092,7 +4092,7 @@ namespace commata {
 
     <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
     // <n>requirements (<xref id="table_handler.requirements"/>):</n></c>
-    std::pair&lt;char_type*, std::size_t> get_buffer();
+    [[nodiscard]] std::pair&lt;char_type*, std::size_t> get_buffer();
     void release_buffer(const char_type* buffer) noexcept;
     void start_record(const char_type* record_begin);
     bool end_record(const char_type* record_end);
@@ -4656,7 +4656,7 @@ namespace commata {
 
     <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
     // <n>requirements (<xref id="table_handler.requirements"/>):</n></c>
-    std::pair&lt;Ch*, std::size_t> get_buffer();
+    [[nodiscard]] std::pair&lt;Ch*, std::size_t> get_buffer();
     void release_buffer(const Ch* buffer);
     void start_record(const Ch* record_begin);
     bool end_record(const Ch* record_end);

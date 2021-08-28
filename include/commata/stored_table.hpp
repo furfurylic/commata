@@ -838,6 +838,7 @@ public:
             std::pair<Ch*, Ch*>(nullptr, nullptr);
     }
 
+    [[nodiscard]]
     std::pair<Ch*, std::size_t> generate_buffer(std::size_t min_size)
     {
         if (min_size > at_t::max_size(this->get())) {
@@ -1216,6 +1217,7 @@ private:
     }
 
     template <class... Args>
+    [[nodiscard]]
     static auto allocate_create_content(Allocator a, Args&&... args)
     {
         auto records = at_t::allocate(a, 1);                    // throw
@@ -1514,6 +1516,7 @@ public:
         return operator_plus_assign_impl(std::move(other));
     }
 
+    [[nodiscard]]
     std::pair<char_type*, std::size_t> generate_buffer(std::size_t min_size)
     {
         return store_.generate_buffer(min_size);
@@ -2109,7 +2112,7 @@ public:
         return (!end_record_) || end_record_->on_end_record(*table_);
     }
 
-    std::pair<char_type*, std::size_t> get_buffer()
+    [[nodiscard]] std::pair<char_type*, std::size_t> get_buffer()
     {
         std::size_t length;
         if (field_begin_) {
