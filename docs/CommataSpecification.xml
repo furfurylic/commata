@@ -3870,7 +3870,7 @@ template &lt;class Content, class Allocator, class... Args>
 
         <table id="table.field_scanner.requirements">
           <caption><c>BodyFieldScanner</c> requirements</caption>
-          <col width="1"/><col width="4"/><col width="3"/><col width="10"/><col width="6"/>
+          <col width="1"/><col width="3"/><col width="3"/><col width="10"/><col width="6"/>
 
           <tr>
             <th>#</th>
@@ -3923,7 +3923,7 @@ template &lt;class Content, class Allocator, class... Args>
 
         <table id="table.record_end_scanner.requirements">
           <caption><c>RecordEndScanner</c> requirements</caption>
-          <col width="1"/><col width="4"/><col width="3"/><col width="16"/>
+          <col width="1"/><col width="3"/><col width="3"/><col width="16"/>
 
           <tr>
             <th>#</th>
@@ -3957,7 +3957,7 @@ template &lt;class Content, class Allocator, class... Args>
 
         <table id="table.header_field_scanner.requirements">
           <caption><c>HeaderFieldScanner</c> requirements</caption>
-          <col width="1"/><col width="4"/><col width="3"/><col width="16"/>
+          <col width="1"/><col width="3"/><col width="3"/><col width="16"/>
 
           <tr>
             <th>#</th>
@@ -4029,7 +4029,7 @@ template &lt;class Content, class Allocator, class... Args>
 
         <table id="table.skipping_handler.requirements">
           <caption><c>SkippingHandler</c> requirements</caption>
-          <col width="1"/><col width="4"/><col width="3"/><col width="15"/>
+          <col width="1"/><col width="3"/><col width="3"/><col width="16"/>
 
           <tr>
             <th>#</th>
@@ -4066,6 +4066,7 @@ template &lt;class Content, class Allocator, class... Args>
            It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.</p>
 
         <p>In <xref id="table.conversion_error_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
+           <c>i</c>, <c>o</c> and <c>e</c> are values of <c>invalid_format_t</c>, <c>out_of_range_t</c> and <c>empty_t</c> respectively.
            <c>b</c> and <c>e</c> are pointers to cv-unqualified <c>Ch</c>.
            The range [<c>b</c>, <c>e</c>) is the value of the field.
            <c>e</c> can be dereferenced and points the terminating zero.
@@ -4074,7 +4075,7 @@ template &lt;class Content, class Allocator, class... Args>
 
         <table id="table.conversion_error_handler.requirements">
           <caption><c>ConversionErrorHandler</c> requirements</caption>
-          <col width="1"/><col width="4"/><col width="3"/><col width="15"/>
+          <col width="1"/><col width="3"/><col width="3"/><col width="16"/>
 
           <tr>
             <th>#</th>
@@ -4085,7 +4086,7 @@ template &lt;class Content, class Allocator, class... Args>
 
           <tr>
             <td rowspan="2">(1)</td>
-            <td><c>h.invalid_format(b, e)</c></td>
+            <td><c>h(i, b, e)</c></td>
             <td rowspan="2"><c>replacement&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a format error.
                 If <c>r.get()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
@@ -4093,12 +4094,12 @@ template &lt;class Content, class Allocator, class... Args>
           </tr>
 
           <tr>
-            <td><c>h.invalid_format(b, e, n)</c></td>
+            <td><c>h(i, b, e, n)</c></td>
           </tr>
 
           <tr>
             <td rowspan="2">(2)</td>
-            <td><c>h.out_of_range(b, e, s)</c></td>
+            <td><c>h(o, b, e, s)</c></td>
             <td rowspan="2"><c>replacement&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a range error.
                 <c>s</c> shall has a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, or <c>0</c> otherwise.
@@ -4107,12 +4108,12 @@ template &lt;class Content, class Allocator, class... Args>
           </tr>
 
           <tr>
-            <td><c>h.out_of_range(b, e, s, n)</c></td>
+            <td><c>h(o, b, e, s, n)</c></td>
           </tr>
 
           <tr>
             <td rowspan="2">(3)</td>
-            <td><c>h.empty()</c></td>
+            <td><c>h(e)</c></td>
             <td rowspan="2"><c>replacement&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has a value that is empty.
                 If <c>r.get()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
@@ -4120,7 +4121,7 @@ template &lt;class Content, class Allocator, class... Args>
           </tr>
 
           <tr>
-            <td><c>h.empty(n)</c></td>
+            <td><c>h(e, n)</c></td>
           </tr>
         </table>
       </section>
@@ -4157,13 +4158,17 @@ namespace commata {
   struct replacement_ignore_t {};
   constexpr replacement_ignore_t replacement_ignore = replacement_ignore_t{};
 
+  struct replacement_fail_t {};
+  constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
+
+  struct invalid_format_t {};
+  struct out_of_range_t {};
+  struct empty_t {};
+
   <c>// <n><xref id="replacement"/>, replacement:</n></c>
   template &lt;class T> class replacement;
   template &lt;class T> void swap(replacement&lt;T>&amp; left,
                                replacement&lt;T>&amp; right) noexcept(<nc>see below</nc>);
-
-  struct replacement_fail_t {};
-  constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
 
   <c>// <n><xref id="scan.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
   struct fail_if_skipped;
@@ -4962,10 +4967,13 @@ template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
 namespace commata {
   struct fail_if_conversion_failed {
     template &lt;class T, class Ch>
-      [[noreturn]] replacement&lt;T> invalid_format(const Ch*, const Ch*, T* = nullptr) const;
+      [[noreturn]] replacement&lt;T> operator()(invalid_format_t,
+                                             const Ch*, const Ch*, T* = nullptr) const;
     template &lt;class T, class Ch>
-      [[noreturn]] replacement&lt;T> out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
-    template &lt;class T> [[noreturn]] replacement&lt;T> empty(T* = nullptr) const;
+      [[noreturn]] replacement&lt;T> operator()(out_of_range_t,
+                                             const Ch*, const Ch*, int, T* = nullptr) const;
+    template &lt;class T>
+      [[noreturn]] replacement&lt;T> operator()(empty_t, T* = nullptr) const;
   };
 }
         </codeblock>
@@ -4976,7 +4984,8 @@ namespace commata {
         <code-item>
           <code>
 template &lt;class T, class Ch>
-  [[noreturn]] replacement&lt;T> invalid_format(const Ch*, const Ch*, T* = nullptr) const;
+  [[noreturn]] replacement&lt;T> operator()(invalid_format_t,
+                                         const Ch*, const Ch*, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</effects>
         </code-item>
@@ -4984,14 +4993,16 @@ template &lt;class T, class Ch>
         <code-item>
           <code>
 template &lt;class T, class Ch>
-  [[noreturn]] replacement&lt;T> out_of_range(const Ch*, const Ch*, int, T* = nullptr) const;
+  [[noreturn]] replacement&lt;T> operator()(out_of_range_t,
+                                         const Ch*, const Ch*, int, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</effects>
         </code-item>
 
         <code-item>
           <code>
-template &lt;class T> [[noreturn]] replacement&lt;T> empty(T* = nullptr) const;
+template &lt;class T>
+  [[noreturn]] replacement&lt;T> operator()(empty_t, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</effects>
         </code-item>
@@ -5031,10 +5042,12 @@ namespace commata {
     replace_if_conversion_failed&amp; operator=(      replace_if_conversion_failed&amp;&amp; other)
       noexcept(<nc>see below</nc>);
 
-    <c>// <n><xref id="replace_if_conversion_failed.handler"/>, members to meet the ConversionErrorHandler requirements (<xref id="conversion_error_handler.requirements"/>):</n></c>
-    template &lt;class Ch> replacement&lt;T> invalid_format(const Ch*, const Ch*) const;
-    template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int sign) const;
-                        replacement&lt;T> empty() const;
+    <c>// <n><xref id="replace_if_conversion_failed.inv"/>, invocation:</n></c>
+    template &lt;class Ch> replacement&lt;T> operator()(invalid_format_t,
+                                                  const Ch*, const Ch*) const;
+    template &lt;class Ch> replacement&lt;T> operator()(out_of_range_t,
+                                                  const Ch*, const Ch*, int sign) const;
+                        replacement&lt;T> operator()(empty_t) const;
 
     <c>// <n><xref id="replace_if_conversion_failed.modifiers"/>, modifiers:</n></c>
     void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
@@ -5172,12 +5185,13 @@ replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&am
           </code-item>
         </section>
 
-        <section id="replace_if_conversion_failed.handler">
-          <name><c>replace_if_conversion_failed</c> members to meet the <c>ConversionErrorHandler</c> requirements</name>
+        <section id="replace_if_conversion_failed.inv">
+          <name><c>replace_if_conversion_failed</c> invocation</name>
 
           <code-item>
             <code>
-template &lt;class Ch> replacement&lt;T> invalid_format(const Ch*, const Ch*) const;
+template &lt;class Ch> replacement&lt;T> operator()(invalid_format_t,
+                                              const Ch*, const Ch*) const;
             </code>
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.invalid_format"/> in reference to the <c>action_on_invalid_format</c> of <c>*this</c>.</effects>
 
@@ -5215,7 +5229,8 @@ template &lt;class Ch> replacement&lt;T> invalid_format(const Ch*, const Ch*) co
 
           <code-item>
             <code>
-template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int sign) const;
+template &lt;class Ch> replacement&lt;T> operator()(out_of_range_t,
+                                              const Ch*, const Ch*, int sign) const;
             </code>
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.out_of_range"/> in reference to <c>sign</c> and the <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> of <c>*this</c>.</effects>
 
@@ -5295,7 +5310,7 @@ template &lt;class Ch> replacement&lt;T> out_of_range(const Ch*, const Ch*, int 
 
           <code-item>
             <code>
-replacement&lt;T> empty() const;
+replacement&lt;T> operator()(empty_t) const;
             </code>
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.empty"/> in reference to the <c>action_on_empty</c> of <c>*this</c>.</effects>
 

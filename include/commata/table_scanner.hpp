@@ -756,6 +756,13 @@ public:
 struct replacement_ignore_t {};
 constexpr replacement_ignore_t replacement_ignore = replacement_ignore_t{};
 
+struct replacement_fail_t {};
+constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
+
+struct invalid_format_t {};
+struct out_of_range_t {};
+struct empty_t {};
+
 template <class T>
 class replacement;
 
@@ -1300,7 +1307,7 @@ struct has_simple_invalid_format_impl
 {
     template <class F>
     static auto check(F*) -> decltype(
-        std::declval<F&>().invalid_format(
+        std::declval<F&>()(std::declval<invalid_format_t>(),
             std::declval<const Ch*>(), std::declval<const Ch*>()),
         std::true_type());
 
@@ -1319,7 +1326,7 @@ struct has_simple_out_of_range_impl
 {
     template <class F>
     static auto check(F*) -> decltype(
-        std::declval<F&>().out_of_range(
+        std::declval<F&>()(std::declval<out_of_range_t>(),
             std::declval<const Ch*>(), std::declval<const Ch*>(),
             std::declval<int>()),
         std::true_type());
@@ -1338,7 +1345,7 @@ struct has_simple_empty_impl
 {
     template <class F>
     static auto check(F*) -> decltype(
-        std::declval<F&>().empty(),
+        std::declval<F&>()(std::declval<empty_t>()),
         std::true_type());
 
     template <class F>
@@ -1357,14 +1364,14 @@ struct conversion_error_facade
         std::enable_if_t<has_simple_invalid_format<H, Ch>::value>* = nullptr>
     static replacement<T> invalid_format(H& h, const Ch* begin, const Ch* end)
     {
-        return h.invalid_format(begin, end);
+        return h(invalid_format_t(), begin, end);
     }
 
     template <class H, class Ch,
         std::enable_if_t<!has_simple_invalid_format<H, Ch>::value>* = nullptr>
     static replacement<T> invalid_format(H& h, const Ch* begin, const Ch* end)
     {
-        return h.invalid_format(begin, end, static_cast<T*>(nullptr));
+        return h(invalid_format_t(), begin, end, static_cast<T*>(nullptr));
     }
 
     template <class H, class Ch,
@@ -1372,7 +1379,7 @@ struct conversion_error_facade
     static replacement<T> out_of_range(
         H& h, const Ch* begin, const Ch* end, int sign)
     {
-        return h.out_of_range(begin, end, sign);
+        return h(out_of_range_t(), begin, end, sign);
     }
 
     template <class H, class Ch,
@@ -1380,21 +1387,21 @@ struct conversion_error_facade
     static replacement<T> out_of_range(
         H& h, const Ch* begin, const Ch* end, int sign)
     {
-        return h.out_of_range(begin, end, sign, static_cast<T*>(nullptr));
+        return h(out_of_range_t(), begin, end, sign, static_cast<T*>(nullptr));
     }
 
     template <class H,
         std::enable_if_t<has_simple_empty<H>::value>* = nullptr>
     static replacement<T> empty(H& h)
     {
-        return h.empty();
+        return h(empty_t());
     }
 
     template <class H,
         std::enable_if_t<!has_simple_empty<H>::value>* = nullptr>
     static replacement<T> empty(H& h)
     {
-        return h.empty(static_cast<T*>(nullptr));
+        return h(empty_t(), static_cast<T*>(nullptr));
     }
 };
 
@@ -1542,9 +1549,6 @@ struct converter<T, H, void_t<typename numeric_type_traits<T>::raw_type>> :
 };
 
 }} // end detail::scanner
-
-struct replacement_fail_t {};
-constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
 
 struct fail_if_skipped
 {
@@ -1727,7 +1731,7 @@ struct fail_if_conversion_failed
 {
     template <class T, class Ch>
     [[noreturn]]
-    replacement<T> invalid_format(
+    replacement<T> operator()(invalid_format_t,
         const Ch* begin, const Ch* end, T* = nullptr) const
     {
         assert(*end == Ch());
@@ -1740,7 +1744,7 @@ struct fail_if_conversion_failed
 
     template <class T, class Ch>
     [[noreturn]]
-    replacement<T> out_of_range(
+    replacement<T> operator()(out_of_range_t,
         const Ch* begin, const Ch* end, int, T* = nullptr) const
     {
         assert(*end == Ch());
@@ -1753,7 +1757,7 @@ struct fail_if_conversion_failed
 
     template <class T>
     [[noreturn]]
-    replacement<T> empty(T* = nullptr) const
+    replacement<T> operator()(empty_t, T* = nullptr) const
     {
         std::ostringstream s;
         s << "Cannot convert an empty string";
@@ -2157,19 +2161,23 @@ public:
         replace_if_conversion_failed&&) = default;
 
     template <class Ch>
-    replacement<T> invalid_format(const Ch* begin, const Ch* end) const
+    replacement<T> operator()(invalid_format_t,
+        const Ch* begin, const Ch* end) const
     {
         return unwrap(store_.get(store::invalid_format),
             [begin, end]() {
-                fail_if_conversion_failed().invalid_format<T>(begin, end);
+                fail_if_conversion_failed()(invalid_format_t(),
+                    begin, end, static_cast<T*>(nullptr));
             });
     }
 
     template <class Ch>
-    replacement<T> out_of_range(const Ch* begin, const Ch* end, int sign) const
+    replacement<T> operator()(out_of_range_t,
+        const Ch* begin, const Ch* end, int sign) const
     {
         const auto fail = [begin, end, sign]() {
-            fail_if_conversion_failed().out_of_range<T>(begin, end, sign);
+            fail_if_conversion_failed()(out_of_range_t(),
+                begin, end, sign, static_cast<T*>(nullptr));
         };
         if (sign > 0) {
             return unwrap(store_.get(store::above_upper_limit), fail);
@@ -2180,11 +2188,12 @@ public:
         }
     }
 
-    replacement<T> empty() const
+    replacement<T> operator()(empty_t) const
     {
         return unwrap(store_.get(store::empty),
             []() {
-                fail_if_conversion_failed().empty<T>();
+                fail_if_conversion_failed()(empty_t(),
+                    static_cast<T*>(nullptr));
             });
     }
 
