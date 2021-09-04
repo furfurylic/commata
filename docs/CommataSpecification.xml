@@ -3985,16 +3985,12 @@ template &lt;class Content, class Allocator, class... Args>
     </section>
 
     <section id="scan.builtin.body_field_scanners.requirements">
-      <name>Default body field scanners</name>
+      <name>Requirements for default body field scanners</name>
 
-      <section id="scan.builtin.body_field_scanners.requirements.general">
-        <name>General</name>
-
-        <p>The Commata library offers three default body field scanner types that meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>):
-           <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>), <c>locale_based_arithmetic_field_translator</c> (<xref id="locale_based_arithmetic_field_translator"/>) and <c>string_field_translator</c> (<xref id="string_field_translator"/>).</p>
-        <p>An object of these types <n>translates</n> a field value into a value of its <n>target type</n> and forwards it into its installed <n>sink</n>.</p>
-        <p>Behaviours of these default body scanner objects can be customized through the three concepts: <c>FieldTranslatorSink</c> (<xref id="field_translator_sink.requirements"/>), <c>SkippingHandler</c> (<xref id="skipping_handler.requirements"/>) and <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>).</p>
-      </section>
+      <p>The Commata library offers three default body field scanner types that meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>):
+         <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>), <c>locale_based_arithmetic_field_translator</c> (<xref id="locale_based_arithmetic_field_translator"/>) and <c>string_field_translator</c> (<xref id="string_field_translator"/>).</p>
+      <p>An object of these types <n>translates</n> a field value into a value of its <n>target type</n> and forwards it into its installed <n>sink</n>.</p>
+      <p>Behaviours of these default body scanner objects can be customized through the three concepts: <c>FieldTranslatorSink</c> (<xref id="field_translator_sink.requirements"/>), <c>SkippingHandler</c> (<xref id="skipping_handler.requirements"/>) and <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>).</p>
 
       <section id="field_translator_sink.requirements">
         <name><c>FieldTranslatorSink</c> requirements</name>
@@ -5423,11 +5419,9 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
-        <p><c>T</c> is the target type (<xref id="scan.builtin.body_field_scanners.requirements.general"/>) and shall be a default translatable arithmeric type.
-           <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
-           The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
-           The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
+        <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c>.</p>
+        <p>The template parameter <c>T</c> shall be a default translatable arithmeric type.
+           The template parameters <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>), the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>) requirements for the target type <c>T</c> respectively.</p>
 
         <section id="arithmetic_field_translator.cons">
           <name><c>arithmetic_field_translator</c> construct/copy/destroy</name>
@@ -5657,12 +5651,10 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
+        <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
           The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C-language locale.</p>
-        <p><c>T</c> is the target type (<xref id="scan.builtin.body_field_scanners.requirements.general"/>) and shall be a default translatable arithmeric type.
-          <c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for the type <c>T</c> (<xref id="field_translator_sink.requirements"/>).
-          The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>T</c> (<xref id="skipping_handler.requirements"/>).
-          The template parameter <c>ConversionErrorHandler</c> shall be a <c>ConversionErrorHandler</c> type for the type <c>T</c> (<xref id="conversion_error_handler.requirements"/>).</p>
+        <p>The template parameter <c>T</c> shall be a default translatable arithmeric type.
+           The template parameters <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>), the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c>T</c> respectively.</p>
 
         <section id="locale_based_arithmetic_field_translator.cons">
           <name><c>locale_based_arithmetic_field_translator</c> construct/copy/destroy</name>
@@ -5781,9 +5773,8 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
-        <p><c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for <c>std::basic_string&lt;Ch, Tr, Allocator></c> (<xref id="field_translator_sink.requirements"/>).
-          The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>std::basic_string&lt;Ch, Tr, Allocator></c> (<xref id="skipping_handler.requirements"/>).</p>
+        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
+        <p>The template parameters <c>Sink</c> and <c>SkippingHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) and the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c>std::basic_string&lt;Ch, Tr, Allocator></c> respectively.</p>
 
         <section id="string_field_translator.cons">
           <name><c>string_field_translator</c> construct/copy/destroy</name>
