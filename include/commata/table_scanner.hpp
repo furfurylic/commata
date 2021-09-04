@@ -523,13 +523,20 @@ private:
     {
         using scanner_t = typed_record_end_scanner<
             std::decay_t<RecordEndScanner>>;
-        end_scanner_ = allocate_construct<scanner_t>(
+        const auto p = allocate_construct<scanner_t>(
             std::forward<RecordEndScanner>(s)); // throw
+        if (end_scanner_) {
+            destroy_deallocate(end_scanner_);
+        }
+        end_scanner_ = p;
     }
 
     void do_set_record_end_scanner(std::nullptr_t)
     {
-        destroy_deallocate(end_scanner_);
+        if (end_scanner_) {
+            destroy_deallocate(end_scanner_);
+            end_scanner_ = nullptr;
+        }
     }
 
 public:

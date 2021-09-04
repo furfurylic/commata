@@ -1363,6 +1363,8 @@ TEST_F(TestTableScannerReference, RecordEndScanner)
     scanner.set_field_scanner(0, make_field_translator(v));
 
     std::function<void()> record_end_scanner = [] {};
+    scanner.set_record_end_scanner();                   // shall be nop
+    scanner.set_record_end_scanner(record_end_scanner); // overwritten
     scanner.set_record_end_scanner(std::ref(record_end_scanner));
 
     record_end_scanner = [&v]() {
