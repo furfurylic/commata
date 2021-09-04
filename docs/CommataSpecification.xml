@@ -4246,14 +4246,14 @@ namespace commata {
     allocator_type get_allocator() const noexcept;
 
     <c>// <n><xref id="basic_table_scanner.field_scanner_access"/>, body field scanner access:</n></c>
-    template &lt;class T = std::nullptr_t> void set_field_scanner(std::size_t j, T s = T());
+    template &lt;class T = std::nullptr_t> void set_field_scanner(std::size_t j, T&amp;&amp; s = T());
     bool has_field_scanner(std::size_t j) const noexcept;
     const std::type_info&amp; get_field_scanner_type(std::size_t j) const noexcept;
     template &lt;class T> const T* get_field_scanner(std::size_t j) const noexcept;
     template &lt;class T>       T* get_field_scanner(std::size_t j)       noexcept;
 
     <c>// <n><xref id="basic_table_scanner.record_end_scanner_access"/>, record-end scanner access:</n></c>
-    template &lt;class T = std::nullptr_t> void set_record_end_scanner(T s = T());
+    template &lt;class T = std::nullptr_t> void set_record_end_scanner(T&amp;&amp; s = T());
     bool has_record_end_scanner() const noexcept;
     const std::type_info&amp; get_record_end_scanner_type() const noexcept;
     template &lt;class T> const T* get_record_end_scanner() const noexcept;
@@ -4299,17 +4299,18 @@ basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
         <code-item>
           <code>
 template &lt;class HeaderFieldScanner>
-  explicit basic_table_scanner(HeaderFieldScanner s, size_type buffer_size = 0);
+  explicit basic_table_scanner(HeaderFieldScanner&amp;&amp; s, size_type buffer_size = 0);
 template &lt;class HeaderFieldScanner>
   basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
                       HeaderFieldScanner s, size_type buffer_size = 0);
           </code>
-          <requires><c>HeaderFieldScanner</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>basic_table_scanner&lt;Ch, Tr, Allocator></c>.</requires>
+          <preface>Let <c>T</c> be <c>std::decay_t&lt;HeaderFieldScanner></c>.</preface>
+          <requires><c>T</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>basic_table_scanner&lt;Ch, Tr, Allocator></c>.</requires>
           <effects>Constructs an object of <c>basic_table_scanner</c> with an header field scanner object installed.
                    The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
                    The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first form) or a copy of <c>alloc</c> (second form).</effects>
-          <postcondition><c>*this</c> has a header field scanner constructed as a copy of <c>s</c> installed and no body field scanners installed.</postcondition>
-          <remark>These constructors shall not participate in overload resolution unless <c>std::is_integral&lt;HeaderFieldScanner>::value</c> is <c>false</c>.</remark>
+          <postcondition><c>*this</c> has a header field scanner object whose type is <c>T</c> constructed with <c>std::forward&lt;HeaderFieldScanner>(s)</c> installed, and no body field scanners installed.</postcondition>
+          <remark>These constructors shall not participate in overload resolution unless <c>std::is_integral&lt;T>::value</c> is <c>false</c>.</remark>
         </code-item>
       </section>
 
@@ -4328,12 +4329,13 @@ allocator_type get_allocator() const noexcept;
 
         <code-item>
           <code>
-template &lt;class T = std::nullptr_t> void set_field_scanner(std::size_t j, T s = T());
+template &lt;class T = std::nullptr_t> void set_field_scanner(std::size_t j, T&amp;&amp; s = T());
           </code>
-          <requires><c>T</c> shall either be (possibly cv-qualified) <c>std::nullptr_t</c> or
+          <preface>Let <c>U</c> be <c>std::decay_t&lt;T></c>.</preface>
+          <requires><c>U</c> shall either be <c>std::nullptr_t</c> or
                     meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) for <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>.</requires>
-          <effects>If <c>T</c> is (possibly cv-qualified) <c>std::nullptr_t</c>, uninstalls the body field scanner installed at zero-based field index <c>j</c> if any.
-                   Otherwise, uninstalls the body field scanner installed there if any, and installs a copy of <c>s</c> as a body field scanner in place of it.</effects>
+          <effects>If <c>U</c> is <c>std::nullptr_t</c>, uninstalls the body field scanner installed at zero-based field index <c>j</c> if any.
+                   Otherwise, uninstalls the body field scanner installed there if any, and installs an object of <c>U</c> constructed with <c>std::forward&lt;T>(s)</c> as a body field scanner in place of it.</effects>
           <remark>If an exception is thrown by this function, this function has no effects.</remark>
         </code-item>
 
@@ -4365,11 +4367,12 @@ template &lt;class T>       T* get_field_scanner(std::size_t j)       noexcept;
 
         <code-item>
           <code>
-template &lt;class T = std::nullptr_t> void set_record_end_scanner(T s = T());
+template &lt;class T = std::nullptr_t> void set_record_end_scanner(T&amp;&amp; s = T());
           </code>
-          <requires><c>T</c> shall either be (possibly cv-qualified) <c>std::nullptr_t</c> or meet the <c>RecordEndScanner</c> requirements (<xref id="record_end_scanner.requirements"/>).</requires>
-          <effects>If <c>T</c> is (possibly cv-qualified) <c>std::nullptr_t</c>, uninstalls the record-end scanner installed if any.
-                   Otherwise, uninstalls the record-end scanner installed if any, and installs a copy of <c>s</c> as the record-end scanner in place of it.</effects>
+          <preface>Let <c>U</c> be <c>std::decay_t&lt;T></c>.</preface>
+          <requires><c>U</c> shall either be <c>std::nullptr_t</c> or meet the <c>RecordEndScanner</c> requirements (<xref id="record_end_scanner.requirements"/>).</requires>
+          <effects>If <c>U</c> is <c>std::nullptr_t</c>, uninstalls the record-end scanner installed if any.
+                   Otherwise, uninstalls the record-end scanner installed if any, and installs an object of <c>U</c> constructed with <c>std::forward&lt;T>(s)</c> as the record-end scanner in place of it.</effects>
           <remark>If an exception is thrown by this function, this function has no effects.</remark>
         </code-item>
 

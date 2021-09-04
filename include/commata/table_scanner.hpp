@@ -124,9 +124,12 @@ class basic_table_scanner
         using range_t = std::pair<Ch*, Ch*>;
 
     public:
-        explicit typed_header_field_scanner(HeaderScanner s) :
-            detail::member_like_base<HeaderScanner>(std::move(s))
+        template <class T>
+        explicit typed_header_field_scanner(T&& s) :
+            detail::member_like_base<HeaderScanner>(std::forward<T>(s))
         {}
+
+        typed_header_field_scanner(typed_header_field_scanner&&) = delete;
 
         void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
         {
@@ -164,9 +167,12 @@ class basic_table_scanner
     struct typed_body_field_scanner :
         body_field_scanner, private detail::member_like_base<FieldScanner>
     {
-        explicit typed_body_field_scanner(FieldScanner s) :
-            detail::member_like_base<FieldScanner>(std::move(s))
+        template <class T>
+        explicit typed_body_field_scanner(T&& s) :
+            detail::member_like_base<FieldScanner>(std::forward<T>(s))
         {}
+
+        typed_body_field_scanner(typed_body_field_scanner&&) = delete;
 
         void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
         {
@@ -241,9 +247,12 @@ class basic_table_scanner
         detail::scanner::record_end_scanner,
         private detail::member_like_base<T>
     {
-        explicit typed_record_end_scanner(T scanner) :
-            detail::member_like_base<T>(std::move(scanner))
+        template <class U>
+        explicit typed_record_end_scanner(U&& scanner) :
+            detail::member_like_base<T>(std::forward<U>(scanner))
         {}
+
+        typed_record_end_scanner(typed_record_end_scanner&&) = delete;
 
         void end_record() override
         {
@@ -330,17 +339,18 @@ public:
 
     template <class HeaderFieldScanner,
         std::enable_if_t<
-            !std::is_integral<HeaderFieldScanner>::value,
+            !std::is_integral<std::decay_t<HeaderFieldScanner>>::value,
             std::nullptr_t> = nullptr>
     basic_table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
-        HeaderFieldScanner s,
+        HeaderFieldScanner&& s,
         size_type buffer_size = 0U) :
         remaining_header_records_(0U),
         buffer_size_(sanitize_buffer_size(buffer_size)),
         buffer_(), begin_(nullptr), fragmented_value_(alloc),
         header_field_scanner_(allocate_construct<
-            typed_header_field_scanner<HeaderFieldScanner>>(std::move(s))),
+            typed_header_field_scanner<std::decay_t<HeaderFieldScanner>>>(
+                std::forward<HeaderFieldScanner>(s))),
         scanners_(make_scanners()), end_scanner_(nullptr)
     {}
 
@@ -384,9 +394,9 @@ public:
     }
 
     template <class FieldScanner = std::nullptr_t>
-    void set_field_scanner(std::size_t j, FieldScanner s = FieldScanner())
+    void set_field_scanner(std::size_t j, FieldScanner&& s = FieldScanner())
     {
-        do_set_field_scanner(j, std::move(s));
+        do_set_field_scanner(j, std::forward<FieldScanner>(s));
     }
 
 private:
@@ -406,15 +416,20 @@ private:
     };
 
     template <class FieldScanner>
-    void do_set_field_scanner(std::size_t j, FieldScanner s)
+    auto do_set_field_scanner(std::size_t j, FieldScanner&& s)
+     -> std::enable_if_t<
+            !std::is_base_of<
+                std::nullptr_t,
+                std::decay_t<FieldScanner>>::value>
     {
-        using scanner_t = typed_body_field_scanner<FieldScanner>;
+        using scanner_t = typed_body_field_scanner<std::decay_t<FieldScanner>>;
         if (!scanners_) {
             scanners_.assign(get_allocator(), make_scanners());     // throw
         }
         const auto it = std::lower_bound(
             scanners_->begin(), scanners_->end(), j, scanner_less());
-        const auto p = allocate_construct<scanner_t>(std::move(s)); // throw
+        const auto p = allocate_construct<scanner_t>(
+                                    std::forward<FieldScanner>(s)); // throw
         if ((it != scanners_->end()) && (it->second == j)) {
             destroy_deallocate(it->first);
             it->first = p;
@@ -493,17 +508,23 @@ private:
 
 public:
     template <class RecordEndScanner = std::nullptr_t>
-    void set_record_end_scanner(RecordEndScanner s = RecordEndScanner())
+    void set_record_end_scanner(RecordEndScanner&& s = RecordEndScanner())
     {
-        do_set_record_end_scanner(std::move(s));
+        do_set_record_end_scanner(std::forward<RecordEndScanner>(s));
     }
 
 private:
     template <class RecordEndScanner>
-    void do_set_record_end_scanner(RecordEndScanner s)
+    auto do_set_record_end_scanner(RecordEndScanner&& s)
+     -> std::enable_if_t<
+            !std::is_base_of<
+                std::nullptr_t,
+                std::decay_t<RecordEndScanner>>::value>
     {
-        using scanner_t = typed_record_end_scanner<RecordEndScanner>;
-        end_scanner_ = allocate_construct<scanner_t>(std::move(s)); // throw
+        using scanner_t = typed_record_end_scanner<
+            std::decay_t<RecordEndScanner>>;
+        end_scanner_ = allocate_construct<scanner_t>(
+            std::forward<RecordEndScanner>(s)); // throw
     }
 
     void do_set_record_end_scanner(std::nullptr_t)
