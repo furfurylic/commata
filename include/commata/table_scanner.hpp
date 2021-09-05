@@ -90,11 +90,6 @@ private:
     virtual void* get_target_v() = 0;
 };
 
-struct record_end_scanner : typable
-{
-    virtual void end_record() = 0;
-};
-
 }} // end detail::scanner
 
 template <class Ch, class Tr = std::char_traits<Ch>,
@@ -242,10 +237,14 @@ class basic_table_scanner
         }
     };
 
+    struct record_end_scanner : detail::scanner::typable
+    {
+        virtual bool end_record(basic_table_scanner& me) = 0;
+    };
+
     template <class T>
     struct typed_record_end_scanner :
-        detail::scanner::record_end_scanner,
-        private detail::member_like_base<T>
+        record_end_scanner, private detail::member_like_base<T>
     {
         template <class U>
         explicit typed_record_end_scanner(U&& scanner) :
@@ -254,9 +253,9 @@ class basic_table_scanner
 
         typed_record_end_scanner(typed_record_end_scanner&&) = delete;
 
-        void end_record() override
+        bool end_record(basic_table_scanner& me) override
         {
-            this->get()();
+            return do_end_record(this->get(), me);
         }
 
         const std::type_info& get_type() const noexcept override
@@ -274,6 +273,42 @@ class basic_table_scanner
         {
             return std::addressof(this->get());
         }
+
+        template <class U>
+        static auto do_end_record(U& u, basic_table_scanner& me)
+         -> std::enable_if_t<
+                detail::scanner::is_callable<U, basic_table_scanner&>::value,
+                bool>
+        {
+            return do_end_record_no_arg(std::bind(std::ref(u), std::ref(me)));
+        }
+
+        template <class U>
+        static auto do_end_record(U& u, basic_table_scanner&)
+         -> std::enable_if_t<
+                !detail::scanner::is_callable<U, basic_table_scanner&>::value
+             && detail::scanner::is_callable<U>::value,
+                bool>
+        {
+            return do_end_record_no_arg(u);
+        }
+
+        template <class F>
+        static auto do_end_record_no_arg(F&& f)
+         -> std::enable_if_t<
+                std::is_void<decltype(std::forward<F>(f)())>::value, bool>
+        {
+            std::forward<F>(f)();
+            return true;
+        }
+
+        template <class F>
+        static auto do_end_record_no_arg(F&& f)
+         -> std::enable_if_t<
+                !std::is_void<decltype(std::forward<F>(f)())>::value, bool>
+        {
+            return std::forward<F>(f)();
+        }
     };
 
     using at_t = std::allocator_traits<Allocator>;
@@ -285,8 +320,7 @@ class basic_table_scanner
     using bfs_ptr_p_t = typename std::pair<bfs_ptr_t, std::size_t>;
     using bfs_ptr_p_a_t = typename at_t::template rebind_alloc<bfs_ptr_p_t>;
     using scanners_a_t = detail::allocation_only_allocator<bfs_ptr_p_a_t>;
-    using res_at_t = typename at_t::template
-        rebind_traits<detail::scanner::record_end_scanner>;
+    using res_at_t = typename at_t::template rebind_traits<record_end_scanner>;
 
     std::size_t remaining_header_records_;
     std::size_t j_;
@@ -650,7 +684,7 @@ public:
         ++j_;
     }
 
-    void end_record(const Ch* /*record_end*/)
+    bool end_record(const Ch* /*record_end*/)
     {
         if (header_field_scanner_) {
             header_field_scanner_->so_much_for_header(*this);
@@ -663,9 +697,10 @@ public:
                 }
             }
             if (end_scanner_) {
-                end_scanner_->end_record();
+                return end_scanner_->end_record(*this);
             }
         }
+        return true;
     }
 
     bool is_in_header() const noexcept

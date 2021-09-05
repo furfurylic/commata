@@ -752,6 +752,50 @@ TYPED_TEST(TestTableScanner, RecordEndScanner)
     ASSERT_EQ(expected, v);
 }
 
+TYPED_TEST(TestTableScanner, ComplexRecordEndScanner)
+{
+    const auto str = char_helper<TypeParam>::str;
+
+    std::vector<int> ns;
+    std::vector<std::basic_string<TypeParam>> ss;
+
+    basic_table_scanner<TypeParam> h;
+    int record_num = 0;
+    h.set_field_scanner(0, make_field_translator(ns));
+    h.set_record_end_scanner([&record_num, &ss](auto& scanner) {
+        ++record_num;
+        switch (record_num) {
+        case 2:
+            scanner.set_field_scanner(0, make_field_translator(ss));
+            break;
+        case 4:
+            return false;
+        default:
+            break;
+        }
+        return true;
+    });
+
+    try {
+        std::basic_stringstream<TypeParam> s;
+        s << "100\r"
+             "200\r"
+             "ABC\r"
+             "XYZ\r"
+             "\"";  // Bad CSV but does not reach here
+        parse_csv(s, std::move(h));
+    } catch (const text_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(2U, ns.size());
+    ASSERT_EQ(100, ns[0]);
+    ASSERT_EQ(200, ns[1]);
+    ASSERT_EQ(2U, ss.size());
+    ASSERT_EQ(str("ABC"), ss[0]);
+    ASSERT_EQ(str("XYZ"), ss[1]);
+}
+
 TYPED_TEST(TestTableScanner, MultilinedHeader)
 {
     std::deque<long> values;

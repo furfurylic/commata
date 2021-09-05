@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-09-05 (UTC)</signature>
+<signature>2021-09-06 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3913,13 +3913,18 @@ template &lt;class Content, class Allocator, class... Args>
       <section id="record_end_scanner.requirements">
         <name><c>RecordEndScanner</c> requirements</name>
 
-        <p>A type <c>S</c> meets the <c>RecordEndScanner</c> requirements if:</p>
+        <p>A type <c>S</c> meets the <c>RecordEndScanner</c> requirements for an instance of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) <c>T</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
           <li>the expression shown in <xref id="table.record_end_scanner.requirements"/> is valid and have the indicated semantics.</li>
         </ul>
 
-        <p>In <xref id="table.record_end_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.</p>
+        <p><xref id="table.record_end_scanner.requirements"/> shows two expressions per row.
+           It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.
+           If both expressions qualify, the first one shall be evaluated by the table scanner.</p>
+
+        <p>In <xref id="table.record_end_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
+           <c>t</c> denotes the table scanner object that holds the record-end scanner denoted by <c>s</c> and is an lvalue of cv-unqualified <c>T</c> .</p>
 
         <table id="table.record_end_scanner.requirements">
           <caption><c>RecordEndScanner</c> requirements</caption>
@@ -3933,10 +3938,15 @@ template &lt;class Content, class Allocator, class... Args>
           </tr>
 
           <tr>
-            <td>(1)</td>
+            <td rowspan="2">(1)</td>
+            <td><c>s(t)</c></td>
+            <td rowspan="2"><c>void</c> or a type contextually convertible to <c>bool</c></td>
+            <td rowspan="2">Called when the table scanner has met an end of a body record.
+                            If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the table scanner shall make the parser abort the parsing process.</td>
+          </tr>
+
+          <tr>
             <td><c>s()</c></td>
-            <td>(Not used)</td>
-            <td>Called when the table scanner has met an end of a body record.</td>
           </tr>
         </table>
       </section>
@@ -3953,7 +3963,7 @@ template &lt;class Content, class Allocator, class... Args>
         <p>In <xref id="table.header_field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
            The type of <c>j</c> is <c>std::size_t</c>.
            The type of <c>v</c> is <c>const std::pair&lt;T::char_type*, T::char_type*>*</c>.
-           <c>t</c> is an lvalue of cv-unqualified <c>T</c>.</p>
+           <c>t</c> denotes the table scanner object that holds the header field scanner denoted by <c>s</c> and is an lvalue of cv-unqualified <c>T</c> .</p>
 
         <table id="table.header_field_scanner.requirements">
           <caption><c>HeaderFieldScanner</c> requirements</caption>
@@ -3969,7 +3979,7 @@ template &lt;class Content, class Allocator, class... Args>
           <tr>
             <td>(1)</td>
             <td><c>s(j, v, t)</c></td>
-            <td>Contextually convertible to <c>bool</c></td>
+            <td>A type contextually convertible to <c>bool</c></td>
             <td>Called by the table scanner in two situations following.
                 <ul>
                   <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
@@ -4260,7 +4270,7 @@ namespace commata {
     std::pair&lt;Ch*, std::size_t> get_buffer();
     void release_buffer(const Ch* buffer);
     void start_record(const Ch* record_begin);
-    void end_record(const Ch* record_end);
+    bool end_record(const Ch* record_end);
     void update(const Ch* first, const Ch* last);
     void finalize(const Ch* first, const Ch* last);
 
