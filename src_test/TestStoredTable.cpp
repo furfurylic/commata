@@ -1585,6 +1585,36 @@ TEST_P(TestStoredTableBuilder, MaxRecordNumPathological)
     ASSERT_EQ("value_b", table[0][3]);
 }
 
+TEST_P(TestStoredTableBuilder, EndRecordHandler)
+{
+    const wchar_t* const s1 = L"A,B,C\nI,J,K\nX,Y,Z\n\"";
+    wstored_table table(GetParam());
+    try {
+        parse_csv(s1, make_stored_table_builder(table,
+            [](auto& t) {
+                auto& b = t.content().back();
+                if (b.front() == L"I") {
+                    t.content().pop_back();
+                } else if (b.front() == L"X") {
+                    std::reverse(b.begin(), b.end());
+                    return false;
+                }
+                return true;
+            }));
+    } catch (const text_error& e) {
+        FAIL() << e.info();
+    }
+
+    ASSERT_EQ(2U, table.size());
+    ASSERT_EQ(3U, table[0].size());
+    ASSERT_STREQ(L"A", table[0][0].c_str());
+    ASSERT_STREQ(L"B", table[0][1].c_str());
+    ASSERT_STREQ(L"C", table[0][2].c_str());
+    ASSERT_STREQ(L"Z", table[1][0].c_str());
+    ASSERT_STREQ(L"Y", table[1][1].c_str());
+    ASSERT_STREQ(L"X", table[1][2].c_str());
+}
+
 TEST_P(TestStoredTableBuilder, EmptyLineAware)
 {
     const char* s = "\r1,2,3,4\na,b\r\n\nx,y,z\r\n\"\"";

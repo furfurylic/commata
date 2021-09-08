@@ -77,6 +77,23 @@ constexpr bool is_nothrow_swappable()
     return noexcept(swap(std::declval<T&>(), std::declval<T&>()));
 }
 
+template <class... As>
+struct is_callable_impl
+{
+    template <class F>
+    static auto check(std::remove_reference_t<F>*) -> decltype(
+        std::declval<F>()(std::declval<As>()...),
+        std::true_type());
+
+    template <class F>
+    static auto check(...) -> std::false_type;
+};
+
+template <class F, class... As>
+struct is_callable :
+    decltype(is_callable_impl<As...>::template check<F>(nullptr))
+{};
+
 }}
 
 #endif

@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-09-06 (UTC)</signature>
+<signature>2021-09-11 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3720,6 +3720,7 @@ namespace commata {
 
     <c>// <n><xref id="stored_table_builder.cons"/>, construct/copy/destroy:</n></c>
     explicit stored_table_builder(table_type&amp; table, std::size_t max_record_num = 0);
+    template &lt;class F> stored_table_builder(table_type&amp; table, F&amp;&amp; f);
     stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
    ~stored_table_builder();
 
@@ -3781,14 +3782,30 @@ namespace commata {
 
       <section id="stored_table_builder.cons">
         <name><c>stored_table_builder</c> construct/copy/destroy</name>
+
         <code-item>
           <code>
 explicit stored_table_builder(table_type&amp; table, std::size_t max_record_num = 0);
           </code>
           <requires><c>table</c> shall have its content container not empty.</requires>
           <effects>Initializes an object of <c>stored_table_builder&lt;Content, Allocator, Options></c> that holds a reference to the targeted object <c>table</c>.
-                   If <c>max_record_num</c> is not <c>0</c>, the returned object make the parser after the first <c>max_record_num</c> records are processed.</effects>
+                   If <c>max_record_num</c> is not <c>0</c>, the returned object make the parser abort the processing after the first <c>max_record_num</c> records are processed.</effects>
           <remark><c>table.empty()</c> may be <c>false</c>. This constructor does nothing on the targeted object.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class F> stored_table_builder(table_type&amp; table, F&amp;&amp; f);
+          </code>
+          <preface>Let <c>G</c> be <c>std::decay_t&lt;F></c> and <c>t</c> be an lvalue of the targeted object of the constructed object whose type is cv-unqualified <c>table_type</c>.</preface>
+          <requires><c>G</c> shall meet the <c>MoveConstructible</c> requirements.
+                    For an expression <c>g</c> that is an lvalue of cv-unqualified <c>G</c>, <c>g()</c> or <c>g(t)</c> shall be a valid expression whose type is <c>void</c> or a type contextually convertible to <c>bool</c>, and evaluating this expression shall not make the content container of <c>t</c> empty.
+                    <c>table</c> shall have its content container not empty.</requires>
+          <effects>Initializes an object of <c>stored_table_builder&lt;Content, Allocator, Options></c> that holds a reference to the targeted object <c>table</c> and an object of <c>G</c>, whose lvalue on cv-unqualified <c>G</c> is hereinafter called <c>g</c>, constructed with <c>std::forward&lt;F>(f)</c>.
+                   The constructed object invokes, after each record of the text table is read into the targeted object, <c>h(g)</c> (if it is a valid expression) or <c>h()</c> (if it is a valid expression and <c>h(t)</c> is not);
+                   and then makes the parser abort the processing if the contextually converted value to <c>bool</c> of the return value of this invocation on <c>h</c> is <c>false</c>.</effects>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_integral&lt;G>::value</c> is <c>false</c>.
+                  <c>table.empty()</c> may be <c>false</c>. This constructor does nothing on the targeted object.</remark>
         </code-item>
 
         <code-item>

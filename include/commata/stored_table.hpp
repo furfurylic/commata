@@ -2045,23 +2045,106 @@ public:
     using char_type = typename table_type::char_type;
 
 private:
+    struct end_record_handler
+    {
+        virtual ~end_record_handler() {}
+        virtual bool on_end_record(table_type& table) = 0;
+    };
+
+    template <class T>
+    struct typed_end_record_handler :
+        end_record_handler, private detail::member_like_base<T>
+    {
+        template <class U>
+        explicit typed_end_record_handler(U&& t) :
+            detail::member_like_base<T>(std::forward<U>(t))
+        {}
+
+        typed_end_record_handler(typed_end_record_handler&&) = delete;
+
+        bool on_end_record(table_type& table)
+        {
+            return on_end_record_impl(this->get(), table);
+        }
+
+    private:
+        template <class U>
+        static auto on_end_record_impl(U& u, table_type& table)
+         -> std::enable_if_t<detail::is_callable<U&, table_type&>::value, bool>
+        {
+            return on_end_record_impl_no_arg(
+                std::bind(std::ref(u), std::ref(table)));
+        }
+
+        template <class U>
+        static auto on_end_record_impl(U& u, table_type&)
+         -> std::enable_if_t<
+                !detail::is_callable<U&, table_type&>::value
+             && detail::is_callable<U&>::value,
+                bool>
+        {
+            return do_end_record_no_arg(u);
+        }
+
+        template <class F>
+        static auto on_end_record_impl_no_arg(F&& f)
+         -> std::enable_if_t<
+                std::is_void<decltype(std::forward<F>(f)())>::value, bool>
+        {
+            std::forward<F>(f)();
+            return true;
+        }
+
+        template <class F>
+        static auto on_end_record_impl_no_arg(F&& f)
+         -> std::enable_if_t<
+                !std::is_void<decltype(std::forward<F>(f)())>::value, bool>
+        {
+            return std::forward<F>(f)();
+        }
+    };
+
+    using ph_t = typename std::allocator_traits<Allocator>::
+                    template rebind_traits<end_record_handler>::pointer;
+
+private:
     char_type* current_buffer_holder_;
     char_type* current_buffer_;
     std::size_t current_buffer_size_;
 
-    std::size_t remaining_record_num_;
     char_type* field_begin_;
     char_type* field_end_;
 
     table_type* table_;
+
+    ph_t end_record_;
 
 public:
     explicit stored_table_builder(table_type& table,
                                   std::size_t max_record_num = 0) :
         detail::stored::arrange<Content, Options>(table.content()),
         current_buffer_holder_(nullptr), current_buffer_(nullptr),
-        remaining_record_num_(max_record_num),
-        field_begin_(nullptr), table_(std::addressof(table))
+        field_begin_(nullptr), table_(std::addressof(table)),
+        end_record_((max_record_num > 0) ?
+            allocate_construct(
+                [remaining = max_record_num](table_type&) mutable {
+                    if (remaining == 1) {
+                        return false;
+                    } else {
+                        --remaining;
+                        return true;
+                    }
+                }) : nullptr)
+    {}
+
+    template <class E,
+              std::enable_if_t<!std::is_integral<std::decay_t<E>>::value,
+                               std::nullptr_t> = nullptr>
+    stored_table_builder(table_type& table, E&& e) :
+        detail::stored::arrange<Content, Options>(table.content()),
+        current_buffer_holder_(nullptr), current_buffer_(nullptr),
+        field_begin_(nullptr), table_(std::addressof(table)),
+        end_record_(allocate_construct(std::forward<E>(e)))
     {}
 
     stored_table_builder(stored_table_builder&& other) noexcept :
@@ -2069,11 +2152,11 @@ public:
         current_buffer_holder_(other.current_buffer_holder_),
         current_buffer_(other.current_buffer_),
         current_buffer_size_(other.current_buffer_size_),
-        remaining_record_num_(other.remaining_record_num_),
         field_begin_(other.field_begin_), field_end_(other.field_end_),
-        table_(other.table_)
+        table_(other.table_), end_record_(other.end_record_)
     {
         other.current_buffer_holder_ = nullptr;
+        other.end_record_ = nullptr;
     }
 
     ~stored_table_builder()
@@ -2089,8 +2172,45 @@ public:
             cat_t::deallocate(
                 a, pt_t::pointer_to(*current_buffer_), current_buffer_size_);
         }
+        if (end_record_) {
+            destroy_deallocate(end_record_);
+        }
     }
 
+private:
+    template <class T>
+    ph_t allocate_construct(T&& t)
+    {
+        using dt_t = std::decay_t<T>;
+        using h_t = typed_end_record_handler<dt_t>;
+
+        using at_t = typename std::allocator_traits<Allocator>::
+                        template rebind_traits<h_t>;
+        using a_t = typename at_t::allocator_type;
+        a_t a(table_->get_allocator());
+
+        const auto p = at_t::allocate(a, 1);                    // throw
+        try {
+            ::new (std::addressof(*p)) h_t(std::forward<T>(t)); // throw
+        } catch (...) {
+            at_t::deallocate(a, p, 1);
+            throw;
+        }
+        return p;
+    }
+
+    void destroy_deallocate(ph_t p) noexcept
+    {
+        using at_t = typename std::allocator_traits<Allocator>::
+                        template rebind_traits<end_record_handler>;
+        using a_t = typename at_t::allocator_type;
+        a_t a(table_->get_allocator());
+
+        p->~end_record_handler();
+        at_t::deallocate(a, p, 1);
+    }
+
+public:
     void start_record(const char_type* /*record_begin*/)
     {
         this->new_record(table_->content());    // throw
@@ -2123,13 +2243,9 @@ public:
 
     bool end_record(const char_type* /*record_end*/)
     {
-        switch (remaining_record_num_) {
-        case 0:
-            return true;
-        case 1:
-            return false;
-        default:
-            --remaining_record_num_;
+        if (end_record_) {
+            return end_record_->on_end_record(*table_);
+        } else {
             return true;
         }
     }
