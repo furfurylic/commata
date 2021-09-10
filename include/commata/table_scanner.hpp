@@ -47,7 +47,7 @@ template <class... As>
 struct is_callable_impl
 {
     template <class F>
-    static auto check(F*) -> decltype(
+    static auto check(std::decay_t<F>*) -> decltype(
         std::declval<F>()(std::declval<As>()...),
         std::true_type());
 
@@ -61,10 +61,10 @@ struct is_callable :
 {};
 
 template <class T, class Ch>
-using accepts_range = is_callable<T, Ch*, Ch*>;
+using accepts_range = is_callable<T&, Ch*, Ch*>;
 
 template <class T, class X>
-using accepts_x = is_callable<T, X>;
+using accepts_x = is_callable<T&, X>;
 
 struct typable
 {
@@ -277,7 +277,7 @@ class basic_table_scanner
         template <class U>
         static auto do_end_record(U& u, basic_table_scanner& me)
          -> std::enable_if_t<
-                detail::scanner::is_callable<U, basic_table_scanner&>::value,
+                detail::scanner::is_callable<U&, basic_table_scanner&>::value,
                 bool>
         {
             return do_end_record_no_arg(std::bind(std::ref(u), std::ref(me)));
@@ -286,8 +286,8 @@ class basic_table_scanner
         template <class U>
         static auto do_end_record(U& u, basic_table_scanner&)
          -> std::enable_if_t<
-                !detail::scanner::is_callable<U, basic_table_scanner&>::value
-             && detail::scanner::is_callable<U>::value,
+                !detail::scanner::is_callable<U&, basic_table_scanner&>::value
+             && detail::scanner::is_callable<U&>::value,
                 bool>
         {
             return do_end_record_no_arg(u);
@@ -2782,7 +2782,7 @@ auto make_field_translator(Sink&& sink, Appendices&&... appendices)
         (detail::scanner::is_convertible_numeric_type<T>::value
       || detail::is_std_string<T>::value)
      && (detail::scanner::is_output_iterator<std::decay_t<Sink>>::value
-      || detail::scanner::is_callable<std::decay_t<Sink>, T>::value),
+      || detail::scanner::is_callable<std::decay_t<Sink>&, T>::value),
         decltype(detail::scanner::make_field_translator_na<T>(
                     std::forward<Sink>(sink),
                     std::forward<Appendices>(appendices)...))>
@@ -2800,7 +2800,7 @@ auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
         detail::is_std_string<T>::value
      && std::is_same<Allocator, typename T::allocator_type>::value
      && (detail::scanner::is_output_iterator<std::decay_t<Sink>>::value
-      || detail::scanner::is_callable<std::decay_t<Sink>, T>::value),
+      || detail::scanner::is_callable<std::decay_t<Sink>&, T>::value),
         decltype(detail::scanner::make_field_translator_na<T>(
                     std::forward<Sink>(sink),
                     std::forward<Appendices>(appendices)...))>
