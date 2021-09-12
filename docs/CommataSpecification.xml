@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-09-11 (UTC)</signature>
+<signature>2021-09-12 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3230,8 +3230,8 @@ namespace commata {
         <p>The class template <c>basic_stored_table</c> describes an in-memory image of a text table (<xref id="definitions.text_table"/>), whose text values are arranged two-dimensionally.</p>
 
         <p>The template parameter <c>Content</c> shall be a sequence container type of a sequence container type of <c>basic_stored_value&lt;Ch, Tr></c> (<xref id="basic_stored_value"/>) for some <c>Ch</c> and <c>Tr</c>
-           and shall meet the <c>DefaultInsertable</c> requirements with <c>Allocator</c>.
-           Note that <c>std::array</c> and <c>std::forward_list</c> do not qualify because they lack some essential functionalities of sequence containers.</p>
+           and shall meet the <c>DefaultInsertable</c> requirements and the <c>Erasable</c> requirements with <c>Allocator</c>.
+           Note that neither <c>std::array</c> nor <c>std::forward_list</c> qualifies because they lack some essential functionalities of sequence containers.</p>
         <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>Content</c>.</p>
 
         <section id="basic_stored_table.parts">
@@ -3306,7 +3306,7 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t
           <code>
 basic_stored_table(const basic_stored_table&amp; other);
           </code>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>Y::max_size(ChAllocator(get_allocator()))</c> and <c>other.get_buffer_size()</c> where <c>Y</c> is equal to <c>std::allocator_traits&lt;Allocator>::template rebind_alloc&lt;char_type></c>.
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>Y::max_size(ChAllocator(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
                          If not undefined, also <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
