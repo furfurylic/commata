@@ -1108,6 +1108,51 @@ struct null_termination
     }
 };
 
+template <class Tr, class Ch>
+void move_chs(const Ch* begin1, std::size_t size, Ch* begin2)
+{
+    Tr::move(begin2, begin1, size);
+}
+
+template <class Tr, class InputIterator, class Ch>
+void move_chs(InputIterator begin1, std::size_t size, Ch* begin2)
+{
+    for (std::size_t i = 0; i < size; ++i) {
+        Tr::assign(*begin2, *begin1);
+        ++begin1;
+        ++begin2;
+    }
+}
+
+template <class InputIterator>
+std::size_t distance(InputIterator begin, InputIterator end)
+{
+    return static_cast<std::size_t>(std::distance(begin, end));
+}
+
+template <class InputIterator, class InputIteratorEnd>
+std::size_t distance(InputIterator begin, InputIteratorEnd end)
+{
+    std::size_t length = 0;
+    while (begin != end) {
+        ++begin;
+        ++length;
+    }
+    return length;
+}
+
+template <class Tr, class InputIterator>
+std::size_t length(InputIterator begin)
+{
+    return distance(begin, null_termination<Tr>());
+}
+
+template <class Tr>
+std::size_t length(const char* begin)
+{
+    return Tr::length(begin);
+}
+
 }} // end detail::stored
 
 template <class Content, class Allocator = std::allocator<Content>>
@@ -1313,7 +1358,8 @@ public:
             value.erase(value.cbegin() + n, value.cend());
         } else {
             const auto secured = secure_n(n + 1);   // throw
-            move_chs(value.data(), value.size(), secured);
+            detail::stored::move_chs<traits_type>(
+                value.data(), value.size(), secured);
             traits_type::assign(secured + value.size(), n + 1 - value.size(),
                 char_type());
             value = value_type(secured, secured + n);
@@ -1332,7 +1378,8 @@ public:
     value_type& rewrite_value(value_type& value,
         ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end)
     {
-        return rewrite_value_impl(value, new_value_begin, new_value_end);
+        return rewrite_value_n(value, new_value_begin,
+            detail::stored::distance(new_value_begin, new_value_end));
     }
 
     template <class ForwardIterator>
@@ -1344,47 +1391,11 @@ public:
                     iterator_category>::value,
             value_type&>
     {
-        return rewrite_value_impl(value, new_value);
+        return rewrite_value_n(value, new_value,
+            detail::stored::length<traits_type>(new_value));
     }
 
 private:
-    template <class ForwardIterator>
-    value_type& rewrite_value_impl(value_type& value,
-        ForwardIterator new_value_begin, ForwardIterator new_value_end)
-    {
-        return rewrite_value_n(value, new_value_begin,
-            static_cast<std::size_t>(
-                std::distance(new_value_begin, new_value_end)));
-    }
-
-    template <class ForwardIterator, class ForwardIteratorEnd>
-    value_type& rewrite_value_impl(value_type& value,
-        ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end)
-    {
-        ForwardIterator i = new_value_begin;
-        std::size_t length = 0;
-        while (i != new_value_end) {
-            ++i;
-            ++length;
-        }
-        return rewrite_value_n(value, new_value_begin, length);
-    }
-
-    template <class ForwardIterator>
-    value_type& rewrite_value_impl(value_type& value,
-        ForwardIterator new_value)
-    {
-        return rewrite_value_impl(value,
-            new_value, detail::stored::null_termination<traits_type>());
-    }
-
-    value_type& rewrite_value_impl(value_type& value,
-        const char_type* new_value)
-    {
-        return rewrite_value_n(value,
-            new_value, traits_type::length(new_value));
-    }
-
     template <class InputIterator>
     value_type& rewrite_value_n(value_type& value,
         InputIterator new_value_begin, std::size_t new_value_size)
@@ -1395,47 +1406,27 @@ private:
     }
 
     template <class InputIterator>
-    value_type& rewrite_value_n_impl(std::true_type, value_type& value,
-        InputIterator new_value_begin, std::size_t new_value_size)
-    {
-        return rewrite_value_n_secure(value, new_value_begin, new_value_size);
-    }
-
-    static void move_chs(
-        const char_type* begin1, std::size_t size, char_type* begin2)
-    {
-        traits_type::move(begin2, begin1, size);
-    }
-
-    template <class InputIterator>
-    static void move_chs(
-        InputIterator begin1, std::size_t size, char_type* begin2)
-    {
-        for (std::size_t i = 0; i < size; ++i) {
-            traits_type::assign(*begin2, *begin1);
-            ++begin1;
-            ++begin2;
-        }
-    }
-
-    template <class InputIterator>
     value_type& rewrite_value_n_impl(std::false_type, value_type& value,
         InputIterator new_value_begin, std::size_t new_value_size)
     {
         if (new_value_size <= value.size()) {
-            move_chs(new_value_begin, new_value_size, value.begin());
+            detail::stored::move_chs<traits_type>(
+                new_value_begin, new_value_size, value.begin());
             value.erase(value.cbegin() + new_value_size, value.cend());
             return value;
+        } else {
+            return rewrite_value_n_impl(std::true_type(),
+                value, new_value_begin, new_value_size);
         }
-        return rewrite_value_n_secure(value, new_value_begin, new_value_size);
     }
 
     template <class InputIterator>
-    value_type& rewrite_value_n_secure(value_type& value,
+    value_type& rewrite_value_n_impl(std::true_type, value_type& value,
         InputIterator new_value_begin, std::size_t new_value_size)
     {
         const auto secured = secure_n(new_value_size + 1);
-        move_chs(new_value_begin, new_value_size, secured);
+        detail::stored::move_chs<traits_type>(
+            new_value_begin, new_value_size, secured);
         traits_type::assign(secured[new_value_size], char_type());
         value = value_type(secured, secured + new_value_size);
         return value;
