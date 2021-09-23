@@ -53,19 +53,12 @@ public:
         delete [] reinterpret_cast<char*>(p);
     }
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4100)
-#endif
     template <class U>
     bool operator==(const identified_allocator<
         U, Pocca, Pocma, Pocs, Iae>& other) const noexcept
     {
-        return Iae || (id() == other.id());
+        return equal_to(std::integral_constant<bool, Iae>(), other);
     }
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
     template <class U>
     bool operator!=(const identified_allocator<
@@ -84,6 +77,21 @@ public:
     std::size_t id() const noexcept
     {
         return id_;
+    }
+
+private:
+    template <class U>
+    constexpr bool equal_to(std::true_type, const identified_allocator<
+        U, Pocca, Pocma, Pocs, Iae>&) const noexcept
+    {
+        return true;
+    }
+
+    template <class U>
+    bool equal_to(std::false_type, const identified_allocator<
+        U, Pocca, Pocma, Pocs, Iae>& other) const noexcept
+    {
+        return id() == other.id();
     }
 };
 
