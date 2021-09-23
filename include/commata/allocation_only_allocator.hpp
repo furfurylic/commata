@@ -104,27 +104,7 @@ public:
         member_like_base<Allocator>(std::move(other.base()))
     {}
 
-    // C++14 standard does not require this
-    template <class OtherAllocator>
-    allocation_only_allocator& operator=(
-        const allocation_only_allocator<OtherAllocator>& other)
-        noexcept(std::is_nothrow_assignable<
-            Allocator&, const OtherAllocator&>::value)
-    {
-        base() = other.base();
-        return *this;
-    }
-
-    // ditto
-    template <class OtherAllocator>
-    allocation_only_allocator& operator=(
-        allocation_only_allocator<OtherAllocator>&& other)
-        noexcept(std::is_nothrow_assignable<
-            Allocator&, OtherAllocator>::value)
-    {
-        base() = std::move(other.base());
-        return *this;
-    }
+    // copy/move ctor/assignment ops are defaulted
 
     template <class... Args>
     auto allocate(size_type n, Args&&... args)
@@ -193,7 +173,7 @@ private:
 };
 
 template <class AllocatorL, class AllocatorR>
-inline bool operator==(
+bool operator==(
     const allocation_only_allocator<AllocatorL>& left,
     const allocation_only_allocator<AllocatorR>& right) noexcept
 {
@@ -201,7 +181,7 @@ inline bool operator==(
 }
 
 template <class AllocatorL, class AllocatorR>
-inline bool operator!=(
+bool operator!=(
     const allocation_only_allocator<AllocatorL>& left,
     const allocation_only_allocator<AllocatorR>& right) noexcept
 {

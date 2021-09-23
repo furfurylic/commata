@@ -38,13 +38,17 @@ public:
             Pocca, Pocma, Pocs>;
     };
 
-    explicit propagation_controlled_allocator(const A& alloc) noexcept :
+    propagation_controlled_allocator(const A& alloc) noexcept :
         member_like_base<A>(alloc)
+    {}
+
+    propagation_controlled_allocator(A&& alloc) noexcept :
+        member_like_base<A>(std::move(alloc))
     {}
 
     // To make rebound copies
     template <class U>
-    explicit propagation_controlled_allocator(
+    propagation_controlled_allocator(
         const propagation_controlled_allocator<U, Pocca, Pocma, Pocs>& other)
             noexcept :
         member_like_base<A>(other.base())
@@ -52,7 +56,7 @@ public:
 
     // ditto
     template <class U>
-    explicit propagation_controlled_allocator(
+    propagation_controlled_allocator(
         propagation_controlled_allocator<U, Pocca, Pocma, Pocs>&& other)
             noexcept :
         member_like_base<A>(std::move(other.base()))
@@ -76,20 +80,6 @@ public:
         base_traits_t::max_size(std::declval<const A&>())))
     {
         return base().max_size();
-    }
-
-    template <class U>
-    bool operator==(const propagation_controlled_allocator<
-        U, Pocca, Pocma, Pocs>& other) const noexcept
-    {
-        return base() == other.base();
-    }
-
-    template <class U>
-    bool operator!=(const propagation_controlled_allocator<
-        U, Pocca, Pocma, Pocs>& other) const noexcept
-    {
-        return base() != other.base();
     }
 
     template <class T, class... Args>
@@ -129,6 +119,54 @@ public:
         return this->get();
     }
 };
+
+template <class AllocatorL, class AllocatorR, bool... PsL, bool... PsR>
+bool operator==(
+    const propagation_controlled_allocator<AllocatorL, PsL...>& left,
+    const propagation_controlled_allocator<AllocatorR, PsR...>& right) noexcept
+{
+    return left.base() == right.base();
+}
+
+template <class Allocator, bool... Ps>
+bool operator==(
+    const propagation_controlled_allocator<Allocator, Ps...>& left,
+    const Allocator& right) noexcept
+{
+    return left.base() == right;
+}
+
+template <class Allocator, bool... Ps>
+bool operator==(
+    const Allocator& left,
+    const propagation_controlled_allocator<Allocator, Ps...>& right) noexcept
+{
+    return left == right.base();
+}
+
+template <class AllocatorL, class AllocatorR, bool... PsL, bool... PsR>
+bool operator!=(
+    const propagation_controlled_allocator<AllocatorL, PsL...>& left,
+    const propagation_controlled_allocator<AllocatorR, PsR...>& right) noexcept
+{
+    return left.base() != right.base();
+}
+
+template <class Allocator, bool... Ps>
+bool operator!=(
+    const propagation_controlled_allocator<Allocator, Ps...>& left,
+    const Allocator& right) noexcept
+{
+    return left.base() != right;
+}
+
+template <class Allocator, bool... Ps>
+bool operator!=(
+    const Allocator& left,
+    const propagation_controlled_allocator<Allocator, Ps...>& right) noexcept
+{
+    return left != right.base();
+}
 
 }}
 
