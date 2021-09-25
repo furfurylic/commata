@@ -314,8 +314,9 @@ class basic_table_scanner
     typename hfs_at_t::pointer header_field_scanner_;
     detail::nothrow_move_constructible<
         std::vector<bfs_ptr_p_t, scanners_a_t>> scanners_;
-    std::size_t sj_;    // possibly active scanner: can't be an iterator
-                        // because it would be invalidated by header scanners
+    typename std::vector<bfs_ptr_p_t, scanners_a_t>::size_type sj_;
+        // possibly active scanner: can't be an iterator
+        // because it would be invalidated by header scanners
     typename res_at_t::pointer end_scanner_;
 
 public:

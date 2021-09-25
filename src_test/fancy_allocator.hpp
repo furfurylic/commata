@@ -56,7 +56,7 @@ public:
     T& operator[](difference_type n) const noexcept { return p_[n]; }
     explicit operator bool() const noexcept { return p_ != nullptr; }
 #ifdef __GNUC__
-    operator void*() const noexcept { return p_; }
+    operator T*() const noexcept { return p_; }
 #endif
 
     static fancy_ptr pointer_to(T& t) noexcept
