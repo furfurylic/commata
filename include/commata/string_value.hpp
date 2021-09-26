@@ -136,55 +136,6 @@ std::basic_string<Ch, Tr, Allocator>& string_value_plus_assign(
     return left;
 }
 
-template <class T, class Ch, class Tr, class Allocator>
-std::basic_string<Ch, Tr, Allocator> string_value_plus(
-    const T& left,
-    const std::basic_string<Ch, Tr, Allocator>& right)
-{
-    std::basic_string<Ch, Tr, Allocator> s;
-    s.reserve(left.size() + right.size());  // throw
-    s.append(left.cbegin(), left.cend()).append(right.cbegin(), right.cend());
-    return s;
-}
-
-template <class T, class Ch, class Tr, class Allocator>
-std::basic_string<Ch, Tr, Allocator> string_value_plus(
-    const T& left,
-    std::basic_string<Ch, Tr, Allocator>&& right)
-{
-    const auto rn = right.size();
-    try {
-        right.append(left.size(), typename T::value_type());    // throw
-    } catch (...) {
-        // gcc 6.3 dislikes const_iterator here
-        right.erase(right.begin() + rn, right.end());
-        throw;
-    }
-    using tr_t = typename T::traits_type;
-    tr_t::move(&*right.begin() + left.size(), right.data(), rn);
-    tr_t::copy(&*right.begin(), left.data(), left.size());
-    return std::move(right);
-}
-
-template <class T, class Ch, class Tr, class Allocator>
-std::basic_string<Ch, Tr, Allocator> string_value_plus(
-    const std::basic_string<Ch, Tr, Allocator>& left,
-    const T& right)
-{
-    std::basic_string<Ch, Tr, Allocator> s;
-    s.reserve(left.size() + right.size());  // throw
-    s.append(left.cbegin(), left.cend()).append(right.cbegin(), right.cend());
-    return s;
-}
-
-template <class T, class Ch, class Tr, class Allocator>
-std::basic_string<Ch, Tr, Allocator> string_value_plus(
-    std::basic_string<Ch, Tr, Allocator>&& left,
-    const T& right)
-{
-    return std::move(string_value_plus_assign(left, right));
-}
-
 }}
 
 #endif

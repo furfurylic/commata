@@ -479,14 +479,6 @@ TYPED_TEST_P(TestTablePull, Plus)
         TypeParam::second_type::value);
     pull();
 
-    string_t s1 = str("xyz");
-
-    ASSERT_EQ(str("xyzXYZ"), s1 + pull);
-    ASSERT_EQ(str("XYZxyz"), pull + s1);
-
-    ASSERT_EQ(str("xyzXYZ"), std::move(s1) + pull);
-    ASSERT_EQ(str("XYZ123"), pull + str("123"));
-
     string_t s2 = str("abc");
     ASSERT_EQ(str("abcXYZ"), s2 += pull);
 }

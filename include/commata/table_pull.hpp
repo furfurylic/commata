@@ -1307,46 +1307,6 @@ auto operator>=(
 }
 
 template <class TableSource, class Allocator, class OtherAllocator>
-auto operator+(
-    const table_pull<TableSource, Allocator>& left,
-    const std::basic_string<typename TableSource::char_type,
-        typename TableSource::traits_type, OtherAllocator>& right)
- -> std::decay_t<decltype(right)>
-{
-    return detail::string_value_plus(left, right);
-}
-
-template <class TableSource, class Allocator, class OtherAllocator>
-auto operator+(
-    const table_pull<TableSource, Allocator>& left,
-    std::basic_string<typename TableSource::char_type,
-        typename TableSource::traits_type, OtherAllocator>&& right)
- -> std::decay_t<decltype(right)>
-{
-    return detail::string_value_plus(left, std::move(right));
-}
-
-template <class TableSource, class Allocator, class OtherAllocator>
-auto operator+(
-    const std::basic_string<typename TableSource::char_type,
-        typename TableSource::traits_type, OtherAllocator>& left,
-    const table_pull<TableSource, Allocator>& right)
- -> std::decay_t<decltype(left)>
-{
-    return detail::string_value_plus(left, right);
-}
-
-template <class TableSource, class Allocator, class OtherAllocator>
-auto operator+(
-    std::basic_string<typename TableSource::char_type,
-        typename TableSource::traits_type, OtherAllocator>&& left,
-    const table_pull<TableSource, Allocator>& right)
- -> std::decay_t<decltype(left)>
-{
-    return detail::string_value_plus(std::move(left), right);
-}
-
-template <class TableSource, class Allocator, class OtherAllocator>
 auto operator+=(
     std::basic_string<typename TableSource::char_type,
         typename TableSource::traits_type, OtherAllocator>& left,

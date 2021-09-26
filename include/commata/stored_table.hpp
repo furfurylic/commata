@@ -568,42 +568,6 @@ auto operator>=(
 }
 
 template <class ChC, class Tr, class Allocator>
-auto operator+(
-    const basic_stored_value<ChC, Tr>& left,
-    const std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>& right)
- -> std::decay_t<decltype(right)>
-{
-    return detail::string_value_plus(left, right);
-}
-
-template <class ChC, class Tr, class Allocator>
-auto operator+(
-    const basic_stored_value<ChC, Tr>& left,
-    std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>&& right)
- -> std::decay_t<decltype(right)>
-{
-    return detail::string_value_plus(left, std::move(right));
-}
-
-template <class ChC, class Tr, class Allocator>
-auto operator+(
-    const std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>& left,
-    const basic_stored_value<ChC, Tr>& right)
- -> std::decay_t<decltype(left)>
-{
-    return detail::string_value_plus(left, right);
-}
-
-template <class ChC, class Tr, class Allocator>
-auto operator+(
-    std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>&& left,
-    const basic_stored_value<ChC, Tr>& right)
- -> std::decay_t<decltype(left)>
-{
-    return detail::string_value_plus(std::move(left), right);
-}
-
-template <class ChC, class Tr, class Allocator>
 auto operator+=(
     std::basic_string<std::remove_const_t<ChC>, Tr, Allocator>& left,
     const basic_stored_value<ChC, Tr>& right)

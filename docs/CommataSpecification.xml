@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-09-12 (UTC)</signature>
+<signature>2021-09-26 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2308,22 +2308,6 @@ namespace commata {
       std::basic_ostream&lt;ChC, Tr>&amp; os, const basic_stored_value&lt;ChC, Tr>&amp; o);
 
   template &lt;class ChC, class Tr, class Allocator>
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-      const basic_stored_value&lt;ChC, Tr>&amp;                                left,
-      const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; right);
-  template &lt;class ChC, class Tr, class Allocator>
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-      const basic_stored_value&lt;ChC, Tr>&amp;                                left,
-      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      right);
-  template &lt;class ChC, class Tr, class Allocator>
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-      const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; left,
-      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
-  template &lt;class ChC, class Tr, class Allocator>
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      left,
-      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
-  template &lt;class ChC, class Tr, class Allocator>
     std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; operator+=(
       std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;       left,
       const basic_stored_value&lt;ChC, Tr>&amp;                                right);
@@ -2554,23 +2538,6 @@ namespace commata {
       std::basic_ostream&lt;ChC, Tr>&amp; os, const basic_stored_value&lt;ChC, Tr>&amp; o);
 
   <c>// <n><xref id="basic_stored_value.conversion"/>, conversion:</n></c>
-  template &lt;class ChC, class Tr, class Allocator>
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-      const basic_stored_value&lt;ChC, Tr>&amp;                                left,
-      const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; right);
-  template &lt;class ChC, class Tr, class Allocator>
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-      const basic_stored_value&lt;ChC, Tr>&amp;                                left,
-      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      right);
-  template &lt;class ChC, class Tr, class Allocator>
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-      const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; left,
-      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
-  template &lt;class ChC, class Tr, class Allocator>
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-      std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      left,
-      const basic_stored_value&lt;ChC, Tr>&amp;                                right);
-
   template &lt;class ChC, class Tr, class Allocator>
     std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; operator+=(
       std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;       left,
@@ -3037,30 +3004,6 @@ template &lt;class ChC, class Tr>
 
       <section id="basic_stored_value.conversion">
         <name><c>basic_stored_value</c> conversion</name>
-
-        <code-item>
-          <code>
-template &lt;class ChC, class Tr, class Allocator>
-  std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-    const basic_stored_value&lt;ChC, Tr>&amp;                                left,
-    const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; right);
-template &lt;class ChC, class Tr, class Allocator>
-  std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-    const basic_stored_value&lt;ChC, Tr>&amp;                                left,
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      right);
-template &lt;class ChC, class Tr, class Allocator>
-  std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-    const std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp; left,
-    const basic_stored_value&lt;ChC, Tr>&amp;                                right);
-template &lt;class ChC, class Tr, class Allocator>
-  std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator> operator+(
-    std::basic_string&lt;std::remove_const_t&lt;ChC>, Tr, Allocator>&amp;&amp;      left,
-    const basic_stored_value&lt;ChC, Tr>&amp;                                right);
-          </code>
-          <returns>A string object whose content is [<c>l.cbegin()</c>, <c>l.cend()</c>) and [<c>r.cbegin()</c>, <c>r.cend()</c>) concatenated
-                   where <c>l</c> and <c>r</c> are the values of <c>left</c> and <c>right</c> before the call respectively.</returns>
-          <remark>If an exception is thrown by an instance of these function templates, the invocation shall have no effect.</remark>
-        </code-item>
 
         <code-item>
           <code>
@@ -6192,30 +6135,6 @@ namespace commata {
 
   template &lt;class TableSource, class Allocator, class OtherAllocator>
     std::basic_string&lt;typename TableSource::char_type,
-                      typename TableSource::traits_type, OtherAllocator>
-      operator+(const table_pull&lt;TableSource, Allocator>&amp; left,
-                const std::basic_string&lt;typename TableSource::char_type,
-                                        typename TableSource::traits_type, OtherAllocator>&amp; right);
-  template &lt;class TableSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TableSource::char_type,
-                      typename TableSource::traits_type, OtherAllocator>
-      operator+(const table_pull&lt;TableSource, Allocator>&amp; left,
-                std::basic_string&lt;typename TableSource::char_type,
-                                  typename TableSource::traits_type, OtherAllocator>&amp;&amp; right);
-  template &lt;class TableSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TableSource::char_type,
-                      typename TableSource::traits_type, OtherAllocator>
-      operator+(const std::basic_string&lt;typename TableSource::char_type,
-                                        typename TableSource::traits_type, OtherAllocator>&amp; left,
-                const table_pull&lt;TableSource, Allocator>&amp; right);
-  template &lt;class TableSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TableSource::char_type,
-                      typename TableSource::traits_type, OtherAllocator>
-      operator+(std::basic_string&lt;typename TableSource::char_type,
-                                  typename TableSource::traits_type, OtherAllocator>&amp;&amp; left,
-                const table_pull&lt;TableSource, Allocator>&amp; right);
-  template &lt;class TableSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TableSource::char_type,
                       typename TableSource::traits_type, OtherAllocator>&amp;
       operator+=(std::basic_string&lt;typename TableSource::char_type,
                                    typename TableSource::traits_type, OtherAllocator>&amp; left,
@@ -6725,31 +6644,6 @@ namespace commata {
                  const table_pull&lt;TableSource, Allocator>&amp; o);
 
   <c>// <n><xref id="table_pull.conversion"/>, table_pull conversion:</n></c>
-  template &lt;class TableSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TableSource::char_type,
-                      typename TableSource::traits_type, OtherAllocator>
-      operator+(const table_pull&lt;TableSource, Allocator>&amp; left,
-                const std::basic_string&lt;typename TableSource::char_type,
-                                        typename TableSource::traits_type, OtherAllocator>&amp; right);
-  template &lt;class TableSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TableSource::char_type,
-                      typename TableSource::traits_type, OtherAllocator>
-      operator+(const table_pull&lt;TableSource, Allocator>&amp; left,
-                std::basic_string&lt;typename TableSource::char_type,
-                                  typename TableSource::traits_type, OtherAllocator>&amp;&amp; right);
-  template &lt;class TableSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TableSource::char_type,
-                      typename TableSource::traits_type, OtherAllocator>
-      operator+(const std::basic_string&lt;typename TableSource::char_type,
-                                        typename TableSource::traits_type, OtherAllocator>&amp; left,
-                const table_pull&lt;TableSource, Allocator>&amp; right);
-  template &lt;class TableSource, class Allocator, class OtherAllocator>
-    std::basic_string&lt;typename TableSource::char_type,
-                      typename TableSource::traits_type, OtherAllocator>
-      operator+(std::basic_string&lt;typename TableSource::char_type,
-                                  typename TableSource::traits_type, OtherAllocator>&amp;&amp; left,
-                const table_pull&lt;TableSource, Allocator>&amp; right);
-
   template &lt;class TableSource, class Allocator, class OtherAllocator>
     std::basic_string&lt;typename TableSource::char_type,
                       typename TableSource::traits_type, OtherAllocator>&amp;
@@ -7282,38 +7176,6 @@ template &lt;class TableSource, class Allocator>
 
       <section id="table_pull.conversion">
         <name><c>table_pull</c> conversion</name>
-
-        <code-item>
-          <code>
-template &lt;class TableSource, class Allocator, class OtherAllocator>
-  std::basic_string&lt;typename TableSource::char_type,
-                    typename TableSource::traits_type, OtherAllocator>
-    operator+(const table_pull&lt;TableSource, Allocator>&amp; left,
-              const std::basic_string&lt;typename TableSource::char_type,
-                                      typename TableSource::traits_type, OtherAllocator>&amp; right);
-template &lt;class TableSource, class Allocator, class OtherAllocator>
-  std::basic_string&lt;typename TableSource::char_type,
-                    typename TableSource::traits_type, OtherAllocator>
-    operator+(const table_pull&lt;TableSource, Allocator>&amp; left,
-              std::basic_string&lt;typename TableSource::char_type,
-                                typename TableSource::traits_type, OtherAllocator>&amp;&amp; right);
-template &lt;class TableSource, class Allocator, class OtherAllocator>
-  std::basic_string&lt;typename TableSource::char_type,
-                    typename TableSource::traits_type, OtherAllocator>
-    operator+(const std::basic_string&lt;typename TableSource::char_type,
-                                      typename TableSource::traits_type, OtherAllocator>&amp; left,
-              const table_pull&lt;TableSource, Allocator>&amp; right);
-template &lt;class TableSource, class Allocator, class OtherAllocator>
-  std::basic_string&lt;typename TableSource::char_type,
-                    typename TableSource::traits_type, OtherAllocator>
-    operator+(std::basic_string&lt;typename TableSource::char_type,
-                                typename TableSource::traits_type, OtherAllocator>&amp;&amp; left,
-              const table_pull&lt;TableSource, Allocator>&amp; right);
-          </code>
-          <returns>A string object whose content is [<c>l.cbegin()</c>, <c>l.cend()</c>) and [<c>r.cbegin()</c>, <c>r.cend()</c>) concatenated
-                    where <c>l</c> and <c>r</c> are the values of <c>left</c> and <c>right</c> before the call respectively.</returns>
-          <remark>If an exception is thrown by an instance of these function templates, the invocation shall have no effect.</remark>
-        </code-item>
 
         <code-item>
           <code>
