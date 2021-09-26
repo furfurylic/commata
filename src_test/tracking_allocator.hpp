@@ -6,6 +6,7 @@
 #ifndef FURFURYLIC_F2499770_B34D_40F0_9D61_D86483E76760
 #define FURFURYLIC_F2499770_B34D_40F0_9D61_D86483E76760
 
+#include <algorithm>
 #include <cassert>
 #include <memory>
 #include <utility>

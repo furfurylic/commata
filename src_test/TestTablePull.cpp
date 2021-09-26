@@ -525,4 +525,4 @@ typedef testing::Types<
     std::pair<wchar_t, std::integral_constant<std::size_t, 2>>,
     std::pair<wchar_t, std::integral_constant<std::size_t, 4>>,
     std::pair<wchar_t, std::integral_constant<std::size_t, 1024>>> ChBs;
-INSTANTIATE_TYPED_TEST_SUITE_P(, TestTablePull, ChBs);
+INSTANTIATE_TYPED_TEST_SUITE_P(CharsBufferSizes, TestTablePull, ChBs);

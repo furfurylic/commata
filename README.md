@@ -14,7 +14,7 @@ All C++ codes in this repository shall compile and link with
 Microsoft Visual Studio 2015, 2019 and GCC 6.3.
 
 This repository also contains a test of it in `src_test` directory.
-Tests are written on [Googletest](https://github.com/google/googletest) v1.10.0.
+Tests are written on [Googletest](https://github.com/google/googletest) v1.11.0.
 Commata employs CMake 3.14 or later to make the test.
 You can build it as follows:
 
