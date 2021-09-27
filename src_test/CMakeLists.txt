@@ -91,6 +91,15 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         $<$<CONFIG:Debug>:-O0 -g3>
         $<$<CONFIG:RelWithDebInfo>:-O2 -g3>
     )
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_definitions(test_commata PRIVATE
+        $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+    )
+    target_compile_options(test_commata PRIVATE -Wall -Wextra -pedantic-errors -Werror=pedantic -Wno-gnu-zero-variadic-macro-arguments)
+    target_compile_options(test_commata PRIVATE
+        $<$<CONFIG:Debug>:-O0 -g3>
+        $<$<CONFIG:RelWithDebInfo>:-O2 -g3>
+    )
 endif()
 
 include_directories(../include)
