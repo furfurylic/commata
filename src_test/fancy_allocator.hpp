@@ -115,7 +115,7 @@ bool operator<(const fancy_ptr<T>& l, const fancy_ptr<U>& r) noexcept
 { return std::addressof(*l) < std::addressof(*r); }
 
 template <class T>
-bool operator<(const fancy_ptr<T>& l, std::nullptr_t) noexcept
+bool operator<(const fancy_ptr<T>&, std::nullptr_t) noexcept
 { return false; }
 
 template <class T>

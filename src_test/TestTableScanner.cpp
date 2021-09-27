@@ -891,7 +891,7 @@ TYPED_TEST(TestTableScanner, HeaderScan)
     std::vector<short> values1;
 
     basic_table_scanner<TypeParam> h(
-        [&ids, &values1, str, this]
+        [&ids, &values1, str]
         (std::size_t j, const auto* range, auto& f) {
             const std::basic_string<TypeParam>
                 field_name(range->first, range->second);
@@ -1683,7 +1683,14 @@ TEST_F(TestReplaceIfSkipped, CopyAssign)
             ASSERT_EQ(v, *rs[i]()) << i;
         }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
         r0 = r0;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
         ASSERT_EQ(v, *r0());
     }
 
@@ -1703,7 +1710,14 @@ TEST_F(TestReplaceIfSkipped, CopyAssign)
             ASSERT_TRUE(!rs[i]()) << i;
         }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
         r0 = r0;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
         ASSERT_TRUE(!r0());
     }
 
@@ -1723,7 +1737,14 @@ TEST_F(TestReplaceIfSkipped, CopyAssign)
             ASSERT_THROW(rs[i](), field_not_found) << i;
         }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
         r0 = r0;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
         ASSERT_THROW(r0(), field_not_found);
     }
 }
@@ -1998,7 +2019,14 @@ TYPED_TEST(TestReplaceIfConversionFailed, CopyAssign)
             ASSERT_EQ(num_5, *r(out_of_range_t(), d, de, 0)) << i;
         }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
         r0 = r0;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
         ASSERT_EQ(num_1, *r0(empty_t()));
         ASSERT_EQ(num_2, *r0(invalid_format_t(), d, de));
         ASSERT_EQ(num_3, *r0(out_of_range_t(), d, de, 1));
@@ -2028,7 +2056,14 @@ TYPED_TEST(TestReplaceIfConversionFailed, CopyAssign)
             ASSERT_TRUE(!r(out_of_range_t(), d, de, 0)) << i;
         }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
         r0 = r0;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
         ASSERT_TRUE(!r0(empty_t()));
         ASSERT_TRUE(!r0(invalid_format_t(), d, de));
         ASSERT_TRUE(!r0(out_of_range_t(), d, de, 1));
@@ -2058,7 +2093,14 @@ TYPED_TEST(TestReplaceIfConversionFailed, CopyAssign)
             ASSERT_THROW(r(out_of_range_t(), d, de, 0), field_out_of_range) << i;
         }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
         r0 = r0;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
         ASSERT_THROW(r0(empty_t()), field_empty);
         ASSERT_THROW(r0(invalid_format_t(), d, de), field_invalid_format);
         ASSERT_THROW(r0(out_of_range_t(), d, de, 1), field_out_of_range);
