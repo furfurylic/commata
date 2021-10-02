@@ -37,5 +37,5 @@ You can build it as follows:
     ```
 
  1. Now you can make and execute the tests.
-    All you have to do should be `cmake --build .` and then `./test_commata` in that directory.
-    Or, with Microsoft Visual Studio, open `commata.sln` in that directory, build `test_commata` project, and run it.
+    All you have to do should be `cd build`, `cmake --build .`, and then `./test_commata`.
+    Or, with Microsoft Visual Studio, open `commata.sln` in `build` directory, build `test_commata` project, and run it.

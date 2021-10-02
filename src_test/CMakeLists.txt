@@ -1,9 +1,11 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.11)
 
 enable_language(CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 project(test_commata)
 enable_testing()
@@ -16,6 +18,8 @@ FetchContent_Declare(
     GIT_TAG        release-1.11.0
 )
 FetchContent_GetProperties(googletest)
+# We don't use FetchContent_MakeAvailable to take advantage of EXCLUDE_FROM_ALL
+# because we don't need googlemock built with our "All" target
 if(NOT googletest_POPULATED)
     FetchContent_Populate(googletest)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -23,6 +27,9 @@ if(NOT googletest_POPULATED)
                      ${googletest_BINARY_DIR}
                      EXCLUDE_FROM_ALL)
 endif()
+set_target_properties(gtest gtest_main PROPERTIES FOLDER Depenencies)
+
+add_executable(test_commata)
 
 set(COMMATA_HEADERS
     ../include/commata/allocation_only_allocator.hpp
@@ -66,18 +73,17 @@ set(TEST_COMMATA_HEADERS
     BaseTest.hpp
 )
 
-add_executable(test_commata
+target_sources(test_commata PRIVATE
     ${COMMATA_HEADERS}
     ${TEST_COMMATA_SOURCES}
     ${TEST_COMMATA_HEADERS}
 )
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 source_group("Commata Headers" FILES ${COMMATA_HEADERS})
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    target_compile_options(test_commata PRIVATE /MP /W4 /bigobj)
     target_compile_options(test_commata PRIVATE
+        /MP /W4 /bigobj
         $<$<CONFIG:MinSizeRel>:/wd4702>
         $<$<CONFIG:Release>:/wd4702>
         $<$<CONFIG:RelWithDebInfo>:/wd4702>
@@ -86,8 +92,8 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_definitions(test_commata PRIVATE
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
     )
-    target_compile_options(test_commata PRIVATE -Wall -Wextra -pedantic-errors -Werror=pedantic)
     target_compile_options(test_commata PRIVATE
+        -Wall -Wextra -pedantic-errors -Werror=pedantic
         $<$<CONFIG:Debug>:-O0 -g3>
         $<$<CONFIG:RelWithDebInfo>:-O2 -g3>
     )
@@ -95,14 +101,15 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_definitions(test_commata PRIVATE
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
     )
-    target_compile_options(test_commata PRIVATE -Wall -Wextra -pedantic-errors -Werror=pedantic -Wno-gnu-zero-variadic-macro-arguments)
     target_compile_options(test_commata PRIVATE
+        -Wall -Wextra -pedantic-errors -Werror=pedantic
+        -Wno-gnu-zero-variadic-macro-arguments
         $<$<CONFIG:Debug>:-O0 -g3>
         $<$<CONFIG:RelWithDebInfo>:-O2 -g3>
     )
 endif()
 
-include_directories(../include)
+target_include_directories(test_commata PRIVATE ../include)
 
 target_link_libraries(test_commata gtest gtest_main)
 
