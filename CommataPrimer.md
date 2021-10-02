@@ -4,12 +4,37 @@ This document shows how you can handle CSV texts with Commata on some simple
 examples. If what you like to know about Commata is not found in this document,
 it is recommended to consult [the specification](https://furfurylic.github.io/commata/CommataSpecification.xml).
 
-Codes here should compile if you configure your compiler refer Commata's
-`include` directory as an include path. You are not likely to be bothered by
-link errors because Commata is a header-only library.
-
 For simplicity, codes here omits `#include` directive for the standard library
 of C++ language.
+
+## Commata is a header-only library
+
+Commata is a header-only library, so your codes that use Commata compile
+if you configure your compiler refer Commata's `include` directory as an include path.
+You are not likely to be bothered by link errors around Commata.
+
+Incidentally, Commata has its `CMakeLists.txt` in the top directory to add itself as an `INTERFACE` library.
+So if your project that uses Commata is built with CMake 3.14 or later,
+you can set up Commata as a depended library in `CMakeLists.txt` in your project as follows:
+
+```CMake
+include(FetchContent)
+
+FetchContent_Declare(
+    commata
+    GIT_REPOSITORY https://github.com/furfurylic/commata.git
+    GIT_TAG        master       # In fact, a commit hash is better
+)
+
+FetchContent_MakeAvailable(commata)
+
+target_link_libraries(your_project PRIVATE commata)
+                                # Include path should be set up
+                                # to include Commata's 'include' directory
+```
+
+To get back to this primer, C++ codes in this document should compile
+if you configure your compiler refer Commata's `include` directory as an include path.
 
 ## Sample CSV file
 

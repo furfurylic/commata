@@ -15,25 +15,25 @@ Microsoft Visual Studio 2015, 2019 and GCC 6.3.
 
 This repository also contains a test of it in `src_test` directory.
 Tests are written on [GoogleTest](https://github.com/google/googletest) v1.11.0.
-Commata employs CMake 3.14 or later to make the test.
+Commata employs CMake 3.13 or later to make the test.
 You can build it as follows:
 
- 1. In the top directory of the repository, prepare GoogleTest and the tests for
-    Commata with CMake:
+ 1. At the top directory of the repository, prepare GoogleTest and the tests for
+    Commata with CMake into `build` directory:
     ```bash
-    $ cmake -S src_test -B build
+    $ cmake -S . -B build -DCOMMATA_BUILD_TESTS=1
     ```
     You can also explicitly specify the geneator, the platform, the build type, and so on. For example:
     ```bash
-    $ cmake -S src_test -B build -GNinja -DCMAKE_BUILD_TYPE=Debug
+    $ cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Debug -DCOMMATA_BUILD_TESTS=1
     ```
     or
     ```bash
-    $ cmake -S src_test -B build -G "Visual Studio 14 2015" -A Win32
+    $ cmake -S . -B build -G "Visual Studio 14 2015" -A Win32 -DCOMMATA_BUILD_TESTS=1
     ```
     or
     ```bash
-    $ cmake -S src_test -B build -G "Visual Studio 16 2019" -A x64
+    $ cmake -S . -B build -G "Visual Studio 16 2019" -A x64 -DCOMMATA_BUILD_TESTS=1
     ```
 
  1. Now you can make and execute the tests.

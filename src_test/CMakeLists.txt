@@ -1,13 +1,11 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.13)
 
-enable_language(CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-project(test_commata)
 enable_testing()
 
 include(FetchContent)
@@ -31,30 +29,7 @@ set_target_properties(gtest gtest_main PROPERTIES FOLDER Depenencies)
 
 add_executable(test_commata)
 
-set(COMMATA_HEADERS
-    ../include/commata/allocation_only_allocator.hpp
-    ../include/commata/buffer_control.hpp
-    ../include/commata/buffer_size.hpp
-    ../include/commata/char_input.hpp
-    ../include/commata/empty_physical_line_aware_handler.hpp
-    ../include/commata/empty_string.hpp
-    ../include/commata/formatted_output.hpp
-    ../include/commata/handler_decorator.hpp
-    ../include/commata/key_chars.hpp
-    ../include/commata/member_like_base.hpp
-    ../include/commata/nothrow_move_constructible.hpp
-    ../include/commata/parse_csv.hpp
-    ../include/commata/parse_error.hpp
-    ../include/commata/propagation_controlled_allocator.hpp
-    ../include/commata/record_extractor.hpp
-    ../include/commata/stored_table.hpp
-    ../include/commata/string_value.hpp
-    ../include/commata/table_pull.hpp
-    ../include/commata/table_scanner.hpp
-    ../include/commata/text_error.hpp
-    ../include/commata/typing_aid.hpp
-    ../include/commata/write_ntmbs.hpp
-)
+get_target_property(COMMATA_HEADERS commata INTERFACE_SOURCES)
 
 set(TEST_COMMATA_SOURCES
     TestCharInput.cpp
@@ -80,6 +55,8 @@ target_sources(test_commata PRIVATE
 )
 
 source_group("Commata Headers" FILES ${COMMATA_HEADERS})
+
+target_compile_features(test_commata PRIVATE cxx_std_14)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(test_commata PRIVATE
@@ -109,9 +86,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     )
 endif()
 
-target_include_directories(test_commata PRIVATE ../include)
-
-target_link_libraries(test_commata gtest gtest_main)
+target_link_libraries(test_commata PRIVATE commata gtest gtest_main)
 
 add_test(
     NAME test_commata
