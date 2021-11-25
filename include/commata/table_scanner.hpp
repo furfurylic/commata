@@ -333,9 +333,8 @@ public:
     {}
 
     template <class HeaderFieldScanner,
-        std::enable_if_t<
-            !std::is_integral<HeaderFieldScanner>::value,
-            std::nullptr_t> = nullptr>
+        std::enable_if_t<!std::is_integral<HeaderFieldScanner>::value>*
+            = nullptr>
     explicit basic_table_scanner(
         HeaderFieldScanner s,
         size_type buffer_size = 0U) :
@@ -356,8 +355,8 @@ public:
 
     template <class HeaderFieldScanner,
         std::enable_if_t<
-            !std::is_integral<std::decay_t<HeaderFieldScanner>>::value,
-            std::nullptr_t> = nullptr>
+            !std::is_integral<std::decay_t<HeaderFieldScanner>>::value>*
+                = nullptr>
     basic_table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
         HeaderFieldScanner&& s,
@@ -848,8 +847,8 @@ public:
     template <class U,
         std::enable_if_t<
             !detail::scanner::is_replacement<std::decay_t<U>>::value
-         && !std::is_same<replacement_ignore_t, std::decay_t<U>>::value,
-            std::nullptr_t> = nullptr>
+         && !std::is_same<replacement_ignore_t, std::decay_t<U>>::value>*
+            = nullptr>
     explicit replacement(U&& t)
         noexcept(std::is_nothrow_constructible<T, U>::value) :
         has_(true)
@@ -1484,8 +1483,8 @@ struct converter :
     private raw_converter<T, typed_conversion_error_handler<T, H>>
 {
     template <class K,
-        std::enable_if_t<!std::is_base_of<converter, std::decay_t<K>>::value,
-                         std::nullptr_t> = nullptr>
+        std::enable_if_t<!std::is_base_of<converter, std::decay_t<K>>::value>*
+            = nullptr>
     converter(K&& h) :
         raw_converter<T, typed_conversion_error_handler<T, H>>(
             typed_conversion_error_handler<T, H>(std::forward<K>(h)))
@@ -1632,8 +1631,7 @@ public:
             || std::is_base_of<replacement_ignore_t,
                 detail::first_t<std::decay_t<Args>...>>::value
             || std::is_base_of<replacement_fail_t,
-                detail::first_t<std::decay_t<Args>...>>::value)),
-            std::nullptr_t> = nullptr>
+                detail::first_t<std::decay_t<Args>...>>::value))>* = nullptr>
     explicit replace_if_skipped(Args&&... args)
         noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
         mode_(mode::replace)
@@ -1885,7 +1883,7 @@ class replace_if_conversion_failed
 
         template <class Head, class... Tails,
             std::enable_if_t<!std::is_base_of<store,
-                std::decay_t<Head>>::value, std::nullptr_t> = nullptr>
+                std::decay_t<Head>>::value>* = nullptr>
         store(Head&& head, Tails&&... tails) :
             store(std::integral_constant<std::size_t, 0>(),
                 std::forward<Head>(head), std::forward<Tails>(tails)...)
@@ -1916,8 +1914,7 @@ class replace_if_conversion_failed
             (!std::is_base_of<
                 replacement_fail_t, std::decay_t<U>>::value)
          && (!std::is_base_of<
-                replacement_ignore_t, std::decay_t<U>>::value),
-            std::nullptr_t> = nullptr>
+                replacement_ignore_t, std::decay_t<U>>::value)>* = nullptr>
         void init(U&& value = U())
         {
             static_assert(Slot < n, "");
@@ -2143,8 +2140,8 @@ public:
         class AboveUpperLimit = T,
         std::enable_if_t<
             !std::is_base_of<
-                replace_if_conversion_failed<T>, std::decay_t<Empty>>::value,
-            std::nullptr_t> = nullptr>
+                replace_if_conversion_failed<T>, std::decay_t<Empty>>::value>*
+                    = nullptr>
     explicit replace_if_conversion_failed(
         Empty&& on_empty = Empty(),
         InvalidFormat&& on_invalid_format = InvalidFormat(),
@@ -2417,8 +2414,8 @@ public:
               class ConversionErrorHandlerR = ConversionErrorHandler,
               std::enable_if_t<
                 !std::is_base_of<
-                    arithmetic_field_translator, std::decay_t<SinkR>>::value,
-                std::nullptr_t> = nullptr>
+                    arithmetic_field_translator, std::decay_t<SinkR>>::value>*
+                        = nullptr>
     explicit arithmetic_field_translator(
         SinkR&& sink,
         SkippingHandlerR&& handle_skipping = SkippingHandler(),
@@ -2490,8 +2487,7 @@ public:
               std::enable_if_t<
                 !std::is_base_of<
                     locale_based_arithmetic_field_translator,
-                    std::decay_t<SinkR>>::value,
-                std::nullptr_t> = nullptr>
+                    std::decay_t<SinkR>>::value>* = nullptr>
     locale_based_arithmetic_field_translator(
         SinkR&& sink, const std::locale& loc,
         SkippingHandlerR&& handle_skipping = SkippingHandler(),
@@ -2606,8 +2602,8 @@ public:
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
               std::enable_if_t<
                 !std::is_base_of<
-                    string_field_translator, std::decay_t<SinkR>>::value,
-                std::nullptr_t> = nullptr>
+                    string_field_translator, std::decay_t<SinkR>>::value>*
+                        = nullptr>
     explicit string_field_translator(
         SinkR&& sink, SkippingHandlerR&& handle_skipping = SkippingHandler()) :
         at_(Allocator(),

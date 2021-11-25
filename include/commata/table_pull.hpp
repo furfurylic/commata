@@ -411,8 +411,8 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_same<TableSource, std::decay_t<TableSourceR>>::value,
-            std::nullptr_t> = nullptr>
+            std::is_same<TableSource, std::decay_t<TableSourceR>>::value>*
+                = nullptr>
     explicit primitive_table_pull(
         TableSourceR&& in, std::size_t buffer_size = 0) :
         primitive_table_pull(std::allocator_arg, Allocator(),
@@ -687,8 +687,8 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_same<TableSource, std::decay_t<TableSourceR>>::value,
-            std::nullptr_t> = nullptr>
+            std::is_same<TableSource, std::decay_t<TableSourceR>>::value>*
+                = nullptr>
     explicit table_pull(TableSourceR&& in, std::size_t buffer_size = 0) :
         table_pull(std::allocator_arg, Allocator(),
             std::forward<TableSourceR>(in), buffer_size)

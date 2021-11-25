@@ -117,8 +117,7 @@ public:
 
     template <class HandlerR,
         std::enable_if_t<
-            std::is_same<Handler, std::decay_t<HandlerR>>::value,
-            std::nullptr_t> = nullptr>
+            std::is_same<Handler, std::decay_t<HandlerR>>::value>* = nullptr>
     explicit full_fledged_handler(HandlerR&& handler,
         BufferControl&& buffer_engine = BufferControl())
         noexcept(std::is_nothrow_constructible<Handler, HandlerR>::value) :

@@ -673,8 +673,7 @@ public:
          || !std::is_base_of<
                 csv_source,
                 std::remove_const_t<std::remove_reference_t<
-                    detail::first_t<Args...>>>>::value,
-            std::nullptr_t> = nullptr>
+                    detail::first_t<Args...>>>>::value>* = nullptr>
     explicit csv_source(Args&&... args) noexcept(
             std::is_nothrow_constructible<CharInput, Args&&...>::value) :
         in_(std::forward<Args>(args)...)

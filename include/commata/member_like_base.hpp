@@ -27,8 +27,8 @@ class member_like_base<F,
 public:
     template <class... Args,
         std::enable_if_t<
-            !std::is_base_of<member_like_base, first_t<Args...>>::value,
-            std::nullptr_t> = nullptr>
+            !std::is_base_of<member_like_base, first_t<Args...>>::value>*
+                = nullptr>
     explicit member_like_base(Args&&... args)
         noexcept(std::is_nothrow_constructible<F, Args...>::value) :
         f_(std::forward<Args>(args)...)
@@ -54,8 +54,8 @@ class member_like_base<F,
 public:
     template <class... Args,
         std::enable_if_t<
-            !std::is_base_of<member_like_base, first_t<Args...>>::value,
-            std::nullptr_t> = nullptr>
+            !std::is_base_of<member_like_base, first_t<Args...>>::value>*
+                = nullptr>
     explicit member_like_base(Args&&... args)
         noexcept(std::is_nothrow_constructible<F, Args...>::value) :
         F(std::forward<Args>(args)...)

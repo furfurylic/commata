@@ -239,9 +239,7 @@ public:
     using allocator_type = Allocator;
 
     template <class FieldNamePredR, class FieldValuePredR,
-        std::enable_if_t<
-            !std::is_integral<FieldNamePredR>::value,
-            std::nullptr_t> = nullptr>
+        std::enable_if_t<!std::is_integral<FieldNamePredR>::value>* = nullptr>
     impl(
             std::allocator_arg_t, const Allocator& alloc,
             std::basic_streambuf<Ch, Tr>* out,

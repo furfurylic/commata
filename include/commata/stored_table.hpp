@@ -2093,8 +2093,8 @@ public:
     {}
 
     template <class E,
-              std::enable_if_t<!std::is_integral<std::decay_t<E>>::value,
-                               std::nullptr_t> = nullptr>
+              std::enable_if_t<!std::is_integral<std::decay_t<E>>::value>*
+                = nullptr>
     stored_table_builder(table_type& table, E&& e) :
         detail::stored::arrange<Content, Options>(table.content()),
         current_buffer_holder_(nullptr), current_buffer_(nullptr),
