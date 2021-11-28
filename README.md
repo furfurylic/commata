@@ -11,7 +11,7 @@ Just another header-only C++14 CSV parser
 
 Commata is written in C++14 and consists only of headers.
 All C++ codes in this repository shall compile and link with
-Microsoft Visual Studio 2015, 2019 and GCC 6.3.
+Microsoft Visual Studio 2015, 2019, GCC 6.3 and Clang 7.0.
 
 This repository also contains a test of it in `src_test` directory.
 Tests are written on [GoogleTest](https://github.com/google/googletest) v1.11.0.
