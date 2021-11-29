@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-11-29 (UTC)</signature>
+<signature>2021-12-11 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -539,8 +539,8 @@ namespace commata {
   class text_error_info {
   public:
     text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
-    text_error_info(const text_error_info&amp; other) noexcept;
-    text_error_info&amp; operator=(const text_error_info&amp; other) noexcept;
+    text_error_info(const text_error_info&amp; other) = default;
+    text_error_info&amp; operator=(const text_error_info&amp; other) = default;
 
     const text_error&amp; error() const noexcept;
     std::size_t get_base() const noexcept;
@@ -574,20 +574,6 @@ text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
 
       <code-item>
         <code>
-text_error_info(const text_error_info&amp; other) noexcept;
-        </code>
-        <effects>Initializes <c>e</c> with <c>other.e</c> and <c>b</c> with <c>other.b</c>.</effects>
-      </code-item>
-
-      <code-item>
-        <code>
-text_error_info&amp; operator=(const text_error_info&amp; other) noexcept;
-        </code>
-        <effects>Assigns <c>e</c> from <c>other.e</c> and <c>b</c> from <c>other.b</c>.</effects>
-      </code-item>
-
-      <code-item>
-        <code>
 const text_error&amp; error() const noexcept;
         </code>
         <returns><c>*e</c>.</returns>
@@ -614,7 +600,7 @@ template &lt;class Tr>
           </code>
           <effects>Behaves as a formatted output function of <c>os</c>.
                    Forms a character sequence <c>seq</c> of an unspecified concise character representation of <c>i.error()</c> from <c>i.error().what()</c> and <c>i.error().get_physical_position()</c>, in which the line number and the column number are <c>i.get_base()</c>-based.
-                 Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c> where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>. Then calls <c>os.width(0)</c>.</effects>
+                   Determines padding for <c>seq</c>. Then inserts <c>seq</c> as if by calling <c>os.rdbuf()->sputn(seq, n)</c> where <c>n</c> is the larger of <c>os.width()</c> and the size of <c>seq</c>. Then calls <c>os.width(0)</c>.</effects>
           <returns><c>os</c>.</returns>
           <remark>The second function template shall widen each character <c>c</c> in the null-terminated byte string pointed by <c>i.error().what()</c> with <c>os.widen(c)</c>.</remark>
           <note>The second function template may not recover the full information of <c>i.error().what()</c> when it is an NTMBS because of the nature of <c>std::basic_ostream&lt;wchar_t, Tr>::widen</c>.</note>
@@ -691,9 +677,9 @@ template &lt;class Handler>
     make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
         </code>
         <preface>For the first form, let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
-        <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements, except that in the second form it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
+        <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>), except that in the second form it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
         <returns><p>An object of an unspecified type whose type meets the <c>TableHandler</c> requirements and that holds an object <c>h</c> that is a copy of <c>handler</c> (first form) or a reference to <c>handler.get()</c> (second form).
-                    It forwards calls of its member functions to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
+                    It forwards calls of its member functions required to meet to the <c>TableHandler</c> requirements to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
                     it first calls <c>h.start_record(where)</c>, and if its contextually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
                     Its return type and the return value are as follows:</p>
                  <ul>
@@ -1622,7 +1608,7 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
                     <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
           <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>).
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (<c>&amp;</c> ref-qualifier version) or <c>std::move(in)</c> (<c>&amp;&amp;</c> ref-qualifier version) as its tied character input,
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character input,
                    an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
           <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
@@ -1677,20 +1663,20 @@ template &lt;class CharInput>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
         </code-item>
       </section>
-    </section>
 
-    <section id="csv_source.creation">
-      <name><c>csv_source</c> creation functions</name>
+      <section id="csv_source.creation">
+        <name><c>csv_source</c> creation functions</name>
 
-      <code-item>
-        <code>
+        <code-item>
+          <code>
 template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
   -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
-        </code>
-        <preface>Let <c>I</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
-        <returns><c>csv_source&lt;I>(std::forward&lt;Args>(args)...)</c>.</returns>
-        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;I, Args...>::value</c>.</remark>
-      </code-item>
+          </code>
+          <preface>Let <c>I</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
+          <returns><c>csv_source&lt;I>(std::forward&lt;Args>(args)...)</c>.</returns>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;I, Args...>::value</c>.</remark>
+        </code-item>
+      </section>
     </section>
 
     <section id="parse_csv">
@@ -4669,7 +4655,7 @@ const T* operator->() const;
           <code>
 void swap(replacement&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <requires><c>T</c> shall be <c>MmoveConstructible</c>.
+          <requires><c>T</c> shall be <c>MoveConstructible</c>.
                     If both of <c>*this</c> and <c>other</c> contain values, they shall be swappable with each other.</requires>
           <effects>Exchanges the contained values of <c>*this</c> and <c>other</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;T&amp;>(), std::declval&lt;T&amp;>())) &amp;&amp; std::is_nothrow_move_constructible&lt;T>::value</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
@@ -5846,7 +5832,7 @@ void operator()();
 
         <p>In addition, an expression <c><n>INSERTER</n>(s)</c> for an lvalue <c>s</c> of a cv-unqualified type <c>S</c> is defined as follows:</p>
          <ul>
-           <li>if <c>s.push_back(std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand., <c>std::back_inserter(s)</c>,</li>
+           <li>if <c>s.push_back(std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::back_inserter(s)</c>,</li>
            <li>otherwise, if <c>s.insert(s.end(), std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::inserter(s, s.end())</c>,</li>
            <li>otherwise, the program is ill-formed.</li>
          </ul>
@@ -6007,7 +5993,7 @@ template &lt;class Allocator, class Container, class... Appendices>
             <td><c>ct(h)</c></td>
             <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
             <td rowspan="2">Creates a table parser object <c>p</c> that has its tied character input object which is copy constructed (on (3)) or move constructed (on (4)) from the wrapped character input object of <c>*this</c> and
-                its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with from <c>h</c> (otherwise).
+                its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with <c>h</c> (otherwise).
                 Then returns <c>p</c>.</td>
           </tr>
 
