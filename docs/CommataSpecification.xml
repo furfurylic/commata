@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-09-26 (UTC)</signature>
+<signature>2021-11-29 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1268,7 +1268,7 @@ namespace commata {
     owned_string_input(owned_string_input&amp;&amp; other) noexcept;
    ~owned_string_input() = default;
     owned_string_input&amp; operator=(const owned_string_input&amp; other);
-    owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) : noexcept(<nc>see below</nc>);
+    owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="owned_string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
@@ -1335,7 +1335,7 @@ owned_string_input&amp; operator=(const owned_string_input&amp; other);
 
         <code-item>
           <code>
-owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) : noexcept(<nc>see below</nc>);
+owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Assigns <c>std::move(other.s)</c> to <c>s</c> and <c>other.head</c> to <c>head</c>, and then assigns <c>other.size()</c> to <c>other.head</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable&lt;std::basic_string&lt;Ch, Tr, Allocator>>::value</c>.</remark>
