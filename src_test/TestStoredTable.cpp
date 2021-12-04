@@ -1389,7 +1389,8 @@ static_assert(
     std::is_nothrow_move_constructible<
         stored_table_builder<
             stored_table::content_type,
-            stored_table::allocator_type, true>>::value, "");
+            stored_table::allocator_type,
+            stored_table_builder_option_transpose>>::value, "");
 
 struct TestStoredTableReusingBuffer : BaseTest
 {
