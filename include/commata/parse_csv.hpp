@@ -842,7 +842,7 @@ public:
     }
 
     template <class Handler, class... Args>
-    auto operator()(const std::reference_wrapper<Handler>& handler,
+    auto operator()(std::reference_wrapper<Handler> handler,
             Args&&... args) const&
         noexcept(std::is_nothrow_copy_constructible<CharInput>::value)
      -> decltype((*this)(detail::wrapper_handler<Handler>(
@@ -853,7 +853,7 @@ public:
     }
 
     template <class Handler, class... Args>
-    auto operator()(const std::reference_wrapper<Handler>& handler,
+    auto operator()(std::reference_wrapper<Handler> handler,
             Args&&... args) &&
         noexcept(std::is_nothrow_move_constructible<CharInput>::value)
      -> decltype(std::move(*this)(detail::wrapper_handler<Handler>(

@@ -135,7 +135,7 @@ auto make_empty_physical_line_aware(Handler&& handler)
 
 template <class Handler>
 auto make_empty_physical_line_aware(
-    const std::reference_wrapper<Handler>& handler) noexcept
+    std::reference_wrapper<Handler> handler) noexcept
  -> detail::empty_physical_line_aware::handler<Handler&>
 {
     return detail::empty_physical_line_aware::handler<Handler&>(handler.get());

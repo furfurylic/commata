@@ -659,7 +659,7 @@ namespace commata {
       make_empty_physical_line_aware(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
   template &lt;class Handler>
     <nc>see below</nc>
-      make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
+      make_empty_physical_line_aware(std::reference_wrapper&lt;Handler> handler) noexcept;
 }
       </codeblock>
     </section>
@@ -674,7 +674,7 @@ template &lt;class HandlerR>
     make_empty_physical_line_aware(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
 template &lt;class Handler>
   <nc>see below</nc>
-    make_empty_physical_line_aware(const std::reference_wrapper&lt;Handler>&amp; handler) noexcept;
+    make_empty_physical_line_aware(std::reference_wrapper&lt;Handler> handler) noexcept;
         </code>
         <preface>For the first form, let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
         <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>), except that in the second form it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
@@ -1498,10 +1498,10 @@ namespace commata {
         operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
                    const Allocator&amp; alloc = Allocator())     &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
-      <nc>see below</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
+      <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                            Args&amp;&amp;... args) const&amp; noexcept;
     template &lt;class Handler, class... Args>
-      <nc>see below</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
+      <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                            Args&amp;&amp;... args)     &amp;&amp; noexcept;
 
     <c>// <n><xref id="csv_source.modifiers"/>, modifiers:</n></c>
@@ -1620,10 +1620,10 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
         <code-item>
           <code>
 template &lt;class Handler, class... Args>
-  <nc>see below</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
+  <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                        Args&amp;&amp;... args) const&amp; noexcept;
 template &lt;class Handler, class... Args>
-  <nc>see below</nc> operator()(const std::reference_wrapper&lt;Handler>&amp; handler,
+  <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                        Args&amp;&amp;... args)     &amp;&amp; noexcept;
           </code>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>,
