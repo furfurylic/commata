@@ -24,7 +24,7 @@ class handler_base
         return static_cast<D*>(this);
     }
 
-    void empty_physical_line(const Ch* where, std::true_type)
+    void empty_physical_line_impl(const Ch* where, std::true_type)
         noexcept(noexcept(std::declval<D&>().start_record(where))
               && noexcept(std::declval<D&>().end_record(where)))
     {
@@ -32,7 +32,7 @@ class handler_base
         d()->end_record(where);
     }
 
-    auto empty_physical_line(const Ch* where, std::false_type)
+    auto empty_physical_line_impl(const Ch* where, std::false_type)
         noexcept(noexcept(std::declval<D&>().start_record(where))
               && noexcept(std::declval<D&>().end_record(where)))
     {
@@ -60,7 +60,7 @@ public:
         noexcept(noexcept(std::declval<D&>().start_record(where))
               && noexcept(std::declval<D&>().end_record(where)))
     {
-        return empty_physical_line(where,
+        return empty_physical_line_impl(where,
             std::integral_constant<bool,
                 std::is_void<decltype(d()->start_record(where))>::value
              && std::is_void<decltype(d()->end_record(where))>::value>());
@@ -93,29 +93,77 @@ public:
     {
         return handler_;
     }
+
+    using handler_base<handler<Handler>, typename Handler::char_type>::
+        empty_physical_line;
 };
+
+template <class Handler>
+auto make(Handler&& h)
+    noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
+ -> std::enable_if_t<
+        !is_std_reference_wrapper<std::decay_t<Handler>>::value
+     && !has_empty_physical_line<std::decay_t<Handler>>::value,
+        handler<std::decay_t<Handler>>>
+{
+    return handler<std::decay_t<Handler>>(std::forward<Handler>(h));
+}
+
+template <class Handler>
+auto make(Handler&& h) noexcept
+ -> std::enable_if_t<
+        has_empty_physical_line<std::decay_t<Handler>>::value,
+        std::decay_t<Handler>>
+{
+    return std::forward<Handler>(h);
+}
+
+template <class Handler>
+auto make(std::reference_wrapper<Handler> h) noexcept
+ -> std::enable_if_t<
+        !has_empty_physical_line<Handler>::value,
+        handler<detail::wrapper_handler<Handler>>>
+{
+    return make(wrapper_handler<Handler>(h.get()));
+}
+
+template <class Handler>
+auto make(std::reference_wrapper<Handler> h) noexcept
+ -> std::enable_if_t<
+        has_empty_physical_line<Handler>::value,
+        wrapper_handler<Handler>>
+{
+    return wrapper_handler<Handler>(h.get());
+}
 
 }} // end detail::empty_physical_line_aware
 
 template <class Handler>
 auto make_empty_physical_line_aware(Handler&& handler)
-    noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
+    noexcept(
+        std::is_nothrow_constructible<std::decay_t<Handler>, Handler>::value)
  -> std::enable_if_t<
         !detail::is_std_reference_wrapper<std::decay_t<Handler>>::value,
-        detail::empty_physical_line_aware::handler<std::decay_t<Handler>>>
+        std::conditional_t<
+            detail::has_empty_physical_line<std::decay_t<Handler>>::value,
+            std::decay_t<Handler>,
+            detail::empty_physical_line_aware::handler<std::decay_t<Handler>>>>
 {
-    return detail::empty_physical_line_aware::handler<
-        std::decay_t<Handler>>(std::forward<Handler>(handler));
+    return detail::empty_physical_line_aware::
+        make(std::forward<Handler>(handler));
 }
 
 template <class Handler>
 auto make_empty_physical_line_aware(
     std::reference_wrapper<Handler> handler) noexcept
- -> detail::empty_physical_line_aware::handler<
-        detail::wrapper_handler<Handler>>
+ -> std::conditional_t<
+        detail::has_empty_physical_line<Handler>::value,
+        detail::wrapper_handler<Handler>,
+        detail::empty_physical_line_aware::handler<
+            detail::wrapper_handler<Handler>>>
 {
     return make_empty_physical_line_aware(
-        detail::wrapper_handler<Handler>(handler.get()));
+        detail::wrapper_handler<Handler>(handler));
 }
 
 }

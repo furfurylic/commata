@@ -65,6 +65,23 @@ public:
     {}
 };
 
+struct test_collector_empty_line_aware : test_collector<char>
+{
+    using test_collector::test_collector;
+
+    void empty_physical_line(const char* where)
+    {
+        const char underlines[] = "___";
+        start_record(where);
+        finalize(underlines, underlines + (sizeof underlines) - 1);
+            // These arguments do not satisfy TableHandler's requirements
+            // (args of finalize shall point a range in the start and end of
+            // the record), but that is fine because we know the implementation
+            // of test_collector::finalize
+        end_record(where);
+    }
+};
+
 template <class Ch>
 class test_collector2
 {
@@ -203,6 +220,20 @@ TEST_P(TestParseCsvBasics, EmptyLineAware)
     ASSERT_EQ(expected_row5, field_values[5]);
 }
 
+TEST_P(TestParseCsvBasics, AlreadyEmptyPhysicalLineAware)
+{
+    std::string s = "\n"
+                    "ABC";
+    std::vector<std::vector<std::string>> field_values;
+    ASSERT_TRUE(parse_csv(s, make_empty_physical_line_aware(
+        test_collector_empty_line_aware(field_values)), GetParam()));
+    ASSERT_EQ(2U, field_values.size());
+    ASSERT_EQ(1U, field_values[0].size());
+    ASSERT_STREQ("___", field_values[0][0].c_str());
+    ASSERT_EQ(1U, field_values[1].size());
+    ASSERT_STREQ("ABC", field_values[1][0].c_str());
+}
+
 INSTANTIATE_TEST_SUITE_P(,
     TestParseCsvBasics, testing::Values(1, 10, 1024));
 
@@ -234,6 +265,21 @@ TEST_F(TestParseCsvReference, EmptyLineAware)
     ASSERT_EQ(2U, collector.field_values()[2].size());
     ASSERT_EQ("C", collector.field_values()[2][0]);
     ASSERT_EQ("D", collector.field_values()[2][1]);
+}
+
+TEST_F(TestParseCsvReference, AlreadyEmptyPhysicalLineAware)
+{
+    std::string s = "\n"
+                    "ABC";
+    std::vector<std::vector<std::string>> field_values;
+    test_collector_empty_line_aware collector(field_values);
+    auto sink = make_empty_physical_line_aware(std::ref(collector));
+    ASSERT_TRUE(parse_csv(std::istringstream(s), std::move(sink)));
+    ASSERT_EQ(2U, field_values.size());
+    ASSERT_EQ(1U, field_values[0].size());
+    ASSERT_STREQ("___", field_values[0][0].c_str());
+    ASSERT_EQ(1U, field_values[1].size());
+    ASSERT_STREQ("ABC", field_values[1][0].c_str());
 }
 
 static_assert(std::is_same<
