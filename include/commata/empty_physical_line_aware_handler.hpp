@@ -95,31 +95,6 @@ public:
     }
 };
 
-template <class Handler>
-class handler<Handler&> :
-    public handler_decorator<Handler, handler<Handler&>>,
-    public handler_base<handler<Handler&>, typename Handler::char_type>
-{
-    Handler* handler_;
-
-public:
-    explicit handler(Handler& h) noexcept :
-        handler_(std::addressof(h))
-    {}
-
-    // Defaulted move ctor is all right
-
-    Handler& base() noexcept
-    {
-        return *handler_;
-    }
-
-    const Handler& base() const noexcept
-    {
-        return *handler_;
-    }
-};
-
 }} // end detail::empty_physical_line_aware
 
 template <class Handler>
@@ -136,9 +111,11 @@ auto make_empty_physical_line_aware(Handler&& handler)
 template <class Handler>
 auto make_empty_physical_line_aware(
     std::reference_wrapper<Handler> handler) noexcept
- -> detail::empty_physical_line_aware::handler<Handler&>
+ -> detail::empty_physical_line_aware::handler<
+        detail::wrapper_handler<Handler>>
 {
-    return detail::empty_physical_line_aware::handler<Handler&>(handler.get());
+    return make_empty_physical_line_aware(
+        detail::wrapper_handler<Handler>(handler.get()));
 }
 
 }
