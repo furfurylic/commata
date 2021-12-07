@@ -16,28 +16,59 @@
 namespace commata {
 namespace detail { namespace empty_physical_line_aware {
 
-template <class D, class Ch>
-class handler_base
+template <class Handler>
+class handler :
+    public handler_decorator<Handler, handler<Handler>>
 {
-    D* d() noexcept
+    Handler handler_;
+
+public:
+    using char_type = typename Handler::char_type;
+
+    template <class A,
+        std::enable_if_t<std::is_constructible<Handler, A>::value>* = nullptr>
+    explicit handler(A&& h)
+        noexcept(std::is_nothrow_constructible<Handler, A>::value) :
+        handler_(std::forward<A>(h))
+    {}
+
+    // Defaulted move ctor is all right
+
+    auto empty_physical_line(const char_type* where)
+        noexcept(noexcept(std::declval<handler&>().start_record(where))
+              && noexcept(std::declval<handler&>().end_record(where)))
     {
-        return static_cast<D*>(this);
+        return empty_physical_line_impl(where,
+            std::integral_constant<bool,
+                std::is_void<decltype(this->start_record(where))>::value
+             && std::is_void<decltype(this->end_record(where))>::value>());
     }
 
-    void empty_physical_line_impl(const Ch* where, std::true_type)
-        noexcept(noexcept(std::declval<D&>().start_record(where))
-              && noexcept(std::declval<D&>().end_record(where)))
+    Handler& base() noexcept
     {
-        d()->start_record(where);
-        d()->end_record(where);
+        return handler_;
     }
 
-    auto empty_physical_line_impl(const Ch* where, std::false_type)
-        noexcept(noexcept(std::declval<D&>().start_record(where))
-              && noexcept(std::declval<D&>().end_record(where)))
+    const Handler& base() const noexcept
     {
-        return essay([t = d(), where] { return t->start_record(where); })
-            && essay([t = d(), where] { return t->end_record(where); });
+        return handler_;
+    }
+
+private:
+    void empty_physical_line_impl(const char_type* where, std::true_type)
+        noexcept(noexcept(std::declval<handler&>().start_record(where))
+              && noexcept(std::declval<handler&>().end_record(where)))
+    {
+        this->start_record(where);
+        this->end_record(where);
+    }
+
+    auto empty_physical_line_impl(const char_type* where, std::false_type)
+        noexcept(noexcept(std::declval<handler&>().start_record(where))
+              && noexcept(std::declval<handler&>().end_record(where)))
+    {
+        return essay([this, where] { return this->start_record(where); })
+            && essay([this, where] { return this->end_record(where); });
     }
 
     template <class F>
@@ -54,48 +85,6 @@ class handler_base
     {
         return f();
     }
-
-public:
-    auto empty_physical_line(const Ch* where)
-        noexcept(noexcept(std::declval<D&>().start_record(where))
-              && noexcept(std::declval<D&>().end_record(where)))
-    {
-        return empty_physical_line_impl(where,
-            std::integral_constant<bool,
-                std::is_void<decltype(d()->start_record(where))>::value
-             && std::is_void<decltype(d()->end_record(where))>::value>());
-    }
-};
-
-template <class Handler>
-class handler :
-    public handler_decorator<Handler, handler<Handler>>,
-    public handler_base<handler<Handler>, typename Handler::char_type>
-{
-    Handler handler_;
-
-public:
-    template <class A,
-        std::enable_if_t<std::is_constructible<Handler, A>::value>* = nullptr>
-    explicit handler(A&& h)
-        noexcept(std::is_nothrow_constructible<Handler, A>::value) :
-        handler_(std::forward<A>(h))
-    {}
-
-    // Defaulted move ctor is all right
-
-    Handler& base() noexcept
-    {
-        return handler_;
-    }
-
-    const Handler& base() const noexcept
-    {
-        return handler_;
-    }
-
-    using handler_base<handler<Handler>, typename Handler::char_type>::
-        empty_physical_line;
 };
 
 template <class Handler>
