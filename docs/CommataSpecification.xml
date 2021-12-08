@@ -653,10 +653,16 @@ namespace commata {
 #include &lt;functional>
 
 namespace commata {
-  <c>// <n><xref id="empty_physical_line_aware_handler"/>, creation of table handler wrappers aware of empty physical lines:</n></c>
-  template &lt;class Handler>
+  <c>// <n><xref id="empty_physical_line_aware_handler"/>, empty_physical_line_aware_handler:</n></c>
+  template &lt;class Handler> class empty_physical_line_aware_handler;
+
+  template &lt;class Handler> void swap(
+    empty_physical_line_aware_handler&lt;Handler>&amp; left,
+    empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(<nc>see below</nc>);
+
+  template &lt;class HandlerR>
     <nc>see below</nc>
-      make_empty_physical_line_aware(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
+      make_empty_physical_line_aware(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
   template &lt;class Handler>
     <nc>see below</nc>
       make_empty_physical_line_aware(std::reference_wrapper&lt;Handler> handler) noexcept;
@@ -665,41 +671,306 @@ namespace commata {
     </section>
 
     <section id="empty_physical_line_aware_handler">
-      <name>Creation of table handler wrappers aware of empty physical lines</name>
+      <name>Class template <c>empty_physical_line_aware_handler</c></name>
 
-      <code-item>
-        <code>
+      <codeblock>
+namespace commata {
+  template &lt;class Handler> class empty_physical_line_aware_handler {
+  public:
+    using char_type    = typename Handler::char_type;
+    using handler_type = Handler;
+
+    <c>// <n><xref id="empty_physical_line_aware_handler.cons"/>, construct/copy/destroy:</n></c>
+    template &lt;class... Args> explicit empty_physical_line_aware_handler(
+      Args&amp;&amp;... args)                                  noexcept(<nc>see below</nc>);
+    empty_physical_line_aware_handler(
+      const empty_physical_line_aware_handler&amp;  other) noexcept(<nc>see below</nc>);
+    empty_physical_line_aware_handler(
+            empty_physical_line_aware_handler&amp;&amp; other) noexcept(<nc>see below</nc>);
+   ~empty_physical_line_aware_handler();
+    empty_physical_line_aware_handler&amp; operator=(
+      const empty_physical_line_aware_handler&amp;  other) noexcept(<nc>see below</nc>);
+    empty_physical_line_aware_handler&amp; operator=(
+            empty_physical_line_aware_handler&amp;&amp; other) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="empty_physical_line_aware_handler.access"/>, access:</n></c>
+    const handler_type&amp; base() const noexcept;
+          handler_type&amp; base()       noexcept;
+
+    <c>// <n><xref id="empty_physical_line_aware_handler.inv"/>, invocation:</n></c>
+    <nc>see below</nc> get_buffer()                                            noexcept(<nc>see below</nc>);
+    <nc>see below</nc> release_buffer(const char_type* buffer)                 noexcept(<nc>see below</nc>);
+    <nc>see below</nc> start_buffer(const char_type* buffer_begin,
+                           const char_type* buffer_end)               noexcept(<nc>see below</nc>);
+    <nc>see below</nc> end_buffer(const char_type* buffer_end)                 noexcept(<nc>see below</nc>);
+    <nc>see below</nc> empty_physical_line(const char_type* where)             noexcept(<nc>see below</nc>);
+    <nc>see below</nc> start_record(const char_type* record_begin)             noexcept(<nc>see below</nc>);
+    <nc>see below</nc> end_record(const char_type* record_end)                 noexcept(<nc>see below</nc>);
+    <nc>see below</nc> update(const char_type* first, const char_type* last)   noexcept(<nc>see below</nc>);
+    <nc>see below</nc> finalize(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
+    <nc>see below</nc> yield(std::size_t p)                                    noexcept(<nc>see below</nc>);
+    <nc>see below</nc> yield_location() const                                  noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="empty_physical_line_aware_handler.modifiers"/>, modifiers:</n></c>
+    void swap(empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
+  };
+
+  <c>// <n><xref id="empty_physical_line_aware_handler.special"/>, specialized algorithms:</n></c>
+  template &lt;class Handler> void swap(
+    empty_physical_line_aware_handler&lt;Handler>&amp; left,
+    empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(<nc>see below</nc>);
+
+  <c>// <n><xref id="empty_physical_line_aware_handler.creation"/>, creation functions:</n></c>
+  template &lt;class HandlerR>
+    <nc>see below</nc>
+      make_empty_physical_line_aware(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
+  template &lt;class Handler>
+    <nc>see below</nc>
+      make_empty_physical_line_aware(std::reference_wrapper&lt;Handler> handler) noexcept;
+}
+      </codeblock>
+
+      <p>An object of <c>empty_physical_line_aware_handler&lt;Handler></c> is a wrapper around an object of <c>Handler</c> that is a table handler type.
+         It offers functionality to translate an invocation of <c>empty_physical_line</c> to <c>start_record</c> and <c>end_record</c>.</p>
+      <p>The template parameter <c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</p>
+      <p><c>empty_physical_line_aware_handler&lt;Handler></c> meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Handler::char_type</c>.</p>
+
+      <section id="empty_physical_line_aware_handler.cons">
+        <name><c>empty_physical_line_aware_handler</c> construct/copy/destroy</name>
+
+        <code-item>
+          <code>
+template &lt;class... Args>
+  explicit empty_physical_line_aware_handler(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+          </code>
+          <requires><c>std::is_constructible&lt;Handler, Args&amp;&amp;...>::value</c> shall be <c>true</c>.</requires>
+          <effects>Constructs an <c>empty_physical_line_aware_handler</c> object that stores a <c>Handler</c> object constructed with <c>std::forward&lt;Args>(args)...</c>.</effects>
+          <remark>This constructor shall not participate in overload resolution if <c>sizeof...(Args) == 1</c> and <c>std::is_base_of&lt;empty_physical_line_aware_handler, std::decay_t&lt;Args>...>::value</c> is <c>true</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, Args&amp;&amp;...>::value</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+empty_physical_line_aware_handler(
+  const empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <requires><c>std::is_copy_constructible&lt;Handler>::value</c> shall be <c>true</c>.</requires>
+          <effects>Constructs an <c>empty_physical_line_aware_handler</c> object that stores a <c>Handler</c> object constructed with <c>other.base()</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;Handler>::value</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+empty_physical_line_aware_handler(
+  empty_physical_line_aware_handler&amp;&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Constructs an <c>empty_physical_line_aware_handler</c> object that stores a <c>Handler</c> object constructed with <c>std::move(other.base())</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;Handler>::value</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+~empty_physical_line_aware_handler();
+          </code>
+          <effects>Destroys the stored <c>Handler</c> object.</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+empty_physical_line_aware_handler&amp; operator=(
+  const empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <effects><p>Equivalent to:</p>
+                 <code>base() = other.base();
+return *this;</code>
+          </effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_assignable&lt;Handler>::value</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+empty_physical_line_aware_handler&amp; operator=(
+  empty_physical_line_aware_handler&amp;&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <effects><p>Equivalent to:</p>
+                   <code>base() = std::move(other.base());
+return *this;</code>
+          </effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable&lt;Handler>::value</c>.</remark>
+        </code-item>
+      </section>
+
+      <section id="empty_physical_line_aware_handler.access">
+        <name><c>empty_physical_line_aware_handler</c> access</name>
+
+        <code-item>
+          <code>
+const handler_type&amp; base() const noexcept;
+      handler_type&amp; base()       noexcept;
+          </code>
+          <returns>A reference to the stored <c>Handler</c> object.</returns>
+        </code-item>
+      </section>
+
+      <section id="empty_physical_line_aware_handler.inv">
+        <name><c>empty_physical_line_aware_handler</c> invocation</name>
+
+        <code-item>
+          <code>
+<nc>see below</nc> get_buffer() noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().get_buffer();</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().get_buffer()</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().get_buffer())</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> release_buffer(const char_type* buffer) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().release_buffer(buffer);</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().release_buffer(buffer)</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().release_buffer(buffer))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> start_buffer(const char_type* buffer_begin,
+                       const char_type* buffer_end) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> end_buffer(const char_type* buffer_end) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().end_buffer(buffer_end))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> empty_physical_line(const char_type* where) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>First calls <c>base().start_record(where)</c>, and unless the return type is contextually convertible to <c>bool</c> and the contextually converted value of the return value to <c>bool</c> is <c>false</c>, next calls <c>base().end_record(where)</c>.</effects>
+          <returns>If both of the return types of <c>base().start_record(where)</c> and <c>base().end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>.
+                   Otherwise, the return type shall be <c>bool</c>, and the return value shall be <c>true</c> unless either call of <c>base().start_record(where)</c> or <c>base().end_record(where)</c> returned a value whose type is contextually convertible to <c>bool</c> and whose contexually converted value <c>bool</c> is <c>false</c>.</returns>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_record(where)) &amp;&amp; noexcept(std::declval&lt;Handler&amp;>().end_record(where))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> start_record(const char_type* record_begin) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_record(record_begin))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> end_record(const char_type* record_end) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().end_record(record_end))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> update(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().update(first, last))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> finalize(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().finalize(first, last))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> yield(std::size_t p) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().yield(p);</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().yield(p)</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().yield(p))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> yield_location() const noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().yield_location();</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;const Handler&amp;>().yield_location()</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;const Handler&amp;>().yield_location())</c>.</remark>
+        </code-item>
+      </section>
+
+      <section id="empty_physical_line_aware_handler.modifiers">
+        <name><c>empty_physical_line_aware_handler</c> modifiers</name>
+
+        <code-item>
+          <code>
+void swap(empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
+          </code>
+          <requires><c>base()</c> and <c>other.base()</c> shall be swappable with each other.</requires>
+          <effects>Exchanges the contained values of <c>base()</c> and <c>other.base()</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;Handler&amp;>(), std::declval&lt;Handler&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
+        </code-item>
+
+      </section>
+
+      <section id="empty_physical_line_aware_handler.special">
+        <name><c>empty_physical_line_aware_handler</c> specialized algorithms</name>
+
+        <code-item>
+          <code>
+template &lt;class Handler> void swap(
+  empty_physical_line_aware_handler&lt;Handler>&amp; left,
+  empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>left.swap(right);</c></effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+        </code-item>
+      </section>
+
+      <section id="empty_physical_line_aware_handler.creation">
+        <name><c>empty_physical_line_aware_handler</c> creation functions</name>
+
+        <code-item>
+          <code>
 template &lt;class HandlerR>
   <nc>see below</nc>
     make_empty_physical_line_aware(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
-        </code>
-        <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
-        <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</requires>
-        <returns><p>If <c>Handler</c> has <c>empty_physical_line</c> member function that meets to the <c>TableHandler</c> requirements, <c>Handler(std::forward&lt;HandlerR>(handler))</c>.
-                    Otherwise, an object of an unspecified type whose type meets the <c>TableHandler</c> requirements and that holds an object <c>h</c>, which is a copy of <c>handler</c>.
-                    It forwards calls of its member functions required to meet to the <c>TableHandler</c> requirements to <c>h</c>; except that when its <c>empty_physical_line</c> member function is called with an argument <c>where</c>,
-                    it first calls <c>h.start_record(where)</c>, and if its contextually converted return value to <c>bool</c> is not <c>false</c>, next calls <c>h.end_record(where)</c>.
-                    Its return type and its return value are as follows:</p>
-                    <ul>
-                      <li>if both of the return types of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>,</li>
-                      <li>otherwise, the return type shall be <c>bool</c>, and the return value shall be <c>true</c> if and only if none of the the return values contextually converted to <c>bool</c> of <c>h.start_record(where)</c> and <c>h.end_record(where)</c> is <c>false</c>.</li>
-                    </ul></returns>
-        <remark>This overload shall not participate in overload resolution unless <c>Handler</c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
-                The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value</c>.</remark>
-      </code-item>
+          </code>
+          <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
+          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</requires>
+          <returns>If <c>Handler</c> has <c>empty_physical_line</c> member function that meets to the <c>TableHandler</c> requirements, an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c>.
+                   Otherwise, an object of <c>empty_physical_line_aware_handler&lt;Handler></c> constructed with <c>std::forward&lt;HandlerR>(handler)</c>.</returns>
+          <remark>This overload shall not participate in overload resolution unless <c>Handler</c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value</c>.</remark>
+        </code-item>
 
-      <code-item>
-        <code>
+        <code-item>
+          <code>
 template &lt;class Handler>
   <nc>see below</nc>
     make_empty_physical_line_aware(std::reference_wrapper&lt;Handler> handler) noexcept;
-        </code>
-        <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>), except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
-        <effects>First makes an object (hereinafter called <c>hh</c>) of an unspecified type whose type meets the <c>TableHandler</c> requirements, that holds a reference to <c>handler.get()</c> (hereinafter called <c>rh</c>),
-                 and that forwards calls of its member functions required to meet to the <c>TableHandler</c> requirements to <c>rh</c>.
-                 Then invokes <c>make_empty_physical_line_aware(std::move(hh))</c>.</effects>
-        <returns>The return value of the last call above.</returns>
-      </code-item>
+          </code>
+          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>), except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
+          <effects>First makes an object (hereinafter called <c>hh</c>) of an unspecified type whose type meets the <c>TableHandler</c> requirements, that holds a reference to <c>handler.get()</c> (hereinafter called <c>rh</c>),
+                   and that forwards calls of its member functions required to meet to the <c>TableHandler</c> requirements to <c>rh</c>.
+                   Then invokes <c>make_empty_physical_line_aware(std::move(hh))</c>.</effects>
+          <returns>The return value of the last call above.</returns>
+        </code-item>
+      </section>
     </section>
   </section>
 </section>

@@ -116,8 +116,7 @@ template <class Handler, class D>
 struct get_buffer_t<Handler, D,
     std::enable_if_t<has_get_buffer<Handler>::value>>
 {
-    std::pair<typename Handler::char_type*, std::size_t> get_buffer()
-        noexcept(noexcept(std::declval<Handler&>().get_buffer()))
+    auto get_buffer() noexcept(noexcept(std::declval<Handler&>().get_buffer()))
     {
         return static_cast<D*>(this)->base().get_buffer();
     }
@@ -136,10 +135,10 @@ template <class Handler, class D>
 struct release_buffer_t<Handler, D,
     std::enable_if_t<has_release_buffer<Handler>::value>>
 {
-    void release_buffer(const typename Handler::char_type* buffer)
+    auto release_buffer(const typename Handler::char_type* buffer)
         noexcept(noexcept(std::declval<Handler&>().release_buffer(buffer)))
     {
-        static_cast<D*>(this)->base().release_buffer(buffer);
+        return static_cast<D*>(this)->base().release_buffer(buffer);
     }
 };
 
@@ -156,13 +155,14 @@ template <class Handler, class D>
 struct start_buffer_t<Handler, D,
     std::enable_if_t<has_start_buffer<Handler>::value>>
 {
-    void start_buffer(
+    auto start_buffer(
         const typename Handler::char_type* buffer_begin,
         const typename Handler::char_type* buffer_end)
         noexcept(noexcept(
             std::declval<Handler&>().start_buffer(buffer_begin, buffer_end)))
     {
-        static_cast<D*>(this)->base().start_buffer(buffer_begin, buffer_end);
+        return static_cast<D*>(this)->base().start_buffer(
+            buffer_begin, buffer_end);
     }
 };
 
@@ -179,10 +179,10 @@ template <class Handler, class D>
 struct end_buffer_t<Handler, D,
     std::enable_if_t<has_end_buffer<Handler>::value>>
 {
-    void end_buffer(const typename Handler::char_type* buffer_end)
+    auto end_buffer(const typename Handler::char_type* buffer_end)
         noexcept(noexcept(std::declval<Handler&>().end_buffer(buffer_end)))
     {
-        static_cast<D*>(this)->base().end_buffer(buffer_end);
+        return static_cast<D*>(this)->base().end_buffer(buffer_end);
     }
 };
 
