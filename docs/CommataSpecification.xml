@@ -273,7 +273,7 @@
 
         <tr>
           <td>(12)</td>
-          <td><c>ct.yield_position()</c></td>
+          <td><c>ct.yield_location()</c></td>
           <td><c>std::size_t</c></td>
           <td><p>Called when the parser is about to start the execution or restart the execution after a suspension due to the latest return value of (11).</p>
               <p>Shall return <c>0</c> if (11) has never be called; otherwise shall return the value of the parameter <c>p</c> of the latest call of (11).</p></td>
