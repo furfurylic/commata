@@ -137,6 +137,10 @@ private:
 };
 
 template <class Handler>
+empty_physical_line_aware_handler(Handler)
+ -> empty_physical_line_aware_handler<Handler>;
+
+template <class Handler>
 void swap(
     empty_physical_line_aware_handler<Handler>& left,
     empty_physical_line_aware_handler<Handler>& right)
@@ -159,7 +163,7 @@ auto make_empty_physical_line_aware(Handler&& handler)
     if constexpr (detail::has_empty_physical_line_v<std::decay_t<Handler>>) {
         return std::forward<Handler>(handler);
     } else {
-        return empty_physical_line_aware_handler<std::decay_t<Handler>>(
+        return empty_physical_line_aware_handler(
                     std::forward<Handler>(handler));
     }
 }

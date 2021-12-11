@@ -679,6 +679,9 @@ namespace commata {
   <c>// <n><xref id="empty_physical_line_aware_handler"/>, empty_physical_line_aware_handler:</n></c>
   template &lt;class Handler> class empty_physical_line_aware_handler;
 
+　template &lt;class Handler>
+    empty_physical_line_aware_handler(Handler) -> empty_physical_line_aware_handler&lt;Handler>;
+
   template &lt;class Handler> void swap(
     empty_physical_line_aware_handler&lt;Handler>&amp; left,
     empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(<nc>see below</nc>);
@@ -952,6 +955,9 @@ namespace commata {
     <c>// <n><xref id="empty_physical_line_aware_handler.modifiers"/>, modifiers:</n></c>
     void swap(empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
   };
+
+　template &lt;class Handler>
+    empty_physical_line_aware_handler(Handler) -> empty_physical_line_aware_handler&lt;Handler>;
 
   <c>// <n><xref id="empty_physical_line_aware_handler.special"/>, specialized algorithms:</n></c>
   template &lt;class Handler> void swap(
