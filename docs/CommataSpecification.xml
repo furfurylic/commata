@@ -647,12 +647,22 @@ namespace commata {
   <section id="handler_wrappers">
     <name>Wrappers of table handlers</name>
 
-    <section id="hpp_empty_physical_line_aware_handler.syn">
-      <name>Header <c>"commama/empty_physical_line_aware_handler.hpp"</c> synopsis</name>
+    <section id="hpp_wrapper_handlers.syn">
+      <name>Header <c>"commama/wrapper_handlers.hpp"</c> synopsis</name>
       <codeblock>
 #include &lt;functional>
 
 namespace commata {
+  <c>// <n><xref id="reference_handler"/>, reference_handler:</n></c>
+  template &lt;class Handler> class reference_handler;
+
+  template &lt;class Handler>
+    reference_handler&lt;Handler> wrap_ref(Handler&amp; handler)                        noexcept;
+  template &lt;class Handler>
+    reference_handler&lt;Handler> wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
+  template &lt;class Handler>
+    reference_handler&lt;Handler> wrap_ref(reference_handler&lt;Handler> handler)      noexcept;
+
   <c>// <n><xref id="empty_physical_line_aware_handler"/>, empty_physical_line_aware_handler:</n></c>
   template &lt;class Handler> class empty_physical_line_aware_handler;
 
@@ -668,6 +678,221 @@ namespace commata {
       make_empty_physical_line_aware(std::reference_wrapper&lt;Handler> handler) noexcept;
 }
       </codeblock>
+    </section>
+
+    <section id="reference_handler">
+      <name>Class template <c>reference_handler</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class Handler> class reference_handler {
+  public:
+    using char_type    = typename Handler::char_type;
+    using handler_type = Handler;
+
+    <c>// <n><xref id="reference_handler.cons"/>, construct/copy/destroy:</n></c>
+    reference_handler(Handler&amp; handler) noexcept;
+    reference_handler(Handler&amp;&amp; handler) = delete;
+    reference_handler(const reference_handler&amp; other) noexcept;
+    reference_handler&amp; operator=(const reference_handler&amp; other) noexcept;
+
+    <c>// <n><xref id="reference_handler.access"/>, access:</n></c>
+    handler_type&amp; base() const noexcept;
+
+    <c>// <n><xref id="reference_handler.inv"/>, invocation:</n></c>
+    <nc>see below</nc> get_buffer()                                            noexcept(<nc>see below</nc>);
+    <nc>see below</nc> release_buffer(const char_type* buffer)                 noexcept(<nc>see below</nc>);
+    <nc>see below</nc> start_buffer(const char_type* buffer_begin,
+                           const char_type* buffer_end)               noexcept(<nc>see below</nc>);
+    <nc>see below</nc> end_buffer(const char_type* buffer_end)                 noexcept(<nc>see below</nc>);
+    <nc>see below</nc> empty_physical_line(const char_type* where)             noexcept(<nc>see below</nc>);
+    <nc>see below</nc> start_record(const char_type* record_begin)             noexcept(<nc>see below</nc>);
+    <nc>see below</nc> end_record(const char_type* record_end)                 noexcept(<nc>see below</nc>);
+    <nc>see below</nc> update(const char_type* first, const char_type* last)   noexcept(<nc>see below</nc>);
+    <nc>see below</nc> finalize(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
+    <nc>see below</nc> yield(std::size_t p)                                    noexcept(<nc>see below</nc>);
+    <nc>see below</nc> yield_location() const                                  noexcept(<nc>see below</nc>);
+  };
+
+  <c>// <n><xref id="reference_handler.creation"/>, creation functions:</n></c>
+  template &lt;class Handler>
+    reference_handler&lt;Handler> wrap_ref(Handler&amp; handler)                        noexcept;
+  template &lt;class Handler>
+    reference_handler&lt;Handler> wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
+  template &lt;class Handler>
+    reference_handler&lt;Handler> wrap_ref(reference_handler&lt;Handler> handler)      noexcept;
+}
+      </codeblock>
+
+      <p>An object of <c>reference_handler&lt;Handler></c> is a wrapper around a reference to an object of <c>Handler</c> that is a (possibly half-fledged) table handler type.</p>
+      <p>The template parameter <c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</p>
+      <p><c>reference_handler&lt;Handler></c> meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Handler::char_type</c>.</p>
+      <p>An instance of <c>reference_handler</c> shall be a trivially copyable type.</p>
+
+      <section id="reference_handler.cons">
+        <name><c>reference_handler</c> construct/copy/destroy</name>
+
+        <code-item>
+          <code>
+reference_handler(Handler&amp; handler) noexcept;
+          </code>
+          <effects>Constructs an <c>reference_handler</c> object that stores a reference to <c>handler</c>.</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+reference_handler(const reference_handler&amp; other) noexcept;
+          </code>
+          <effects>Constructs an <c>reference_handler</c> object that stores a reference to <c>other.base()</c>.</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+reference_handler&amp; operator=(const reference_handler&amp; other) noexcept;
+          </code>
+          <postcondition><c>*this</c> stores a reference to <c>other.base()</c>.</postcondition>
+        </code-item>
+      </section>
+
+      <section id="reference_handler.access">
+        <name><c>reference_handler</c> access</name>
+
+        <code-item>
+          <code>
+handler_type&amp; base() const noexcept;
+          </code>
+          <returns>The stored reference.</returns>
+        </code-item>
+      </section>
+
+      <section id="reference_handler.inv">
+        <name><c>reference_handler</c> invocation</name>
+
+        <code-item>
+          <code>
+<nc>see below</nc> get_buffer() noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().get_buffer();</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().get_buffer()</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().get_buffer())</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> release_buffer(const char_type* buffer) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().release_buffer(buffer);</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().release_buffer(buffer)</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().release_buffer(buffer))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> start_buffer(const char_type* buffer_begin,
+                       const char_type* buffer_end) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> end_buffer(const char_type* buffer_end) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().end_buffer(buffer_end))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> empty_physical_line(const char_type* where) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return empty_physical_line(where);</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().empty_physical_line(where)</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().empty_physical_line(where))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> start_record(const char_type* record_begin) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_record(record_begin))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> end_record(const char_type* record_end) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().end_record(record_end))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> update(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().update(first, last))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> finalize(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().finalize(first, last))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> yield(std::size_t p) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().yield(p);</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().yield(p)</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().yield(p))</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> yield_location() const noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().yield_location();</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;const Handler&amp;>().yield_location()</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;const Handler&amp;>().yield_location())</c>.</remark>
+        </code-item>
+      </section>
+
+      <section id="reference_handler.creation">
+        <name><c>reference_handler</c> creation functions</name>
+
+        <code-item>
+          <code>
+template &lt;class Handler>
+  reference_handler&lt;Handler> wrap_ref(Handler&amp; handler) noexcept;
+          </code>
+          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
+          <returns><c>reference_handler&lt;Handler>(handler)</c>.</returns>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class Handler>
+  reference_handler&lt;Handler> wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return wrap_ref(handler.get());</c></effects>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class Handler>
+  reference_handler&lt;Handler> wrap_ref(reference_handler&lt;Handler> handler) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return wrap_ref(handler.base());</c></effects>
+        </code-item>
+      </section>
     </section>
 
     <section id="empty_physical_line_aware_handler">
@@ -964,11 +1189,7 @@ template &lt;class Handler>
   <nc>see below</nc>
     make_empty_physical_line_aware(std::reference_wrapper&lt;Handler> handler) noexcept;
           </code>
-          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>), except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
-          <effects>First makes an object (hereinafter called <c>hh</c>) of an unspecified type whose type meets the <c>TableHandler</c> requirements, that holds a reference to <c>handler.get()</c> (hereinafter called <c>rh</c>),
-                   and that forwards calls of its member functions required to meet to the <c>TableHandler</c> requirements to <c>rh</c>.
-                   Then invokes <c>make_empty_physical_line_aware(std::move(hh))</c>.</effects>
-          <returns>The return value of the last call above.</returns>
+          <effects>Equivalent to: <c>return make_empty_physical_line_aware(wrap_ref(handler));</c></effects>
         </code-item>
       </section>
     </section>
@@ -1729,6 +1950,7 @@ template &lt;class Ch, class Tr, class Allocator>
 
 #include "parse_error.hpp"
 #include "char_input.hpp"
+#include "wrapper_handler.hpp"
 
 namespace commata {
   <c>// <n><xref id="csv_source"/>, csv_source:</n></c>
@@ -1755,7 +1977,6 @@ namespace commata {
     using char_type = typename CharInput::char_type;
     using traits_type = typename CharInput::traits_type;
     template &lt;class Handler, class Allocator = void> using parser_type = <nc>see below</nc>;
-    template &lt;class Handler> using reference_handler_type = <nc>unspecified</nc>;
   
     <c>// <n><xref id="csv_source.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
@@ -1825,17 +2046,6 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
                           Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character input object, its tied table handler object, and the allocator object held by it if any.</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>>::value</c> shall be <c>true</c>.</remark>
         </code-item>
-
-        <code-item>
-          <code>
-template &lt;class Handler> using reference_handler_type = <nc>see below</nc>;
-          </code>
-          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>,
-                    except that it need not meet either the <c>MoveConstructible</c> requirement or the <c>Destructible</c> requirements.</requires>
-          <alias-template>An unspecified type (hereinafter called <c>H</c>) which meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
-                          <c>std::nothrow_move_constructible&lt;H>::value</c> shall be <c>true</c>.
-                          An object of <c>H</c> wraps a reference to an object of <c>Handler</c> and forwards calls of its member functions to the referenced object.</alias-template>
-        </code-item>
       </section>
 
       <section id="csv_source.cons">
@@ -1903,19 +2113,21 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
 template &lt;class Handler, class... Args>
   <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                        Args&amp;&amp;... args) const&amp; noexcept;
+          </code>
+          <effects>Equivalent to: <c>return (*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
+          <remark>This operator shall not participate in overload resolution unless a function call expression to <c>std::declval&lt;const csv_source&amp;>()</c> with the arguments being <c>std::declval&lt;reference_handler&lt;Handler>>(), std::declval&lt;Args>()...</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;CharInput>::value</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
 template &lt;class Handler, class... Args>
   <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                       Args&amp;&amp;... args)     &amp;&amp; noexcept;
+                       Args&amp;&amp;... args) &amp;&amp; noexcept;
           </code>
-          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>,
-                    except that it need not meet either the <c>MoveConstructible</c> requirement or the <c>Destructible</c> requirements.</requires>
-          <effects>Creates an object <c>h</c> of <c>reference_handler_type&lt;Handler></c> which wraps a reference to <c>handler.get()</c>.
-                   Then forwards the call with the arguments being <c>std::move(h), std::forward&lt;Args>(args)...</c> to another <c>operator()</c> member function template that has the same ref-qualifier.</effects>
-          <returns>The return value of the forwarded call above.</returns>
-          <remark>These operators shall not participate in overload resolution unless a function call expression to <c>std::declval&lt;const csv_source&amp;>()</c> (first form) or <c>std::declval&lt;csv_source>()</c> (second form) with the arguments being <c>std::declval&lt;reference_handler_type&lt;Handler>>(), std::declval&lt;Args>()...</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to
-                  <c>std::is_nothrow_copy_constructible&lt;CharInput>::value</c> (first form) or
-                  <c>std::is_nothrow_move_constructible&lt;CharInput>::value</c> (second form).</remark>
+          <effects>Equivalent to: <c>return std::move(*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
+          <remark>This operator shall not participate in overload resolution unless a function call expression to <c>std::declval&lt;csv_source>()</c> with the arguments being <c>std::declval&lt;reference_handler&lt;Handler>>(), std::declval&lt;Args>()...</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;CharInput>::value</c>.</remark>
         </code-item>
       </section>
 

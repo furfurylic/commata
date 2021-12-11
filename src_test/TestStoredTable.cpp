@@ -26,9 +26,9 @@
 
 #include <gtest/gtest.h>
 
-#include <commata/empty_physical_line_aware_handler.hpp>
-#include <commata/stored_table.hpp>
 #include <commata/parse_csv.hpp>
+#include <commata/stored_table.hpp>
+#include <commata/wrapper_handlers.hpp>
 
 #include "BaseTest.hpp"
 #include "fancy_allocator.hpp"

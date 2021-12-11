@@ -27,10 +27,10 @@
 
 #include <gtest/gtest.h>
 
-#include <commata/empty_physical_line_aware_handler.hpp>
 #include <commata/parse_csv.hpp>
 #include <commata/text_error.hpp>
 #include <commata/table_scanner.hpp>
+#include <commata/wrapper_handlers.hpp>
 
 #include "BaseTest.hpp"
 #include "fancy_allocator.hpp"

@@ -652,9 +652,9 @@ contains no fields, you can wrap your table handlers with
 `make_empty_physical_line_aware`:
 
 ```C++
-#include <commata/empty_physical_line_aware_handler.hpp>
 #include <commata/parse_csv.hpp>
 #include <commata/stored_table.hpp>
+#include <commata/wrapper_handlers.hpp>
 
 using commata::make_empty_physical_line_aware;
 using commata::make_stored_table_builder;

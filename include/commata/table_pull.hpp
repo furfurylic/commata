@@ -24,9 +24,9 @@
 #include "buffer_size.hpp"
 #include "empty_string.hpp"
 #include "formatted_output.hpp"
-#include "handler_decorator.hpp"
 #include "member_like_base.hpp"
 #include "string_value.hpp"
+#include "wrapper_handlers.hpp"
 
 namespace commata {
 
@@ -385,13 +385,13 @@ private:
 
     static_assert(std::is_same<
         decltype(std::declval<const TableSource&>()(
-            std::declval<detail::wrapper_handler<handler_t>>())),
+            std::declval<reference_handler<handler_t>>())),
         decltype(std::declval<TableSource>()(
-            std::declval<detail::wrapper_handler<handler_t>>()))>::value,
+            std::declval<reference_handler<handler_t>>()))>::value,
         "");
 
     using parser_t = typename TableSource::template parser_type<
-        detail::wrapper_handler<handler_t>>;
+        reference_handler<handler_t>>;
 
     std::size_t i_sq_;
     std::size_t i_dq_;
@@ -428,7 +428,7 @@ public:
         sq_(&handler_->state_queue()), dq_(&handler_->data_queue()),
         ap_(alloc,
             std::forward<TableSourceR>(in)(
-                detail::wrapper_handler<handler_t>(*handler_)))
+                reference_handler<handler_t>(*handler_)))
     {
         sq_->emplace_back(
             primitive_table_pull_state::before_parse,

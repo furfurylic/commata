@@ -17,8 +17,8 @@
 
 #include <gtest/gtest.h>
 
-#include <commata/empty_physical_line_aware_handler.hpp>
 #include <commata/parse_csv.hpp>
+#include <commata/wrapper_handlers.hpp>
 
 #include "BaseTest.hpp"
 #include "fancy_allocator.hpp"
@@ -154,6 +154,13 @@ check_handler<Ch, F> make_check_handler(F f)
 
 } // unnamed
 
+static_assert(noexcept(std::swap( 
+    std::declval<reference_handler<test_collector<char>>&>(),
+    std::declval<reference_handler<test_collector<char>>&>())), "");
+static_assert(
+    std::is_trivially_copyable<reference_handler<test_collector<char>>>::value,
+    "");
+
 static_assert(
     std::is_same<
         typename csv_source<string_input<char>>::template
@@ -287,9 +294,8 @@ static_assert(std::is_same<
         std::declval<const csv_source<string_input<wchar_t>>&>()(
             std::declval<std::reference_wrapper<test_collector2<wchar_t>>>())),
     typename csv_source<string_input<wchar_t>>::template parser_type<
-        typename csv_source<string_input<wchar_t>>::template
-            reference_handler_type<test_collector2<wchar_t>>,
-            std::allocator<wchar_t>>>::value, "");
+        reference_handler<test_collector2<wchar_t>>,
+        std::allocator<wchar_t>>>::value, "");
 
 template <class Ch>
 struct TestParseCsvFancy : BaseTest

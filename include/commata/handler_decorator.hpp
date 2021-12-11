@@ -280,23 +280,6 @@ struct handler_decorator :
     }
 };
 
-template <class Handler>
-class wrapper_handler :
-    public handler_decorator<Handler, wrapper_handler<Handler>>
-{
-    Handler* handler_;
-
-public:
-    explicit wrapper_handler(Handler& handler) noexcept :
-        handler_(std::addressof(handler))
-    {}
-
-    Handler& base() const noexcept
-    {
-        return *handler_;
-    }
-};
-
 }}
 
 #endif

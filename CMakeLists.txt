@@ -13,7 +13,6 @@ target_sources(commata INTERFACE
     include/commata/buffer_control.hpp
     include/commata/buffer_size.hpp
     include/commata/char_input.hpp
-    include/commata/empty_physical_line_aware_handler.hpp
     include/commata/empty_string.hpp
     include/commata/formatted_output.hpp
     include/commata/handler_decorator.hpp
@@ -30,6 +29,7 @@ target_sources(commata INTERFACE
     include/commata/table_scanner.hpp
     include/commata/text_error.hpp
     include/commata/typing_aid.hpp
+    include/commata/wrapper_handlers.hpp
     include/commata/write_ntmbs.hpp
 )
 target_compile_features(commata INTERFACE cxx_std_14)

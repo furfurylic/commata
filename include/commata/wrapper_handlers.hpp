@@ -9,11 +9,54 @@
 #include <functional>
 #include <memory>
 #include <type_traits>
+#include <utility>
 
 #include "handler_decorator.hpp"
 #include "typing_aid.hpp"
 
 namespace commata {
+
+template <class Handler>
+class reference_handler :
+    public detail::handler_decorator<Handler, reference_handler<Handler>>
+{
+    Handler* handler_;
+
+public:
+    reference_handler(Handler& handler) noexcept :
+        handler_(std::addressof(handler))
+    {}
+
+    reference_handler(Handler&& handler) = delete;
+
+    reference_handler(const reference_handler&) = default;
+    reference_handler& operator=(const reference_handler&) = default;
+
+    Handler& base() const noexcept
+    {
+        return *handler_;
+    }
+};
+
+template <class Handler>
+reference_handler<Handler> wrap_ref(Handler& handler) noexcept
+{
+    return reference_handler<Handler>(handler);
+}
+
+template <class Handler>
+reference_handler<Handler> wrap_ref(std::reference_wrapper<Handler> handler)
+    noexcept
+{
+    return wrap_ref(handler.get());
+}
+
+template <class Handler>
+reference_handler<Handler> wrap_ref(reference_handler<Handler> handler)
+    noexcept
+{
+    return wrap_ref(handler.base());
+}
 
 template <class Handler>
 class empty_physical_line_aware_handler :
@@ -128,8 +171,7 @@ template <class Handler>
 auto make(Handler&& h)
     noexcept(std::is_nothrow_move_constructible<std::decay_t<Handler>>::value)
  -> std::enable_if_t<
-        !is_std_reference_wrapper<std::decay_t<Handler>>::value
-     && !has_empty_physical_line<std::decay_t<Handler>>::value,
+        !has_empty_physical_line<std::decay_t<Handler>>::value,
         empty_physical_line_aware_handler<std::decay_t<Handler>>>
 {
     return empty_physical_line_aware_handler<std::decay_t<Handler>>(
@@ -143,24 +185,6 @@ auto make(Handler&& h) noexcept
         std::decay_t<Handler>>
 {
     return std::forward<Handler>(h);
-}
-
-template <class Handler>
-auto make(std::reference_wrapper<Handler> h) noexcept
- -> std::enable_if_t<
-        !has_empty_physical_line<Handler>::value,
-        empty_physical_line_aware_handler<detail::wrapper_handler<Handler>>>
-{
-    return make(wrapper_handler<Handler>(h.get()));
-}
-
-template <class Handler>
-auto make(std::reference_wrapper<Handler> h) noexcept
- -> std::enable_if_t<
-        has_empty_physical_line<Handler>::value,
-        wrapper_handler<Handler>>
-{
-    return wrapper_handler<Handler>(h.get());
 }
 
 }} // end detail::empty_physical_line_aware
@@ -185,12 +209,10 @@ auto make_empty_physical_line_aware(
     std::reference_wrapper<Handler> handler) noexcept
  -> std::conditional_t<
         detail::has_empty_physical_line<Handler>::value,
-        detail::wrapper_handler<Handler>,
-        empty_physical_line_aware_handler<
-            detail::wrapper_handler<Handler>>>
+        reference_handler<Handler>,
+        empty_physical_line_aware_handler<reference_handler<Handler>>>
 {
-    return make_empty_physical_line_aware(
-        detail::wrapper_handler<Handler>(handler));
+    return make_empty_physical_line_aware(wrap_ref(handler));
 }
 
 }

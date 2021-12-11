@@ -21,11 +21,11 @@
 #include "buffer_control.hpp"
 #include "buffer_size.hpp"
 #include "char_input.hpp"
-#include "handler_decorator.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
 #include "parse_error.hpp"
 #include "typing_aid.hpp"
+#include "wrapper_handlers.hpp"
 
 namespace commata {
 namespace detail {
@@ -781,9 +781,6 @@ public:
                     Allocator>>::ret_t>;
 
     template <class Handler>
-    using reference_handler_type = detail::wrapper_handler<Handler>;
-
-    template <class Handler>
     auto operator()(Handler&& handler) const&
         noexcept(
             std::is_nothrow_constructible<
@@ -845,22 +842,21 @@ public:
     auto operator()(std::reference_wrapper<Handler> handler,
             Args&&... args) const&
         noexcept(std::is_nothrow_copy_constructible<CharInput>::value)
-     -> decltype((*this)(detail::wrapper_handler<Handler>(
+     -> decltype((*this)(reference_handler<Handler>(
             handler.get()), std::forward<Args>(args)...))
     {
-        return (*this)(detail::wrapper_handler<Handler>(
-            handler.get()), std::forward<Args>(args)...);
+        return (*this)(wrap_ref(handler.get()), std::forward<Args>(args)...);
     }
 
     template <class Handler, class... Args>
     auto operator()(std::reference_wrapper<Handler> handler,
             Args&&... args) &&
         noexcept(std::is_nothrow_move_constructible<CharInput>::value)
-     -> decltype(std::move(*this)(detail::wrapper_handler<Handler>(
+     -> decltype(std::move(*this)(reference_handler<Handler>(
             handler.get()), std::forward<Args>(args)...))
     {
-        return std::move(*this)(detail::wrapper_handler<Handler>(
-            handler.get()), std::forward<Args>(args)...);
+        return std::move(*this)(wrap_ref(handler.get()),
+                                std::forward<Args>(args)...);
     }
 
     void swap(csv_source& other)
