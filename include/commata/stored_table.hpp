@@ -77,7 +77,6 @@ public:
     }
 
     basic_stored_value(const basic_stored_value&) = default;
-    ~basic_stored_value() = default;
     basic_stored_value& operator=(const basic_stored_value&) = default;
 
     template <
@@ -320,12 +319,6 @@ public:
         begin_ = end_;
     }
 
-    void swap(basic_stored_value& other) noexcept
-    {
-        std::swap(begin_, other.begin_);
-        std::swap(end_,   other.end_);
-    }
-
 private:
     [[noreturn]]
     void throw_pos(size_type pos) const
@@ -350,14 +343,6 @@ std::basic_string<std::remove_const_t<Ch>,
     return std::basic_string<std::remove_const_t<Ch>,
             std::char_traits<std::remove_const_t<Ch>>, Allocator>(
                 v.cbegin(), v.cend(), alloc);
-}
-
-template <class Ch, class Tr>
-void swap(
-    basic_stored_value<Ch, Tr>& left,
-    basic_stored_value<Ch, Tr>& right) noexcept
-{
-    return left.swap(right);
 }
 
 template <class ChL, class ChR, class Tr>

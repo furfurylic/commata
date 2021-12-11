@@ -2794,9 +2794,6 @@ namespace commata {
     std::basic_string&lt;std::remove_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>, Allocator>
       to_string(basic_stored_value&lt;Ch, Tr>&amp; o, const Allocator&amp; alloc = Allocator());
 
-  template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; left,
-                                          basic_stored_value&lt;Ch, Tr>&amp; right) noexcept;
-
   using stored_value   = basic_stored_value&lt;char>;
   using wstored_value  = basic_stored_value&lt;wchar_t>;
   using cstored_value  = basic_stored_value&lt;const char>;
@@ -2886,7 +2883,6 @@ namespace commata {
     basic_stored_value(const basic_stored_value&amp; other) noexcept = default;
     template &lt;class OtherCh>
       basic_stored_value(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
-   ~basic_stored_value() = default;
     basic_stored_value&amp; operator=(const basic_stored_value&amp; other) noexcept = default;
     template &lt;class OtherCh>
       basic_stored_value&amp; operator=(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
@@ -2942,8 +2938,6 @@ namespace commata {
 
     void pop_front();
     void pop_back();
-
-    void swap(basic_stored_value&amp; other) noexcept;
 
   private:
     Ch* b;    <c>// <n>exposition only</n></c>
@@ -3025,10 +3019,6 @@ namespace commata {
   template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove_const&lt;Ch>>>
     std::basic_string&lt;std::remove_const&lt;Ch>, std::char_traits&lt;std::remove_const&lt;Ch>>, Allocator>
       to_string(basic_stored_value&lt;Ch, Tr>&amp; o, const Allocator&amp; alloc = Allocator());
-
-  <c>// <n><xref id="basic_stored_value.special"/>, specialized algorithms:</n></c>
-  template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; left,
-                                          basic_stored_value&lt;Ch, Tr>&amp; right) noexcept;
 }
       </codeblock>
 
@@ -3043,6 +3033,7 @@ namespace commata {
         <li><c>basic_stored_value&lt;Ch, Tr>::iterator</c> shall be convertible to <c>basic_stored_value&lt;Ch, Tr>::const_iterator</c>, and</li>
         <li>each instance of <c>std::iterator_traits</c> on them shall have a set of member typedefs indicated in <xref id="table.basic_stored_value.iterator.typedefs"/>.</li>
       </ul>
+      <p>An instance of <c>basic_stored_value</c> is a trivially copyable type.</p>
 
       <table id="table.basic_stored_value.iterator.typedefs">
         <caption>Member typedefs of each instance of <c>std::iterator_traits&lt;T></c> where <c>T</c> is either of <c>iterator</c> or <c>const_iterator</c> of <c>basic_stored_value&lt;Ch, Tr></c></caption>
@@ -3311,13 +3302,6 @@ void pop_back();
           <throws>Nothing.</throws>
           <effects>Equivalent to call <c>erase(cend() - 1)</c>.</effects>
         </code-item>
-
-        <code-item>
-          <code>
-void swap(basic_stored_value&amp; other) noexcept;
-          </code>
-          <effects>Exchanges the values of <c>b</c> and <c>other.b</c>, and does the same with <c>e</c> and <c>other.e</c>.</effects>
-        </code-item>
       </section>
 
       <section id="basic_stored_value.comparison">
@@ -3507,18 +3491,6 @@ template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove
                          std::char_traits&lt;std::remove_const_t&lt;Ch>>,
                          Allocator>(o.cbegin(), o.cend(), alloc);</code>
           </effects>
-        </code-item>
-      </section>
-
-      <section id="basic_stored_value.special">
-        <name><c>basic_stored_value</c> specialized algorithms</name>
-
-        <code-item>
-          <code>
-template &lt;class Ch, class Tr> void swap(basic_stored_value&lt;Ch, Tr>&amp; left,
-                                        basic_stored_value&lt;Ch, Tr>&amp; right) noexcept;
-          </code>
-          <effects>Equivalent to: <c>left.swap(right);</c></effects>
         </code-item>
       </section>
 

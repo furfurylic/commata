@@ -63,10 +63,11 @@ static_assert(noexcept(std::declval<stored_value&>().size()), "");
 static_assert(noexcept(std::declval<stored_value&>().length()), "");
 static_assert(noexcept(std::declval<stored_value&>().empty()), "");
 static_assert(noexcept(std::declval<stored_value&>().clear()), "");
-static_assert(noexcept(
-    std::declval<stored_value&>().swap(std::declval<stored_value&>())), "");
-static_assert(noexcept(
-    swap(std::declval<stored_value&>(), std::declval<stored_value&>())), "");
+static_assert(noexcept(std::swap(
+    std::declval<stored_value&>(), std::declval<stored_value&>())), "");
+static_assert(noexcept(std::swap(
+    std::declval<stored_value&>(), std::declval<stored_value&>())), "");
+static_assert(std::is_trivially_copyable<stored_value>::value, "");
 
 template <class Ch>
 struct TestStoredValueNoModification : BaseTest
@@ -382,13 +383,9 @@ TYPED_TEST(TestStoredValueNoModification, Swap)
     const auto b1 = v1.cbegin();
     const auto b2 = v2.cbegin();
 
-    v1.swap(v2);
+    std::swap(v1, v2);
     ASSERT_EQ(b1, v2.cbegin());
     ASSERT_EQ(b2, v1.cbegin());
-
-    swap(v1, v2);
-    ASSERT_EQ(b1, v1.cbegin());
-    ASSERT_EQ(b2, v2.cbegin());
 }
 
 TYPED_TEST(TestStoredValueNoModification, Plus)
