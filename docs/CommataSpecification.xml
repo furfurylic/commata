@@ -1268,9 +1268,6 @@ template &lt;class Handler>
 namespace commata {
   <c>// <n><xref id="streambuf_input"/>, streambuf_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class streambuf_input;
-  template &lt;class Ch, class Tr>
-    void swap(streambuf_input&lt;Ch, Tr>&amp; left,
-              streambuf_input&lt;Ch, Tr>&amp; right) noexcept;
 
   <c>// <n><xref id="owned_streambuf_input"/>, owned_streambuf_input:</n></c>
   template &lt;class Streambuf> class owned_streambuf_input;
@@ -1286,9 +1283,6 @@ namespace commata {
 
   <c>// <n><xref id="string_input"/>, string_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class string_input;
-  template &lt;class Ch, class Tr>
-    void swap(string_input&lt;Ch, Tr>&amp; left,
-              string_input&lt;Ch, Tr>&amp; right) noexcept;
 
   <c>// <n><xref id="owned_string_input"/>, owned_string_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
@@ -1338,30 +1332,21 @@ namespace commata {
     streambuf_input() noexcept : in(nullptr) {}
     explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>* sb);
     explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
-    streambuf_input(streambuf_input&amp;&amp; other) noexcept;
-   ~streambuf_input() = default;
-    streambuf_input&amp; operator=(streambuf_input&amp;&amp; other) noexcept;
+    streambuf_input(const streambuf_input&amp;&amp; other) = default;
+    streambuf_input&amp; operator=(streambuf_input&amp;&amp; other) = default;
 
     <c>// <n><xref id="streambuf_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
-    <c>// <n><xref id="streambuf_input.modifiers"/>, modifiers:</n></c>
-    void swap(streambuf_input&amp; other) noexcept;
-
   private:
     std::basic_streambuf&lt;Ch, Tr>* in;  <c>// <n>exposition only</n></c>
   };
-
-  <c>// <n><xref id="streambuf_input.special"/>, specialized algorithms:</n></c>
-  template &lt;class Ch, class Tr>
-    void swap(streambuf_input&lt;Ch, Tr>&amp; left,
-              streambuf_input&lt;Ch, Tr>&amp; right) noexcept;
 }
       </codeblock>
 
       <p>The class template <c>streambuf_input</c> describes thin wrappers of stream buffers without any ownership of them.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
+      <p>An instance of <c>streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c> and is a trivially copyable type.</p>
 
       <section id="streambuf_input.cons">
         <name><c>streambuf_input</c> construct/copy/destroy</name>
@@ -1381,20 +1366,6 @@ explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
           </code>
           <effects>Initializes <c>in</c> with <c>s.rdbuf()</c>.</effects>
         </code-item>
-
-        <code-item>
-          <code>
-streambuf_input(streambuf_input&amp;&amp; other) noexcept;
-          </code>
-          <effects>Initializes <c>in</c> with <c>other.in</c> and then assigns <c>nullptr</c> to <c>other.in</c>.</effects>
-        </code-item>
-
-        <code-item>
-          <code>
-streambuf_input&amp; operator=(streambuf_input&amp;&amp; other) noexcept;
-          </code>
-          <effects>Assigns <c>other.in</c> to <c>in</c> and then assigns <c>nullptr</c> to <c>other.in</c>.</effects>
-        </code-item>
       </section>
 
       <section id="streambuf_input.inv">
@@ -1407,30 +1378,6 @@ size_type operator()(Ch* out, size_type n);
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
           <effects>If <c>in</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in</c> to successive elements of the array whose first element is designated by <c>out</c>.</effects>
           <returns>The number of characters assigned.</returns>
-        </code-item>
-      </section>
-
-      <section id="streambuf_input.modifiers">
-        <name><c>streambuf_input</c> modifiers</name>
-
-        <code-item>
-          <code>
-void swap(streambuf_input&amp; other) noexcept;
-          </code>
-          <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-        </code-item>
-      </section>
-
-      <section id="streambuf_input.special">
-        <name><c>streambuf_input</c> specialized algorithms</name>
-
-        <code-item>
-          <code>
-template &lt;class Ch, class Tr>
-  void swap(streambuf_input&lt;Ch, Tr>&amp; left,
-            streambuf_input&lt;Ch, Tr>&amp; right) noexcept;
-          </code>
-          <effects>Equivalent to: <c>left.swap(right);</c></effects>
         </code-item>
       </section>
     </section>
@@ -1641,30 +1588,21 @@ namespace commata {
     template &lt;class Allocator>
       explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
     string_input(const string_input&amp; other) = default;
-   ~string_input() = default;
     string_input&amp; operator=(const string_input&amp; other) = default;
 
     <c>// <n><xref id="string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
-    <c>// <n><xref id="string_input.modifiers"/>, modifiers:</n></c>
-    void swap(string_input&amp; other) noexcept;
-
   private:
     const Ch* begin;  <c>// <n>exposition only</n></c>
     const Ch* end;    <c>// <n>exposition only</n></c>
   };
-
-  <c>// <n><xref id="string_input.special"/>, specialized algorithms:</n></c>
-  template &lt;class Ch, class Tr>
-    void swap(string_input&lt;Ch, Tr>&amp; left,
-              string_input&lt;Ch, Tr>&amp; right) noexcept;
 }
       </codeblock>
 
       <p>The class template <c>string_input</c> describes thin wrappers of on-memory character sequences without any ownership of them.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
+      <p>An instance of <c>string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c> and is a trivially copyable type.</p>
 
       <section id="string_input.cons">
         <name><c>string_input</c> construct/copy/destroy</name>
@@ -1708,30 +1646,6 @@ size_type operator()(Ch* out, size_type n);
           <effects>Calls <c>Tr::copy(out, begin, rlen)</c>, and then evaluates <c>begin += rlen</c>.</effects>
           <returns><c>rlen</c>.</returns>
           <throws>Nothing.</throws>
-        </code-item>
-      </section>
-
-      <section id="string_input.modifiers">
-        <name><c>string_input</c> modifiers</name>
-
-        <code-item>
-          <code>
-void swap(string_input&amp; other) noexcept;
-          </code>
-          <effects>Exchanges <c>begin</c> and <c>other.begin</c>, and, <c>end</c> and <c>other.end</c>, respectively.</effects>
-        </code-item>
-      </section>
-
-      <section id="string_input.special">
-        <name><c>string_input</c> specialized algorithms</name>
-
-        <code-item>
-          <code>
-template &lt;class Ch, class Tr>
-  void swap(string_input&lt;Ch, Tr>&amp; left,
-            string_input&lt;Ch, Tr>&amp; right) noexcept;
-          </code>
-          <effects>Equivalent to: <c>left.swap(right);</c></effects>
         </code-item>
       </section>
     </section>

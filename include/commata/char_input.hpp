@@ -67,38 +67,14 @@ public:
         streambuf_input(in.rdbuf())
     {}
 
-    streambuf_input(streambuf_input&& other) noexcept :
-        in_(other.in_)
-    {
-        other.in_ = nullptr;
-    }
-
-    ~streambuf_input() = default;
-
-    streambuf_input& operator=(streambuf_input&& other) noexcept
-    {
-        in_ = other.in_;
-        other.in_ = nullptr;
-        return *this;
-    }
+    streambuf_input(const streambuf_input& other) = default;
+    streambuf_input& operator=(const streambuf_input&) =default;
 
     size_type operator()(Ch* out, size_type n)
     {
         return in_ ? detail::input::read(*in_, out, n) : 0;
     }
-
-    void swap(streambuf_input& other) noexcept
-    {
-        std::swap(in_, other.in_);
-    }
 };
-
-template <class Ch, class Tr>
-void swap(streambuf_input<Ch, Tr>& left,
-          streambuf_input<Ch, Tr>& right) noexcept
-{
-    left.swap(right);
-}
 
 template <class Streambuf>
 class owned_streambuf_input
@@ -232,21 +208,7 @@ public:
     {}
 
     string_input(const string_input& other) = default;
-
-    string_input(string_input&& other) noexcept :
-        begin_(other.begin_), end_(other.end_)
-    {
-        other.begin_ = end_;
-    }
-
-    ~string_input() = default;
     string_input& operator=(const string_input& other) = default;
-
-    string_input& operator=(string_input&& other) noexcept
-    {
-        string_input(std::move(other)).swap(*this);
-        return *this;
-    }
 
     size_type operator()(Ch* out, size_type n)
     {
@@ -260,20 +222,7 @@ public:
             return 0;
         }
     }
-
-    void swap(string_input& other) noexcept
-    {
-        std::swap(begin_, other.begin_);
-        std::swap(end_, other.end_);
-    }
 };
-
-template <class Ch, class Tr>
-void swap(string_input<Ch, Tr>& left,
-          string_input<Ch, Tr>& right) noexcept
-{
-    left.swap(right);
-}
 
 template <class Ch, class Tr = std::char_traits<Ch>,
     class Allocator = std::allocator<Ch>>
