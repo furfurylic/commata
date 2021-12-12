@@ -38,48 +38,50 @@ public:
             Pocca, Pocma, Pocs>;
     };
 
-    propagation_controlled_allocator(const A& alloc) noexcept :
+    propagation_controlled_allocator(const A& alloc)
+        noexcept(std::is_nothrow_copy_constructible<A>::value) :
         member_like_base<A>(alloc)
     {}
 
-    propagation_controlled_allocator(A&& alloc) noexcept :
+    propagation_controlled_allocator(A&& alloc)
+        noexcept(std::is_nothrow_move_constructible<A>::value) :
         member_like_base<A>(std::move(alloc))
     {}
 
     // To make rebound copies
-    template <class U>
+    template <class B>
     propagation_controlled_allocator(
-        const propagation_controlled_allocator<U, Pocca, Pocma, Pocs>& other)
-            noexcept :
+        const propagation_controlled_allocator<B, Pocca, Pocma, Pocs>& other)
+        noexcept(std::is_nothrow_constructible<A, const B&>::value) :
         member_like_base<A>(other.base())
     {}
 
     // ditto
-    template <class U>
+    template <class B>
     propagation_controlled_allocator(
-        propagation_controlled_allocator<U, Pocca, Pocma, Pocs>&& other)
-            noexcept :
+        propagation_controlled_allocator<B, Pocca, Pocma, Pocs>&& other)
+        noexcept(std::is_nothrow_constructible<A, B&&>::value) :
         member_like_base<A>(std::move(other.base()))
     {}
 
     // copy/move ctor/assignment ops are defaulted
 
     template <class... Args>
-    auto allocate(Args... args)
+    auto allocate(size_type n, Args&&... args)
     {
-        return base().allocate(std::forward<Args>(args)...);
+        return base_traits_t::allocate(base(), n, std::forward<Args>(args)...);
     }
 
-    template <class... Args>
-    auto deallocate(Args... args) noexcept
+    auto deallocate(pointer p, size_type n)
     {
-        return base().deallocate(std::forward<Args>(args)...);
+        return base_traits_t::deallocate(base(), p, n);
     }
 
-    size_type max_size() noexcept(noexcept(
-        base_traits_t::max_size(std::declval<const A&>())))
+    size_type max_size() noexcept
+        // this noexceptness is mandated in the spec of
+        // std::allocator_traits<A>::max_size
     {
-        return base().max_size();
+        return base_traits_t::max_size(base());
     }
 
     template <class T, class... Args>
@@ -91,7 +93,7 @@ public:
     template <class T>
     auto destroy(T* p)
     {
-        return base_traits_t::destroy(*this, p);
+        return base_traits_t::destroy(base(), p);
     }
 
     propagation_controlled_allocator select_on_container_copy_construction()
@@ -120,50 +122,78 @@ public:
     }
 };
 
-template <class AllocatorL, class AllocatorR, bool... PsL, bool... PsR>
+// I really wanted to write these template parameters with packs
+// but then Visual Studio 2015 did not compile them... (Visual Studio 2019 did)
+template <class AllocatorL, bool PoccaL, bool PocmaL, bool PocsL,
+          class AllocatorR, bool PoccaR, bool PocmaR, bool PocsR>
 bool operator==(
-    const propagation_controlled_allocator<AllocatorL, PsL...>& left,
-    const propagation_controlled_allocator<AllocatorR, PsR...>& right) noexcept
+    const propagation_controlled_allocator<AllocatorL, PoccaL, PocmaL, PocsL>&
+        left,
+    const propagation_controlled_allocator<AllocatorR, PoccaR, PocmaR, PocsR>&
+        right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   == std::declval<const AllocatorR&>()))
 {
     return left.base() == right.base();
 }
 
-template <class Allocator, bool... Ps>
+template <class AllocatorL, bool PoccaL, bool PocmaL, bool PocsL,
+          class AllocatorR>
 bool operator==(
-    const propagation_controlled_allocator<Allocator, Ps...>& left,
-    const Allocator& right) noexcept
+    const propagation_controlled_allocator<AllocatorL, PoccaL, PocmaL, PocsL>&
+        left,
+    const AllocatorR& right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   == std::declval<const AllocatorR&>()))
 {
     return left.base() == right;
 }
 
-template <class Allocator, bool... Ps>
+template <class AllocatorL,
+          class AllocatorR, bool PoccaR, bool PocmaR, bool PocsR>
 bool operator==(
-    const Allocator& left,
-    const propagation_controlled_allocator<Allocator, Ps...>& right) noexcept
+    const AllocatorL& left,
+    const propagation_controlled_allocator<AllocatorR, PoccaR, PocmaR, PocsR>&
+        right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   == std::declval<const AllocatorR&>()))
 {
     return left == right.base();
 }
 
-template <class AllocatorL, class AllocatorR, bool... PsL, bool... PsR>
+template <class AllocatorL, bool PoccaL, bool PocmaL, bool PocsL,
+          class AllocatorR, bool PoccaR, bool PocmaR, bool PocsR>
 bool operator!=(
-    const propagation_controlled_allocator<AllocatorL, PsL...>& left,
-    const propagation_controlled_allocator<AllocatorR, PsR...>& right) noexcept
+    const propagation_controlled_allocator<AllocatorL, PoccaL, PocmaL, PocsL>&
+        left,
+    const propagation_controlled_allocator<AllocatorR, PoccaR, PocmaR, PocsR>&
+        right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   != std::declval<const AllocatorR&>()))
 {
     return left.base() != right.base();
 }
 
-template <class Allocator, bool... Ps>
+template <class AllocatorL, bool PoccaL, bool PocmaL, bool PocsL,
+          class AllocatorR>
 bool operator!=(
-    const propagation_controlled_allocator<Allocator, Ps...>& left,
-    const Allocator& right) noexcept
+    const propagation_controlled_allocator<AllocatorL, PoccaL, PocmaL, PocsL>&
+        left,
+    const AllocatorR& right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   != std::declval<const AllocatorR&>()))
 {
     return left.base() != right;
 }
 
-template <class Allocator, bool... Ps>
+template <class AllocatorL,
+          class AllocatorR, bool PoccaR, bool PocmaR, bool PocsR>
 bool operator!=(
-    const Allocator& left,
-    const propagation_controlled_allocator<Allocator, Ps...>& right) noexcept
+    const AllocatorL& left,
+    const propagation_controlled_allocator<AllocatorR, PoccaR, PocmaR, PocsR>&
+        right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   != std::declval<const AllocatorR&>()))
 {
     return left != right.base();
 }
