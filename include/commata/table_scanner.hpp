@@ -2135,13 +2135,22 @@ class replace_if_conversion_failed
 
     store store_;
 
+private:
+    template <class A>
+    struct is_acceptable_arg :
+        std::integral_constant<bool,
+            std::is_base_of<replacement_fail_t, std::decay_t<A>>::value
+         || std::is_base_of<replacement_ignore_t, std::decay_t<A>>::value
+         || std::is_constructible<T, A>::value>
+    {};
+
 public:
     template <class Empty = T, class InvalidFormat = T,
         class AboveUpperLimit = T,
         std::enable_if_t<
-            !std::is_base_of<
-                replace_if_conversion_failed<T>, std::decay_t<Empty>>::value>*
-                    = nullptr>
+            is_acceptable_arg<Empty>::value
+         && is_acceptable_arg<InvalidFormat>::value
+         && is_acceptable_arg<AboveUpperLimit>::value>* = nullptr>
     explicit replace_if_conversion_failed(
         Empty&& on_empty = Empty(),
         InvalidFormat&& on_invalid_format = InvalidFormat(),
@@ -2155,7 +2164,12 @@ public:
     {}
 
     template <class Empty, class InvalidFormat,
-        class AboveUpperLimit, class BelowLowerLimit>
+        class AboveUpperLimit, class BelowLowerLimit,
+        std::enable_if_t<
+            is_acceptable_arg<Empty>::value
+         && is_acceptable_arg<InvalidFormat>::value
+         && is_acceptable_arg<AboveUpperLimit>::value
+         && is_acceptable_arg<BelowLowerLimit>::value>* = nullptr>
     replace_if_conversion_failed(
         Empty&& on_empty,
         InvalidFormat&& on_invalid_format,
@@ -2175,7 +2189,13 @@ public:
 
     template <class Empty, class InvalidFormat,
         class AboveUpperLimit, class BelowLowerLimit,
-        class Underflow>
+        class Underflow,
+        std::enable_if_t<
+            is_acceptable_arg<Empty>::value
+         && is_acceptable_arg<InvalidFormat>::value
+         && is_acceptable_arg<AboveUpperLimit>::value
+         && is_acceptable_arg<BelowLowerLimit>::value
+         && is_acceptable_arg<Underflow>::value>* = nullptr>
     replace_if_conversion_failed(
         Empty&& on_empty,
         InvalidFormat&& on_invalid_format,

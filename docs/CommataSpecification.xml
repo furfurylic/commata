@@ -5411,21 +5411,19 @@ template &lt;class Empty = T, class InvalidFormat = T, class AboveUpperLimit = T
                                  AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
       noexcept(<nc>see below</nc>);
             </code>
-            <requires><p>For each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>, the following condition shall meet:</p>
+            <requires>Unless <c>T</c> is an unsigned integer type, <c>std::is_default_constructible&lt;T>::value</c> shall be <c>true</c>.</requires>
+            <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is <c>true</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
+                     Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is <c>true</c>, configures it to be <c>ignore</c>.
+                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
+                     Does the same with <c>action_on_invalid_format</c> and <c>action_on_above_upper_limit</c>.
+                     Configures <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
+            <remark><p>This overload shall not participate in overload resolution unless for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c> the following condition meet:</p>
                       <ul>
                         <li><c>std::is_base_of&lt;replacement_fail_t, std::decay_t&lt;U>>::value</c> is <c>true</c>,</li>
                         <li><c>std::is_base_of&lt;replacement_ignore_t, std::decay_t&lt;U>>::value</c> is <c>true</c>, or</li>
                         <li><c>std::is_constructible&lt;T, U>::value</c> is <c>true</c>.</li>
                       </ul>
-                      <p>In addition, <c>std::is_default_constructible&lt;T>::value</c> shall be <c>true</c>.</p>
-            </requires>
-            <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
-                     Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
-                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
-                     Does the same with <c>action_on_invalid_format</c> and <c>action_on_above_upper_limit</c>.
-                     Configures <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-            <remark>This overload shall not participate in overload resolution unless <c>std::is_base_of&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;Empty>>::value</c> is <c>false</c>.
-                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible&lt;T>::value &amp;&amp; std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+                    <p>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible&lt;T>::value &amp;&amp; std::is_nothrow_move_constructible&lt;T>::value</c>.</p></remark>
           </code-item>
 
           <code-item>
@@ -5436,21 +5434,20 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                                AboveUpperLimit&amp;&amp; on_above_upper_limit,
                                BelowLowerLimit&amp;&amp; on_below_lower_limit) noexcept(<nc>see below</nc>);
             </code>
-            <requires><p>For each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>, the following condition shall meet:</p>
+            <requires>Unless <c>T</c> is an integer type, <c>std::is_default_constructible&lt;T>::value</c> shall be <c>true</c>.</requires>
+            <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is <c>true</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
+                     Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is <c>true</c>, configures it to be <c>ignore</c>.
+                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
+                     Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c>.
+                     Configures <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
+            <remark><p>This overload shall not participate in overload resolution unless for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c> the following condition meet:</p>
                       <ul>
                         <li><c>std::is_base_of&lt;replacement_fail_t, std::decay_t&lt;U>>::value</c> is <c>true</c>,</li>
                         <li><c>std::is_base_of&lt;replacement_ignore_t, std::decay_t&lt;U>>::value</c> is <c>true</c>, or</li>
                         <li><c>std::is_constructible&lt;T, U>::value</c> is <c>true</c>.</li>
                       </ul>
-                      <p>In addition, <c>std::is_default_constructible&lt;T>::value</c> shall be <c>true</c>.</p>
-            </requires>
-            <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
-                     Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
-                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
-                     Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c>.
-                     Configures <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-            <remark>If <c>T</c> is an unsigned integer type, instantiating this overload shall make the program ill-formed.
-                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible&lt;T>::value &amp;&amp; std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+                    <p>If <c>T</c> is an unsigned integer type, instantiating this overload shall make the program ill-formed.
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible&lt;T>::value &amp;&amp; std::is_nothrow_move_constructible&lt;T>::value</c>.</p></remark>
           </code-item>
 
           <code-item>
@@ -5463,19 +5460,18 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                                BelowLowerLimit&amp;&amp; on_below_lower_limit,
                                Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
             </code>
-            <requires><p>For each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>, the following condition shall meet:</p>
+            <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is <c>true</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
+                     Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is <c>true</c>, configures it to be <c>ignore</c>.
+                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
+                     Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>.</effects>
+            <remark><p>This overload shall not participate in overload resolution unless for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c> the following condition meet:</p>
                       <ul>
                         <li><c>std::is_base_of&lt;replacement_fail_t, std::decay_t&lt;U>>::value</c> is <c>true</c>,</li>
                         <li><c>std::is_base_of&lt;replacement_ignore_t, std::decay_t&lt;U>>::value</c> is <c>true</c>, or</li>
                         <li><c>std::is_constructible&lt;T, U>::value</c> is <c>true</c>.</li>
                       </ul>
-            </requires>
-            <effects>If <c>std::is_base_of&lt;replace_fail_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures <c>action_on_empty</c> to be <c>fail</c>.
-                     Otherwise, if <c>std::is_base_of&lt;replace_ignore_t, std::decay_t&lt;Empty>>::value</c> is not <c>false</c>, configures it to be <c>ignore</c>.
-                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
-                     Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>.</effects>
-            <remark>If <c>T</c> is an integer type, instantiating this overload shall make the program ill-formed.
-                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</remark>
+                    <p>If <c>T</c> is an integer type, instantiating this overload shall make the program ill-formed.
+                       The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;T>::value</c>.</p></remark>
           </code-item>
 
           <code-item>
