@@ -5503,7 +5503,8 @@ replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&a
             <requires><c>T</c> shall be <c>CopyAssignable</c>.</requires>
             <effects>Configures all the replacement actions to be the same as <c>other</c>'s.</effects>
             <returns><c>*this</c>.</returns>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;T>::value &amp;&amp; std::is_nothrow_copy_assignable&lt;T>::value</c>.</remark>
+            <remark>If an exception is thrown, <c>*this</c> may be left in a valid but unspecified state.
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;T>::value &amp;&amp; std::is_nothrow_copy_assignable&lt;T>::value</c>.</remark>
           </code-item>
 
           <code-item>
