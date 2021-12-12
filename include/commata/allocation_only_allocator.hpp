@@ -43,15 +43,11 @@ struct const_reference_forwarded<A, typename A::const_reference>
 
 } // end allocation_only
 
-template <class Allocator>
+template <class A>
 class allocation_only_allocator :
-    member_like_base<Allocator>
+    member_like_base<A>
 {
-    using base_traits_t = typename std::allocator_traits<Allocator>;
-
-    // To rebind
-    template <class OtherAllocator>
-    friend class allocation_only_allocator;
+    using base_traits_t = typename std::allocator_traits<A>;
 
 public:
     using pointer = typename base_traits_t::pointer;
@@ -65,9 +61,9 @@ public:
     // These types are not required by the C++14 standard, but
     // std::basic_string which comes with gcc 7.3.1 seems to do
     using reference =
-        typename allocation_only::reference_forwarded<Allocator>::type;
+        typename allocation_only::reference_forwarded<A>::type;
     using const_reference =
-        typename allocation_only::const_reference_forwarded<Allocator>::type;
+        typename allocation_only::const_reference_forwarded<A>::type;
 
     template <class U>
     struct rebind
@@ -81,27 +77,31 @@ public:
     allocation_only_allocator() = default;
 
     // To make wrappers
-    explicit allocation_only_allocator(const Allocator& other) noexcept :
-        member_like_base<Allocator>(other)
+    explicit allocation_only_allocator(const A& other)
+            noexcept(std::is_nothrow_copy_constructible<A>::value):
+        member_like_base<A>(other)
     {}
 
     // ditto
-    explicit allocation_only_allocator(Allocator&& other) noexcept :
-        member_like_base<Allocator>(std::move(other))
+    explicit allocation_only_allocator(A&& other)
+            noexcept(std::is_nothrow_move_constructible<A>::value) :
+        member_like_base<A>(std::move(other))
     {}
 
     // To make rebound copies
-    template <class OtherAllocator>
+    template <class B>
     explicit allocation_only_allocator(
-        const allocation_only_allocator<OtherAllocator>& other) noexcept :
-        member_like_base<Allocator>(other.base())
+        const allocation_only_allocator<B>& other)
+            noexcept(std::is_nothrow_constructible<A, const B&>::value) :
+        member_like_base<A>(other.base())
     {}
 
     // ditto
-    template <class OtherAllocator>
+    template <class B>
     explicit allocation_only_allocator(
-        allocation_only_allocator<OtherAllocator>&& other) noexcept :
-        member_like_base<Allocator>(std::move(other.base()))
+        allocation_only_allocator<B>&& other)
+            noexcept(std::is_nothrow_constructible<A, B&&>::value) :
+        member_like_base<A>(std::move(other.base()))
     {}
 
     // copy/move ctor/assignment ops are defaulted
@@ -109,17 +109,17 @@ public:
     template <class... Args>
     auto allocate(size_type n, Args&&... args)
     {
-        return base_traits_t::allocate(base(),
-            n, std::forward<Args>(args)...);
+        return base_traits_t::allocate(base(), n, std::forward<Args>(args)...);
     }
 
-    auto deallocate(pointer p, size_type n) noexcept
+    auto deallocate(pointer p, size_type n)
     {
         return base_traits_t::deallocate(base(), p, n);
     }
 
-    auto max_size() noexcept(noexcept(
-        base_traits_t::max_size(std::declval<const Allocator&>())))
+    size_type max_size() const noexcept
+        // this noexceptness is mandated in the spec of
+        // std::allocator_traits<A>::max_size
     {
         return base_traits_t::max_size(base());
     }
@@ -136,9 +136,9 @@ public:
         destroy(p, std::is_trivially_destructible<T>());
     }
 
-    auto select_on_container_copy_construction() const noexcept(noexcept(
-        base_traits_t::select_on_container_copy_construction(
-            std::declval<const Allocator&>())))
+    allocation_only_allocator select_on_container_copy_construction() const
+        noexcept(noexcept(base_traits_t::select_on_container_copy_construction(
+                            std::declval<const A&>())))
     {
         return base_traits_t::select_on_container_copy_construction(base());
     }
@@ -175,19 +175,62 @@ private:
 template <class AllocatorL, class AllocatorR>
 bool operator==(
     const allocation_only_allocator<AllocatorL>& left,
-    const allocation_only_allocator<AllocatorR>& right) noexcept
+    const allocation_only_allocator<AllocatorR>& right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   == std::declval<const AllocatorR&>()))
 {
     return left.base() == right.base();
 }
 
 template <class AllocatorL, class AllocatorR>
+bool operator==(
+    const allocation_only_allocator<AllocatorL>& left,
+    const AllocatorR& right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   == std::declval<const AllocatorR&>()))
+{
+    return left.base() == right;
+}
+
+template <class AllocatorL, class AllocatorR>
+bool operator==(
+    const AllocatorL& left,
+    const allocation_only_allocator<AllocatorR>& right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   == std::declval<const AllocatorR&>()))
+{
+    return left == right.base();
+}
+
+template <class AllocatorL, class AllocatorR>
 bool operator!=(
     const allocation_only_allocator<AllocatorL>& left,
-    const allocation_only_allocator<AllocatorR>& right) noexcept
+    const allocation_only_allocator<AllocatorR>& right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   != std::declval<const AllocatorR&>()))
 {
     return left.base() != right.base();
 }
 
+template <class AllocatorL, class AllocatorR>
+bool operator!=(
+    const allocation_only_allocator<AllocatorL>& left,
+    const AllocatorR& right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   != std::declval<const AllocatorR&>()))
+{
+    return left.base() != right;
+}
+
+template <class AllocatorL, class AllocatorR>
+bool operator!=(
+    const AllocatorL& left,
+    const allocation_only_allocator<AllocatorR>& right)
+    noexcept(noexcept(std::declval<const AllocatorL&>()
+                   != std::declval<const AllocatorR&>()))
+{
+    return left != right.base();
+}
 }}
 
 #endif
