@@ -434,7 +434,7 @@ private:
             what << what_core;
             write_formatted_field_name_of(what, " for ", nf_.base(),
                 static_cast<const Ch*>(nullptr));
-            return record_extraction_error(what.str());
+            return record_extraction_error(std::move(what).str());
         } catch (...) {
             return record_extraction_error(what_core);
         }

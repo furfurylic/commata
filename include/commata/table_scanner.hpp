@@ -1783,7 +1783,7 @@ struct fail_if_conversion_failed
         detail::write_ntmbs(s, begin, end);
         s << ": cannot convert";
         write_name<T>(s, " to an instance of ");
-        throw field_invalid_format(s.str());
+        throw field_invalid_format(std::move(s).str());
     }
 
     template <class T, class Ch>
@@ -1796,7 +1796,7 @@ struct fail_if_conversion_failed
         detail::write_ntmbs(s, begin, end);
         s << ": out of range";
         write_name<T>(s, " of ");
-        throw field_out_of_range(s.str());
+        throw field_out_of_range(std::move(s).str());
     }
 
     template <class T>
@@ -1806,7 +1806,7 @@ struct fail_if_conversion_failed
         std::ostringstream s;
         s << "Cannot convert an empty string";
         write_name<T>(s, " to an instance of ");
-        throw field_empty(s.str());
+        throw field_empty(std::move(s).str());
     }
 
 private:

@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include <gtest/gtest.h>
 
@@ -187,9 +188,11 @@ TYPED_TEST_P(TestTablePull, Basics)
         ASSERT_EQ(str("col3"), string_t(pull.begin(), pull.end())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(0, 19), pull.get_physical_position()) << e;
-        std::basic_ostringstream<char_t> o1;
-        o1 << pull;
-        ASSERT_EQ(str("col3"), o1.str()) << e;
+        {
+            std::basic_ostringstream<char_t> o1;
+            o1 << pull;
+            ASSERT_EQ(str("col3"), std::move(o1).str()) << e;
+        }
         ++j;
 
         ASSERT_TRUE(pull()) << e;
@@ -197,9 +200,11 @@ TYPED_TEST_P(TestTablePull, Basics)
         ASSERT_EQ(str(""), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(0, 20), pull.get_physical_position()) << e;
-        std::basic_ostringstream<char_t> o2;
-        o2 << pull;
-        ASSERT_EQ(str(""), o2.str()) << e;
+        {
+            std::basic_ostringstream<char_t> o2;
+            o2 << pull;
+            ASSERT_EQ(str(""), std::move(o2).str()) << e;
+        }
         ++j;
 
         ASSERT_TRUE(pull()) << e;

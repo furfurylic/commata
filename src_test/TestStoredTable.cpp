@@ -409,7 +409,7 @@ TYPED_TEST(TestStoredValueNoModification, Write)
     using decayed_char_t = std::remove_const_t<char_t>;
     using value_t = basic_stored_value<char_t>;
     using string_t = basic_string<decayed_char_t>;
-    using stream_t = basic_stringstream<decayed_char_t>;
+    using ostream_t = basic_ostringstream<decayed_char_t>;
 
     const auto ch = char_helper<decayed_char_t>::ch;
     const auto str = char_helper<decayed_char_t>::str;
@@ -418,17 +418,17 @@ TYPED_TEST(TestStoredValueNoModification, Write)
     string_t s0 = s + char_t();
     const value_t v(&s0[0], &s0[s0.size() - 1]);
 
-    stream_t o1;
+    ostream_t o1;
     o1 << setfill(ch('_')) << setw(10) << s
        << setfill(ch('*')) << left << setw(8) << s
        << setfill(ch('+')) << setw(4) << s
        << 10;
-    stream_t o2;
+    ostream_t o2;
     o2 << setfill(ch('_')) << setw(10) << v
        << setfill(ch('*')) << left << setw(8) << v
        << setfill(ch('+')) << setw(4) << v
        << 10;
-    ASSERT_EQ(o1.str(), o2.str());
+    ASSERT_EQ(std::move(o1).str(), std::move(o2).str());
 }
 
 template <class Ch>
@@ -1797,9 +1797,9 @@ TEST_F(TestStoredTableConst, Value)
     ASSERT_EQ(cv, "xyzuv");
 
     // test with streams
-    std::stringstream stream;
+    std::ostringstream stream;
     stream << cv;
-    ASSERT_EQ("xyzuv", stream.str());
+    ASSERT_EQ("xyzuv", std::move(stream).str());
 }
 
 TEST_F(TestStoredTableConst, Table)

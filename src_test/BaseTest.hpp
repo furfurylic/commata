@@ -9,6 +9,7 @@
 #include <locale>
 #include <sstream>
 #include <string>
+#include <utility>
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 #define COMMATA_TEST_MEMORY_LEAK_CHECK
@@ -120,9 +121,9 @@ public:
     template <class T>
     static std::basic_string<Ch> to_string(T value)
     {
-        std::basic_stringstream<Ch> s;
+        std::basic_ostringstream<Ch> s;
         s << value;
-        return s.str();
+        return std::move(s).str();
     }
 
     template <class... Args>

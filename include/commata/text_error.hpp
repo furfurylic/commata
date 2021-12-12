@@ -325,14 +325,14 @@ inline std::string to_string(const text_error_info& i)
 {
     std::ostringstream s;
     s << i;
-    return s.str();
+    return std::move(s).str();
 }
 
 inline std::wstring to_wstring(const text_error_info& i)
 {
     std::wostringstream s;
     s << i;
-    return s.str();
+    return std::move(s).str();
 }
 
 }

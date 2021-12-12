@@ -86,6 +86,25 @@ std::basic_string<Ch> plus1(std::basic_string<Ch> s, std::size_t i
     return s;
 }
 
+class from_str
+{
+    std::stringstream str_;
+
+public:
+    from_str(const char* s)
+    {
+        str_ << s;
+    }
+
+    template <class T>
+    operator T() && noexcept
+    {
+        T num;
+        str_ >> num;
+        return num;
+    }
+};
+
 }
 
 typedef testing::Types<char, wchar_t> Chs;
@@ -436,7 +455,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, UpperLimit)
     {
         stringstream_t ss;
         ss << std::scientific << std::setprecision(50) << maxx << '0';
-        maxxBy10 = ss.str();
+        maxxBy10 = std::move(ss).str();
     }
 
     std::vector<value_t> values;
@@ -474,7 +493,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, LowerLimit)
     {
         stringstream_t ss;
         ss << std::scientific << std::setprecision(50) << minn << '0';
-        minnBy10 = ss.str();
+        minnBy10 = std::move(ss).str();
     }
 
     std::vector<value_t> values;
@@ -1903,14 +1922,6 @@ TYPED_TEST(TestReplaceIfConversionFailed, CtorsCopy)
     char d[] = "dummy";
     char* de = d + sizeof d - 1;
 
-    const auto from_str = [](const char* s) {
-        std::stringstream str;
-        str << s;
-        TypeParam num;
-        str >> num;
-        return num;
-    };
-
     TypeParam num_1 = from_str("10");
     TypeParam num_2 = from_str("15");
     TypeParam num_3 = from_str("-35");
@@ -1983,14 +1994,6 @@ TYPED_TEST(TestReplaceIfConversionFailed, CopyAssign)
 
     char d[] = "dummy";
     char* de = d + sizeof d - 1;
-
-    const auto from_str = [](const char* s) {
-        std::stringstream str;
-        str << s;
-        TypeParam num;
-        str >> num;
-        return num;
-    };
 
     TypeParam num_1 = from_str("10");
     TypeParam num_2 = from_str("15");
@@ -2116,14 +2119,6 @@ TYPED_TEST(TestReplaceIfConversionFailed, MoveAssign)
     char d[] = "dummy";
     char* de = d + sizeof d - 1;
 
-    const auto from_str = [](const char* s) {
-        std::stringstream str;
-        str << s;
-        TypeParam num;
-        str >> num;
-        return num;
-    };
-
     TypeParam num_1 = from_str("10");
     TypeParam num_2 = from_str("15");
     TypeParam num_3 = from_str("-35");
@@ -2226,14 +2221,6 @@ TYPED_TEST(TestReplaceIfConversionFailed, Swap)
 
     char d[] = "dummy";
     char* de = d + sizeof d - 1;
-
-    const auto from_str = [](const char* s) {
-        std::stringstream str;
-        str << s;
-        TypeParam num;
-        str >> num;
-        return num;
-    };
 
     TypeParam num_1 = from_str("10");
     TypeParam num_2 = from_str("15");

@@ -333,10 +333,10 @@ TEST_P(TestParseCsvEndsWithoutLF, All)
     test_collector<char> collector(field_values);
     ASSERT_TRUE(parse_csv(&buf, collector, 1024));
     ASSERT_EQ(1U, field_values.size());
-    std::stringstream s;
+    std::ostringstream s;
     std::copy(field_values[0].cbegin(), field_values[0].cend(),
         std::ostream_iterator<std::string>(s, "/"));
-    ASSERT_EQ(GetParam().second, s.str());
+    ASSERT_EQ(GetParam().second, std::move(s).str());
 }
 
 INSTANTIATE_TEST_SUITE_P(, TestParseCsvEndsWithoutLF,

@@ -82,17 +82,17 @@ TEST_F(TestTextError, Info)
 {
     text_error e("Some error occurred");
     {
-        std::stringstream s;
+        std::ostringstream s;
         s << e.info();
-        ASSERT_EQ(e.what(), s.str());
+        ASSERT_EQ(e.what(), std::move(s).str());
     }
 
     e.set_physical_position(12345);
     {
-        std::stringstream s;
+        std::ostringstream s;
         s << e.info();
-        std::string i = s.str();
-        ASSERT_NE(s.str(), e.what());
+        std::string i = std::move(s).str();
+        ASSERT_NE(i, e.what());
         const auto lpos = i.find(
             std::to_string(e.get_physical_position()->first + 1));
         const auto cpos = i.find("n/a");
@@ -105,9 +105,9 @@ TEST_F(TestTextError, Info)
     e.set_physical_position(text_error::npos - 1, text_error::npos - 2);
     std::string is;
     {
-        std::stringstream s;
+        std::ostringstream s;
         s << e.info();
-        is = s.str();
+        is = std::move(s).str();
     }
     ASSERT_NE(is, e.what());
     {
@@ -124,9 +124,9 @@ TEST_F(TestTextError, Info)
     // info()'s string is aligned to right
     std::string is2;
     {
-        std::stringstream s;
+        std::ostringstream s;
         s << std::setw(is.size() + 20) << std::setfill('_') << e.info();
-        is2 = s.str();
+        is2 = std::move(s).str();
     }
     ASSERT_EQ(is.size() + 20, is2.size());
     ASSERT_EQ(std::string(20, '_'), is2.substr(0, 20));
@@ -135,10 +135,10 @@ TEST_F(TestTextError, Info)
     // info()'s string is aligned to left
     std::string is3;
     {
-        std::stringstream s;
+        std::ostringstream s;
         s << std::left;
         s << std::setw(is.size() + 10) << std::setfill('#') << e.info();
-        is3 = s.str();
+        is3 = std::move(s).str();
     }
     ASSERT_EQ(is.size() + 10, is3.size());
     ASSERT_EQ(is, is3.substr(0, is.size()));
@@ -147,15 +147,15 @@ TEST_F(TestTextError, Info)
     // info() can be written into wide streams
     std::wstring isw;
     {
-        std::wstringstream s;
+        std::wostringstream s;
         s << is.c_str();
-        isw = s.str();
+        isw = std::move(s).str();
     }
     std::wstring is4;
     {
-        std::wstringstream s;
+        std::wostringstream s;
         s << e.info();
-        is4 = s.str();
+        is4 = std::move(s).str();
     }
     ASSERT_EQ(isw, is4);
     ASSERT_EQ(isw, to_wstring(e.info()));

@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <utility>
 
 #include <gtest/gtest.h>
 
@@ -39,7 +40,7 @@ TEST_P(TestRecordExtractor, LeftmostKey)
     ASSERT_EQ(L"key_a,key_b,value_a,value_b\n"
               L"\"ka1\",kb1,va1,vb1\n"
               L"ka1,kb3,vb3,\"vb3\"\n",
-              out.str());
+              std::move(out).str());
 }
 
 TEST_P(TestRecordExtractor, InnerKey)
@@ -57,7 +58,7 @@ TEST_P(TestRecordExtractor, InnerKey)
     ASSERT_EQ("key_a,key_b,value_a,value_b\n"
               "ka2,kb12,va2,vb2\n"
               "ka1,kb13,\"vb\n3\",vb3\n",
-              out.str());
+              std::move(out).str());
 }
 
 TEST_P(TestRecordExtractor, NoSuchKey)
@@ -87,7 +88,7 @@ TEST_P(TestRecordExtractor, NoSuchField)
         make_record_extractor(&out, "key_b", "k1"), GetParam()));
     ASSERT_EQ("key_a,key_b\n"
               "k0,k1,k2\n",
-              out.str());
+              std::move(out).str());
 }
 
 TEST_P(TestRecordExtractor, MoveCtor)
@@ -111,7 +112,7 @@ TEST_P(TestRecordExtractor, MoveCtor)
 
     try {
         parse_csv(s, std::move(ex), GetParam());
-        ASSERT_STREQ(L"", out.str().c_str());
+        ASSERT_TRUE(out.str().empty());
     } catch (const record_extraction_error&) {
         // "no such field" is all right
     }
@@ -120,7 +121,7 @@ TEST_P(TestRecordExtractor, MoveCtor)
     ASSERT_STREQ(
         L",key_b,value_a,value_b\n"
         L"ka1,kb3,vb3,\"vb3\"\n",
-        out.str().c_str());
+        std::move(out).str().c_str());
 }
 
 INSTANTIATE_TEST_SUITE_P(, TestRecordExtractor, testing::Values(1, 10, 1024));
@@ -149,7 +150,7 @@ TEST_P(TestRecordExtractorLimit, Basics)
     if (max_record_num > 1) {
         expected += "ka1,kb3,vb3,vb3\n";
     }
-    ASSERT_EQ(expected, out.str());
+    ASSERT_EQ(expected, std::move(out).str());
 }
 
 INSTANTIATE_TEST_SUITE_P(, TestRecordExtractorLimit,
@@ -175,7 +176,7 @@ TEST_F(TestRecordExtractorIndexed, Basics)
     ASSERT_EQ("key_a,key_b,value_a,value_b\n"
               "ka2,kb12,va2,vb2\n"
               "ka1,kb13,\"vb\n3\",vb3\n",
-              out.str());
+              std::move(out).str());
 }
 
 TEST_F(TestRecordExtractorIndexed, FirstLineIncluded)
@@ -190,7 +191,7 @@ TEST_F(TestRecordExtractorIndexed, FirstLineIncluded)
             return value > 500;
         }, 0U));
     ASSERT_EQ("assets,1100\nlialibities,600\n",
-              out.str());
+              std::move(out).str());
 }
 
 TEST_F(TestRecordExtractorIndexed, TooLargeTargetFieldIndex)
@@ -218,7 +219,7 @@ TEST_F(TestRecordExtractorIndexed, ConstRValueRefString)
                        L"star,alnilam\n"
                        L"vegetable,brassica\n";
     parse_csv(s, std::move(extractor));
-    ASSERT_EQ(L"star,alnilam\n", out.str());
+    ASSERT_EQ(L"star,alnilam\n", std::move(out).str());
 }
 
 namespace {
@@ -249,7 +250,7 @@ TEST_F(TestRecordExtractorFinalPredicateForValue, Basics)
     ASSERT_EQ("key_a,key_b,value_a,value_b\n"
               "ka2,kb12,va2,vb2\n"
               "ka1,kb13,\"vb\n3\",vb3\n",
-              out.str());
+              std::move(out).str());
 }
 
 struct TestRecordExtractorMiscellaneous : BaseTest
@@ -278,7 +279,7 @@ TEST_F(TestRecordExtractorMiscellaneous, Reference)
     ASSERT_EQ("instrument,type\n"
               "tuba,brass\n"
               "clarinet,woodwind\n",
-              out.str());
+              std::move(out).str());
 }
 
 TEST_F(TestRecordExtractorMiscellaneous, Allocator)
@@ -403,7 +404,7 @@ TEST_F(TestRecordExtractorMiscellaneous, IsInHeader)
     parse_csv(s, record_extractor_wrapper<decltype(x)>(std::move(x)));
 
     ASSERT_STREQ("[instrument],[type]\n"
-                 "clarinet,woodwind\n", out.str().c_str());
+                 "clarinet,woodwind\n", std::move(out).str().c_str());
 }
 
 TEST_F(TestRecordExtractorMiscellaneous, IsInHeaderIndexed)
@@ -417,5 +418,5 @@ TEST_F(TestRecordExtractorMiscellaneous, IsInHeaderIndexed)
     parse_csv(s, record_extractor_wrapper<decltype(x)>(std::move(x)));
 
     ASSERT_STREQ("[instrument],[type]\n"
-                 "clarinet,woodwind\n", out.str().c_str());
+                 "clarinet,woodwind\n", std::move(out).str().c_str());
 }
