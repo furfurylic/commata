@@ -50,8 +50,7 @@ class text_error :
         virtual const char* what() const noexcept = 0;
     };
 
-    template <class Tr = std::char_traits<char>,
-              class Allocator = std::allocator<char>>
+    template <class Tr, class Allocator>
     class string_holder : public what_holder
     {
         std::basic_string<char, Tr, Allocator> s_;
@@ -156,8 +155,7 @@ public:
     const std::pair<std::size_t, std::size_t>* get_physical_position() const
         noexcept
     {
-        return (pos_ != std::make_pair(npos, npos)) ?
-            &pos_ : nullptr;
+        return (pos_ != std::make_pair(npos, npos)) ? &pos_ : nullptr;
     }
 
     text_error_info info(std::size_t base = 1U) const noexcept;
