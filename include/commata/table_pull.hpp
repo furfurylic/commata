@@ -411,15 +411,19 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_same<TableSource, std::decay_t<TableSourceR>>::value>*
-                = nullptr>
+            std::is_constructible<TableSource, TableSourceR&&>::value
+         && !std::is_base_of<primitive_table_pull,
+                             std::decay_t<TableSourceR>>::value>* = nullptr>
     explicit primitive_table_pull(
         TableSourceR&& in, std::size_t buffer_size = 0) :
         primitive_table_pull(std::allocator_arg, Allocator(),
             std::forward<TableSourceR>(in), buffer_size)
     {}
 
-    template <class TableSourceR>
+    template <class TableSourceR,
+        std::enable_if_t<
+            std::is_constructible<TableSource, TableSourceR&&>::value>*
+        = nullptr>
     primitive_table_pull(std::allocator_arg_t, const Allocator& alloc,
         TableSourceR&& in, std::size_t buffer_size = 0) :
         i_sq_(0), i_dq_(0),
@@ -687,14 +691,18 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_same<TableSource, std::decay_t<TableSourceR>>::value>*
-                = nullptr>
+            std::is_constructible<TableSource, TableSourceR&&>::value
+         && !std::is_base_of<table_pull, std::decay_t<TableSourceR>>::value>*
+        = nullptr>
     explicit table_pull(TableSourceR&& in, std::size_t buffer_size = 0) :
         table_pull(std::allocator_arg, Allocator(),
             std::forward<TableSourceR>(in), buffer_size)
     {}
 
-    template <class TableSourceR>
+    template <class TableSourceR,
+        std::enable_if_t<
+            std::is_constructible<TableSource, TableSourceR&&>::value>*
+        = nullptr>
     table_pull(std::allocator_arg_t, const Allocator& alloc,
         TableSourceR&& in, std::size_t buffer_size = 0) :
         p_(std::allocator_arg, alloc, std::forward<TableSourceR>(in),
@@ -1345,8 +1353,11 @@ std::basic_string<typename TableSource::char_type,
 }
 
 template <class TableSource, class... Appendices>
-table_pull<std::decay_t<TableSource>> make_table_pull(
-    TableSource&& in, Appendices&&... appendices)
+auto make_table_pull(TableSource&& in, Appendices&&... appendices)
+ -> std::enable_if_t<
+        std::is_constructible<table_pull<std::decay_t<TableSource>>,
+                              TableSource&&, Appendices&&...>::value,
+        table_pull<std::decay_t<TableSource>>>
 {
     return table_pull<std::decay_t<TableSource>>(
         std::forward<TableSource>(in),
@@ -1354,9 +1365,14 @@ table_pull<std::decay_t<TableSource>> make_table_pull(
 }
 
 template <class TableSource, class Allocator, class... Appendices>
-table_pull<std::decay_t<TableSource>, Allocator> make_table_pull(
-    std::allocator_arg_t, const Allocator& alloc,
+auto make_table_pull(std::allocator_arg_t, const Allocator& alloc,
     TableSource&& in, Appendices&&... appendices)
+ -> std::enable_if_t<
+        std::is_constructible<
+            table_pull<std::decay_t<TableSource>, Allocator>,
+            std::allocator_arg_t, const Allocator&,
+            TableSource&&, Appendices&&...>::value,
+        table_pull<std::decay_t<TableSource>, Allocator>>
 {
     return table_pull<std::decay_t<TableSource>, Allocator>(
         std::allocator_arg, alloc, std::forward<TableSource>(in),

@@ -6630,15 +6630,14 @@ template &lt;class TableSourceR>
   explicit primitive_table_pull(TableSourceR&amp;&amp; in,
                                 std::size_t buffer_size = 0);
           </code>
-          <requires><c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.
-                    <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
+          <requires><c>std::is_default_constructible&lt;Allocator>::value</c> shall be <c>true</c>.</requires>
           <effects>First default constructs an <c>Allocator</c> object <c>a</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
                    Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
-          <remark><c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
-                  This overload shall not participate in overload resolution unless <c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</remark>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;TableSource, TableSourceR&amp;&amp;>::value &amp;&amp; !std::is_base_of&lt;table_pull, std::decay_t&lt;TableSourceR>>::value</c> is <c>true</c>.
+                  <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</remark>
         </code-item>
 
         <code-item>
@@ -6647,12 +6646,13 @@ template &lt;class TableSourceR>
   primitive_table_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
                        std::size_t buffer_size = 0);
           </code>
-          <requires><c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.</requires>
           <effects>First constructs an <c>Allocator</c> object <c>a</c> with <c>alloc</c>.
                    Creates the event queue that does dynamic memory allocation with <c>a</c>.
                    Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;TableSource, TableSourceR&amp;&amp;>::value</c> is <c>true</c>.
+                  <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</remark>
         </code-item>
 
         <code-item>
@@ -7060,13 +7060,12 @@ static constexpr bool physical_position_available = <nc>see below</nc>;
 template &lt;class TableSourceR>
   explicit table_pull(TableSourceR&amp;&amp; in, std::size_t buffer_size = 0);
           </code>
-          <requires><c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.
-                    <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
+          <requires><c>std::is_default_constructible&lt;Allocator>::value</c> shall be <c>true</c>.</requires>
           <effects>Initializes an object of <c>table_pull</c> with a default constructed <c>Allocator</c> object as its allocator object and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
           <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
-          <remark>This overload shall not participate in overload resolution unless <c>std::remove_const_t&lt;std::remove_reference_t&lt;TableSourceR>></c> is the same type as <c>TableSource</c>.</remark>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;TableSource, TableSourceR&amp;&amp;>::value &amp;&amp; !std::is_base_of&lt;table_pull, std::decay_t&lt;TableSourceR>>::value</c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
@@ -7075,11 +7074,11 @@ template &lt;class TableSourceR>
   table_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
              std::size_t buffer_size = 0);
           </code>
-          <requires><c>std::decay_t&lt;TableSourceR></c> is the same type as <c>TableSource</c>.</requires>
           <effects>Initializes an object of <c>table_pull</c> with an allocator object constructed from <c>alloc</c> and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
           <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;TableSource, TableSourceR&amp;&amp;>::value</c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
@@ -7584,6 +7583,7 @@ template &lt;class TableSource, class... Appendices>
           <effects><p>Equivalent to:</p>
                    <code>return table_pull&lt;std::decay_t&lt;TableSource>>(std::forward&lt;TableSource>(in),
                                              std::forward&lt;Appendices>(appendices)...);</code></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible&lt;table_pull&lt;std::decay_t&lt;TableSource>>, TableSource&amp;&amp;, Appendices&amp;&amp;...>::value</c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
@@ -7597,6 +7597,7 @@ template &lt;class TableSource, class Allocator, class... Appendices>
                    <code>return table_pull&lt;std::decay_t&lt;TableSource>, Allocator>(std::allocator_arg, alloc,
                                                         std::forward&lt;TableSource>(in),
                                                         std::forward&lt;Appendices>(appendices)...);</code></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible&lt;table_pull&lt;std::decay_t&lt;TableSource, Allocator>>, std::allocator_arg_t, const Allocator&amp;, TableSource&amp;&amp;, Appendices&amp;&amp;...>::value</c> is <c>true</c>.</remark>
         </code-item>
       </section>
     </section>
