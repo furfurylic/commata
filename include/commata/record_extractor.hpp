@@ -518,7 +518,11 @@ class record_extractor :
         FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
 
 public:
-    template <class FieldNamePredR, class FieldValuePredR>
+    template <class FieldNamePredR, class FieldValuePredR,
+        std::enable_if_t<
+            std::is_constructible<FieldNamePred, FieldNamePredR&&>::value
+         && std::is_constructible<FieldValuePred, FieldValuePredR&&>::value>*
+        = nullptr>
     record_extractor(
         std::basic_streambuf<Ch, Tr>* out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
@@ -531,7 +535,11 @@ public:
             header, max_record_num)
     {}
 
-    template <class FieldNamePredR, class FieldValuePredR>
+    template <class FieldNamePredR, class FieldValuePredR,
+        std::enable_if_t<
+            std::is_constructible<FieldNamePred, FieldNamePredR&&>::value
+         && std::is_constructible<FieldValuePred, FieldValuePredR&&>::value>*
+        = nullptr>
     record_extractor(
         std::allocator_arg_t, const Allocator& alloc,
         std::basic_streambuf<Ch, Tr>* out,
@@ -560,7 +568,10 @@ class record_extractor_with_indexed_key :
         Ch, Tr, Allocator>;
 
 public:
-    template <class FieldValuePredR>
+    template <class FieldValuePredR,
+        std::enable_if_t<
+            std::is_constructible<FieldValuePred, FieldValuePredR&&>::value>*
+        = nullptr>
     record_extractor_with_indexed_key(
         std::basic_streambuf<Ch, Tr>* out,
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
@@ -573,7 +584,10 @@ public:
             header, max_record_num)
     {}
 
-    template <class FieldValuePredR>
+    template <class FieldValuePredR,
+        std::enable_if_t<
+            std::is_constructible<FieldValuePred, FieldValuePredR&&>::value>*
+        = nullptr>
     record_extractor_with_indexed_key(
         std::allocator_arg_t, const Allocator& alloc,
         std::basic_streambuf<Ch, Tr>* out,
