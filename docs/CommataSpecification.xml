@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-12-14 (UTC)</signature>
+<signature>2021-12-15 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1969,11 +1969,13 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
           <code>
 template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
           </code>
-          <requires><c>std::is_constructible&lt;CharInput, Args...>::value</c> shall be <c>true</c>.</requires>
           <effects>Initializes <c>in</c> with <c>std::forward&lt;Args>(args)...</c>.</effects>
-          <remark>This constructor shall not participate in overload resolution if <c>sizeof...(Args)</c> is equal to <c>1</c> and
-                  <c>csv_source&lt;CharInput></c> is a base class of or the same type as the reference-removed and cv-unqualified type of the first type of <c>args</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;CharInput, Args...>::value</c>.</remark>
+          <remark><p>This constructor shall not participate in overload resolution unless:</p>
+                  <ul>
+                    <li><c>std::is_constructible&lt;CharInput, Args...>::value</c> is <c>true</c> and</li>
+                    <li><c>sizeof...(Args)</c> is not equal to <c>1</c> or <c>std::is_base_of&lt;csv_source&lt;CharInput>, std::decay_t&lt;Args...>>::value</c> is <c>false</c>.</li>
+                  </ul>
+                  <p>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;CharInput, Args&amp;&amp;...>::value</c>.</p></remark>
         </code-item>
       </section>
 
@@ -2081,7 +2083,8 @@ template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcep
           </code>
           <preface>Let <c>I</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
           <returns><c>csv_source&lt;I>(std::forward&lt;Args>(args)...)</c>.</returns>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;I, Args...>::value</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible&lt;csv_source&lt;I>, Args&amp;&amp;...>::value</c> is <c>true</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;I, Args&amp;&amp;...>::value</c>.</remark>
         </code-item>
       </section>
     </section>

@@ -669,11 +669,11 @@ public:
 
     template <class... Args,
         std::enable_if_t<
-            (sizeof...(Args) != 1)
-         || !std::is_base_of<
+            std::is_constructible<CharInput, Args&&...>::value
+         && ((sizeof...(Args) != 1)
+          || !std::is_base_of<
                 csv_source,
-                std::remove_const_t<std::remove_reference_t<
-                    detail::first_t<Args...>>>>::value>* = nullptr>
+                std::decay_t<detail::first_t<Args...>>>::value)>* = nullptr>
     explicit csv_source(Args&&... args) noexcept(
             std::is_nothrow_constructible<CharInput, Args&&...>::value) :
         in_(std::forward<Args>(args)...)
@@ -878,7 +878,11 @@ template <class... Args>
 auto make_csv_source(Args&&... args)
     noexcept(std::is_nothrow_constructible<
         decltype(make_char_input(std::forward<Args>(args)...))>::value)
- -> csv_source<decltype(make_char_input(std::forward<Args>(args)...))>
+ -> std::enable_if_t<
+        std::is_constructible<
+            csv_source<decltype(make_char_input(std::forward<Args>(args)...))>,
+            Args&&...>::value,
+        csv_source<decltype(make_char_input(std::forward<Args>(args)...))>>
 {
     return csv_source<decltype(make_char_input(std::forward<Args>(args)...))>(
         std::forward<Args>(args)...);
