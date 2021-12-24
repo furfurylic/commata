@@ -163,7 +163,7 @@
 </xsl:template>
 
 <xsl:template name="toc-xref">
-  <a href="#{@id}"><xsl:apply-templates select="//*[@id = current()/@id]" mode="heading"/></a>
+  <a href="#{@id}"><xsl:apply-templates select="//*[@id = current()/@id]" mode="heading"/> [<xsl:value-of select="@id"/>]</a>
 </xsl:template>
 
 <xsl:template match="c"><code><xsl:apply-templates/></code></xsl:template>
