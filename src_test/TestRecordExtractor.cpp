@@ -642,3 +642,9 @@ TEST_F(TestRecordExtractorMiscellaneous, EvadeCopyingIndexed)
                  "clarinet,woodwind\n", std::move(out).str().c_str());
     ASSERT_EQ(0U, total);
 }
+
+void g()
+{
+    std::stringbuf str;
+    make_record_extractor(&str, "hoge", 10);
+}
