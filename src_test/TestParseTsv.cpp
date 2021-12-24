@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <exception>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <ostream>
 #include <sstream>
@@ -415,4 +416,10 @@ TEST_F(TestParseTsv, SourceSwap)
     simple_transcriptor handler(str, true);
     parse_tsv(std::move(source), handler);
     ASSERT_STREQ("{(ABCDE)(FGHI)(JKL)}", std::move(str).str().c_str());
+}
+
+void h()
+{
+    std::stringbuf str;
+    parse_tsv(&str, simple_transcriptor(std::cout));
 }

@@ -590,3 +590,9 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuideIndexed)
         ASSERT_GT(total, 0U);
     }
 }
+
+void g()
+{
+    std::stringbuf str;
+    make_record_extractor(&str, "hoge", 10);
+}
