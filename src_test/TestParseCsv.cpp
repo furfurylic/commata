@@ -684,3 +684,14 @@ TEST_F(TestCsvSource, Swap)
     ASSERT_EQ(1U, field_values[0].size());
     ASSERT_STREQ("XYZ", field_values[0][0].c_str());
 }
+
+void f()
+{
+    std::stringbuf str;
+    auto source = make_csv_source(str);
+
+    std::vector<std::vector<std::string>> field_values;
+    test_collector<char> h(field_values);
+
+    std::move(source)(std::ref(h), std::exception());
+}
