@@ -46,6 +46,10 @@ static_assert(
     std::is_nothrow_copy_assignable<text_error>::value,
     "text_error shall be nothrow-copy-assignable");
 
+static_assert(
+    std::is_trivially_copyable<text_error_info>::value,
+    "text_error_info shall be trivially destructible");
+
 struct TestTextError : BaseTest
 {};
 

@@ -538,10 +538,12 @@ text_error_info info(std::size_t base = 1) const noexcept;
 namespace commata {
   class text_error_info {
   public:
+    <c>// <n><xref id="text_error_info.cons"/>, constructors and assignment operators:</n></c>
     text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
     text_error_info(const text_error_info&amp; other) = default;
     text_error_info&amp; operator=(const text_error_info&amp; other) = default;
 
+    <c>// <n><xref id="text_error_info.observe"/>, observers:</n></c>
     const text_error&amp; error() const noexcept;
     std::size_t get_base() const noexcept;
 
@@ -565,26 +567,36 @@ namespace commata {
       <p>An object of the class <c>text_error_info</c> is a mere reference-wrapper of an object of the class <c>text_error</c>.
          This class offers a simple character representation of objects of the class <c>text_error</c>.</p>
 
-      <code-item>
-        <code>
+      <p><c>text_error_info</c> shall be a trivially copyable type.</p>
+
+      <section id="text_error_info.cons">
+        <name><c>text_error_info</c> constructors and assignment operators</name>
+
+        <code-item>
+          <code>
 text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
-        </code>
-        <effects>Initializes <c>e</c> with <c>std::addressof(ex)</c> and <c>b</c> with <c>base</c>.</effects>
-      </code-item>
+          </code>
+          <effects>Initializes <c>e</c> with <c>std::addressof(ex)</c> and <c>b</c> with <c>base</c>.</effects>
+        </code-item>
+      </section>
 
-      <code-item>
-        <code>
+      <section id="text_error_info.observe">
+        <name><c>text_error_info</c> observers</name>
+
+        <code-item>
+          <code>
 const text_error&amp; error() const noexcept;
-        </code>
-        <returns><c>*e</c>.</returns>
-      </code-item>
+          </code>
+          <returns><c>*e</c>.</returns>
+        </code-item>
 
-      <code-item>
-        <code>
+        <code-item>
+          <code>
 std::size_t get_base() const noexcept;
-        </code>
-        <returns><c>b</c>.</returns>
-      </code-item>
+          </code>
+          <returns><c>b</c>.</returns>
+        </code-item>
+      </section>
 
       <section id="text_error_info.char_repr">
         <name><c>text_error_info</c> character representations</name>
