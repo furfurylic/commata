@@ -18,7 +18,7 @@ std::basic_ostream<Ch, Tr>& formatted_output(
     std::basic_ostream<Ch, Tr>& os, std::streamsize n, F put_obj)
 {
     const typename std::basic_ostream<Ch, Tr>::sentry s(os);        // throw
-    auto w = os.width(0);
+    const auto w = os.width();
 
     const auto pad = [&os, n, w] {
         if (w > n) {
@@ -37,11 +37,11 @@ std::basic_ostream<Ch, Tr>& formatted_output(
         return put_obj(os.rdbuf());
     };
 
-    bool failed = true;
+    bool sets_failbit = true;
     if (s) {
         try  {
-            failed = !(((os.flags() & std::ios_base::adjustfield)
-                    == std::ios_base::left) ?
+            sets_failbit = !(((os.flags() & std::ios_base::adjustfield)
+                           == std::ios_base::left) ?
                 put() && pad() : pad() && put());                   // throw
         } catch (...) {
             if (os.bad()) {
@@ -55,13 +55,14 @@ std::basic_ostream<Ch, Tr>& formatted_output(
                 if ((os.exceptions() & std::ios_base::badbit) != 0) {
                     throw;                                          // throw
                 }
-                failed = false;
+                sets_failbit = false;
             }
         }
     }
-    if (failed) {
+    if (sets_failbit) {
         os.setstate(std::ios_base::failbit);                        // throw
     }
+    os.width(0);
     return os;
 }
 
