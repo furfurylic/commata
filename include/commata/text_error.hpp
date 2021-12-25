@@ -14,6 +14,7 @@
 #include <exception>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <sstream>
 #include <streambuf>
@@ -204,23 +205,22 @@ bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch(&s)[N])
 }
 
 template <class T>
-std::pair<T, bool> add(T a, T b)
+std::optional<T> add(T a, T b)
 {
     if (std::numeric_limits<T>::max() - a >= b) {
-        return { a + b, true };
+        return a + b;
     } else {
-        return { T(), false };
+        return std::nullopt;
     }
 }
 
 template <class T, class... Ts>
-std::pair<T, bool> add(T a, T b, Ts... cs)
+std::optional<T> add(T a, T b, Ts... cs)
 {
-    const auto bcs = add<T>(b, cs...);
-    if (bcs.second) {
-        return add<T>(a, bcs.first);
+    if (const auto bcs = add<T>(b, cs...)) {
+        return add<T>(a, *bcs);
     } else {
-        return { T(), false };
+        return std::nullopt;
     }
 }
 
@@ -245,10 +245,14 @@ std::basic_ostream<char, Tr>& operator<<(
         const auto w = i.error().what();
         const auto w_len = std::strlen(w);
 
-        const auto n = add<length_t>(
-            w_len, l_len, c_len, ((w_len > 0) ? 15 : 27)).first;
+        auto n = add<length_t>(w_len, l_len, c_len, ((w_len > 0) ? 15 : 27));
+        if (!n || (*n > unmax)) {
+            // more than largest possible padding length, when 'no padding'
+            // does the trick
+            n = 0;
+        }
 
-        return detail::formatted_output(os, static_cast<std::streamsize>(n),
+        return detail::formatted_output(os, static_cast<std::streamsize>(*n),
             [w, w_len, l = &l[0], l_len, c = &c[0], c_len]
             (auto* sb) {
                 if (w_len > 0) {
@@ -288,10 +292,14 @@ std::basic_ostream<wchar_t, Tr>& operator<<(
         const auto w_raw = i.error().what();
         const auto w_len = std::strlen(w_raw);
 
-        const auto n = add<length_t>(
-            w_len, l_len, c_len, ((w_len > 0) ? 15 : 27)).first;
+        auto n = add<length_t>(w_len, l_len, c_len, ((w_len > 0) ? 15 : 27));
+        if (!n || (*n > unmax)) {
+            // more than largest possible padding length, when 'no padding'
+            // does the trick
+            n = 0;
+        }
 
-        return detail::formatted_output(os, static_cast<std::streamsize>(n),
+        return detail::formatted_output(os, static_cast<std::streamsize>(*n),
             [&os, w_raw, w_len, l = &l[0], l_len, c = &c[0], c_len]
             (auto* sb) {
                 if (w_len > 0) {
