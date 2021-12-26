@@ -192,41 +192,76 @@ inline text_error_info text_error::info(std::size_t base) const noexcept
 
 namespace detail { namespace ex {
 
+using length_t = std::common_type_t<std::make_unsigned_t<std::streamsize>,
+                                    std::size_t>;
+
+constexpr std::streamsize nmax = std::numeric_limits<std::streamsize>::max();
+constexpr length_t unmax = static_cast<length_t>(nmax);
+
 // Prints a non-negative integer value in the decimal system
 // into a sufficient-length buffer
 template <std::size_t N>
-std::streamsize print_pos(char (&s)[N], std::size_t pos, std::size_t base)
+std::size_t print_pos(char (&s)[N], std::size_t pos, std::size_t base)
 {
     const auto len = (pos != text_error::npos)
                   && (text_error::npos - base >= pos) ?
         std::snprintf(s, N, "%zu", pos + base) :
         std::snprintf(s, N, "n/a");
     assert((len > 0 ) && (static_cast<std::size_t>(len) < N));
-    return static_cast<std::streamsize>(len);
+    return static_cast<std::size_t>(len);
 }
 
 template <std::size_t N>
-std::streamsize print_pos(wchar_t (&s)[N], std::size_t pos, std::size_t base)
+std::size_t print_pos(wchar_t (&s)[N], std::size_t pos, std::size_t base)
 {
     const auto len = (pos != text_error::npos)
                   && (text_error::npos - base >= pos) ?
         std::swprintf(s, N, L"%zu", pos + base) :
         std::swprintf(s, N, L"n/a");
     assert((len > 0 ) && (static_cast<std::size_t>(len) < N));
-    return static_cast<std::streamsize>(len);
+    return static_cast<std::size_t>(len);
+}
+
+template <class Ch, class Tr>
+bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch* s, std::size_t n)
+{
+    while (n > unmax) {
+        if (sb->sputn(s, nmax) != nmax) {
+            return false;
+        }
+        s += unmax;
+        n -= unmax;
+    }
+    return sb->sputn(s, n) == static_cast<std::streamsize>(n);
 }
 
 template <class Ch, class Tr, std::size_t N>
 bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch(&s)[N])
 {
     // s shall be null terminated, so s[N - 1] is null
-    return sb->sputn(s, N - 1) == N - 1;
+    assert(s[N - 1] == Ch());
+    return sputn(sb, s, N - 1);
 }
 
-template <class Ch, class Tr>
-bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch* s, std::streamsize n)
+template <class T>
+std::pair<T, bool> add(T a, T b)
 {
-    return sb->sputn(s, n) == n;
+    if (std::numeric_limits<T>::max() - a >= b) {
+        return { a + b, true };
+    } else {
+        return { T(), false };
+    }
+}
+
+template <class T, class... Ts>
+std::pair<T, bool> add(T a, T b, Ts... cs)
+{
+    const auto bcs = add<T>(b, cs...);
+    if (bcs.second) {
+        return add<T>(a, bcs.first);
+    } else {
+        return { T(), false };
+    }
 }
 
 }} // end detail::ex
@@ -248,11 +283,12 @@ std::basic_ostream<char, Tr>& operator<<(
 
         // what
         const auto w = i.error().what();
-        const auto w_len = static_cast<std::streamsize>(std::strlen(w));
+        const auto w_len = std::strlen(w);
 
-        const auto n = w_len + l_len + c_len + ((w_len > 0) ? 15 : 27);
+        const auto n = add<length_t>(
+            w_len, l_len, c_len, ((w_len > 0) ? 15 : 27)).first;
 
-        return detail::formatted_output(os, n,
+        return detail::formatted_output(os, static_cast<std::streamsize>(n),
             [w, w_len, l = &l[0], l_len, c = &c[0], c_len]
             (auto* sb) {
                 if (w_len > 0) {
@@ -290,15 +326,16 @@ std::basic_ostream<wchar_t, Tr>& operator<<(
 
         // what
         const auto w_raw = i.error().what();
-        const auto w_len = static_cast<std::streamsize>(std::strlen(w_raw));
+        const auto w_len = std::strlen(w_raw);
 
-        const auto n = w_len + l_len + c_len + ((w_len > 0) ? 15 : 27);
+        const auto n = add<length_t>(
+            w_len, l_len, c_len, ((w_len > 0) ? 15 : 27)).first;
 
-        return detail::formatted_output(os, n,
+        return detail::formatted_output(os, static_cast<std::streamsize>(n),
             [&os, w_raw, w_len, l = &l[0], l_len, c = &c[0], c_len]
             (auto* sb) {
                 if (w_len > 0) {
-                    for (std::streamsize j = 0; j < w_len; ++j) {
+                    for (std::size_t j = 0; j < w_len; ++j) {
                         if (sb->sputc(os.widen(w_raw[j])) == Tr::eof()) {
                             return false;
                         }
