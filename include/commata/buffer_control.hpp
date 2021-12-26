@@ -115,14 +115,17 @@ class full_fledged_handler :
 public:
     using char_type = typename Handler::char_type;
 
-    template <class HandlerR,
+    template <class HandlerR, class BufferControlR = BufferControl,
         std::enable_if_t<
-            std::is_same<Handler, std::decay_t<HandlerR>>::value>* = nullptr>
+            std::is_constructible<Handler, HandlerR&&>::value
+         && std::is_constructible<BufferControl, BufferControlR&&>::value
+         && !std::is_base_of<full_fledged_handler,
+                             std::decay_t<HandlerR>>::value>* = nullptr>
     explicit full_fledged_handler(HandlerR&& handler,
-        BufferControl&& buffer_engine = BufferControl())
+        BufferControlR&& buffer_engine = BufferControl())
         noexcept(std::is_nothrow_constructible<Handler, HandlerR>::value) :
-        BufferControl(std::move(buffer_engine)),
-        handler_(std::move(handler))
+        BufferControl(std::forward<BufferControlR>(buffer_engine)),
+        handler_(std::forward<HandlerR>(handler))
     {}
 
     std::pair<char_type*, std::size_t> get_buffer()

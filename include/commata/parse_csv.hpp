@@ -401,13 +401,18 @@ private:
     {};
 
 public:
-    explicit parser(Input in, Handler&& f)
-        noexcept(std::is_nothrow_move_constructible<Handler>::value) :
-        p_(nullptr), f_(std::move(f)),
+    template <class InputR, class HandlerR,
+        std::enable_if_t<
+            std::is_constructible<Input, InputR&&>::value
+         && std::is_constructible<Handler, HandlerR&&>::value>* = nullptr>
+    explicit parser(InputR&& in, HandlerR&& f)
+        noexcept(std::is_nothrow_constructible<Input, InputR&&>::value
+              && std::is_nothrow_constructible<Handler, HandlerR&&>::value) :
+        p_(nullptr), f_(std::forward<HandlerR>(f)),
         physical_line_index_(parse_error::npos),
         physical_line_or_buffer_begin_(nullptr),
         physical_line_chars_passed_away_(0),
-        in_(std::move(in)), buffer_(nullptr),
+        in_(std::forward<InputR>(in)), buffer_(nullptr),
         s_(state::after_lf), record_started_(false), eof_reached_(false)
     {}
 
