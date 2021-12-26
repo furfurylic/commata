@@ -181,14 +181,6 @@ public:
     using text_error::text_error;
 };
 
-template <class FieldNamePred, class FieldValuePred,
-          class Ch, class Tr, class Allocator>
-class record_extractor;
-
-template <class FieldValuePred,
-          class Ch, class Tr, class Allocator>
-class record_extractor_with_indexed_key;
-
 constexpr std::size_t record_extractor_npos = static_cast<std::size_t>(-1);
 
 namespace detail { namespace record_extraction {
@@ -228,11 +220,6 @@ class impl
     record_mode header_mode_;
     record_mode record_mode_;
 
-    friend class record_extractor<
-        FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
-    friend class record_extractor_with_indexed_key<
-        FieldValuePred, Ch, Tr, Allocator>;
-
 public:
     using char_type = Ch;
     using traits_type = Tr;
@@ -259,7 +246,7 @@ public:
             std::basic_streambuf<Ch, Tr>* out,
             std::size_t target_field_index, FieldValuePredR&& field_value_pred,
             bool has_header,
-            bool includes_header,std::size_t max_record_num) :
+            bool includes_header, std::size_t max_record_num) :
         impl(
             std::allocator_arg, alloc, out,
             FieldNamePred(),
