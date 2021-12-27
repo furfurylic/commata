@@ -1869,15 +1869,7 @@ class replace_if_conversion_failed
     public:
         static constexpr std::size_t n = init_n();
 
-        struct aligned
-        {
-            alignas(T) char m[sizeof(T)];
-        };
-
-        // GCC 6.3 seems not to handle...
-        // alignas(T) char replacements_[sizeof(T)][n];
-        // ...correctly, so we introduce a new type "aligned"
-        aligned replacements_[n];
+        alignas(T) char replacements_[n][sizeof(T)];
         std::bitset<n> has_;
         std::bitset<n> skips_;
 
@@ -2096,7 +2088,7 @@ class replace_if_conversion_failed
         template <class U>
         void  place_replacement(unsigned r, U&& value)
         {
-            ::new(replacements_[r].m) T(std::forward<U>(value));
+            ::new(replacements_[r]) T(std::forward<U>(value));
         }
 
     public:
@@ -2123,13 +2115,13 @@ class replace_if_conversion_failed
 
         T& operator[](unsigned r)
         {
-            return *static_cast<T*>(static_cast<void*>(replacements_[r].m));
+            return *static_cast<T*>(static_cast<void*>(replacements_[r]));
         }
 
         const T& operator[](unsigned r) const
         {
             return *static_cast<const T*>(
-                static_cast<const void*>(replacements_[r].m));
+                static_cast<const void*>(replacements_[r]));
         }
     };
 
