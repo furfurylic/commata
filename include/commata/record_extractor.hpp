@@ -283,12 +283,11 @@ public:
         record_num_to_include_(other.record_num_to_include_),
         target_field_index_(other.target_field_index_),
         field_index_(other.field_index_),
-        current_begin_(other.current_begin_), out_(other.out_),
+        current_begin_(other.current_begin_),
+        out_(std::exchange(other.out_, nullptr)),
         nf_(std::move(other.nf_)), vr_(std::move(other.vr_)),
         header_mode_(other.header_mode_), record_mode_(other.record_mode_)
-    {
-        other.out_ = nullptr;
-    }
+    {}
 
     // Move-assignment shall be deleted because basic_string's propagation of
     // the allocator in C++14 is apocryphal (it does not seem able to be

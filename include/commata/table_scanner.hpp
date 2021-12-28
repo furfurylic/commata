@@ -372,17 +372,15 @@ public:
 
     basic_table_scanner(basic_table_scanner&& other) noexcept :
         remaining_header_records_(other.remaining_header_records_),
-        buffer_size_(other.buffer_size_), buffer_(other.buffer_),
+        buffer_size_(other.buffer_size_),
+        buffer_(std::exchange(other.buffer_, nullptr)),
         begin_(other.begin_), end_(other.end_),
         fragmented_value_(std::move(other.fragmented_value_)),
-        header_field_scanner_(other.header_field_scanner_),
+        header_field_scanner_(std::exchange(other.header_field_scanner_,
+                                            nullptr)),
         scanners_(std::move(other.scanners_)),
-        end_scanner_(other.end_scanner_)
-    {
-        other.buffer_ = nullptr;
-        other.header_field_scanner_ = nullptr;
-        other.end_scanner_ = nullptr;
-    }
+        end_scanner_(std::exchange(other.end_scanner_, nullptr))
+    {}
 
     ~basic_table_scanner()
     {

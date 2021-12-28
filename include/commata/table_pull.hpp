@@ -441,14 +441,12 @@ public:
     }
 
     primitive_table_pull(primitive_table_pull&& other) noexcept :
-        i_sq_(other.i_sq_), i_dq_(other.i_dq_),
-        handler_(other.handler_),
+        i_sq_(std::exchange(other.i_sq_, 0)),
+        i_dq_(std::exchange(other.i_dq_, 0)),
+        handler_(std::exchange(other.handler_, nullptr)),
         sq_(&handler_->state_queue()), dq_(&handler_->data_queue()),
         ap_(std::move(other.ap_))
     {
-        other.i_sq_ = 0;
-        other.i_dq_ = 0;
-        other.handler_ = nullptr;
         other.sq_ = &sq_moved_from;
         other.dq_ = &dq_moved_from;
     }
@@ -716,15 +714,13 @@ public:
     table_pull(table_pull&& other) noexcept :
         p_(std::move(other.p_)),
         empty_physical_line_aware_(other.empty_physical_line_aware_),
-        last_state_(other.last_state_), last_(other.last_),
+        last_state_(std::exchange(other.last_state_, table_pull_state::eof)),
+        last_(std::exchange(other.last_, empty_string())),
         value_(std::move(other.value_)),
-        value_expiring_(other.value_expiring_), i_(other.i_), j_(other.j_)
-    {
-        other.last_state_ = table_pull_state::eof;
-        other.last_ = empty_string();
-        other.i_ = 0;
-        other.j_ = 0;
-    }
+        value_expiring_(other.value_expiring_),
+        i_(std::exchange(other.i_, 0)),
+        j_(std::exchange(other.j_, 0))
+    {}
 
     ~table_pull() = default;
 

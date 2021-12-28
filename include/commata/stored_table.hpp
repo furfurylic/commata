@@ -751,18 +751,13 @@ public:
     table_store(std::allocator_arg_t, const Allocator& alloc,
         table_store&& other) :
         member_like_base<Allocator>(alloc),
-        buffers_(other.buffers_), buffers_back_(other.buffers_back_),
-        buffers_size_(other.buffers_size_),
-        buffers_cleared_(other.buffers_cleared_),
-        buffers_cleared_back_(other.buffers_cleared_back_)
-    {
-        assert(alloc == other.get_allocator());
-        other.buffers_ = nullptr;
-        other.buffers_back_ = nullptr;
-        other.buffers_size_ = 0;
-        other.buffers_cleared_ = nullptr;
-        other.buffers_cleared_back_ = nullptr;
-    }
+        buffers_             (std::exchange(other.buffers_, nullptr)),
+        buffers_back_        (std::exchange(other.buffers_back_, nullptr)),
+        buffers_size_        (std::exchange(other.buffers_size_, 0)),
+        buffers_cleared_     (std::exchange(other.buffers_cleared_, nullptr)),
+        buffers_cleared_back_(std::exchange(other.buffers_cleared_back_,
+                                            nullptr))
+    {}
 
     ~table_store()
     {
@@ -947,29 +942,16 @@ public:
     {
         assert(get_allocator() == other.get_allocator());
 
-        if (buffers_back_) {
-            assert(!buffers_back_->next);
-            buffers_back_->next = other.buffers_;
-        } else {
-            assert(!buffers_);  // because buffers_back_ != nullptr
-            buffers_ = other.buffers_;
-        }
-        buffers_back_ = other.buffers_back_;
-        buffers_size_ += other.buffers_size_;
-        other.buffers_ = nullptr;
-        other.buffers_back_ = nullptr;
-        other.buffers_size_ = 0;
+        *(buffers_back_ ? &buffers_back_->next : &buffers_) =
+            std::exchange(other.buffers_, nullptr);
+        buffers_back_ = std::exchange(other.buffers_back_, nullptr);
+        buffers_size_ += std::exchange(other.buffers_size_, 0);
 
-        if (buffers_cleared_back_) {
-            assert(!buffers_cleared_back_->next);
-            buffers_cleared_back_->next = other.buffers_cleared_;
-        } else {
-            assert(!buffers_cleared_);
-            buffers_cleared_ = other.buffers_cleared_;
-        }
-        buffers_cleared_back_ = other.buffers_cleared_back_;
-        other.buffers_cleared_ = nullptr;
-        other.buffers_cleared_back_ = nullptr;
+        *(buffers_cleared_back_ ?
+                &buffers_cleared_back_->next : &buffers_cleared_) =
+            std::exchange(other.buffers_cleared_, nullptr);
+        buffers_cleared_back_ =
+            std::exchange(other.buffers_cleared_back_, nullptr);
 
         return *this;
     }
@@ -1183,11 +1165,10 @@ public:
     }
 
     basic_stored_table(basic_stored_table&& other) noexcept :
-        store_(std::move(other.store_)), records_(other.records_),
+        store_(std::move(other.store_)),
+        records_(std::exchange(other.records_, nullptr)),
         buffer_size_(other.buffer_size_)
-    {
-        other.records_ = nullptr;
-    }
+    {}
 
     // Throws nothing if alloc == other.get_allocator().
     basic_stored_table(std::allocator_arg_t, const Allocator& alloc,
@@ -2089,15 +2070,14 @@ public:
 
     stored_table_builder(stored_table_builder&& other) noexcept :
         detail::stored::arrange<Content, Options>(other),
-        current_buffer_holder_(other.current_buffer_holder_),
+        current_buffer_holder_(std::exchange(other.current_buffer_holder_,
+                                             nullptr)),
         current_buffer_(other.current_buffer_),
         current_buffer_size_(other.current_buffer_size_),
         field_begin_(other.field_begin_), field_end_(other.field_end_),
-        table_(other.table_), end_record_(other.end_record_)
-    {
-        other.current_buffer_holder_ = nullptr;
-        other.end_record_ = nullptr;
-    }
+        table_(other.table_),
+        end_record_(std::exchange(other.end_record_, nullptr))
+    {}
 
     ~stored_table_builder()
     {
