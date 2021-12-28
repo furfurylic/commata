@@ -416,7 +416,19 @@ public:
         s_(state::after_lf), record_started_(false), eof_reached_(false)
     {}
 
-    parser(parser&&) = default;
+    parser(parser&& other) :
+        p_(other.p_), f_(std::move(other.f_)),
+        first_(other.first_), last_(other.last_),
+        physical_line_index_(other.physical_line_index_),
+        physical_line_or_buffer_begin_(other.physical_line_or_buffer_begin_),
+        physical_line_chars_passed_away_(
+            other.physical_line_chars_passed_away_),
+        in_(std::move(other.in_)),
+        buffer_(std::exchange(other.buffer_, nullptr)),
+        buffer_last_(other.buffer_last_),
+        s_(other.s_), record_started_(other.record_started_),
+        eof_reached_(other.eof_reached_)
+    {}
 
     ~parser()
     {
