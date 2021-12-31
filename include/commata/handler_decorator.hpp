@@ -265,24 +265,28 @@ struct handler_decorator :
 
     auto start_record(const char_type* record_begin)
         noexcept(noexcept(std::declval<Handler&>().start_record(record_begin)))
+     -> decltype(std::declval<Handler&>().start_record(record_begin))
     {
         return static_cast<D*>(this)->base().start_record(record_begin);
     }
 
     auto update(const char_type* first, const char_type* last)
         noexcept(noexcept(std::declval<Handler&>().update(first, last)))
+     -> decltype(std::declval<Handler&>().update(first, last))
     {
         return static_cast<D*>(this)->base().update(first, last);
     }
 
     auto finalize(const char_type* first, const char_type* last)
         noexcept(noexcept(std::declval<Handler&>().finalize(first, last)))
+     -> decltype(std::declval<Handler&>().finalize(first, last))
     {
         return static_cast<D*>(this)->base().finalize(first, last);
     }
 
     auto end_record(const char_type* end)
         noexcept(noexcept(std::declval<Handler&>().end_record(end)))
+     -> decltype(std::declval<Handler&>().end_record(end))
     {
         return static_cast<D*>(this)->base().end_record(end);
     }
