@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2021-12-15 (UTC)</signature>
+<signature>2022-01-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1225,7 +1225,7 @@ template &lt;class Handler>
         <li>the expressions shown in <xref id="table.char_input.requirements"/> are valid and have the indicated semantics.</li>
       </ul>
 
-       <p>In <xref id="table.char_input.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>d</c> is a rvalue of <c>Ch*</c>. <c>n</c> is a rvalue of <c>T::size_type</c>.</p>
+       <p>In <xref id="table.char_input.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>d</c> is an rvalue of <c>Ch*</c>. <c>n</c> is an rvalue of <c>T::size_type</c>.</p>
 
       <table id="table.char_input.requirements">
         <caption>CharInput requirements</caption>
@@ -2476,7 +2476,7 @@ template &lt;class FieldValuePredR>
               <td><c>header</c></td>
               <td>If equal to <c>0</c>, the first record of the text table will not be regarded as a header record, that is, it will be treated similarly to other records.
                   Otherwise, if equal to <c>header_forwarding_yes</c>, it will be regarded as a header record and will always be forwarded to <c>out</c>.
-                  Otherwise, if equal to <c>header_forwarding_no</c>, it will be regarded as a header record and wiil never be forwarded to <c>out</c>.
+                  Otherwise, if equal to <c>header_forwarding_no</c>, it will be regarded as a header record and will never be forwarded to <c>out</c>.
                   Otherwise, the behaviour is undefined.</td>
             </tr>
             <tr>
