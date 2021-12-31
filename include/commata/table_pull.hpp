@@ -409,7 +409,7 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_constructible<TableSource, TableSourceR&&>::value
+            std::is_base_of<TableSource, std::decay_t<TableSourceR>>::value
          && !std::is_base_of<primitive_table_pull,
                              std::decay_t<TableSourceR>>::value>* = nullptr>
     explicit primitive_table_pull(
@@ -420,7 +420,7 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_constructible<TableSource, TableSourceR&&>::value>*
+            std::is_base_of<TableSource, std::decay_t<TableSourceR>>::value>*
         = nullptr>
     primitive_table_pull(std::allocator_arg_t, const Allocator& alloc,
         TableSourceR&& in, std::size_t buffer_size = 0) :
@@ -687,7 +687,7 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_constructible<TableSource, TableSourceR&&>::value
+            std::is_base_of<TableSource, std::decay_t<TableSourceR>>::value
          && !std::is_base_of<table_pull, std::decay_t<TableSourceR>>::value>*
         = nullptr>
     explicit table_pull(TableSourceR&& in, std::size_t buffer_size = 0) :
@@ -697,7 +697,7 @@ public:
 
     template <class TableSourceR,
         std::enable_if_t<
-            std::is_constructible<TableSource, TableSourceR&&>::value>*
+            std::is_base_of<TableSource, std::decay_t<TableSourceR>>::value>*
         = nullptr>
     table_pull(std::allocator_arg_t, const Allocator& alloc,
         TableSourceR&& in, std::size_t buffer_size = 0) :

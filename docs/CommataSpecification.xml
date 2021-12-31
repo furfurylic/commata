@@ -6651,7 +6651,7 @@ template &lt;class TableSourceR>
                    Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;TableSource, TableSourceR&amp;&amp;>::value &amp;&amp; !std::is_base_of&lt;table_pull, std::decay_t&lt;TableSourceR>>::value</c> is <c>true</c>.
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of&lt;TableSource, std::decay_t&lt;TableSourceR>>::value &amp;&amp; !std::is_base_of&lt;table_pull, std::decay_t&lt;TableSourceR>>::value</c> is <c>true</c>.
                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</remark>
         </code-item>
 
@@ -6666,7 +6666,7 @@ template &lt;class TableSourceR>
                    Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) of allocate buffers.
                    Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.</effects>
           <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;TableSource, TableSourceR&amp;&amp;>::value</c> is <c>true</c>.
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of&lt;TableSource, std::decay_t&lt;TableSourceR>>::value</c> is <c>true</c>.
                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</remark>
         </code-item>
 
@@ -7080,7 +7080,7 @@ template &lt;class TableSourceR>
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
           <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;TableSource, TableSourceR&amp;&amp;>::value &amp;&amp; !std::is_base_of&lt;table_pull, std::decay_t&lt;TableSourceR>>::value</c> is <c>true</c>.</remark>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of&lt;TableSource, std::decay_t&lt;TableSourceR>>::value &amp;&amp; !std::is_base_of&lt;table_pull, std::decay_t&lt;TableSourceR>>::value</c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
@@ -7093,7 +7093,7 @@ template &lt;class TableSourceR>
                    <c>buffer_size</c> serves as a hint to allocate buffers.
                    <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
           <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible&lt;TableSource, TableSourceR&amp;&amp;>::value</c> is <c>true</c>.</remark>
+          <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of&lt;TableSource, std::decay_t&lt;TableSourceR>>::value</c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
