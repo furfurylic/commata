@@ -6604,6 +6604,8 @@ namespace commata {
     std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<nc>see below</nc>);
     char_type*       operator[](size_type i);
     const char_type* operator[](size_type i) const;
+    char_type*       at(size_type i);
+    const char_type* at(size_type i) const;
     size_type data_size() const noexcept;
     size_type max_data_size() const noexcept;
   };
@@ -6853,6 +6855,16 @@ const char_type* operator[](size_type i) const;
           </code>
           <requires><c>i</c> shall be smaller than <c>data_size()</c>.</requires>
           <returns>The <c>i</c>-th (zero-based) argument value of the front of the event queue.</returns>
+          <throws>Nothing.</throws>
+        </code-item>
+
+        <code-item>
+          <code>
+char_type*       at(size_type i);
+const char_type* at(size_type i) const;
+          </code>
+          <throws><c>std::out_of_range</c> if <c>i >= data_size()</c>.</throws>
+          <returns><c>(*this)[i]</c>.</returns>
         </code-item>
 
         <code-item>

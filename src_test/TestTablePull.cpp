@@ -46,24 +46,32 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
     while (pull()) {
         switch (pull.state()) {
         case primitive_table_pull_state::update:
+            ASSERT_EQ(2, pull.data_size());
+            ASSERT_THROW(pull.at(2), std::out_of_range);
             if (!in_value) {
                 s.push_back(ch('['));
                 in_value = true;
             }
-            s.append(pull[0], pull[1]);
+            s.append(pull.at(0), pull[1]);
             break;
         case primitive_table_pull_state::finalize:
+            ASSERT_EQ(2, pull.data_size());
+            ASSERT_THROW(pull.at(2), std::out_of_range);
             if (!in_value) {
                 s.push_back(ch('['));
             }
-            s.append(pull[0], pull[1]);
+            s.append(pull[0], pull.at(1));
             s.push_back(ch(']'));
             in_value = false;
             break;
         case primitive_table_pull_state::start_record:
+            ASSERT_EQ(1, pull.data_size());
+            ASSERT_THROW(pull.at(1), std::out_of_range);
             s.append(str("<<"));
             break;
         case primitive_table_pull_state::end_record:
+            ASSERT_EQ(1, pull.data_size());
+            ASSERT_THROW(pull.at(1), std::out_of_range);
             s.append(str(">>"));
             {
                 const auto pos = pull.get_physical_position();
@@ -74,6 +82,8 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
             }
             break;
         case primitive_table_pull_state::empty_physical_line:
+            ASSERT_EQ(1, pull.data_size());
+            ASSERT_THROW(pull.at(1), std::out_of_range);
             s.append(str("--"));
             break;
         default:

@@ -12,6 +12,7 @@
 #include <iterator>
 #include <limits>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -529,6 +530,32 @@ public:
         return (*dq_)[i_dq_ + i];
     }
 
+    char_type* at(size_type i)
+    {
+        return at_impl(this, i);
+    }
+
+    const char_type* at(size_type i) const
+    {
+        return at_impl(this, i);
+    }
+
+private:
+    template <class ThisType>
+    static auto at_impl(ThisType* me, size_type i)
+    {
+        const auto ds = me->data_size();
+        if (i < ds) {
+            return (*me)[i];
+        } else {
+            std::ostringstream what;
+            what << "Too large suffix " << i
+                 << ": its maximum value is " << (ds - 1);
+            throw std::out_of_range(std::move(what).str());
+        }
+    }
+
+public:
     size_type data_size() const noexcept
     {
         return (*sq_)[i_sq_].second;
