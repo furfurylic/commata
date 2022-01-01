@@ -5163,6 +5163,8 @@ namespace commata {
           </tr>
         </table>
 
+        <p><c>replace_if_skipped&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable&lt;T>::value</c> is <c>true</c>.</p>
+
         <section id="replace_if_skipped.cons">
           <name><c>replace_if_skipped</c> construct/copy/destroy</name>
 

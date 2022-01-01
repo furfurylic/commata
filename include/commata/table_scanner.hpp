@@ -1606,18 +1606,196 @@ struct fail_if_skipped
     }
 };
 
+namespace detail { namespace scanner { 
+
+enum class replace_mode
+{
+    replace,
+    fail,
+    ignore
+};
+
+struct generic_args_t {};
+
+namespace replace_if_skipped_impl {
+
+template <class T>
+class trivial_store
+{
+    alignas(T) char value_[sizeof(T)];
+    replace_mode mode_;
+
+public:
+    template <class... Args>
+    trivial_store(generic_args_t, Args&&... args)
+        noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
+        mode_(replace_mode::replace)
+    {
+        emplace(std::forward<Args>(args)...);
+    }
+
+    explicit trivial_store(replace_mode mode) noexcept :
+        mode_(mode)
+    {}
+
+    replace_mode mode() const noexcept
+    {
+        return mode_;
+    }
+
+    const T& value() const
+    {
+        assert(mode_ == replace_mode::replace);
+        return *static_cast<const T*>(static_cast<const void*>(value_));
+    }
+
+protected:
+    replace_mode& mode() noexcept
+    {
+        return mode_;
+    }
+
+    template <class... Args>
+    void emplace(Args&&... args)
+        noexcept(std::is_nothrow_constructible<T, Args&&...>::value)
+    {
+        ::new(value_) T(std::forward<Args>(args)...);
+    }
+
+    T& value()
+    {
+        assert(mode_ == replace_mode::replace);
+        return *static_cast<T*>(static_cast<void*>(value_));
+    }
+};
+
+template <class T>
+class nontrivial_store : public trivial_store<T>
+{
+public:
+    // VS2015 dislikes:
+    // using trivial_store<T>::trivial_store;
+    // and raises an internal compiler error (C1001)
+
+    template <class... Args>
+    nontrivial_store(generic_args_t, Args&&... args)
+        noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
+        trivial_store<T>(generic_args_t(), std::forward<Args>(args)...)
+    {}
+
+    explicit nontrivial_store(replace_mode mode) noexcept :
+        trivial_store<T>(mode)
+    {}
+
+    nontrivial_store(const nontrivial_store& other)
+        noexcept(std::is_nothrow_copy_constructible<T>::value) :
+        trivial_store<T>(other.mode())
+    {
+        if (this->mode() == replace_mode::replace) {
+            this->emplace(other.value());                       // throw
+        }
+    }
+
+    nontrivial_store(nontrivial_store&& other)
+        noexcept(std::is_nothrow_move_constructible<T>::value) :
+        trivial_store<T>(other.mode())
+    {
+        if (this->mode() == replace_mode::replace) {
+            this->emplace(std::move(other.value()));            // throw
+        }
+    }
+
+    ~nontrivial_store()
+    {
+        if (this->mode() == replace_mode::replace) {
+            this->value().~T();
+        }
+    }
+
+    nontrivial_store& operator=(const nontrivial_store& other)
+        noexcept(std::is_nothrow_copy_constructible<T>::value
+              && std::is_nothrow_copy_assignable<T>::value)
+    {
+        assign(other);
+        return *this;
+    }
+
+    nontrivial_store& operator=(nontrivial_store&& other)
+        noexcept(std::is_nothrow_move_constructible<T>::value
+              && std::is_nothrow_move_assignable<T>::value)
+    {
+        assign(std::move(other));
+        return *this;
+    }
+
+private:
+    template <class Other>
+    void assign(Other&& other)
+    {
+        using f_t = std::conditional_t<
+            std::is_lvalue_reference<Other>::value, const T&, T>;
+        if (this->mode() == replace_mode::replace) {
+            if (other.mode() == replace_mode::replace) {
+                if (this != std::addressof(other)) {
+                    // Avoid self move assignment, which is unsafe at least
+                    // for standard library types
+                    this->value() =
+                        std::forward<f_t>(other.value());       // throw
+                }
+                return;
+            } else {
+                this->value().~T();
+            }
+        } else if (other.mode() == replace_mode::replace) {
+            this->emplace(std::forward<f_t>(other.value()));    // throw
+        }
+        this->mode() = other.mode();
+    }
+
+public:
+    void swap(nontrivial_store& other)
+        noexcept(detail::is_nothrow_swappable<T>()
+              && std::is_nothrow_move_constructible<T>::value)
+    {
+        using std::swap;
+        if (this->mode() == replace_mode::replace) {
+            if (other.mode() == replace_mode::replace) {
+                swap(this->value(), other.value());             // throw
+                return;
+            } else {
+                other.emplace(std::move(this->value()));        // throw
+                this->value().~T();
+            }
+        } else if (other.mode() == replace_mode::replace) {
+            this->emplace(std::move(other.value()));            // throw
+            other.value().~T();
+        }
+        swap(this->mode(), other.mode());
+    }
+};
+
+template <class T>
+void swap(nontrivial_store<T>& left, nontrivial_store<T>& right)
+    noexcept(noexcept(left.swap(right)))
+{
+    left.swap(right);
+}
+
+template <class T>
+using store_t = std::conditional_t<std::is_trivially_copyable<T>::value,
+    trivial_store<T>, nontrivial_store<T>>;
+
+}}}
+
 template <class T>
 class replace_if_skipped
 {
-    enum class mode
-    {
-        replace,
-        fail,
-        ignore
-    };
+    using replace_mode = detail::scanner::replace_mode;
 
-    alignas(T) char value_[sizeof(T)];
-    mode mode_;
+    using generic_args_t = detail::scanner::generic_args_t;
+
+    using store_t = detail::scanner::replace_if_skipped_impl::store_t<T>;
+    store_t store_;
 
 public:
     template <class... Args,
@@ -1632,95 +1810,29 @@ public:
                 detail::first_t<std::decay_t<Args>...>>::value))>* = nullptr>
     explicit replace_if_skipped(Args&&... args)
         noexcept(std::is_nothrow_constructible<T, Args&&...>::value) :
-        mode_(mode::replace)
-    {
-        ::new(value_) T(std::forward<Args>(args)...);               // throw
-    }
+        store_(generic_args_t(), std::forward<Args>(args)...)
+    {}
 
     explicit replace_if_skipped(replacement_fail_t) noexcept :
-        mode_(mode::fail)
+        store_(detail::scanner::replace_mode::fail)
     {}
 
     explicit replace_if_skipped(replacement_ignore_t) noexcept :
-        mode_(mode::ignore)
+        store_(detail::scanner::replace_mode::ignore)
     {}
 
-    replace_if_skipped(const replace_if_skipped& other)
-        noexcept(std::is_nothrow_copy_constructible<T>::value) :
-        mode_(other.mode_)
-    {
-        if (mode_ == mode::replace) {
-            ::new(value_) T(other.value());                         // throw
-        }
-    }
+    replace_if_skipped(const replace_if_skipped&) = default;
+    replace_if_skipped(replace_if_skipped&&) = default;
+    ~replace_if_skipped() = default;
+    replace_if_skipped& operator=(const replace_if_skipped&) = default;
+    replace_if_skipped& operator=(replace_if_skipped&&) = default;
 
-    replace_if_skipped(replace_if_skipped&& other)
-        noexcept(std::is_nothrow_move_constructible<T>::value) :
-        mode_(other.mode_)
-    {
-        if (mode_ == mode::replace) {
-            ::new(value_) T(std::move(other.value()));              // throw
-        }
-    }
-
-    ~replace_if_skipped()
-    {
-        if (mode_ == mode::replace) {
-            value().~T();
-        }
-    }
-
-    replace_if_skipped& operator=(const replace_if_skipped& other)
-        noexcept(std::is_nothrow_copy_constructible<T>::value
-              && std::is_nothrow_copy_assignable<T>::value)
-    {
-        assign(other);
-        return *this;
-    }
-
-    replace_if_skipped& operator=(replace_if_skipped&& other)
-        noexcept(std::is_nothrow_move_constructible<T>::value
-              && std::is_nothrow_move_assignable<T>::value)
-    {
-        assign(std::move(other));
-        return *this;
-    }
-
-private:
-    template <class Other>
-    void assign(Other&& other)
-    {
-        using f_t = std::conditional_t<
-            std::is_lvalue_reference<Other>::value, const T&, T>;
-        if (mode_ == mode::replace) {
-            if (other.mode_ == mode::replace) {
-                if (this == std::addressof(other)) {
-                    // It seems that GCC 6.3's string move assignment op does
-                    // mess the content on self-assignment, which does not seem
-                    // to be a violation to the C++'s spec.
-                    // Anyway, we will avoid any harms of self-assignment.
-                    return;
-                }
-                value() = std::forward<f_t>(other.value());         // throw
-            } else {
-                value().~T();
-                mode_ = other.mode_;
-            }
-        } else {
-            if (other.mode_ == mode::replace) {
-                ::new(value_) T(std::forward<f_t>(other.value()));  // throw
-            }
-            mode_ = other.mode_;
-        }
-    }
-
-public:
     replacement<T> operator()() const
     {
-        switch (mode_) {
-        case mode::replace:
-            return replacement<T>(value());
-        case mode::fail:
+        switch (store_.mode()) {
+        case replace_mode::replace:
+            return replacement<T>(store_.value());
+        case replace_mode::fail:
             fail_if_skipped().operator()<T>();
             // fall through
         default:
@@ -1729,36 +1841,10 @@ public:
     }
 
     void swap(replace_if_skipped& other)
-        noexcept(detail::is_nothrow_swappable<T>()
-              && std::is_nothrow_move_constructible<T>::value)
+        noexcept(detail::is_nothrow_swappable<store_t>())
     {
         using std::swap;
-        if (mode_ == mode::replace) {
-            if (other.mode_ == mode::replace) {
-                swap(value(), other.value());                       // throw
-                return;
-            } else {
-                ::new(other.value_) T(std::move(value()));          // throw
-                value().~T();
-            }
-        } else if (other.mode_ == mode::replace) {
-            ::new(value_) T(std::move(other.value()));              // throw
-            other.value().~T();
-        }
-        swap(mode_, other.mode_);
-    }
-
-private:
-    const T& value() const
-    {
-        assert(mode_ == mode::replace);
-        return *static_cast<const T*>(static_cast<const void*>(value_));
-    }
-
-    T& value()
-    {
-        assert(mode_ == mode::replace);
-        return *static_cast<T*>(static_cast<void*>(value_));
+        swap(store_, other.store_);
     }
 };
 
