@@ -16,6 +16,8 @@
 
 #include "BaseTest.hpp"
 
+using namespace std::literals::string_literals;
+
 using namespace commata;
 using namespace commata::test;
 
@@ -26,7 +28,7 @@ struct TestCharInput : BaseTest
 
 TEST_F(TestCharInput, OwnedStringCopy)
 {
-    auto i = std::make_unique<owned_string_input<char>>(std::string("ABC"));
+    auto i = std::make_unique<owned_string_input<char>>("ABC"s);
     auto j = *i;
 
     std::vector<char> b(6);

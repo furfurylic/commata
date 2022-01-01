@@ -22,6 +22,8 @@
 #include "fancy_allocator.hpp"
 #include "tracking_allocator.hpp"
 
+using namespace std::literals::string_literals;
+
 using namespace commata;
 using namespace commata::test;
 
@@ -140,7 +142,7 @@ TEST_P(TestRecordExtractorLimit, Basics)
                     "ka1,kb3,vb3,vb3\n";
     std::stringbuf out;
     const auto result = parse_csv(s, make_record_extractor(&out,
-        "key_a", std::string("ka1"), header, max_record_num), 2);
+        "key_a", "ka1"s, header, max_record_num), 2);
     ASSERT_EQ(max_record_num > 1, result);
     std::string expected;
     if (header == header_forwarding_yes) {
@@ -295,7 +297,7 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
     std::stringbuf out;
 
     auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
-        "instrument_______", std::string("clarinet_________"));
+        "instrument_______", "clarinet_________"s);
     parse_csv(s, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
 }

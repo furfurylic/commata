@@ -36,6 +36,8 @@
 #include "fancy_allocator.hpp"
 #include "tracking_allocator.hpp"
 
+using namespace std::literals::string_literals;
+
 using namespace commata;
 using namespace commata::test;
 
@@ -1455,25 +1457,25 @@ struct TestReplacement : BaseTest
 
 TEST_F(TestReplacement, Basics)
 {
-    replacement<std::string> r(std::string("ABCDEFG"));
+    replacement<std::string> r("ABCDEFG"s);
     ASSERT_NE(r.get(), nullptr);
     ASSERT_STREQ("ABCDEFG", r.get()->c_str());
     ASSERT_STREQ(r.get()->c_str(), r->c_str());
-    ASSERT_EQ(std::string("ABCDEFG"), *r);
+    ASSERT_EQ("ABCDEFG"s, *r);
 
     // Copy construction
     const auto r2(r);
     ASSERT_NE(r2.get(), nullptr);
     ASSERT_STREQ("ABCDEFG", r2.get()->c_str());
     ASSERT_STREQ(r2.get()->c_str(), r2->c_str());
-    ASSERT_EQ(std::string("ABCDEFG"), *r2);
+    ASSERT_EQ("ABCDEFG"s, *r2);
 
     // Move construction
     const auto r3(std::move(r));
     ASSERT_NE(r3.get(), nullptr);
     ASSERT_STREQ("ABCDEFG", r3.get()->c_str());
     ASSERT_STREQ(r3.get()->c_str(), r3->c_str());
-    ASSERT_EQ(std::string("ABCDEFG"), *r3);
+    ASSERT_EQ("ABCDEFG"s, *r3);
 
     // Moved-from state: these are not specified in the spec
     ASSERT_EQ(nullptr, r.get());
@@ -1517,12 +1519,12 @@ TEST_F(TestReplacement, Assignment)
         ASSERT_NE(r.get(), nullptr) << i;
         ASSERT_STREQ("ABCDEF", r.get()->c_str()) << i;
         ASSERT_STREQ(r.get()->c_str(), r->c_str()) << i;
-        ASSERT_EQ(std::string("ABCDEF"), *r) << i;
+        ASSERT_EQ("ABCDEF"s, *r) << i;
     }
 
     // Assignment from replacement with T to replacement with T
     {
-        replacement<std::string> r(std::string("123456"));
+        replacement<std::string> r("123456"s);
         rs[1] = r;
         rs[0] = std::move(r);
         // Moved-from state: these are not specified in the spec
@@ -1534,7 +1536,7 @@ TEST_F(TestReplacement, Assignment)
         ASSERT_NE(r.get(), nullptr) << i;
         ASSERT_STREQ("123456", r.get()->c_str()) << i;
         ASSERT_STREQ(r.get()->c_str(), r->c_str()) << i;
-        ASSERT_EQ(std::string("123456"), *r) << i;
+        ASSERT_EQ("123456"s, *r) << i;
     }
 
     // Assignment from replacement with replacement with U (convertible to T)
@@ -1552,7 +1554,7 @@ TEST_F(TestReplacement, Assignment)
         ASSERT_NE(r.get(), nullptr) << i;
         ASSERT_STREQ("ijklmn", r.get()->c_str()) << i;
         ASSERT_STREQ(r.get()->c_str(), r->c_str()) << i;
-        ASSERT_EQ(std::string("ijklmn"), *r) << i;
+        ASSERT_EQ("ijklmn"s, *r) << i;
     }
 
     // Self-assignment
@@ -1562,7 +1564,7 @@ TEST_F(TestReplacement, Assignment)
     ASSERT_NE(rs[0].get(), nullptr);
     ASSERT_STREQ("ijklmn", rs[0].get()->c_str());
     ASSERT_STREQ(rs[0].get()->c_str(), rs[0]->c_str());
-    ASSERT_EQ(std::string("ijklmn"), *rs[0]);
+    ASSERT_EQ("ijklmn"s, *rs[0]);
 
     // Assignment from replacement with none to replacement with T
     {
