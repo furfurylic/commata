@@ -2384,4 +2384,6 @@ static_assert(std::is_nothrow_move_assignable<rv_t>::value, "");
 static_assert(noexcept(
     swap(std::declval<rv_t&>(), std::declval<rv_t&>())), "");
 
+static_assert(std::is_trivially_copyable<ri_t>::value, "");
+
 }
