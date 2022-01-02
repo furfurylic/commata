@@ -5470,8 +5470,8 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                      Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
                      Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c>.
                      Configures <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-            <remark>This overload shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.
-                    If <c>T</c> is an unsigned integer type, instantiating this overload shall make the program ill-formed.
+            <remark>This overload shall not be declared if <c>T</c> is an unsigned integer type.
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.
                     The expression inside <c>noexcept</c> is <c>true</c> if and only if <c>std::is_nothrow_default_constructible&lt;T>::value</c> is <c>true</c> and none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.</remark>
           </code-item>
 
@@ -5489,8 +5489,8 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                      Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
                      Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
                      Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>.</effects>
-            <remark>This overload shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.
-                    If <c>T</c> is an integer type, instantiating this overload shall make the program ill-formed.
+            <remark>This overload shall not be declared if <c>T</c> is an integer type.
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.
                     The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.</remark>
           </code-item>
 

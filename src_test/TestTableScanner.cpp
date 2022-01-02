@@ -2386,4 +2386,8 @@ static_assert(noexcept(
 
 static_assert(std::is_trivially_copyable<ri_t>::value, "");
 
+static_assert(!std::is_constructible<replace_if_conversion_failed<int>,
+    int, int, int, int, int>::value, "");
+static_assert(!std::is_constructible<replace_if_conversion_failed<unsigned>,
+    unsigned, replacement_fail_t, replacement_ignore_t, long>::value, "");
 }

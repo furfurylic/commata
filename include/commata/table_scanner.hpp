@@ -1920,14 +1920,11 @@ enum slot : unsigned {
 
 struct copy_mode_t {};
 
-template <class T>
+template <class T, unsigned N>
 struct trivial_store
 {
-    static constexpr unsigned n =
-        std::is_integral<T>::value ? std::is_signed<T>::value ? 4 : 3 : 5;
-
 private:
-    alignas(T) char replacements_[n][sizeof(T)];
+    alignas(T) char replacements_[N][sizeof(T)];
     std::uint_fast8_t has_;
     std::uint_fast8_t skips_;
 
@@ -1960,7 +1957,7 @@ private:
         init<Slot>();
     }
 
-    trivial_store(std::integral_constant<std::size_t, n>) noexcept :
+    trivial_store(std::integral_constant<std::size_t, N>) noexcept :
         has_(0), skips_(0)
     {}
 
@@ -1971,7 +1968,7 @@ private:
     void init(U&& value)
         noexcept(std::is_nothrow_constructible<T, U&&>::value)
     {
-        static_assert(Slot < n, "");
+        static_assert(Slot < N, "");
         assert(!has(Slot));
         assert(!skips(Slot));
         emplace(Slot, std::forward<U>(value));
@@ -1981,7 +1978,7 @@ private:
     template <unsigned Slot>
     void init() noexcept(std::is_nothrow_default_constructible<T>::value)
     {
-        static_assert(Slot < n, "");
+        static_assert(Slot < N, "");
         assert(!has(Slot));
         assert(!skips(Slot));
         emplace(Slot);
@@ -1991,7 +1988,7 @@ private:
     template <unsigned Slot>
     void init(replacement_fail_t) noexcept
     {
-        static_assert(Slot < n, "");
+        static_assert(Slot < N, "");
         assert(!has(Slot));
         assert(!skips(Slot));
     }
@@ -1999,7 +1996,7 @@ private:
     template <unsigned Slot>
     void init(replacement_ignore_t) noexcept
     {
-        static_assert(Slot < n, "");
+        static_assert(Slot < N, "");
         assert(!has(Slot));
         assert(!skips(Slot));
         set_skips(Slot);
@@ -2085,19 +2082,19 @@ protected:
     }
 };
 
-template <class T>
-struct nontrivial_store : trivial_store<T>
+template <class T, unsigned N>
+struct nontrivial_store : trivial_store<T, N>
 {
     template <class... Args>
     nontrivial_store(generic_args_t, Args&&... args) :
-        trivial_store<T>(generic_args_t(), std::forward<Args>(args)...)
+        trivial_store<T, N>(generic_args_t(), std::forward<Args>(args)...)
     {}
 
     nontrivial_store(const nontrivial_store& other)
         noexcept(std::is_nothrow_copy_constructible<T>::value) :
-        trivial_store<T>(copy_mode_t(), other)
+        trivial_store<T, N>(copy_mode_t(), other)
     {
-        for (unsigned r = 0; r < trivial_store<T>::n; ++r) {
+        for (unsigned r = 0; r < N; ++r) {
             if (this->has(r)) {
                 this->emplace(r, other[r]);
             }
@@ -2106,9 +2103,9 @@ struct nontrivial_store : trivial_store<T>
 
     nontrivial_store(nontrivial_store&& other)
         noexcept(std::is_nothrow_move_constructible<T>::value) :
-        trivial_store<T>(copy_mode_t(), other)
+        trivial_store<T, N>(copy_mode_t(), other)
     {
-        for (unsigned r = 0; r < trivial_store<T>::n; ++r) {
+        for (unsigned r = 0; r < N; ++r) {
             if (this->has(r)) {
                 this->emplace(r, std::move(other[r]));
             }
@@ -2117,7 +2114,7 @@ struct nontrivial_store : trivial_store<T>
 
     ~nontrivial_store()
     {
-        for (unsigned r = 0; r < trivial_store<T>::n; ++r) {
+        for (unsigned r = 0; r < N; ++r) {
             if (this->has(r)) {
                 (*this)[r].~T();
             }
@@ -2149,7 +2146,7 @@ private:
         }
         using f_t = std::conditional_t<
             std::is_lvalue_reference<Other>::value, const T&, T>;
-        for (unsigned r = 0; r < trivial_store<T>::n; ++r) {
+        for (unsigned r = 0; r < N; ++r) {
             if (this->has(r)) {
                 if (other.has(r)) {
                     (*this)[r] = std::forward<f_t>(other[r]);
@@ -2170,7 +2167,7 @@ public:
         noexcept(detail::is_nothrow_swappable<T>()
               && std::is_nothrow_constructible<T>::value)
     {
-        for (unsigned r = 0; r < trivial_store<T>::n; ++r) {
+        for (unsigned r = 0; r < N; ++r) {
             if (this->has(r)) {
                 if (other.has(r)) {
                     using std::swap;
@@ -2199,21 +2196,160 @@ public:
     }
 };
 
-template <class T>
-void swap(nontrivial_store<T>& left, nontrivial_store<T>& right)
+template <class T, unsigned N>
+void swap(nontrivial_store<T, N>& left, nontrivial_store<T, N>& right)
     noexcept(noexcept(left.swap(right)))
 {
     left.swap(right);
 }
 
+template <class T, class A>
+struct is_acceptable_arg :
+    std::integral_constant<bool,
+        std::is_base_of<replacement_fail_t, std::decay_t<A>>::value
+     || std::is_base_of<replacement_ignore_t, std::decay_t<A>>::value
+     || std::is_constructible<T, A>::value>
+{};
+
+template <class T, class A>
+struct is_nothrow_arg :
+    std::integral_constant<bool,
+        std::is_base_of<replacement_fail_t, std::decay_t<A>>::value
+     || std::is_base_of<replacement_ignore_t, std::decay_t<A>>::value
+     || std::is_nothrow_constructible<T, A>::value>
+{};
+
 template <class T>
-using store_t = std::conditional_t<std::is_trivially_copyable<T>::value,
-    trivial_store<T>, nontrivial_store<T>>;
+constexpr unsigned base_n =
+    std::is_integral<T>::value ? std::is_signed<T>::value ? 4 : 3 : 5;
+
+template <class T, unsigned N>
+struct base;
+
+template <class T>
+struct base<T, 3>
+{
+protected:
+    using store_t = std::conditional_t<std::is_trivially_copyable<T>::value,
+        trivial_store<T, base_n<T>>, nontrivial_store<T, base_n<T>>>;
+
+private:
+    store_t store_;
+
+protected:
+    template <class... As>
+    base(detail::scanner::generic_args_t, As&&... as) :
+        store_(detail::scanner::generic_args_t(), std::forward<As>(as)...)
+    {}
+
+public:
+    template <class Empty = T, class InvalidFormat = T,
+        class AboveUpperLimit = T,
+        std::enable_if_t<
+            is_acceptable_arg<T, Empty>::value
+         && is_acceptable_arg<T, InvalidFormat>::value
+         && is_acceptable_arg<T, AboveUpperLimit>::value>* = nullptr>
+    explicit base(
+        Empty&& on_empty = Empty(),
+        InvalidFormat&& on_invalid_format = InvalidFormat(),
+        AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit())
+            noexcept(std::is_nothrow_default_constructible<T>::value
+                  && is_nothrow_arg<T, Empty>::value
+                  && is_nothrow_arg<T, InvalidFormat>::value
+                  && is_nothrow_arg<T, AboveUpperLimit>::value) :
+        base(
+            detail::scanner::generic_args_t(),
+            std::forward<Empty>(on_empty),
+            std::forward<InvalidFormat>(on_invalid_format),
+            std::forward<AboveUpperLimit>(on_above_upper_limit))
+    {}
+
+protected:
+    const store_t& store() const
+    {
+        return store_;
+    }
+
+    store_t& store()
+    {
+        return store_;
+    }
+};
+
+template <class T>
+struct base<T, 4> : base<T, 3>
+{
+    using base<T, 3>::base;
+
+    template <class Empty, class InvalidFormat,
+        class AboveUpperLimit, class BelowLowerLimit,
+        std::enable_if_t<
+            is_acceptable_arg<T, Empty>::value
+         && is_acceptable_arg<T, InvalidFormat>::value
+         && is_acceptable_arg<T, AboveUpperLimit>::value
+         && is_acceptable_arg<T, BelowLowerLimit>::value>* = nullptr>
+    base(
+        Empty&& on_empty,
+        InvalidFormat&& on_invalid_format,
+        AboveUpperLimit&& on_above_upper_limit,
+        BelowLowerLimit&& on_below_lower_limit)
+            noexcept(std::is_nothrow_default_constructible<T>::value
+                  && is_nothrow_arg<T, Empty>::value
+                  && is_nothrow_arg<T, InvalidFormat>::value
+                  && is_nothrow_arg<T, AboveUpperLimit>::value
+                  && is_nothrow_arg<T, BelowLowerLimit>::value) :
+        base<T, 3>(
+            detail::scanner::generic_args_t(),
+            std::forward<Empty>(on_empty),
+            std::forward<InvalidFormat>(on_invalid_format),
+            std::forward<AboveUpperLimit>(on_above_upper_limit),
+            std::forward<BelowLowerLimit>(on_below_lower_limit))
+    {}
+};
+
+template <class T>
+struct base<T, 5> : base<T, 4>
+{
+    using base<T, 4>::base;
+
+    template <class Empty, class InvalidFormat,
+        class AboveUpperLimit, class BelowLowerLimit,
+        class Underflow,
+        std::enable_if_t<
+            is_acceptable_arg<T, Empty>::value
+         && is_acceptable_arg<T, InvalidFormat>::value
+         && is_acceptable_arg<T, AboveUpperLimit>::value
+         && is_acceptable_arg<T, BelowLowerLimit>::value
+         && is_acceptable_arg<T, Underflow>::value>* = nullptr>
+    base(
+        Empty&& on_empty,
+        InvalidFormat&& on_invalid_format,
+        AboveUpperLimit&& on_above_upper_limit,
+        BelowLowerLimit&& on_below_lower_limit,
+        Underflow&& on_underflow)
+            noexcept(is_nothrow_arg<T, Empty>::value
+                  && is_nothrow_arg<T, InvalidFormat>::value
+                  && is_nothrow_arg<T, AboveUpperLimit>::value
+                  && is_nothrow_arg<T, BelowLowerLimit>::value
+                  && is_nothrow_arg<T, Underflow>::value) :
+        base<T, 4>(
+            detail::scanner::generic_args_t(),
+            std::forward<Empty>(on_empty),
+            std::forward<InvalidFormat>(on_invalid_format),
+            std::forward<AboveUpperLimit>(on_above_upper_limit),
+            std::forward<BelowLowerLimit>(on_below_lower_limit),
+            std::forward<Underflow>(on_underflow))
+    {}
+};
+
+template <class T>
+using base_t = base<T, base_n<T>>;
 
 }}}
 
 template <class T>
-class replace_if_conversion_failed
+class replace_if_conversion_failed :
+    public detail::scanner::replace_if_conversion_failed_impl::base_t<T>
 {
     using replace_mode = detail::scanner::replace_mode;
 
@@ -2231,107 +2367,10 @@ class replace_if_conversion_failed
     static constexpr unsigned slot_underflow =
         detail::scanner::replace_if_conversion_failed_impl::slot_underflow;
 
-    using store_t = detail::scanner::replace_if_conversion_failed_impl::
-                        store_t<T>;
-    store_t store_;
-
-private:
-    template <class A>
-    struct is_acceptable_arg :
-        std::integral_constant<bool,
-            std::is_base_of<replacement_fail_t, std::decay_t<A>>::value
-         || std::is_base_of<replacement_ignore_t, std::decay_t<A>>::value
-         || std::is_constructible<T, A>::value>
-    {};
-
-    template <class A>
-    struct is_nothrow_arg :
-        std::integral_constant<bool,
-            std::is_base_of<replacement_fail_t, std::decay_t<A>>::value
-         || std::is_base_of<replacement_ignore_t, std::decay_t<A>>::value
-         || std::is_nothrow_constructible<T, A>::value>
-    {};
-
 public:
-    template <class Empty = T, class InvalidFormat = T,
-        class AboveUpperLimit = T,
-        std::enable_if_t<
-            is_acceptable_arg<Empty>::value
-         && is_acceptable_arg<InvalidFormat>::value
-         && is_acceptable_arg<AboveUpperLimit>::value>* = nullptr>
-    explicit replace_if_conversion_failed(
-        Empty&& on_empty = Empty(),
-        InvalidFormat&& on_invalid_format = InvalidFormat(),
-        AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit())
-            noexcept(std::is_nothrow_default_constructible<T>::value
-                  && is_nothrow_arg<Empty>::value
-                  && is_nothrow_arg<InvalidFormat>::value
-                  && is_nothrow_arg<AboveUpperLimit>::value) :
-        store_(
-            detail::scanner::generic_args_t(),
-            std::forward<Empty>(on_empty),
-            std::forward<InvalidFormat>(on_invalid_format),
-            std::forward<AboveUpperLimit>(on_above_upper_limit))
-    {}
-
-    template <class Empty, class InvalidFormat,
-        class AboveUpperLimit, class BelowLowerLimit,
-        std::enable_if_t<
-            is_acceptable_arg<Empty>::value
-         && is_acceptable_arg<InvalidFormat>::value
-         && is_acceptable_arg<AboveUpperLimit>::value
-         && is_acceptable_arg<BelowLowerLimit>::value>* = nullptr>
-    replace_if_conversion_failed(
-        Empty&& on_empty,
-        InvalidFormat&& on_invalid_format,
-        AboveUpperLimit&& on_above_upper_limit,
-        BelowLowerLimit&& on_below_lower_limit)
-            noexcept(std::is_nothrow_default_constructible<T>::value
-                  && is_nothrow_arg<Empty>::value
-                  && is_nothrow_arg<InvalidFormat>::value
-                  && is_nothrow_arg<AboveUpperLimit>::value
-                  && is_nothrow_arg<BelowLowerLimit>::value) :
-        store_(
-            detail::scanner::generic_args_t(),
-            std::forward<Empty>(on_empty),
-            std::forward<InvalidFormat>(on_invalid_format),
-            std::forward<AboveUpperLimit>(on_above_upper_limit),
-            std::forward<BelowLowerLimit>(on_below_lower_limit))
-    {
-        static_assert(
-            !(std::is_integral<T>::value && !std::is_signed<T>::value), "");
-    }
-
-    template <class Empty, class InvalidFormat,
-        class AboveUpperLimit, class BelowLowerLimit,
-        class Underflow,
-        std::enable_if_t<
-            is_acceptable_arg<Empty>::value
-         && is_acceptable_arg<InvalidFormat>::value
-         && is_acceptable_arg<AboveUpperLimit>::value
-         && is_acceptable_arg<BelowLowerLimit>::value
-         && is_acceptable_arg<Underflow>::value>* = nullptr>
-    replace_if_conversion_failed(
-        Empty&& on_empty,
-        InvalidFormat&& on_invalid_format,
-        AboveUpperLimit&& on_above_upper_limit,
-        BelowLowerLimit&& on_below_lower_limit,
-        Underflow&& on_underflow)
-            noexcept(is_nothrow_arg<Empty>::value
-                  && is_nothrow_arg<InvalidFormat>::value
-                  && is_nothrow_arg<AboveUpperLimit>::value
-                  && is_nothrow_arg<BelowLowerLimit>::value
-                  && is_nothrow_arg<Underflow>::value) :
-        store_(
-            detail::scanner::generic_args_t(),
-            std::forward<Empty>(on_empty),
-            std::forward<InvalidFormat>(on_invalid_format),
-            std::forward<AboveUpperLimit>(on_above_upper_limit),
-            std::forward<BelowLowerLimit>(on_below_lower_limit),
-            std::forward<Underflow>(on_underflow))
-    {
-        static_assert(!std::is_integral<T>::value, "");
-    }
+    // VS2015 refuses to compile "base_t<T>" here
+    using detail::scanner::replace_if_conversion_failed_impl::base<T,
+        detail::scanner::replace_if_conversion_failed_impl::base_n<T>>::base;
 
     replace_if_conversion_failed(
         const replace_if_conversion_failed&) = default;
@@ -2347,7 +2386,7 @@ public:
     replacement<T> operator()(invalid_format_t,
         const Ch* begin, const Ch* end) const
     {
-        return unwrap(store_.get(slot_invalid_format),
+        return unwrap(this->store().get(slot_invalid_format),
             [begin, end]() {
                 fail_if_conversion_failed()(invalid_format_t(),
                     begin, end, static_cast<T*>(nullptr));
@@ -2363,17 +2402,17 @@ public:
                 begin, end, sign, static_cast<T*>(nullptr));
         };
         if (sign > 0) {
-            return unwrap(store_.get(slot_above_upper_limit), fail);
+            return unwrap(this->store().get(slot_above_upper_limit), fail);
         } else if (sign < 0) {
-            return unwrap(store_.get(slot_below_lower_limit), fail);
+            return unwrap(this->store().get(slot_below_lower_limit), fail);
         } else {
-            return unwrap(store_.get(slot_underflow), fail);
+            return unwrap(this->store().get(slot_underflow), fail);
         }
     }
 
     replacement<T> operator()(empty_t) const
     {
-        return unwrap(store_.get(slot_empty),
+        return unwrap(this->store().get(slot_empty),
             []() {
                 fail_if_conversion_failed()(empty_t(),
                     static_cast<T*>(nullptr));
@@ -2385,7 +2424,7 @@ public:
               && std::is_nothrow_constructible<T>::value)
     {
         using std::swap;
-        swap(store_, other.store_);
+        swap(this->store(), other.store());
     }
 
 private:
