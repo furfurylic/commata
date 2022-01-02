@@ -5446,13 +5446,13 @@ template &lt;class Empty = T, class InvalidFormat = T, class AboveUpperLimit = T
                                  AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
       noexcept(<nc>see below</nc>);
             </code>
-            <requires><c>std::is_default_constructible&lt;T>::value</c> shall be <c>true</c>.</requires>
             <effects>If <c>Empty</c> implies a fail action, configures <c>action_on_empty</c> to be <c>fail</c>.
                      Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
                      Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
                      Does the same with <c>action_on_invalid_format</c> and <c>action_on_above_upper_limit</c>.
                      Configures <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-            <remark>This overload shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.
+            <remark>This overload shall not be declared if <c>std::is_default_constructible&lt;T>::value</c> is <c>false</c>.
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.
                     The expression inside <c>noexcept</c> is <c>true</c> if and only if <c>std::is_nothrow_default_constructible&lt;T>::value</c> is <c>true</c> and none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.</remark>
           </code-item>
 
@@ -5464,13 +5464,12 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                                AboveUpperLimit&amp;&amp; on_above_upper_limit,
                                BelowLowerLimit&amp;&amp; on_below_lower_limit) noexcept(<nc>see below</nc>);
             </code>
-            <requires><c>std::is_default_constructible&lt;T>::value</c> shall be <c>true</c>.</requires>
             <effects>If <c>Empty</c> implies a fail action, configures <c>action_on_empty</c> to be <c>fail</c>.
                      Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
                      Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
                      Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c>.
                      Configures <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-            <remark>This overload shall not be declared if <c>T</c> is an unsigned integer type.
+            <remark>This overload shall not be declared if <c>T</c> is an unsigned integer type or <c>std::is_default_constructible&lt;T>::value</c> is <c>false</c>.
                     It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.
                     The expression inside <c>noexcept</c> is <c>true</c> if and only if <c>std::is_nothrow_default_constructible&lt;T>::value</c> is <c>true</c> and none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.</remark>
           </code-item>

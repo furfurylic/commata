@@ -2390,4 +2390,21 @@ static_assert(!std::is_constructible<replace_if_conversion_failed<int>,
     int, int, int, int, int>::value, "");
 static_assert(!std::is_constructible<replace_if_conversion_failed<unsigned>,
     unsigned, replacement_fail_t, replacement_ignore_t, long>::value, "");
+
+namespace {
+
+struct ndc  // not default constructible
+{
+    ndc(int) {}
+};
+
+}
+
+static_assert(!std::is_constructible<replace_if_conversion_failed<ndc>,
+    ndc, ndc, ndc>::value, "");
+static_assert(!std::is_constructible<replace_if_conversion_failed<ndc>,
+    ndc, ndc, ndc, ndc>::value, "");
+static_assert(std::is_constructible<replace_if_conversion_failed<ndc>,
+    ndc, ndc, ndc, ndc, ndc>::value, "");
+
 }

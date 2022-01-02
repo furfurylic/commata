@@ -2227,7 +2227,7 @@ template <class T, unsigned N>
 struct base;
 
 template <class T>
-struct base<T, 3>
+struct base<T, 0>
 {
 protected:
     using store_t = std::conditional_t<std::is_trivially_copyable<T>::value,
@@ -2242,7 +2242,22 @@ protected:
         store_(detail::scanner::generic_args_t(), std::forward<As>(as)...)
     {}
 
-public:
+    const store_t& store() const
+    {
+        return store_;
+    }
+
+    store_t& store()
+    {
+        return store_;
+    }
+};
+
+template <class T>
+struct base<T, 3> : base<T, 0>
+{
+    using base<T, 0>::base;
+
     template <class Empty = T, class InvalidFormat = T,
         class AboveUpperLimit = T,
         std::enable_if_t<
@@ -2257,23 +2272,12 @@ public:
                   && is_nothrow_arg<T, Empty>::value
                   && is_nothrow_arg<T, InvalidFormat>::value
                   && is_nothrow_arg<T, AboveUpperLimit>::value) :
-        base(
+        base<T, 0>(
             detail::scanner::generic_args_t(),
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
             std::forward<AboveUpperLimit>(on_above_upper_limit))
     {}
-
-protected:
-    const store_t& store() const
-    {
-        return store_;
-    }
-
-    store_t& store()
-    {
-        return store_;
-    }
 };
 
 template <class T>
@@ -2308,9 +2312,9 @@ struct base<T, 4> : base<T, 3>
 };
 
 template <class T>
-struct base<T, 5> : base<T, 4>
+struct base<T, 5> : base<T, std::is_default_constructible<T>::value ? 4 : 0>
 {
-    using base<T, 4>::base;
+    using base<T, std::is_default_constructible<T>::value ? 4 : 0>::base;
 
     template <class Empty, class InvalidFormat,
         class AboveUpperLimit, class BelowLowerLimit,
@@ -2332,7 +2336,7 @@ struct base<T, 5> : base<T, 4>
                   && is_nothrow_arg<T, AboveUpperLimit>::value
                   && is_nothrow_arg<T, BelowLowerLimit>::value
                   && is_nothrow_arg<T, Underflow>::value) :
-        base<T, 4>(
+        base<T, std::is_default_constructible<T>::value ? 4 : 0>(
             detail::scanner::generic_args_t(),
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
@@ -2366,6 +2370,11 @@ class replace_if_conversion_failed :
             slot_below_lower_limit;
     static constexpr unsigned slot_underflow =
         detail::scanner::replace_if_conversion_failed_impl::slot_underflow;
+
+private:
+    template <class... As>
+    replace_if_conversion_failed(detail::scanner::generic_args_t, As&&...)
+        = delete;
 
 public:
     // VS2015 refuses to compile "base_t<T>" here
