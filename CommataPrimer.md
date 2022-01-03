@@ -562,7 +562,7 @@ the following codes will do:
 using commata::parse_csv;
 
 // A table handler type whose objects make a vector of vectors of field values
-class vov_text_handler    // vov means "vector of vector"
+class vov_table_handler    // vov means "vector of vector"
 {
   std::vector<std::vector<std::string>>* records_;
   std::string current_value_;
@@ -570,7 +570,7 @@ class vov_text_handler    // vov means "vector of vector"
 public:
   using char_type = char;
 
-  explicit vov_text_handler(
+  explicit vov_table_handler(
     std::vector<std::vector<std::string>>& records) :
     records_(&records)
   {}
@@ -599,11 +599,11 @@ public:
   {}
 };
 
-void vov_text_handler_sample()
+void vov_table_handler_sample()
 {
   std::vector<std::vector<std::string>> records;
 
-  parse_csv(std::ifstream("stars.csv"), vov_text_handler(records));
+  parse_csv(std::ifstream("stars.csv"), vov_table_handler(records));
 
   std::cout << records.size() << std::endl; // will print "9"
   std::cout << records[3][1] << std::endl;  // will print "Porrima"
