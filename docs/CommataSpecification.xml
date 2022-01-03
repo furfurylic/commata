@@ -1273,6 +1273,7 @@ template &lt;class Handler>
       <name>Header <c>"commama/char_input.hpp"</c> synopsis</name>
       <codeblock>
 #include &lt;cstddef>
+#include &lt;istream>
 #include &lt;streambuf>
 #include &lt;string>
 #include &lt;type_traits>
@@ -1526,7 +1527,7 @@ namespace commata {
 
       <p>The class template <c>owned_istream_input</c> describes thin wrappers of an object of an derived type of an instance of <c>std::basic_istream</c> with the ownership of it.</p>
       <p>The template parameter <c>IStream</c> shall be the same type as, or be a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</p>
-      <p>An instance of <c>owned_istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
+      <p>An instance of <c>owned_istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>IStream::char_type</c>.</p>
 
       <section id="owned_istream_input.cons">
         <name><c>owned_istream_input</c> construct/copy/destroy</name>

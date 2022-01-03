@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <istream>
 #include <limits>
 #include <memory>
 #include <streambuf>
