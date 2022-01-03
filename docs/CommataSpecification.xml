@@ -32,7 +32,7 @@
     <ul>
       <li>it consists only of one uppercase alphabetic letter,</li>
       <li>it begins with a lowercase alphabetic letter,</li>
-      <li>it consists only of alphabetic letters and possibly zero decimal digit characters, contains both of an uppercase alphabetic letter and a lowercase one, and begins with an uppercase one, or</li>
+      <li>it consists only of alphabetic letters and possibly zero decimal digit characters, and contains both of an uppercase alphabetic letter and a lowercase one, or</li>
       <li>it begins with <c>COMMATA_</c>.</li>
     </ul>
     <p>Headers described in this document may define macros whose name begin with <c>COMMATA_</c> and may not define any macros with other names.</p>
@@ -2093,10 +2093,10 @@ template &lt;class CharInput>
 template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
   -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
           </code>
-          <preface>Let <c>I</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
-          <returns><c>csv_source&lt;I>(std::forward&lt;Args>(args)...)</c>.</returns>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible&lt;csv_source&lt;I>, Args&amp;&amp;...>::value</c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;I, Args&amp;&amp;...>::value</c>.</remark>
+          <preface>Let <c>CI</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
+          <returns><c>csv_source&lt;CI>(std::forward&lt;Args>(args)...)</c>.</returns>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible&lt;csv_source&lt;CI>, Args&amp;&amp;...>::value</c> is <c>true</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;CI, Args&amp;&amp;...>::value</c>.</remark>
         </code-item>
       </section>
     </section>
@@ -3614,15 +3614,15 @@ namespace commata {
       <section id="basic_stored_table.cons">
         <name><c>basic_stored_table</c> construct/copy/destroy</name>
 
-        <p>In this subclause, <c>X</c> denotes <c>std::allocator_traits&lt;Allocator></c>, <c>Y</c> denotes <c>typename X::template rebind_traits&lt;Ch></c> and <c>ChAllocator</c> denotes <c>typename Y::allocator_type</c>.</p>
-        <p>All constructors and assignment operators shall make an appropriate decision about propagation of the allocator in accordance with <c>X::select_on_container_copy_construnction</c>, <c>X::propagete_on_container_copy_assignment</c> and <c>X::propagete_on_container_move_assignment</c>.</p>
+        <p>In this subclause, <c>AT</c> denotes <c>std::allocator_traits&lt;Allocator></c>, <c>CAT</c> denotes <c>typename AT::template rebind_traits&lt;Ch></c> and <c>CA</c> denotes <c>typename CAT::allocator_type</c>.</p>
+        <p>All constructors and assignment operators shall make an appropriate decision about propagation of the allocator in accordance with <c>AT::select_on_container_copy_construnction</c>, <c>AT::propagete_on_container_copy_assignment</c> and <c>AT::propagete_on_container_move_assignment</c>.</p>
 
         <code-item>
           <code>
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t buffer_size = 0U);
           </code>
           <effects>Copy constructs the allocator from <c>alloc</c>.
-                   If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>Y::max_size(ChAllocator(a))</c> and the greater of <c>buffer_size</c> and <c>2</c> where <c>a</c> is an lvalue to the allocator.
+                   If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>CAT::max_size(CA(a))</c> and the greater of <c>buffer_size</c> and <c>2</c> where <c>a</c> is an lvalue to the allocator.
                    Otherwise, initializes it to an unspecified value.
                    Initializes the content container to have an element as default inserted into it.</effects>
         </code-item>
@@ -3631,7 +3631,7 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t
           <code>
 basic_stored_table(const basic_stored_table&amp; other);
           </code>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>Y::max_size(ChAllocator(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
                          If not undefined, also <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
@@ -3639,7 +3639,7 @@ basic_stored_table(const basic_stored_table&amp; other);
           <code>
 basic_stored_table(basic_stored_table&amp;&amp; other) noexcept;
           </code>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>Y::max_size(ChAllocator(get_allocator()))</c> and the value of <c>other.get_buffer_size()</c> before this construction.
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and the value of <c>other.get_buffer_size()</c> before this construction.
                          If not undefined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
         </code-item>
 
@@ -3648,7 +3648,7 @@ basic_stored_table(basic_stored_table&amp;&amp; other) noexcept;
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                    std::size_t buffer_size = 0);
           </code>
-          <effects>If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>Y::max_size(ChAllocator(alloc))</c> and the greater of <c>buffer_size</c> and <c>2</c>.
+          <effects>If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>CAT::max_size(CA(alloc))</c> and the greater of <c>buffer_size</c> and <c>2</c>.
                    Otherwise, initializes it to a unspecified value.
                    Initializes the allocator with <c>alloc</c>.
                    Make the content container have an element as default inserted.</effects>
@@ -3659,7 +3659,7 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                    const basic_stored_table&amp; other);
           </code>
-          <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>Y::max_size(ChAllocator(alloc))</c> and <c>other.get_buffer_size()</c>.
+          <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(alloc))</c> and <c>other.get_buffer_size()</c>.
                          If not undefined, <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
@@ -3668,7 +3668,7 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                    basic_stored_table&amp;&amp; other);
           </code>
-          <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>Y::max_size(ChAllocator(alloc))</c> and <c>other.get_buffer_size()</c>.
+          <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(alloc))</c> and <c>other.get_buffer_size()</c>.
                          If not undefined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
         </code-item>
 
@@ -3683,7 +3683,7 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
           <code>
 basic_stored_table&amp; operator=(const basic_stored_table&amp; other);
           </code>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>Y::max_size(ChAllocator(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
                          If not undefined, <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
@@ -3692,7 +3692,7 @@ basic_stored_table&amp; operator=(const basic_stored_table&amp; other);
 basic_stored_table&amp; operator=(basic_stored_table&amp;&amp; other)
   noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment::value);
           </code>
-          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>Y::max_size(ChAllocator(get_allocator()))</c> and the value of <c>other.get_buffer_size()</c> before this assignment.
+          <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and the value of <c>other.get_buffer_size()</c> before this assignment.
                          If not undefined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this assignment.</postcondition>
         </code-item>
       </section>
@@ -5171,12 +5171,12 @@ namespace commata {
 template &lt;class... Args> explicit replace_if_skipped(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
             </code>
             <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Args>(args)...</c>.</effects>
-            <remark>Let <c>G</c> be <c>std::decay_t&lt;F></c> where <c>F</c> is the first type of <c>Args</c> when <c>sizeof...(Args)</c> is equal to <c>1</c>.
+            <remark>Let <c>DF</c> be <c>std::decay_t&lt;F></c> where <c>F</c> is the first type of <c>Args</c> when <c>sizeof...(Args)</c> is equal to <c>1</c>.
                     This constrcutor shall not participate in overload resolution unless <c>std::is_constructible&lt;T, Args...>::value</c> is <c>true</c> and,
                     <c>sizeof...(Args)</c> is not equal to <c>1</c> or
-                    none of <c>std::is_base_of&lt;replace_if_skipped&lt;T>, G>::value</c>,
-                    <c>std::is_base_of&lt;replacement_fail_t, G>::value</c> or
-                    <c>std::is_base_of&lt;replacement_ignore_t, G>::value</c> is <c>true</c>.
+                    none of <c>std::is_base_of&lt;replace_if_skipped&lt;T>, DF>::value</c>,
+                    <c>std::is_base_of&lt;replacement_fail_t, DF>::value</c> or
+                    <c>std::is_base_of&lt;replacement_ignore_t, DF>::value</c> is <c>true</c>.
                     The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;T, Args...>::value</c>.</remark>
           </code-item>
 
@@ -5840,11 +5840,11 @@ template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
                        <li><c>ceh</c> is the conversion error handler,</li>
                        <li><c>n</c> is a null pointer of type <c>T*</c>,</li>
                        <li><c>V</c> denotes <c>decltype(v)</c>,</li>
-                       <li><c>W</c> denotes <c>std::make_signed&lt;V>::type</c>,</li>
+                       <li><c>SV</c> denotes <c>std::make_signed&lt;V>::type</c>,</li>
                        <li><c>x</c> denotes <c>std::numeric_limits&lt;T>::max()</c>, and</li>
                        <li>the domain of <c>T</c> denotes
                          <ul>
-                           <li>the range [<c>-x</c>, <c>x</c>] in <c>W</c> mapped by a conversion to <c>V</c> if <c>T</c> is an unsigned integer type,</li>
+                           <li>the range [<c>-x</c>, <c>x</c>] in <c>SV</c> mapped by a conversion to <c>V</c> if <c>T</c> is an unsigned integer type,</li>
                            <li>a union of the range [<c>std::numeric_limits&lt;T>::lowest()</c>, <c>x</c>] and a set of other non-finite values (for example, positive or negative infinities and &#x2018;Not-a-Number&#x2019; values) otherwise.</li>
                          </ul>
                        </li>
@@ -5921,7 +5921,7 @@ template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
                 <td rowspan="3">Yes</td>
                 <td rowspan="2">Yes</td>
                 <td>Yes</td>
-                <td>Lets <c>w</c> be <c>static_cast&lt;T>(static_cast&lt;W>(v) + x + 1)</c> if <c>T</c> is an unsigned integer type, <c>V</c> has a greater size than <c>T</c>, and <c>static_cast&lt;W>(v)</c> is a negative value; <c>static_cast&lt;T>(v)</c> otherwise.
+                <td>Lets <c>w</c> be <c>static_cast&lt;T>(static_cast&lt;SV>(v) + x + 1)</c> if <c>T</c> is an unsigned integer type, <c>V</c> has a greater size than <c>T</c>, and <c>static_cast&lt;SV>(v)</c> is a negative value; <c>static_cast&lt;T>(v)</c> otherwise.
                     Then puts <c>w</c> into the field translator sink.</td>
               </tr>
 
@@ -6242,9 +6242,9 @@ template &lt;class T, class SinkR, class... Appendices>
                      <li>if <c>T</c> is a default translatable string type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
-                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>G</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
+                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
                            <ul>
-                             <li>if <c>G</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, Appendices1...></c>,</li>
+                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, Appendices1...></c>,</li>
                              <li>otherwise, if <c>std::is_constructible&lt;replace_if_skipped&lt;T>, F>::value</c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
                              <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, Appendices...></c>;</li>
                            </ul>
@@ -6254,9 +6254,9 @@ template &lt;class T, class SinkR, class... Appendices>
                      <li>otherwise, if <c>sizeof...(Appendices)</c> is greater than <c>0</c> and the reference-removed type of the first type of <c>Appendices</c> is possibly cv-qualified <c>std::locale</c> or its derived type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T></c>,</li>
-                         <li>otherwise, with <c>F</c> being the second type of <c>Appendices...</c>, <c>G</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices2...</c> representing the types of <c>Appendices...</c> without its first two types:
+                         <li>otherwise, with <c>F</c> being the second type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices2...</c> representing the types of <c>Appendices...</c> without its first two types:
                            <ul>
-                             <li>if <c>G</c> is <c>replacement_fail_t</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, fail_if_skipped, Appendices2...></c>,</li>
+                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, fail_if_skipped, Appendices2...></c>,</li>
                              <li>otherwise, if <c>std::is_constructible&lt;replace_if_skipped&lt;T>, F>::value</c> is <c>true</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, Appendices2...></c>,</li>
                              <li>otherwise, <c>locale_based_arithmetic_field_translator&lt;Sink, T, Appendices2...></c>;</li>
                            </ul>
@@ -6266,9 +6266,9 @@ template &lt;class T, class SinkR, class... Appendices>
                      <li>otherwise:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>arithmetic_field_translator&lt;Sink, T></c>,</li>
-                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices...</c>, <c>G</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
+                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
                            <ul>
-                             <li>if <c>G</c> is <c>replacement_fail_t</c>, <c>arithmetic_field_translator&lt;Sink, T, fail_if_skipped, Appendices1...></c>,</li>
+                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>arithmetic_field_translator&lt;Sink, T, fail_if_skipped, Appendices1...></c>,</li>
                              <li>otherwise, if <c>std::is_constructible&lt;replace_if_skipped&lt;T>, F>::value</c> is <c>true</c>, <c>arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
                              <li>otherwise, <c>arithmetic_field_translator&lt;Sink, T, Appendices...></c>.</li>
                            </ul>
@@ -6291,9 +6291,9 @@ template &lt;class T, class Allocator, class SinkR, class... Appendices>
                    <p>where <c><n>R</n></c> is a type decided as follows with <c>Sink</c> being <c>std::decay_t&lt;SinkR></c>:</p>
                      <ul>
                        <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
-                       <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>G</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
+                       <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
                          <ul>
-                           <li>if <c>G</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, Appendices1...></c>,</li>
+                           <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, Appendices1...></c>,</li>
                            <li>otherwise, if <c>std::is_constructible&lt;replace_if_skipped&lt;T>, F>::value</c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
                            <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, Appendices...></c>;</li>
                          </ul>
