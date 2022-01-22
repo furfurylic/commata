@@ -25,7 +25,7 @@ if(NOT googletest_POPULATED)
                      ${googletest_BINARY_DIR}
                      EXCLUDE_FROM_ALL)
 endif()
-set_target_properties(gtest gtest_main PROPERTIES FOLDER Depenencies)
+set_target_properties(gtest gtest_main PROPERTIES FOLDER "Dependencies")
 
 add_executable(test_commata)
 
