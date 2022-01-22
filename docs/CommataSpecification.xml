@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2022-01-11 (UTC)</signature>
+<signature>2022-01-22 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -5753,8 +5753,9 @@ namespace commata {
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler>
       explicit arithmetic_field_translator(
-        SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = SkippingHandler(),
-        ConversionErrorHandlerR&amp;&amp; handle_conversion_error = ConversionErrorHandler());
+        SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>(),
+        ConversionErrorHandlerR&amp;&amp; handle_conversion_error =
+          std::decay_t&lt;ConversionErrorHandlerR>());
     arithmetic_field_translator(const arithmetic_field_translator&amp;  other) noexcept(<nc>see below</nc>);
     arithmetic_field_translator(      arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~arithmetic_field_translator();
@@ -5783,8 +5784,9 @@ namespace commata {
 template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
           class ConversionErrorHandlerR = ConversionErrorHandler>
   explicit arithmetic_field_translator(
-    SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = SkippingHandler(),
-    ConversionErrorHandlerR&amp;&amp; handle_conversion_error = ConversionErrorHandler());
+    SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>(),
+    ConversionErrorHandlerR&amp;&amp; handle_conversion_error =
+      std::decay_t&lt;ConversionErrorHandlerR>());
             </code>
             <requires><c>std::is_constructible&lt;Sink, SinkR>::value</c>, <c>std::is_constructible&lt;SkippingHandler, SkippingHandlerR>::value</c> and <c>std::is_constructible&lt;ConversionErrorHandler, ConversionErrorHandlerR>::value</c> shall all be <c>true</c>.</requires>
             <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds objects of <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandler>(handle_conversion_error)</c>
@@ -5983,8 +5985,9 @@ namespace commata {
               class ConversionErrorHandlerR = ConversionErrorHandler>
     explicit locale_based_arithmetic_field_translator(
       SinkR&amp;&amp; sink, const std::locale&amp; loc,
-      SkippingHandlerR&amp;&amp; handle_skipping = SkippingHandler(),
-      ConversionErrorHandlerR&amp;&amp; handle_conversion_error = ConversionErrorHandler());
+      SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>(),
+      ConversionErrorHandlerR&amp;&amp; handle_conversion_error =
+        std::decay_t&lt;ConversionErrorHandlerR>());
     locale_based_arithmetic_field_translator(
       const locale_based_arithmetic_field_translator&amp;  other) noexcept(<nc>see below</nc>);
     locale_based_arithmetic_field_translator(
@@ -6017,8 +6020,9 @@ template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
           class ConversionErrorHandlerR = ConversionErrorHandler>
 explicit locale_based_arithmetic_field_translator(
   SinkR&amp;&amp; sink, const std::locale&amp; loc,
-  SkippingHandlerR&amp;&amp; handle_skipping = SkippingHandler(),
-  ConversionErrorHandlerR&amp;&amp; handle_conversion_error = ConversionErrorHandler());
+  SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>(),
+  ConversionErrorHandlerR&amp;&amp; handle_conversion_error =
+    std::decay_t&lt;ConversionErrorHandlerR>());
             </code>
             <requires><c>std::is_constructible&lt;Sink, SinkR>::value</c>, <c>std::is_constructible&lt;SkippingHandler, SkippingHandlerR>::value</c> and <c>std::is_constructible&lt;ConversionErrorHandler, ConversionErrorHandlerR>::value</c> shall all be <c>true</c>.</requires>
             <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds objects of <c>Sink</c>, <c>std::locale</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c>, <c>loc</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandler>(handle_conversion_error)</c>
@@ -6102,11 +6106,12 @@ namespace commata {
 
     <c>// <n><xref id="string_field_translator.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
-      explicit string_field_translator(SinkR&amp;&amp; sink,
-                                       SkippingHandlerR&amp;&amp; handle_skipping = SkippingHandler());
+      explicit string_field_translator(
+        SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
-      string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, SinkR&amp;&amp; sink,
-                              SkippingHandlerR&amp;&amp; handle_skipping = SkippingHandler());
+      string_field_translator(
+        std::allocator_arg_t, const Allocator&amp; alloc, SinkR&amp;&amp; sink,
+        SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
     string_field_translator(const string_field_translator&amp;  other) noexcept(<nc>see below</nc>);
     string_field_translator(      string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~string_field_translator();
@@ -6134,8 +6139,8 @@ namespace commata {
           <code-item>
             <code>
 template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
-  explicit string_field_translator(SinkR&amp;&amp; sink,
-                                   SkippingHandlerR&amp;&amp; handle_skipping = SkippingHandler());
+  explicit string_field_translator(
+    SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
             </code>
             <requires>Both of <c>std::is_constructible&lt;Sink, SinkR>::value</c> and <c>std::is_constructible&lt;SkippingHandler, SkippingHandlerR>::value</c> shall be <c>true</c>.
                       <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
@@ -6146,8 +6151,9 @@ template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
           <code-item>
             <code>
 template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
-  string_field_translator(std::allocator_arg_t, const Allocator&amp; alloc, SinkR&amp;&amp; sink,
-                          SkippingHandlerR&amp;&amp; handle_skipping = SkippingHandler());
+  string_field_translator(
+    std::allocator_arg_t, const Allocator&amp; alloc, SinkR&amp;&amp; sink,
+    SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
             </code>
             <requires>Both of <c>std::is_constructible&lt;Sink, SinkR>::value</c> and <c>std::is_constructible&lt;SkippingHandler, SkippingHandlerR>::value</c> shall be <c>true</c>.</requires>
             <effects>Initializes an object of <c>string_field_translator</c> that holds objects of <c>Allocator</c>, <c>Sink</c> and <c>SkippingHandler</c> initialized with <c>alloc</c>, <c>std::forward&lt;SinkR>(sink)</c> and <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> as the allocator, the field translator sink object and the skipping handler object respectively.</effects>

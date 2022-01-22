@@ -2607,9 +2607,10 @@ public:
                         = nullptr>
     explicit arithmetic_field_translator(
         SinkR&& sink,
-        SkippingHandlerR&& handle_skipping = SkippingHandler(),
-        ConversionErrorHandlerR&& handle_conversion_error
-            = ConversionErrorHandler()) :
+        SkippingHandlerR&& handle_skipping =
+            std::decay_t<SkippingHandlerR>(),
+        ConversionErrorHandlerR&& handle_conversion_error =
+            std::decay_t<ConversionErrorHandlerR>()) :
         ct_(converter_t(std::forward<ConversionErrorHandlerR>(
                             handle_conversion_error)),
             translator_t(std::forward<SinkR>(sink),
@@ -2679,9 +2680,10 @@ public:
                     std::decay_t<SinkR>>::value>* = nullptr>
     locale_based_arithmetic_field_translator(
         SinkR&& sink, const std::locale& loc,
-        SkippingHandlerR&& handle_skipping = SkippingHandler(),
-        ConversionErrorHandlerR&& handle_conversion_error
-            = ConversionErrorHandler()) :
+        SkippingHandlerR&& handle_skipping =
+            std::decay_t<SkippingHandlerR>(),
+        ConversionErrorHandlerR&& handle_conversion_error =
+            std::decay_t<ConversionErrorHandlerR>()) :
         loc_(loc),
         out_(std::forward<SinkR>(sink),
              std::forward<SkippingHandlerR>(handle_skipping),
@@ -2794,7 +2796,9 @@ public:
                     string_field_translator, std::decay_t<SinkR>>::value>*
                         = nullptr>
     explicit string_field_translator(
-        SinkR&& sink, SkippingHandlerR&& handle_skipping = SkippingHandler()) :
+        SinkR&& sink,
+        SkippingHandlerR&& handle_skipping =
+            std::decay_t<SkippingHandlerR>()) :
         at_(Allocator(),
             translator_t(std::forward<SinkR>(sink),
                          std::forward<SkippingHandlerR>(handle_skipping)))
