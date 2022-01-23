@@ -21,19 +21,19 @@ You can build it as follows:
  1. At the top directory of the repository, prepare GoogleTest and the tests for
     Commata with CMake into `build` directory:
     ```bash
-    $ cmake -S . -B build -DCOMMATA_BUILD_TESTS=1
+    $ cmake -S . -B build -DCOMMATA_BUILD_TESTS=ON
     ```
     You can also explicitly specify the geneator, the platform, the build type, and so on. For example:
     ```bash
-    $ cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Debug -DCOMMATA_BUILD_TESTS=1
+    $ cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Debug -DCOMMATA_BUILD_TESTS=ON
     ```
     or
     ```bash
-    $ cmake -S . -B build -G "Visual Studio 14 2015" -A Win32 -DCOMMATA_BUILD_TESTS=1
+    $ cmake -S . -B build -G "Visual Studio 14 2015" -A Win32 -DCOMMATA_BUILD_TESTS=ON
     ```
     or
     ```bash
-    $ cmake -S . -B build -G "Visual Studio 16 2019" -A x64 -DCOMMATA_BUILD_TESTS=1
+    $ cmake -S . -B build -G "Visual Studio 16 2019" -A x64 -DCOMMATA_BUILD_TESTS=ON
     ```
 
  1. Now you can make and execute the tests.

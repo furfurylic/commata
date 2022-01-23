@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 
+option(COMMATA_BUILD_TESTS "Whether to build Commata's test" OFF)
+
 project(commata CXX)
 
 add_library(commata INTERFACE)
