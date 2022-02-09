@@ -435,7 +435,7 @@ public:
     {
         sq_->emplace_back(
             primitive_table_pull_state::before_parse,
-            static_cast<typename std::decay_t<decltype(*handler_)>::
+            static_cast<typename handler_t::
                     state_queue_element_type::second_type>(0));
     }
 
@@ -691,7 +691,7 @@ public:
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     static constexpr bool physical_position_available =
-        decltype(p_)::physical_position_available;
+        primitive_t::physical_position_available;
 
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
