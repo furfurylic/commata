@@ -592,7 +592,7 @@ private:
         return p;
     }
 
-    void destroy_handler(const handler_p_t p)
+    void destroy_handler(handler_p_t p)
     {
         p->~handler_t();
         handler_a_t a(get_allocator());
