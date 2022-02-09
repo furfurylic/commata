@@ -534,9 +534,11 @@ REGISTER_TYPED_TEST_SUITE_P(TestTablePull,
     Basics, SkipRecord, SkipField, Error, Relations, Plus, Move);
 
 typedef testing::Types<
+    std::pair<char, std::integral_constant<std::size_t, 1>>,
     std::pair<char, std::integral_constant<std::size_t, 2>>,
     std::pair<char, std::integral_constant<std::size_t, 4>>,
     std::pair<char, std::integral_constant<std::size_t, 1024>>,
+    std::pair<wchar_t, std::integral_constant<std::size_t, 1>>,
     std::pair<wchar_t, std::integral_constant<std::size_t, 2>>,
     std::pair<wchar_t, std::integral_constant<std::size_t, 4>>,
     std::pair<wchar_t, std::integral_constant<std::size_t, 1024>>> ChBs;

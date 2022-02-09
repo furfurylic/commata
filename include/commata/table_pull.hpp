@@ -107,21 +107,11 @@ public:
     explicit handler(
         std::allocator_arg_t, const Allocator& alloc,
         std::size_t buffer_size) :
-        alloc_(alloc, sanitize_buffer_size(buffer_size, alloc)),
+        alloc_(alloc, detail::sanitize_buffer_size(buffer_size, alloc)),
         buffer_(at_t::allocate(alloc_.base(), alloc_.member())),
         yield_location_(0), collects_data_(true)
     {}
 
-private:
-    static std::size_t sanitize_buffer_size(
-        std::size_t buffer_size, const Allocator& alloc) noexcept
-    {
-        return std::max(
-            static_cast<std::size_t>(2U),
-            detail::sanitize_buffer_size(buffer_size, alloc));
-    }
-
-public:
     handler(const handler& other) = delete;
     handler(handler&& other) = delete;
 
@@ -163,7 +153,7 @@ public:
 
     std::pair<char_type*, std::size_t> get_buffer()
     {
-        return { std::addressof(*buffer_), alloc_.member() - 1 };
+        return { std::addressof(*buffer_), alloc_.member() };
     }
 
     void release_buffer(const char_type*) noexcept
