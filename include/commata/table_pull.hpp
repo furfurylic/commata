@@ -640,31 +640,17 @@ enum class table_pull_state : std::uint_fast8_t
 namespace detail { namespace pull {
 
 template <class PrimitiveTablePull>
-class temporarily_discard
+struct reset_discarding_data
 {
-    PrimitiveTablePull* p_;
-
-public:
-    explicit temporarily_discard(PrimitiveTablePull& p) noexcept : p_(&p)
+    void operator()(PrimitiveTablePull* p) const
     {
-        p_->set_discarding_data();
-    }
-
-    temporarily_discard(const temporarily_discard&) = delete;
-
-    ~temporarily_discard()
-    {
-        if (p_) {
-            p_->set_discarding_data(false);
-        }
-    }
-
-    void reset() noexcept
-    {
-        p_->set_discarding_data(false);
-        p_ = nullptr;
+        p->set_discarding_data(false);
     }
 };
+
+template <class PrimitiveTablePull>
+using temporarily_discard = std::unique_ptr<
+            PrimitiveTablePull, reset_discarding_data<PrimitiveTablePull>>;
 
 }} // end detail::pull
 
@@ -796,7 +782,8 @@ public:
         }
         last_ = empty_string();
         value_.clear();
-        detail::pull::temporarily_discard<decltype(p_)> d(p_);
+        p_.set_discarding_data(true);
+        detail::pull::temporarily_discard<decltype(p_)> d(&p_);
         if (value_expiring_) {
             ++j_;
             value_expiring_ = false;
@@ -913,7 +900,8 @@ public:
         }
         last_ = empty_string();
         value_.clear();
-        detail::pull::temporarily_discard<decltype(p_)> d(p_);
+        p_.set_discarding_data(true);
+        detail::pull::temporarily_discard<decltype(p_)> d(&p_);
         if (value_expiring_) {
             ++j_;
             value_expiring_ = false;
