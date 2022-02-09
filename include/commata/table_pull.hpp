@@ -637,23 +637,6 @@ enum class table_pull_state : std::uint_fast8_t
     record_end
 };
 
-namespace detail { namespace pull {
-
-template <class PrimitiveTablePull>
-struct reset_discarding_data
-{
-    void operator()(PrimitiveTablePull* p) const
-    {
-        p->set_discarding_data(false);
-    }
-};
-
-template <class PrimitiveTablePull>
-using temporarily_discard = std::unique_ptr<
-            PrimitiveTablePull, reset_discarding_data<PrimitiveTablePull>>;
-
-}} // end detail::pull
-
 template <class TableSource,
     class Allocator = std::allocator<typename TableSource::char_type>>
 class table_pull
@@ -664,12 +647,26 @@ public:
     using allocator_type = Allocator;
 
 private:
-    primitive_table_pull<TableSource, allocator_type,
+    using primitive_t = primitive_table_pull<TableSource, allocator_type,
         (primitive_table_pull_handle_end_buffer
        | primitive_table_pull_handle_end_record
        | primitive_table_pull_handle_empty_physical_line
        | primitive_table_pull_handle_update
-       | primitive_table_pull_handle_finalize)> p_;
+       | primitive_table_pull_handle_finalize)>;
+
+    struct reset_discarding_data
+    {
+        void operator()(primitive_t* p) const
+        {
+            p->set_discarding_data(false);
+        }
+    };
+
+    using temporarily_discard =
+        std::unique_ptr<primitive_t, reset_discarding_data>;
+
+private:
+    primitive_t p_;
     bool empty_physical_line_aware_;
 
     table_pull_state last_state_;
@@ -783,7 +780,7 @@ public:
         last_ = empty_string();
         value_.clear();
         p_.set_discarding_data(true);
-        detail::pull::temporarily_discard<decltype(p_)> d(&p_);
+        temporarily_discard d(&p_);
         if (value_expiring_) {
             ++j_;
             value_expiring_ = false;
@@ -901,7 +898,7 @@ public:
         last_ = empty_string();
         value_.clear();
         p_.set_discarding_data(true);
-        detail::pull::temporarily_discard<decltype(p_)> d(&p_);
+        temporarily_discard d(&p_);
         if (value_expiring_) {
             ++j_;
             value_expiring_ = false;
