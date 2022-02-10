@@ -335,7 +335,6 @@ public:
 
     void finalize(const Ch* first, const Ch* last)
     {
-        using namespace std::placeholders;
         if (is_in_header()) {
             if ((target_field_index_ == record_extractor_npos)
              && with_field_buffer_appended(
