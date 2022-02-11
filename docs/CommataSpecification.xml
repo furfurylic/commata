@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2022-02-02 (UTC)</signature>
+<signature>2022-02-13 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3606,7 +3606,7 @@ namespace commata {
           <ul>
              <li>all participating <c>basic_stored_table</c> objects are be complete,</li>
              <li>no two of the contained values of the participating <c>basic_stored_table</c> objects overlap, and</li>
-             <li>the states of the participating <c>basic_stored_table</c> objects are not changed if the call exits via an exception.</li>
+             <li>the states of the participating <c>basic_stored_table</c> objects are not changed if the call exits via an exception except when they are referenced by rvalue references passed as parameters to them.</li>
           </ul>
 
           <p>All non-const member functions of <c>basic_stored_table</c> and all instances of non-member function templates declared in this header (<xref id="hpp.stored_table.syn"/>) that take at least one parameter whose type is a reference to a non-const <c>basic_stored_table&lt;Ch, Tr></c> for some <c>Ch</c> and <c>Tr</c> may change the current buffer marks of the participating non-const <c>basic_stored_table</c> objects.</p>
@@ -3672,6 +3672,8 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
           </code>
           <postcondition><c>get_allocator() == alloc</c> shall be <c>true</c> and <c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(alloc))</c> and <c>other.get_buffer_size()</c>.
                          If not undefined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this construction.</postcondition>
+          <throws>Nothing if <c>other.get_allocator() == alloc</c> is not <c>false</c>.</throws>
+          <remark>The states of <c>other</c> shall not be changed if the call exits via an exception.</remark>
         </code-item>
 
         <code-item>
@@ -3696,6 +3698,8 @@ basic_stored_table&amp; operator=(basic_stored_table&amp;&amp; other)
           </code>
           <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and the value of <c>other.get_buffer_size()</c> before this assignment.
                          If not undefined, <c>content()</c> shall be equal to the value that <c>other.content()</c> had before this assignment.</postcondition>
+          <throws>Nothing unless both of <c>other.get_allocator() == alloc</c> and <c>AT::propagate_on_container_move_assignment</c> are <c>false</c>.</throws>
+          <remark>The states of <c>other</c> shall not be changed if the call exits via an exception.</remark>
         </code-item>
       </section>
 
@@ -3927,7 +3931,7 @@ template &lt;class OtherContent, class OtherAllocator>
     const basic_stored_table&lt;OtherContent, OtherAllocator>&amp; other);
           </code>
           <requires><c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
-                    If an exception is thrown by a call of <c>emplace</c> of <c>content()</c> at the end, there shall be no effects on the before-end elements.
+                    If an exception is thrown by a call of <c>emplace</c> or <c>insert</c> of <c>content()</c> at the end, there shall be no effects on the before-end elements.
                     Any calls of <c>erase</c> of <c>content()</c> at the end shall not exit via an exception.</requires>
           <postcondition>Let <c>lsize</c> be the value that <c>size()</c> returned before the call.
                          <c>size() == lsize + other.size()</c> shall be <c>true</c>.
@@ -3942,9 +3946,9 @@ template &lt;class OtherContent>
     basic_stored_table&lt;OtherContent, Allocator>&amp;&amp; other);
           </code>
           <requires><c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
-                    If an exception is thrown by a call of <c>emplace</c> of <c>content()</c> at the end, there shall be no effects on the before-end elements.
-                    Neither calls of <c>erase</c> of <c>content()</c> at the end nor <c>erase</c> of <c>other.content()</c> at the end shall exit via an exception.
-                    If <c>content_type</c> and <c>OtherContent</c> is the same type which has a nested <c>allocator_type</c> type, their type shall be an allocator-aware container type and any calls of its <c>swap</c> on two objects with equal allocators shall not exit via exception.</requires>
+                    If an exception is thrown by a call of <c>emplace</c> or <c>insert</c> of <c>content()</c> at the end, there shall be no effects on the before-end elements.
+                    Any calls of <c>erase</c> of <c>content()</c> at the end shall not exit via an exception.
+                    Any calls of <c>clear</c> of <c>other.content()</c> shall not exit via an exception.</requires>
           <postcondition>Let <c>lsize</c> be the value that <c>size()</c> returned before the call.
                          <c>size() == lsize + other.size()</c> shall be <c>true</c>.
                          For each <c>i</c> in the range [<c>0</c>, <c>lsize</c>), the value of <c>(*this)[i]</c> shall be equal to the value that it had before call.

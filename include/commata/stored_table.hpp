@@ -1588,218 +1588,92 @@ void swap(
 
 namespace detail { namespace stored {
 
-template <class T, class = void>
-struct has_allocator_type :
-    std::false_type
-{};
+template <class Container>
 
-template <class T>
-struct has_allocator_type<T, typename T::allocator_type*> :
-    std::true_type
-{};
-
-template <class T, class = void>
-struct adaptive_manoeuvre;
-
-template <class T>
-struct adaptive_manoeuvre<T,
-    std::enable_if_t<std::is_nothrow_move_assignable<T>::value>>
+struct invoke_clear
 {
-    template <class Container>
-    static void emplace_back(Container& c, T&& t)
+    void operator()(Container* c)
     {
-        c.emplace(c.cend(), std::move(t));
-    }
-
-    static void emigrate(T&& from, T& to) noexcept
-    {
-        to = std::move(from);
+        c->clear();
     }
 };
 
-template <class T>
-struct adaptive_manoeuvre<T,
-    std::enable_if_t<
-        !std::is_nothrow_move_assignable<T>::value
-     && has_allocator_type<T>::value>>
+template <class ContainerFrom, class ContainerTo>
+void  emigrate_impl(ContainerFrom&& from, ContainerTo& to, std::false_type)
 {
-    template <class Container>
-    static void emplace_back(Container& c, T&& t)
-    {
-        c.emplace(c.cend(), t.get_allocator());
-        c.end().swap(t);
+    for (const auto& f : from) {
+        to.emplace(to.cend(), f.cbegin(), f.cend());            // throw
     }
+}
 
-    // Requires allocators to be equal and throws nothing.
-    static void emigrate(T&& from, T& to)
-    {
-        assert(from.get_allocator() == to.get_allocator());
-        to.swap(from);
-    }
-};
-
-template <class T>
-struct adaptive_manoeuvre<T,
-    std::enable_if_t<
-        !std::is_nothrow_move_assignable<T>::value
-     && !has_allocator_type<T>::value
-     && is_nothrow_swappable<T>()>>
+template <class ContainerFrom, class ContainerTo>
+void  emigrate_impl(ContainerFrom&& from, ContainerTo& to, std::true_type)
 {
-    template <class Container>
-    static void emplace_back(Container& c, T&& t)
-    {
-        c.emplace(c.cend());
-        c.end().swap(t);
-    }
+    static_assert(!std::is_reference<ContainerFrom>::value, "");
+        // so we'll use move instead of forward
 
-    static void emigrate(T&& from, T& to) noexcept
-    {
-        to.swap(from);
-    }
-};
+    to.insert(to.end(), std::make_move_iterator(from.begin()),
+                        std::make_move_iterator(from.end()));   // throw
+}
 
-template <class T>
-struct has_adaptive_manoeuvre :
-    std::integral_constant<bool,
-        std::is_nothrow_move_assignable<T>::value
-     || has_allocator_type<T>::value
-     || is_nothrow_swappable<T>()>
-{};
+template <class ContainerFrom, class ContainerTo>
+void  emigrate(ContainerFrom&& from, ContainerTo& to)
+{
+    static_assert(!std::is_reference<ContainerFrom>::value, "");
+        // so we'll use move instead of forward
+
+    std::unique_ptr<ContainerTo, invoke_clear<ContainerTo>> p(&to);
+    emigrate_impl(
+        std::move(from), to,
+        std::is_same<typename ContainerFrom::value_type,
+                     typename ContainerTo::value_type>());      // throw
+}
 
 template <class ContentL, class ContentR>
-void append_stored_table_content_primitive(ContentL& l, ContentR&& r)
+void append_stored_table_content(ContentL& l, ContentR&& r)
 {
-    // We require:
-    // - if an exception is thrown by ContentL's emplace() at the end,
-    //   there are no effects on the before-end elements.
-    // - ContentL's erase() at the end does not throw an exception.
-    // - ContentR's erase() at the end does not throw an exception.
+    static_assert(!std::is_reference<ContentR>::value, "");
+        // so we'll use move instead of forward
 
-    const auto left_original_size = l.size();               // ?
+    // We require:
+    // - if an exception is thrown by ContentL's emplace() or insert() at the
+    //   end, there are no effects on the before-end elements.
+    // - ContentL's erase() at the end does not throw an exception.
+    // - ContentR's clear() does not throw an exception.
+
+    const auto left_original_size = l.size();    // ?
+
+    // Make sure right_content has no reference to moved values
+    std::unique_ptr<ContentR, invoke_clear<ContentR>> p(&r);
+
     try {
-        for (auto& rr : r) {
-            l.emplace(l.cend(), rr.cbegin(), rr.cend());    // throw
-        }
+        emigrate(std::move(r), l);              // throw
     } catch (...) {
         l.erase(std::next(l.begin(), left_original_size), l.cend());
         throw;
     }
-
-    // Make sure right_content has no reference to moved values;
-    // we use erase() instead of clear() to simplify requirements
-    r.erase(r.cbegin(), r.cend());
 }
 
-template <class RecordL, class AllocatorL, class ContentR>
-void append_stored_table_content_primitive(
-    std::list<RecordL, AllocatorL>& l, ContentR&& r)
+template <class RecordL, class AllocatorL, class RecordR, class AllocatorR>
+void append_stored_table_content(
+    std::list<RecordL, AllocatorL>& l, std::list<RecordL, AllocatorR>&& r)
 {
-    std::list<RecordL, AllocatorL> r2(l.get_allocator());   // throw
-    for (auto& rr : r) {
-        r2.emplace_back(rr.cbegin(), rr.cend());            // throw
-    }
+    std::list<RecordL, AllocatorL> r2(l.get_allocator());       // throw
+    emigrate(std::move(r), r2);                                 // throw
     l.splice(l.cend(), r2);
-}
-
-template <class ContentL, class ContentR>
-void append_stored_table_content_adaptive(ContentL& l, ContentR&& r)
-{
-    static_assert(!std::is_reference<ContentR>::value, "");
-        // so we'll use move instead of forward
-    static_assert(std::is_same<typename ContentL::value_type,
-        typename ContentR::value_type>::value, "");
-    static_assert(
-        has_adaptive_manoeuvre<typename ContentL::value_type>::value, "");
-
-    // We require:
-    // - if an exception is thrown by ContentL's emplace() at the end,
-    //   there are no effects on the before-end elements.
-    // - ContentL's erase() at the end does not throw an exception.
-    // - ContentR's erase() at the end does not throw an exception.
-    // - if ContentL::value_type has allocator_type member type, it shall be
-    //   allocator aware and ContentL::value_type::swap on objects which have
-    //   equal allocators shall not exit via an exception.
-
-    using manoeuvre = adaptive_manoeuvre<typename ContentL::value_type>;
-
-    const auto left_original_size = l.size();    // ?
-    try {
-        for (auto& rr : r) {
-            manoeuvre::emplace_back(l, std::move(rr));  // throw
-        }
-    } catch (...) {
-        const auto le = std::next(l.begin(), left_original_size);
-        for (auto i = le, ie = l.end(), j = r.begin(); i != ie; ++i, ++j) {
-            manoeuvre::emigrate(std::move(*i), *j);
-        }
-        l.erase(le, l.cend());
-        throw;
-    }
-
-    // Make sure right_content has no reference to moved values;
-    // we use erase() instead of clear() to simplify requirements
-    r.erase(r.cbegin(), r.cend());
-}
-
-template <class Record, class AllocatorL, class ContentR>
-void append_stored_table_content_adaptive(
-    std::list<Record, AllocatorL>& l, ContentR&& r)
-{
-    static_assert(
-        std::is_same<Record, typename ContentR::value_type>::value, "");
-    static_assert(has_adaptive_manoeuvre<Record>::value, "");
-
-    using manoeuvre = adaptive_manoeuvre<Record>;
-
-    std::list<Record, AllocatorL> r2(l.get_allocator());    // throw
-    try {
-        for (auto& rr : r) {
-            manoeuvre::emplace_back(r2, std::move(rr));     // throw
-        }
-    } catch (...) {
-        for (auto i = r2.begin(), ie = r2.end(), j = r.begin();
-                i != ie; ++i, ++j) {
-            manoeuvre::emigrate(std::move(*i), *j);
-        }
-        throw;
-    }
-    l.splice(l.cend(), r2);
-}
-
-template <class ContentL, class ContentR>
-auto append_stored_table_content(ContentL& l, ContentR&& r)
- -> std::enable_if_t<
-        std::is_same<
-            typename ContentL::value_type,
-            typename ContentR::value_type>::value
-     && has_adaptive_manoeuvre<
-            typename ContentL::value_type>::value>
-{
-    static_assert(!std::is_reference<ContentR>::value, "");
-        // so we'll use move instead of forward
-    append_stored_table_content_adaptive(l, std::move(r));
-}
-
-template <class ContentL, class ContentR>
-auto append_stored_table_content(ContentL& l, ContentR&& r)
- -> std::enable_if_t<
-        !std::is_same<
-            typename ContentL::value_type,
-            typename ContentR::value_type>::value
-     || !has_adaptive_manoeuvre<
-            typename ContentL::value_type>::value>
-{
-    append_stored_table_content_primitive(l, r);
 }
 
 template <class Record, class Allocator>
 void append_stored_table_content(
     std::list<Record, Allocator>& l, std::list<Record, Allocator>&& r)
 {
+    // stores' allocator equality does not necessarily mean contents' one
     if (l.get_allocator() == r.get_allocator()) {
         l.splice(l.cend(), r);
     } else {
-        append_stored_table_content_adaptive(l, std::move(r));  // throw
+        std::list<Record, Allocator> r2(l.get_allocator());     // throw
+        emigrate(std::move(r), r2);                             // throw
+        l.splice(l.cend(), r2);
     }
 }
 
