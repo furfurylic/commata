@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2022-02-13 (UTC)</signature>
+<signature>2022-03-01 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3864,7 +3864,7 @@ template &lt;class F> auto guard_rewrite(F f) -> decltype(f(*this));
           <requires><c>f</c> shall possibly call functions that do not change the state of <c>*this</c> except <c>rewrite_value</c>, <c>import_value</c>, <c>generate_buffer</c>, <c>consume_buffer</c>, <c>add_buffer</c> and <c>secure_current_upto</c>.</requires>
           <effects>Calls <c>f(*this)</c>.</effects>
           <returns>The return value of the call above.</returns>
-          <remark>If an exception is thrown, all objects returned by the calls of <c>rewrite_value</c> and therefore <c>import_value</c> during the call of <c>f(*this)</c> are invalidated
+          <remark>If an exception is thrown, all objects returned by the calls of <c>resize_value</c> and <c>rewrite_value</c>, and therefore also <c>make_value</c> and <c>import_value</c> during the call of <c>f(*this)</c> are invalidated
                   and the current buffer mark and its reservation marks (<xref id="basic_stored_table.primitives"/>) are restored.</remark>
         </code-item>
       </section>
@@ -3913,7 +3913,7 @@ void add_buffer(char_type* buffer, std::size_t size);
 void secure_current_upto(char_type* secured_last);
           </code>
           <requires><c>secured_last</c> shall point an element in the current buffer or be the past-the-end pointer of the current buffer.</requires>
-          <effects>Marks the range [<c>cb</c>, <c>secured_last</c>) as reserved against <c>rewrite_value</c> and therefore <c>import_value</c> (<xref id="basic_stored_table.rewrite"/>), where <c>cb</c> is a pointer to the first element of the current buffer.</effects>
+          <effects>Marks the range [<c>cb</c>, <c>secured_last</c>) as reserved against <c>resize_value</c> and <c>rewrite_value</c>, and therefore also <c>make_value</c> and <c>import_value</c> (<xref id="basic_stored_table.rewrite"/>), where <c>cb</c> is a pointer to the first element of the current buffer.</effects>
           <throws>Nothing.</throws>
           <remark>This function does not change the current buffer mark. The reservation marks can not be revoked except by <c>guard_rewrite</c>.</remark>
         </code-item>
