@@ -3493,9 +3493,8 @@ namespace commata {
     value_type&amp; resize_value(value_type&amp; value, typename value_type::size_type n);
     value_type make_value(typename value_type::size_type n);
     template &lt;class ForwardIterator, class ForwardIteratorEnd>
-      value_type&amp;
-        rewrite_value(value_type&amp; value,
-                      ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end);
+      value_type&amp; rewrite_value(value_type&amp; value,
+                                ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end);
     template &lt;class ForwardIterator>
       value_type&amp; rewrite_value(value_type&amp; value, ForwardIterator new_value);
     template &lt;class OtherValue>
@@ -3735,8 +3734,7 @@ const content_type&amp; content() const;
 record_type&amp;       operator[](size_type record_index);
 const record_type&amp; operator[](size_type record_index) const;
           </code>
-          <requires>The content container of <c>*this</c> shall not be empty.</requires>
-          <returns><c>content()[record_index]</c>.</returns>
+          <effects>Equivalent to: <c>content()[record_index]</c>.</effects>
         </code-item>
 
         <code-item>
@@ -3805,9 +3803,8 @@ return value;</code>
         <code-item>
           <code>
 template &lt;class ForwardIterator, class ForwardIteratorEnd>
-  value_type&amp;
-    rewrite_value(value_type&amp; value,
-                  ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end);
+  value_type&amp; rewrite_value(value_type&amp; value,
+                            ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end);
           </code>
           <requires>The template parameter <c>ForwardIterator</c> shall meet the <c>ForwardIterator</c> requirements for <c>char_type</c>.
                     The template parameter <c>ForwardIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
@@ -3826,11 +3823,7 @@ template &lt;class ForwardIterator, class ForwardIteratorEnd>
 template &lt;class ForwardIterator>
   value_type&amp; rewrite_value(value_type&amp; value, ForwardIterator new_value);
           </code>
-          <requires>The template parameter <c>ForwardIterator</c> shall meet the <c>ForwardIterator</c> requirements for <c>char_type</c>.
-                    <c>value</c> shall be backed by <c>*this</c>.
-                    <c>new_value</c> shall point the first element of a valid null-terminated sequence of <c>char_type</c>.</requires>
-          <effects>Calls <c>rewrite_value(value, new_value, null_termination())</c>.</effects>
-          <returns><c>value</c>.</returns>
+          <effects>Equivalent to: <c>return rewrite_value(value, new_value, null_termination());</c></effects>
           <remark>This overload shall not participate in overload resolution unless <c>std::iterator_traits&lt;ForwardIterator>::iterator_category</c> is a type
                   that is equal to or a derived class of <c>std::forward_iterator_tag</c>.</remark>
         </code-item>
@@ -3840,9 +3833,7 @@ template &lt;class ForwardIterator>
 template &lt;class OtherValue>
   value_type&amp; rewrite_value(value_type&amp; value, const OtherValue&amp; new_value);
           </code>
-          <effects><p>Equivalent to:</p>
-                   <code>return rewrite_value(value, new_value.cbegin(), new_value.cend());</code>
-          </effects>
+          <effects>Equivalent to: <c>return rewrite_value(value, new_value.cbegin(), new_value.cend());</c></effects>
           <remark>This overload shall not participate in overload resolution unless <c>OtherValue::const_iterator</c> is a type.</remark>
         </code-item>
 
