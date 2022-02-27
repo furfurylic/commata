@@ -832,6 +832,9 @@ public:
 
     std::pair<Ch*, std::size_t> generate_buffer(std::size_t min_size)
     {
+        if (min_size > at_t::max_size(this->get())) {
+            throw std::bad_alloc();
+        }
         if (buffers_cleared_) {
             auto p_prev_next = &buffers_cleared_;
             auto p = *p_prev_next;
@@ -852,7 +855,7 @@ public:
             min_size);
     }
 
-    void consume_buffer(Ch* p, std::size_t size) noexcept
+    void consume_buffer(Ch* p, std::size_t size)
     try {
         buffers_cleared_ = hello(p, size, buffers_cleared_);        // throw
         if (!buffers_cleared_back_) {
