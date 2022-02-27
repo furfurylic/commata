@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2022-03-01 (UTC)</signature>
+<signature>2022-03-26 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3494,9 +3494,9 @@ namespace commata {
     value_type make_value(typename value_type::size_type n);
     template &lt;class ForwardIterator, class ForwardIteratorEnd>
       value_type&amp; rewrite_value(value_type&amp; value,
-                                ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end);
+                                InputIterator new_value_begin, InputIteratorEnd new_value_end);
     template &lt;class ForwardIterator>
-      value_type&amp; rewrite_value(value_type&amp; value, ForwardIterator new_value);
+      value_type&amp; rewrite_value(value_type&amp; value, InputIterator new_value);
     template &lt;class OtherValue>
       value_type&amp; rewrite_value(value_type&amp; value, const OtherValue&amp; new_value);
     template &lt;class... Args> value_type import_value(Args&amp;&amp;... args);
@@ -3802,13 +3802,13 @@ return value;</code>
 
         <code-item>
           <code>
-template &lt;class ForwardIterator, class ForwardIteratorEnd>
+template &lt;class InputIterator, class InputIteratorEnd>
   value_type&amp; rewrite_value(value_type&amp; value,
-                            ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end);
+                            InputIterator new_value_begin, InputIteratorEnd new_value_end);
           </code>
-          <requires>The template parameter <c>ForwardIterator</c> shall meet the <c>ForwardIterator</c> requirements for <c>char_type</c>.
-                    The template parameter <c>ForwardIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
-                    <c>std::declval&lt;const ForwardIterator&amp;>() != std::declval&lt;const ForwardIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.
+          <requires>The template parameter <c>InputIterator</c> shall meet the <c>InputIterator</c> requirements for <c>char_type</c>.
+                    The template parameter <c>InputIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
+                    <c>std::declval&lt;const InputIterator&amp;>() != std::declval&lt;const InputIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.
                     <c>value</c> shall be backed by <c>*this</c>.
                     <c>new_value_begin</c> shall point an element in, or be a past-the-end iterator of, a valid range.</requires>
           <postcondition><c>value</c> shall be unchangedly backed by <c>*this</c>.
@@ -3820,12 +3820,12 @@ template &lt;class ForwardIterator, class ForwardIteratorEnd>
 
         <code-item>
           <code>
-template &lt;class ForwardIterator>
-  value_type&amp; rewrite_value(value_type&amp; value, ForwardIterator new_value);
+template &lt;class InputIterator>
+  value_type&amp; rewrite_value(value_type&amp; value, InputIterator new_value);
           </code>
           <effects>Equivalent to: <c>return rewrite_value(value, new_value, null_termination());</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::iterator_traits&lt;ForwardIterator>::iterator_category</c> is a type
-                  that is equal to or a derived class of <c>std::forward_iterator_tag</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::iterator_traits&lt;InputIterator>::iterator_category</c> is a type
+                  that is equal to or a derived class of <c>std::input_iterator_tag</c>.</remark>
         </code-item>
 
         <code-item>

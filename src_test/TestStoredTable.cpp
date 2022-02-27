@@ -818,6 +818,30 @@ TEST_F(TestStoredTable, RewriteValueWithNonPointerIterator)
     ASSERT_EQ("ABC", table.content().back().back());
 }
 
+TEST_F(TestStoredTable, RewriteValueWithNonForwardIterator)
+{
+    stored_table table;
+    table.content().emplace_back();
+
+    table.content().back().emplace_back();
+    {
+        std::stringstream v;
+        v << "ABC" << '\0';
+        table.rewrite_value(table.content().back().back(),
+            std::istream_iterator<char>(v));
+    }
+    ASSERT_EQ("ABC", table.content().back().back());
+
+    table.content().back().emplace_back();
+    {
+        std::stringstream v;
+        v << "XYZ";
+        table.rewrite_value(table.content().back().back(),
+            std::istream_iterator<char>(v), std::istream_iterator<char>());
+    }
+    ASSERT_EQ("XYZ", table.content().back().back());
+}
+
 namespace {
 
 struct d_end

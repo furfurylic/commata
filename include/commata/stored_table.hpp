@@ -1307,28 +1307,78 @@ public:
         return value;
     }
 
-    template <class ForwardIterator, class ForwardIteratorEnd>
+    template <class InputIterator, class InputIteratorEnd>
     value_type& rewrite_value(value_type& value,
+        InputIterator new_value_begin, InputIteratorEnd new_value_end)
+    {
+        return rewrite_value(
+            typename std::iterator_traits<InputIterator>::iterator_category(),
+            value, new_value_begin, new_value_end);
+    }
+
+private:
+    template <class ForwardIterator, class ForwardIteratorEnd>
+    value_type& rewrite_value(std::forward_iterator_tag, value_type& value,
         ForwardIterator new_value_begin, ForwardIteratorEnd new_value_end)
     {
         return rewrite_value_n(value, new_value_begin,
             detail::stored::distance(new_value_begin, new_value_end));
     }
 
-    template <class ForwardIterator>
-    auto rewrite_value(value_type& value, ForwardIterator new_value)
+    template <class InputIterator, class InputIteratorEnd>
+    value_type& rewrite_value(std::input_iterator_tag, value_type& value,
+        InputIterator new_value_begin, InputIteratorEnd new_value_end)
+    {
+        // We surely can implement this without using vector and instead with
+        // direct use of the store's buffer, but it is a bit difficult
+        using va_t = typename at_t::template rebind_alloc<char_type>;
+        std::vector<char_type, va_t> v(va_t{get_allocator()});
+        while (new_value_begin != new_value_end) {
+            v.push_back(*new_value_begin);
+            ++new_value_begin;
+        }
+        return rewrite_value(value, v);
+    }
+
+public:
+    template <class InputIterator>
+    auto rewrite_value(value_type& value, InputIterator new_value)
      -> std::enable_if_t<
             std::is_base_of<
-                std::forward_iterator_tag,
-                typename std::iterator_traits<ForwardIterator>::
+                std::input_iterator_tag,
+                typename std::iterator_traits<InputIterator>::
                     iterator_category>::value,
             value_type&>
+    {
+        return rewrite_value(
+            typename std::iterator_traits<InputIterator>::iterator_category(),
+            value, new_value);
+    }
+
+private:
+    template <class ForwardIterator>
+    value_type& rewrite_value(std::forward_iterator_tag,
+        value_type& value, ForwardIterator new_value)
     {
         return rewrite_value_n(value, new_value,
             detail::stored::length<traits_type>(new_value));
     }
 
-private:
+    template <class InputIterator>
+    value_type& rewrite_value(std::input_iterator_tag,
+        value_type& value, InputIterator new_value)
+    {
+        // We surely can implement this without using vector and instead with
+        // direct use of the store's buffer, but it is a bit difficult
+        using va_t = typename at_t::template rebind_alloc<char_type>;
+        std::vector<char_type, va_t> v((va_t(get_allocator())));    // vexing
+        while (*new_value != char_type()) {
+            v.push_back(*new_value);
+            ++new_value;
+        }
+        return rewrite_value(value, v);
+    }
+
     template <class InputIterator>
     value_type& rewrite_value_n(value_type& value,
         InputIterator new_value_begin, std::size_t new_value_size)
