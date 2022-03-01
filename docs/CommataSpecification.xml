@@ -372,6 +372,7 @@
 #include &lt;exception>
 #include &lt;ostream>
 #include &lt;string>
+#include &lt;string_view>
 
 namespace commata {
   class text_error_info;  <c>// <n>forward declaration</n></c>
@@ -405,11 +406,11 @@ namespace commata {
 
     <c>// <n><xref id="text_error.cons"/>, constructors and assignment operators:</n></c>
     text_error() noexcept;
-    template &lt;class Tr, class Allocator>
-      explicit text_error(const std::basic_string&lt;char, Tr, Allocator>&amp; what_arg);
+    template &lt;class Tr>
+      explicit text_error(std::basic_string_view&lt;char, Tr> what_arg);
     template &lt;class Tr, class Allocator>
       explicit text_error(std::basic_string&lt;char, Tr, Allocator>&amp;&amp; what_arg);
-    explicit text_error(const char* what_arg);
+    text_error(const char* what_arg);
     text_error(const text_error&amp; other) noexcept;
     text_error(text_error&amp;&amp; other) noexcept;
     text_error&amp; operator=(const text_error&amp; other) noexcept;
@@ -443,10 +444,10 @@ text_error() noexcept;
 
         <code-item>
           <code>
-template &lt;class Tr, class Allocator>
-  explicit text_error(const std::basic_string&lt;char, Tr, Allocator>&amp; what_arg);
+template &lt;class Tr>
+  explicit text_error(std::basic_string_view&lt;char, Tr> what_arg);
           </code>
-          <postcondition><c>(std::strcmp(what(), what_arg.c_str()) == 0) &amp;&amp; !get_physical_position()</c> shall be <c>true</c>.</postcondition>
+          <postcondition><c>(std::strcmp(what(), w.c_str()) == 0) &amp;&amp; !get_physical_position()</c> shall be <c>true</c> where <c>w</c> is an object of <c>std::string</c> constructed with <c>what_arg.cbegin()</c> and <c>what_arg.cend()</c>.</postcondition>
         </code-item>
 
         <code-item>

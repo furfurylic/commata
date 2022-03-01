@@ -67,12 +67,9 @@ public:
         pos_(npos, npos)
     {}
 
-    template <class Tr, class Allocator>
-    explicit text_error(
-        const std::basic_string<char, Tr, Allocator>& what_arg) :
-        what_(std::make_shared<string_holder<>>(
-                what_arg.cbegin(), what_arg.cend())),
-        pos_(npos, npos)
+    template <class Tr>
+    explicit text_error(std::basic_string_view<char, Tr> what_arg) :
+        text_error(std::string(what_arg.cbegin(), what_arg.cend()))
     {}
 
     template <class Tr, class Allocator>
@@ -83,8 +80,7 @@ public:
     {}
 
     explicit text_error(const char* what_arg) :
-        what_(std::make_shared<string_holder<>>(what_arg)),
-        pos_(npos, npos)
+        text_error(std::string(what_arg))
     {}
 
     text_error(const text_error& other) = default;
