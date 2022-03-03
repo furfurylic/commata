@@ -1040,6 +1040,36 @@ TEST_F(TestStoredTable, MergeLists)
     ASSERT_EQ(field200, &table3.content().back().front());
 }
 
+TEST_F(TestStoredTable, Const)
+{
+    using value_t = basic_stored_value<const char>;
+    basic_stored_table<std::vector<std::vector<value_t>>> table;
+
+    table.content().emplace_back();
+    table.content().back().push_back(table.import_value("Asterids"));
+    table.content().back().push_back(table.import_value("Saussurea"));
+    table.content().back().push_back(table.import_value("S. hokurokuensis"));
+    table.content().emplace_back();
+    table.content().back().push_back(table.import_value("Asterids"));
+    table.content().back().push_back(table.import_value("Cirsium"));
+    table.content().back().push_back(table.import_value("C. oligophyllum"));
+    table.content().emplace_back();
+    table.content().back().push_back(table.import_value("Asterids"));
+    table.content().back().push_back(table.import_value("Saussurea"));
+    table.content().back().push_back(table.import_value("S. amabilis"));
+
+    table.shrink_to_fit();
+
+    ASSERT_STREQ("Asterids", table[0][0].c_str());
+    ASSERT_EQ(table[0][0].c_str(), table[1][0].c_str());
+    ASSERT_EQ(table[0][0].c_str(), table[2][0].c_str());
+
+    ASSERT_STREQ("Saussurea", table[0][1].c_str());
+    ASSERT_EQ(table[0][1].c_str(), table[2][1].c_str());
+
+    ASSERT_STREQ("Cirsium", table[1][1].c_str());
+}
+
 template <class ContentLR>
 struct TestStoredTableMerge : BaseTest
 {};

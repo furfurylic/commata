@@ -23,6 +23,7 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -1598,12 +1599,47 @@ private:
     template <class OtherContent>
     void import_leaky(const OtherContent& other, content_type& records)
     {
+        import_leaky_impl(
+            std::is_const<typename value_type::value_type>(), other, records);
+    }
+
+    template <class OtherContent>
+    void import_leaky_impl(
+        std::false_type, const OtherContent& other, content_type& records)
+    {
         reserve(records, records.size() + other.size());        // throw
         for (const auto& r : other) {
             const auto e = records.emplace(records.cend());     // throw
             reserve(*e, r.size());                              // throw
             for (const auto& v : r) {
                 e->insert(e->cend(), import_value(v));          // throw
+            }
+        }
+    }
+
+    template <class OtherContent>
+    void import_leaky_impl(
+        std::true_type, const OtherContent& other, content_type& records)
+    {
+        using va_t = typename at_t::template rebind_alloc<value_type>;
+        using canon_t = std::unordered_set<value_type,
+            std::hash<value_type>, std::equal_to<value_type>, va_t>;
+
+        canon_t canonicals(va_t{get_allocator()});              // throw
+
+        reserve(records, records.size() + other.size());        // throw
+        for (const auto& r : other) {
+            const auto e = records.emplace(records.cend());     // throw
+            reserve(*e, r.size());                              // throw
+            for (const auto& v : r) {
+                const auto i = canonicals.find(v);
+                if (i == canonicals.cend()) {
+                    const auto j =
+                        canonicals.insert(import_value(v));     // throw
+                    e->insert(e->cend(), *j.first);             // throw
+                } else {
+                    e->insert(e->cend(), *i);                   // throw
+                }
             }
         }
     }

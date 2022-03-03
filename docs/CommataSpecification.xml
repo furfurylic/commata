@@ -3590,7 +3590,7 @@ namespace commata {
           </ul>
           <p>An object of an instance of <c>basic_stored_table</c> is called <n>complete</n> if none of its contained values is not backed by it.</p>
 
-          <p>Two objects <c>v</c> and <c>w</c> of a value type is called <n>overlapping</n> if two ranges [<c>v.cbegin()</c>, <c>v.cend()</c>], [<c>w.cbegin()</c>, <c>w.cend()</c>] have at least one common element.</p>
+          <p>Two objects <c>v</c> and <c>w</c> of value types, which are hereinafter referred to as <c>V</c> and <c>W</c> respectively, are called <n>overlapping</n> if at least one of <c>V::value_type</c> or <c>W::value_type</c> is non-const char-like type and two ranges [<c>v.cbegin()</c>, <c>v.cend()</c>], [<c>w.cbegin()</c>, <c>w.cend()</c>] have at least one common element.</p>
         </section>
 
         <section id="basic_stored_table.conds">
