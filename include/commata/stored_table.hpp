@@ -2126,11 +2126,7 @@ public:
 
     bool end_record(const char_type* /*record_end*/)
     {
-        if (end_record_) {
-            return end_record_->on_end_record(*table_);
-        } else {
-            return true;
-        }
+        return (!end_record_) || end_record_->on_end_record(*table_);
     }
 
     std::pair<char_type*, std::size_t> get_buffer()
