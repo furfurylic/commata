@@ -820,26 +820,21 @@ TEST_F(TestStoredTable, RewriteValueWithNonPointerIterator)
 
 TEST_F(TestStoredTable, RewriteValueWithNonForwardIterator)
 {
-    stored_table table;
-    table.content().emplace_back();
+    stored_table table(10U);
 
-    table.content().back().emplace_back();
-    {
-        std::stringstream v;
-        v << "ABC" << '\0';
-        table.rewrite_value(table.content().back().back(),
-            std::istream_iterator<char>(v));
-    }
-    ASSERT_EQ("ABC", table.content().back().back());
+    std::stringstream v;
+    v << "12345678901234567890" << '\0';
 
-    table.content().back().emplace_back();
-    {
-        std::stringstream v;
-        v << "XYZ";
-        table.rewrite_value(table.content().back().back(),
-            std::istream_iterator<char>(v), std::istream_iterator<char>());
-    }
-    ASSERT_EQ("XYZ", table.content().back().back());
+    const auto value = table.import_value(
+        std::istream_iterator<char>(v));    // takes 21, which is 10*2+1
+    ASSERT_EQ("12345678901234567890", value);
+
+    v << "ABC";
+    const auto value2 = table.import_value(
+        std::istream_iterator<char>(v),
+        std::istream_iterator<char>());     // needs more 4, which is satisfied
+                                            // with no more allocation
+    ASSERT_EQ("ABC", value2);
 }
 
 namespace {

@@ -659,6 +659,11 @@ public:
         return p;
     }
 
+    std::pair<Ch*, Ch*> unsecured_range() const noexcept
+    {
+        return std::pair<Ch*, Ch*>(hwl_, end_);
+    }
+
     Ch* secured() const noexcept
     {
         return hwl_;
@@ -717,7 +722,7 @@ class table_store :
     // At this time we adopt a homemade forward list
     // taking advantage of its constant-time and nofail "splice" ability
     // and its nofail move construction and move assignment
-    node_type* buffers_;        // "front" of buffers
+    node_type* buffers_;        // "front" of buffers; "current" is the front
     node_type* buffers_back_;   // "back" of buffers, whose next is nullptr
     std::size_t buffers_size_;  // "size" of buffers
 
@@ -829,6 +834,13 @@ public:
             }
         }
         return nullptr;
+    }
+
+    std::pair<Ch*, Ch*> get_current() noexcept
+    {
+        return buffers_ ?
+            buffers_->unsecured_range() :
+            std::pair<Ch*, Ch*>(nullptr, nullptr);
     }
 
     std::pair<Ch*, std::size_t> generate_buffer(std::size_t min_size)
@@ -1330,15 +1342,45 @@ private:
     value_type& rewrite_value(std::input_iterator_tag, value_type& value,
         InputIterator new_value_begin, InputIteratorEnd new_value_end)
     {
-        // We surely can implement this without using vector and instead with
-        // direct use of the store's buffer, but it is a bit difficult
-        using va_t = typename at_t::template rebind_alloc<char_type>;
-        std::vector<char_type, va_t> v(va_t{get_allocator()});
+        std::pair<char_type*, std::size_t> generated(nullptr, 0);
+
+        auto range = store_.get_current();
+        if (!range.first) {
+            const auto buffer = generate_buffer(buffer_size_);      // throw
+            range = std::pair<char_type*, char_type*>(
+                buffer.first, buffer.first + buffer.second);
+            generated = buffer;
+        }
+
+        char_type* i = range.first;
         while (new_value_begin != new_value_end) {
-            v.push_back(*new_value_begin);
+            *i = *new_value_begin;
+            ++i;
+            if (i == range.second) {
+                constexpr auto smax = std::numeric_limits<std::size_t>::max();
+                const std::size_t n = i - range.first;
+                const auto alloc_size = (n > smax / 2) ?
+                    std::max<std::size_t>(smax, buffer_size_) :
+                    std::max<std::size_t>(2 * n, buffer_size_);
+                auto buffer = generate_buffer(alloc_size);  // throw
+                traits_type::move(buffer.first, range.first, n);
+                if (generated.first) {
+                    store_.consume_buffer(generated.first, generated.second);
+                }
+                range = std::pair<char_type*, char_type*>(
+                    buffer.first, buffer.first + buffer.second);
+                i = range.first + n;
+                generated = buffer;
+            }
             ++new_value_begin;
         }
-        return rewrite_value(value, v);
+        *i = char_type();
+        if (generated.first) {
+            add_buffer(generated.first, generated.second);          // throw
+        }
+        secure_current_upto(i + 1);
+        value = value_type(range.first, i);
+        return value;
     }
 
 public:
@@ -1369,15 +1411,8 @@ private:
     value_type& rewrite_value(std::input_iterator_tag,
         value_type& value, InputIterator new_value)
     {
-        // We surely can implement this without using vector and instead with
-        // direct use of the store's buffer, but it is a bit difficult
-        using va_t = typename at_t::template rebind_alloc<char_type>;
-        std::vector<char_type, va_t> v((va_t(get_allocator())));    // vexing
-        while (*new_value != char_type()) {
-            v.push_back(*new_value);
-            ++new_value;
-        }
-        return rewrite_value(value, v);
+        return rewrite_value(std::input_iterator_tag(), value,
+            new_value, detail::stored::null_termination<traits_type>());
     }
 
     template <class InputIterator>
