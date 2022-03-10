@@ -6863,7 +6863,7 @@ const char_type* at(size_type i) const;
           <code>
 size_type data_size() const noexcept;
           </code>
-          <returns>An integer value smaller by one than the maximum value that can be passed to <c>operator[]</c>.</returns>
+          <returns>An integer value greater by one than the maximum value that can be passed to <c>operator[]</c>.</returns>
         </code-item>
 
         <code-item>
