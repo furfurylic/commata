@@ -301,7 +301,7 @@ TYPED_TEST_P(TestTablePull, SkipField)
 
     const auto str = char_helper<char_t>::str;
    
-    const auto csv = str("1A,1B,1C,1D,1E,1F");
+    const auto csv = str("1A,1B,1C,1D,1E,1F\n2A,2B");
 
     auto pull = make_table_pull(
         make_csv_source(csv), TypeParam::second_type::value);
@@ -320,6 +320,12 @@ TYPED_TEST_P(TestTablePull, SkipField)
     ASSERT_EQ(table_pull_state::record_end, pull.state());
     ASSERT_TRUE(pull.empty());
     i = 0; j = 6;
+    ASSERT_EQ(std::make_pair(i, j), pull.get_position());
+
+    ASSERT_TRUE(pull(1));
+    ASSERT_EQ(table_pull_state::field, pull.state());
+    ASSERT_EQ(str("2B"), to_string(pull));
+    i = 1; j = 1;
     ASSERT_EQ(std::make_pair(i, j), pull.get_position());
 }
 

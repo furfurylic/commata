@@ -662,7 +662,6 @@ private:
     table_pull_state last_state_;
     std::pair<char_type*, char_type*> last_;
     std::basic_string<char_type, traits_type, Allocator> value_;
-    bool value_expiring_;
 
     std::size_t i_;
     std::size_t j_;
@@ -705,8 +704,7 @@ public:
             ((buffer_size > 1) ? buffer_size : 2)),
         empty_physical_line_aware_(false),
         last_state_(table_pull_state::before_parse), last_(empty_string()),
-        value_(alloc), value_expiring_(false),
-        i_(0), j_(0)
+        value_(alloc), i_(0), j_(0)
     {}
 
     table_pull(table_pull&& other) noexcept :
@@ -715,7 +713,6 @@ public:
         last_state_(std::exchange(other.last_state_, table_pull_state::eof)),
         last_(std::exchange(other.last_, empty_string())),
         value_(std::move(other.value_)),
-        value_expiring_(other.value_expiring_),
         i_(std::exchange(other.i_, 0)),
         j_(std::exchange(other.j_, 0))
     {}
@@ -764,35 +761,46 @@ public:
         if (!*this) {
             return *this;
         }
-        if (n < 1) {
-            return next_field();
-        }
+
         last_ = empty_string();
         value_.clear();
+        switch (last_state_) {
+        case table_pull_state::field:
+            ++j_;
+            break;
+        case table_pull_state::record_end:
+            ++i_;
+            j_ = 0;
+            break;
+        default:
+            break;
+        }
+
+        if (n < 1) {
+            next_field();
+            return *this;
+        }
+
         p_.set_discarding_data(true);
         temporarily_discard d(&p_);
-        if (value_expiring_) {
-            ++j_;
-            value_expiring_ = false;
-        }
         for (;;) {
             try {
                 p_();
             } catch (...) {
-                set_state(table_pull_state::eof);
+                last_state_ = table_pull_state::eof;
                 throw;
             }
             switch (p_.state()) {
             case primitive_table_pull_state::update:
                 break;
             case primitive_table_pull_state::finalize:
-                set_state(table_pull_state::field);
+                last_state_ = table_pull_state::field;
+                ++j_;
                 if (n == 1) {
                     d.reset();
-                    value_expiring_ = true;
-                    return next_field();
+                    next_field();
+                    return *this;
                 }
-                ++j_;
                 --n;
                 break;
             case primitive_table_pull_state::empty_physical_line:
@@ -801,10 +809,7 @@ public:
                 }
                 // fall through
             case primitive_table_pull_state::end_record:
-                if (last_state_ == table_pull_state::field) {
-                    value_expiring_ = true;
-                }
-                set_state(table_pull_state::record_end);
+                last_state_ = table_pull_state::record_end;
                 return *this;
             case primitive_table_pull_state::eof:
                 goto exit;
@@ -814,25 +819,19 @@ public:
             }
         }
     exit:
-        set_state(table_pull_state::eof);
+        last_state_ = table_pull_state::eof;
         return *this;
     }
 
 private:
-    table_pull& next_field()
+    void next_field()
     {
         assert(*this);
-        if (value_expiring_) {
-            value_.clear();
-            last_ = empty_string();
-            ++j_;
-            value_expiring_ = false;
-        }
         for (;;) {
             try {
                 p_();
             } catch (...) {
-                set_state(table_pull_state::eof);
+                last_state_ = table_pull_state::eof;
                 last_ = empty_string();
                 throw;
             }
@@ -849,18 +848,17 @@ private:
                     last_.first = &value_[0];
                     last_.second = last_.first + value_.size() - 1;
                 }
-                set_state(table_pull_state::field);
-                value_expiring_ = true;
-                return *this;
+                last_state_ = table_pull_state::field;
+                return;
             case primitive_table_pull_state::empty_physical_line:
                 if (!empty_physical_line_aware_) {
                     break;
                 }
                 // fall through
             case primitive_table_pull_state::end_record:
-                set_state(table_pull_state::record_end);
+                last_state_ = table_pull_state::record_end;
                 last_ = empty_string();
-                return *this;
+                return;
             case primitive_table_pull_state::end_buffer:
                 if (last_.first != empty_string().first) {
                     value_.append(last_.first, last_.second);
@@ -874,9 +872,8 @@ private:
             }
         }
     exit:
-        set_state(table_pull_state::eof);
+        last_state_ = table_pull_state::eof;
         last_ = empty_string();
-        return *this;
     }
 
 public:
@@ -885,26 +882,28 @@ public:
         if (!*this) {
             return *this;
         }
+
         last_ = empty_string();
         value_.clear();
+
         p_.set_discarding_data(true);
         temporarily_discard d(&p_);
-        if (value_expiring_) {
-            ++j_;
-            value_expiring_ = false;
-        }
         for (;;) {
             try {
                 p_();
             } catch (...) {
-                set_state(table_pull_state::eof);
+                last_state_ = table_pull_state::eof;
                 throw;
             }
             switch (p_.state()) {
             case primitive_table_pull_state::update:
                 break;
             case primitive_table_pull_state::finalize:
-                set_state(table_pull_state::field);
+                if (last_state_ == table_pull_state::record_end) {
+                    ++i_;
+                    j_ = 0;
+                }
+                last_state_ = table_pull_state::field;
                 ++j_;
                 break;
             case primitive_table_pull_state::empty_physical_line:
@@ -913,14 +912,15 @@ public:
                 }
                 // fall through
             case primitive_table_pull_state::end_record:
+                if (last_state_ == table_pull_state::record_end) {
+                    ++i_;
+                    j_ = 0;
+                } else {
+                    last_state_ = table_pull_state::record_end;
+                }
                 if (n == 0) {
-                    if (last_state_ == table_pull_state::field) {
-                        value_expiring_ = true;
-                    }
-                    set_state(table_pull_state::record_end);
                     return *this;
                 } else {
-                    set_state(table_pull_state::record_end);
                     --n;
                     break;
                 }
@@ -932,7 +932,11 @@ public:
             }
         }
     exit:
-        set_state(table_pull_state::eof);
+        if (last_state_ == table_pull_state::record_end) {
+            ++i_;
+            j_ = 0;
+        }
+        last_state_ = table_pull_state::eof;
         return *this;
     }
 
@@ -1040,15 +1044,6 @@ public:
     }
 
 private:
-    void set_state(table_pull_state s) noexcept
-    {
-        if (last_state_ == table_pull_state::record_end) {
-            ++i_;
-            j_ = 0;
-        }
-        last_state_ = s;
-    }
-
     void do_update(char_type* first, char_type* last)
     {
         if (!value_.empty()) {
