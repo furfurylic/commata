@@ -777,103 +777,101 @@ public:
         }
 
         if (n < 1) {
-            next_field();
+            next_field();                                           // throw
             return *this;
         }
 
         p_.set_discarding_data(true);
         temporarily_discard d(&p_);
-        for (;;) {
-            try {
-                p_();
-            } catch (...) {
-                last_state_ = table_pull_state::eof;
-                throw;
-            }
-            switch (p_.state()) {
-            case primitive_table_pull_state::update:
-                break;
-            case primitive_table_pull_state::finalize:
-                last_state_ = table_pull_state::field;
-                ++j_;
-                if (n == 1) {
-                    d.reset();
-                    next_field();
+        try {
+            for (;;) {
+                switch (p_().state()) {                             // throw
+                case primitive_table_pull_state::update:
+                    break;
+                case primitive_table_pull_state::finalize:
+                    last_state_ = table_pull_state::field;
+                    ++j_;
+                    if (n == 1) {
+                        d.reset();
+                        next_field();                               // throw
+                        return *this;
+                    }
+                    --n;
+                    break;
+                case primitive_table_pull_state::empty_physical_line:
+                    if (!empty_physical_line_aware_) {
+                        break;
+                    }
+                    // fall through
+                case primitive_table_pull_state::end_record:
+                    last_state_ = table_pull_state::record_end;
                     return *this;
-                }
-                --n;
-                break;
-            case primitive_table_pull_state::empty_physical_line:
-                if (!empty_physical_line_aware_) {
+                case primitive_table_pull_state::eof:
+                    goto exit;
+                case primitive_table_pull_state::end_buffer:
+                default:
                     break;
                 }
-                // fall through
-            case primitive_table_pull_state::end_record:
-                last_state_ = table_pull_state::record_end;
-                return *this;
-            case primitive_table_pull_state::eof:
-                goto exit;
-            case primitive_table_pull_state::end_buffer:
-            default:
-                break;
             }
+        exit:
+            last_state_ = table_pull_state::eof;
+            return *this;
+        } catch (...) {
+            last_state_ = table_pull_state::eof;
+            throw;
         }
-    exit:
-        last_state_ = table_pull_state::eof;
-        return *this;
     }
 
 private:
     void next_field()
     {
         assert(*this);
-        for (;;) {
-            try {
-                p_();
-            } catch (...) {
-                last_state_ = table_pull_state::eof;
-                last_ = empty_string();
-                throw;
-            }
-            switch (p_.state()) {
-            case primitive_table_pull_state::update:
-                do_update(p_[0], p_[1]);
-                break;
-            case primitive_table_pull_state::finalize:
-                do_update(p_[0], p_[1]);
-                if (value_.empty()) {
-                    *last_.second = char_type();
-                } else {
-                    value_.push_back(char_type());
-                    last_.first = &value_[0];
-                    last_.second = last_.first + value_.size() - 1;
-                }
-                last_state_ = table_pull_state::field;
-                return;
-            case primitive_table_pull_state::empty_physical_line:
-                if (!empty_physical_line_aware_) {
+        try {
+            for (;;) {
+                switch (p_().state()) {                             // throw
+                case primitive_table_pull_state::update:
+                    do_update(p_[0], p_[1]);                        // throw
+                    break;
+                case primitive_table_pull_state::finalize:
+                    do_update(p_[0], p_[1]);                        // throw
+                    if (value_.empty()) {
+                        *last_.second = char_type();
+                    } else {
+                        value_.push_back(char_type());              // throw
+                        last_.first = &value_[0];
+                        last_.second = last_.first + value_.size() - 1;
+                    }
+                    last_state_ = table_pull_state::field;
+                    return;
+                case primitive_table_pull_state::empty_physical_line:
+                    if (!empty_physical_line_aware_) {
+                        break;
+                    }
+                    // fall through
+                case primitive_table_pull_state::end_record:
+                    last_state_ = table_pull_state::record_end;
+                    last_ = empty_string();
+                    return;
+                case primitive_table_pull_state::end_buffer:
+                    if (last_.first != empty_string().first) {
+                        value_.append(last_.first, last_.second);   // throw
+                        last_.first = empty_string().first;
+                    }
+                    break;
+                case primitive_table_pull_state::eof:
+                    goto exit;
+                default:
                     break;
                 }
-                // fall through
-            case primitive_table_pull_state::end_record:
-                last_state_ = table_pull_state::record_end;
-                last_ = empty_string();
-                return;
-            case primitive_table_pull_state::end_buffer:
-                if (last_.first != empty_string().first) {
-                    value_.append(last_.first, last_.second);
-                    last_.first = empty_string().first;
-                }
-                break;
-            case primitive_table_pull_state::eof:
-                goto exit;
-            default:
-                break;
             }
+        exit:
+            last_state_ = table_pull_state::eof;
+            last_ = empty_string();
+        } catch (...) {
+            last_state_ = table_pull_state::eof;
+            last_ = empty_string();
+            throw;
         }
-    exit:
-        last_state_ = table_pull_state::eof;
-        last_ = empty_string();
     }
 
 public:
@@ -888,56 +886,55 @@ public:
 
         p_.set_discarding_data(true);
         temporarily_discard d(&p_);
-        for (;;) {
-            try {
-                p_();
-            } catch (...) {
-                last_state_ = table_pull_state::eof;
-                throw;
-            }
-            switch (p_.state()) {
-            case primitive_table_pull_state::update:
-                break;
-            case primitive_table_pull_state::finalize:
-                if (last_state_ == table_pull_state::record_end) {
-                    ++i_;
-                    j_ = 0;
-                }
-                last_state_ = table_pull_state::field;
-                ++j_;
-                break;
-            case primitive_table_pull_state::empty_physical_line:
-                if (!empty_physical_line_aware_) {
+        try {
+            for (;;) {
+                switch (p_().state()) {                             // throw
+                case primitive_table_pull_state::update:
+                    break;
+                case primitive_table_pull_state::finalize:
+                    if (last_state_ == table_pull_state::record_end) {
+                        ++i_;
+                        j_ = 0;
+                    }
+                    last_state_ = table_pull_state::field;
+                    ++j_;
+                    break;
+                case primitive_table_pull_state::empty_physical_line:
+                    if (!empty_physical_line_aware_) {
+                        break;
+                    }
+                    // fall through
+                case primitive_table_pull_state::end_record:
+                    if (last_state_ == table_pull_state::record_end) {
+                        ++i_;
+                        j_ = 0;
+                    } else {
+                        last_state_ = table_pull_state::record_end;
+                    }
+                    if (n == 0) {
+                        return *this;
+                    } else {
+                        --n;
+                        break;
+                    }
+                case primitive_table_pull_state::eof:
+                    goto exit;
+                case primitive_table_pull_state::end_buffer:
+                default:
                     break;
                 }
-                // fall through
-            case primitive_table_pull_state::end_record:
-                if (last_state_ == table_pull_state::record_end) {
-                    ++i_;
-                    j_ = 0;
-                } else {
-                    last_state_ = table_pull_state::record_end;
-                }
-                if (n == 0) {
-                    return *this;
-                } else {
-                    --n;
-                    break;
-                }
-            case primitive_table_pull_state::eof:
-                goto exit;
-            case primitive_table_pull_state::end_buffer:
-            default:
-                break;
             }
+        exit:
+            if (last_state_ == table_pull_state::record_end) {
+                ++i_;
+                j_ = 0;
+            }
+            last_state_ = table_pull_state::eof;
+            return *this;
+        } catch (...) {
+            last_state_ = table_pull_state::eof;
+            throw;
         }
-    exit:
-        if (last_state_ == table_pull_state::record_end) {
-            ++i_;
-            j_ = 0;
-        }
-        last_state_ = table_pull_state::eof;
-        return *this;
     }
 
     const_iterator begin() const noexcept
@@ -1047,7 +1044,7 @@ private:
     void do_update(char_type* first, char_type* last)
     {
         if (!value_.empty()) {
-            value_.append(first, last);
+            value_.append(first, last);                             // throw
         } else if (last_.first != empty_string().first) {
             TableSource::traits_type::move(last_.second, first, last - first);
             last_.second += last - first;
