@@ -731,7 +731,7 @@ TEST_F(TestStoredTable, ResizeValue)
         const auto& rv = table.resize_value(v, 5);
         ASSERT_EQ(std::addressof(v), std::addressof(rv));
     }
-    ASSERT_EQ(5, v.size());
+    ASSERT_EQ(5U, v.size());
     for (std::size_t i = 0; i < 6; ++i) {
         ASSERT_EQ('\0', v[i]) << i;
     }
@@ -744,7 +744,7 @@ TEST_F(TestStoredTable, ResizeValue)
         ASSERT_EQ(std::addressof(v), std::addressof(rv));
         ASSERT_EQ(p, &v[0]);    // no reallocation
     }
-    ASSERT_EQ(2, v.size());
+    ASSERT_EQ(2U, v.size());
     ASSERT_STREQ("ab", v.c_str());
 
     {
@@ -753,7 +753,7 @@ TEST_F(TestStoredTable, ResizeValue)
         ASSERT_EQ(std::addressof(v), std::addressof(rv));
         ASSERT_NE(&v[0], p);    // reallocation
     }
-    ASSERT_EQ(6, v.size());
+    ASSERT_EQ(6U, v.size());
     ASSERT_STREQ("ab", v.c_str());
     for (std::size_t i = 3; i < 6; ++i) {
         ASSERT_EQ('\0', v[i]) << i;
@@ -765,7 +765,7 @@ TEST_F(TestStoredTable, MakeValue)
     stored_table table;
     stored_value v = table.make_value(8);
     std::strcpy(v.c_str(), "aboard");
-    ASSERT_EQ(8, v.size());
+    ASSERT_EQ(8U, v.size());
     ASSERT_STREQ("aboard", v.c_str());
     for (std::size_t i = 6; i < 9; ++i) {
         ASSERT_EQ('\0', v[i]) << i;

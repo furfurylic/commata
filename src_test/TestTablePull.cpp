@@ -40,13 +40,13 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
     auto source = make_csv_source(csv);
     primitive_table_pull<decltype(source)> pull(
         std::move(source), TypeParam::second_type::value);
-    ASSERT_EQ(2, pull.max_data_size());
+    ASSERT_EQ(2U, pull.max_data_size());
     std::basic_string<char_t> s;
     bool in_value = false;
     while (pull()) {
         switch (pull.state()) {
         case primitive_table_pull_state::update:
-            ASSERT_EQ(2, pull.data_size());
+            ASSERT_EQ(2U, pull.data_size());
             ASSERT_THROW(pull.at(2), std::out_of_range);
             if (!in_value) {
                 s.push_back(ch('['));
@@ -55,7 +55,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
             s.append(pull.at(0), pull[1]);
             break;
         case primitive_table_pull_state::finalize:
-            ASSERT_EQ(2, pull.data_size());
+            ASSERT_EQ(2U, pull.data_size());
             ASSERT_THROW(pull.at(2), std::out_of_range);
             if (!in_value) {
                 s.push_back(ch('['));
@@ -65,12 +65,12 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
             in_value = false;
             break;
         case primitive_table_pull_state::start_record:
-            ASSERT_EQ(1, pull.data_size());
+            ASSERT_EQ(1U, pull.data_size());
             ASSERT_THROW(pull.at(1), std::out_of_range);
             s.append(str("<<"));
             break;
         case primitive_table_pull_state::end_record:
-            ASSERT_EQ(1, pull.data_size());
+            ASSERT_EQ(1U, pull.data_size());
             ASSERT_THROW(pull.at(1), std::out_of_range);
             s.append(str(">>"));
             {
@@ -82,7 +82,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
             }
             break;
         case primitive_table_pull_state::empty_physical_line:
-            ASSERT_EQ(1, pull.data_size());
+            ASSERT_EQ(1U, pull.data_size());
             ASSERT_THROW(pull.at(1), std::out_of_range);
             s.append(str("--"));
             break;
@@ -375,8 +375,8 @@ TYPED_TEST_P(TestTablePull, Error)
     // secod is the number of successfully read fields after
     // the last successfully read record, which is specified by the spec
     // for 'eof'
-    ASSERT_EQ(1, pull.get_position().first);
-    ASSERT_EQ(1, pull.get_position().second);
+    ASSERT_EQ(1U, pull.get_position().first);
+    ASSERT_EQ(1U, pull.get_position().second);
 
     // One more call of operator() will not change the state
     ASSERT_FALSE(pull());
@@ -522,8 +522,8 @@ TYPED_TEST_P(TestTablePull, Move)
     ASSERT_THROW(pull2()(), parse_error);
     ASSERT_EQ(table_pull_state::eof, pull2.state());
                                     // Unspecified but implemented so
-    ASSERT_EQ(2, pull2.get_position().first);
-    ASSERT_EQ(0, pull2.get_position().second);
+    ASSERT_EQ(2U, pull2.get_position().first);
+    ASSERT_EQ(0U, pull2.get_position().second);
 
     auto pull3 = std::move(pull2);  // also the state is moved
     ASSERT_EQ(table_pull_state::eof, pull3.state());

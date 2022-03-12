@@ -210,7 +210,7 @@ bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch* s, std::size_t n)
             return false;
         }
         s += unmax;
-        n -= unmax;
+        n = static_cast<std::size_t>(n - unmax);    // safe because n > unmax
     }
     return sb->sputn(s, n) == static_cast<std::streamsize>(n);
 }

@@ -6,6 +6,7 @@
 #ifndef COMMATA_GUARD_4B6A00F6_E33D_4114_9F57_D2C2E984E809
 #define COMMATA_GUARD_4B6A00F6_E33D_4114_9F57_D2C2E984E809
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -16,6 +17,7 @@
 #include <streambuf>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 #include "buffer_control.hpp"
@@ -530,10 +532,15 @@ private:
 
         std::size_t loaded_size = 0;
         do {
-            const auto length = in_(buffer_ + loaded_size,
-                std::min(
-                    buffer_size - loaded_size,
-                    std::numeric_limits<typename Input::size_type>::max()));
+            using min_t =
+                std::common_type_t<std::size_t, typename Input::size_type>;
+            const auto length = static_cast<std::size_t>(
+                in_(buffer_ + loaded_size,
+                    static_cast<std::size_t>(
+                        std::min<min_t>(
+                            buffer_size - loaded_size,
+                            std::numeric_limits<typename Input::size_type>::
+                                max()))));
             if (length == 0) {
                 eof_reached_ = true;
                 break;

@@ -427,8 +427,8 @@ TEST_F(TestCsvSource, DefaultConstructAndAssign)
     test_collector<char> collector(field_values);
     xyz(std::move(collector))();
 
-    ASSERT_EQ(1, field_values.size());
-    ASSERT_EQ(1, field_values[0].size());
+    ASSERT_EQ(1U, field_values.size());
+    ASSERT_EQ(1U, field_values[0].size());
     ASSERT_STREQ("ABC", field_values[0][0].c_str());
 }
 
@@ -444,7 +444,7 @@ TEST_F(TestCsvSource, Swap)
     test_collector<char> collector(field_values);
     abc(std::move(collector))();
 
-    ASSERT_EQ(1, field_values.size());
-    ASSERT_EQ(1, field_values[0].size());
+    ASSERT_EQ(1U, field_values.size());
+    ASSERT_EQ(1U, field_values[0].size());
     ASSERT_STREQ("XYZ", field_values[0][0].c_str());
 }
