@@ -807,15 +807,13 @@ public:
                     last_state_ = table_pull_state::record_end;
                     return *this;
                 case primitive_table_pull_state::eof:
-                    goto exit;
+                    last_state_ = table_pull_state::eof;
+                    return *this;
                 case primitive_table_pull_state::end_buffer:
                 default:
                     break;
                 }
             }
-        exit:
-            last_state_ = table_pull_state::eof;
-            return *this;
         } catch (...) {
             last_state_ = table_pull_state::eof;
             throw;
@@ -859,14 +857,13 @@ private:
                     }
                     break;
                 case primitive_table_pull_state::eof:
-                    goto exit;
+                    last_state_ = table_pull_state::eof;
+                    last_ = empty_string();
+                    return;
                 default:
                     break;
                 }
             }
-        exit:
-            last_state_ = table_pull_state::eof;
-            last_ = empty_string();
         } catch (...) {
             last_state_ = table_pull_state::eof;
             last_ = empty_string();
@@ -918,19 +915,17 @@ public:
                         break;
                     }
                 case primitive_table_pull_state::eof:
-                    goto exit;
+                    if (last_state_ == table_pull_state::record_end) {
+                        ++i_;
+                        j_ = 0;
+                    }
+                    last_state_ = table_pull_state::eof;
+                    return *this;
                 case primitive_table_pull_state::end_buffer:
                 default:
                     break;
                 }
             }
-        exit:
-            if (last_state_ == table_pull_state::record_end) {
-                ++i_;
-                j_ = 0;
-            }
-            last_state_ = table_pull_state::eof;
-            return *this;
         } catch (...) {
             last_state_ = table_pull_state::eof;
             throw;
