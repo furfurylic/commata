@@ -203,16 +203,33 @@ std::size_t print_pos(wchar_t (&s)[N], std::size_t pos, std::size_t base)
 }
 
 template <class Ch, class Tr>
-bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch* s, std::size_t n)
+bool sputn_impl(std::false_type,
+    std::basic_streambuf<Ch, Tr>* sb, const Ch* s, std::size_t n)
+{
+    return sb->sputn(s, n) == static_cast<std::streamsize>(n);
+}
+
+template <class Ch, class Tr>
+bool sputn_impl(std::true_type,
+    std::basic_streambuf<Ch, Tr>* sb, const Ch* s, std::size_t n)
 {
     while (n > unmax) {
         if (sb->sputn(s, nmax) != nmax) {
             return false;
         }
         s += unmax;
-        n = static_cast<std::size_t>(n - unmax);    // safe because n > unmax
+        n -= static_cast<std::size_t>(unmax);   // safe because n > unmax
     }
-    return sb->sputn(s, n) == static_cast<std::streamsize>(n);
+    return sputn_impl(std::false_type(), sb, s, n);
+}
+
+template <class Ch, class Tr>
+bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch* s, std::size_t n)
+{
+    constexpr bool size_t_larger =
+        std::numeric_limits<std::size_t>::max() > unmax;
+    return sputn_impl(std::integral_constant<bool, size_t_larger>(),
+        sb, s, n);
 }
 
 template <class Ch, class Tr, std::size_t N>
