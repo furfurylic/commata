@@ -33,9 +33,9 @@ struct TestRecordExtractor : BaseTestWithParam<std::size_t>
 TEST_P(TestRecordExtractor, LeftmostKey)
 {
     const wchar_t* s = L"key_a,key_b,value_a,value_b\n"
-                       L"\"ka1\",kb1,va1,vb1\r\n"
+                       LR"("ka1",kb1,va1,vb1)" L"\r\n"
                        L"ka2,kb2,va2,vb2\n"
-                       L"ka1,kb3,vb3,\"vb3\"\r";
+                       LR"(ka1,kb3,vb3,"vb3")" L"\r";
     std::wstringbuf out;
     std::wstring key_a = L"key_a";
     parse_csv(s, make_record_extractor(&out, key_a, L"ka1"), GetParam());
@@ -47,19 +47,23 @@ TEST_P(TestRecordExtractor, LeftmostKey)
 
 TEST_P(TestRecordExtractor, InnerKey)
 {
-    const char* s = "\r\n\n"
+    const char* s = "\r\n"
+                    "\n"
                     "key_a,key_b,value_a,value_b\n"
                     "ka1,kb01,va1,vb1\n"
                     "ka2,kb12,va2,vb2\n"
-                    "ka1,kb13,\"vb\n3\",vb3";
+                    R"(ka1,kb13,"vb)" "\n"
+                    R"(3",vb3)";
     std::ostringstream out;
     parse_csv(s, make_record_extractor(out, "key_b",
         [](const char* first ,const char* last) {
             return std::string(first, last).substr(0, 3) == "kb1";
         }), GetParam());
-    ASSERT_EQ("key_a,key_b,value_a,value_b\n"
-              "ka2,kb12,va2,vb2\n"
-              "ka1,kb13,\"vb\n3\",vb3\n",
+    ASSERT_EQ(R"(key_a,key_b,value_a,value_b
+ka2,kb12,va2,vb2
+ka1,kb13,"vb
+3",vb3
+)",
               std::move(out).str());
 }
 
@@ -101,9 +105,9 @@ TEST_P(TestRecordExtractor, MoveCtor)
     // This is a test for that behaviour.
 
     const wchar_t* s = L",key_b,value_a,value_b\n"
-                       L"\"ka1\",kb1,va1,vb1\r\n"
+                       LR"("ka1",kb1,va1,vb1)" L"\r\n"
                        L",kb2,va2,vb2\n"
-                       L"ka1,kb3,vb3,\"vb3\"\r";
+                       LR"(ka1,kb3,vb3,"vb3")" L"\r";
         // field name/value preds are likely to be empty strings
         // after moved from, so we contain empty fields in the header and
         // a non-heder record
@@ -120,9 +124,9 @@ TEST_P(TestRecordExtractor, MoveCtor)
     }
 
     parse_csv(s, std::move(ey), GetParam());
-    ASSERT_STREQ(
-        L",key_b,value_a,value_b\n"
-        L"ka1,kb3,vb3,\"vb3\"\n",
+    ASSERT_STREQ(LR"(,key_b,value_a,value_b
+ka1,kb3,vb3,"vb3"
+)",
         std::move(out).str().c_str());
 }
 
@@ -165,19 +169,23 @@ struct TestRecordExtractorIndexed : BaseTest
 
 TEST_F(TestRecordExtractorIndexed, Basics)
 {
-    const char* s = "\r\n\n"
+    const char* s = "\r\n"
+                    "\n"
                     "key_a,key_b,value_a,value_b\n"
                     "ka1,kb01,va1,vb1\n"
                     "ka2,kb12,va2,vb2\n"
-                    "ka1,kb13,\"vb\n3\",vb3";
+                    R"(ka1,kb13,"vb)" "\n"
+                    R"(3",vb3)";
     std::ostringstream out;
     parse_csv(s, make_record_extractor(out, 1,
         [](const char* first ,const char* last) {
             return std::string(first, last).substr(0, 3) == "kb1";
         }), 1024);
-    ASSERT_EQ("key_a,key_b,value_a,value_b\n"
-              "ka2,kb12,va2,vb2\n"
-              "ka1,kb13,\"vb\n3\",vb3\n",
+    ASSERT_EQ(R"(key_a,key_b,value_a,value_b
+ka2,kb12,va2,vb2
+ka1,kb13,"vb
+3",vb3
+)",
               std::move(out).str());
 }
 
@@ -241,17 +249,21 @@ struct TestRecordExtractorFinalPredicateForValue : BaseTest
 
 TEST_F(TestRecordExtractorFinalPredicateForValue, Basics)
 {
-    const char* s = "\r\n\n"
+    const char* s = "\r\n"
+                    "\n"
                     "key_a,key_b,value_a,value_b\n"
                     "ka1,kb01,va1,vb1\n"
                     "ka2,kb12,va2,vb2\n"
-                    "ka1,kb13,\"vb\n3\",vb3";
+                    R"(ka1,kb13,"vb)" "\n"
+                    R"(3",vb3)";
     std::stringbuf out;
     parse_csv(s,
         make_record_extractor(&out, 1, final_predicate_for_value()), 1024);
-    ASSERT_EQ("key_a,key_b,value_a,value_b\n"
-              "ka2,kb12,va2,vb2\n"
-              "ka1,kb13,\"vb\n3\",vb3\n",
+    ASSERT_EQ(R"(key_a,key_b,value_a,value_b
+ka2,kb12,va2,vb2
+ka1,kb13,"vb
+3",vb3
+)",
               std::move(out).str());
 }
 

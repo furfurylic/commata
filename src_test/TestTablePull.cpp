@@ -35,8 +35,10 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
     const auto str = char_helper<char_t>::str;
     const auto ch  = char_helper<char_t>::ch;
    
-    const auto csv = str(",\"col1\", col2 ,col3,\r\n\n"
-                         " cell10 ,,\"cell\r\n12\",\"cell\"\"13\"\"\",\"\"\n");
+    const auto csv = str(R"(,"col1", col2 ,col3,)" "\r\n"
+                         "\n"
+                         R"( cell10 ,,"cell)" "\r\n"
+                         R"(12","cell""13""","")" "\n");
     auto source = make_csv_source(csv);
     primitive_table_pull<decltype(source)> pull(
         std::move(source), TypeParam::second_type::value);
@@ -146,8 +148,10 @@ TYPED_TEST_P(TestTablePull, Basics)
     const auto ch = char_helper<char_t>::ch;
     const auto str = char_helper<char_t>::str;
    
-    const auto csv = str(",\"col1\", col2 ,col3,\r\n\n"
-                         " cell10 ,,\"cell\r\n12\",\"cell\"\"13\"\"\",\"\"\n");
+    const auto csv = str(R"(,"col1", col2 ,col3,)" "\r\n"
+                         "\n"
+                         R"( cell10 ,,"cell)" "\r\n"
+                         R"(12","cell""13""","")" "\n");
 
     for (auto e : { false, true }) {
         auto pull = make_table_pull(
@@ -512,8 +516,8 @@ TYPED_TEST_P(TestTablePull, Move)
     const auto str = char_helper<char_t>::str;
 
     auto pull = make_table_pull(make_csv_source(str("XYZ,UVW\n"
-                                                   "abc,def\n"
-                                                   "\"\"\"")),
+                                                    "abc,def\n"
+                                                    "\"\"\"")),
         TypeParam::second_type::value);
     pull.skip_record()();
 

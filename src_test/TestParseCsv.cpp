@@ -175,8 +175,10 @@ struct TestParseCsvBasics :
 
 TEST_P(TestParseCsvBasics, Narrow)
 {
-    std::string s = ",\"col1\", col2 ,col3,\r\n\n"
-                    " cell10 ,,\"cell\r\n12\",\"cell\"\"13\"\"\",\"\"\n";
+    std::string s = R"(,"col1", col2 ,col3,)" "\r\n"
+                    "\n"
+                    R"( cell10 ,,"cell)" "\r\n"
+                    R"(12","cell""13""","")" "\n";
     std::stringbuf buf(s);
     std::vector<std::vector<std::string>> field_values;
     test_collector<char> collector(field_values);
@@ -192,7 +194,11 @@ TEST_P(TestParseCsvBasics, Narrow)
 
 TEST_P(TestParseCsvBasics, Wide)
 {
-    std::wstring s = L"\n\r\rheader1,header2\r\r\n"
+    std::wstring s = L"\n"
+                     L"\r"
+                     L"\r"
+                     L"header1,header2\r"
+                     L"\r\n"
                      L"value1,value2\n";
     std::vector<std::vector<std::wstring>> field_values;
     test_collector<wchar_t> collector(field_values);

@@ -1550,11 +1550,13 @@ struct TestStoredTableBuilder : BaseTestWithParam<std::size_t>
 
 TEST_P(TestStoredTableBuilder, Basics)
 {
-    const char* s = "\r\n\n"
-                    "\"key_a\",key_b,value_a,value_b\n"
-                    "ka1,\"kb\"\"01\"\"\",va1,\n"
-                    "ka2,\"\",\"\"\"va2\"\"\",vb2\n"
-                    "\"k\"\"a\"\"1\",\"kb\"\"13\"\"\",\"vb\n3\"";
+    const char* s = "\r\n"
+                    "\n"
+                    R"("key_a",key_b,value_a,value_b)" "\n"
+                    R"(ka1,"kb""01""",va1,)" "\n"
+                    R"(ka2,"","""va2""",vb2)" "\n"
+                    R"("k""a""1","kb""13""","vb)" "\n"
+                    R"(3")";
     stored_table table(GetParam());
     try {
         parse_csv(s, make_stored_table_builder(table));
@@ -1587,8 +1589,8 @@ TEST_P(TestStoredTableBuilder, Basics)
 
 TEST_P(TestStoredTableBuilder, MaxRecordNum)
 {
-    const char* s1 = "\"key_a\",key_b,value_a,value_b\n"
-                     "ka1,\"kb\"\"01\"\"\",va1,\n";
+    const char* s1 = R"("key_a",key_b,value_a,value_b)" "\n"
+                     R"(ka1,"kb""01""",va1,)" "\n";
     stored_table table(GetParam());
     try {
         parse_csv(s1, make_stored_table_builder(table, 1U));
@@ -1606,7 +1608,9 @@ TEST_P(TestStoredTableBuilder, MaxRecordNum)
 
 TEST_P(TestStoredTableBuilder, MaxRecordNumPathological)
 {
-    const char* s1 = "\r\n\n\"key_a\",key_b,value_a,value_b";
+    const char* s1 = "\r\n"
+                     "\n"
+                     R"("key_a",key_b,value_a,value_b)";
     stored_table table(GetParam());
     try {
         parse_csv(s1, make_stored_table_builder(table, 5U));
@@ -1654,7 +1658,12 @@ TEST_P(TestStoredTableBuilder, EndRecordHandler)
 
 TEST_P(TestStoredTableBuilder, EmptyLineAware)
 {
-    const char* s = "\r1,2,3,4\na,b\r\n\nx,y,z\r\n\"\"";
+    const char* s = "\r"
+                    "1,2,3,4\n"
+                    "a,b\r\n"
+                    "\n"
+                    "x,y,z\r\n"
+                    R"("")";
     stored_table table(GetParam());
     try {
         parse_csv(s, make_empty_physical_line_aware(

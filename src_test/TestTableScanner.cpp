@@ -717,7 +717,8 @@ TYPED_TEST(TestTableScanner, Indexed)
     std::basic_stringstream<TypeParam> s;
     s << "F0,F1,F2,F3,F4,F5,F6\r"
          "50,__, 101.2 ,XYZ,  200,1,fixa\n"
-         "-3,__,3.00e9,\"\"\"ab\"\"\rc\",200,2,tive\n";
+         R"(-3,__,3.00e9,"""ab"")" "\r"
+         R"(c",200,2,tive)" "\n";
     try {
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
@@ -758,7 +759,8 @@ TYPED_TEST(TestTableScanner, RecordEndScanner)
     try {
         std::basic_stringstream<TypeParam> s;
         s << "Word\r"
-             "\"aban\ndon\"\n"
+             R"("aban)" "\n"
+             R"(don")" "\n"
              "Abbott";  // elaborately does not end with CR/LF
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
