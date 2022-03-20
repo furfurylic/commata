@@ -466,7 +466,6 @@ public:
 
             set_first_last();
 
-
             while (p_ < buffer_last_) {
                 step([this](const auto& h) {
                     h.normal(*this, p_, buffer_last_);
