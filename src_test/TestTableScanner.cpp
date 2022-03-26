@@ -44,20 +44,66 @@ using namespace commata::test;
 namespace {
 
 template <class Ch>
+struct digit;
+
+template <>
+struct digit<char>
+{
+    static constexpr char ch0 = '0';
+    static constexpr char ch1 = '1';
+    static constexpr char ch2 = '2';
+    static constexpr char ch3 = '3';
+    static constexpr char ch4 = '4';
+    static constexpr char ch5 = '5';
+    static constexpr char ch6 = '6';
+    static constexpr char ch7 = '7';
+    static constexpr char ch8 = '8';
+    static constexpr char ch9 = '9';
+};
+
+template <>
+struct digit<wchar_t>
+{
+    static constexpr wchar_t ch0 = L'0';
+    static constexpr wchar_t ch1 = L'1';
+    static constexpr wchar_t ch2 = L'2';
+    static constexpr wchar_t ch3 = L'3';
+    static constexpr wchar_t ch4 = L'4';
+    static constexpr wchar_t ch5 = L'5';
+    static constexpr wchar_t ch6 = L'6';
+    static constexpr wchar_t ch7 = L'7';
+    static constexpr wchar_t ch8 = L'8';
+    static constexpr wchar_t ch9 = L'9';
+};
+
+template <class Ch>
 struct digits
 {
     // With std::array, it seems we cannot make the compiler count the number
     // of the elements, so we employ good old arrays
-    static const Ch all[];
+    static constexpr Ch all[] = {
+        digit<Ch>::ch0,
+        digit<Ch>::ch1,
+        digit<Ch>::ch2,
+        digit<Ch>::ch3,
+        digit<Ch>::ch4,
+        digit<Ch>::ch5,
+        digit<Ch>::ch6,
+        digit<Ch>::ch7,
+        digit<Ch>::ch8,
+        digit<Ch>::ch9
+    };
+
+    static constexpr bool is_sorted = all[0] <= all[1]
+                                   && all[1] <= all[2]
+                                   && all[2] <= all[3]
+                                   && all[3] <= all[4]
+                                   && all[4] <= all[5]
+                                   && all[5] <= all[6]
+                                   && all[6] <= all[7]
+                                   && all[7] <= all[8]
+                                   && all[8] <= all[9];
 };
-
-template <>
-const char digits<char>::all[] =
-    { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-
-template <>
-const wchar_t digits<wchar_t>::all[] =
-    { L'0', L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9' };
 
 template <class Ch>
 std::basic_string<Ch> plus1(std::basic_string<Ch> s, std::size_t i
@@ -69,7 +115,15 @@ std::basic_string<Ch> plus1(std::basic_string<Ch> s, std::size_t i
     const auto all_end = all + std::size(digits<Ch>::all);
 
     for (;;) {
-        const auto k = std::find(all, all_end, s[i]);
+        const Ch* k;
+        if constexpr (digits<Ch>::is_sorted) {
+            k = std::lower_bound(all, all_end, s[i]);
+            if ((k != all_end) && (*k != s[i])) {
+                k = all_end;
+            }
+        } else {
+            k = std::find(all, all_end, s[i]);
+        }
         if (k == all_end - 1) {
             s[i] = all[0];  // carrying occurs
             if (i == 0) {
