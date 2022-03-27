@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2022-03-26 (UTC)</signature>
+<signature>2022-03-27 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6279,7 +6279,7 @@ template &lt;class T, class Allocator, class SinkR, class... Appendices>
                                   SinkR&amp;&amp;&amp;&amp; sink, Appendices&amp;&amp;... appendices);
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>return R(std::allocator_arg, alloc, std::forward&lt;SinkR>(sink), std::forward&lt;Appendices>(appendices)...);</code>
+                   <code>return <n>R</n>(std::allocator_arg, alloc, std::forward&lt;SinkR>(sink), std::forward&lt;Appendices>(appendices)...);</code>
                    <p>where <c><n>R</n></c> is a type decided as follows with <c>Sink</c> being <c>std::decay_t&lt;SinkR></c>:</p>
                      <ul>
                        <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
