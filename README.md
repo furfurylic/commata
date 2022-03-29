@@ -11,7 +11,7 @@ Just another header-only C++17 CSV parser
 
 Commata is written in C++17 and consists only of headers.
 All C++ codes in this repository shall compile and link with
-Microsoft Visual Studio 2019, GCC 7.3 and Clang 7.0.
+Microsoft Visual Studio 2019, 2022, GCC 7.3 and Clang 7.0.
 
 This repository also contains a test of it in `src_test` directory.
 Tests are written on [GoogleTest](https://github.com/google/googletest) v1.11.0.
@@ -29,7 +29,7 @@ You can build it as follows:
     ```
     or
     ```bash
-    $ cmake -S . -B build -G "Visual Studio 16 2019" -A x64 -DCOMMATA_BUILD_TESTS=ON
+    $ cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCOMMATA_BUILD_TESTS=ON
     ```
 
  1. Now you can make and execute the tests.
