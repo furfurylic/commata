@@ -317,7 +317,9 @@ void one_pass_scanning_sample3()
         // whose value is [field_value.first, field_value.second), and
         // field_value.second is dereferenceable and points the terminating
         // zero
-        if (std::strcmp(field_value->first, "Name") == 0) {
+        if (std::string_view(field_value->first,
+                             field_value->second - field_value->first)
+            == "Name") {
           scanner.set_field_scanner(
             field_index, make_field_translator(names));
           names_attached = true;
