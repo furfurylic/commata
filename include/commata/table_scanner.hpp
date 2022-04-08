@@ -383,7 +383,8 @@ private:
         using scanner_t = typed_body_field_scanner<std::decay_t<FieldScanner>>;
         const auto it = std::lower_bound(
             scanners_.begin(), scanners_.end(), j, scanner_less());
-        const auto p = allocate_construct<scanner_t>(std::move(s)); // throw
+        const auto p = allocate_construct<scanner_t>(
+                            std::forward<FieldScanner>(s));         // throw
         if ((it != scanners_.end()) && (it->second == j)) {
             destroy_deallocate(it->first);
             it->first = p;
