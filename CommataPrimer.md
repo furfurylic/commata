@@ -283,8 +283,10 @@ void one_pass_scanning_sample2()
 values into the following types:
  - arithmetic types: `char`, `signed char`, `unsigned char`, `short`,
    `unsigned short`, `int`, `unsigned int`, `long`, `unsigned long`,
-   `long long`, `unsigned long long`, `float`, `double`, `long double`, and
+   `long long`, `unsigned long long`, `float`, `double`, `long double`,
  - standard string types: `std::basic_string<Ch, Tr, Allocator>` where `Ch` is
+   the identical type to the character type of the input text, and
+ - standard string view types: `std::basic_string_view<Ch, Tr>` where `Ch` is
    the identical type to the character type of the input text.
 
 To translate strings into arithmetic values, Commata employs C function
