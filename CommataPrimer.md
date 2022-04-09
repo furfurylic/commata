@@ -84,7 +84,7 @@ void stored_table_sample()
 }
 ```
 
-`table[0]` is a short for `table.content()[0]`, where `table.content()` is a
+`table[0]` is short for `table.content()[0]`, where `table.content()` is a
 reference to a `std::deque<std::vector<commata::stored_value>>` object owned by
 `table`. So `table[0][3]` is a reference to a `commata::stored_value` object.
 
