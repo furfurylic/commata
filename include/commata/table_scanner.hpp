@@ -66,6 +66,24 @@ private:
     virtual void* get_target_v() = 0;
 };
 
+class counting_header_field_scanner
+{
+    std::size_t remaining_header_records_;
+
+public:
+    counting_header_field_scanner(std::size_t header_record_count) :
+        remaining_header_records_(header_record_count)
+    {
+        assert(header_record_count > 0);
+    }
+
+    template <class Ch, class TableScanner>
+    bool operator()(std::size_t, const std::pair<Ch*, Ch*>* v, TableScanner&)
+    {
+        return v || (--remaining_header_records_ > 0);
+    }
+};
+
 } // end detail::scanner
 
 template <class Ch, class Tr = std::char_traits<Ch>,
@@ -256,7 +274,6 @@ class basic_table_scanner
     using scanners_a_t = detail::allocation_only_allocator<bfs_ptr_p_a_t>;
     using res_at_t = typename at_t::template rebind_traits<record_end_scanner>;
 
-    std::size_t remaining_header_records_;
     std::size_t j_;
     std::size_t buffer_size_;
     typename at_t::pointer buffer_;
@@ -296,10 +313,16 @@ public:
         std::allocator_arg_t, const Allocator& alloc,
         std::size_t header_record_count = 0U,
         size_type buffer_size = 0U) :
-        remaining_header_records_(header_record_count),
         buffer_size_(sanitize_buffer_size(buffer_size)), buffer_(),
         begin_(nullptr), fragmented_value_(alloc),
-        header_field_scanner_(), scanners_(scanners_a_t(bfs_ptr_p_a_t(alloc))),
+        header_field_scanner_(
+            (header_record_count > 0) ?
+            allocate_construct<
+                typed_header_field_scanner<
+                    detail::scanner::counting_header_field_scanner>>(
+                        header_record_count) :
+            nullptr),
+        scanners_(scanners_a_t(bfs_ptr_p_a_t(alloc))),
         end_scanner_(nullptr)
     {}
 
@@ -310,7 +333,6 @@ public:
         std::allocator_arg_t, const Allocator& alloc,
         HeaderFieldScanner&& s,
         size_type buffer_size = 0U) :
-        remaining_header_records_(0U),
         buffer_size_(sanitize_buffer_size(buffer_size)),
         buffer_(), begin_(nullptr), fragmented_value_(alloc),
         header_field_scanner_(allocate_construct<
@@ -320,7 +342,6 @@ public:
     {}
 
     basic_table_scanner(basic_table_scanner&& other) noexcept :
-        remaining_header_records_(other.remaining_header_records_),
         buffer_size_(other.buffer_size_),
         buffer_(std::exchange(other.buffer_, nullptr)),
         begin_(other.begin_), end_(other.end_),
@@ -597,8 +618,6 @@ public:
     {
         if (header_field_scanner_) {
             header_field_scanner_->so_much_for_header(*this);
-        } else if (remaining_header_records_ > 0) {
-            --remaining_header_records_;
         } else {
             for (auto i = sj_, ie = scanners_.size(); i != ie; ++i) {
                 scanners_[i].first->field_skipped();
@@ -612,7 +631,7 @@ public:
 
     bool is_in_header() const noexcept
     {
-        return header_field_scanner_ || (remaining_header_records_ > 0);
+        return header_field_scanner_;
     }
 
 private:
@@ -661,8 +680,7 @@ private:
     {
         if (header_field_scanner_) {
             return std::addressof(*header_field_scanner_);
-        } else if ((remaining_header_records_ == 0U)
-                && (sj_ < scanners_.size()) && (j_ == scanners_[sj_].second)) {
+        } else if ((sj_ < scanners_.size()) && (j_ == scanners_[sj_].second)) {
             return std::addressof(*scanners_[sj_].first);
         } else {
             return nullptr;
