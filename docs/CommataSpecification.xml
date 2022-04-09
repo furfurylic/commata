@@ -4539,11 +4539,11 @@ namespace commata {
   using wtable_scanner = basic_table_scanner&lt;wchar_t>;
 
   <c>// <n><xref id="scan.builtin.exceptions"/>, exception classes:</n></c>
-  class field_translation_error : public text_error;
-    class field_not_found : public field_translation_error;
-    class field_invalid_format : public field_translation_error;
-      class field_empty : public field_invalid_format;
-    class field_out_of_range : public field_translation_error;
+  class field_translation_error;
+    class field_not_found;
+    class field_invalid_format;
+      class field_empty;
+    class field_out_of_range;
 
   struct replacement_ignore_t {};
   constexpr replacement_ignore_t replacement_ignore = replacement_ignore_t{};
