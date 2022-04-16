@@ -599,11 +599,11 @@ private:
     primitive_t p_;
     bool empty_physical_line_aware_;
 
-    table_pull_state last_state_;
+    table_pull_state state_;
 
     // current string value, arranged contiguously, followed by a null
     // character, and maintained also when value_ is in use
-    view_type last_;
+    view_type view_;
     // current string value, as a null terminated one, used only when it
     // cannot reside in current buffer; empty when not used
     std::vector<char_type, Allocator> value_;
@@ -638,15 +638,15 @@ public:
         p_(std::allocator_arg, alloc, std::forward<TableSourceR>(in),
             ((buffer_size > 1) ? buffer_size : 2)),
         empty_physical_line_aware_(false),
-        last_state_(table_pull_state::before_parse), last_(),
+        state_(table_pull_state::before_parse), view_(),
         value_(alloc), i_(0), j_(0)
     {}
 
     table_pull(table_pull&& other) noexcept :
         p_(std::move(other.p_)),
         empty_physical_line_aware_(other.empty_physical_line_aware_),
-        last_state_(std::exchange(other.last_state_, table_pull_state::eof)),
-        last_(std::exchange(other.last_, view_type())),
+        state_(std::exchange(other.state_, table_pull_state::eof)),
+        view_(std::exchange(other.view_, view_type())),
         value_(std::move(other.value_)),
         i_(std::exchange(other.i_, 0)),
         j_(std::exchange(other.j_, 0))
@@ -672,7 +672,7 @@ public:
 
     table_pull_state state() const noexcept
     {
-        return last_state_;
+        return state_;
     }
 
     explicit operator bool() const noexcept
@@ -697,9 +697,9 @@ public:
             return *this;
         }
 
-        last_ = view_type();
+        view_ = view_type();
         value_.clear();
-        switch (last_state_) {
+        switch (state_) {
         case table_pull_state::field:
             ++j_;
             break;
@@ -724,7 +724,7 @@ public:
                 case primitive_table_pull_state::update:
                     break;
                 case primitive_table_pull_state::finalize:
-                    last_state_ = table_pull_state::field;
+                    state_ = table_pull_state::field;
                     ++j_;
                     if (n == 1) {
                         d.reset();
@@ -739,10 +739,10 @@ public:
                     }
                     [[fallthrough]];
                 case primitive_table_pull_state::end_record:
-                    last_state_ = table_pull_state::record_end;
+                    state_ = table_pull_state::record_end;
                     return *this;
                 case primitive_table_pull_state::eof:
-                    last_state_ = table_pull_state::eof;
+                    state_ = table_pull_state::eof;
                     return *this;
                 case primitive_table_pull_state::end_buffer:
                 default:
@@ -750,7 +750,7 @@ public:
                 }
             }
         } catch (...) {
-            last_state_ = table_pull_state::eof;
+            state_ = table_pull_state::eof;
             throw;
         }
     }
@@ -768,13 +768,13 @@ private:
                 case primitive_table_pull_state::finalize:
                     do_update(p_[0], p_[1]);                        // throw
                     if (value_.empty()) {
-                        const_cast<char_type*>(last_.data())[last_.size()]
+                        const_cast<char_type*>(view_.data())[view_.size()]
                             = char_type();
                     } else {
                         value_.push_back(char_type());              // throw
-                        last_ = view_type(value_.data(), value_.size() - 1);
+                        view_ = view_type(value_.data(), value_.size() - 1);
                     }
-                    last_state_ = table_pull_state::field;
+                    state_ = table_pull_state::field;
                     return;
                 case primitive_table_pull_state::empty_physical_line:
                     if (!empty_physical_line_aware_) {
@@ -782,27 +782,27 @@ private:
                     }
                     [[fallthrough]];
                 case primitive_table_pull_state::end_record:
-                    last_state_ = table_pull_state::record_end;
-                    last_ = view_type();
+                    state_ = table_pull_state::record_end;
+                    view_ = view_type();
                     return;
                 case primitive_table_pull_state::end_buffer:
-                    if (!last_.empty()) {
+                    if (!view_.empty()) {
                         value_.insert(value_.cend(),
-                            last_.cbegin(), last_.cend());          // throw
-                        last_ = view_type();
+                            view_.cbegin(), view_.cend());          // throw
+                        view_ = view_type();
                     }
                     break;
                 case primitive_table_pull_state::eof:
-                    last_state_ = table_pull_state::eof;
-                    last_ = view_type();
+                    state_ = table_pull_state::eof;
+                    view_ = view_type();
                     return;
                 default:
                     break;
                 }
             }
         } catch (...) {
-            last_state_ = table_pull_state::eof;
-            last_ = view_type();
+            state_ = table_pull_state::eof;
+            view_ = view_type();
             throw;
         }
     }
@@ -814,7 +814,7 @@ public:
             return *this;
         }
 
-        last_ = view_type();
+        view_ = view_type();
         value_.clear();
 
         p_.set_discarding_data(true);
@@ -825,11 +825,11 @@ public:
                 case primitive_table_pull_state::update:
                     break;
                 case primitive_table_pull_state::finalize:
-                    if (last_state_ == table_pull_state::record_end) {
+                    if (state_ == table_pull_state::record_end) {
                         ++i_;
                         j_ = 0;
                     }
-                    last_state_ = table_pull_state::field;
+                    state_ = table_pull_state::field;
                     ++j_;
                     break;
                 case primitive_table_pull_state::empty_physical_line:
@@ -838,11 +838,11 @@ public:
                     }
                     [[fallthrough]];
                 case primitive_table_pull_state::end_record:
-                    if (last_state_ == table_pull_state::record_end) {
+                    if (state_ == table_pull_state::record_end) {
                         ++i_;
                         j_ = 0;
                     } else {
-                        last_state_ = table_pull_state::record_end;
+                        state_ = table_pull_state::record_end;
                     }
                     if (n == 0) {
                         return *this;
@@ -851,11 +851,11 @@ public:
                         break;
                     }
                 case primitive_table_pull_state::eof:
-                    if (last_state_ == table_pull_state::record_end) {
+                    if (state_ == table_pull_state::record_end) {
                         ++i_;
                         j_ = 0;
                     }
-                    last_state_ = table_pull_state::eof;
+                    state_ = table_pull_state::eof;
                     return *this;
                 case primitive_table_pull_state::end_buffer:
                 default:
@@ -863,24 +863,24 @@ public:
                 }
             }
         } catch (...) {
-            last_state_ = table_pull_state::eof;
+            state_ = table_pull_state::eof;
             throw;
         }
     }
 
     const char_type* c_str() const noexcept
     {
-        return last_.data();
+        return view_.data();
     }
 
     const view_type& operator*() const noexcept
     {
-        return last_;
+        return view_;
     }
 
     const view_type* operator->() const noexcept
     {
-        return &last_;
+        return &view_;
     }
 
 private:
@@ -888,13 +888,13 @@ private:
     {
         if (!value_.empty()) {
             value_.insert(value_.cend(), first, last);              // throw
-        } else if (!last_.empty()) {
+        } else if (!view_.empty()) {
             traits_type::move(
-                const_cast<char_type*>(last_.data() + last_.size()),
+                const_cast<char_type*>(view_.data() + view_.size()),
                 first, last - first);
-            last_ = view_type(last_.data(), last_.size() + last - first);
+            view_ = view_type(view_.data(), view_.size() + last - first);
         } else {
-            last_ = view_type(first, last - first);
+            view_ = view_type(first, last - first);
         }
     }
 };
