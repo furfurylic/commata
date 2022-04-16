@@ -600,10 +600,17 @@ private:
     bool empty_physical_line_aware_;
 
     table_pull_state last_state_;
+
+    // current string value, arranged contiguously, followed by a null
+    // character, and maintained also when value_ is in use
     view_type last_;
+    // current string value, as a null terminated one, used only when it
+    // cannot reside in current buffer; empty when not used
     std::vector<char_type, Allocator> value_;
 
+    // num of "end record" events encountered
     std::size_t i_;
+    // num of "finalize" events encountered in current record
     std::size_t j_;
 
 public:
