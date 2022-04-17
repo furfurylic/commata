@@ -279,7 +279,7 @@ class basic_table_scanner
     typename at_t::pointer buffer_;
     const Ch* begin_;
     const Ch* end_;
-    string_t fragmented_value_;
+    string_t value_;
     typename hfs_at_t::pointer header_field_scanner_;
     std::vector<bfs_ptr_p_t, scanners_a_t> scanners_;
     typename std::vector<bfs_ptr_p_t, scanners_a_t>::size_type sj_;
@@ -314,7 +314,7 @@ public:
         std::size_t header_record_count = 0U,
         size_type buffer_size = 0U) :
         buffer_size_(sanitize_buffer_size(buffer_size)), buffer_(),
-        begin_(nullptr), fragmented_value_(alloc),
+        begin_(nullptr), value_(alloc),
         header_field_scanner_(
             (header_record_count > 0) ?
             allocate_construct<
@@ -334,7 +334,7 @@ public:
         HeaderFieldScanner&& s,
         size_type buffer_size = 0U) :
         buffer_size_(sanitize_buffer_size(buffer_size)),
-        buffer_(), begin_(nullptr), fragmented_value_(alloc),
+        buffer_(), begin_(nullptr), value_(alloc),
         header_field_scanner_(allocate_construct<
             typed_header_field_scanner<std::decay_t<HeaderFieldScanner>>>(
                 std::forward<HeaderFieldScanner>(s))),
@@ -345,7 +345,7 @@ public:
         buffer_size_(other.buffer_size_),
         buffer_(std::exchange(other.buffer_, nullptr)),
         begin_(other.begin_), end_(other.end_),
-        fragmented_value_(std::move(other.fragmented_value_)),
+        value_(std::move(other.value_)),
         header_field_scanner_(std::exchange(other.header_field_scanner_,
                                             nullptr)),
         scanners_(std::move(other.scanners_)),
@@ -371,7 +371,7 @@ public:
 
     allocator_type get_allocator() const noexcept
     {
-        return fragmented_value_.get_allocator();
+        return value_.get_allocator();
     }
 
     template <class FieldScanner = std::nullptr_t>
@@ -547,7 +547,7 @@ public:
             auto a = get_allocator();
             buffer_ = at_t::allocate(a, buffer_size_);  // throw
         } else if (begin_) {
-            fragmented_value_.assign(begin_, end_);     // throw
+            value_.assign(begin_, end_);                // throw
             begin_ = nullptr;
         }
         return { true_buffer(), static_cast<std::size_t>(buffer_size_ - 1) };
@@ -568,14 +568,13 @@ public:
     {
         if (get_scanner() && (first != last)) {
             if (begin_) {
-                assert(fragmented_value_.empty());
-                fragmented_value_.
-                    reserve((end_ - begin_) + (last - first));  // throw
-                fragmented_value_.assign(begin_, end_);
-                fragmented_value_.append(first, last);
+                assert(value_.empty());
+                value_.reserve((end_ - begin_) + (last - first));   // throw
+                value_.assign(begin_, end_);
+                value_.append(first, last);
                 begin_ = nullptr;
-            } else if (!fragmented_value_.empty()) {
-                fragmented_value_.append(first, last);          // throw
+            } else if (!value_.empty()) {
+                value_.append(first, last);                         // throw
             } else {
                 begin_ = first;
                 end_ = last;
@@ -588,21 +587,21 @@ public:
         if (const auto scanner = get_scanner()) {
             if (begin_) {
                 if (first != last) {
-                    fragmented_value_.
+                    value_.
                         reserve((end_ - begin_) + (last - first));  // throw
-                    fragmented_value_.assign(begin_, end_);
-                    fragmented_value_.append(first, last);
-                    scanner->field_value(std::move(fragmented_value_), *this);
-                    fragmented_value_.clear();
+                    value_.assign(begin_, end_);
+                    value_.append(first, last);
+                    scanner->field_value(std::move(value_), *this);
+                    value_.clear();
                 } else {
                     *uc(end_) = Ch();
                     scanner->field_value(uc(begin_), uc(end_), *this);
                 }
                 begin_ = nullptr;
-            } else if (!fragmented_value_.empty()) {
-                fragmented_value_.append(first, last);              // throw
-                scanner->field_value(std::move(fragmented_value_), *this);
-                fragmented_value_.clear();
+            } else if (!value_.empty()) {
+                value_.append(first, last);                         // throw
+                scanner->field_value(std::move(value_), *this);
+                value_.clear();
             } else {
                 *uc(last) = Ch();
                 scanner->field_value(uc(first), uc(last), *this);
