@@ -179,12 +179,12 @@ TYPED_TEST_P(TestTablePull, Basics)
         ASSERT_EQ(str("col1"), string_t(*pull)) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(0, 7), pull.get_physical_position()) << e;
-        ASSERT_FALSE(pull->empty());
-        ASSERT_EQ(4U, pull->size());
-        ASSERT_EQ('\0', pull->data()[4]);
-        ASSERT_EQ(ch('o'), (*pull)[1]);
-        ASSERT_EQ(ch('l'), pull->at(2));
-        ASSERT_THROW(static_cast<void>(pull->at(4)), std::out_of_range);
+        ASSERT_FALSE(pull->empty()) << e;
+        ASSERT_EQ(4U, pull->size()) << e;
+        ASSERT_EQ('\0', pull->data()[4]) << e;
+        ASSERT_EQ(ch('o'), (*pull)[1]) << e;
+        ASSERT_EQ(ch('l'), pull->at(2)) << e;
+        ASSERT_THROW(static_cast<void>(pull->at(4)), std::out_of_range) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
@@ -402,22 +402,21 @@ TYPED_TEST_P(TestTablePull, Move)
     auto pull = make_table_pull(make_csv_source(str("XYZ,UVW\n"
                                                     "abc,def\n"
                                                     "\"\"\"")),
-        TypeParam::second_type::value);
+                                TypeParam::second_type::value);
     pull.skip_record()();
 
     auto pull2 = std::move(pull);
-    ASSERT_EQ(pos_t(1, 0), pull2.get_position());
+    ASSERT_EQ(pos_t(1U, 0U), pull2.get_position());
     ASSERT_EQ(str("def"), *pull2());
 
     ASSERT_EQ(table_pull_state::eof, pull.state());
                                     // Unspecified but implemented so
-    ASSERT_EQ(str(""), *pull());    // ditto
+    ASSERT_TRUE(pull->empty());     // ditto
 
     ASSERT_THROW(pull2()(), parse_error);
     ASSERT_EQ(table_pull_state::eof, pull2.state());
                                     // Unspecified but implemented so
-    ASSERT_EQ(2U, pull2.get_position().first);
-    ASSERT_EQ(0U, pull2.get_position().second);
+    ASSERT_EQ(pos_t(2U, 0U), pull2.get_position());
 
     auto pull3 = std::move(pull2);  // also the state is moved
     ASSERT_EQ(table_pull_state::eof, pull3.state());
