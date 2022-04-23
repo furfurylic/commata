@@ -1685,7 +1685,7 @@ void  emigrate(ContainerFrom&& from, ContainerTo& to)
     static_assert(!std::is_reference_v<ContainerFrom>);
         // so we'll use move instead of forward
 
-    std::unique_ptr<ContainerTo, invoke_clear<ContainerTo>> p(&to);
+    std::unique_ptr<ContainerFrom, invoke_clear<ContainerFrom>> p(&from);
     if constexpr (std::is_same_v<typename ContainerFrom::value_type,
                                  typename ContainerTo::value_type>) {
         to.insert(to.end(), std::make_move_iterator(from.begin()),
