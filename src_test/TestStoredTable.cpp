@@ -1117,6 +1117,9 @@ struct TestStoredTableMerge : BaseTest
 typedef testing::Types<
     std::pair<
         std::vector<std::vector<stored_value>>,
+        std::vector<std::vector<stored_value>>>,
+    std::pair<
+        std::vector<std::vector<stored_value>>,
         std::deque<std::vector<stored_value>>>,
     std::pair<
         std::deque<std::deque<stored_value>>,
@@ -1185,13 +1188,17 @@ TYPED_TEST(TestStoredTableMerge, WithMovedFrom)
     ASSERT_EQ(1U, table2.size());
     ASSERT_EQ(1U, table2.content().back().size());
     ASSERT_EQ("value", table2.content().back().back());
-    ASSERT_EQ(char000, &table2.content().back().back().back());
+    if (!table2.empty()) {
+        ASSERT_EQ(char000, &table2.content().back().back().back());
+    }
 
     table1 += std::move(table2);
     ASSERT_EQ(1U, table1.size());
     ASSERT_EQ(1U, table1.content().back().size());
     ASSERT_EQ("value", table1.content().back().back());
-    ASSERT_EQ(char000, &table2.content().back().back().back());
+    if (!table2.empty()) {
+        ASSERT_EQ(char000, &table2.content().back().back().back());
+    }
 
     if (table2.empty()) {
         table2 += table1;
