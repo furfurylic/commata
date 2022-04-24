@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2022-04-23 (UTC)</signature>
+<signature>2022-04-24 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3561,10 +3561,10 @@ namespace commata {
     <c>// <n><xref id="basic_stored_table.modifiers"/>, modifiers:</n></c>
     template &lt;class OtherContent, class OtherAllocator>
       basic_stored_table&amp; operator+=(
-        const basic_stored_table&lt;OtherContent, OtherAllocator>&amp; other);
-    template &lt;class OtherContent>
+        const basic_stored_table&lt;OtherContent, OtherAllocator>&amp;  other);
+    template &lt;class OtherContent, class OtherAllocator>
       basic_stored_table&amp; operator+=(
-              basic_stored_table&lt;OtherContent, Allocator>&amp;&amp;     other);
+              basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
     void swap(basic_stored_table&amp; other)
       noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value
             || std::allocator_traits&lt;Allocator>::is_always_equal::value);
@@ -3974,9 +3974,9 @@ template &lt;class OtherContent, class OtherAllocator>
 
         <code-item>
           <code>
-template &lt;class OtherContent>
+template &lt;class OtherContent, class OtherAllocator>
   basic_stored_table&amp; operator+=(
-    basic_stored_table&lt;OtherContent, Allocator>&amp;&amp; other);
+    basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
           </code>
           <requires><c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
                     If an exception is thrown by a call of <c>emplace</c> or <c>insert</c> of <c>content()</c> at the end, there shall be no effects on the before-end elements.

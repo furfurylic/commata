@@ -1135,20 +1135,27 @@ TYPED_TEST_SUITE(TestStoredTableMerge, ContentLRs);
 
 TYPED_TEST(TestStoredTableMerge, Merge)
 {
-    basic_stored_table<typename TypeParam::first_type> table1(20U);
+    using table1_t = basic_stored_table<typename TypeParam::first_type>;
+    using table2_t = basic_stored_table<typename TypeParam::second_type>;
+
+    table1_t table1(20U);
     table1.content().emplace_back();
     table1.content().begin()->resize(3);
     table1.rewrite_value((*table1.content().begin())[0], "Lorem");
     table1.rewrite_value((*table1.content().begin())[1], "ipsum");
     table1.rewrite_value((*table1.content().begin())[2], "dolor");
 
-    basic_stored_table<typename TypeParam::second_type> table2(25U);
+    table2_t table2(25U);
     table2.content().resize(2);
     table2.content().begin() ->resize(2);
     table2.content().rbegin()->resize(1);
     table2.rewrite_value((*table2.content().begin()) [0], "sit");
     table2.rewrite_value((*table2.content().begin()) [1], "amet,");
     table2.rewrite_value((*table2.content().rbegin())[0], "consectetur");
+
+    const typename table2_t::value_type* const vsit =
+        &*table2.content().begin()->begin();
+    const char* const sit = vsit->data();
 
     table1 += std::move(table2);
     ASSERT_EQ(3U, table1.size());
@@ -1158,6 +1165,22 @@ TYPED_TEST(TestStoredTableMerge, Merge)
     ASSERT_EQ("sit"        , (*std::next(table1.content().cbegin()))[0]);
     ASSERT_EQ("amet,"      , (*std::next(table1.content().cbegin()))[1]);
     ASSERT_EQ("consectetur", (*table1.content().crbegin())          [0]);
+
+    const typename table1_t::value_type* const vsit2 =
+        &*std::next(table1.content().begin())->begin();
+
+    // table2's values shall be "moved" (not copied) into table1
+    // without reallocation on store's buffers, so the pointers to their
+    // elements shall be preserved
+    ASSERT_EQ(sit, vsit2->data());
+
+    // if table1 and table2 has the same record type,
+    // table2's records shall be "moved" as well and their elements shall
+    // remain int the same place as before
+    if constexpr (std::is_same_v<typename table1_t::record_type,
+                                 typename table2_t::record_type>) {
+        ASSERT_EQ(vsit, vsit2);
+    }
 }
 
 TYPED_TEST(TestStoredTableMerge, WithMovedFrom)

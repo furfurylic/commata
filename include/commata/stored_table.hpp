@@ -1095,6 +1095,20 @@ std::size_t length(const char* begin)
     return Tr::length(begin);
 }
 
+struct is_equatable_with_impl
+{
+    template <class L, class R>
+    static auto check(L*, R*) -> decltype(
+        (std::declval<const L&>() == std::declval<const R&>()),
+        std::true_type());
+
+    static auto check(...) -> std::false_type;
+};
+
+template <class L, class R>
+constexpr bool is_equatable_with_v =
+    decltype(is_equatable_with_impl::check<L, R>(nullptr, nullptr))::value;
+
 } // end detail::stored
 
 template <class Content, class Allocator = std::allocator<Content>>
@@ -1509,9 +1523,9 @@ public:
         return operator_plus_assign_impl(other);
     }
 
-    template <class OtherContent>
+    template <class OtherContent, class OtherAllocator>
     basic_stored_table& operator+=(
-        basic_stored_table<OtherContent, Allocator>&& other)
+        basic_stored_table<OtherContent, OtherAllocator>&& other)
     {
         return operator_plus_assign_impl(std::move(other));
     }
@@ -1562,9 +1576,26 @@ private:
         other.copy_to(*this);
     }
 
-    template <class OtherContent>
+    template <class OtherContent, class OtherAllocator>
     void append_no_singular(
-        basic_stored_table<OtherContent, Allocator>&& other);
+        basic_stored_table<OtherContent, OtherAllocator>&& other)
+    {
+        using oca_t =
+            typename basic_stored_table<OtherContent, OtherAllocator>::ca_t;
+        if constexpr (std::is_same_v<ca_t, oca_t>
+                   && cat_t::is_always_equal::value) {
+            append_no_singular_merge(std::move(other));         // throw
+        } else if constexpr (
+                detail::stored::is_equatable_with_v<ca_t, oca_t>) {
+            if (store_.get_allocator() == other.store_.get_allocator()) {
+                append_no_singular_merge(std::move(other));     // throw
+            } else {
+                append_no_singular(other);                      // throw
+            }
+        } else {
+            append_no_singular(other);                          // throw
+        }
+    }
 
     template <class ContentTo, class AllocatorTo>
     void copy_to(basic_stored_table<ContentTo, AllocatorTo>& to) const
@@ -1646,6 +1677,10 @@ private:
     {
         c.reserve(n);
     }
+
+    template <class OtherContent, class OtherAllocator>
+    void append_no_singular_merge(
+        basic_stored_table<OtherContent, OtherAllocator>&& other);
 
 private:
     // Unconditionally swaps all contents including allocators
@@ -1767,18 +1802,12 @@ auto plus_stored_table_impl(
 }} // end namespace detail::stored
 
 template <class Content, class Allocator>
-template <class OtherContent>
-void basic_stored_table<Content, Allocator>::append_no_singular(
-    basic_stored_table<OtherContent, Allocator>&& other)
+template <class OtherContent, class OtherAllocator>
+void basic_stored_table<Content, Allocator>::append_no_singular_merge(
+    basic_stored_table<OtherContent, OtherAllocator>&& other)
 {
-    if constexpr (!std::allocator_traits<Allocator>::is_always_equal::value) {
-        if (store_.get_allocator() != other.store_.get_allocator()) {
-            append_no_singular(other);              // throw
-            return;
-        }
-    }
     detail::stored::append_stored_table_content(
-        content(), std::move(other.content()));     // throw
+        content(), std::move(other.content()));         // throw
     store_.merge(std::move(other.store_));
 }
 
