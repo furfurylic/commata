@@ -4039,7 +4039,7 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
               const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>return basic_stored_table&lt;ContentL, AllocatorL>(std::move(left += right));</code>
+                   <code>return std::move(left += right);</code>
           </effects>
         </code-item>
 
@@ -4047,11 +4047,11 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
           <code>
 template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
   basic_stored_table&lt;ContentL, AllocatorL>
-    operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
-                    basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
+    operator+(basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
+              basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>return basic_stored_table&lt;ContentL, AllocatorL>(std::move(left += std::move(right)));</code>
+                   <code>return std::move(left += std::move(right));</code>
           </effects>
         </code-item>
       </section>
