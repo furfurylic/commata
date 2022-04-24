@@ -1759,10 +1759,11 @@ void append_stored_table_content(ContentL& l, ContentR&& r)
 
 template <class RecordL, class AllocatorL, class RecordR, class AllocatorR>
 void append_stored_table_content(
-    std::list<RecordL, AllocatorL>& l, std::list<RecordL, AllocatorR>&& r)
+    std::list<RecordL, AllocatorL>& l, std::list<RecordL, AllocatorR>&& r,
+    std::nullptr_t = nullptr/*just a tag*/)
 {
-    std::list<RecordL, AllocatorL> r2(l.get_allocator());       // throw
-    emigrate(std::move(r), r2);                                 // throw
+    std::list<RecordL, AllocatorL> r2(l.get_allocator());           // throw
+    emigrate(std::move(r), r2);                                     // throw
     l.splice(l.cend(), r2);
 }
 
@@ -1773,9 +1774,7 @@ void append_stored_table_content(
     // stores' allocator equality does not necessarily mean contents' one
     if constexpr (!std::allocator_traits<Allocator>::is_always_equal::value) {
         if (l.get_allocator() != r.get_allocator()) {
-            std::list<Record, Allocator> r2(l.get_allocator());     // throw
-            emigrate(std::move(r), r2);                             // throw
-            l.splice(l.cend(), r2);
+            append_stored_table_content(l, std::move(r), nullptr);  // throw
             return;
         }
     }
