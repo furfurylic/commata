@@ -1343,49 +1343,8 @@ public:
         if constexpr (std::is_base_of_v<std::forward_iterator_tag, it_cat>) {
             return rewrite_value_n(value, new_value_begin,
                 detail::stored::distance(new_value_begin, new_value_end));
-
         } else {
-            std::pair<char_type*, std::size_t> generated(nullptr, 0);
-
-            auto range = store_.get_current();
-            if (!range.first) {
-                const auto buffer = generate_buffer(buffer_size_);  // throw
-                range = std::pair<char_type*, char_type*>(
-                    buffer.first, buffer.first + buffer.second);
-                generated = buffer;
-            }
-
-            char_type* i = range.first;
-            while (new_value_begin != new_value_end) {
-                *i = *new_value_begin;
-                ++i;
-                if (i == range.second) {
-                    constexpr auto smax =
-                        std::numeric_limits<std::size_t>::max();
-                    const std::size_t n = i - range.first;
-                    const auto alloc_size = (n > smax / 2) ?
-                        std::max<std::size_t>(smax, buffer_size_) :
-                        std::max<std::size_t>(2 * n, buffer_size_);
-                    auto buffer = generate_buffer(alloc_size);      // throw
-                    traits_type::move(buffer.first, range.first, n);
-                    if (generated.first) {
-                        store_.consume_buffer(
-                            generated.first, generated.second);
-                    }
-                    range = std::pair<char_type*, char_type*>(
-                        buffer.first, buffer.first + buffer.second);
-                    i = range.first + n;
-                    generated = buffer;
-                }
-                ++new_value_begin;
-            }
-            *i = char_type();
-            if (generated.first) {
-                add_buffer(generated.first, generated.second);      // throw
-            }
-            secure_current_upto(i + 1);
-            value = value_type(range.first, i);
-            return value;
+            return rewrite_value_input(value, new_value_begin, new_value_end);
         }
     }
 
@@ -1398,8 +1357,8 @@ public:
                     iterator_category>,
             value_type&>
     {
-        using it_cat =
-            typename std::iterator_traits<InputIterator>::iterator_category;
+        using it_tr = std::iterator_traits<InputIterator>;
+        using it_cat = typename it_tr::iterator_category;
         if constexpr (std::is_base_of_v<std::forward_iterator_tag, it_cat>) {
             return rewrite_value_n(value, new_value,
                 detail::stored::length<traits_type>(new_value));
@@ -1443,6 +1402,82 @@ private:
             secure_current_upto(secured + n);
         }
         return secured;
+    }
+
+    class generated_buffer
+    {
+        char_type* generated_;
+        std::size_t generated_size_;
+        basic_stored_table* table_;
+
+    public:
+        explicit generated_buffer(basic_stored_table& table) noexcept :
+            generated_(nullptr), table_(&table)
+        {}
+
+        ~generated_buffer() noexcept
+        {
+            purge();
+        }
+
+        void reset(char_type* generated, std::size_t generated_size) noexcept
+        {
+            purge();
+            generated_ = generated;
+            generated_size_ = generated_size;
+        }
+
+        void commit_if_any()
+        {
+            if (generated_) {
+                table_->add_buffer(generated_, generated_size_);
+                generated_ = nullptr;
+            }
+        }
+
+    private:
+        void purge() noexcept
+        {
+            if (generated_) {
+                table_->consume_buffer(generated_, generated_size_);
+            }
+        }
+    };
+
+    template <class InputIterator, class InputIteratorEnd>
+    value_type& rewrite_value_input(value_type& value,
+        InputIterator new_value_begin, InputIteratorEnd new_value_end)
+    {
+        generated_buffer generated(*this);
+
+        auto [cb, ce] = store_.get_current();
+        if (!cb) {
+            const auto [b, bn] = generate_buffer(buffer_size_);     // throw
+            std::tie(cb, ce) = std::make_pair(b, b + bn);
+            generated.reset(b, bn);
+        }
+
+        constexpr auto smax = std::numeric_limits<std::size_t>::max();
+
+        char_type* i = cb;
+        for (; new_value_begin != new_value_end; ++new_value_begin) {
+            traits_type::assign(*i, *new_value_begin);
+            ++i;
+            if (i == ce) {
+                const std::size_t cn = i - cb;
+                const auto gn = (cn > smax / 2) ?
+                    smax : std::max(2 * cn, buffer_size_);
+                const auto [b, bn] = generate_buffer(gn);           // throw
+                traits_type::move(b, cb, cn);
+                std::tie(cb, i, ce) = std::make_tuple(b, b + cn, b + bn);
+                generated.reset(b, bn);
+            }
+        }
+        traits_type::assign(*i, char_type());
+        generated.commit_if_any();                                  // throw
+        secure_current_upto(i + 1);
+        value = value_type(cb, i);
+        return value;
     }
 
 public:
