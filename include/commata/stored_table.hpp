@@ -2002,7 +2002,7 @@ private:
              && detail::is_callable<U&>::value,
                 bool>
         {
-            return do_end_record_no_arg(u);
+            return on_end_record_impl_no_arg(u);
         }
 
         template <class F>
