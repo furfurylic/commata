@@ -1994,43 +1994,24 @@ private:
 
         bool on_end_record(table_type& table)
         {
-            return on_end_record_impl(this->get(), table);
+            if constexpr (std::is_invocable_v<T&, table_type&>) {
+                return on_end_record_no_arg(
+                    std::bind(std::ref(this->get()), std::ref(table)));
+            } else {
+                return on_end_record_no_arg(std::ref(this->get()));
+            }
         }
 
     private:
-        template <class U>
-        static auto on_end_record_impl(U& u, table_type& table)
-         -> std::enable_if_t<std::is_invocable_v<U&, table_type&>, bool>
-        {
-            return on_end_record_impl_no_arg(
-                std::bind(std::ref(u), std::ref(table)));
-        }
-
-        template <class U>
-        static auto on_end_record_impl(U& u, table_type&)
-         -> std::enable_if_t<
-                !std::is_invocable_v<U&, table_type&>
-             && std::is_invocable_v<U&>,
-                bool>
-        {
-            return on_end_record_impl_no_arg(u);
-        }
-
         template <class F>
-        static auto on_end_record_impl_no_arg(F&& f)
-         -> std::enable_if_t<
-                std::is_void_v<decltype(std::forward<F>(f)())>, bool>
+        static bool on_end_record_no_arg(F f)
         {
-            std::forward<F>(f)();
-            return true;
-        }
-
-        template <class F>
-        static auto on_end_record_impl_no_arg(F&& f)
-         -> std::enable_if_t<
-                !std::is_void_v<decltype(std::forward<F>(f)())>, bool>
-        {
-            return std::forward<F>(f)();
+            if constexpr (std::is_void_v<std::invoke_result_t<F>>) {
+                f();
+                return true;
+            } else {
+                return f();
+            }
         }
     };
 
@@ -2058,12 +2039,7 @@ public:
         end_record_((max_record_num > 0) ?
             allocate_construct(
                 [remaining = max_record_num](table_type&) mutable {
-                    if (remaining == 1) {
-                        return false;
-                    } else {
-                        --remaining;
-                        return true;
-                    }
+                    return --remaining > 0;
                 }) : nullptr)
     {}
 
