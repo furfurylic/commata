@@ -2137,8 +2137,7 @@ public:
         update(first, last);
         table_type::traits_type::assign(*field_end_, char_type());
         if (current_buffer_holder_) {
-            auto cbh = current_buffer_holder_;
-            current_buffer_holder_ = nullptr;
+            const auto cbh = std::exchange(current_buffer_holder_, nullptr);
             table_->add_buffer(cbh, current_buffer_size_);    // throw
         }
         this->new_value(table_->content(), field_begin_, field_end_); // throw
