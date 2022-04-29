@@ -1733,18 +1733,19 @@ TEST_P(TestStoredTableBuilder, EndRecordHandler)
 
 TEST_P(TestStoredTableBuilder, EndRecordHandlerNoArg)
 {
-    const wchar_t* const s1 = L"A,B,C\nI,J,K\nX,Y,Z\n\"";
+    const wchar_t* const s1 = L"A,B,C\nI,J,K\n";
     wstored_table table(GetParam());
+    std::size_t n = 0;
     try {
         parse_csv(s1, make_stored_table_builder(table,
-            [n = 0]() mutable { // I think () is not required but VS2019 does
+            [&n] {
                 ++n;
-                return n < 2;
             }));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
 
+    ASSERT_EQ(2U, n);
     ASSERT_EQ(2U, table.size());
     ASSERT_EQ(3U, table[0].size());
     ASSERT_STREQ(L"A", table[0][0].c_str());
