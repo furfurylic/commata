@@ -906,10 +906,6 @@ private:
     }
 
 public:
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4706)
-#endif
     // Clears all elements in buffers_
     // and then splice buffers_ to buffers_cleared_back_
     void clear() noexcept
@@ -918,7 +914,8 @@ public:
             auto i = buffers_;
             do {
                 i->clear();
-            } while ((i = i->next));    // parens to squelch gcc's complaint
+                i = i->next;
+            } while (i);
             if (buffers_cleared_back_) {
                 buffers_cleared_back_->next = buffers_;
             } else {
@@ -930,9 +927,6 @@ public:
             buffers_size_ = 0;
         }
     }
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
     void swap(table_store& other)
         noexcept(at_t::propagate_on_container_swap::value
