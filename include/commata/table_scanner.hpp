@@ -566,7 +566,7 @@ public:
 
     void update(const Ch* first, const Ch* last)
     {
-        if (get_scanner() && (first != last)) {
+        if (get_scanner()) {
             if (begin_) {
                 assert(value_.empty());
                 value_.reserve((end_ - begin_) + (last - first));   // throw

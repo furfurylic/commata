@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2022-04-24 (UTC)</signature>
+<signature>2022-04-30 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -237,7 +237,9 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Called when the parser finds a non-final chunk of a field value.
                  Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
-              <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified and resides in [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
+              <p>The range [<c>f</c>, <c>l</c>) shall not be empty.
+                 The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).</p>
+              <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>), and <c>l</c> is a pointer whose pointee is const-qualified and resides in [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
                  (4) (first argument), (7) (first argument), this (second argument) or (10) (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
               <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the table handler can reach the range as non-const, it may modify the elements in the range.</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
@@ -250,7 +252,9 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Called when the parser finds a final chunk of a field value.
                  Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
-              <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified  and resides in [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
+              <p>The range [<c>f</c>, <c>l</c>) may be empty.
+                 The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).</p>
+              <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified and resides in [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
                  (4) (first argument), (7) (first argument), (9) (second argument) or this (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
               <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the table handler can reach the range as non-const, it may modify the element in the range.</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
