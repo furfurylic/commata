@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
-<title>Specification of Commata, which is just another C++14 CSV parser</title>
+<title>Specification of Commata, which is just another C++17 CSV parser</title>
 <signature>2022-05-05 (UTC)</signature>
 
 <section id="introduction">
@@ -1900,10 +1900,16 @@ namespace commata {
   template &lt;class CharInput> csv_source(CharInput) -> csv_source&lt;CharInput>;
   template &lt;class CharInput>
     void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(<nc>see below</nc>);
-  template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
+  template &lt;class... Args>   auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
     -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
+  template &lt;class CharInput> auto make_csv_source(CharInput&amp;&amp; in) noexcept(<nc>see below</nc>)
+    -> csv_source&lt;std::decay_t&lt;CharInput>>;
 
   <c>// <n><xref id="parse_csv"/>, functions that utilize the CSV parser:</n></c>
+  template &lt;class CharInput, class... OtherArgs>
+    bool parse_csv(const csv_source&lt;CharInput>&amp;  src, OtherArgs&amp;&amp;... other_args);
+  template &lt;class CharInput, class... OtherArgs>
+    bool parse_csv(      csv_source&lt;CharInput>&amp;&amp; src, OtherArgs&amp;&amp;... other_args);
   template &lt;class Arg1, class Arg2, class... OtherArgs>
     bool parse_csv(Arg1&amp;&amp; arg1, Arg2&amp;&amp; arg2, OtherArgs&amp;&amp;... other_args);
 }
@@ -2111,13 +2117,24 @@ template &lt;class CharInput>
 
         <code-item>
           <code>
-template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
+template &lt;class... Args>   auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
   -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
           </code>
           <preface>Let <c>CI</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
           <returns><c>csv_source&lt;CI>(std::forward&lt;Args>(args)...)</c>.</returns>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible_v&lt;csv_source&lt;CI>, Args&amp;&amp;...></c> is <c>true</c>.
+          <remark>This overload shall not participate in overload resolution unless <c>make_char_input(std::declval&lt;Args&amp;&amp;>()...)</c> is well-formed when treated as an unevaluated operand.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CI, Args&amp;&amp;...></c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class CharInput> auto make_csv_source(CharInput&amp;&amp; in) noexcept(<nc>see below</nc>)
+  -> csv_source&lt;std::decay_t&lt;CharInput>>;
+          </code>
+          <preface>Let <c>CI</c> be <c>std::decay_t&lt;CharInput></c>.</preface>
+          <returns><c>csv_source&lt;CI>(std::forward&lt;CharInput>(in))</c>.</returns>
+          <remark>This overload shall not participate in overload resolution if <c>make_char_input(std::declval&lt;CharInput&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CI, CharInput&amp;&amp;></c>.</remark>
         </code-item>
       </section>
     </section>
@@ -2127,18 +2144,32 @@ template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcep
 
       <code-item>
         <code>
+template &lt;class CharInput, class... OtherArgs>
+  bool parse_csv(const csv_source&lt;CharInput>&amp;  src, OtherArgs&amp;&amp;... other_args);
+        </code>
+        <effects>Equivalent to: <c>return src(std::forward&lt;OtherArgs>(other_args)...)();</c>.</effects>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class CharInput, class... OtherArgs>
+  bool parse_csv(      csv_source&lt;CharInput>&amp;&amp; src, OtherArgs&amp;&amp;... other_args);
+        </code>
+        <effects>Equivalent to: <c>return std::move(src)(std::forward&lt;OtherArgs>(other_args)...)();</c>.</effects>
+      </code-item>
+
+      <code-item>
+        <code>
 template &lt;class Arg1, class Arg2, class... OtherArgs>
   bool parse_csv(Arg1&amp;&amp; arg1, Arg2&amp;&amp; arg2, OtherArgs&amp;&amp;... other_args);
         </code>
-        <effects><p>If <c>make_csv_source(std::declval&lt;Arg1>(), std::declval&lt;Arg2>())</c> is well-formed when treated as an unevaluated operand, equivalent to:</p>
-                 <code>return make_csv_source(std::forward&lt;Arg1>(arg1), std::forward&lt;Arg2>(arg2))
-                      (std::forward&lt;OtherArgs>(other_args)...)
-                      ();</code>
+        <effects><p>If <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand, equivalent to:</p>
+                 <code>return parse_csv(make_csv_source(std::forward&lt;Arg1>(arg1), std::forward&lt;Arg2>(arg2)),
+                 std::forward&lt;OtherArgs>(other_args)...);</code>
                  <p>Otherwise, equivalent to:</p>
-                 <code>return make_csv_source(std::forward&lt;Arg1>(arg1))
-                      (std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs>(other_args)...)
-                      ();</code></effects>
-        <remark>This function template shall not participate in overload resolution unless either of <c>make_csv_source(std::declval&lt;Arg1>())</c> or <c>make_csv_source(std::declval&lt;Arg1>(), std::declval&lt;Arg2>())</c> is well-formed when treated as an unevaluated operand.</remark>
+                 <code>return parse_csv(make_csv_source(std::forward&lt;Arg1>(arg1)),
+                 std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs>(other_args)...);</code></effects>
+        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not an instance of <c>csv_source</c> and either of <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
     </section>
   </section>

@@ -882,69 +882,101 @@ auto swap(csv_source<CharInput>& left, csv_source<CharInput>& right)
     left.swap(right);
 }
 
+namespace detail::csv {
+
+struct are_make_char_input_args_impl
+{
+    template <class... Args>
+    static auto check(std::void_t<Args...>*) -> decltype(
+        make_char_input(std::declval<Args>()...),
+        std::true_type());
+
+    template <class...>
+    static auto check(...) -> std::false_type;
+};
+
+template <class... Args>
+constexpr bool are_make_char_input_args_v =
+    decltype(are_make_char_input_args_impl::check<Args...>(nullptr))();
+
+}
+
 template <class... Args>
 auto make_csv_source(Args&&... args)
     noexcept(std::is_nothrow_constructible_v<
-        decltype(make_char_input(std::forward<Args>(args)...)), Args...>)
+        decltype(make_char_input(std::forward<Args>(args)...)), Args&&...>)
  -> std::enable_if_t<
-        std::is_constructible_v<
-            csv_source<decltype(make_char_input(std::forward<Args>(args)...))>,
-            Args&&...>,
+        detail::csv::are_make_char_input_args_v<Args&&...>,
         csv_source<decltype(make_char_input(std::forward<Args>(args)...))>>
 {
     return csv_source<decltype(make_char_input(std::forward<Args>(args)...))>(
         std::forward<Args>(args)...);
 }
 
+template <class CharInput>
+auto make_csv_source(CharInput&& input)
+    noexcept(std::is_nothrow_constructible_v<
+        std::decay_t<CharInput>, CharInput>)
+ -> std::enable_if_t<
+        !detail::csv::are_make_char_input_args_v<CharInput&&>,
+        csv_source<std::decay_t<CharInput>>>
+{
+    return csv_source<std::decay_t<CharInput>>(std::forward<CharInput>(input));
+}
+
 namespace detail::csv {
 
-struct are_make_csv_source_args1_impl
+struct are_make_csv_source_args_impl
 {
-    template <class Arg1>
-    static auto check(std::decay_t<Arg1>*) -> decltype(
-        make_csv_source(std::declval<Arg1>()),
+    template <class... Args>
+    static auto check(std::void_t<Args...>*) -> decltype(
+        make_csv_source(std::declval<Args>()...),
         std::true_type());
 
-    template <class Arg1>
+    template <class...>
     static auto check(...) -> std::false_type;
 };
 
-template <class Arg1>
-constexpr bool are_make_csv_source_args1_v =
-    decltype(are_make_csv_source_args1_impl::check<Arg1>(nullptr))();
+template <class... Args>
+constexpr bool are_make_csv_source_args_v =
+    decltype(are_make_csv_source_args_impl::check<Args...>(nullptr))();
 
-struct are_make_csv_source_args2_impl
+template <class T>
+constexpr bool is_csv_source = false;
+
+template <class CharInput>
+constexpr bool is_csv_source<csv_source<CharInput>> = true;
+
+}
+
+template <class CharInput, class... OtherArgs>
+bool parse_csv(const csv_source<CharInput>& src, OtherArgs&&... other_args)
 {
-    template <class Arg1, class Arg2>
-    static auto check(std::decay_t<Arg1>*) -> decltype(
-        make_csv_source(std::declval<Arg1>(), std::declval<Arg2>()),
-        std::true_type());
+    return src(std::forward<OtherArgs>(other_args)...)();
+}
 
-    template <class Arg1, class Arg2>
-    static auto check(...) -> std::false_type;
-};
-
-template <class Arg1, class Arg2>
-constexpr bool are_make_csv_source_args2_v =
-    decltype(are_make_csv_source_args2_impl::check<Arg1, Arg2>(nullptr))();
-
-} // detail::csv
+template <class CharInput, class... OtherArgs>
+bool parse_csv(csv_source<CharInput>&& src, OtherArgs&&... other_args)
+{
+    return std::move(src)(std::forward<OtherArgs>(other_args)...)();
+}
 
 template <class Arg1, class Arg2, class... OtherArgs>
 auto parse_csv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)
  -> std::enable_if_t<
-        detail::csv::are_make_csv_source_args1_v<Arg1>
-     || detail::csv::are_make_csv_source_args2_v<Arg1, Arg2>,
+        !detail::csv::is_csv_source<std::decay_t<Arg1>>
+     && (detail::csv::are_make_csv_source_args_v<Arg1&&>
+      || detail::csv::are_make_csv_source_args_v<Arg1&&, Arg2&&>),
         bool>
 {
-    if constexpr (detail::csv::are_make_csv_source_args2_v<Arg1, Arg2>) {
-        return make_csv_source(
-                std::forward<Arg1>(arg1), std::forward<Arg2>(arg2))
-            (std::forward<OtherArgs>(other_args)...)();
+    if constexpr (detail::csv::are_make_csv_source_args_v<Arg1&&, Arg2&&>) {
+        return parse_csv(make_csv_source(std::forward<Arg1>(arg1),
+                                         std::forward<Arg2>(arg2)),
+                         std::forward<OtherArgs>(other_args)...);
     } else {
-        return make_csv_source(std::forward<Arg1>(arg1))
-            (std::forward<Arg2>(arg2),
-                std::forward<OtherArgs>(other_args)...)();
+        return parse_csv(make_csv_source(std::forward<Arg1>(arg1)),
+                         std::forward<Arg2>(arg2),
+                         std::forward<OtherArgs>(other_args)...);
     }
 }
 
