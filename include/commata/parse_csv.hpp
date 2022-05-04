@@ -885,7 +885,7 @@ auto swap(csv_source<CharInput>& left, csv_source<CharInput>& right)
 template <class... Args>
 auto make_csv_source(Args&&... args)
     noexcept(std::is_nothrow_constructible_v<
-        decltype(make_char_input(std::forward<Args>(args)...))>)
+        decltype(make_char_input(std::forward<Args>(args)...)), Args...>)
  -> std::enable_if_t<
         std::is_constructible_v<
             csv_source<decltype(make_char_input(std::forward<Args>(args)...))>,
