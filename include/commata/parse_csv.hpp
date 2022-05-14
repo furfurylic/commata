@@ -791,7 +791,7 @@ public:
     template <class Handler>
     auto operator()(Handler&& handler) const&
         noexcept(
-            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler>
+            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
          && std::is_nothrow_copy_constructible_v<CharInput>)
      -> std::enable_if_t<without_allocator<Handler>::enabled,
             parser_type<std::decay_t<Handler>>>
@@ -803,7 +803,7 @@ public:
     template <class Handler>
     auto operator()(Handler&& handler) &&
         noexcept(
-            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler>
+            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
          && std::is_nothrow_move_constructible_v<CharInput>)
      -> std::enable_if_t<without_allocator<Handler>::enabled,
             parser_type<std::decay_t<Handler>>>
@@ -816,7 +816,7 @@ public:
     auto operator()(Handler&& handler, std::size_t buffer_size = 0,
             const Allocator& alloc = Allocator()) const&
         noexcept(
-            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler>
+            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
          && std::is_nothrow_copy_constructible_v<CharInput>)
      -> std::enable_if_t<
             with_allocator<Handler, Allocator>::enabled,
@@ -831,7 +831,7 @@ public:
     auto operator()(Handler&& handler,
         std::size_t buffer_size = 0, const Allocator& alloc = Allocator()) &&
         noexcept(
-            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler>
+            std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
          && std::is_nothrow_move_constructible_v<CharInput>)
      -> std::enable_if_t<
             with_allocator<Handler, Allocator>::enabled,
@@ -916,7 +916,7 @@ auto make_csv_source(Args&&... args)
 template <class CharInput>
 auto make_csv_source(CharInput&& input)
     noexcept(std::is_nothrow_constructible_v<
-        std::decay_t<CharInput>, CharInput>)
+        std::decay_t<CharInput>, CharInput&&>)
  -> std::enable_if_t<
         !detail::csv::are_make_char_input_args_v<CharInput&&>,
         csv_source<std::decay_t<CharInput>>>

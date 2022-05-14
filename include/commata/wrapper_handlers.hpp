@@ -153,7 +153,7 @@ auto swap(
 template <class Handler>
 auto make_empty_physical_line_aware(Handler&& handler)
     noexcept(
-        std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler>)
+        std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>)
  -> std::enable_if_t<
         !detail::is_std_reference_wrapper_v<std::decay_t<Handler>>,
         std::conditional_t<

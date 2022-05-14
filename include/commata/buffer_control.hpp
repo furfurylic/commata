@@ -117,7 +117,7 @@ public:
                                std::decay_t<HandlerR>>>* = nullptr>
     explicit full_fledged_handler(HandlerR&& handler,
         BufferControlR&& buffer_engine = BufferControl())
-        noexcept(std::is_nothrow_constructible_v<Handler, HandlerR>) :
+        noexcept(std::is_nothrow_constructible_v<Handler, HandlerR&&>) :
         BufferControl(std::forward<BufferControlR>(buffer_engine)),
         handler_(std::forward<HandlerR>(handler))
     {}

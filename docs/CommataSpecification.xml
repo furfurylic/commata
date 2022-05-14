@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2022-05-05 (UTC)</signature>
+<signature>2022-05-14 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2010,7 +2010,7 @@ template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept
           <effects>Initializes <c>in</c> with <c>std::forward&lt;Args>(args)...</c>.</effects>
           <remark><p>This constructor shall not participate in overload resolution unless:</p>
                   <ul>
-                    <li><c>std::is_constructible_v&lt;CharInput, Args...></c> is <c>true</c> and</li>
+                    <li><c>std::is_constructible_v&lt;CharInput, Args&amp;&amp;...></c> is <c>true</c> and</li>
                     <li><c>sizeof...(Args)</c> is not equal to <c>1</c> or <c>std::is_base_of_v&lt;csv_source&lt;CharInput>, std::decay_t&lt;Args...>></c> is <c>false</c>.</li>
                   </ul>
                   <p>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CharInput, Args&amp;&amp;...></c>.</p></remark>
@@ -2034,8 +2034,8 @@ template &lt;class HandlerR>
                    and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler.</returns>
           <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is deemed to have buffer control.
                   The expression inside <c>noexcept</c> is equivalent to
-                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR> &amp;&amp; std::is_nothrow_copy_constructible&lt;CharInput></c> (first form) or
-                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR> &amp;&amp; std::is_nothrow_move_constructible&lt;CharInput></c> (second form).</remark>
+                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible&lt;CharInput></c> (first form) or
+                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible&lt;CharInput></c> (second form).</remark>
         </code-item>
 
         <code-item>
@@ -2058,8 +2058,8 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
           <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
                   The expression inside <c>noexcept</c> is equivalent to
-                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;CharInput></c> (first form) or
-                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR> &amp;&amp; std::is_nothrow_move_constructible_v&lt;CharInput></c> (second form).</remark>
+                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;CharInput></c> (first form) or
+                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible_v&lt;CharInput></c> (second form).</remark>
         </code-item>
 
         <code-item>
@@ -2069,7 +2069,7 @@ template &lt;class Handler, class... Args>
                        Args&amp;&amp;... args) const&amp; noexcept;
           </code>
           <effects>Equivalent to: <c>return (*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
-          <remark>This operator shall not participate in overload resolution unless <c>std::is_invocable_v&lt;const csv_source&amp;, reference_handler&lt;Handler>, Args&amp;&amp;...></c> is <c>true</c>.
+          <remark>This operator shall not participate in overload resolution unless <c>std::is_invocable_v&lt;const csv_source&amp;, reference_handler&lt;Handler>&amp;&amp;, Args&amp;&amp;...></c> is <c>true</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;CharInput></c>.</remark>
         </code-item>
 
@@ -2080,7 +2080,7 @@ template &lt;class Handler, class... Args>
                        Args&amp;&amp;... args) &amp;&amp; noexcept;
           </code>
           <effects>Equivalent to: <c>return std::move(*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
-          <remark>This operator shall not participate in overload resolution unless <c>std::is_invocable_v&lt;csv_source, reference_handler&lt;Handler>, Args&amp;&amp;...></c> is <c>true</c>.
+          <remark>This operator shall not participate in overload resolution unless <c>std::is_invocable_v&lt;csv_source&amp;&amp;, reference_handler&lt;Handler>&amp;&amp;, Args&amp;&amp;...></c> is <c>true</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;CharInput></c>.</remark>
         </code-item>
       </section>
@@ -5026,12 +5026,12 @@ template &lt;class... Args> explicit replace_if_skipped(Args&amp;&amp;... args) 
             </code>
             <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Args>(args)...</c>.</effects>
             <remark>Let <c>DF</c> be <c>std::decay_t&lt;F></c> where <c>F</c> is the first type of <c>Args</c> when <c>sizeof...(Args)</c> is equal to <c>1</c>.
-                    This constrcutor shall not participate in overload resolution unless <c>std::is_constructible_v&lt;T, Args...></c> is <c>true</c> and,
+                    This constrcutor shall not participate in overload resolution unless <c>std::is_constructible_v&lt;T, Args&amp;&amp;...></c> is <c>true</c> and,
                     <c>sizeof...(Args)</c> is not equal to <c>1</c> or
                     none of <c>std::is_base_of_v&lt;replace_if_skipped&lt;T>, DF></c>,
                     <c>std::is_base_of_v&lt;replacement_fail_t, DF></c> or
                     <c>std::is_base_of_v&lt;replacement_ignore_t, DF></c> is <c>true</c>.
-                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;T, Args...></c>.</remark>
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;T, Args&amp;&amp;...></c>.</remark>
           </code-item>
 
           <code-item>
@@ -5660,7 +5660,7 @@ template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
     ConversionErrorHandlerR&amp;&amp; handle_conversion_error =
       std::decay_t&lt;ConversionErrorHandlerR>());
             </code>
-            <requires><c>std::is_constructible_v&lt;Sink, SinkR></c>, <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR></c> and <c>std::is_constructible_v&lt;ConversionErrorHandler, ConversionErrorHandlerR></c> shall all be <c>true</c>.</requires>
+            <requires><c>std::is_constructible_v&lt;Sink, SinkR&amp;&amp;></c>, <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> and <c>std::is_constructible_v&lt;ConversionErrorHandler, ConversionErrorHandlerR&amp;&amp;></c> shall all be <c>true</c>.</requires>
             <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds objects of <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandler>(handle_conversion_error)</c>
                      as the field translator sink object, the skipping handler object and the conversion error handler object respectively.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler>, std::decay_t&lt;SinkR>></c> is <c>false</c>.</remark>
@@ -5896,7 +5896,7 @@ explicit locale_based_arithmetic_field_translator(
   ConversionErrorHandlerR&amp;&amp; handle_conversion_error =
     std::decay_t&lt;ConversionErrorHandlerR>());
             </code>
-            <requires><c>std::is_constructible_v&lt;Sink, SinkR></c>, <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR></c> and <c>std::is_constructible_v&lt;ConversionErrorHandler, ConversionErrorHandlerR></c> shall all be <c>true</c>.</requires>
+            <requires><c>std::is_constructible_v&lt;Sink, SinkR&amp;&amp;></c>, <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> and <c>std::is_constructible_v&lt;ConversionErrorHandler, ConversionErrorHandlerR&amp;&amp;></c> shall all be <c>true</c>.</requires>
             <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds objects of <c>Sink</c>, <c>std::locale</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c>, <c>loc</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandler>(handle_conversion_error)</c>
                      as the field translator sink object, the locale object, the skipping handler object and the conversion error handler object respectively.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;locale_based_arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler>, std::decay_t&lt;SinkR>></c> is <c>false</c>.</remark>
@@ -6014,7 +6014,7 @@ template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
   explicit string_field_translator(
     SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
             </code>
-            <requires>Both of <c>std::is_constructible_v&lt;Sink, SinkR></c> and <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR></c> shall be <c>true</c>.
+            <requires>Both of <c>std::is_constructible_v&lt;Sink, SinkR&amp;&amp;></c> and <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> shall be <c>true</c>.
                       <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
             <effects>Initializes an object of <c>string_field_translator</c> that holds a default constructed <c>Allocator</c> object as its allocator, and objects of <c>Sink</c> and <c>SkippingHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c> and <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> as the field translator sink object and the skipping handler object respectively.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;string_field_translator&lt;Sink, Ch, Tr, Allocator, SkippingHandler>, std::decay_t&lt;SinkR>></c> is <c>false</c>.</remark>
@@ -6027,7 +6027,7 @@ template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
     std::allocator_arg_t, const Allocator&amp; alloc, SinkR&amp;&amp; sink,
     SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
             </code>
-            <requires>Both of <c>std::is_constructible_v&lt;Sink, SinkR></c> and <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR></c> shall be <c>true</c>.</requires>
+            <requires>Both of <c>std::is_constructible_v&lt;Sink, SinkR&amp;&amp;></c> and <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> shall be <c>true</c>.</requires>
             <effects>Initializes an object of <c>string_field_translator</c> that holds objects of <c>Allocator</c>, <c>Sink</c> and <c>SkippingHandler</c> initialized with <c>alloc</c>, <c>std::forward&lt;SinkR>(sink)</c> and <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> as the allocator, the field translator sink object and the skipping handler object respectively.</effects>
           </code-item>
 
@@ -6136,7 +6136,7 @@ template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
   explicit string_view_field_translator(
     SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
             </code>
-            <requires>Both of <c>std::is_constructible_v&lt;Sink, SinkR></c> and <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR></c> shall be <c>true</c>.</requires>
+            <requires>Both of <c>std::is_constructible_v&lt;Sink, SinkR&amp;&amp;></c> and <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> shall be <c>true</c>.</requires>
             <effects>Initializes an object of <c>string_field_translator</c> that holds objects of <c>Sink</c> and <c>SkippingHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c> and <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> as the field translator sink object and the skipping handler object respectively.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;string_view_field_translator&lt;Sink, Ch, Tr, SkippingHandler>, std::decay_t&lt;SinkR>></c> is <c>false</c>.</remark>
           </code-item>
@@ -6220,7 +6220,7 @@ template &lt;class T, class SinkR, class... Appendices>
                          <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
                            <ul>
                              <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, Appendices1...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
                              <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, Appendices...></c>;</li>
                            </ul>
                          </li>
@@ -6232,7 +6232,7 @@ template &lt;class T, class SinkR, class... Appendices>
                          <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
                            <ul>
                              <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, fail_if_skipped, Appendices1...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F></c> is <c>true</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
                              <li>otherwise, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, Appendices...></c>;</li>
                            </ul>
                          </li>
@@ -6244,7 +6244,7 @@ template &lt;class T, class SinkR, class... Appendices>
                          <li>otherwise, with <c>F</c> being the second type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices2...</c> representing the types of <c>Appendices...</c> without its first two types:
                            <ul>
                              <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, fail_if_skipped, Appendices2...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F></c> is <c>true</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, Appendices2...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, Appendices2...></c>,</li>
                              <li>otherwise, <c>locale_based_arithmetic_field_translator&lt;Sink, T, Appendices2...></c>;</li>
                            </ul>
                          </li>
@@ -6256,7 +6256,7 @@ template &lt;class T, class SinkR, class... Appendices>
                          <li>otherwise, with <c>F</c> being the first type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
                            <ul>
                              <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>arithmetic_field_translator&lt;Sink, T, fail_if_skipped, Appendices1...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F></c> is <c>true</c>, <c>arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
                              <li>otherwise, <c>arithmetic_field_translator&lt;Sink, T, Appendices...></c>.</li>
                            </ul>
                          </li>
@@ -6281,7 +6281,7 @@ template &lt;class T, class Allocator, class SinkR, class... Appendices>
                        <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
                          <ul>
                            <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, Appendices1...></c>,</li>
-                           <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
+                           <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
                            <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, Appendices...></c>;</li>
                          </ul>
                        </li>

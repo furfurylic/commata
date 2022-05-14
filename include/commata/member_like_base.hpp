@@ -25,9 +25,11 @@ class member_like_base<F,
 public:
     template <class... Args,
         std::enable_if_t<
-            !std::is_base_of_v<member_like_base, first_t<Args...>>>* = nullptr>
+            !std::is_base_of_v<
+                member_like_base,
+                first_t<std::decay_t<Args>...>>>* = nullptr>
     explicit member_like_base(Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<F, Args...>) :
+        noexcept(std::is_nothrow_constructible_v<F, Args&&...>) :
         f_(std::forward<Args>(args)...)
     {}
 
@@ -50,9 +52,11 @@ class member_like_base<F,
 public:
     template <class... Args,
         std::enable_if_t<
-            !std::is_base_of_v<member_like_base, first_t<Args...>>>* = nullptr>
+            !std::is_base_of_v<
+                member_like_base,
+                first_t<std::decay_t<Args>...>>>* = nullptr>
     explicit member_like_base(Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<F, Args...>) :
+        noexcept(std::is_nothrow_constructible_v<F, Args&&...>) :
         F(std::forward<Args>(args)...)
     {}
 
@@ -76,8 +80,8 @@ class base_member_pair
 
         template <class C, class N>
         pair(C&& base, N&& member)
-            noexcept(std::is_nothrow_constructible_v<B, C>
-                  && std::is_nothrow_constructible_v<M, N>) :
+            noexcept(std::is_nothrow_constructible_v<B, C&&>
+                  && std::is_nothrow_constructible_v<M, N&&>) :
             member_like_base<B>(std::forward<C>(base)),
             m(std::forward<N>(member))
         {}
@@ -88,8 +92,8 @@ class base_member_pair
 public:
     template <class C, class N>
     base_member_pair(C&& first, N&& second)
-        noexcept(std::is_nothrow_constructible_v<B, C>
-              && std::is_nothrow_constructible_v<M, N>) :
+        noexcept(std::is_nothrow_constructible_v<B&&, C&&>
+              && std::is_nothrow_constructible_v<M&&, N&&>) :
         p_(std::forward<C>(first), std::forward<N>(second))
     {}
 

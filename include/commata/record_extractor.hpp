@@ -474,6 +474,10 @@ private:
     }
 };
 
+template <class T, class Ch, class Tr>
+constexpr bool is_string_pred_v =
+    std::is_invocable_r_v<bool, T&, const std::basic_string_view<Ch, Tr>&>;
+
 } // end detail::record_extraction
 
 enum class header_forwarding : std::uint_fast8_t
@@ -487,11 +491,11 @@ class record_extractor :
     public detail::record_extraction::impl<
         FieldNamePred, FieldValuePred, Ch, Tr, Allocator>
 {
-    static_assert(std::is_invocable_r_v<bool, FieldNamePred,
-                    std::basic_string_view<Ch, Tr>>,
+    static_assert(detail::record_extraction::
+                    is_string_pred_v<FieldNamePred, Ch, Tr>,
         "FieldNamePred of record_extractor is not a valid invocable type");
-    static_assert(std::is_invocable_r_v<bool, FieldValuePred,
-                    std::basic_string_view<Ch, Tr>>,
+    static_assert(detail::record_extraction::
+                    is_string_pred_v<FieldValuePred, Ch, Tr>,
         "FieldValuePred of record_extractor is not a valid invocable type");
 
     using base = detail::record_extraction::impl<
@@ -556,8 +560,8 @@ class record_extractor_with_indexed_key :
         detail::record_extraction::hollow_field_name_pred, FieldValuePred,
         Ch, Tr, Allocator>
 {
-    static_assert(std::is_invocable_r_v<bool, FieldValuePred,
-                        std::basic_string_view<Ch, Tr>>,
+    static_assert(detail::record_extraction::
+                    is_string_pred_v<FieldValuePred, Ch, Tr>,
         "FieldValuePred of record_extractor_with_indexed_key "
         "is not a valid invocable type");
 
@@ -670,10 +674,6 @@ auto make_string_pred(T&& s, const Allocator& a)
         return std::forward<T>(s);
     }
 }
-
-template <class T, class Ch, class Tr>
-constexpr bool is_string_pred_v =
-    std::is_invocable_r_v<bool, T, std::basic_string_view<Ch, Tr>>;
 
 } // end detail::record_extraction
 

@@ -166,7 +166,7 @@ class basic_table_scanner
         void field_value(Ch* begin, Ch* end,
             [[maybe_unused]] basic_table_scanner& me) override
         {
-            if constexpr (std::is_invocable_v<decltype(scanner()), Ch*, Ch*>) {
+            if constexpr (std::is_invocable_v<FieldScanner&, Ch*, Ch*>) {
                 scanner()(begin, end);
             } else {
                 scanner()(string_t(begin, end, me.get_allocator()));
@@ -175,7 +175,7 @@ class basic_table_scanner
 
         void field_value(string_t&& value, basic_table_scanner&) override
         {
-            if constexpr (std::is_invocable_v<decltype(scanner()), string_t>) {
+            if constexpr (std::is_invocable_v<FieldScanner&, string_t&&>) {
                 scanner()(std::move(value));
             } else {
                 scanner()(value.data(), value.data() + value.size());
@@ -1423,7 +1423,7 @@ class replace_if_skipped
 public:
     template <class... Args,
         std::enable_if_t<
-            std::is_constructible_v<T, Args...>
+            std::is_constructible_v<T, Args&&...>
          && !((sizeof...(Args) == 1)
            && (std::is_base_of_v<replace_if_skipped,
                 detail::first_t<std::decay_t<Args>...>>
@@ -1949,9 +1949,9 @@ struct base<T, 3> : base<T, 0>
     template <class Empty = T, class InvalidFormat = T,
         class AboveUpperLimit = T,
         std::enable_if_t<
-            is_acceptable_arg_v<T, Empty>
-         && is_acceptable_arg_v<T, InvalidFormat>
-         && is_acceptable_arg_v<T, AboveUpperLimit>>* = nullptr>
+            is_acceptable_arg_v<T, Empty&&>
+         && is_acceptable_arg_v<T, InvalidFormat&&>
+         && is_acceptable_arg_v<T, AboveUpperLimit&&>>* = nullptr>
     explicit base(
         Empty&& on_empty = Empty(),
         InvalidFormat&& on_invalid_format = InvalidFormat(),
@@ -1976,20 +1976,20 @@ struct base<T, 4> : base<T, 3>
     template <class Empty, class InvalidFormat,
         class AboveUpperLimit, class BelowLowerLimit,
         std::enable_if_t<
-            is_acceptable_arg_v<T, Empty>
-         && is_acceptable_arg_v<T, InvalidFormat>
-         && is_acceptable_arg_v<T, AboveUpperLimit>
-         && is_acceptable_arg_v<T, BelowLowerLimit>>* = nullptr>
+            is_acceptable_arg_v<T, Empty&&>
+         && is_acceptable_arg_v<T, InvalidFormat&&>
+         && is_acceptable_arg_v<T, AboveUpperLimit&&>
+         && is_acceptable_arg_v<T, BelowLowerLimit&&>>* = nullptr>
     base(
         Empty&& on_empty,
         InvalidFormat&& on_invalid_format,
         AboveUpperLimit&& on_above_upper_limit,
         BelowLowerLimit&& on_below_lower_limit)
             noexcept(std::is_nothrow_default_constructible_v<T>
-                  && is_nothrow_arg_v<T, Empty>
-                  && is_nothrow_arg_v<T, InvalidFormat>
-                  && is_nothrow_arg_v<T, AboveUpperLimit>
-                  && is_nothrow_arg_v<T, BelowLowerLimit>) :
+                  && is_nothrow_arg_v<T, Empty&&>
+                  && is_nothrow_arg_v<T, InvalidFormat&&>
+                  && is_nothrow_arg_v<T, AboveUpperLimit&&>
+                  && is_nothrow_arg_v<T, BelowLowerLimit&&>) :
         base<T, 3>(
             detail::scanner::generic_args_t(),
             std::forward<Empty>(on_empty),
@@ -2589,7 +2589,7 @@ template <class T, class Sink, class ReplaceIfSkipped, class... As,
      && !detail::is_std_string_view_v<T>
      && !std::is_base_of_v<std::locale, std::decay_t<ReplaceIfSkipped>>
      && !std::is_base_of_v<replacement_fail_t,std::decay_t<ReplaceIfSkipped>>
-     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
+     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped&&>,
         std::nullptr_t> = nullptr>
 arithmetic_field_translator<T, Sink, replace_if_skipped<T>, As...>
     make_field_translator_na(Sink, ReplaceIfSkipped&&, As...);
@@ -2617,7 +2617,7 @@ template <class T, class Sink, class ReplaceIfSkipped, class... As,
     std::enable_if_t<
         !detail::is_std_string_v<T>
      && !std::is_base_of_v<replacement_fail_t, std::decay_t<ReplaceIfSkipped>>
-     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
+     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped&&>,
         std::nullptr_t> = nullptr>
 locale_based_arithmetic_field_translator<T, Sink, replace_if_skipped<T>, As...>
     make_field_translator_na(Sink, std::locale, ReplaceIfSkipped&&, As...);
@@ -2644,7 +2644,7 @@ template <class T, class Sink, class ReplaceIfSkipped,
     std::enable_if_t<
         detail::is_std_string_v<T>
      && !std::is_base_of_v<replacement_fail_t, std::decay_t<ReplaceIfSkipped>>
-     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
+     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped&&>,
         std::nullptr_t> = nullptr>
 string_field_translator<Sink,
         typename T::value_type, typename T::traits_type,
@@ -2674,7 +2674,7 @@ template <class T, class Sink, class ReplaceIfSkipped,
     std::enable_if_t<
         detail::is_std_string_view_v<T>
      && !std::is_base_of_v<replacement_fail_t, std::decay_t<ReplaceIfSkipped>>
-     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped>,
+     && std::is_constructible_v<replace_if_skipped<T>, ReplaceIfSkipped&&>,
         std::nullptr_t> = nullptr>
 string_view_field_translator<Sink,
         typename T::value_type, typename T::traits_type, replace_if_skipped<T>>

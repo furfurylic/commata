@@ -76,7 +76,7 @@ public:
     tracking_allocator& operator=(
         tracking_allocator<OtherBaseAllocator>&& other)
         noexcept(std::is_nothrow_assignable_v<
-            BaseAllocator&, OtherBaseAllocator>)
+            BaseAllocator&, OtherBaseAllocator&&>)
     {
         static_cast<BaseAllocator&>(*this) = std::move(other);
         allocated_ = other.allocated_;
