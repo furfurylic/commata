@@ -1957,6 +1957,47 @@ using arrange = std::conditional_t<
     (Options & stored_table_builder_option_transpose) != 0U,
     arrange_transposing<Content>, arrange_as_is<Content>>;
 
+template <class StoredTable>
+struct end_record_handler
+{
+    virtual ~end_record_handler() {}
+    virtual bool on_end_record(StoredTable& table) = 0;
+};
+
+template <class StoredTable, class T>
+struct typed_end_record_handler :
+    end_record_handler<StoredTable>, private detail::member_like_base<T>
+{
+    template <class U>
+    explicit typed_end_record_handler(U&& t) :
+        detail::member_like_base<T>(std::forward<U>(t))
+    {}
+
+    typed_end_record_handler(typed_end_record_handler&&) = delete;
+
+    bool on_end_record(StoredTable& table)
+    {
+        if constexpr (std::is_invocable_v<T&, StoredTable&>) {
+            return on_end_record_no_arg(
+                std::bind(std::ref(this->get()), std::ref(table)));
+        } else {
+            return on_end_record_no_arg(std::ref(this->get()));
+        }
+    }
+
+private:
+    template <class F>
+    static bool on_end_record_no_arg(F f)
+    {
+        if constexpr (std::is_void_v<std::invoke_result_t<F>>) {
+            f();
+            return true;
+        } else {
+            return f();
+        }
+    }
+};
+
 } // end detail::stored
 
 template <class Content, class Allocator,
@@ -1969,48 +2010,9 @@ public:
     using char_type = typename table_type::char_type;
 
 private:
-    struct end_record_handler
-    {
-        virtual ~end_record_handler() {}
-        virtual bool on_end_record(table_type& table) = 0;
-    };
-
-    template <class T>
-    struct typed_end_record_handler :
-        end_record_handler, private detail::member_like_base<T>
-    {
-        template <class U>
-        explicit typed_end_record_handler(U&& t) :
-            detail::member_like_base<T>(std::forward<U>(t))
-        {}
-
-        typed_end_record_handler(typed_end_record_handler&&) = delete;
-
-        bool on_end_record(table_type& table)
-        {
-            if constexpr (std::is_invocable_v<T&, table_type&>) {
-                return on_end_record_no_arg(
-                    std::bind(std::ref(this->get()), std::ref(table)));
-            } else {
-                return on_end_record_no_arg(std::ref(this->get()));
-            }
-        }
-
-    private:
-        template <class F>
-        static bool on_end_record_no_arg(F f)
-        {
-            if constexpr (std::is_void_v<std::invoke_result_t<F>>) {
-                f();
-                return true;
-            } else {
-                return f();
-            }
-        }
-    };
-
+    using h_t = detail::stored::end_record_handler<table_type>;
     using ph_t = typename std::allocator_traits<Allocator>::
-                    template rebind_traits<end_record_handler>::pointer;
+        template rebind_traits<h_t>::pointer;
 
 private:
     char_type* current_buffer_holder_;
@@ -2080,17 +2082,17 @@ private:
     template <class T>
     ph_t allocate_construct(T&& t)
     {
-        using dt_t = std::decay_t<T>;
-        using h_t = typed_end_record_handler<dt_t>;
+        using t_t = std::decay_t<T>;
+        using th_t = detail::stored::typed_end_record_handler<table_type, t_t>;
 
         using at_t = typename std::allocator_traits<Allocator>::
-                        template rebind_traits<h_t>;
+                        template rebind_traits<th_t>;
         using a_t = typename at_t::allocator_type;
         a_t a(table_->get_allocator());
 
-        const auto p = at_t::allocate(a, 1);                    // throw
+        const auto p = at_t::allocate(a, 1);                        // throw
         try {
-            ::new (std::addressof(*p)) h_t(std::forward<T>(t)); // throw
+            ::new (std::addressof(*p)) th_t(std::forward<T>(t));    // throw
         } catch (...) {
             at_t::deallocate(a, p, 1);
             throw;
@@ -2101,7 +2103,7 @@ private:
     void destroy_deallocate(ph_t p) noexcept
     {
         using at_t = typename std::allocator_traits<Allocator>::
-                        template rebind_traits<end_record_handler>;
+                        template rebind_traits<h_t>;
         using a_t = typename at_t::allocator_type;
         a_t a(table_->get_allocator());
 
