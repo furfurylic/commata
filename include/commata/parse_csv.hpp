@@ -905,9 +905,7 @@ template <class... Args>
 auto make_csv_source(Args&&... args)
     noexcept(std::is_nothrow_constructible_v<
         decltype(make_char_input(std::forward<Args>(args)...)), Args&&...>)
- -> std::enable_if_t<
-        detail::csv::are_make_char_input_args_v<Args&&...>,
-        csv_source<decltype(make_char_input(std::forward<Args>(args)...))>>
+ -> csv_source<decltype(make_char_input(std::forward<Args>(args)...))>
 {
     return csv_source<decltype(make_char_input(std::forward<Args>(args)...))>(
         std::forward<Args>(args)...);
