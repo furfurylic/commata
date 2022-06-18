@@ -1103,6 +1103,17 @@ template <class L, class R>
 constexpr bool is_equatable_with_v =
     decltype(is_equatable_with_impl::check<L, R>(nullptr, nullptr))::value;
 
+template <class Container>
+static void reserve(Container&, typename Container::size_type)
+{}
+
+template <class... Ts>
+static void reserve(std::vector<Ts...>& c,
+    typename std::vector<Ts...>::size_type n)
+{
+    c.reserve(n);
+}
+
 } // end detail::stored
 
 template <class Content, class Allocator = std::allocator<Content>>
@@ -1661,7 +1672,8 @@ private:
     template <class OtherContent>
     void import_leaky(const OtherContent& other, content_type& records)
     {
-        reserve(records, records.size() + other.size());            // throw
+        detail::stored::reserve(
+            records, records.size() + other.size());                // throw
 
         if constexpr (std::is_const_v<typename value_type::value_type>) {
             using va_t = typename at_t::template rebind_alloc<value_type>;
@@ -1672,7 +1684,7 @@ private:
 
             for (const auto& r : other) {
                 const auto e = records.emplace(records.cend());     // throw
-                reserve(*e, r.size());                              // throw
+                detail::stored::reserve(*e, r.size());              // throw
                 for (const auto& v : r) {
                     const auto i = canonicals.find(v);
                     if (i == canonicals.cend()) {
@@ -1688,23 +1700,12 @@ private:
         } else {
             for (const auto& r : other) {
                 const auto e = records.emplace(records.cend());     // throw
-                reserve(*e, r.size());                              // throw
+                detail::stored::reserve(*e, r.size());              // throw
                 for (const auto& v : r) {
                     e->insert(e->cend(), import_value(v));          // throw
                 }
             }
         }
-    }
-
-    template <class Container>
-    static void reserve(Container&, typename Container::size_type)
-    {}
-
-    template <class... Ts>
-    static void reserve(std::vector<Ts...>& c,
-        typename std::vector<Ts...>::size_type n)
-    {
-        c.reserve(n);
     }
 
     template <class OtherContent, class OtherAllocator>
