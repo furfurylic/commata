@@ -1521,6 +1521,7 @@ public:
         return records_ ? content().size() : 0;
     }
 
+    [[nodiscard]]
     bool empty() const
         noexcept(noexcept(std::declval<const content_type&>().empty()))
     {
