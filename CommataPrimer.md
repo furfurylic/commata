@@ -553,7 +553,7 @@ defined in the header `"commata/table_scanner.hpp"`.
 ## Making your own table handler types
 
 So far, the second arguments to `parse_csv` were the return value of
-`make_stored_table_builder` and rvalues of `table_scanner` objects. But you can
+`make_stored_table_builder` or rvalues of `table_scanner` objects. But you can
 define your own types whose objects can be passed to `parse_csv`.
 These types are called _table handler_ types.
 
@@ -714,7 +714,7 @@ void pull_parsing_sample()
 }
 ```
 
-`make_table_pull(s)` in the sample above returns an object of `table_pull`.
+`make_table_pull` in the sample above returns an object of `table_pull`.
 It can proceed to an end of a record by `skip_record` or to a further field by
 `operator()`. They take one parameter which instructs the number of ends of records
 or fields jumped over. It defaults to `0`. Note that `operator()` cannot make the
