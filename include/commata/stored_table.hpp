@@ -1813,7 +1813,7 @@ void append_content(
 }
 
 template <class ContentL, class AllocatorL, class TableR>
-auto plus_stored_table_impl(
+auto plus_impl(
     const basic_stored_table<ContentL, AllocatorL>& left, TableR&& right)
 {
     auto l(left);                           // throw
@@ -1822,7 +1822,7 @@ auto plus_stored_table_impl(
 }
 
 template <class ContentL, class AllocatorL, class TableR>
-auto plus_stored_table_impl(
+auto plus_impl(
     basic_stored_table<ContentL, AllocatorL>&& left, TableR&& right)
 {
     left += std::forward<TableR>(right);    // throw
@@ -1846,7 +1846,7 @@ auto operator+(
     const basic_stored_table<ContentL, AllocatorL>& left,
     const basic_stored_table<ContentR, AllocatorR>& right)
 {
-    return detail::stored::plus_stored_table_impl(left, right);
+    return detail::stored::plus_impl(left, right);
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
@@ -1854,7 +1854,7 @@ auto operator+(
     const basic_stored_table<ContentL, AllocatorL>& left,
     basic_stored_table<ContentR, AllocatorR>&& right)
 {
-    return detail::stored::plus_stored_table_impl(left, std::move(right));
+    return detail::stored::plus_impl(left, std::move(right));
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
@@ -1862,7 +1862,7 @@ auto operator+(
     basic_stored_table<ContentL, AllocatorL>&& left,
     const basic_stored_table<ContentR, AllocatorR>& right)
 {
-    return detail::stored::plus_stored_table_impl(std::move(left), right);
+    return detail::stored::plus_impl(std::move(left), right);
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
@@ -1870,7 +1870,7 @@ auto operator+(
     basic_stored_table<ContentL, AllocatorL>&& left,
     basic_stored_table<ContentR, AllocatorR>&& right)
 {
-    return detail::stored::plus_stored_table_impl(
+    return detail::stored::plus_impl(
         std::move(left), std::move(right));
 }
 
