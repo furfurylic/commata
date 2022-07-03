@@ -1746,7 +1746,7 @@ struct invoke_clear
 };
 
 template <class ContainerFrom, class ContainerTo>
-void  emigrate(ContainerFrom&& from, ContainerTo& to)
+void emigrate(ContainerFrom&& from, ContainerTo& to)
 {
     static_assert(!std::is_reference_v<ContainerFrom>);
         // so we'll use move instead of forward
@@ -1764,7 +1764,7 @@ void  emigrate(ContainerFrom&& from, ContainerTo& to)
 }
 
 template <class ContentL, class ContentR>
-void append_stored_table_content(ContentL& l, ContentR&& r)
+void append_content(ContentL& l, ContentR&& r)
 {
     static_assert(!std::is_reference_v<ContentR>);
         // so we'll use move instead of forward
@@ -1789,23 +1789,23 @@ void append_stored_table_content(ContentL& l, ContentR&& r)
 }
 
 template <class RecordL, class AllocatorL, class RecordR, class AllocatorR>
-void append_stored_table_content(
+void append_content(
     std::list<RecordL, AllocatorL>& l, std::list<RecordL, AllocatorR>&& r,
     std::nullptr_t = nullptr/*just a tag*/)
 {
-    std::list<RecordL, AllocatorL> r2(l.get_allocator());           // throw
-    emigrate(std::move(r), r2);                                     // throw
+    std::list<RecordL, AllocatorL> r2(l.get_allocator());   // throw
+    emigrate(std::move(r), r2);                             // throw
     l.splice(l.cend(), r2);
 }
 
 template <class Record, class Allocator>
-void append_stored_table_content(
+void append_content(
     std::list<Record, Allocator>& l, std::list<Record, Allocator>&& r)
 {
     // stores' allocator equality does not necessarily mean contents' one
     if constexpr (!std::allocator_traits<Allocator>::is_always_equal::value) {
         if (l.get_allocator() != r.get_allocator()) {
-            append_stored_table_content(l, std::move(r), nullptr);  // throw
+            append_content(l, std::move(r), nullptr);       // throw
             return;
         }
     }
@@ -1836,7 +1836,7 @@ template <class OtherContent, class OtherAllocator>
 void basic_stored_table<Content, Allocator>::append_no_singular_merge(
     basic_stored_table<OtherContent, OtherAllocator>&& other)
 {
-    detail::stored::append_stored_table_content(
+    detail::stored::append_content(
         content(), std::move(other.content()));         // throw
     store_.merge(std::move(other.store_));
 }
