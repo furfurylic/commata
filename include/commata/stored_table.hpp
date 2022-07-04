@@ -1602,7 +1602,8 @@ private:
                     std::allocator_arg, get_allocator());           // throw
                 t.append_no_singular(
                     std::forward<OtherTable>(other));               // throw
-                swap(t);
+                swap(t);    // t and *this are constructed with the same
+                            // allocators, so this is safe
             }
         } else if (other.records_) {
             append_no_singular(std::forward<OtherTable>(other));    // throw
@@ -1636,6 +1637,8 @@ private:
         } else {
             append_no_singular(other);                          // throw
         }
+        // We'd like to reduce the calls of append_no_singular down to once,
+        // but such striving comes to nothing by Visual Studio's warning C4702
     }
 
     template <class ContentTo, class AllocatorTo>
