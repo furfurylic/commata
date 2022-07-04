@@ -1735,10 +1735,9 @@ void swap(
 
 namespace detail { namespace stored {
 
-template <class Container>
-
 struct invoke_clear
 {
+    template <class Container>
     void operator()(Container* c)
     {
         c->clear();
@@ -1751,7 +1750,9 @@ void emigrate(ContainerFrom&& from, ContainerTo& to)
     static_assert(!std::is_reference_v<ContainerFrom>);
         // so we'll use move instead of forward
 
-    std::unique_ptr<ContainerFrom, invoke_clear<ContainerFrom>> p(&from);
+    // Make sure from has no reference to moved values
+    std::unique_ptr<ContainerFrom, invoke_clear> p(&from);
+
     if constexpr (std::is_same_v<typename ContainerFrom::value_type,
                                  typename ContainerTo::value_type>) {
         to.insert(to.end(), std::make_move_iterator(from.begin()),
@@ -1775,10 +1776,7 @@ void append_content(ContentL& l, ContentR&& r)
     // - ContentL's erase() at the end does not throw an exception.
     // - ContentR's clear() does not throw an exception.
 
-    const auto left_original_size = l.size();    // ?
-
-    // Make sure right_content has no reference to moved values
-    std::unique_ptr<ContentR, invoke_clear<ContentR>> p(&r);
+    const auto left_original_size = l.size();   // ?
 
     try {
         emigrate(std::move(r), l);              // throw
