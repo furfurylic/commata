@@ -726,11 +726,9 @@ private:
                     typename traits_type::char_type>,
                 "std::decay_t<Handler>::char_type and traits_type::char_type "
                 "are inconsistent; they shall be the same type");
-            using specs_t = without_allocator<Handler>;
             return ret_t(
                     std::forward<CharInputR>(in),
-                    typename specs_t::full_fledged_handler_t(
-                        std::forward<Handler>(handler)));
+                    full_fledged_handler_t(std::forward<Handler>(handler)));
         }
     };
 
