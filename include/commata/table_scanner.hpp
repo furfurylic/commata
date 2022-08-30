@@ -635,7 +635,7 @@ public:
 
     void update(const Ch* first, const Ch* last)
     {
-        if (get_scanner() && (first != last)) {
+        if (get_scanner().first && (first != last)) {
             if (begin_) {
                 assert(fragmented_value_.empty());
                 fragmented_value_.
@@ -654,32 +654,33 @@ public:
 
     void finalize(const Ch* first, const Ch* last)
     {
-        if (const auto scanner = get_scanner()) {
+        const auto scanner = get_scanner();
+        if (scanner.first) {
             if (begin_) {
                 if (first != last) {
                     fragmented_value_.
                         reserve((end_ - begin_) + (last - first));  // throw
                     fragmented_value_.assign(begin_, end_);
                     fragmented_value_.append(first, last);
-                    scanner->field_value(std::move(fragmented_value_), *this);
+                    scanner.first->field_value(
+                        std::move(fragmented_value_), *this);
                     fragmented_value_.clear();
                 } else {
                     *uc(end_) = Ch();
-                    scanner->field_value(uc(begin_), uc(end_), *this);
+                    scanner.first->field_value(uc(begin_), uc(end_), *this);
                 }
                 begin_ = nullptr;
             } else if (!fragmented_value_.empty()) {
                 fragmented_value_.append(first, last);              // throw
-                scanner->field_value(std::move(fragmented_value_), *this);
+                scanner.first->field_value(std::move(fragmented_value_), *this);
                 fragmented_value_.clear();
             } else {
                 *uc(last) = Ch();
-                scanner->field_value(uc(first), uc(last), *this);
+                scanner.first->field_value(uc(first), uc(last), *this);
             }
-        }
-        if (scanners_ && (sj_ < scanners_->size())
-         && (j_ == (*scanners_)[sj_].second)) {
-            ++sj_;
+            if (scanner.second) {
+                ++sj_;
+            }
         }
         ++j_;
     }
@@ -755,15 +756,15 @@ private:
         return std::addressof(*buffer_);
     }
 
-    field_scanner* get_scanner()
+    std::pair<field_scanner*, bool> get_scanner()
     {
         if (header_field_scanner_) {
-            return std::addressof(*header_field_scanner_);
+            return { std::addressof(*header_field_scanner_), false };
         } else if (scanners_ && (sj_ < scanners_->size())
                 && (j_ == ((*scanners_)[sj_]).second)) {
-            return std::addressof(*(*scanners_)[sj_].first);
+            return { std::addressof(*(*scanners_)[sj_].first), true };
         } else {
-            return nullptr;
+            return { nullptr, false };
         }
     }
 
