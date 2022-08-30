@@ -130,7 +130,7 @@ class basic_table_scanner
         {
             const range_t range(begin, end);
             if (!scanner()(me.j_, std::addressof(range), me)) {
-                me.remove_header_field_scanner();
+                me.remove_header_field_scanner(false);
             }
         }
 
@@ -142,7 +142,7 @@ class basic_table_scanner
         void so_much_for_header(basic_table_scanner& me) override
         {
             if (!scanner()(me.j_, static_cast<const range_t*>(nullptr), me)) {
-                me.remove_header_field_scanner();
+                me.remove_header_field_scanner(true);
             }
         }
 
@@ -773,10 +773,22 @@ private:
         return tb + (s - tb);
     }
 
-    void remove_header_field_scanner()
+    void remove_header_field_scanner(bool at_record_end)
     {
-        destroy_deallocate(header_field_scanner_);
-        header_field_scanner_ = nullptr;
+        if (at_record_end) {
+            destroy_deallocate(header_field_scanner_);
+            header_field_scanner_ = nullptr;
+        } else {
+            // If removal of the header field scanner occurs in the midst of a
+            // record, we must replace the scanner with a "padder" so that
+            // no body field scanners fire on the remaining header fields
+            decltype(header_field_scanner_) padder =
+                allocate_construct<typed_header_field_scanner<
+                    detail::scanner::counting_header_field_scanner>>(1);
+                        // throw
+            destroy_deallocate(header_field_scanner_);
+            header_field_scanner_ = padder;
+        }
     }
 };
 
