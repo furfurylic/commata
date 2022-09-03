@@ -1019,56 +1019,6 @@ struct raw_converter<T, H, std::enable_if_t<std::is_floating_point_v<T>,
     }
 };
 
-template <class Ch>
-struct has_simple_invalid_format_impl
-{
-    template <class F>
-    static auto check(F*) -> decltype(
-        std::declval<F&>()(std::declval<invalid_format_t>(),
-            std::declval<const Ch*>(), std::declval<const Ch*>()),
-        std::true_type());
-
-    template <class F>
-    static auto check(...) -> std::false_type;
-};
-
-template <class F, class Ch>
-constexpr bool has_simple_invalid_format_v =
-    decltype(has_simple_invalid_format_impl<Ch>::template check<F>(nullptr))();
-
-template <class Ch>
-struct has_simple_out_of_range_impl
-{
-    template <class F>
-    static auto check(F*) -> decltype(
-        std::declval<F&>()(std::declval<out_of_range_t>(),
-            std::declval<const Ch*>(), std::declval<const Ch*>(),
-            std::declval<int>()),
-        std::true_type());
-
-    template <class F>
-    static auto check(...) -> std::false_type;
-};
-
-template <class F, class Ch>
-constexpr bool has_simple_out_of_range_v =
-    decltype(has_simple_out_of_range_impl<Ch>::template check<F>(nullptr))();
-
-struct has_simple_empty_impl
-{
-    template <class F>
-    static auto check(F*) -> decltype(
-        std::declval<F&>()(std::declval<empty_t>()),
-        std::true_type());
-
-    template <class F>
-    static auto check(...) -> std::false_type;
-};
-
-template <class F>
-constexpr bool has_simple_empty_v =
-    decltype(has_simple_empty_impl::check<F>(nullptr))();
-
 template <class T>
 struct conversion_error_facade
 {
@@ -1076,7 +1026,8 @@ struct conversion_error_facade
     static std::optional<T> invalid_format(
         H& h,const Ch* begin, const Ch* end)
     {
-        if constexpr (has_simple_invalid_format_v<H, Ch>) {
+        if constexpr (std::is_invocable_v<H,
+                invalid_format_t, const Ch*, const Ch*>) {
             return h(invalid_format_t(), begin, end);
         } else {
             return h(invalid_format_t(), begin, end, static_cast<T*>(nullptr));
@@ -1087,7 +1038,8 @@ struct conversion_error_facade
     static std::optional<T> out_of_range(
         H& h, const Ch* begin, const Ch* end, int sign)
     {
-        if constexpr (has_simple_out_of_range_v<H, Ch>) {
+        if constexpr (std::is_invocable_v<H,
+                out_of_range_t, const Ch*, const Ch*, int>) {
             return h(out_of_range_t(), begin, end, sign);
         } else {
             return h(out_of_range_t(),
@@ -1098,7 +1050,7 @@ struct conversion_error_facade
     template <class H>
     static std::optional<T> empty(H& h)
     {
-        if constexpr (has_simple_empty_v<H>) {
+        if constexpr (std::is_invocable_v<H, empty_t>) {
             return h(empty_t());
         } else {
             return h(empty_t(), static_cast<T*>(nullptr));
