@@ -120,26 +120,19 @@ public:
     }
 };
 
-// I really wanted to write these template parameters with packs
-// but then Visual Studio 2015 did not compile them... (Visual Studio 2019 did)
-template <class AllocatorL, bool PoccaL, bool PocmaL, bool PocsL,
-          class AllocatorR, bool PoccaR, bool PocmaR, bool PocsR>
+template <class AllocatorL, class AllocatorR, bool... PosL, bool... PosR>
 bool operator==(
-    const propagation_controlled_allocator<AllocatorL, PoccaL, PocmaL, PocsL>&
-        left,
-    const propagation_controlled_allocator<AllocatorR, PoccaR, PocmaR, PocsR>&
-        right)
+    const propagation_controlled_allocator<AllocatorL, PosL...>& left,
+    const propagation_controlled_allocator<AllocatorR, PosR...>& right)
     noexcept(noexcept(std::declval<const AllocatorL&>()
                    == std::declval<const AllocatorR&>()))
 {
     return left.base() == right.base();
 }
 
-template <class AllocatorL, bool PoccaL, bool PocmaL, bool PocsL,
-          class AllocatorR>
+template <class AllocatorL, class AllocatorR, bool... PosL>
 bool operator==(
-    const propagation_controlled_allocator<AllocatorL, PoccaL, PocmaL, PocsL>&
-        left,
+    const propagation_controlled_allocator<AllocatorL, PosL...>& left,
     const AllocatorR& right)
     noexcept(noexcept(std::declval<const AllocatorL&>()
                    == std::declval<const AllocatorR&>()))
@@ -147,36 +140,29 @@ bool operator==(
     return left.base() == right;
 }
 
-template <class AllocatorL,
-          class AllocatorR, bool PoccaR, bool PocmaR, bool PocsR>
+template <class AllocatorL, class AllocatorR, bool... PosR>
 bool operator==(
     const AllocatorL& left,
-    const propagation_controlled_allocator<AllocatorR, PoccaR, PocmaR, PocsR>&
-        right)
+    const propagation_controlled_allocator<AllocatorR, PosR...>& right)
     noexcept(noexcept(std::declval<const AllocatorL&>()
                    == std::declval<const AllocatorR&>()))
 {
     return left == right.base();
 }
 
-template <class AllocatorL, bool PoccaL, bool PocmaL, bool PocsL,
-          class AllocatorR, bool PoccaR, bool PocmaR, bool PocsR>
+template <class AllocatorL, class AllocatorR, bool... PosL, bool... PosR>
 bool operator!=(
-    const propagation_controlled_allocator<AllocatorL, PoccaL, PocmaL, PocsL>&
-        left,
-    const propagation_controlled_allocator<AllocatorR, PoccaR, PocmaR, PocsR>&
-        right)
+    const propagation_controlled_allocator<AllocatorL, PosL...>& left,
+    const propagation_controlled_allocator<AllocatorR, PosR...>& right)
     noexcept(noexcept(std::declval<const AllocatorL&>()
                    != std::declval<const AllocatorR&>()))
 {
     return left.base() != right.base();
 }
 
-template <class AllocatorL, bool PoccaL, bool PocmaL, bool PocsL,
-          class AllocatorR>
+template <class AllocatorL, class AllocatorR, bool... PosL>
 bool operator!=(
-    const propagation_controlled_allocator<AllocatorL, PoccaL, PocmaL, PocsL>&
-        left,
+    const propagation_controlled_allocator<AllocatorL, PosL...>& left,
     const AllocatorR& right)
     noexcept(noexcept(std::declval<const AllocatorL&>()
                    != std::declval<const AllocatorR&>()))
@@ -184,12 +170,10 @@ bool operator!=(
     return left.base() != right;
 }
 
-template <class AllocatorL,
-          class AllocatorR, bool PoccaR, bool PocmaR, bool PocsR>
+template <class AllocatorL, class AllocatorR, bool... PosR>
 bool operator!=(
     const AllocatorL& left,
-    const propagation_controlled_allocator<AllocatorR, PoccaR, PocmaR, PocsR>&
-        right)
+    const propagation_controlled_allocator<AllocatorR, PosR...>& right)
     noexcept(noexcept(std::declval<const AllocatorL&>()
                    != std::declval<const AllocatorR&>()))
 {
