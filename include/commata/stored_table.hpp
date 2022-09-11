@@ -337,7 +337,7 @@ private:
     {
         std::ostringstream s;
         s << pos << " is too large for this value, whose size is " << size();
-        throw std::out_of_range(s.str());
+        throw std::out_of_range(std::move(s).str());
     }
 };
 

@@ -625,7 +625,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, View)
         FAIL() << e.info();
     }
 
-    ASSERT_EQ(str("ABC!!!XYZ"), stream.str());
+    ASSERT_EQ(str("ABC!!!XYZ"), std::move(stream).str());
 }
 
 namespace {

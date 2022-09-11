@@ -616,7 +616,7 @@ private:
         } else {
             std::ostringstream str;
             str << "Target field index too large: " << i;
-            throw std::out_of_range(str.str());
+            throw std::out_of_range(std::move(str).str());
         }
     }
 };
