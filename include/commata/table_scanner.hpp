@@ -1969,9 +1969,9 @@ struct base<T, 4> : base<T, 3>
 };
 
 template <class T>
-struct base<T, 5> : base<T, std::is_default_constructible<T>::value ? 4 : 0>
+struct base<T, 5> : base<T, std::is_default_constructible_v<T> ? 4 : 0>
 {
-    using base<T, std::is_default_constructible<T>::value ? 4 : 0>::base;
+    using base<T, std::is_default_constructible_v<T> ? 4 : 0>::base;
 
     template <class Empty, class InvalidFormat,
         class AboveUpperLimit, class BelowLowerLimit,
@@ -1993,7 +1993,7 @@ struct base<T, 5> : base<T, std::is_default_constructible<T>::value ? 4 : 0>
                   && is_nothrow_arg_v<T, AboveUpperLimit>
                   && is_nothrow_arg_v<T, BelowLowerLimit>
                   && is_nothrow_arg_v<T, Underflow>) :
-        base<T, std::is_default_constructible<T>::value ? 4 : 0>(
+        base<T, std::is_default_constructible_v<T> ? 4 : 0>(
             detail::scanner::generic_args_t(),
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
