@@ -299,12 +299,14 @@ std::basic_ostream<wchar_t, Tr>& operator<<(
             n = 0;
         }
 
+        const auto& facet = std::use_facet<std::ctype<wchar_t>>(os.getloc());
+
         return detail::formatted_output(os, static_cast<std::streamsize>(*n),
-            [&os, w_raw, w_len, l = &l[0], l_len, c = &c[0], c_len]
+            [&facet, w_raw, w_len, l = &l[0], l_len, c = &c[0], c_len]
             (auto* sb) {
                 if (w_len > 0) {
                     for (std::size_t j = 0; j < w_len; ++j) {
-                        if (sb->sputc(os.widen(w_raw[j])) == Tr::eof()) {
+                        if (sb->sputc(facet.widen(w_raw[j])) == Tr::eof()) {
                             return false;
                         }
                     }
