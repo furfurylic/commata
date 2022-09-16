@@ -224,106 +224,133 @@ std::optional<T> add(T a, T b, Ts... cs)
     }
 }
 
+template <class Ch>
+struct literals;
+
+template <>
+struct literals<char>
+{
+    constexpr static char   and_line           [] =  "; line ";
+    constexpr static char   text_error_at_line [] =  "Text error at line ";
+    constexpr static char   column             [] =  " column ";
+};
+
+template <>
+struct literals<wchar_t>
+{
+    constexpr static wchar_t and_line          [] = L"; line ";
+    constexpr static wchar_t text_error_at_line[] = L"Text error at line ";
+    constexpr static wchar_t column            [] = L" column ";
+};
+
+template <class Ch, class Tr>
+class sputn_widen_engine;
+
+template <class Tr>
+class sputn_widen_engine<char, Tr>
+{
+public:
+    explicit sputn_widen_engine(std::basic_ostream<char, Tr>&) noexcept
+    {}
+
+    bool operator()(std::basic_streambuf<char, Tr>* sb,
+        const char* s, std::size_t n) const
+    {
+        return sputn(sb, s, n);
+    }
+};
+
+template <class Tr>
+class sputn_widen_engine<wchar_t, Tr>
+{
+    const std::ctype<wchar_t>* facet_;
+    std::exception_ptr ex_;
+
+public:
+    explicit sputn_widen_engine(std::basic_ostream<wchar_t, Tr>& os) noexcept :
+        facet_(nullptr), ex_(nullptr)
+    {
+        // noexcept-ness counts; we must throw exceptions only when the sentry
+        // exists and beholds us
+        try {
+            facet_ = &std::use_facet<std::ctype<wchar_t>>(os.getloc());
+        } catch (...) {
+            ex_ = std::current_exception();
+        }
+    }
+
+    bool operator()(std::basic_streambuf<wchar_t, Tr>* sb,
+        const char* s, std::size_t n) const
+    {
+        if (ex_) {
+            std::rethrow_exception(ex_);
+        }
+        for (std::size_t i = 0; i < n; ++i) {
+            if (sb->sputc(facet_->widen(s[i])) == Tr::eof()) {
+                return false;
+            }
+        }
+        return true;
+    }
+};
+
+template <class Ch, class Tr>
+sputn_widen_engine(std::basic_ostream<Ch, Tr>&) -> sputn_widen_engine<Ch, Tr>;
+
 } // end detail::ex
 
-template <class Tr>
-std::basic_ostream<char, Tr>& operator<<(
-    std::basic_ostream<char, Tr>& os, const text_error_info& i)
+template <class Ch, class Tr>
+std::basic_ostream<Ch, Tr>& operator<<(
+    std::basic_ostream<Ch, Tr>& os, const text_error_info& i)
 {
     using namespace detail::ex;
+    using lit = literals<Ch>;
 
-    if (const auto p = i.error().get_physical_position()) {
-        // line
-        char l[std::numeric_limits<std::size_t>::digits10 + 2];
-        const auto l_len = print_pos(l, p->first, i.get_base());
+    const auto p = i.error().get_physical_position();
 
-        // column
-        char c[sizeof(l)];
-        const auto c_len = print_pos(c, p->second, i.get_base());
-
-        // what
-        const auto w = i.error().what();
-        const auto w_len = std::strlen(w);
-
-        auto n = add<length_t>(w_len, l_len, c_len, ((w_len > 0) ? 15 : 27));
-        if (!n || (*n > unmax)) {
-            // more than largest possible padding length, when 'no padding'
-            // does the trick
-            n = 0;
-        }
-
-        return detail::formatted_output(os, static_cast<std::streamsize>(*n),
-            [w, w_len, l = &l[0], l_len, c = &c[0], c_len]
-            (auto* sb) {
-                if (w_len > 0) {
-                    if (!sputn(sb, w, w_len)
-                     || !sputn(sb, "; line ")) {
-                        return false;
-                    }
-                } else if (!sputn(sb, "Text error at line ")) {
-                    return false;
-                }
-                return sputn(sb, l, l_len)
-                    && sputn(sb, " column ")
-                    && sputn(sb, c, c_len);
-            });
-
-    } else {
+    if (!p) {
         return os << i.error().what();
     }
-}
 
-template <class Tr>
-std::basic_ostream<wchar_t, Tr>& operator<<(
-    std::basic_ostream<wchar_t, Tr>& os, const text_error_info& i)
-{
-    using namespace detail::ex;
+    // line
+    Ch l[std::numeric_limits<std::size_t>::digits10 + 2];
+    const auto l_len = print_pos(l, p->first, i.get_base());
 
-    if (const auto p = i.error().get_physical_position()) {
-        // line
-        wchar_t l[std::numeric_limits<std::size_t>::digits10 + 2];
-        const auto l_len = print_pos(l, p->first, i.get_base());
+    // column
+    Ch c[std::size(l)];
+    const auto c_len = print_pos(c, p->second, i.get_base());
 
-        // column
-        wchar_t c[std::size(l)];
-        const auto c_len = print_pos(c, p->second, i.get_base());
+    // what
+    const char* const w = i.error().what();
+    const auto w_len = std::strlen(w);
 
-        // what
-        const auto w_raw = i.error().what();
-        const auto w_len = std::strlen(w_raw);
+    auto n = add<length_t>(w_len, l_len, c_len,
+        ((w_len > 0) ?
+            std::size(lit::and_line) : std::size(lit::text_error_at_line)),
+        std::size(lit::column) - 2);    // 2 is for two EOSs
+    if (!n || (*n > unmax)) {
+        // more than largest possible padding length, when 'no padding'
+        // does the trick
+        n = 0;
+    }
 
-        auto n = add<length_t>(w_len, l_len, c_len, ((w_len > 0) ? 15 : 27));
-        if (!n || (*n > unmax)) {
-            // more than largest possible padding length, when 'no padding'
-            // does the trick
-            n = 0;
-        }
+    sputn_widen_engine sputn_widen(os);
 
-        const auto& facet = std::use_facet<std::ctype<wchar_t>>(os.getloc());
-
-        return detail::formatted_output(os, static_cast<std::streamsize>(*n),
-            [&facet, w_raw, w_len, l = &l[0], l_len, c = &c[0], c_len]
-            (auto* sb) {
-                if (w_len > 0) {
-                    for (std::size_t j = 0; j < w_len; ++j) {
-                        if (sb->sputc(facet.widen(w_raw[j])) == Tr::eof()) {
-                            return false;
-                        }
-                    }
-                    if (!sputn(sb, L"; line ")) {
-                        return false;
-                    }
-                } else if (!sputn(sb, L"Text error at line ")) {
+    return detail::formatted_output(os, static_cast<std::streamsize>(*n),
+        [sputn_widen, w, w_len, l = &l[0], l_len, c = &c[0], c_len]
+        (auto* sb) {
+            if (w_len > 0) {
+                if (!sputn_widen(sb, w, w_len)
+                 || !sputn(sb, lit::and_line)) {
                     return false;
                 }
-                return sputn(sb, l, l_len)
-                    && sputn(sb, L" column ")
-                    && sputn(sb, c, c_len);
-            });
-
-    } else {
-        return os << i.error().what();
-    }
+            } else if (!sputn(sb, lit::text_error_at_line)) {
+                return false;
+            }
+            return sputn(sb, l, l_len)
+                && sputn(sb, lit::column)
+                && sputn(sb, c, c_len);
+        });
 }
 
 inline std::string to_string(const text_error_info& i)
