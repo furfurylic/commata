@@ -1478,8 +1478,13 @@ public:
     void swap(replace_if_skipped& other)
         noexcept(std::is_nothrow_swappable_v<store_t>)
     {
-        using std::swap;
-        swap(store_, other.store_);
+        // See comments on replace_if_conversion_failed::swap
+        // (But it seems that valgrind does not report 'memcpy for overlapping
+        // buffers' even with Clang7 even if this self-check is absent)
+        if (this != std::addressof(other)) {
+            using std::swap;
+            swap(store_, other.store_);
+        }
     }
 };
 
@@ -2132,8 +2137,17 @@ public:
         noexcept(std::is_nothrow_swappable_v<T>
               && std::is_nothrow_constructible_v<T>)
     {
-        using std::swap;
-        swap(this->store(), other.store());
+        // There seem to be pairs of a compiler and a standard library
+        // implementation (at least Clang 7) whose std::swap is not self-safe
+        // std::swap, which inherently employs move construction, which is not
+        // required to be self-safe
+        // (Clang7 seems to employ memcpy for move construction of trivially-
+        // copyable types, which itself is perfectly correct, and which is not,
+        // however, suitable for std::swap without self-check)
+        if (this != std::addressof(other)) {
+            using std::swap;
+            swap(this->store(), other.store());
+        }
     }
 
 private:
