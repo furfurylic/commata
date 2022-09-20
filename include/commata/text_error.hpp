@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <exception>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -170,40 +171,6 @@ std::size_t print_pos(char (&s)[N], std::size_t pos, std::size_t base)
     return static_cast<std::size_t>(len);
 }
 
-template <std::size_t N>
-std::size_t print_pos(wchar_t (&s)[N], std::size_t pos, std::size_t base)
-{
-    const auto len = (pos != text_error::npos)
-                  && (text_error::npos - base >= pos) ?
-        std::swprintf(s, N, L"%zu", pos + base) :
-        std::swprintf(s, N, L"n/a");
-    assert((len > 0 ) && (static_cast<std::size_t>(len) < N));
-    return static_cast<std::size_t>(len);
-}
-
-template <class Ch, class Tr>
-bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch* s, std::size_t n)
-{
-    if constexpr (std::numeric_limits<std::size_t>::max() > unmax) {
-        while (n > unmax) {
-            if (sb->sputn(s, nmax) != nmax) {
-                return false;
-            }
-            s += unmax;
-            n -= static_cast<std::size_t>(unmax);   // safe because n > unmax
-        }
-    }
-    return sb->sputn(s, n) == static_cast<std::streamsize>(n);
-}
-
-template <class Ch, class Tr, std::size_t N>
-bool sputn(std::basic_streambuf<Ch, Tr>* sb, const Ch(&s)[N])
-{
-    // s shall be null terminated, so s[N - 1] is null
-    assert(s[N - 1] == Ch());
-    return sputn(sb, s, N - 1);
-}
-
 template <class T>
 std::optional<T> add(T a, T b)
 {
@@ -224,62 +191,33 @@ std::optional<T> add(T a, T b, Ts... cs)
     }
 }
 
-template <class Ch>
-struct literals;
-
-template <>
-struct literals<char>
+struct literals
 {
-    constexpr static char   and_line           [] =  "; line ";
-    constexpr static char   text_error_at_line [] =  "Text error at line ";
-    constexpr static char   column             [] =  " column ";
-};
-
-template <>
-struct literals<wchar_t>
-{
-    constexpr static wchar_t and_line          [] = L"; line ";
-    constexpr static wchar_t text_error_at_line[] = L"Text error at line ";
-    constexpr static wchar_t column            [] = L" column ";
+    constexpr static char and_line           [] = "; line ";
+    constexpr static char text_error_at_line [] = "Text error at line ";
+    constexpr static char column             [] = " column ";
 };
 
 template <class Ch, class Tr>
-class sputn_widen_engine;
-
-template <class Tr>
-class sputn_widen_engine<char, Tr>
+class sputn_engine
 {
-public:
-    explicit sputn_widen_engine(std::basic_ostream<char, Tr>&) noexcept
-    {}
-
-    bool operator()(std::basic_streambuf<char, Tr>* sb,
-        const char* s, std::size_t n) const
-    {
-        return sputn(sb, s, n);
-    }
-};
-
-template <class Tr>
-class sputn_widen_engine<wchar_t, Tr>
-{
-    const std::ctype<wchar_t>* facet_;
+    const std::ctype<Ch>* facet_;
     std::exception_ptr ex_;
 
 public:
-    explicit sputn_widen_engine(std::basic_ostream<wchar_t, Tr>& os) noexcept :
+    explicit sputn_engine(std::basic_ostream<Ch, Tr>& os) noexcept :
         facet_(nullptr), ex_(nullptr)
     {
         // noexcept-ness counts; we must throw exceptions only when the sentry
         // exists and beholds us
         try {
-            facet_ = &std::use_facet<std::ctype<wchar_t>>(os.getloc());
+            facet_ = &std::use_facet<std::ctype<Ch>>(os.getloc());
         } catch (...) {
             ex_ = std::current_exception();
         }
     }
 
-    bool operator()(std::basic_streambuf<wchar_t, Tr>* sb,
+    bool operator()(std::basic_streambuf<Ch, Tr>* sb,
         const char* s, std::size_t n) const
     {
         if (ex_) {
@@ -292,10 +230,51 @@ public:
         }
         return true;
     }
+
+    template <std::size_t N>
+    bool operator()(std::basic_streambuf<Ch, Tr>* sb, const char(&s)[N]) const
+    {
+        // s shall be null terminated, so s[N - 1] is null
+        assert(s[N - 1] == Ch());
+        return (*this)(sb, s, N - 1);
+    }
+};
+
+template <class Tr>
+class sputn_engine<char, Tr>
+{
+public:
+    explicit sputn_engine(std::basic_ostream<char, Tr>&) noexcept
+    {}
+
+    bool operator()(std::basic_streambuf<char, Tr>* sb,
+        const char* s, std::size_t n) const
+    {
+        if constexpr (std::numeric_limits<std::size_t>::max() > unmax) {
+            while (n > unmax) {
+                if (sb->sputn(s, nmax) != nmax) {
+                    return false;
+                }
+                s += unmax;
+                n -= static_cast<std::size_t>(unmax);
+                    // safe because n > unmax
+            }
+        }
+        return sb->sputn(s, n) == static_cast<std::streamsize>(n);
+    }
+
+    template <std::size_t N>
+    bool operator()(std::basic_streambuf<char, Tr>* sb,
+        const char(&s)[N]) const
+    {
+        // s shall be null terminated, so s[N - 1] is null
+        assert(s[N - 1] == char());
+        return (*this)(sb, s, N - 1);
+    }
 };
 
 template <class Ch, class Tr>
-sputn_widen_engine(std::basic_ostream<Ch, Tr>&) -> sputn_widen_engine<Ch, Tr>;
+sputn_engine(std::basic_ostream<Ch, Tr>&) -> sputn_engine<Ch, Tr>;
 
 } // end detail::ex
 
@@ -304,7 +283,6 @@ std::basic_ostream<Ch, Tr>& operator<<(
     std::basic_ostream<Ch, Tr>& os, const text_error_info& i)
 {
     using namespace detail::ex;
-    using lit = literals<Ch>;
 
     const auto p = i.error().get_physical_position();
 
@@ -313,11 +291,11 @@ std::basic_ostream<Ch, Tr>& operator<<(
     }
 
     // line
-    Ch l[std::numeric_limits<std::size_t>::digits10 + 2];
+    char l[std::numeric_limits<std::size_t>::digits10 + 2];
     const auto l_len = print_pos(l, p->first, i.get_base());
 
     // column
-    Ch c[std::size(l)];
+    char c[std::size(l)];
     const auto c_len = print_pos(c, p->second, i.get_base());
 
     // what
@@ -326,29 +304,30 @@ std::basic_ostream<Ch, Tr>& operator<<(
 
     auto n = add<length_t>(w_len, l_len, c_len,
         ((w_len > 0) ?
-            std::size(lit::and_line) : std::size(lit::text_error_at_line)),
-        std::size(lit::column) - 2);    // 2 is for two EOSs
+            std::size(literals::and_line) :
+            std::size(literals::text_error_at_line)),
+        std::size(literals::column) - 2);    // 2 is for two EOSs
     if (!n || (*n > unmax)) {
         // more than largest possible padding length, when 'no padding'
         // does the trick
         n = 0;
     }
 
-    sputn_widen_engine sputn_widen(os);
+    sputn_engine sputn(os);
 
     return detail::formatted_output(os, static_cast<std::streamsize>(*n),
-        [sputn_widen, w, w_len, l = &l[0], l_len, c = &c[0], c_len]
+        [sputn, w, w_len, l = &l[0], l_len, c = &c[0], c_len]
         (auto* sb) {
             if (w_len > 0) {
-                if (!sputn_widen(sb, w, w_len)
-                 || !sputn(sb, lit::and_line)) {
+                if (!sputn(sb, w, w_len)
+                 || !sputn(sb, literals::and_line)) {
                     return false;
                 }
-            } else if (!sputn(sb, lit::text_error_at_line)) {
+            } else if (!sputn(sb, literals::text_error_at_line)) {
                 return false;
             }
             return sputn(sb, l, l_len)
-                && sputn(sb, lit::column)
+                && sputn(sb, literals::column)
                 && sputn(sb, c, c_len);
         });
 }
