@@ -70,7 +70,7 @@ public:
 
     template <class Tr>
     explicit text_error(std::basic_string_view<char, Tr> what_arg) :
-        text_error(std::string(what_arg.cbegin(), what_arg.cend()))
+        text_error(std::string(what_arg))
     {}
 
     template <class Tr, class Allocator>
