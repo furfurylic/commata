@@ -39,8 +39,7 @@ class text_error :
         virtual const char* what() const noexcept = 0;
     };
 
-    template <class Tr = std::char_traits<char>,
-              class Allocator = std::allocator<char>>
+    template <class Tr, class Allocator>
     class string_holder : public what_holder
     {
         std::basic_string<char, Tr, Allocator> s_;
