@@ -24,7 +24,6 @@
 #include <utility>
 
 #include "formatted_output.hpp"
-#include "typing_aid.hpp"
 
 namespace commata {
 
