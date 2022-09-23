@@ -650,7 +650,7 @@ constexpr bool has_const_iterator_v =
     decltype(has_const_iterator_impl::check<T>(nullptr))::value;
 
 template <class Ch, class Tr, class Allocator, class T>
-auto make_string_pred(T&& s, const Allocator& a)
+decltype(auto) make_string_pred(T&& s, const Allocator& a)
 {
     if constexpr (detail::is_std_string_of_ch_tr_v<T, Ch, Tr>) {
         // rvalue of std::basic_string only

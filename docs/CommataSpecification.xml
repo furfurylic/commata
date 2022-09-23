@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2022-06-16 (UTC)</signature>
+<signature>2022-09-23 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2621,14 +2621,15 @@ bool is_in_header() const noexcept;
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>,
             and whose type <c>T</c> is unspecified but satisfies <c>std::is_nothrow_move_constructible_v&lt;T> == true</c>,</li>
         <li>otherwise, if <c>std::constructible_v&lt;std::basic_string_view&lt;Ch, Tr>, decltype((p))></c> is <c>true</c>,
-            a prvalue of a binary predicate object that holds an <c>std::basic_string_view&lt;Ch, Tr></c> object (hereinafter called <c>v</c> initialized with <c>p</c>,
+            a prvalue of a binary predicate object that holds an <c>std::basic_string_view&lt;Ch, Tr></c> object (hereinafter called <c>v</c>) initialized with <c>p</c>,
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>v</c> in terms of <c>Tr::eq</c>,
             and whose type <c>T</c> is unspecified but satisfies <c>std::is_nothrow_move_constructible_v&lt;T> == true</c>,</li>
         <li>otherwise, if <c>P::const_iterator</c> denotes a type where <c>P</c> is the type of <c>p</c>,
             a prvalue of a binary predicate object that holds an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object (hereinafter called <c>s</c>) initialized with <c>p.cbegin()</c>, <c>p.cend()</c> and <c>a</c>,
             and tells if a range [<c>f</c>, <c>l</c>) is equal to <c>s</c> in terms of <c>Tr::eq</c>,
             and whose type <c>T</c> is unspecified but satisfies <c>std::is_nothrow_move_constructible_v&lt;T> == true</c>,</li>
-        <li>otherwise, if <c>p</c> is a binary predicate that takes two <c>const Ch*</c> paramters, <c>p</c> itself,</li>
+        <li>otherwise, if <c>p</c> is an lvalue of a binary predicate that takes two <c>const Ch*</c> parameters, an lvalue of <c>p</c>,</li>
+        <li>otherwise, if <c>p</c> is an rvalue of a binary predicate that takes two <c>const Ch*</c> parameters, an rvalue of <c>p</c>,</li>
         <li>otherwise, the program is ill-formed.</li>
       </ul>
 
