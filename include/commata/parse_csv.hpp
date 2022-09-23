@@ -722,7 +722,7 @@ private:
             static_assert(std::is_same_v<handler_t, std::decay_t<HandlerR>>);
             static_assert(
                 std::is_same_v<
-                    typename std::decay_t<Handler>::char_type,
+                    typename handler_t::char_type,
                     typename traits_type::char_type>,
                 "std::decay_t<Handler>::char_type and traits_type::char_type "
                 "are inconsistent; they shall be the same type");
