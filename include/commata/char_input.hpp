@@ -113,8 +113,10 @@ public:
     void swap(owned_streambuf_input& other)
         noexcept(std::is_nothrow_swappable_v<Streambuf>)
     {
-        using std::swap;
-        swap(in_, other.in_);
+        if (this != std::addressof(other)) {
+            using std::swap;
+            swap(in_, other.in_);
+        }
     }
 };
 
@@ -164,8 +166,10 @@ public:
     void swap(owned_istream_input& other)
         noexcept(std::is_nothrow_swappable_v<IStream>)
     {
-        using std::swap;
-        swap(in_, other.in_);
+        if (this != std::addressof(other)) {
+            using std::swap;
+            swap(in_, other.in_);
+        }
     }
 };
 
