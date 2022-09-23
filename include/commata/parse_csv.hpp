@@ -864,8 +864,10 @@ public:
     void swap(csv_source& other)
         noexcept(std::is_nothrow_swappable_v<CharInput>)
     {
-        using std::swap;
-        swap(in_, other.in_);
+        if (this != std::addressof(other)) {
+            using std::swap;
+            swap(in_, other.in_);
+        }
     }
 };
 
