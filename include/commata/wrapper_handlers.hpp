@@ -119,8 +119,11 @@ public:
     void swap(empty_physical_line_aware_handler& other)
         noexcept(std::is_nothrow_swappable_v<Handler>)
     {
-        using std::swap;
-        base().swap(other.base());
+        // Avoid self-moving in std::swap
+        if (this != std::addressof(other)) {
+            using std::swap;
+            base().swap(other.base());
+        }
     }
 
 private:
