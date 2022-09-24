@@ -713,8 +713,7 @@ private:
                 detail::full_fledged_handler<
                     handler_t, detail::thru_buffer_control>>;
 
-        using ret_t =
-            detail::csv::parser<CharInput, full_fledged_handler_t>;
+        using ret_t = detail::csv::parser<CharInput, full_fledged_handler_t>;
 
         template <class HandlerR, class CharInputR>
         static auto invoke(HandlerR&& handler, CharInputR&& in)
