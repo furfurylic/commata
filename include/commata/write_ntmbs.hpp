@@ -114,7 +114,7 @@ auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-                if (n > 0) {
+                if ((n != static_cast<std::size_t>(-1)) && (n > 0)) {
                     os.rdbuf()->sputn(s, n);
                     continue;
                 }
