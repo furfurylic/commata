@@ -74,6 +74,14 @@ public:
     }
 };
 
+template <class TrS, class Tr, class Allocator>
+std::basic_ostream<char, TrS>& operator<<(
+    std::basic_ostream<char, TrS>& os,
+    const string_eq<char, Tr, Allocator>& eq)
+{
+    return os << eq.get();
+}
+
 struct is_stream_writable_impl
 {
     template <class Stream, class T>
