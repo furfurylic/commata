@@ -43,13 +43,15 @@ std::basic_ostream<Ch, Tr>& formatted_output(
                            == std::ios_base::left) ?
                 put() && pad() : pad() && put());                   // throw
         } catch (...) {
+            // Set badbit without causing an std::ios::failure to be thrown
+            // (C++17 30.7.5.2.1)
             if (os.bad()) {
+                // Already set and nothing to do
                 throw;                                              // throw
             } else {
-                // Set badbit, possibly rethrowing the original exception
                 try {
                     os.setstate(std::ios_base::badbit);             // throw
-                } catch (...) {
+                } catch (std::ios::failure&) {
                 }
                 if ((os.exceptions() & std::ios_base::badbit) != 0) {
                     throw;                                          // throw
@@ -57,11 +59,15 @@ std::basic_ostream<Ch, Tr>& formatted_output(
                 sets_failbit = false;
             }
         }
+        // According C++17 30.7.5.2.1, setting failbit *does not seem* required
+        // when the sentry is not sound
+        if (sets_failbit) {
+            os.setstate(std::ios_base::failbit);                    // throw
+        }
+        // According C++17 30.7.5.2.1, setting width to 0 is not required in
+        // any way when the sentry is not sound
+        os.width(0);
     }
-    if (sets_failbit) {
-        os.setstate(std::ios_base::failbit);                        // throw
-    }
-    os.width(0);
     return os;
 }
 
