@@ -1509,6 +1509,22 @@ template <class... Ts>
 using replaced_type_from_t =
     typename replaced_type_from_impl<replaced_type_not_found_t, Ts...>::type;
 
+template <class Ch, class Tr, class Tr2>
+auto sputn(std::basic_streambuf<Ch, Tr>* sb, std::basic_string_view<Ch, Tr2> s)
+{
+    using max_t = std::common_type_t<
+        std::make_unsigned_t<std::streamsize>,
+        typename std::basic_string_view<Ch, Tr2>::size_type>;
+    constexpr max_t max =
+        static_cast<max_t>(std::numeric_limits<std::streamsize>::max());
+
+    while (s.size() > max) {
+        sb->sputn(s.data(), max);
+        s.remove_prefix(max);
+    }
+    return sb->sputn(s.data(), s.size());
+}
+
 } // end detail::scanner
 
 template <class T,
@@ -1527,11 +1543,12 @@ struct fail_if_conversion_failed
     std::optional<T> operator()(invalid_format_t,
         const Ch* begin, const Ch* end, T* = nullptr) const
     {
+        using namespace std::string_view_literals;
         assert(*end == Ch());
-        std::ostringstream s;
-        detail::write_ntmbs(s, begin, end);
-        s << ": cannot convert";
-        write_name<T>(s, " to an instance of ");
+        std::stringbuf s;
+        detail::write_ntmbs(&s, std::locale(), begin, end);
+        detail::scanner::sputn(&s, ": cannot convert"sv);
+        write_name<T>(&s, " to an instance of "sv);
         throw field_invalid_format(std::move(s).str());
     }
 
@@ -1540,11 +1557,12 @@ struct fail_if_conversion_failed
     std::optional<T> operator()(out_of_range_t,
         const Ch* begin, const Ch* end, int, T* = nullptr) const
     {
+        using namespace std::string_view_literals;
         assert(*end == Ch());
-        std::ostringstream s;
-        detail::write_ntmbs(s, begin, end);
-        s << ": out of range";
-        write_name<T>(s, " of ");
+        std::stringbuf s;
+        detail::write_ntmbs(&s, std::locale(), begin, end);
+        detail::scanner::sputn(&s, ": out of range"sv);
+        write_name<T>(&s, " of "sv);
         throw field_out_of_range(std::move(s).str());
     }
 
@@ -1552,25 +1570,26 @@ struct fail_if_conversion_failed
     [[noreturn]]
     std::optional<T> operator()(empty_t, T* = nullptr) const
     {
-        std::ostringstream s;
-        s << "Cannot convert an empty string";
-        write_name<T>(s, " to an instance of ");
+        using namespace std::string_view_literals;
+        std::stringbuf s;
+        detail::scanner::sputn(&s, "Cannot convert an empty string"sv);
+        write_name<T>(&s, " to an instance of "sv);
         throw field_empty(std::move(s).str());
     }
 
 private:
     template <class T>
-    static std::ostream& write_name(std::ostream& os, const char* prefix,
+    static void write_name(std::streambuf* sb, std::string_view prefix,
         decltype(detail::scanner::numeric_type_traits<T>::name)* = nullptr)
     {
-        return os << prefix << detail::scanner::numeric_type_traits<T>::name;
+        using namespace detail::scanner;
+        sputn(sb, prefix);
+        sputn(sb, detail::scanner::numeric_type_traits<T>::name);
     }
 
-    template <class T>
-    static std::ostream& write_name(std::ostream& os, ...)
-    {
-        return os;
-    }
+    template <class T, class... Args>
+    static void write_name(std::streambuf*, Args&&...)
+    {}
 };
 
 namespace detail::scanner::replace_if_conversion_failed_impl {
