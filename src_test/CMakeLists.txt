@@ -39,6 +39,7 @@ set(TEST_COMMATA_SOURCES
     TestTablePull.cpp
     TestTableScanner.cpp
     TestTextError.cpp
+    TestWriteNTMBS.cpp
 )
 
 set(TEST_COMMATA_HEADERS

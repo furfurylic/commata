@@ -7,6 +7,7 @@
 #define COMMATA_GUARD_CC28B744_3844_4C86_9375_7FFB78261ABD
 
 #include <cstddef>
+#include <cstdio>
 #include <cwchar>
 #include <iomanip>
 #include <iterator>
@@ -34,50 +35,58 @@ constexpr std::size_t nchar()
     return (i + 7) / 8 * 2;
 }
 
-inline std::ostream& set_hex(std::ostream& os)
-{
-    return os << std::noshowbase << std::nouppercase
-              << std::hex << std::right << std::setfill('0');
-}
-
 template <class Ch>
-std::ostream& setw_char(std::ostream& os)
+bool write_hexadecimal(std::streambuf* sb, Ch c)
 {
-    return os << std::setw(nchar<Ch>());
-}
-
-class flags
-{
-    std::ostream* os_;
-    std::ios_base::fmtflags flags_;
-    char fill_;
-
-public:
-    explicit flags(std::ostream& os) :
-        os_(&os), flags_(os.flags()), fill_(os.fill())
-    {}
-
-    ~flags()
-    {
-        try {   // just in case
-            os_->setf(flags_);
-            *os_ << std::setw(0) << std::setfill(fill_);
-        } catch (...) {}
+    constexpr auto eof = std::char_traits<char>::eof();
+    char hex[nchar<Ch>() + 1];
+    const auto n = std::snprintf(hex, std::size(hex), "%x", c);
+    if (sb->sputc('[') == eof) return false;
+    if (n > 0) {
+        if (sb->sputc('0') == eof) return false;
+        if (sb->sputc('x') == eof) return false;
+        for (std::size_t i = n; i < nchar<Ch>(); ++i) {
+            if (sb->sputc('0') == eof) return false;
+        }
+        if (sb->sputn(hex, n) != n) return false;
     }
-};
+    return sb->sputc(']') != eof;
+}
 
 } // end ntmbs
 
 template <class InputIterator, class InputIteratorEnd>
-auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
+auto write_ntmbs(std::streambuf* sb, const std::locale&,
+                 InputIterator begin, InputIteratorEnd end)
+ -> std::enable_if_t<
+        std::is_same_v<
+            std::remove_const_t<
+                typename std::iterator_traits<InputIterator>::value_type>,
+            char>>
+{
+    // [begin, end] may be a NTMBS, so we cannot determine whether a char
+    // is an unprintable one or not easily
+    // (Of course we can first convert multibyte chars to wide chars,
+    // but we know C's global locale is often unreliable)
+    for (; begin != end; ++begin) {
+        const auto c = *begin;
+        if (c == '\0') {
+            ntmbs::write_hexadecimal(sb, c);
+        } else {
+            sb->sputc(c);
+        }
+    }
+}
+
+template <class InputIterator, class InputIteratorEnd>
+auto write_ntmbs(std::streambuf* sb, const std::locale& loc,
+                 InputIterator begin, InputIteratorEnd end)
  -> std::enable_if_t<
         std::is_same_v<
             std::remove_const_t<
                 typename std::iterator_traits<InputIterator>::value_type>,
             wchar_t>>
 {
-    using namespace ntmbs;
-
     // MB_CUR_MAX is not necessarily a constant;
     // we employ std::string for its no-allocation potential
     std::optional<std::string> s_store;
@@ -93,11 +102,10 @@ auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
     using ct_t = std::ctype<wchar_t>;
     const ct_t* facet = nullptr;
     try {
-        facet = &std::use_facet<ct_t>(os.getloc());
+        facet = &std::use_facet<ct_t>(loc);
     } catch (...) {}
 
     std::mbstate_t state = {};
-    const flags f(os);
     for (; begin != end; ++begin) {
         const auto c = *begin;
         if (s && facet) {
@@ -115,42 +123,19 @@ auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
 #pragma warning(pop)
 #endif
                 if ((n != static_cast<std::size_t>(-1)) && (n > 0)) {
-                    os.rdbuf()->sputn(s, n);
+                    sb->sputn(s, n);
                     continue;
                 }
             }
         }
-        // We assume this is a rare case, so flags are set lazily
-        os << std::setw(0)
-           << "[0x" << set_hex << setw_char<wchar_t> << (c + 0) << ']';
+        ntmbs::write_hexadecimal(sb, c);
     }
 }
 
 template <class InputIterator, class InputIteratorEnd>
-auto write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
- -> std::enable_if_t<
-        std::is_same_v<
-            std::remove_const_t<
-                typename std::iterator_traits<InputIterator>::value_type>,
-            char>>
+void write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
 {
-    using namespace ntmbs;
-
-    // [begin, end] may be a NTMBS, so we cannot determine whether a char
-    // is an unprintable one or not easily
-    // (Of course we can first convert multibyte chars to wide chars,
-    // but we know C's global locale is often unreliable)
-    const flags f(os);
-    for (; begin != end; ++begin) {
-        const auto c = *begin;
-        if (c == '\0') {
-            // We assume this is a rare case, so flags are set lazily
-            os << std::setw(0)
-               << "[0x" << set_hex << setw_char<char> << 0 << ']';
-        } else {
-            os.rdbuf()->sputc(c);
-        }
-    }
+    write_ntmbs(os.rdbuf(), os.getloc(), begin, end);
 }
 
 }
