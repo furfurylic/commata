@@ -107,7 +107,7 @@ template <class Tr, class Ch, class T,
                         || is_plain_field_name_pred_v<Ch, Tr, T>,
                            std::nullptr_t> = nullptr>
 void write_formatted_field_name_of(
-    std::ostream&, const char*, const T&, const Ch*)
+    std::ostream&, std::string_view, const T&, const Ch*)
 {}
 
 template <class Tr, class Ch, class T,
@@ -115,9 +115,9 @@ template <class Tr, class Ch, class T,
                         && !is_plain_field_name_pred_v<Ch, Tr, T>,
                            std::nullptr_t> = nullptr>
 void write_formatted_field_name_of(
-    std::ostream& o, const char* prefix, const T& t, const Ch*)
+    std::ostream& o, std::string_view prefix, const T& t, const Ch*)
 {
-    o.rdbuf()->sputn(prefix, std::strlen(prefix));
+    o.rdbuf()->sputn(prefix.data(), prefix.size());
     o << t;
 }
 
@@ -127,30 +127,30 @@ template <class Tr, class Ch, class T,
                         && !is_plain_field_name_pred_v<Ch, Tr, T>,
                            std::nullptr_t> = nullptr>
 void write_formatted_field_name_of(
-    std::ostream& o, const char* prefix, const T& t, const Ch*)
+    std::ostream& o, std::string_view prefix, const T& t, const Ch*)
 {
     std::wstringstream wo;
     wo << t;
-    o.rdbuf()->sputn(prefix, std::strlen(prefix));
+    o.rdbuf()->sputn(prefix.data(), prefix.size());
     using it_t = std::istreambuf_iterator<wchar_t>;
     detail::write_ntmbs(o, it_t(wo), it_t());
 }
 
 template <class Tr>
 void write_formatted_field_name_of(
-    std::ostream& o, const char* prefix,
+    std::ostream& o, std::string_view prefix,
     const range_eq<wchar_t, Tr>& t, const wchar_t*)
 {
-    o.rdbuf()->sputn(prefix, std::strlen(prefix));
+    o.rdbuf()->sputn(prefix.data(), prefix.size());
     detail::write_ntmbs(o, t.get().cbegin(), t.get().cend());
 }
 
 template <class Tr, class Allocator>
 void write_formatted_field_name_of(
-    std::ostream& o, const char* prefix,
+    std::ostream& o, std::string_view prefix,
     const string_eq<wchar_t, Tr, Allocator>& t, const wchar_t*)
 {
-    o.rdbuf()->sputn(prefix, std::strlen(prefix));
+    o.rdbuf()->sputn(prefix.data(), prefix.size());
     detail::write_ntmbs(o, t.get().cbegin(), t.get().cend());
 }
 
@@ -402,11 +402,12 @@ private:
 
     record_extraction_error no_matching_field() const
     {
-        const char* const what_core = "No matching field";
+        using namespace std::string_view_literals;
+        constexpr auto what_core = "No matching field"sv;
         try {
             std::ostringstream what;
             what << what_core;
-            write_formatted_field_name_of<Tr>(what, " for ", nf_.base(),
+            write_formatted_field_name_of<Tr>(what, " for "sv, nf_.base(),
                 static_cast<const Ch*>(nullptr));
             return record_extraction_error(std::move(what).str());
         } catch (...) {
