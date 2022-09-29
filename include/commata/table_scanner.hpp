@@ -762,7 +762,7 @@ struct numeric_type_traits;
 template <>
 struct numeric_type_traits<char>
 {
-    static constexpr const char* name = "char";
+    static constexpr std::string_view name = "char";
     using raw_type =
         std::conditional_t<std::is_signed_v<char>, long, unsigned long>;
 };
@@ -770,49 +770,49 @@ struct numeric_type_traits<char>
 template <>
 struct numeric_type_traits<signed char>
 {
-    static constexpr const char* name = "signed char";
+    static constexpr std::string_view name = "signed char";
     using raw_type = long;
 };
 
 template <>
 struct numeric_type_traits<unsigned char>
 {
-    static constexpr const char* name = "unsigned char";
+    static constexpr std::string_view name = "unsigned char";
     using raw_type = unsigned long;
 };
 
 template <>
 struct numeric_type_traits<short>
 {
-    static constexpr const char* name = "short int";
+    static constexpr std::string_view name = "short int";
     using raw_type = long;
 };
 
 template <>
 struct numeric_type_traits<unsigned short>
 {
-    static constexpr const char* name = "unsigned short int";
+    static constexpr std::string_view name = "unsigned short int";
     using raw_type = unsigned long;
 };
 
 template <>
 struct numeric_type_traits<int>
 {
-    static constexpr const char* name = "int";
+    static constexpr std::string_view name = "int";
     using raw_type = long;
 };
 
 template <>
 struct numeric_type_traits<unsigned>
 {
-    static constexpr const char* name = "unsigned int";
+    static constexpr std::string_view name = "unsigned int";
     using raw_type = unsigned long;
 };
 
 template <>
 struct numeric_type_traits<long>
 {
-    static constexpr const char* name = "long int";
+    static constexpr std::string_view name = "long int";
     static constexpr const auto strto = std::strtol;
     static constexpr const auto wcsto = std::wcstol;
 };
@@ -820,7 +820,7 @@ struct numeric_type_traits<long>
 template <>
 struct numeric_type_traits<unsigned long>
 {
-    static constexpr const char* name = "unsigned long int";
+    static constexpr std::string_view name = "unsigned long int";
     static constexpr const auto strto = std::strtoul;
     static constexpr const auto wcsto = std::wcstoul;
 };
@@ -828,7 +828,7 @@ struct numeric_type_traits<unsigned long>
 template <>
 struct numeric_type_traits<long long>
 {
-    static constexpr const char* name = "long long int";
+    static constexpr std::string_view name = "long long int";
     static constexpr const auto strto = std::strtoll;
     static constexpr const auto wcsto = std::wcstoll;
 };
@@ -836,7 +836,7 @@ struct numeric_type_traits<long long>
 template <>
 struct numeric_type_traits<unsigned long long>
 {
-    static constexpr const char* name = "unsigned long long int";
+    static constexpr std::string_view name = "unsigned long long int";
     static constexpr const auto strto = std::strtoull;
     static constexpr const auto wcsto = std::wcstoull;
 };
@@ -844,7 +844,7 @@ struct numeric_type_traits<unsigned long long>
 template <>
 struct numeric_type_traits<float>
 {
-    static constexpr const char* name = "float";
+    static constexpr std::string_view name = "float";
     static constexpr const auto strto = std::strtof;
     static constexpr const auto wcsto = std::wcstof;
     static constexpr const float huge = HUGE_VALF;
@@ -853,7 +853,7 @@ struct numeric_type_traits<float>
 template <>
 struct numeric_type_traits<double>
 {
-    static constexpr const char* name = "double";
+    static constexpr std::string_view name = "double";
     static constexpr const auto strto = std::strtod;
     static constexpr const auto wcsto = std::wcstod;
     static constexpr const double huge = HUGE_VAL;
@@ -862,7 +862,7 @@ struct numeric_type_traits<double>
 template <>
 struct numeric_type_traits<long double>
 {
-    static constexpr const char* name = "long double";
+    static constexpr std::string_view name = "long double";
     static constexpr const auto strto = std::strtold;
     static constexpr const auto wcsto = std::wcstold;
     static constexpr const long double huge = HUGE_VALL;
