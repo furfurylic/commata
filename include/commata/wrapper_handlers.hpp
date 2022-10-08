@@ -169,7 +169,7 @@ auto make_empty_physical_line_aware(Handler&& handler)
         !detail::is_std_reference_wrapper_v<std::decay_t<Handler>>,
         std::conditional_t<
             detail::has_empty_physical_line_v<std::decay_t<Handler>>,
-            std::decay_t<Handler>,
+            Handler&&,
             empty_physical_line_aware_handler<std::decay_t<Handler>>>>
 {
     if constexpr (detail::has_empty_physical_line_v<std::decay_t<Handler>>) {
