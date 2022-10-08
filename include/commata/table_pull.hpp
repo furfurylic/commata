@@ -359,9 +359,7 @@ public:
         handler_(create_handler(alloc,
             std::allocator_arg, alloc, buffer_size)),
         sq_(&handler_->state_queue()), dq_(&handler_->data_queue()),
-        ap_(alloc,
-            std::forward<TableSourceR>(in)(
-                reference_handler<handler_t>(*handler_)))
+        ap_(alloc, std::forward<TableSourceR>(in)(wrap_ref(*handler_)))
     {
         sq_->emplace_back(
             primitive_table_pull_state::before_parse,
