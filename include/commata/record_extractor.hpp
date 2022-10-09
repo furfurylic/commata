@@ -673,7 +673,7 @@ decltype(auto) make_string_pred(T&& s, const Allocator& a)
             // accept s and a as arguments of its constructor
     } else if constexpr (std::is_constructible_v<
                             std::basic_string_view<Ch, Tr>, T&&>) {
-        return range_eq<Ch, Tr>(std::move(s));
+        return range_eq<Ch, Tr>(std::forward<T>(s));
     } else if constexpr (has_const_iterator_v<std::remove_reference_t<T>>) {
         return string_eq(
             std::basic_string<Ch, Tr, Allocator>(s.cbegin(), s.cend(), a));
