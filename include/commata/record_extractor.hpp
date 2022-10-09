@@ -32,54 +32,94 @@
 namespace commata {
 namespace detail::record_extraction {
 
-template <class Ch, class Tr>
-class range_eq
+template <class Ch, class Tr, class C>
+class eq
 {
-    std::basic_string_view<Ch, Tr> s_;
+    C c_;
 
 public:
-    explicit range_eq(std::basic_string_view<Ch, Tr> s) noexcept :
-        s_(s)
+    explicit eq(C&& c) : c_(std::move(c))
     {}
 
     bool operator()(std::basic_string_view<Ch, Tr> s) const noexcept
     {
-        return s_ == s;
+        auto       i  =   begin();
+        const auto ie =   end();
+        auto       j  = s.cbegin();
+        const auto je = s.cend();
+        if constexpr (std::is_same_v<decltype(i),
+                                     std::remove_const_t<decltype(ie)>>) {
+            return std::equal(i, ie, j, je,
+                [](Ch l, Ch r) {
+                    return Tr::eq(l, r);
+                });
+        } else {
+            while ((i != ie) && (j != je)) {
+                if (!Tr::eq(*i, *j)) {
+                    return false;
+                }
+                ++i;
+                ++j;
+            }
+            return !((i != ie) || (j != je));
+        }
     }
 
-    decltype(auto) get() const noexcept
+    auto begin() const
     {
-        return s_;
+        if constexpr (std::is_pointer_v<C>) {
+            return std::begin(*c_);
+        } else {
+            return std::begin(c_);
+        }
+    }
+
+    auto end() const
+    {
+        if constexpr (std::is_pointer_v<C>) {
+            return std::end(*c_);
+        } else {
+            return std::end(c_);
+        }
     }
 };
 
-template <class Ch, class Tr, class Allocator>
-class string_eq
+template <class Ch, class Tr, class C>
+auto make_eq(C&& c)
 {
-    std::basic_string<Ch, Tr, Allocator> s_;
-
-public:
-    explicit string_eq(std::basic_string<Ch, Tr, Allocator>&& s) noexcept :
-        s_(std::move(s))
-    {}
-
-    bool operator()(std::basic_string_view<Ch, Tr> s) const noexcept
-    {
-        return s_ == s;
+    if constexpr (std::is_reference_v<C>) {
+        return eq<Ch, Tr, std::remove_reference_t<C>*>(std::addressof(c));
+    } else {
+        return eq<Ch, Tr, C>(std::forward<C>(c));
     }
+}
 
-    decltype(auto) get() const noexcept
-    {
-        return s_;
-    }
-};
-
-template <class TrS, class Tr, class Allocator>
+template <class TrS, class Tr, class C>
 std::basic_ostream<char, TrS>& operator<<(
-    std::basic_ostream<char, TrS>& os,
-    const string_eq<char, Tr, Allocator>& eq)
+    std::basic_ostream<char, TrS>& os, const eq<char, Tr, C>& eq)
 {
-    return os << eq.get();
+    using begin_t = decltype(eq.begin());
+    using end_t   = decltype(eq.end());
+    typename std::iterator_traits<begin_t>::difference_type n;
+    if constexpr (std::is_same_v<begin_t, end_t>) {
+        n = std::distance(eq.begin(), eq.end());
+    } else {
+        n = 0;
+        auto b = eq.begin();
+        const auto e = eq.end();
+        while (b != e) {
+            ++n;
+            ++b;
+        }
+    }
+    return formatted_output(os, n, [&eq](auto* sb) {
+        for (const auto c : eq) {
+            if (sb->sputc(c) == Tr::eof()) {
+                return false;
+            }
+        }
+        return true;
+    });
 }
 
 struct is_stream_writable_impl
@@ -144,22 +184,13 @@ void write_formatted_field_name_of(
     detail::write_ntmbs(o, it_t(wo), it_t());
 }
 
-template <class Tr>
+template <class Tr, class... Args>
 void write_formatted_field_name_of(
     std::ostream& o, std::string_view prefix,
-    const range_eq<wchar_t, Tr>& t, const wchar_t*)
+    const eq<wchar_t, Tr, Args...>& t, const wchar_t*)
 {
     o.rdbuf()->sputn(prefix.data(), prefix.size());
-    detail::write_ntmbs(o, t.get().cbegin(), t.get().cend());
-}
-
-template <class Tr, class Allocator>
-void write_formatted_field_name_of(
-    std::ostream& o, std::string_view prefix,
-    const string_eq<wchar_t, Tr, Allocator>& t, const wchar_t*)
-{
-    o.rdbuf()->sputn(prefix.data(), prefix.size());
-    detail::write_ntmbs(o, t.get().cbegin(), t.get().cend());
+    detail::write_ntmbs(o, t.begin(), t.end());
 }
 
 struct hollow_field_name_pred
@@ -483,9 +514,25 @@ private:
     }
 };
 
+template <class Ch, class Tr>
+struct is_string_pred_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<bool&>() = std::declval<T&>()(
+            std::declval<std::basic_string_view<Ch, Tr>&>()),
+        std::true_type());
+
+    template <class>
+    static auto check(...) -> std::false_type;
+};
+
+// Why this is not defined as std::is_invocable_r_v<bool, T&,
+// const std::basic_string_view<Ch, Tr>&> is that we'd like to exclude member
+// pointers (they do not any harm, but we'd like to keep the interface simple)
 template <class T, class Ch, class Tr>
-constexpr bool is_string_pred_v =
-    std::is_invocable_r_v<bool, T&, const std::basic_string_view<Ch, Tr>&>;
+constexpr bool is_string_pred_v = decltype(is_string_pred_impl<Ch, Tr>::
+                                    template check<T>(nullptr))::value;
 
 } // end detail::record_extraction
 
@@ -644,42 +691,44 @@ record_extractor_with_indexed_key(std::allocator_arg_t, Allocator,
 
 namespace detail::record_extraction {
 
-struct has_const_iterator_impl
+template <class Ch>
+struct is_range_accessible_impl
 {
     template <class T>
     static auto check(T*) ->
-        decltype(std::declval<typename T::const_iterator>(), std::true_type());
+        decltype(
+            std::declval<bool&>() = std::begin(std::declval<const T&>()) !=
+                                    std::end  (std::declval<const T&>()),
+            std::bool_constant<
+                std::is_base_of_v<
+                    std::forward_iterator_tag,
+                    typename std::iterator_traits<
+                        decltype(std::begin(std::declval<const T&>()))>
+                            ::iterator_category>
+             && std::is_convertible_v<
+                    typename std::iterator_traits<
+                        decltype(std::begin(std::declval<const T&>()))>
+                            ::value_type,
+                    Ch>>());
 
     template <class T>
-    static auto check(...) -> std::false_type;
+    static auto check(...)->std::false_type;
 };
 
-template <class T>
-constexpr bool has_const_iterator_v =
-    decltype(has_const_iterator_impl::check<T>(nullptr))::value;
+template <class T, class Ch>
+constexpr bool is_range_accessible_v =
+    decltype(is_range_accessible_impl<Ch>::template check<T>(nullptr))::value;
 
-template <class Ch, class Tr, class Allocator, class T>
-decltype(auto) make_string_pred(T&& s, const Allocator& a)
+template <class Ch, class Tr, class T>
+decltype(auto) make_string_pred(T&& s)
 {
-    if constexpr (detail::is_std_string_of_ch_tr_v<T, Ch, Tr>) {
-        // rvalue of std::basic_string only
-        return string_eq(std::move(s));
-    } else if constexpr (detail::is_std_string_of_ch_tr_v<
-            std::remove_const_t<T>, Ch, Tr>) {
-        // rvalue of const std::basic_string only
-        return string_eq(
-            std::basic_string<Ch, Tr, Allocator>(s.cbegin(), s.cend(), a));
-            // std::basic_string that comes with GCC 7.3 does not seem to
-            // accept s and a as arguments of its constructor
-    } else if constexpr (std::is_constructible_v<
-                            std::basic_string_view<Ch, Tr>, T&&>) {
-        return range_eq<Ch, Tr>(std::forward<T>(s));
-    } else if constexpr (has_const_iterator_v<std::remove_reference_t<T>>) {
-        return string_eq(
-            std::basic_string<Ch, Tr, Allocator>(s.cbegin(), s.cend(), a));
+    if constexpr (std::is_convertible_v<T, const Ch*>) {
+        const Ch* const str = s;
+        return make_eq<Ch, Tr>(std::basic_string_view<Ch, Tr>(str));
+    } else if constexpr (is_range_accessible_v<
+                            std::remove_reference_t<T>, Ch>) {
+        return make_eq<Ch, Tr>(std::forward<T>(s));
     } else {
-        // This "not uses-allocator construction" is intentional because
-        // what we would like to do here is a mere move/copy by forwarding
         return std::forward<T>(s);
     }
 }
@@ -696,27 +745,23 @@ auto make_record_extractor(
  -> std::enable_if_t<
         detail::record_extraction::is_string_pred_v<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
-                std::declval<FieldNamePred>(),
-                std::declval<Allocator>()))>, Ch, Tr>
+                std::declval<FieldNamePred>()))>, Ch, Tr>
      && detail::record_extraction::is_string_pred_v<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
-                std::declval<FieldValuePred>(),
-                std::declval<Allocator>()))>, Ch, Tr>,
+                std::declval<FieldValuePred>()))>, Ch, Tr>,
         record_extractor<
             std::decay_t<
                 decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
-                    std::declval<FieldNamePred>(),
-                    std::declval<Allocator>()))>,
+                    std::declval<FieldNamePred>()))>,
             std::decay_t<
                 decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
-                    std::declval<FieldValuePred>(),
-                    std::declval<Allocator>()))>,
+                    std::declval<FieldValuePred>()))>,
             Ch, Tr, Allocator>>
 {
     auto fnp = detail::record_extraction::make_string_pred<Ch, Tr>(
-        std::forward<FieldNamePred>(field_name_pred), alloc);
+        std::forward<FieldNamePred>(field_name_pred));
     auto fvp = detail::record_extraction::make_string_pred<Ch, Tr>(
-        std::forward<FieldValuePred>(field_value_pred), alloc);
+        std::forward<FieldValuePred>(field_value_pred));
     return record_extractor(
         std::allocator_arg, alloc, out,
         std::move(fnp), std::move(fvp),
@@ -733,16 +778,14 @@ auto make_record_extractor(
  -> std::enable_if_t<
         detail::record_extraction::is_string_pred_v<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
-                std::declval<FieldValuePred>(),
-                std::declval<Allocator>()))>, Ch, Tr>,
+                std::declval<FieldValuePred>()))>, Ch, Tr>,
         record_extractor_with_indexed_key<std::decay_t<
             decltype(detail::record_extraction::make_string_pred<Ch, Tr>(
-                std::declval<FieldValuePred>(),
-                std::declval<Allocator>()))>,
+                std::declval<FieldValuePred>()))>,
             Ch, Tr, Allocator>>
 {
     auto fvp = detail::record_extraction::make_string_pred<Ch, Tr>(
-        std::forward<FieldValuePred>(field_value_pred), alloc);
+        std::forward<FieldValuePred>(field_value_pred));
     return record_extractor_with_indexed_key(
         std::allocator_arg, alloc, out,
         static_cast<std::size_t>(target_field_index), std::move(fvp),

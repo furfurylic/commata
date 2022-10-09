@@ -18,20 +18,6 @@ constexpr bool is_std_string_v = false;
 template <class... Args>
 constexpr bool is_std_string_v<std::basic_string<Args...>> = true;
 
-template <class T, class Ch>
-constexpr bool is_std_string_of_ch_v = false;
-
-template <class Ch, class... Args>
-constexpr bool is_std_string_of_ch_v<std::basic_string<Ch, Args...>,
-                                     Ch> = true;
-
-template <class T, class Ch, class Tr>
-constexpr bool is_std_string_of_ch_tr_v = false;
-
-template <class Ch, class Tr, class... Args>
-constexpr bool is_std_string_of_ch_tr_v<std::basic_string<Ch, Tr, Args...>,
-                                        Ch, Tr> = true;
-
 template <class T>
 constexpr bool is_std_string_view_v = false;
 

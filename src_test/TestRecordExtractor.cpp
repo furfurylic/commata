@@ -27,6 +27,47 @@ using namespace std::literals::string_literals;
 using namespace commata;
 using namespace commata::test;
 
+namespace {
+
+struct null_termination
+{};
+
+bool operator!=(const char* str, null_termination)
+{
+    return *str != '\0';
+}
+
+struct null_terminated
+{
+    const char* str;
+
+    const char* begin() const
+    {
+        return str;
+    }
+
+    null_termination end() const
+    {
+        return null_termination();
+    }
+};
+
+}
+
+struct TestRecordExtractorStringPred : BaseTest
+{};
+
+TEST_F(TestRecordExtractorStringPred, NullTerminatedEq)
+{
+    const null_terminated abc = { "ABC" };
+    const auto eq =
+        detail::record_extraction::make_eq<char, std::char_traits<char>>(abc);
+    ASSERT_FALSE(eq("ABCD"));
+    ASSERT_FALSE(eq("AB"));
+    ASSERT_FALSE(eq("ABc"));
+    ASSERT_TRUE (eq("ABC"));
+}
+
 struct TestRecordExtractor : BaseTestWithParam<std::size_t>
 {};
 
