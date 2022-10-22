@@ -7,6 +7,7 @@
 #define COMMATA_GUARD_9F3EFB02_5C6D_449D_A895_01323928E6BC
 
 #include <functional>
+#include <iterator>
 #include <string>
 #include <type_traits>
 
@@ -47,6 +48,35 @@ struct first<Head, Tail...>
 
 template <class... Ts>
 using first_t = typename first<Ts...>::type;
+
+template <class E, class Category>
+struct is_range_accessible_impl
+{
+    template <class T>
+    static auto check(T*) ->
+        decltype(
+            std::declval<bool&>() = std::begin(std::declval<const T&>()) !=
+                                    std::end  (std::declval<const T&>()),
+            std::bool_constant<
+                std::is_base_of_v<
+                    Category,
+                    typename std::iterator_traits<
+                        decltype(std::begin(std::declval<const T&>()))>
+                            ::iterator_category>
+             && std::is_convertible_v<
+                    typename std::iterator_traits<
+                        decltype(std::begin(std::declval<const T&>()))>
+                            ::value_type,
+                    E>>());
+
+    template <class T>
+    static auto check(...)->std::false_type;
+};
+
+template <class T, class E, class Category>
+constexpr bool is_range_accessible_v =
+    decltype(is_range_accessible_impl<E, Category>::
+        template check<T>(nullptr))::value;
 
 }
 

@@ -3935,8 +3935,15 @@ template &lt;class InputIterator>
 template &lt;class OtherValue>
   value_type&amp; rewrite_value(value_type&amp; value, const OtherValue&amp; new_value);
           </code>
-          <effects>Equivalent to: <c>return rewrite_value(value, new_value.cbegin(), new_value.cend());</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>OtherValue::const_iterator</c> is a type.</remark>
+          <effects>Equivalent to: <c>return rewrite_value(value, std::begin(new_value), std::end(new_value));</c></effects>
+          <remark><p>This overload shall not participate in overload resolution unless:</p>
+            <ul>
+              <li><c>std::is_convertible_v&lt;const OtherValue&amp;, const char_type*></c> is <c>false</c>,</li>
+              <li><c>std::begin(std::declval&lt;const OtherValue&amp;>()) != std::end(std::declval&lt;const OtherValue&amp;>())</c> is well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>,</li>
+              <li><c>std::iterator_traits&lt;decltype(std::begin(std::declval&lt;const OtherValue&amp;>()))>::iterator_category</c> denotes a type (hereinafter called <c>C</c>) and <c>std::is_base_of_v&lt;std::input_iterator_tag, C></c> is <c>true</c>, and</li>
+              <li><c>std::iterator_traits&lt;decltype(std::begin(std::declval&lt;const OtherValue&amp;>()))>::value_type</c> denotes a type (hereinafter called <c>V</c>) and <c>std::is_convertible_v&lt;V, char_type></c> is <c>true</c>.</li>
+            </ul>
+          </remark>
         </code-item>
 
         <code-item>

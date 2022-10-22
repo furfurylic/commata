@@ -34,6 +34,7 @@
 #include "member_like_base.hpp"
 #include "propagation_controlled_allocator.hpp"
 #include "string_value.hpp"
+#include "typing_aid.hpp"
 
 namespace commata {
 
@@ -1488,11 +1489,14 @@ private:
 public:
     template <class OtherValue>
     auto rewrite_value(value_type& value, const OtherValue& new_value)
-     -> decltype(
-            std::declval<typename OtherValue::const_iterator>(),
-            std::declval<value_type>())&
+     -> std::enable_if_t<
+            !std::is_convertible_v<const OtherValue&, const char_type*>
+         && detail::is_range_accessible_v<OtherValue,
+                                          char_type, std::input_iterator_tag>,
+            value_type&>
     {
-        return rewrite_value(value, new_value.cbegin(), new_value.cend());
+        return rewrite_value(value,
+                             std::begin(new_value), std::end(new_value));
     }
 
     template <class... Args>

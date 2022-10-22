@@ -691,34 +691,6 @@ record_extractor_with_indexed_key(std::allocator_arg_t, Allocator,
 
 namespace detail::record_extraction {
 
-template <class Ch>
-struct is_range_accessible_impl
-{
-    template <class T>
-    static auto check(T*) ->
-        decltype(
-            std::declval<bool&>() = std::begin(std::declval<const T&>()) !=
-                                    std::end  (std::declval<const T&>()),
-            std::bool_constant<
-                std::is_base_of_v<
-                    std::forward_iterator_tag,
-                    typename std::iterator_traits<
-                        decltype(std::begin(std::declval<const T&>()))>
-                            ::iterator_category>
-             && std::is_convertible_v<
-                    typename std::iterator_traits<
-                        decltype(std::begin(std::declval<const T&>()))>
-                            ::value_type,
-                    Ch>>());
-
-    template <class T>
-    static auto check(...)->std::false_type;
-};
-
-template <class T, class Ch>
-constexpr bool is_range_accessible_v =
-    decltype(is_range_accessible_impl<Ch>::template check<T>(nullptr))::value;
-
 template <class Ch, class Tr, class T>
 decltype(auto) make_string_pred(T&& s)
 {
@@ -726,7 +698,7 @@ decltype(auto) make_string_pred(T&& s)
         const Ch* const str = s;
         return make_eq<Ch, Tr>(std::basic_string_view<Ch, Tr>(str));
     } else if constexpr (is_range_accessible_v<
-                            std::remove_reference_t<T>, Ch>) {
+                std::remove_reference_t<T>, Ch, std::forward_iterator_tag>) {
         return make_eq<Ch, Tr>(std::forward<T>(s));
     } else {
         return std::forward<T>(s);
