@@ -43,7 +43,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         include/commata/commata.natvis
     )
 endif()
-target_compile_features(commata INTERFACE cxx_std_17)
+target_compile_features(commata INTERFACE cxx_std_20)
 
 if(COMMATA_BUILD_TESTS)
     add_subdirectory(src_test)
