@@ -387,188 +387,30 @@ auto operator==(
     return detail::string_value_eq(left, right);
 }
 
-template <class ChC, class Tr, class Left>
-auto operator==(
-    const Left& left,
-    const basic_stored_value<ChC, Tr>& right)
-    noexcept(noexcept(detail::string_value_eq(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value_v<
-        std::remove_const_t<ChC>, Tr, Left>, bool>
-{
-    return detail::string_value_eq(left, right);
-}
-
 template <class ChL, class ChR, class Tr>
-auto operator!=(
-    const basic_stored_value<ChL, Tr>& left,
-    const basic_stored_value<ChR, Tr>& right) noexcept
- -> std::enable_if_t<
-        std::is_same_v<
-            std::remove_const_t<ChL>,
-            std::remove_const_t<ChR>>, bool>
-{
-    return !(left == right);
-}
-
-template <class ChC, class Tr, class Right>
-auto operator!=(
-    const basic_stored_value<ChC, Tr>& left,
-    const Right& right)
-    noexcept(noexcept(!(left == right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value_v<
-        std::remove_const_t<ChC>, Tr, Right>, bool>
-{
-    return !(left == right);
-}
-
-template <class ChC, class Tr, class Left>
-auto operator!=(
-    const Left& left,
-    const basic_stored_value<ChC, Tr>& right)
-    noexcept(noexcept(!(left == right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value_v<
-        std::remove_const_t<ChC>, Tr, Left>, bool>
-{
-    return !(left == right);
-}
-
-template <class ChL, class ChR, class Tr>
-auto operator<(
+auto operator<=>(
     const basic_stored_value<ChL, Tr>& left,
     const basic_stored_value<ChR, Tr>& right)
-    noexcept(noexcept(detail::string_value_lt(left, right)))
+    noexcept(noexcept(detail::string_value_comp(left, right)))
  -> std::enable_if_t<
         std::is_same_v<
             std::remove_const_t<ChL>,
-            std::remove_const_t<ChR>>, bool>
+            std::remove_const_t<ChR>>,
+        decltype(detail::string_value_comp(left, right))>
 {
-    return detail::string_value_lt(left, right);
+    return detail::string_value_comp(left, right);
 }
 
 template <class ChC, class Tr, class Right>
-auto operator<(
+auto operator<=>(
     const basic_stored_value<ChC, Tr>& left,
     const Right& right)
-    noexcept(noexcept(detail::string_value_lt(left, right)))
+    noexcept(noexcept(detail::string_value_comp(left, right)))
  -> std::enable_if_t<detail::is_comparable_with_string_value_v<
-        std::remove_const_t<ChC>, Tr, Right>, bool>
+                        std::remove_const_t<ChC>, Tr, Right>,
+        decltype(detail::string_value_comp(left, right))>
 {
-    return detail::string_value_lt(left, right);
-}
-
-template <class ChC, class Tr, class Left>
-auto operator<(
-    const Left& left,
-    const basic_stored_value<ChC, Tr>& right)
-    noexcept(noexcept(detail::string_value_lt(left, right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value_v<
-        std::remove_const_t<ChC>, Tr, Left>, bool>
-{
-    return detail::string_value_lt(left, right);
-}
-
-template <class ChL, class ChR, class Tr>
-auto operator>(
-    const basic_stored_value<ChL, Tr>& left,
-    const basic_stored_value<ChR, Tr>& right) noexcept
- -> std::enable_if_t<
-        std::is_same_v<
-            std::remove_const_t<ChL>,
-            std::remove_const_t<ChR>>, bool>
-{
-    return right < left;
-}
-
-template <class ChC, class Tr, class Right>
-auto operator>(
-    const basic_stored_value<ChC, Tr>& left,
-    const Right& right)
-    noexcept(noexcept(right < left))
- -> std::enable_if_t<detail::is_comparable_with_string_value_v<
-        std::remove_const_t<ChC>, Tr, Right>, bool>
-{
-    return right < left;
-}
-
-template <class ChC, class Tr, class Left>
-auto operator>(
-    const Left& left,
-    const basic_stored_value<ChC, Tr>& right)
-    noexcept(noexcept(right < left))
- -> std::enable_if_t<detail::is_comparable_with_string_value_v<
-        std::remove_const_t<ChC>, Tr, Left>, bool>
-{
-    return right < left;
-}
-
-template <class ChL, class ChR, class Tr>
-auto operator<=(
-    const basic_stored_value<ChL, Tr>& left,
-    const basic_stored_value<ChR, Tr>& right)
-    noexcept(noexcept(!(right < left)))
- -> std::enable_if_t<
-        std::is_same_v<
-            std::remove_const_t<ChL>,
-            std::remove_const_t<ChR>>, bool>
-{
-    return !(right < left);
-}
-
-template <class ChC, class Tr, class Right>
-auto operator<=(
-    const basic_stored_value<ChC, Tr>& left,
-    const Right& right)
-    noexcept(noexcept(!(right < left)))
- -> std::enable_if_t<detail::is_comparable_with_string_value_v<
-        std::remove_const_t<ChC>, Tr, Right>, bool>
-{
-    return !(right < left);
-}
-
-template <class ChC, class Tr, class Left>
-auto operator<=(
-    const Left& left,
-    const basic_stored_value<ChC, Tr>& right)
-    noexcept(noexcept(!(right < left)))
- -> std::enable_if_t<detail::is_comparable_with_string_value_v<
-        std::remove_const_t<ChC>, Tr, Left>, bool>
-{
-    return !(right < left);
-}
-
-template <class ChL, class ChR, class Tr>
-auto operator>=(
-    const basic_stored_value<ChL, Tr>& left,
-    const basic_stored_value<ChR, Tr>& right)
-    noexcept(noexcept(!(left < right)))
- -> std::enable_if_t<
-        std::is_same_v<
-            std::remove_const_t<ChL>,
-            std::remove_const_t<ChR>>, bool>
-{
-    return !(left < right);
-}
-
-template <class ChC, class Tr, class Right>
-auto operator>=(
-    const basic_stored_value<ChC, Tr>& left,
-    const Right& right)
-    noexcept(noexcept(!(left < right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value_v<
-        std::remove_const_t<ChC>, Tr, Right>, bool>
-{
-    return !(left < right);
-}
-
-template <class ChC, class Tr, class Left>
-auto operator>=(
-    const Left& left,
-    const basic_stored_value<ChC, Tr>& right)
-    noexcept(noexcept(!(left < right)))
- -> std::enable_if_t<detail::is_comparable_with_string_value_v<
-        std::remove_const_t<ChC>, Tr, Left>, bool>
-{
-    return !(left < right);
+    return detail::string_value_comp(left, right);
 }
 
 template <class ChC, class Tr>

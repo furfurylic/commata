@@ -64,6 +64,12 @@ static_assert(noexcept(std::declval<stored_value&>().empty()));
 static_assert(noexcept(std::declval<stored_value&>().clear()));
 static_assert(std::is_nothrow_swappable_v<stored_value>);
 
+// See comments on TestStoredValueNoModification.Relations
+static_assert(std::is_same_v<std::strong_ordering,
+    decltype(std::declval<stored_value>() <=> std::declval<cstored_value>())>);
+static_assert(std::is_same_v<std::strong_ordering,
+    decltype(std::declval<cstored_value>() <=> std::declval<stored_value>())>);
+
 template <class Ch>
 struct TestStoredValueNoModification : BaseTest
 {};
@@ -142,6 +148,24 @@ TYPED_TEST(TestStoredValueNoModification, Relations)
     using string_t = std::basic_string<decayed_char_t>;
     using string_view_t = std::basic_string_view<decayed_char_t>;
     using value_t = basic_stored_value<char_t>;
+
+    // Since std::char_traits<decayed_char_t> has comparison_category and it is
+    // strong_ordering, comparison around value_t shall not fall back to
+    // weak_ordering
+    static_assert(std::is_same_v<std::strong_ordering,
+        decltype(std::declval<value_t>() <=> std::declval<value_t>())>);
+    static_assert(std::is_same_v<std::strong_ordering,
+        decltype(std::declval<value_t>() <=> std::declval<string_t>())>);
+    static_assert(std::is_same_v<std::strong_ordering,
+        decltype(std::declval<string_t>() <=> std::declval<value_t>())>);
+    static_assert(std::is_same_v<std::strong_ordering,
+        decltype(std::declval<value_t>() <=> std::declval<string_view_t>())>);
+    static_assert(std::is_same_v<std::strong_ordering,
+        decltype(std::declval<string_view_t>() <=> std::declval<value_t>())>);
+    static_assert(std::is_same_v<std::strong_ordering,
+        decltype(std::declval<const char_t*>() <=> std::declval<value_t>())>);
+    static_assert(std::is_same_v<std::strong_ordering,
+        decltype(std::declval<value_t>() <=> std::declval<const char_t*>())>);
 
     const auto str = char_helper<decayed_char_t>::str;
 

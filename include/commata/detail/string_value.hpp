@@ -6,12 +6,43 @@
 #ifndef COMMATA_GUARD_2501F2DC_A59A_46EC_ABF7_C898072C318D
 #define COMMATA_GUARD_2501F2DC_A59A_46EC_ABF7_C898072C318D
 
+#include <compare>
 #include <string_view>
 #include <type_traits>
 
 namespace commata::detail {
 
 namespace string_value {
+
+struct has_comparison_category_impl
+{
+    template <class Tr>
+    static auto check(Tr*) ->
+        decltype(std::declval<typename Tr::comparison_category>(),
+            std::true_type());
+
+    template <class Tr>
+    static auto check(...) -> std::false_type;
+};
+
+template <class Tr>
+constexpr bool has_comparison_category_v =
+    decltype(has_comparison_category_impl::check<Tr>(nullptr))::value;
+
+template <class Tr, class = void>
+struct comparison_category
+{
+    using type = std::weak_ordering;
+};
+
+template <class Tr>
+struct comparison_category<Tr, std::enable_if_t<has_comparison_category_v<Tr>>>
+{
+    using type = typename Tr::comparison_category;
+};
+
+template <class Tr>
+using comparison_category_t = typename comparison_category<Tr>::type;
 
 template <class T>
 using view_t = std::basic_string_view<
@@ -62,39 +93,32 @@ auto string_value_eq(
     return i == lve;
 }
 
-template <class T>
-auto string_value_eq(
-    const typename T::value_type* left,
-    const T& right)
- -> std::enable_if_t<
-        std::is_convertible_v<const T&, string_value::view_t<T>>, bool>
-{
-    return string_value_eq(right, left);
-}
-
 template <class T, class U>
-auto string_value_lt(
+auto string_value_comp(
     const T& left,
     const U& right)
     noexcept(noexcept(string_value::view_t<T>(left))
           && noexcept(string_value::view_t<U>(right)))
  -> std::enable_if_t<
         std::is_convertible_v<const T&, string_value::view_t<T>>
-     && std::is_convertible_v<const U&, string_value::view_t<U>>, bool>
+     && std::is_convertible_v<const U&, string_value::view_t<U>>,
+        decltype(std::declval<string_value::view_t<T>>()
+             <=> std::declval<string_value::view_t<U>>())>
 {
-    return std::basic_string_view<std::remove_const_t<typename T::value_type>,
-            typename T::traits_type>(left)
-         < std::basic_string_view<std::remove_const_t<typename U::value_type>,
-            typename U::traits_type>(right);
+    return string_value::view_t<T>(left) <=> string_value::view_t<T>(right);
 }
 
 template <class T>
-auto string_value_lt(
+auto string_value_comp(
     const T& left,
     const typename T::value_type* right)
  -> std::enable_if_t<
-        std::is_convertible_v<const T&, string_value::view_t<T>>, bool>
+        std::is_convertible_v<const T&, string_value::view_t<T>>,
+        string_value::comparison_category_t<typename T::traits_type>>
 {
+    using result_t =
+        string_value::comparison_category_t<typename T::traits_type>;
+
     std::basic_string_view<std::remove_const_t<typename T::value_type>>
         lv = left;
 
@@ -102,36 +126,21 @@ auto string_value_lt(
     for (auto l : lv) {
         const auto r = *right;
         if (tr_t::eq(r, typename T::value_type()) || tr_t::lt(r, l)) {
-            return false;
+            return result_t::greater;
         } else if (tr_t::lt(l, r)) {
-            return true;
+            return result_t::less;
         }
         ++right;
     }
-    return !tr_t::eq(*right, typename T::value_type());
-}
-
-template <class T>
-auto string_value_lt(
-    const typename T::value_type* left,
-    const T& right)
- -> std::enable_if_t<
-        std::is_convertible_v<const T&, string_value::view_t<T>>, bool>
-{
-    std::basic_string_view<std::remove_const_t<typename T::value_type>>
-        rv = right;
-
-    using tr_t = typename T::traits_type;
-    for (auto r : rv) {
-        const auto l = *left;
-        if (tr_t::eq(l, typename T::value_type()) || tr_t::lt(l, r)) {
-            return true;
-        } else if (tr_t::lt(r, l)) {
-            return false;
+    if (tr_t::eq(*right, typename T::value_type())) {
+        if constexpr (std::is_same_v<std::strong_ordering, result_t>) {
+            return result_t::equal;
+        } else {
+            return result_t::equivalent;
         }
-        ++left;
+    } else {
+        return result_t::less;
     }
-    return false;   // at least left == rv
 }
 
 }
