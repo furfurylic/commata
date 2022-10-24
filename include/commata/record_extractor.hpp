@@ -48,22 +48,10 @@ public:
         const auto ie =   end();
         auto       j  = s.cbegin();
         const auto je = s.cend();
-        if constexpr (std::is_same_v<decltype(i),
-                                     std::remove_const_t<decltype(ie)>>) {
-            return std::equal(i, ie, j, je,
+        return std::ranges::equal(i, ie, j, je,
                 [](Ch l, Ch r) {
                     return Tr::eq(l, r);
                 });
-        } else {
-            while (!((i == ie) || (j == je))) {
-                if (!Tr::eq(*i, *j)) {
-                    return false;
-                }
-                ++i;
-                ++j;
-            }
-            return (i == ie) && (j == je);
-        }
     }
 
     auto begin() const
