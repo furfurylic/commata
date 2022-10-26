@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
@@ -877,8 +878,8 @@ constexpr bool is_basic_stored_value_v<basic_stored_value<Args...>> = true;
 template <class Tr>
 struct null_termination
 {
-    template <class InputIterator>
-    friend bool operator==(InputIterator left, null_termination)
+    template <std::input_iterator I>
+    friend bool operator==(I left, null_termination)
     {
         return Tr::eq(*left, typename Tr::char_type());
     }
@@ -890,8 +891,8 @@ void move_chs(const Ch* begin1, std::size_t size, Ch* begin2)
     Tr::move(begin2, begin1, size);
 }
 
-template <class Tr, class InputIterator, class Ch>
-void move_chs(InputIterator begin1, std::size_t size, Ch* begin2)
+template <class Tr, std::input_iterator I, class Ch>
+void move_chs(I begin1, std::size_t size, Ch* begin2)
 {
     for (std::size_t i = 0; i < size; ++i) {
         Tr::assign(*begin2, *begin1);
@@ -900,14 +901,14 @@ void move_chs(InputIterator begin1, std::size_t size, Ch* begin2)
     }
 }
 
-template <class InputIterator>
-std::size_t distance(InputIterator begin, InputIterator end)
+template <std::input_iterator I>
+std::size_t distance(I begin, I end)
 {
     return static_cast<std::size_t>(std::distance(begin, end));
 }
 
-template <class InputIterator, class InputIteratorEnd>
-std::size_t distance(InputIterator begin, InputIteratorEnd end)
+template <std::input_iterator I, std::sentinel_for<I> S>
+std::size_t distance(I begin, S end)
 {
     std::size_t length = 0;
     while (!(begin == end)) {
@@ -917,8 +918,8 @@ std::size_t distance(InputIterator begin, InputIteratorEnd end)
     return length;
 }
 
-template <class Tr, class InputIterator>
-std::size_t length(InputIterator begin)
+template <class Tr, std::input_iterator I>
+std::size_t length(I begin)
 {
     return distance(begin, null_termination<Tr>());
 }
@@ -1172,12 +1173,12 @@ public:
         return value;
     }
 
-    template <class InputIterator, class InputIteratorEnd>
+    template <std::input_iterator I, std::sentinel_for<I> S>
     value_type& rewrite_value(value_type& value,
-        InputIterator new_value_begin, InputIteratorEnd new_value_end)
+        I new_value_begin, S new_value_end)
     {
         using it_cat =
-            typename std::iterator_traits<InputIterator>::iterator_category;
+            typename std::iterator_traits<I>::iterator_category;
 
         if constexpr (std::is_base_of_v<std::forward_iterator_tag, it_cat>) {
             return rewrite_value_n(value, new_value_begin,
@@ -1187,16 +1188,10 @@ public:
         }
     }
 
-    template <class InputIterator>
-    auto rewrite_value(value_type& value, InputIterator new_value)
-     -> std::enable_if_t<
-            std::is_base_of_v<
-                std::input_iterator_tag,
-                typename std::iterator_traits<InputIterator>::
-                    iterator_category>,
-            value_type&>
+    template <std::input_iterator I>
+    value_type& rewrite_value(value_type& value, I new_value)
     {
-        using it_tr = std::iterator_traits<InputIterator>;
+        using it_tr = std::iterator_traits<I>;
         using it_cat = typename it_tr::iterator_category;
         if constexpr (std::is_base_of_v<std::forward_iterator_tag, it_cat>) {
             return rewrite_value_n(value, new_value,
@@ -1208,9 +1203,9 @@ public:
     }
 
 private:
-    template <class InputIterator>
+    template <std::input_iterator I>
     value_type& rewrite_value_n(value_type& value,
-        InputIterator new_value_begin, std::size_t new_value_size)
+        I new_value_begin, std::size_t new_value_size)
     {
         if (new_value_size == 0) {
             return value = value_type();
@@ -1287,9 +1282,9 @@ private:
         }
     };
 
-    template <class InputIterator, class InputIteratorEnd>
+    template <std::input_iterator I, std::sentinel_for<I> S>
     value_type& rewrite_value_input(value_type& value,
-        InputIterator new_value_begin, InputIteratorEnd new_value_end)
+        I new_value_begin, S new_value_end)
     {
         if (new_value_begin == new_value_end) {
             return value = value_type();
