@@ -44,13 +44,6 @@ struct replaced_type_from_impl<Found>
         replaced_type_not_found_t, Found>;
 };
 
-// In C++20, we can use std::type_identity instead
-template <class T>
-struct identity
-{
-    using type = T;
-};
-
 struct has_common_type_impl
 {
     template <class... Ts>
@@ -71,14 +64,15 @@ struct replaced_type_from_impl<Found, Head, Tails...>
         typename std::conditional<
             std::is_base_of_v<replacement_fail_t, Head>
          || std::is_base_of_v<replacement_ignore_t, Head>,
-            identity<identity<Found>>,
+            std::type_identity<std::type_identity<Found>>,
             typename std::conditional<
                 std::is_same_v<Found, replaced_type_not_found_t>,
-                identity<Head>,
+                std::type_identity<Head>,
                 std::conditional_t<
                     has_common_type_v<Found, Head>,
                     std::common_type<Found, Head>,
-                    identity<replaced_type_impossible_t>>>>::type::type::type,
+                    std::type_identity<replaced_type_impossible_t>
+                >>>::type::type::type,
         Tails...>::type;
 };
 
