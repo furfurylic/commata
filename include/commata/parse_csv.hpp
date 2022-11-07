@@ -699,29 +699,29 @@ private:
     template <class Handler>
     class without_allocator
     {
-        using handler_t = std::decay_t<Handler>;
+        static_assert(!std::is_reference_v<Handler>);
 
     public:
         static constexpr bool enabled =
-            !detail::is_std_reference_wrapper_v<handler_t>
-         && detail::is_with_buffer_control_v<handler_t>;
+            !detail::is_std_reference_wrapper_v<Handler>
+         && detail::is_with_buffer_control_v<Handler>;
 
         using full_fledged_handler_t =
             std::conditional_t<
-                detail::is_full_fledged_v<handler_t>,
-                handler_t,
+                detail::is_full_fledged_v<Handler>,
+                Handler,
                 detail::full_fledged_handler<
-                    handler_t, detail::thru_buffer_control>>;
+                    Handler, detail::thru_buffer_control>>;
 
         using ret_t = detail::csv::parser<CharInput, full_fledged_handler_t>;
 
         template <class HandlerR, class CharInputR>
         static auto invoke(HandlerR&& handler, CharInputR&& in)
         {
-            static_assert(std::is_same_v<handler_t, std::decay_t<HandlerR>>);
+            static_assert(std::is_same_v<Handler, std::decay_t<HandlerR>>);
             static_assert(
                 std::is_same_v<
-                    typename handler_t::char_type,
+                    typename Handler::char_type,
                     typename traits_type::char_type>,
                 "std::decay_t<Handler>::char_type and traits_type::char_type "
                 "are inconsistent; they shall be the same type");
@@ -734,17 +734,17 @@ private:
     template <class Handler, class Allocator>
     class with_allocator
     {
-        using handler_t = std::decay_t<Handler>;
+        static_assert(!std::is_reference_v<Handler>);
 
         using buffer_engine_t = detail::default_buffer_control<Allocator>;
 
         using full_fledged_handler_t =
-            detail::full_fledged_handler<handler_t, buffer_engine_t>;
+            detail::full_fledged_handler<Handler, buffer_engine_t>;
 
     public:
         static constexpr bool enabled =
-            !detail::is_std_reference_wrapper_v<handler_t>
-         && detail::is_without_buffer_control_v<handler_t>;
+            !detail::is_std_reference_wrapper_v<Handler>
+         && detail::is_without_buffer_control_v<Handler>;
 
         using ret_t = detail::csv::parser<CharInput, full_fledged_handler_t>;
 
@@ -754,13 +754,13 @@ private:
         {
             static_assert(
                 std::is_same_v<
-                    typename handler_t::char_type,
+                    typename Handler::char_type,
                     typename traits_type::char_type>,
                 "std::decay_t<Handler>::char_type and traits_type::char_type "
                 "are inconsistent; they shall be the same type");
             static_assert(
                 std::is_same_v<
-                    typename handler_t::char_type,
+                    typename Handler::char_type,
                     typename std::allocator_traits<Allocator>::value_type>,
                 "std::decay_t<Handler>::char_type and "
                 "std::allocator_traits<Allocator>::value_type are "
@@ -790,10 +790,10 @@ public:
         noexcept(
             std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
          && std::is_nothrow_copy_constructible_v<CharInput>)
-     -> std::enable_if_t<without_allocator<Handler>::enabled,
+     -> std::enable_if_t<without_allocator<std::decay_t<Handler>>::enabled,
             parser_type<std::decay_t<Handler>>>
     {
-        return without_allocator<Handler>::invoke(
+        return without_allocator<std::decay_t<Handler>>::invoke(
             std::forward<Handler>(handler), in_);
     }
 
@@ -802,10 +802,10 @@ public:
         noexcept(
             std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
          && std::is_nothrow_move_constructible_v<CharInput>)
-     -> std::enable_if_t<without_allocator<Handler>::enabled,
+     -> std::enable_if_t<without_allocator<std::decay_t<Handler>>::enabled,
             parser_type<std::decay_t<Handler>>>
     {
-        return without_allocator<Handler>::invoke(
+        return without_allocator<std::decay_t<Handler>>::invoke(
             std::forward<Handler>(handler), std::move(in_));
     }
 
@@ -816,10 +816,10 @@ public:
             std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
          && std::is_nothrow_copy_constructible_v<CharInput>)
      -> std::enable_if_t<
-            with_allocator<Handler, Allocator>::enabled,
-            parser_type<Handler, Allocator>>
+            with_allocator<std::decay_t<Handler>, Allocator>::enabled,
+            parser_type<std::decay_t<Handler>, Allocator>>
     {
-        return with_allocator<Handler, Allocator>::invoke(
+        return with_allocator<std::decay_t<Handler>, Allocator>::invoke(
             std::forward<Handler>(handler),
             buffer_size, std::move(alloc), in_);
     }
@@ -831,10 +831,10 @@ public:
             std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
          && std::is_nothrow_move_constructible_v<CharInput>)
      -> std::enable_if_t<
-            with_allocator<Handler, Allocator>::enabled,
-            parser_type<Handler, Allocator>>
+            with_allocator<std::decay_t<Handler>, Allocator>::enabled,
+            parser_type<std::decay_t<Handler>, Allocator>>
     {
-        return with_allocator<Handler, Allocator>::invoke(
+        return with_allocator<std::decay_t<Handler>, Allocator>::invoke(
             std::forward<Handler>(handler),
             buffer_size, std::move(alloc), std::move(in_));
     }
