@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2022-11-16 (UTC)</signature>
+<signature>2022-11-26 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2123,7 +2123,7 @@ template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcep
   -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
           </code>
           <preface>Let <c>CharInput</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
-          <returns><c>csv_source&lt;CharInput>(std::forward&lt;Args>(args)...)</c>.</returns>
+          <effects>Equivalent to: <c>return csv_source&lt;CharInput>(std::forward&lt;Args>(args)...);</c></effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CharInput, Args&amp;&amp;...></c>.</remark>
         </code-item>
 
@@ -2133,7 +2133,7 @@ template &lt;class CharInputR> auto make_csv_source(CharInputR&amp;&amp; in) noe
   -> csv_source&lt;std::decay_t&lt;CharInputR>>;
           </code>
           <preface>Let <c>CharInput</c> be <c>std::decay_t&lt;CharInputR></c>.</preface>
-          <returns><c>csv_source&lt;CharInput>(std::forward&lt;CharInputR>(in))</c>.</returns>
+          <effects>Equivalent to: <c>return csv_source&lt;CharInput>(std::forward&lt;CharInputR>(in));</c></effects>
           <remark>This overload shall not participate in overload resolution if <c>make_char_input(std::declval&lt;CharInputR&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CharInput, CharInputR&amp;&amp;></c>.</remark>
         </code-item>
