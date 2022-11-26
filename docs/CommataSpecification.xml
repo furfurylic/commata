@@ -6674,7 +6674,7 @@ primitive_table_pull&amp; set_discarding_data(bool b = true) noexcept;
           <code>
 primitive_table_pull&amp; operator()();
           </code>
-          <effects>If <c>state() == primitive_table_pull_state::eof</c> is <c>true</c>, return without doing anything.
+          <effects>If <c>state() == primitive_table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
                    Otherwise, first dequeues an event from the event queue on the front if the queue is not empty.
                    Then iteratively calls <c>p()</c> to enqueue parsing events into the event queue on the back while the event queue is empty
                    where <c>p</c> is the table parser held by <c>*this</c>.</effects>
