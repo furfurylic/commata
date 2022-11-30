@@ -165,7 +165,7 @@ std::size_t print_pos(char (&s)[N], std::size_t pos, std::size_t base)
                   && (text_error::npos - base >= pos) ?
         std::snprintf(s, N, "%zu", pos + base) :
         std::snprintf(s, N, "n/a");
-    assert((len > 0 ) && (static_cast<std::size_t>(len) < N));
+    assert((len > 0) && (static_cast<std::size_t>(len) < N));
     return static_cast<std::size_t>(len);
 }
 
