@@ -39,7 +39,7 @@ TEST_F(TestTextError, DefaultCtor)
 {
     text_error e;
     ASSERT_STREQ("", e.what());
-    ASSERT_EQ(nullptr, e.get_physical_position());
+    ASSERT_FALSE(e.get_physical_position());
 }
 
 TEST_F(TestTextError, Ctors)
@@ -48,25 +48,25 @@ TEST_F(TestTextError, Ctors)
 
     text_error e1(message);
     ASSERT_STREQ(message, e1.what());
-    ASSERT_EQ(nullptr, e1.get_physical_position());
+    ASSERT_FALSE(e1.get_physical_position());
 
     e1.set_physical_position(123, 456);
 
     auto e2(e1);
     ASSERT_STREQ(message, e2.what());
-    ASSERT_NE(e2.get_physical_position(), nullptr);
+    ASSERT_TRUE(e2.get_physical_position());
     ASSERT_EQ(123, e2.get_physical_position()->first);
     ASSERT_EQ(456, e2.get_physical_position()->second);
 
     auto e3(std::move(e1));
     ASSERT_STREQ(message, e3.what());
-    ASSERT_NE(e3.get_physical_position(), nullptr);
+    ASSERT_TRUE(e3.get_physical_position());
     ASSERT_EQ(123, e3.get_physical_position()->first);
     ASSERT_EQ(456, e3.get_physical_position()->second);
 
     text_error e4{std::string_view(message)};   // most vexing parse
     ASSERT_STREQ(message, e4.what());
-    ASSERT_EQ(nullptr, e4.get_physical_position());
+    ASSERT_FALSE(e4.get_physical_position());
 }
 
 TEST_F(TestTextError, AssignmentOps)

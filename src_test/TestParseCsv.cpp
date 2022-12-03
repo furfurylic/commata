@@ -368,7 +368,7 @@ TEST_P(TestParseCsvErrors, Errors)
         FAIL();
     } catch (const parse_error& e) {
         const auto pos = e.get_physical_position();
-        ASSERT_TRUE(pos != nullptr);
+        ASSERT_TRUE(pos.has_value());
         ASSERT_EQ(GetParam().second.first, pos->first);
         ASSERT_EQ(GetParam().second.second, pos->second);
     }

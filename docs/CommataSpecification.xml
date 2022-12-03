@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2022-11-26 (UTC)</signature>
+<signature>2022-12-03 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -373,6 +373,7 @@
       <codeblock>
 #include &lt;cstddef>
 #include &lt;exception>
+#include &lt;optional>
 #include &lt;ostream>
 #include &lt;string>
 #include &lt;string_view>
@@ -423,7 +424,7 @@ namespace commata {
 
     <c>// <n><xref id="text_error.physical_position"/>, physical postion information:</n></c>
     text_error&amp; set_physical_position(std::size_t row = npos, std::size_t col = npos) noexcept;
-    const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noexcept;
+    std::optional&lt;std::pair&lt;std::size_t, std::size_t>> get_physical_position() const noexcept;
 
     <c>// <n><xref id="text_error.info"/>, textual information:</n></c>
     text_error_info info(std::size_t base = 1) const noexcept;
@@ -515,10 +516,10 @@ text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col =
 
         <code-item>
           <code>
-const std::pair&lt;std::size_t, std::size_t>* get_physical_position() const noexcept;
+std::optional&lt;std::pair&lt;std::size_t, std::size_t>> get_physical_position() const noexcept;
           </code>
-          <returns>If <c>*this</c> holds a physical position information possibly set by the last invocation of <c>set_physical_position</c>, a pointer to an pair of its line number and column number. Otherwise, <c>nullptr</c>.</returns>
-          <remark><c>p->first</c> and <c>p->second</c> shall be <c>npos</c> or zero-based numbers of the row and the column where <c>p</c> is the return value that is not equal to <c>nullptr</c>.
+          <returns>If <c>*this</c> holds a physical position information possibly set by the last invocation of <c>set_physical_position</c>, an pair of its line number and column number. Otherwise, <c>std::nullopt</c>.</returns>
+          <remark><c>p->first</c> and <c>p->second</c> shall be <c>npos</c> or zero-based numbers of the row and the column where <c>p</c> is the return value that is not equal to <c>std::nullopt</c>.
                   <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
         </code-item>
       </section>

@@ -110,10 +110,14 @@ public:
         return *this;
     }
 
-    const std::pair<std::size_t, std::size_t>* get_physical_position() const
-        noexcept
+    std::optional<std::pair<std::size_t, std::size_t>>
+        get_physical_position() const noexcept
     {
-        return (pos_ != std::make_pair(npos, npos)) ? &pos_ : nullptr;
+        if (pos_ != std::make_pair(npos, npos)) {
+            return pos_;
+        } else {
+            return std::nullopt;
+        }
     }
 
     text_error_info info(std::size_t base = 1U) const noexcept;

@@ -118,7 +118,7 @@ TEST_P(TestRecordExtractor, NoSuchKey)
         parse_csv(s, make_record_extractor(&out, L"key_c", L"kc1"), GetParam());
         FAIL();
     } catch (const record_extraction_error& e) {
-        ASSERT_NE(e.get_physical_position(), nullptr);
+        ASSERT_TRUE(e.get_physical_position());
         ASSERT_EQ(0U, e.get_physical_position()->first);
         std::string message(e.what());
         ASSERT_TRUE(message.find("key_c") != std::string::npos) << message;

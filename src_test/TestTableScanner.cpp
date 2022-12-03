@@ -250,7 +250,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, UpperLimit)
         parse_csv(s, std::move(h));
         FAIL();
     } catch (const field_out_of_range& e) {
-        ASSERT_NE(e.get_physical_position(), nullptr);
+        ASSERT_TRUE(e.get_physical_position());
         ASSERT_EQ(1U, e.get_physical_position()->first);
         const string_t message = widen(e.what());
         ASSERT_TRUE(message.find(maxxPlus1) != string_t::npos)
@@ -295,7 +295,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
         parse_csv(s, std::move(h));
         FAIL() << values[0] << ',' << values[1];
     } catch (const field_out_of_range& e) {
-        ASSERT_NE(e.get_physical_position(), nullptr);
+        ASSERT_TRUE(e.get_physical_position());
         ASSERT_EQ(1U, e.get_physical_position()->first);
         const string_t message = widen(e.what());
         ASSERT_TRUE(message.find(minnMinus1) != string_t::npos)
@@ -509,7 +509,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, UpperLimit)
         parse_csv(s, std::move(h));
         FAIL() << values[1];
     } catch (const text_error& e) {
-        ASSERT_NE(e.get_physical_position(), nullptr);
+        ASSERT_TRUE(e.get_physical_position());
         ASSERT_EQ(1U, e.get_physical_position()->first);
         const string_t message = widen(e.what());
         ASSERT_TRUE(message.find(maxxBy10) != string_t::npos)
@@ -547,7 +547,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, LowerLimit)
         parse_csv(s, std::move(h));
         FAIL() << values[1];
     } catch (const text_error& e) {
-        ASSERT_NE(e.get_physical_position(), nullptr);
+        ASSERT_TRUE(e.get_physical_position());
         ASSERT_EQ(1U, e.get_physical_position()->first);
         const string_t message = widen(e.what());
         ASSERT_TRUE(message.find(minnBy10) != string_t::npos)
@@ -956,7 +956,7 @@ TYPED_TEST(TestTableScanner, SkippedWithErrors)
         parse_csv(s, std::move(h));
         FAIL();
     } catch (const field_not_found& e) {
-        ASSERT_NE(e.get_physical_position(), nullptr);
+        ASSERT_TRUE(e.get_physical_position());
         ASSERT_EQ(1U, e.get_physical_position()->first);
     }
 
