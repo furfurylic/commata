@@ -166,24 +166,32 @@ std::size_t print_pos(char (&s)[N], std::size_t pos, std::size_t base)
         std::snprintf(s, N, "%zu", pos + base) :
         std::snprintf(s, N, "n/a");
     assert((len > 0) && (static_cast<std::size_t>(len) < N));
+        // According to the spec of snprintf, len shall not be greater than
+        // the maximum value of the type of N, which is std::size_t,
+        // so casting it to std::size_t shall be safe
     return static_cast<std::size_t>(len);
 }
 
-template <class T>
-std::optional<T> add(T a, T b)
+template <class T1, class T2>
+constexpr std::optional<std::common_type_t<T1, T2>> add(T1 a, T2 b)
 {
-    if (std::numeric_limits<T>::max() - a >= b) {
-        return a + b;
+    static_assert(std::is_unsigned_v<T1>);
+    static_assert(std::is_unsigned_v<T2>);
+    using ret_t = std::common_type_t<T1, T2>;
+    static_assert(std::is_unsigned_v<ret_t>);
+    if (std::numeric_limits<ret_t>::max() - a >= b) {
+        return static_cast<ret_t>(a) + b;
     } else {
         return std::nullopt;
     }
 }
 
-template <class T, class... Ts>
-std::optional<T> add(T a, T b, Ts... cs)
+template <class T1, class T2, class... Ts>
+constexpr std::optional<std::common_type_t<T1, T2, Ts...>> add(
+    T1 a, T2 b, Ts... cs)
 {
-    if (const auto bcs = add<T>(b, cs...)) {
-        return add<T>(a, *bcs);
+    if (const auto bcs = add(b, cs...)) {
+        return add(a, *bcs);
     } else {
         return std::nullopt;
     }
@@ -289,7 +297,8 @@ std::basic_ostream<Ch, Tr>& operator<<(
     }
 
     // line
-    char l[std::numeric_limits<std::size_t>::digits10 + 2];
+    char l[std::max(std::numeric_limits<std::size_t>::digits10 + 2, 4)];
+        // 4 is the size of "n/a"
     const auto l_len = print_pos(l, p->first, i.get_base());
 
     // column
@@ -300,25 +309,23 @@ std::basic_ostream<Ch, Tr>& operator<<(
     const char* const w = i.error().what();
     const auto w_len = std::strlen(w);
 
-    auto n = add<length_t>(w_len, l_len, c_len,
+    const auto n = add(w_len, l_len, c_len,
         ((w_len > 0) ?
             std::size(literals::and_line) :
             std::size(literals::text_error_at_line)),
         std::size(literals::column) - 2);    // 2 is for two EOSs
-    if (!n || (*n > unmax)) {
-        // more than largest possible padding length, when 'no padding'
-        // does the trick
-        n = 0;
-    }
 
     sputn_engine sputn(os);
 
-    return detail::formatted_output(os, static_cast<std::streamsize>(*n),
+    return detail::formatted_output(os,
+        (((!n || (*n > unmax))) ? 0 : static_cast<std::streamsize>(*n)),
+            // If n is greater than the largest possible padding length, then
+            // 'no padding' does the trick
         [sputn, w, w_len, l = &l[0], l_len, c = &c[0], c_len]
         (auto* sb) {
             if (w_len > 0) {
-                if (!sputn(sb, w, w_len)
-                 || !sputn(sb, literals::and_line)) {
+                if (!(sputn(sb, w, w_len)
+                   && sputn(sb, literals::and_line))) {
                     return false;
                 }
             } else if (!sputn(sb, literals::text_error_at_line)) {
