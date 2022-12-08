@@ -418,7 +418,9 @@ public:
         s_(state::after_lf), record_started_(false), eof_reached_(false)
     {}
 
-    parser(parser&& other) :
+    parser(parser&& other) noexcept(
+            std::is_nothrow_move_constructible<Handler>::value
+         && std::is_nothrow_move_constructible<Input>::value) :
         p_(other.p_), f_(std::move(other.f_)),
         first_(other.first_), last_(other.last_),
         physical_line_index_(other.physical_line_index_),

@@ -152,6 +152,10 @@ check_handler<Ch, F> make_check_handler(F f)
     return check_handler<Ch, F>(f);
 }
 
+static_assert(std::is_nothrow_move_constructible<
+    detail::csv::parser<streambuf_input<char>, test_collector<char>>>::value,
+    "");
+
 } // unnamed
 
 static_assert(noexcept(std::swap( 
