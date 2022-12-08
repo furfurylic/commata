@@ -115,7 +115,8 @@ TEST_P(TestRecordExtractor, NoSuchKey)
                        L"ka2,kb12,va2,vb2\n";
     std::wstringbuf out;
     try {
-        parse_csv(s, make_record_extractor(&out, L"key_c", L"kc1"), GetParam());
+        parse_csv(s,
+            make_record_extractor(&out, L"key_c", L"kc1"), GetParam());
         FAIL();
     } catch (const record_extraction_error& e) {
         ASSERT_TRUE(e.get_physical_position());
