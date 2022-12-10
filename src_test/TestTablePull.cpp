@@ -7,7 +7,6 @@
 #pragma warning(disable:4996)
 #endif
 
-#include <sstream>
 #include <string>
 #include <vector>
 #include <utility>
@@ -141,10 +140,8 @@ TYPED_TEST_P(TestTablePull, PrimitiveMove)
 TYPED_TEST_P(TestTablePull, Basics)
 {
     using char_t = typename TypeParam::first_type;
-    using string_t = std::basic_string<char_t>;
     using pos_t = std::pair<std::size_t, std::size_t>;
 
-    const auto ch = char_helper<char_t>::ch;
     const auto str = char_helper<char_t>::str;
    
     const auto csv = str(R"(,"col1", col2 ,col3,)" "\r\n"
@@ -159,41 +156,30 @@ TYPED_TEST_P(TestTablePull, Basics)
 
         ASSERT_TRUE(pull) << e;
         ASSERT_EQ(table_pull_state::before_parse, pull.state()) << e;
-        ASSERT_EQ(str(""), string_t(*pull)) << e;
         ASSERT_TRUE(pull->empty());
-        ASSERT_EQ(0U, pull->size());
 
         std::size_t i = 0;
         std::size_t j = 0;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str(""), string_t(*pull)) << e;
+        ASSERT_EQ(str(""), *pull) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(0, 0), pull.get_physical_position()) << e;
-        ASSERT_EQ(str(""), string_t(*pull)) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str("col1"), string_t(*pull)) << e;
+        ASSERT_EQ(str("col1"), *pull) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(0, 7), pull.get_physical_position()) << e;
-        ASSERT_FALSE(pull->empty()) << e;
-        ASSERT_EQ(4U, pull->size()) << e;
-        ASSERT_EQ('\0', pull->data()[4]) << e;
-        ASSERT_EQ(ch('o'), (*pull)[1]) << e;
-        ASSERT_EQ(ch('l'), pull->at(2)) << e;
-        ASSERT_THROW(static_cast<void>(pull->at(4)), std::out_of_range) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str(" 2loc "), string_t(pull->crbegin(), pull->crend()))
-            << e;
+        ASSERT_EQ(str(" col2 "), *pull) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(0, 14), pull.get_physical_position()) << e;
-        ASSERT_EQ(str(" col2 "), string_t(*pull)) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
@@ -201,38 +187,27 @@ TYPED_TEST_P(TestTablePull, Basics)
         ASSERT_EQ(str("col3"), pull.c_str()) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(0, 19), pull.get_physical_position()) << e;
-        {
-            std::basic_ostringstream<char_t> o1;
-            o1 << *pull;
-            ASSERT_EQ(str("col3"), std::move(o1).str()) << e;
-        }
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str(""), string_t(pull.c_str())) << e;
+        ASSERT_TRUE(pull->empty()) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(0, 20), pull.get_physical_position()) << e;
-        {
-            std::basic_ostringstream<char_t> o2;
-            o2 << *pull;
-            ASSERT_EQ(str(""), std::move(o2).str()) << e;
-        }
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::record_end, pull.state()) << e;
-        ASSERT_EQ(str(""), string_t(*pull)) << e;
+        ASSERT_TRUE(pull->empty()) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(0, 20), pull.get_physical_position()) << e;
-        ASSERT_EQ(str(""), string_t(*pull));
         ++i;
         j = 0;
 
         if (e) {
             ASSERT_TRUE(pull()) << e;
             ASSERT_EQ(table_pull_state::record_end, pull.state()) << e;
-            ASSERT_EQ(str(""), string_t(*pull)) << e;
+            ASSERT_TRUE(pull->empty()) << e;
             ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
             ASSERT_EQ(pos_t(1, 0), pull.get_physical_position()) << e;
             ++i;
@@ -240,44 +215,42 @@ TYPED_TEST_P(TestTablePull, Basics)
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str(" 01llec "), string_t(pull->rbegin(), pull->rend()))
-            << e;
+        ASSERT_EQ(str(" cell10 "), *pull) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(2, 8), pull.get_physical_position()) << e;
-        ASSERT_EQ(str(" cell10 "), string_t(*pull));
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str(""), string_t(*pull)) << e;
+        ASSERT_TRUE(pull->empty()) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(2, 9), pull.get_physical_position()) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str("cell\r\n12"), string_t(*pull)) << e;
+        ASSERT_EQ(str("cell\r\n12"), *pull) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(2, 20), pull.get_physical_position()) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str("cell\"13\""), string_t(*pull)) << e;
+        ASSERT_EQ(str("cell\"13\""), *pull) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(2, 33), pull.get_physical_position()) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str(""), string_t(*pull)) << e;
+        ASSERT_TRUE(pull->empty()) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(2, 36), pull.get_physical_position()) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::record_end, pull.state()) << e;
-        ASSERT_EQ(str(""), string_t(*pull)) << e;
+        ASSERT_TRUE(pull->empty()) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
         ASSERT_EQ(pos_t(2, 36), pull.get_physical_position()) << e;
         ++i;
