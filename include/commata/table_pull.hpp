@@ -755,54 +755,52 @@ public:
 
 private:
     void next_field()
-    {
+    try {
         assert(*this);
-        try {
-            for (;;) {
-                switch (p_().state()) {                             // throw
-                case primitive_table_pull_state::update:
-                    do_update(p_[0], p_[1]);                        // throw
-                    break;
-                case primitive_table_pull_state::finalize:
-                    do_update(p_[0], p_[1]);                        // throw
-                    if (value_.empty()) {
-                        const_cast<char_type*>(view_.data())[view_.size()]
-                            = char_type();
-                    } else {
-                        value_.push_back(char_type());              // throw
-                        view_ = view_type(value_.data(), value_.size() - 1);
-                    }
-                    state_ = table_pull_state::field;
-                    return;
-                case primitive_table_pull_state::empty_physical_line:
-                    if (!empty_physical_line_aware_) {
-                        break;
-                    }
-                    [[fallthrough]];
-                case primitive_table_pull_state::end_record:
-                    state_ = table_pull_state::record_end;
-                    view_ = view_type();
-                    return;
-                case primitive_table_pull_state::end_buffer:
-                    if (!view_.empty()) {
-                        value_.insert(value_.cend(),
-                            view_.cbegin(), view_.cend());          // throw
-                        view_ = view_type();
-                    }
-                    break;
-                case primitive_table_pull_state::eof:
-                    state_ = table_pull_state::eof;
-                    view_ = view_type();
-                    return;
-                default:
+        for (;;) {
+            switch (p_().state()) {                             // throw
+            case primitive_table_pull_state::update:
+                do_update(p_[0], p_[1]);                        // throw
+                break;
+            case primitive_table_pull_state::finalize:
+                do_update(p_[0], p_[1]);                        // throw
+                if (value_.empty()) {
+                    const_cast<char_type*>(view_.data())[view_.size()]
+                        = char_type();
+                } else {
+                    value_.push_back(char_type());              // throw
+                    view_ = view_type(value_.data(), value_.size() - 1);
+                }
+                state_ = table_pull_state::field;
+                return;
+            case primitive_table_pull_state::empty_physical_line:
+                if (!empty_physical_line_aware_) {
                     break;
                 }
+                [[fallthrough]];
+            case primitive_table_pull_state::end_record:
+                state_ = table_pull_state::record_end;
+                view_ = view_type();
+                return;
+            case primitive_table_pull_state::end_buffer:
+                if (!view_.empty()) {
+                    value_.insert(value_.cend(),
+                        view_.cbegin(), view_.cend());          // throw
+                    view_ = view_type();
+                }
+                break;
+            case primitive_table_pull_state::eof:
+                state_ = table_pull_state::eof;
+                view_ = view_type();
+                return;
+            default:
+                break;
             }
-        } catch (...) {
-            state_ = table_pull_state::eof;
-            view_ = view_type();
-            throw;
         }
+    } catch (...) {
+        state_ = table_pull_state::eof;
+        view_ = view_type();
+        throw;
     }
 
 public:
