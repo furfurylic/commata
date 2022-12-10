@@ -384,10 +384,11 @@ public:
         noexcept(std::is_nothrow_constructible_v<Input, InputR&&>
               && std::is_nothrow_constructible_v<Handler, HandlerR&&>) :
         p_(nullptr), f_(std::forward<HandlerR>(f)),
+        first_(nullptr), last_(nullptr),
         physical_line_index_(parse_error::npos),
         physical_line_or_buffer_begin_(nullptr),
         physical_line_chars_passed_away_(0),
-        in_(std::forward<InputR>(in)), buffer_(nullptr),
+        in_(std::forward<InputR>(in)), buffer_(nullptr), buffer_last_(nullptr),
         s_(state::after_lf), record_started_(false), eof_reached_(false)
     {}
 

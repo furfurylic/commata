@@ -293,7 +293,8 @@ private:
         std::size_t target_field_index, bool has_header,
         bool includes_header, std::size_t max_record_num) :
         record_num_to_include_(max_record_num),
-        target_field_index_(target_field_index), field_index_(0), out_(out),
+        target_field_index_(target_field_index), field_index_(0),
+        current_begin_(nullptr), out_(out),
         nf_(std::forward<FieldNamePredR>(field_name_pred),
             std::vector<Ch, alloc_t>(alloc_t(alloc))),
         vr_(std::forward<FieldValuePredR>(field_value_pred),
