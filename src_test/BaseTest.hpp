@@ -27,6 +27,12 @@ class MemoryLeakCheck
 #endif
 
 public:
+    MemoryLeakCheck()
+#ifdef COMMATA_TEST_MEMORY_LEAK_CHECK
+      : state1()
+#endif
+    {}
+
     void Init()
     {
 #ifdef COMMATA_TEST_MEMORY_LEAK_CHECK
