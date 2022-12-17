@@ -319,9 +319,10 @@ std::basic_ostream<Ch, Tr>& operator<<(
     sputn_engine sputn(os);
 
     return detail::formatted_output(os,
-        (((!n || (*n > unmax))) ? 0 : static_cast<std::streamsize>(*n)),
-            // If n is greater than the largest possible padding length, then
-            // 'no padding' does the trick
+        (((!n || (*n > unmax))) ? nmax : static_cast<std::streamsize>(*n)),
+            // If n is greater than the largest possible specifiable width,
+            // then by right no padding should take place, so inhibiting
+            // padding by specifying unmax as the length is reasonable
         [sputn, w, w_len, l = &l[0], l_len, c = &c[0], c_len]
         (auto* sb) {
             if (w_len > 0) {
