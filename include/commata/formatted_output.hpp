@@ -17,14 +17,12 @@ std::basic_ostream<Ch, Tr>& formatted_output(
     std::basic_ostream<Ch, Tr>& os, std::streamsize n, F put_obj)
 {
     const typename std::basic_ostream<Ch, Tr>::sentry s(os);        // throw
-    const auto w = os.width();
 
-    const auto pad = [&os, n, w] {
+    const auto pad = [&os, n, w = os.width()] {
         if (w > n) {
             const auto sb = os.rdbuf();
             const auto f = os.fill();
-            const auto pad = w - n;
-            for (decltype(pad + 1) i = 0; i < pad; ++i) {
+            for (std::streamsize i = 0, ie = w - n; i < ie; ++i) {
                 if (sb->sputc(f) == Tr::eof()) {
                     return false;
                 }
