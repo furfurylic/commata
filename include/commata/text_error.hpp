@@ -283,9 +283,6 @@ public:
     }
 };
 
-template <class Ch, class Tr>
-sputn_engine(std::basic_ostream<Ch, Tr>&) -> sputn_engine<Ch, Tr>;
-
 } // end detail::ex
 
 template <class Ch, class Tr>
