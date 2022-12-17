@@ -628,7 +628,7 @@ notified by `finalize`.
 `stored_table` and `make_stored_table_builder` seems to be the best to load the
 whole contents of CSV texts into memory. But if you want to do is to make a
 container object of container object of `std::string` objects (not
-`stored_value`objects) each of which represents its corresponding field value,
+`stored_value` objects) each of which represents its corresponding field value,
 this sample codes can be faster and optimal.)
 
 `parse_csv` depletes table handler objects passed to it; in other words,
