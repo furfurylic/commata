@@ -282,8 +282,18 @@ std::basic_ostream<char, Tr>& operator<<(
         const auto w = i.error().what();
         const auto w_len = std::strlen(w);
 
-        const auto n = add<length_t>(
-            w_len, l_len, c_len, ((w_len > 0) ? 15 : 27)).first;
+        length_t n;
+        {
+            bool ok;
+            std::tie(n, ok) = add<length_t>(
+                w_len, l_len, c_len, ((w_len > 0) ? 15 : 27));
+            if ((!ok) || (n > unmax)) {
+                // If n is greater than the largest possible specifiable width,
+                // then by right no padding should take place, so inhibiting
+                // padding by specifying unmax as the length is reasonable
+                n = nmax;
+            }
+        }
 
         return detail::formatted_output(os, static_cast<std::streamsize>(n),
             [w, w_len, l = &l[0], l_len, c = &c[0], c_len]
