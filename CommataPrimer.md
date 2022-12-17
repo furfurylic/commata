@@ -415,7 +415,7 @@ A quotation mark found in a non-escaped value
 ```
 
 `text_error` has a member function `info` that returns an object of
-`commata::text_error_info`, which possibly have a useful location information
+`commata::text_error_info`, which possibly has a useful location information
 of the error.
 
 So you can write instead like this:
