@@ -6373,22 +6373,29 @@ template &lt;class Allocator, class Container, class... Appendices>
 
           <tr>
             <td>(2)</td>
+            <td><c>T::traits_type</c></td>
+            <td></td>
+            <td>Shall be a character traits type for <c>Ch</c>.</td>
+          </tr>
+
+          <tr>
+            <td>(3)</td>
             <td><c>T::parser_type&lt;H></c></td>
             <td></td>
             <td>Shall be a type that meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.</td>
           </tr>
 
           <tr>
-            <td>(3)</td>
+            <td>(4)</td>
             <td><c>ct(h)</c></td>
             <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
-            <td rowspan="2">Creates a table parser object <c>p</c> that has its tied character input object which is copy constructed (on (3)) or move constructed (on (4)) from the wrapped character input object of <c>*this</c> and
+            <td rowspan="2">Creates a table parser object <c>p</c> that has its tied character input object which is copy constructed (on (4)) or move constructed (on (5)) from the wrapped character input object of <c>*this</c> and
                 its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with <c>h</c> (otherwise).
                 Then returns <c>p</c>.</td>
           </tr>
 
           <tr>
-            <td>(4)</td>
+            <td>(5)</td>
             <td><c>rt(h)</c></td>
           </tr>
         </table>
