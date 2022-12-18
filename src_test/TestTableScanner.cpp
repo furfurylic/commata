@@ -925,6 +925,24 @@ public:
 
 }
 
+TYPED_TEST(TestTableScanner, IgnoreSkipped)
+{
+    calc_average<int> a;
+    basic_table_scanner<TypeParam> scanner;
+    scanner.set_field_scanner(0, make_field_translator<int>(
+        std::ref(a), replacement_ignore));
+
+    const auto str = char_helper<TypeParam>::str;
+
+    try {
+        parse_csv(str("100\n\n200"), std::move(scanner));
+    } catch (const text_error& e) {
+        FAIL() << text_error_info(e);
+    }
+
+    ASSERT_EQ(150, a.yield());
+}
+
 TYPED_TEST(TestTableScanner, Ignored)
 {
     replace_if_conversion_failed<int> r(
