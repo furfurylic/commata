@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2022-12-17 (UTC)</signature>
+<signature>2022-12-18 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6255,9 +6255,9 @@ template &lt;class T, class SinkR, class... Appendices>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
                          <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
                            <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, Appendices1...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
-                             <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, Appendices...></c>;</li>
+                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
+                             <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, std::decay_t&lt;Appendices>...></c>;</li>
                            </ul>
                          </li>
                        </ul>
@@ -6267,9 +6267,9 @@ template &lt;class T, class SinkR, class... Appendices>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type></c>,</li>
                          <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
                            <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, fail_if_skipped, Appendices1...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
-                             <li>otherwise, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, Appendices...></c>;</li>
+                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
+                             <li>otherwise, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, std::decay_t&lt;Appendices>...></c>;</li>
                            </ul>
                          </li>
                        </ul>
@@ -6279,9 +6279,9 @@ template &lt;class T, class SinkR, class... Appendices>
                          <li>if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T></c>,</li>
                          <li>otherwise, with <c>F</c> being the second type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices2...</c> representing the types of <c>Appendices...</c> without its first two types:
                            <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, fail_if_skipped, Appendices2...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, Appendices2...></c>,</li>
-                             <li>otherwise, <c>locale_based_arithmetic_field_translator&lt;Sink, T, Appendices2...></c>;</li>
+                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, fail_if_skipped, std::decay_t&lt;Appendices2>...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices2>...></c>,</li>
+                             <li>otherwise, <c>locale_based_arithmetic_field_translator&lt;Sink, T, std::decay_t&lt;Appendices1>...></c>;</li>
                            </ul>
                          </li>
                        </ul>
@@ -6291,9 +6291,9 @@ template &lt;class T, class SinkR, class... Appendices>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>arithmetic_field_translator&lt;Sink, T></c>,</li>
                          <li>otherwise, with <c>F</c> being the first type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
                            <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>arithmetic_field_translator&lt;Sink, T, fail_if_skipped, Appendices1...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
-                             <li>otherwise, <c>arithmetic_field_translator&lt;Sink, T, Appendices...></c>.</li>
+                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>arithmetic_field_translator&lt;Sink, T, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
+                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
+                             <li>otherwise, <c>arithmetic_field_translator&lt;Sink, T, std::decay_t&lt;Appendices>...></c>.</li>
                            </ul>
                          </li>
                        </ul>
@@ -6316,9 +6316,9 @@ template &lt;class T, class Allocator, class SinkR, class... Appendices>
                        <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
                        <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
                          <ul>
-                           <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, Appendices1...></c>,</li>
-                           <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, Appendices1...></c>,</li>
-                           <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, Appendices...></c>;</li>
+                           <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
+                           <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
+                           <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, std::decay_t&lt;Appendices>...></c>;</li>
                          </ul>
                        </li>
                      </ul>
