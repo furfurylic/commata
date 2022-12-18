@@ -442,11 +442,11 @@ public:
 
         do {
             {
-                const auto sizes = arrange_buffer();
+                const auto [buffer_size, loaded_size] = arrange_buffer();
                 p_ = buffer_;
                 physical_line_or_buffer_begin_ = buffer_;
-                buffer_last_ = buffer_ + sizes.second;
-                f_.start_buffer(buffer_, buffer_ + sizes.first);
+                buffer_last_ = buffer_ + loaded_size;
+                f_.start_buffer(buffer_, buffer_ + buffer_size);
             }
 
             set_first_last();
@@ -527,15 +527,13 @@ private:
 
         std::size_t loaded_size = 0;
         do {
-            using min_t =
-                std::common_type_t<std::size_t, typename Input::size_type>;
+            using input_size_t = typename Input::size_type;
+            using min_t = std::common_type_t<std::size_t, input_size_t>;
+            constexpr auto x = std::numeric_limits<input_size_t>::max();
             const auto length = static_cast<std::size_t>(
                 in_(buffer_ + loaded_size,
                     static_cast<std::size_t>(
-                        std::min<min_t>(
-                            buffer_size - loaded_size,
-                            std::numeric_limits<typename Input::size_type>::
-                                max()))));
+                        std::min<min_t>(buffer_size - loaded_size, x))));
             if (length == 0) {
                 eof_reached_ = true;
                 break;
