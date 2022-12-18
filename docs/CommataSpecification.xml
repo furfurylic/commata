@@ -6153,7 +6153,7 @@ namespace commata {
     const SkippingHandler&amp; get_skipping_handler() const noexcept;
           SkippingHandler&amp; get_skipping_handler()       noexcept;
 
-    <c>// <n><xref id="string_view_field_translator.scanner"/>, members to meet the BodyFieldScanner requirements (<xref id="body_field_scanner.requirements"/>):</n></c>
+    <c>// <n><xref id="string_view_field_translator.inv"/>, invocation:</n></c>
     void operator()(const Ch* begin, const Ch* end);
     void operator()();
   };
@@ -6207,8 +6207,8 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
           </code-item>
         </section>
 
-        <section id="string_view_field_translator.scanner">
-          <name><c>string_view_field_translator</c> members to meet the <c>BodyFieldScanner</c> requirements</name>
+        <section id="string_view_field_translator.inv">
+          <name><c>string_view_field_translator</c> invocation</name>
           <code-item>
             <code>
 void operator()(const Ch* begin, const Ch* end);
