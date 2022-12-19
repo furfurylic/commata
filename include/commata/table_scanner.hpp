@@ -1205,7 +1205,7 @@ struct fail_if_skipped
     }
 };
 
-namespace detail::scanner { 
+namespace detail::scanner {
 
 enum class replace_mode
 {
