@@ -1221,8 +1221,8 @@ namespace replace_if_skipped_impl {
 template <class T>
 class trivial_store
 {
-    alignas(T) char value_[sizeof(T)];
-    replace_mode mode_;
+    alignas(T) char value_[sizeof(T)] = {};
+    replace_mode mode_ = static_cast<replace_mode>(0);
 
 public:
     template <class... Args>
@@ -1608,9 +1608,9 @@ template <class T, unsigned N>
 struct trivial_store
 {
 private:
-    alignas(T) char replacements_[N][sizeof(T)];
-    std::uint_fast8_t has_;
-    std::uint_fast8_t skips_;
+    alignas(T) char replacements_[N][sizeof(T)] = {};
+    std::uint_fast8_t has_ = 0U;
+    std::uint_fast8_t skips_ =0U;
 
 protected:
     trivial_store(copy_mode_t, const trivial_store& other) noexcept :
@@ -2328,12 +2328,12 @@ class locale_based_arithmetic_field_translator
         T, Sink, SkippingHandler, ConversionErrorHandler> out_;
 
     // These are initialized after parsing has started
-    wchar_t decimal_point_;     // of specified loc in the ctor
-    wchar_t thousands_sep_;     // ditto
-    wchar_t decimal_point_c_;   // of C's global
-                                // to mimic std::strtol and its comrades
-    wchar_t thousands_sep_c_;   // ditto
-    bool mimics_;
+    wchar_t decimal_point_ = L'\0';     // of specified loc in the ctor
+    wchar_t thousands_sep_ = L'\0';     // ditto
+    wchar_t decimal_point_c_ = L'\0';   // of C's global to mimic
+                                        // std::strtol and its comrades
+    wchar_t thousands_sep_c_ = L'\0';   // ditto
+    bool mimics_ = false;
 
 public:
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
