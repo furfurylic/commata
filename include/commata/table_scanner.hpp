@@ -897,9 +897,9 @@ public:
         using ret_t = std::optional<std::remove_const_t<decltype(r)>>;
 
         const auto has_postfix =
-            std::find_if<const Ch*>(middle, end, [](Ch c) {
+            std::any_of<const Ch*>(middle, end, [](Ch c) {
                 return !is_space(c);
-            }) != end;
+            });
         if (has_postfix) {
             // if a not-whitespace-extra-character found, it is NG
             return ret_t(this->get().invalid_format(begin, end));
