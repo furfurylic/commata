@@ -963,22 +963,12 @@ struct raw_converter<T, H, std::enable_if_t<std::is_integral_v<T>,
         return numeric_type_traits<T>::wcsto(s, e, 10);
     }
 
-    int erange(T v) const
+    int erange([[maybe_unused]] T v) const
     {
         if constexpr (std::is_signed_v<T>) {
-            if (v == std::numeric_limits<T>::max()) {
-                return 1;
-            } else if (v == std::numeric_limits<T>::min()) {
-                return -1;
-            } else {
-                return 0;
-            }
+            return (v > T()) ? 1 : -1;
         } else {
-            if (v == std::numeric_limits<T>::max()) {
-                return 1;
-            } else {
-                return -1;
-            }
+            return 1;
         }
     }
 };
