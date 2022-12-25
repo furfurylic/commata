@@ -847,7 +847,6 @@ struct numeric_type_traits<float>
     static constexpr std::string_view name = "float";
     static constexpr const auto strto = std::strtof;
     static constexpr const auto wcsto = std::wcstof;
-    static constexpr const float huge = HUGE_VALF;
 };
 
 template <>
@@ -856,7 +855,6 @@ struct numeric_type_traits<double>
     static constexpr std::string_view name = "double";
     static constexpr const auto strto = std::strtod;
     static constexpr const auto wcsto = std::wcstod;
-    static constexpr const double huge = HUGE_VAL;
 };
 
 template <>
@@ -865,7 +863,6 @@ struct numeric_type_traits<long double>
     static constexpr std::string_view name = "long double";
     static constexpr const auto strto = std::strtold;
     static constexpr const auto wcsto = std::wcstold;
-    static constexpr const long double huge = HUGE_VALL;
 };
 
 struct is_convertible_numeric_type_impl
@@ -1009,13 +1006,7 @@ struct raw_converter<T, H, std::enable_if_t<std::is_floating_point_v<T>,
 
     int erange(T v) const
     {
-        if (v == numeric_type_traits<T>::huge) {
-            return 1;
-        } else if (v == -numeric_type_traits<T>::huge) {
-            return -1;
-        } else {
-            return 0;
-        }
+        return (v > T()) ? 1 : (v < T()) ? -1 : 0;
     }
 };
 
