@@ -274,7 +274,7 @@ class basic_table_scanner
     using scanners_a_t = detail::allocation_only_allocator<bfs_ptr_p_a_t>;
     using res_at_t = typename at_t::template rebind_traits<record_end_scanner>;
 
-    std::size_t j_;
+    std::size_t j_ = 0;
     std::size_t buffer_size_;
     typename at_t::pointer buffer_;
     const Ch* begin_;
