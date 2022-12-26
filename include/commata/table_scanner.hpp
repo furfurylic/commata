@@ -1134,13 +1134,13 @@ struct restrained_converter<T, H, U,
     {
         const auto result = this->convert_raw(begin, end);
         if (!result.has_value()) {
-            return std::optional<T>();
+            return std::nullopt;
         }
         const auto r = *result;
         if constexpr (sizeof(T) < sizeof(U)) {
             constexpr auto t_max = std::numeric_limits<T>::max();
             if (r <= t_max) {
-                return { static_cast<T>(r) };
+                return static_cast<T>(r);
             } else {
                 const auto s = static_cast<std::make_signed_t<U>>(r);
                 if (s < 0) {
@@ -1148,14 +1148,14 @@ struct restrained_converter<T, H, U,
                     // and then returned
                     const auto s_wrapped_around = s + t_max + 1;
                     if (s_wrapped_around > 0) {
-                        return { static_cast<T>(s_wrapped_around) };
+                        return static_cast<T>(s_wrapped_around);
                     }
                 }
             }
             return conversion_error_facade<T>::out_of_range(
                 this->get_conversion_error_handler(), begin, end, 1);
         } else {
-            return { static_cast<T>(r) };
+            return static_cast<T>(r);
         }
     }
 };
