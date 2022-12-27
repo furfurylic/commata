@@ -93,10 +93,9 @@ constexpr bool is_full_fledged_v =
  && has_start_buffer_v<Handler> && has_end_buffer_v<Handler>
  && has_empty_physical_line_v<Handler>;
 
-// noexcept-ness of the member functions except the ctor and the dtor does not
-// count because they are invoked as parts of a willingly-throwing operation,
-// so we do not specify "noexcept" to the member functions except the ctor and
-// the dtor
+// full_fledged_handler elaborately lacks yield and yield_location in its
+// interface because it may be good for implementation of optimized parsers to
+// take advantage of their absence
 template <class Handler, class BufferControl>
 class full_fledged_handler :
     BufferControl,
@@ -112,6 +111,10 @@ class full_fledged_handler :
 public:
     using char_type = typename Handler::char_type;
 
+    // noexcept-ness of the member functions except the ctor and the dtor does
+    // not count because they are invoked as parts of a willingly-throwing
+    // operation, so we do not specify "noexcept" to the member functions
+    // except the ctor and the dtor
     template <class HandlerR, class BufferControlR = BufferControl,
         std::enable_if_t<
             std::is_constructible_v<Handler, HandlerR&&>

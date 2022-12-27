@@ -247,6 +247,9 @@ struct yield_location_t<Handler, D,
     }
 };
 
+// handler_decorator forwards all invocations on TextHandler requirements
+// to base()'s member functions with corresponding names; it does not expose
+// any excess member functions that Handler does not expose
 template <class Handler, class D>
 struct handler_decorator :
     get_buffer_t<Handler, D>, release_buffer_t<Handler, D>,
