@@ -99,7 +99,10 @@ constexpr bool is_full_fledged_v =
 // the dtor
 template <class Handler, class BufferControl>
 class full_fledged_handler :
-    BufferControl
+    BufferControl,
+    public yield_t<Handler, full_fledged_handler<Handler, BufferControl>>,
+    public yield_location_t<Handler,
+        full_fledged_handler<Handler, BufferControl>>
 {
     static_assert(!std::is_reference_v<Handler>);
     static_assert(!is_full_fledged_v<Handler>);
@@ -173,6 +176,16 @@ public:
         if constexpr (has_empty_physical_line_v<Handler>) {
             return handler_.empty_physical_line(where);
         }
+    }
+
+    Handler& base() noexcept
+    {
+        return handler_;
+    }
+
+    const Handler& base() const noexcept
+    {
+        return handler_;
     }
 };
 
