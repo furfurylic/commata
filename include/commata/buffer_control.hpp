@@ -105,7 +105,10 @@ struct is_full_fledged :
 // the dtor
 template <class Handler, class BufferControl>
 class full_fledged_handler :
-    BufferControl
+    BufferControl,
+    public yield_t<Handler, full_fledged_handler<Handler, BufferControl>>,
+    public yield_location_t<Handler,
+        full_fledged_handler<Handler, BufferControl>>
 {
     static_assert(!std::is_reference<Handler>::value, "");
     static_assert(!is_full_fledged<Handler>::value, "");
@@ -172,6 +175,16 @@ public:
     auto empty_physical_line(const char_type* where)
     {
         return empty_physical_line(has_empty_physical_line<Handler>(), where);
+    }
+
+    Handler& base() noexcept
+    {
+        return handler_;
+    }
+
+    const Handler& base() const noexcept
+    {
+        return handler_;
     }
 
 private:
