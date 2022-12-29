@@ -91,16 +91,18 @@ template <class Handler>
 constexpr bool is_full_fledged_v =
     is_with_buffer_control_v<Handler>
  && has_start_buffer_v<Handler> && has_end_buffer_v<Handler>
- && has_empty_physical_line_v<Handler>;
+ && has_empty_physical_line_v<Handler> && has_handle_exception_v<Handler>;
 
-// full_fledged_handler elaborately lacks yield and yield_location in its
-// interface because it may be good for implementation of optimized parsers to
-// take advantage of their absence
+// full_fledged_handler elaborately lacks yield, yield_location and handle_-
+// exception in its interface because it may be good for implementation of
+// optimized parsers to take advantage of their absence
 template <class Handler, class BufferControl>
 class full_fledged_handler :
     BufferControl,
     public yield_t<Handler, full_fledged_handler<Handler, BufferControl>>,
     public yield_location_t<Handler,
+        full_fledged_handler<Handler, BufferControl>>,
+    public handle_exception_t<Handler,
         full_fledged_handler<Handler, BufferControl>>
 {
     static_assert(!std::is_reference_v<Handler>);

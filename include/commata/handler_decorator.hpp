@@ -100,6 +100,17 @@ struct has_yield_location_impl
     static auto check(...) -> std::false_type;
 };
 
+struct has_handle_exception_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<T&>().handle_exception(),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
 } // end handler_decoration
 
 template <class T>
@@ -247,6 +258,26 @@ struct yield_location_t<Handler, D,
     }
 };
 
+template <class T>
+constexpr bool has_handle_exception_v = decltype(
+    handler_decoration::has_handle_exception_impl::check<T>(nullptr))();
+
+template <class Handler, class D, class = void>
+struct handle_exception_t
+{};
+
+template <class Handler, class D>
+struct handle_exception_t<Handler, D,
+    std::enable_if_t<has_handle_exception_v<Handler>>>
+{
+    auto handle_exception()
+        noexcept(noexcept(std::declval<Handler&>().handle_exception()))
+     -> decltype(std::declval<Handler&>().handle_exception())
+    {
+        return static_cast<D*>(this)->base().handle_exception();
+    }
+};
+
 // handler_decorator forwards all invocations on TextHandler requirements
 // to base()'s member functions with corresponding names; it does not expose
 // any excess member functions that Handler does not expose
@@ -255,7 +286,8 @@ struct handler_decorator :
     get_buffer_t<Handler, D>, release_buffer_t<Handler, D>,
     start_buffer_t<Handler, D>, end_buffer_t<Handler, D>,
     empty_physical_line_t<Handler, D>,
-    yield_t<Handler, D>, yield_location_t<Handler, D>
+    yield_t<Handler, D>, yield_location_t<Handler, D>,
+    handle_exception_t<Handler, D>
 {
     using char_type = typename Handler::char_type;
 

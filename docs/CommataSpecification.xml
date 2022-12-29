@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2022-12-18 (UTC)</signature>
+<signature>2022-12-31 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -243,7 +243,7 @@
                  (4) (first argument), (7) (first argument), this (second argument) or (10) (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
               <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the table handler can reach the range as non-const, it may modify the elements in the range.</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
-           <td/>
+          <td/>
         </tr>
 
         <tr>
@@ -282,6 +282,16 @@
               <p>Shall return <c>0</c> if (11) has never be called; otherwise shall return the value of the parameter <c>p</c> of the latest call of (11).</p></td>
           <td>Returns <c>0</c>.</td>
         </tr>
+
+        <tr>
+          <td>(13)</td>
+          <td><c>t.handle_exception()</c></td>
+          <td>(Not used) </td>
+          <td><p>Called when the parser catches an exception that otherwise should cause the invocation to the parser to exit via the exception.
+                 When called, the caught exception shall be referrable as a currently handled exception.</p>
+              <p>If a call of this does not exit via an exception, the parser shall rethrow the currently handled exception to make the invocation to the parser exit via it.</p></td>
+          <td>Does nothing.</td>
+         </tr>
       </table>
 
       <p>A moved-from object whose type satisfies <c>TableHandler</c> requirements may cause undefined behaviour when used in terms of <xref id="table.table_handler.requirements"/>.</p>
@@ -732,6 +742,7 @@ namespace commata {
     <nc>see below</nc> finalize(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
     <nc>see below</nc> yield(std::size_t p)                                    noexcept(<nc>see below</nc>);
     <nc>see below</nc> yield_location() const                                  noexcept(<nc>see below</nc>);
+    <nc>see below</nc> handle_exception()                                      noexcept(<nc>see below</nc>);
   };
 
   <c>// <n><xref id="reference_handler.creation"/>, creation functions:</n></c>
@@ -883,6 +894,15 @@ handler_type&amp; base() const noexcept;
           <remark>This member function shall not be declared unless <c>std::declval&lt;const Handler&amp;>().yield_location()</c> is well-formed when treated as an unevaluated operand.
                   The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;const Handler&amp;>().yield_location())</c>.</remark>
         </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> handle_exception() noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().handle_exception();</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().handle_exception()</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().handle_exception())</c>.</remark>
+        </code-item>
       </section>
 
       <section id="reference_handler.creation">
@@ -955,6 +975,7 @@ namespace commata {
     <nc>see below</nc> finalize(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
     <nc>see below</nc> yield(std::size_t p)                                    noexcept(<nc>see below</nc>);
     <nc>see below</nc> yield_location() const                                  noexcept(<nc>see below</nc>);
+    <nc>see below</nc> handle_exception()                                      noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="empty_physical_line_aware_handler.modifiers"/>, modifiers:</n></c>
     void swap(empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
@@ -1159,6 +1180,15 @@ const handler_type&amp; base() const noexcept;
           <effects>Equivalent to: <c>return base().yield_location();</c></effects>
           <remark>This member function shall not be declared unless <c>std::declval&lt;const Handler&amp;>().yield_location()</c> is well-formed when treated as an unevaluated operand.
                   The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;const Handler&amp;>().yield_location())</c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+<nc>see below</nc> handle_exception() noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Equivalent to: <c>return base().handle_exception();</c></effects>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().handle_exception()</c> is well-formed when treated as an unevaluated operand.
+                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().handle_exception())</c>.</remark>
         </code-item>
       </section>
 

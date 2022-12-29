@@ -9,8 +9,10 @@
 #endif
 
 #include <algorithm>
+#include <exception>
 #include <iterator>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -24,6 +26,8 @@
 #include "BaseTest.hpp"
 #include "fancy_allocator.hpp"
 #include "tracking_allocator.hpp"
+
+using namespace std::literals;
 
 using namespace commata;
 using namespace commata::test;
@@ -64,6 +68,12 @@ public:
 
     void end_record(const Ch* /*record_end*/)
     {}
+
+protected:
+    const std::basic_string<Ch>& field_value() const noexcept
+    {
+        return field_value_;
+    }
 };
 
 struct test_collector_empty_line_aware : test_collector<char>
@@ -80,6 +90,18 @@ struct test_collector_empty_line_aware : test_collector<char>
             // the record), but that is fine because we know the implementation
             // of test_collector::finalize
         end_record(where);
+    }
+};
+
+struct test_collector_handle_exception : test_collector<char>
+{
+    using test_collector::test_collector;
+
+    void handle_exception()
+    {
+        assert(std::current_exception());
+        std::throw_with_nested(std::runtime_error(
+            "Currenct field value: \"" + field_value() + '"'));
     }
 };
 
@@ -383,6 +405,27 @@ INSTANTIATE_TEST_SUITE_P(, TestParseCsvErrors,
         std::make_pair("\"col1", std::make_pair(0, 5)),
         std::make_pair("\"col1\",\"", std::make_pair(0, 8)),
         std::make_pair("col1\r\n\n\"col2\"a", std::make_pair(2, 6))));
+
+struct TestParseCsvHandleException : commata::test::BaseTest
+{};
+
+TEST_F(TestParseCsvHandleException, All)
+{
+    std::vector<std::vector<std::string>> field_values;
+
+    try {
+        parse_csv("A,B,C\nX,\"YZ"sv,
+            test_collector_handle_exception(field_values));
+        FAIL();
+    } catch (const std::runtime_error& e) {
+        ASSERT_EQ(2U, field_values.size());
+        ASSERT_EQ(1U, field_values.back().size());
+        ASSERT_TRUE(
+            std::string_view(e.what()).find("YZ"sv) != std::string_view::npos)
+            << e.what();
+        ASSERT_THROW(std::rethrow_if_nested(e), parse_error);
+    }
+}
 
 namespace {
 

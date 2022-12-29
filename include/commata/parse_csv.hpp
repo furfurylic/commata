@@ -415,6 +415,21 @@ public:
         }
     }
 
+    bool operator()()
+    {
+        if constexpr (has_handle_exception_v<Handler>) {
+            try {
+                return invoke_impl();
+            } catch (...) {
+                f_.handle_exception();
+                throw;
+            }
+        } else {
+            return invoke_impl();
+        }
+    }
+
+private:
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4102)
@@ -422,7 +437,7 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-label"
 #endif
-    bool operator()()
+    bool invoke_impl()
     try {
         if constexpr (has_yield_location_v<Handler>) {
             switch (f_.yield_location()) {
@@ -504,6 +519,7 @@ yield_end:
 #pragma GCC diagnostic pop
 #endif
 
+public:
     std::pair<std::size_t, std::size_t> get_physical_position() const noexcept
     {
         return { physical_line_index_, get_physical_column_index() };
