@@ -240,8 +240,8 @@ struct yield_location_t<Handler, D,
     std::enable_if_t<has_yield_location_v<Handler>>>
 {
     auto yield_location() const
-        noexcept(noexcept(std::declval<Handler&>().yield_location()))
-     -> decltype(std::declval<Handler&>().yield_location())
+        noexcept(noexcept(std::declval<const Handler&>().yield_location()))
+     -> decltype(std::declval<const Handler&>().yield_location())
     {
         return static_cast<const D*>(this)->base().yield_location();
     }
