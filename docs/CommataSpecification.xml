@@ -3343,7 +3343,8 @@ template &lt;class OtherTr = std::char_traits&lt;std::remove_const_t&lt;Ch>>,
           <code>
 iterator erase(const_iterator first, const_iterator last);
           </code>
-          <requires>[<c>first</c>, <c>last</c>) shall be comprised in [<c>cbegin()</c>, <c>cend()</c>).</requires>
+          <requires><c>first</c> shall point an element in [<c>cbegin()</c>, <c>cend()</c>].
+                    <c>last</c> shall point an element in [<c>first</c>, <c>cend()</c>].</requires>
           <throws>Nothing.</throws>
           <postcondition>Suppose that <c>prefix</c> is the string of [<c>cbegin()</c>, <c>first</c>) and <c>postfix</c> is of [<c>last</c>, <c>cend()</c>) before the call.
                          Then the string of [<c>b</c>, <c>e</c>) shall be equal to <c>prefix</c> and <c>postfix</c> concatenated.
@@ -3356,10 +3357,7 @@ iterator erase(const_iterator first, const_iterator last);
           <code>
 iterator erase(const_iterator position);
           </code>
-          <requires><c>position</c> shall point an object in [<c>cbegin()</c>, <c>cend()</c>).</requires>
-          <throws>Nothing.</throws>
-          <effects>Calls <c>erase(position, position + 1)</c>.</effects>
-          <returns><c>begin() + off</c> where <c>off</c> is the value of <c>position - cbegin()</c> before the call.</returns>
+          <effects>Equivalent to: <c>return erase(position, position + 1);</c></effects>
         </code-item>
 
         <code-item>
@@ -3375,18 +3373,14 @@ basic_stored_value&amp; erase(size_type pos = 0, size_type n = npos);
           <code>
 void pop_front();
           </code>
-          <requires><c>empty()</c> shall not be <c>false</c>.</requires>
-          <throws>Nothing.</throws>
-          <effects>Calls <c>erase(cbegin())</c>.</effects>
+          <effects>Equivalent to: <c>erase(cbegin());</c></effects>
         </code-item>
 
         <code-item>
           <code>
 void pop_back();
           </code>
-          <requires><c>empty()</c> shall not be <c>false</c>.</requires>
-          <throws>Nothing.</throws>
-          <effects>Equivalent to call <c>erase(cend() - 1)</c>.</effects>
+          <effects>Equivalent to: <c>erase(cend() - 1);</c></effects>
         </code-item>
       </section>
 
