@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2022-12-31 (UTC)</signature>
+<signature>2023-01-01 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3659,8 +3659,8 @@ namespace commata {
   private:
     <c>// <nc>exposition only</nc></c>
     struct null_termination {
-      template &lt;class InputIterator> friend bool operator!=(InputIterator left, null_termination) {
-        return !traits_type::eq(*left, char_type());
+      template &lt;class InputIterator> friend bool operator==(InputIterator left, null_termination) {
+        return traits_type::eq(*left, char_type());
       }
     };
   };
@@ -3937,11 +3937,11 @@ template &lt;class InputIterator, class InputIteratorEnd>
           </code>
           <requires>The template parameter <c>InputIterator</c> shall meet the <c>InputIterator</c> requirements for <c>char_type</c>.
                     The template parameter <c>InputIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
-                    <c>std::declval&lt;const InputIterator&amp;>() != std::declval&lt;const InputIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.
+                    <c>std::declval&lt;const InputIterator&amp;>() == std::declval&lt;const InputIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.
                     <c>value</c> shall be backed by <c>*this</c>.
                     <c>new_value_begin</c> shall point an element in, or be a past-the-end iterator of, a valid range.</requires>
           <postcondition><c>value</c> shall be unchangedly backed by <c>*this</c>.
-                         Let <c>n</c> is the smallest non-negative integer which makes the value of <c>std::next(new_value_begin, n) != new_value_end</c> contextually converted to <c>bool</c> be <c>false</c>.
+                         Let <c>n</c> is the smallest non-negative integer which makes the value of <c>std::next(new_value_begin, n) == new_value_end</c> contextually converted to <c>bool</c> be <c>true</c>.
                          Then <c>std::equal(value.cbegin(), value.cend(), new_value_begin, std::next(new_value_begin, n), p)</c> shall not be <c>false</c>
                          where <c>p</c> is an equivalent predicate to <c>traits_type::eq</c>.</postcondition>
           <returns><c>value</c>.</returns>

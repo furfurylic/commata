@@ -1039,9 +1039,9 @@ template <class Tr>
 struct null_termination
 {
     template <class InputIterator>
-    friend bool operator!=(InputIterator left, null_termination)
+    friend bool operator==(InputIterator left, null_termination)
     {
-        return !Tr::eq(*left, typename Tr::char_type());
+        return Tr::eq(*left, typename Tr::char_type());
     }
 };
 
@@ -1071,7 +1071,7 @@ template <class InputIterator, class InputIteratorEnd>
 std::size_t distance(InputIterator begin, InputIteratorEnd end)
 {
     std::size_t length = 0;
-    while (begin != end) {
+    while (!(begin == end)) {
         ++begin;
         ++length;
     }
@@ -1466,7 +1466,7 @@ private:
         constexpr auto smax = std::numeric_limits<std::size_t>::max();
 
         char_type* i = cb;
-        for (; new_value_begin != new_value_end; ++new_value_begin) {
+        for (; !(new_value_begin == new_value_end); ++new_value_begin) {
             traits_type::assign(*i, *new_value_begin);
             ++i;
             if (i == ce) {

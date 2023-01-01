@@ -887,9 +887,9 @@ namespace {
 struct d_end
 {};
 
-bool operator!=(const wchar_t* left, d_end)
+bool operator==(const wchar_t* left, d_end)
 {
-    return *left != L'd';
+    return *left == L'd';
 }
 
 }
