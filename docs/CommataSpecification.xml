@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2022-12-18 (UTC)</signature>
+<signature>2023-01-01 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3845,9 +3845,10 @@ template &lt;class F> auto guard_rewrite(F f) -> decltype(f(*this));
           <requires><c>std::declval&lt;F&amp;>()(std::declval&lt;basic_stored_table&amp;>())</c> shall be well-formed when treated as an unevaluated operand.
                     Evaluating <c>f(t)</c> shall not change the state of the value of <c>t</c> except that it can call <c>resize_value</c>, <c>make_value</c>, <c>rewrite_value</c>, <c>import_value</c>, <c>generate_buffer</c>, <c>consume_buffer</c>, <c>add_buffer</c> and <c>secure_current_upto</c> on the value of <c>t</c> where <c>t</c> is an lvalue of <c>basic_stored_table</c>.</requires>
           <effects>First makes a copy of the bookkeeper object of the store. Then calls <c>f(*this)</c>.
-                   If an exception is thrown by the call of <c>f(*this)</c>, all objects returned by the calls of <c>resize_value</c> and <c>rewrite_value</c>, and therefore also <c>make_value</c> and <c>import_value</c> during the call are invalidated
-                   and the current buffer mark and its reservation marks (<xref id="basic_stored_table.primitives"/>) are restored referencing the copied bookkeeper object.
-                   Whether or not an exception is thrown, the copied bookkeeper object is destroyed before leaving this function.</effects>
+                   If an exception is thrown by the call of <c>f(*this)</c>, all objects returned by the calls of <c>resize_value</c> and <c>rewrite_value</c>, and therefore also <c>make_value</c> and <c>import_value</c> during the call are invalidated,
+                   the current buffer mark and its reservation marks (<xref id="basic_stored_table.primitives"/>) are restored referencing the copied bookkeeper object,
+                   and the exception is rethrown.
+                   The copied bookkeeper object is destroyed before leaving this function no matter wheter an exception is thrown or not.</effects>
           <returns>The return value of the call above.</returns>
         </code-item>
       </section>
