@@ -33,6 +33,11 @@ target_sources(commata INTERFACE
     include/commata/wrapper_handlers.hpp
     include/commata/write_ntmbs.hpp
 )
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_sources(commata INTERFACE
+        include/commata/commata.natvis
+    )
+endif()
 target_compile_features(commata INTERFACE cxx_std_17)
 
 if(COMMATA_BUILD_TESTS)

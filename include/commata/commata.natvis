@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="commata::basic_stored_value&lt;char,*&gt;">
+    <AlternativeType Name="commata::basic_stored_value&lt;char const,*&gt;" />
+    <DisplayString>{begin_,s}</DisplayString>
+    <StringView>begin_,s</StringView>
+  </Type>
+  <Type Name="commata::basic_stored_value&lt;wchar_t,*&gt;">
+    <AlternativeType Name="commata::basic_stored_value&lt;wchar_t const,*&gt;" />
+    <DisplayString>{begin_,su}</DisplayString>
+    <StringView>begin_,su</StringView>
+  </Type>
+</AutoVisualizer>
