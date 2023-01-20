@@ -55,7 +55,7 @@ struct is_range_accessible_impl
     template <class T>
     static auto check(T*) ->
         decltype(
-            std::declval<bool&>() = std::begin(std::declval<const T&>()) !=
+            std::declval<bool&>() = std::begin(std::declval<const T&>()) ==
                                     std::end  (std::declval<const T&>()),
             std::bool_constant<
                 std::is_base_of_v<
