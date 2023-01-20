@@ -68,7 +68,7 @@ auto write_ntmbs(std::streambuf* sb, const std::locale&,
     // is an unprintable one or not easily
     // (Of course we can first convert multibyte chars to wide chars,
     // but we know C's global locale is often unreliable)
-    for (; begin != end; ++begin) {
+    for (; !(begin == end); ++begin) {
         const auto c = *begin;
         if (c == '\0') {
             ntmbs::write_hexadecimal(sb, c);
@@ -106,7 +106,7 @@ auto write_ntmbs(std::streambuf* sb, const std::locale& loc,
     } catch (...) {}
 
     std::mbstate_t state = {};
-    for (; begin != end; ++begin) {
+    for (; !(begin == end); ++begin) {
         const auto c = *begin;
         if (s && facet) {
             bool printable = false;
