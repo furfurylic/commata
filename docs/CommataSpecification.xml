@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-01-20 (UTC)</signature>
+<signature>2023-01-21 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4061,9 +4061,12 @@ template &lt;class OtherContent, class OtherAllocator>
   basic_stored_table&amp; operator+=(
     const basic_stored_table&lt;OtherContent, OtherAllocator>&amp; other);
           </code>
-          <requires><c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
-                    If an exception is thrown by a call of <c>emplace</c> or <c>insert</c> of <c>content()</c> at the end, there shall be no effects on the before-end elements.
-                    Any calls of <c>erase</c> of <c>content()</c> at the end shall not exit via an exception.</requires>
+          <requires><p><c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
+                       If the content container of <c>*this</c> is not empty, then:</p>
+                    <ul>
+                      <li>an exception is thrown by a call of <c>emplace</c> or <c>insert</c> of <c>this->content()</c> at the end, there shall be no effects on the before-end elements, and</li>
+                      <li>any calls of <c>erase</c> of <c>this->content()</c> at the end shall not exit via an exception.</li>
+                    </ul></requires>
           <postcondition>Let <c>lsize</c> be the value that <c>size()</c> returned before the call.
                          <c>size() == lsize + other.size()</c> shall be <c>true</c>.
                          For each <c>i</c> in the range [<c>0</c>, <c>lsize</c>), the value of <c>(*this)[i]</c> shall be equal to the value that it had before call.
@@ -4076,10 +4079,13 @@ template &lt;class OtherContent, class OtherAllocator>
   basic_stored_table&amp; operator+=(
     basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
           </code>
-          <requires><c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
-                    If an exception is thrown by a call of <c>emplace</c> or <c>insert</c> of <c>content()</c> at the end, there shall be no effects on the before-end elements.
-                    Any calls of <c>erase</c> of <c>content()</c> at the end shall not exit via an exception.
-                    Any calls of <c>clear</c> of <c>other.content()</c> shall not exit via an exception.</requires>
+          <requires><p><c>basic_stored_table&lt;OtherContent, OtherAllocator>::char_type</c> and <c>basic_stored_table&lt;OtherContent, OtherAllocator>::traits_type</c> shall be identical types to <c>char_type</c> and <c>traits_type</c> respectively.
+                       If the content container of <c>other</c> is not empty, then any calls of <c>clear</c> of <c>other.content()</c> shall not exit via an exception.
+                       If the content container of <c>*this</c> is not empty, then:</p>
+                    <ul>
+                       <li>if an exception is thrown by a call of <c>emplace</c> or <c>insert</c> of <c>this->content()</c> at the end, there shall be no effects on the before-end elements, and</li>
+                       <li>any calls of <c>erase</c> of <c>this->content()</c> at the end shall not exit via an exception.</li>
+                    </ul></requires>
           <postcondition>Let <c>lsize</c> be the value that <c>size()</c> returned before the call.
                          <c>size() == lsize + other.size()</c> shall be <c>true</c>.
                          For each <c>i</c> in the range [<c>0</c>, <c>lsize</c>), the value of <c>(*this)[i]</c> shall be equal to the value that it had before call.
