@@ -1793,12 +1793,12 @@ void append_content(ContentL& l, ContentR&& r)
     }
 }
 
-template <class RecordL, class AllocatorL, class RecordR, class AllocatorR>
+template <class Record, class AllocatorL, class AllocatorR>
 void append_content(
-    std::list<RecordL, AllocatorL>& l, std::list<RecordL, AllocatorR>&& r,
+    std::list<Record, AllocatorL>& l, std::list<Record, AllocatorR>&& r,
     std::nullptr_t = nullptr/*just a tag*/)
 {
-    std::list<RecordL, AllocatorL> r2(l.get_allocator());   // throw
+    std::list<Record, AllocatorL> r2(l.get_allocator());    // throw
     emigrate(std::move(r), r2);                             // throw
     l.splice(l.cend(), r2);
 }
