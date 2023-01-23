@@ -1379,6 +1379,10 @@ private:
     value_type& rewrite_value_n(value_type& value,
         InputIterator new_value_begin, std::size_t new_value_size)
     {
+        if (new_value_size == 0) {
+            return value = value_type();
+        }
+
         if constexpr (!std::is_const_v<typename value_type::value_type>) {
             if (new_value_size <= value.size()) {
                 detail::stored::move_chs<traits_type>(
@@ -1454,6 +1458,10 @@ private:
     value_type& rewrite_value_input(value_type& value,
         InputIterator new_value_begin, InputIteratorEnd new_value_end)
     {
+        if (new_value_begin == new_value_end) {
+            return value = value_type();
+        }
+
         generated_buffer generated(*this);
 
         auto [cb, ce] = store_.get_current();
