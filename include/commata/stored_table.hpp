@@ -1570,15 +1570,35 @@ public:
     }
 
     template <class OtherContent, class OtherAllocator>
-    basic_stored_table& operator+=(
+    auto operator+=(
         const basic_stored_table<OtherContent, OtherAllocator>& other)
+     -> std::enable_if_t<
+            std::is_same_v<
+                typename basic_stored_table<OtherContent, OtherAllocator>::
+                    char_type,
+                char_type>
+         && std::is_same_v<
+                typename basic_stored_table<OtherContent, OtherAllocator>::
+                    traits_type,
+                traits_type>,
+            basic_stored_table&>
     {
         return operator_plus_assign_impl(other);
     }
 
     template <class OtherContent, class OtherAllocator>
-    basic_stored_table& operator+=(
+    auto operator+=(
         basic_stored_table<OtherContent, OtherAllocator>&& other)
+     -> std::enable_if_t<
+            std::is_same_v<
+                typename basic_stored_table<OtherContent, OtherAllocator>::
+                    char_type,
+                char_type>
+         && std::is_same_v<
+                typename basic_stored_table<OtherContent, OtherAllocator>::
+                    traits_type,
+                traits_type>,
+            basic_stored_table&>
     {
         return operator_plus_assign_impl(std::move(other));
     }
