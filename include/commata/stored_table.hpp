@@ -1636,7 +1636,13 @@ private:
     {
         using oca_t =
             typename basic_stored_table<OtherContent, OtherAllocator>::ca_t;
-        if constexpr (std::is_same_v<ca_t, oca_t>
+        if constexpr (
+            std::is_const_v<
+                typename basic_stored_table<OtherContent, OtherAllocator>::
+                    value_type::value_type>
+             && !std::is_const_v<typename value_type::value_type>) {
+            append_no_singular(other);                          // throw
+        } else if constexpr (std::is_same_v<ca_t, oca_t>
                    && cat_t::is_always_equal::value) {
             append_no_singular_merge(std::move(other));         // throw
         } else if constexpr (

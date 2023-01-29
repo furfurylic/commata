@@ -1108,6 +1108,18 @@ TEST_F(TestStoredTable, Const)
     ASSERT_EQ(table[0][1].c_str(), table[2][1].c_str());
 
     ASSERT_STREQ("Cirsium", table[1][1].c_str());
+
+    // non-const value table
+    basic_stored_table<std::vector<std::vector<stored_value>>> table2;
+
+    table2.content().emplace_back();
+    table2.content().back().push_back(table2.import_value("Asterids"));
+    table2.content().back().push_back(table2.import_value("Serratula"));
+    table2.content().back().push_back(table2.import_value("S. coronata"));
+
+    table2 += table;                // copy
+    table2 += std::move(table);     // copy too
+    ASSERT_EQ(3, table.size());
 }
 
 template <class ContentLR>
