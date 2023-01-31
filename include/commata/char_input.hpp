@@ -323,7 +323,6 @@ template <class Ch, class Tr, class Allocator>
 auto swap(owned_string_input<Ch, Tr, Allocator>& left,
           owned_string_input<Ch, Tr, Allocator>& right)
     noexcept(noexcept(left.swap(right)))
- -> std::enable_if_t<std::is_swappable_v<std::basic_string<Ch, Tr, Allocator>>>
 {
     left.swap(right);
 }

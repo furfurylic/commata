@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-01-28 (UTC)</signature>
+<signature>2023-01-31 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1837,8 +1837,7 @@ template &lt;class Ch, class Tr, class Allocator>
             owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;basic_string&lt;Ch, Tr, Allocator>></c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
         </code-item>
       </section>
     </section>
