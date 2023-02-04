@@ -251,22 +251,9 @@ public:
         s_(), head_(0)
     {}
 
-    explicit owned_string_input(
-        const std::basic_string<Ch, Tr, Allocator>& str) :
-        s_(str), head_(0)
-    {}
-
     explicit owned_string_input(std::basic_string<Ch, Tr, Allocator>&& str)
         noexcept :
         s_(std::move(str)), head_(0)
-    {}
-
-    owned_string_input(const owned_string_input& other) :
-        s_(other.s_, other.head_, std::basic_string<Ch, Tr, Allocator>::npos,
-            std::allocator_traits<Allocator>::
-                select_on_container_copy_construction(
-                    other.s_.get_allocator())),
-        head_(0)
     {}
 
     owned_string_input(owned_string_input&& other) noexcept :
@@ -276,22 +263,6 @@ public:
     }
 
     ~owned_string_input() = default;
-
-    owned_string_input& operator=(const owned_string_input& other)
-    {
-        if constexpr (std::allocator_traits<Allocator>::
-                propagate_on_container_copy_assignment()) {
-            // This implementation inhibits s_'s buffer from being reused,
-            // but it seems necessary so that s_'s allocator is replaced with
-            // other.s_'s allocator (even if the allocators are equivalent)
-            s_ = std::basic_string<Ch, Tr, Allocator>(
-                other.s_, other.head_, other.s_.get_allocator());   // throw
-        } else {
-            s_.assign(other.s_, other.head_);   // throw
-        }
-        head_ = 0;
-        return *this;
-    }
 
     owned_string_input& operator=(owned_string_input&& other)
         noexcept(std::is_nothrow_move_assignable_v<

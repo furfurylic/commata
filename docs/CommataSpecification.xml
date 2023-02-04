@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-01-31 (UTC)</signature>
+<signature>2023-02-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1722,10 +1722,8 @@ namespace commata {
     <c>// <n><xref id="owned_string_input.cons"/>, construct/copy/destroy:</n></c>
     owned_string_input() noexcept(<nc>see below</nc>);
     explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; str) noexcept;
-    owned_string_input(const owned_string_input&amp; other);
     owned_string_input(owned_string_input&amp;&amp; other) noexcept;
    ~owned_string_input() = default;
-    owned_string_input&amp; operator=(const owned_string_input&amp; other);
     owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="owned_string_input.inv"/>, invocation:</n></c>
@@ -1770,25 +1768,9 @@ explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; st
 
         <code-item>
           <code>
-owned_string_input(const owned_string_input&amp; other);
-          </code>
-          <effects>Initializes <c>s</c> with <c>other.s</c>, <c>other.head</c>, <c>std::basic_string&lt;Ch, Tr, Allocator>::npos</c> and <c>std::allocator_traits&lt;Allocator>::select_on_container_copy_construction(other.s.get_allocator())</c>, and <c>head</c> with <c>0</c>.</effects>
-        </code-item>
-
-        <code-item>
-          <code>
 owned_string_input(owned_string_input&amp;&amp; other) noexcept;
           </code>
           <effects>Initializes <c>s</c> with <c>std::move(other.s)</c> and <c>head</c> with <c>other.head</c>, and then assigns <c>other.size()</c> to <c>other.head</c>.</effects>
-        </code-item>
-
-        <code-item>
-          <code>
-owned_string_input&amp; operator=(const owned_string_input&amp; other);
-          </code>
-          <effects>Make <c>s.compare(head, s.size() - head, other.s, other.head)</c> be <c>0</c>.
-                   Replaces the allocator of <c>s</c> with the allocator of <c>other.s</c> if and only if <c>std::allocator_traits&lt;Allocator>::propagate_on_container_copy_assignment</c> is <c>true</c>.</effects>
-          <remark>If an exception is thrown by this function, the invocation shall have no effect.</remark>
         </code-item>
 
         <code-item>
