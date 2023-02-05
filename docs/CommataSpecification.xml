@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-02-04 (UTC)</signature>
+<signature>2023-02-10 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -279,7 +279,7 @@
           <td><c>ct.yield_location()</c></td>
           <td><c>std::size_t</c></td>
           <td><p>Called when the parser is about to start the execution or restart the execution after a suspension due to the latest return value of (11).</p>
-              <p>Shall return <c>0</c> if (11) has never be called; otherwise shall return the value of the parameter <c>p</c> of the latest call of (11).</p></td>
+              <p>Shall return the value of the parameter <c>p</c> of the latest call of (11) with the return value being <c>true</c>; otherwise shall return <c>0</c>.</p></td>
           <td>Returns <c>0</c>.</td>
         </tr>
 
