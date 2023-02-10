@@ -1523,7 +1523,7 @@ static_assert(
         stored_table_builder<
             stored_table::content_type,
             stored_table::allocator_type,
-            stored_table_builder_option_transpose>>);
+            stored_table_builder_option::transpose>>);
 
 struct TestStoredTableReusingBuffer : BaseTest
 {

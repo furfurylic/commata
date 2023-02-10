@@ -2887,13 +2887,26 @@ namespace commata {
   using cstored_table  = basic_stored_table&lt;std::deque&lt;std::vector&lt;cstored_value>>>;
   using cwstored_table = basic_stored_table&lt;std::deque&lt;std::vector&lt;cwstored_value>>>;
 
-  enum stored_table_builder_option : <nc>unspecified</nc> {
-    stored_table_builder_option_transpose = 1
-  };
+  <c>// <n><xref id="stored_table_builder_option"/>, stored_table_builder_option:</n></c>
+  enum class stored_table_builder_option : <nc>see below</nc>;
+
+  constexpr stored_table_builder_option operator|(
+    stored_table_builder_option left, stored_table_builder_option right) noexcept;
+  constexpr stored_table_builder_option&amp; operator|=(
+    stored_table_builder_option&amp; left, stored_table_builder_option right) noexcept;
+  constexpr stored_table_builder_option operator&amp;(
+    stored_table_builder_option left, stored_table_builder_option right) noexcept;
+  constexpr stored_table_builder_option&amp; operator&amp;=(
+    stored_table_builder_option&amp; left, stored_table_builder_option right) noexcept;
+  constexpr stored_table_builder_option operator^(
+    stored_table_builder_option left, stored_table_builder_option right) noexcept;
+  constexpr stored_table_builder_option&amp; operator^=(
+    stored_table_builder_option&amp; left, stored_table_builder_option right) noexcept;
+  constexpr stored_table_builder_option operator~(stored_table_builder_option handle) noexcept;
 
   <c>// <n><xref id="stored_table_builder"/>, stored_table_builder:</n></c>
   template &lt;class Content, class Allocator,
-            std::underlying_type_t&lt;stored_table_builder_option> Options = 0>
+            stored_table_builder_option Options = stored_table_builder_option::none>
     class stored_table_builder;
 
   template &lt;class Content, class Allocator, class... Args>
@@ -4171,13 +4184,97 @@ template &lt;class Content, class Allocator>
       </section>
     </section>
 
+    <section id="stored_table_builder_option">
+      <name>Type <c>stored_table_builder_option</c></name>
+
+      <codeblock>
+namespace commata {
+  enum class stored_table_builder_option : <nc>see below</nc> {
+    none = 0,
+    transpose = 1
+  };
+
+  <c>// <n><xref id="stored_table_builder_option.ops"/>, operations:</n></c>
+  constexpr stored_table_builder_option operator|(
+    stored_table_builder_option left, stored_table_builder_option right) noexcept;
+  constexpr stored_table_builder_option&amp; operator|=(
+    stored_table_builder_option&amp; left, stored_table_builder_option right) noexcept;
+  constexpr stored_table_builder_option operator&amp;(
+    stored_table_builder_option left, stored_table_builder_option right) noexcept;
+  constexpr stored_table_builder_option&amp; operator&amp;=(
+    stored_table_builder_option&amp; left, stored_table_builder_option right) noexcept;
+  constexpr stored_table_builder_option operator^(
+    stored_table_builder_option left, stored_table_builder_option right) noexcept;
+  constexpr stored_table_builder_option&amp; operator^=(
+    stored_table_builder_option&amp; left, stored_table_builder_option right);
+  constexpr stored_table_builder_option operator~(stored_table_builder_option handle) noexcept;
+}
+      </codeblock>
+
+      <p>The enumarated type <c>stored_table_builder_option</c> defines several integral values with single one bit and with all one bit, which is used to configure the <c>stored_table_builder</c> objects (<xref id="stored_table_builder"/>).
+         Its underlying type is an unspecified unsigned integer type.</p>
+
+      <section id="stored_table_builder_option.ops">
+        <name><c>stored_table_builder_option</c> operations</name>
+        <p>In this subclause, <c>U</c> denotes <c>std::underlying_type_t&lt;stored_table_builder_option></c>.</p>
+        <code-item>
+          <code>
+constexpr stored_table_builder_option operator|(
+  stored_table_builder_option left, stored_table_builder_option right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return stored_table_builder_option(static_cast&lt;U>(left) | static_cast&lt;U>(right));</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr stored_table_builder_option&amp; operator|=(
+  stored_table_builder_option&amp; left, stored_table_builder_option right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return left = left | right;</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr stored_table_builder_option operator&amp;(
+  stored_table_builder_option left, stored_table_builder_option right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return stored_table_builder_option(static_cast&lt;U>(left) &amp; static_cast&lt;U>(right));</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr stored_table_builder_option&amp; operator&amp;=(
+  stored_table_builder_option&amp; left, stored_table_builder_option right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return left = left &amp; right;</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr stored_table_builder_option operator^(
+  stored_table_builder_option left, stored_table_builder_option right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return stored_table_builder_option(static_cast&lt;U>(left) ^ static_cast&lt;U>(right));</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr stored_table_builder_option&amp; operator^=(
+  stored_table_builder_option&amp; left, stored_table_builder_option right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return left = left ^ right;</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr stored_table_builder_option operator~(stored_table_builder_option handle) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return stored_table_builder_option(~static_cast&lt;U>(handle));</c></effects>
+        </code-item>
+      </section>
+    </section>
+
     <section id="stored_table_builder">
       <name>Class template <c>stored_table_builder</c></name>
 
       <codeblock>
 namespace commata {
   template &lt;class Content, class Allocator,
-            std::underlying_type_t&lt;stored_table_builder_option> Options = 0>
+            stored_table_builder_option Options = stored_table_builder_option::none>
     class stored_table_builder {
   public:
     using table_type = basic_stored_table&lt;Content, Allocator>;
@@ -4224,7 +4321,7 @@ namespace commata {
 
       <table id="table.stored_table_builder.options">
         <caption><c>stored_table_builder</c> options</caption>
-        <col width="3"/><col width="5"/>
+        <col width="1"/><col width="2"/>
 
         <tr>
           <th>Condition</th>
@@ -4232,12 +4329,12 @@ namespace commata {
         </tr>
 
         <tr>
-          <td><c>(Options &amp; stored_table_builder_option_transpose) == 0</c></td>
+          <td><c>(Options &amp; stored_table_builder_option::transpose) == stored_table_builder_option(0)</c></td>
           <td>The value of the <c>j</c>-th field of the <c>i</c>-th record of the text shall be arranged into <c>c[s + i][j]</c>.</td>
         </tr>
 
         <tr>
-          <td><c>(Options &amp; stored_table_builder_option_transpose) != 0</c></td>
+          <td><c>(Options &amp; stored_table_builder_option::transpose) != stored_table_builder_option(0)</c></td>
           <td>The value of the <c>j</c>-th field of the <c>i</c>-th record of the text shall be arranged into <c>c[j][s + i]</c>.
               On each arrangement, the range [<c>c[j].begin() + e</c>, <c>c[j].begin() + (s + i)</c>) shall be filled by empty values where <c>e</c> is the value that <c>c[j].size()</c> had before the arrangement.</td>
         </tr>
@@ -4311,7 +4408,7 @@ template &lt;class Content, class Allocator, class... Args>
                                                  Args&amp;&amp;... args);
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>return stored_table_builder&lt;Content, Allocator, stored_table_builder_option_transpose>(
+                   <code>return stored_table_builder&lt;Content, Allocator, stored_table_builder_option::transpose>(
          table, std::forward&lt;Args>(args)...));</code>
           </effects>
         </code-item>

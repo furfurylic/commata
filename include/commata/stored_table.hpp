@@ -1922,10 +1922,66 @@ using cstored_table =
 using cwstored_table =
     basic_stored_table<std::deque<std::vector<cwstored_value>>>;
 
-enum stored_table_builder_option : std::uint_fast8_t
+enum class stored_table_builder_option : std::uint_fast8_t
 {
-    stored_table_builder_option_transpose = 1
+    none = 0,
+    transpose = 1
 };
+
+constexpr inline stored_table_builder_option operator|(
+    stored_table_builder_option left, stored_table_builder_option right)
+    noexcept
+{
+    using u_t = std::underlying_type_t<stored_table_builder_option>;
+    return stored_table_builder_option(
+        static_cast<u_t>(left) | static_cast<u_t>(right));
+}
+
+constexpr inline stored_table_builder_option& operator|=(
+    stored_table_builder_option& left, stored_table_builder_option right)
+    noexcept
+{
+    return left = left | right;
+}
+
+constexpr inline stored_table_builder_option operator&(
+    stored_table_builder_option left, stored_table_builder_option right)
+    noexcept
+{
+    using u_t = std::underlying_type_t<stored_table_builder_option>;
+    return stored_table_builder_option(
+        static_cast<u_t>(left) & static_cast<u_t>(right));
+}
+
+constexpr inline stored_table_builder_option& operator&=(
+    stored_table_builder_option& left, stored_table_builder_option right)
+    noexcept
+{
+    return left = left & right;
+}
+
+constexpr inline stored_table_builder_option operator^(
+    stored_table_builder_option left, stored_table_builder_option right)
+    noexcept
+{
+    using u_t = std::underlying_type_t<stored_table_builder_option>;
+    return stored_table_builder_option(
+        static_cast<u_t>(left) ^ static_cast<u_t>(right));
+}
+
+constexpr inline stored_table_builder_option& operator^=(
+    stored_table_builder_option& left, stored_table_builder_option right)
+    noexcept
+{
+    return left = left ^ right;
+}
+
+constexpr inline stored_table_builder_option operator~(
+    stored_table_builder_option handle) noexcept
+{
+    using u_t = std::underlying_type_t<stored_table_builder_option>;
+    return stored_table_builder_option(~static_cast<u_t>(handle));
+}
 
 namespace detail::stored {
 
@@ -1992,10 +2048,10 @@ public:
     }
 };
 
-template <class Content,
-    std::underlying_type_t<stored_table_builder_option> Options>
+template <class Content, stored_table_builder_option Options>
 using arrange = std::conditional_t<
-    (Options & stored_table_builder_option_transpose) != 0U,
+    (Options & stored_table_builder_option::transpose)
+        != stored_table_builder_option(0),
     arrange_transposing<Content>, arrange_as_is<Content>>;
 
 template <class StoredTable>
@@ -2042,7 +2098,7 @@ private:
 } // end detail::stored
 
 template <class Content, class Allocator,
-    std::underlying_type_t<stored_table_builder_option> Options = 0U>
+    stored_table_builder_option Options = stored_table_builder_option::none>
 class stored_table_builder :
     detail::stored::arrange<Content, Options>
 {
@@ -2275,7 +2331,7 @@ auto make_transposed_stored_table_builder(
     basic_stored_table<Content, Allocator>& table, Args&&... args)
 {
     return stored_table_builder<Content, Allocator,
-        stored_table_builder_option_transpose>(
+        stored_table_builder_option::transpose>(
             table, std::forward<Args>(args)...);
 }
 
