@@ -4049,7 +4049,7 @@ template &lt;class OtherContent, class OtherAllocator>
           </code>
           <requires><p>If the content container of <c>*this</c> is not empty, then:</p>
                     <ul>
-                      <li>an exception is thrown by a call of <c>emplace</c> or <c>insert</c> of <c>this->content()</c> at the end, there shall be no effects on the before-end elements, and</li>
+                      <li>if an exception is thrown by a call of <c>emplace</c> or <c>insert</c> of <c>this->content()</c> at the end, there shall be no effects on the before-end elements, and</li>
                       <li>any calls of <c>erase</c> of <c>this->content()</c> at the end shall not exit via an exception.</li>
                     </ul></requires>
           <postcondition>Let <c>lsize</c> be the value that <c>size()</c> returned before the call.
