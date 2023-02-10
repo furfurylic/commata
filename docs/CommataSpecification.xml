@@ -518,7 +518,7 @@ text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
           <code>
 text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col = npos) noexcept;
           </code>
-          <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>*this</c> holds a physical position information and <c>get_physical_position() == nullptr</c> shall be <c>true</c>. Otherwise, <c>*this</c> holds no physical position information and <c>*get_physical_position() == std::make_pair(line, col)</c> shall be <c>true</c>.</postcondition>
+          <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>*this</c> holds no physical position information and <c>get_physical_position() == std::nullopt</c> shall be <c>true</c>. Otherwise, <c>*this</c> holds a physical position information and <c>*get_physical_position() == std::make_pair(line, col)</c> shall be <c>true</c>.</postcondition>
           <returns><c>*this</c>.</returns>
           <remark><c>line</c> and <c>col</c> shall be <c>npos</c> or zero-based numbers of the row and the column.
                   <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
