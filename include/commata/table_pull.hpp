@@ -37,17 +37,72 @@ enum class primitive_table_pull_state : std::uint_fast8_t
     end_buffer
 };
 
-enum primitive_table_pull_handle : std::uint_fast8_t
+enum class primitive_table_pull_handle : std::uint_fast8_t
 {
-    primitive_table_pull_handle_start_buffer        = 1,
-    primitive_table_pull_handle_end_buffer          = 1 << 1,
-    primitive_table_pull_handle_start_record        = 1 << 2,
-    primitive_table_pull_handle_end_record          = 1 << 3,
-    primitive_table_pull_handle_empty_physical_line = 1 << 4,
-    primitive_table_pull_handle_update              = 1 << 5,
-    primitive_table_pull_handle_finalize            = 1 << 6,
-    primitive_table_pull_handle_all = static_cast<std::uint_fast8_t>(-1)
+    start_buffer        = 1,
+    end_buffer          = 1 << 1,
+    start_record        = 1 << 2,
+    end_record          = 1 << 3,
+    empty_physical_line = 1 << 4,
+    update              = 1 << 5,
+    finalize            = 1 << 6,
+    all = static_cast<std::uint_fast8_t>(-1)
 };
+
+constexpr inline primitive_table_pull_handle operator|(
+    primitive_table_pull_handle left, primitive_table_pull_handle right)
+    noexcept
+{
+    using u_t = std::underlying_type_t<primitive_table_pull_handle>;
+    return primitive_table_pull_handle(
+        static_cast<u_t>(left) | static_cast<u_t>(right));
+}
+
+constexpr inline primitive_table_pull_handle& operator|=(
+    primitive_table_pull_handle& left, primitive_table_pull_handle right)
+    noexcept
+{
+    return left = left | right;
+}
+
+constexpr inline primitive_table_pull_handle operator&(
+    primitive_table_pull_handle left, primitive_table_pull_handle right)
+    noexcept
+{
+    using u_t = std::underlying_type_t<primitive_table_pull_handle>;
+    return primitive_table_pull_handle(
+        static_cast<u_t>(left) & static_cast<u_t>(right));
+}
+
+constexpr inline primitive_table_pull_handle& operator&=(
+    primitive_table_pull_handle& left, primitive_table_pull_handle right)
+    noexcept
+{
+    return left = left & right;
+}
+
+constexpr inline primitive_table_pull_handle operator^(
+    primitive_table_pull_handle left, primitive_table_pull_handle right)
+    noexcept
+{
+    using u_t = std::underlying_type_t<primitive_table_pull_handle>;
+    return primitive_table_pull_handle(
+        static_cast<u_t>(left) ^ static_cast<u_t>(right));
+}
+
+constexpr inline primitive_table_pull_handle& operator^=(
+    primitive_table_pull_handle& left, primitive_table_pull_handle right)
+    noexcept
+{
+    return left = left ^ right;
+}
+
+constexpr inline primitive_table_pull_handle operator~(
+    primitive_table_pull_handle handle) noexcept
+{
+    using u_t = std::underlying_type_t<primitive_table_pull_handle>;
+    return primitive_table_pull_handle(~static_cast<u_t>(handle));
+}
 
 namespace detail::pull {
 
@@ -67,8 +122,7 @@ template <class T>
 constexpr bool has_get_physical_position_v =
     decltype(has_get_physical_position_impl::check<T>(nullptr))();
 
-template <class Ch, class Allocator,
-    std::underlying_type_t<primitive_table_pull_handle> Handle>
+template <class Ch, class Allocator, primitive_table_pull_handle Handle>
 class handler
 {
 public:
@@ -157,8 +211,7 @@ public:
         [[maybe_unused]] const Ch* buffer_begin,
         [[maybe_unused]] const Ch* buffer_end)
     {
-        if constexpr (
-            (Handle & primitive_table_pull_handle_start_buffer) != 0) {
+        if constexpr (handles(primitive_table_pull_handle::start_buffer)) {
             if (collects_data_) {
                 sq_.emplace_back(
                     primitive_table_pull_state::start_buffer, dn(2));
@@ -173,8 +226,7 @@ public:
 
     void end_buffer([[maybe_unused]] const Ch* buffer_end)
     {
-        if constexpr (
-            (Handle & primitive_table_pull_handle_end_buffer) != 0) {
+        if constexpr (handles(primitive_table_pull_handle::end_buffer)) {
             if (collects_data_) {
                 sq_.emplace_back(
                     primitive_table_pull_state::end_buffer, dn(1));
@@ -188,8 +240,7 @@ public:
 
     void start_record([[maybe_unused]] const char_type* record_begin)
     {
-        if constexpr
-            ((Handle & primitive_table_pull_handle_start_record) != 0) {
+        if constexpr (handles(primitive_table_pull_handle::start_record)) {
             if (collects_data_) {
                 sq_.emplace_back(
                     primitive_table_pull_state::start_record, dn(1));
@@ -205,8 +256,7 @@ public:
         [[maybe_unused]] const char_type* first,
         [[maybe_unused]] const char_type* last)
     {
-        if constexpr (
-            (Handle & primitive_table_pull_handle_update) != 0) {
+        if constexpr (handles(primitive_table_pull_handle::update)) {
             if (collects_data_) {
                 sq_.emplace_back(primitive_table_pull_state::update, dn(2));
                 dq_.push_back(uc(first));
@@ -221,8 +271,7 @@ public:
         [[maybe_unused]] const char_type* first,
         [[maybe_unused]] const char_type* last)
     {
-        if constexpr (
-            (Handle & primitive_table_pull_handle_finalize) != 0) {
+        if constexpr (handles(primitive_table_pull_handle::finalize)) {
             if (collects_data_) {
                 sq_.emplace_back(primitive_table_pull_state::finalize, dn(2));
                 dq_.push_back(uc(first));
@@ -235,8 +284,7 @@ public:
 
     void end_record([[maybe_unused]] const char_type* record_end)
     {
-        if constexpr (
-            (Handle & primitive_table_pull_handle_end_record) != 0) {
+        if constexpr (handles(primitive_table_pull_handle::end_record)) {
             if (collects_data_) {
                 sq_.emplace_back(
                     primitive_table_pull_state::end_record, dn(1));
@@ -251,7 +299,7 @@ public:
     void empty_physical_line([[maybe_unused]] const char_type* where)
     {
         if constexpr (
-            (Handle & primitive_table_pull_handle_empty_physical_line) != 0) {
+                handles(primitive_table_pull_handle::empty_physical_line)) {
             if (collects_data_) {
                 sq_.emplace_back(
                     primitive_table_pull_state::empty_physical_line, dn(1));
@@ -278,6 +326,11 @@ public:
         return yield_location_;
     }
 
+    static constexpr bool handles(primitive_table_pull_handle handle) noexcept
+    {
+        return (Handle & handle) != ~primitive_table_pull_handle::all;
+    }
+
 private:
     char_type* uc(const char_type* s) const noexcept
     {
@@ -295,8 +348,7 @@ private:
 
 template <class TableSource,
     class Allocator = std::allocator<typename TableSource::char_type>,
-    std::underlying_type_t<primitive_table_pull_handle> Handle =
-        primitive_table_pull_handle_all>
+    primitive_table_pull_handle Handle = primitive_table_pull_handle::all>
 class primitive_table_pull
 {
 public:
@@ -491,13 +543,15 @@ public:
 
     size_type max_data_size() const noexcept
     {
-        return ((Handle & (primitive_table_pull_handle_start_buffer
-                         | primitive_table_pull_handle_update
-                         | primitive_table_pull_handle_finalize)) != 0) ?  2 :
-               ((Handle & (primitive_table_pull_handle_end_buffer
-                         | primitive_table_pull_handle_empty_physical_line
-                         | primitive_table_pull_handle_start_record
-                         | primitive_table_pull_handle_end_record)) != 0) ? 1 :
+        return handler_t::handles(
+                    primitive_table_pull_handle::start_buffer
+                  | primitive_table_pull_handle::update
+                  | primitive_table_pull_handle::finalize) ?  2 :
+               handler_t::handles(
+                    primitive_table_pull_handle::end_buffer
+                  | primitive_table_pull_handle::empty_physical_line
+                  | primitive_table_pull_handle::start_record
+                  | primitive_table_pull_handle::end_record) ? 1 :
                0;
     }
 
@@ -541,7 +595,7 @@ primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
     -> primitive_table_pull<TableSource, Allocator>;
 
 template <class TableSource, class Allocator,
-    std::underlying_type_t<primitive_table_pull_handle> Handle>
+    primitive_table_pull_handle Handle>
 typename primitive_table_pull<TableSource, Allocator, Handle>::handler_t::
             state_queue_type
     primitive_table_pull<TableSource, Allocator, Handle>::sq_moved_from
@@ -551,7 +605,7 @@ typename primitive_table_pull<TableSource, Allocator, Handle>::handler_t::
             Handle>::handler_t::state_queue_element_type::second_type>(0)) };
 
 template <class TableSource, class Allocator,
-    std::underlying_type_t<primitive_table_pull_handle> Handle>
+    primitive_table_pull_handle Handle>
 typename primitive_table_pull<TableSource, Allocator, Handle>::handler_t::
             data_queue_type
     primitive_table_pull<TableSource, Allocator, Handle>::dq_moved_from = {};
@@ -576,11 +630,11 @@ public:
 
 private:
     using primitive_t = primitive_table_pull<TableSource, allocator_type,
-        (primitive_table_pull_handle_end_buffer
-       | primitive_table_pull_handle_end_record
-       | primitive_table_pull_handle_empty_physical_line
-       | primitive_table_pull_handle_update
-       | primitive_table_pull_handle_finalize)>;
+        (primitive_table_pull_handle::end_buffer
+       | primitive_table_pull_handle::end_record
+       | primitive_table_pull_handle::empty_physical_line
+       | primitive_table_pull_handle::update
+       | primitive_table_pull_handle::finalize)>;
 
     struct reset_discarding_data
     {

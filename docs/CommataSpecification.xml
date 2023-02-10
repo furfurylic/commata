@@ -6479,13 +6479,26 @@ namespace commata {
   };
 
   <c>// <n><xref id="primitive_table_pull_handle"/>, primitive_table_pull_handle:</n></c>
-  enum primitive_table_pull_handle : <nc>see below</nc>;
+  enum class primitive_table_pull_handle : <nc>see below</nc>;
+
+  constexpr primitive_table_pull_handle operator|(
+    primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
+  constexpr primitive_table_pull_handle&amp; operator|=(
+    primitive_table_pull_handle&amp; left, primitive_table_pull_handle right) noexcept;
+  constexpr primitive_table_pull_handle operator&amp;(
+    primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
+  constexpr primitive_table_pull_handle&amp; operator&amp;=(
+    primitive_table_pull_handle&amp; left, primitive_table_pull_handle right) noexcept;
+  constexpr primitive_table_pull_handle operator^(
+    primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
+  constexpr primitive_table_pull_handle&amp; operator^=(
+    primitive_table_pull_handle&amp; left, primitive_table_pull_handle right) noexcept;
+  constexpr primitive_table_pull_handle operator~(primitive_table_pull_handle handle) noexcept;
 
   <c>// <n><xref id="primitive_table_pull"/>, primitive_table_pull:</n></c>
   template &lt;class TableSource,
             class Allocator = std::allocator&lt;typename TableSource::char_type>,
-            std::underlying_type_t&lt;primitive_table_pull_handle> Handle =
-              primitive_table_pull_handle_all>
+            primitive_table_pull_handle Handle = primitive_table_pull_handle::all>
     class primitive_table_pull;
 
   template &lt;class TableSource, class... Args>
@@ -6528,21 +6541,89 @@ namespace commata {
 
       <codeblock>
 namespace commata {
-  enum primitive_table_pull_handle : <nc>see below</nc> {
-    primitive_table_pull_handle_start_buffer        = <nc>unspecified</nc>,
-    primitive_table_pull_handle_end_buffer          = <nc>unspecified</nc>,
-    primitive_table_pull_handle_empty_physical_line = <nc>unspecified</nc>,
-    primitive_table_pull_handle_start_record        = <nc>unspecified</nc>,
-    primitive_table_pull_handle_end_record          = <nc>unspecified</nc>,
-    primitive_table_pull_handle_update              = <nc>unspecified</nc>,
-    primitive_table_pull_handle_finalize            = <nc>unspecified</nc>,
-    primitive_table_pull_handle_all                 = -1   <c>// all one bit</c>
+  enum class primitive_table_pull_handle : <nc>see below</nc> {
+    start_buffer        = <nc>unspecified</nc>,
+    end_buffer          = <nc>unspecified</nc>,
+    empty_physical_line = <nc>unspecified</nc>,
+    start_record        = <nc>unspecified</nc>,
+    end_record          = <nc>unspecified</nc>,
+    update              = <nc>unspecified</nc>,
+    finalize            = <nc>unspecified</nc>,
+    all                 = -1   <c>// all one bit</c>
   };
+
+  <c>// <n><xref id="primitive_table_pull_handle.ops"/>, operations:</n></c>
+  constexpr primitive_table_pull_handle operator|(
+    primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
+  constexpr primitive_table_pull_handle&amp; operator|=(
+    primitive_table_pull_handle&amp; left, primitive_table_pull_handle right) noexcept;
+  constexpr primitive_table_pull_handle operator&amp;(
+    primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
+  constexpr primitive_table_pull_handle&amp; operator&amp;=(
+    primitive_table_pull_handle&amp; left, primitive_table_pull_handle right) noexcept;
+  constexpr primitive_table_pull_handle operator^(
+    primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
+  constexpr primitive_table_pull_handle&amp; operator^=(
+    primitive_table_pull_handle&amp; left, primitive_table_pull_handle right);
+  constexpr primitive_table_pull_handle operator~(primitive_table_pull_handle handle) noexcept;
 }
       </codeblock>
 
       <p>The enumarated type <c>primitive_table_pull_handle</c> defines several integral values with single one bit and with all one bit, which is used to configure the <c>primitive_table_pull</c> objects (<xref id="primitive_table_pull"/>).
-         Its underlying type is an unsigned integer type.</p>
+         Its underlying type is an unspecified unsigned integer type.</p>
+
+      <section id="primitive_table_pull_handle.ops">
+        <name><c>primitive_table_pull_handle</c> operations</name>
+        <p>In this subclause, <c>U</c> denotes <c>std::underlying_type_t&lt;primitive_table_pull_handle></c>.</p>
+        <code-item>
+          <code>
+constexpr primitive_table_pull_handle operator|(
+  primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return primitive_table_pull_handle(static_cast&lt;U>(left) | static_cast&lt;U>(right));</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr primitive_table_pull_handle&amp; operator|=(
+  primitive_table_pull_handle&amp; left, primitive_table_pull_handle right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return left = left | right;</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr primitive_table_pull_handle operator&amp;(
+  primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return primitive_table_pull_handle(static_cast&lt;U>(left) &amp; static_cast&lt;U>(right));</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr primitive_table_pull_handle&amp; operator&amp;=(
+  primitive_table_pull_handle&amp; left, primitive_table_pull_handle right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return left = left &amp; right;</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr primitive_table_pull_handle operator^(
+  primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return primitive_table_pull_handle(static_cast&lt;U>(left) ^ static_cast&lt;U>(right));</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr primitive_table_pull_handle&amp; operator^=(
+  primitive_table_pull_handle&amp; left, primitive_table_pull_handle right) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return left = left ^ right;</c></effects>
+        </code-item>
+        <code-item>
+          <code>
+constexpr primitive_table_pull_handle operator~(primitive_table_pull_handle handle) noexcept;
+          </code>
+          <effects>Equivalent to: <c>return primitive_table_pull_handle(~static_cast&lt;U>(handle));</c></effects>
+        </code-item>
+      </section>
     </section>
 
     <section id="primitive_table_pull">
@@ -6552,8 +6633,7 @@ namespace commata {
 namespace commata {
   template &lt;class TableSource,
             class Allocator = std::allocator&lt;typename TableSource::char_type>,
-            std::underlying_type_t&lt;primitive_table_pull_handle> Handle =
-              primitive_table_pull_handle_all>
+            primitive_table_pull_handle Handle = primitive_table_pull_handle::all>
     class primitive_table_pull {
   public:
     using char_type      = typename TableSource::char_type;
@@ -6615,9 +6695,9 @@ namespace commata {
         <li>an <n>event queue</n>, which is a queue of the parsing events, and which is enqueued on the back by the tied table handler object of the table parser object and dequeued by the user on the front.</li>
       </ul>
       <p>The user of this class template can configure the table handler object to ignore some parsing event with the template parameter <c>Handle</c>.
-         If <c>(Handle &amp; primitive_table_pull_handle_start_buffer) == 0</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
-         All other enumerators but <c>primitive_table_pull_handle_all</c> shall work similarly.
-         <c>primitive_table_pull_handle_all</c> has a representation of all one bits and is intended to be used to express &#x2018;ignore none&#x2019;.</p>
+         If <c>(Handle &amp; primitive_table_pull_handle::start_buffer) == primitive_table_pull_handle(0)</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
+         All other enumerators but <c>primitive_table_pull_handle::all</c> shall work similarly.
+         <c>primitive_table_pull_handle::all</c> has a representation of all one bits and is intended to be used to express &#x2018;ignore none&#x2019;.</p>
 
       <section id="primitive_table_pull.physical_position_available">
         <name><c>primitive_table_pull</c> physical position availability</name>
