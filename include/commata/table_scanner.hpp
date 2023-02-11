@@ -303,10 +303,11 @@ public:
     template <class HeaderFieldScanner,
         std::enable_if_t<!std::is_integral_v<HeaderFieldScanner>>* = nullptr>
     explicit basic_table_scanner(
-        HeaderFieldScanner s,
+        HeaderFieldScanner&& s,
         size_type buffer_size = 0U) :
         basic_table_scanner(
-            std::allocator_arg, Allocator(), std::move(s), buffer_size)
+            std::allocator_arg, Allocator(),
+            std::forward<HeaderFieldScanner>(s), buffer_size)
     {}
 
     basic_table_scanner(
