@@ -748,7 +748,8 @@ void pull_parsing_sample2()
 
   while (p.skip_record()(1)) {      // moves to the end of the record and
                                     // skip the first field of the next record
-    v.push_back(std::string(*p));
+    v.emplace_back(*p);             // *p is a reference to std::string_view
+                                    // object of the current field value
   }
 
   std::cout << v[0] << std::endl;   // will print "Spica"
