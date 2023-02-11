@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2023-02-10 (UTC)</signature>
+<signature>2023-02-11 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4583,10 +4583,10 @@ namespace commata {
     basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
                         std::size_t header_record_count = 0, size_type buffer_size = 0);
     template &lt;class HeaderFieldScanner>
-      explicit basic_table_scanner(HeaderFieldScanner s, size_type buffer_size = 0);
+      explicit basic_table_scanner(HeaderFieldScanner&amp;&amp; s, size_type buffer_size = 0);
     template &lt;class HeaderFieldScanner>
       basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-                          HeaderFieldScanner s, size_type buffer_size = 0);
+                          HeaderFieldScanner&amp;&amp; s, size_type buffer_size = 0);
     basic_table_scanner(basic_table_scanner&amp;&amp; other) noexcept;
 
    ~basic_table_scanner();
@@ -4651,7 +4651,7 @@ template &lt;class HeaderFieldScanner>
   explicit basic_table_scanner(HeaderFieldScanner&amp;&amp; s, size_type buffer_size = 0);
 template &lt;class HeaderFieldScanner>
   basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-                      HeaderFieldScanner s, size_type buffer_size = 0);
+                      HeaderFieldScanner&amp;&amp; s, size_type buffer_size = 0);
           </code>
           <preface>Let <c>T</c> be <c>std::decay_t&lt;HeaderFieldScanner></c>.</preface>
           <requires><c>T</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>basic_table_scanner&lt;Ch, Tr, Allocator></c>.</requires>
