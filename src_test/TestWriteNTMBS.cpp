@@ -31,7 +31,7 @@ TEST_F(TestWriteNTMBS, NarrowChar)
     write_ntmbs(os, s.cbegin(), s.cend());
     s.push_back('\0');
 
-    ASSERT_EQ("AB[0x" + zeros + "]C", os.str());
+    ASSERT_EQ("AB[0x" + zeros + "]C", std::move(os).str());
 }
 
 TEST_F(TestWriteNTMBS, WideChar)
@@ -45,5 +45,5 @@ TEST_F(TestWriteNTMBS, WideChar)
     std::vector<wchar_t> s = { L'A', L'B', L'\0', L'C' };
     write_ntmbs(os, s.cbegin(), s.cend());
 
-    ASSERT_EQ("AB[0x" + zeros + "]C", os.str());
+    ASSERT_EQ("AB[0x" + zeros + "]C", std::move(os).str());
 }
