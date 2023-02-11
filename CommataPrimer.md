@@ -110,7 +110,7 @@ std::cout << std::strlen(table[6][1].c_str()) << std::endl;
  member function which does the same thing in constant time.)
 
 `stored_value` supports iterators and has comparison operators with
-`const char*`, `std::string`, and `stored_value`:
+`const char*`, `std::string`, `std::string_view` and `stored_value`:
 
 ```C++
 for (char c : table[0][0]) {
