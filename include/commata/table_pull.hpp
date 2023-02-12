@@ -347,8 +347,8 @@ private:
 } // end detail::pull
 
 template <class TableSource,
-    class Allocator = std::allocator<typename TableSource::char_type>,
-    primitive_table_pull_handle Handle = primitive_table_pull_handle::all>
+    primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
+    class Allocator = std::allocator<typename TableSource::char_type>>
 class primitive_table_pull
 {
 public:
@@ -592,23 +592,24 @@ primitive_table_pull(TableSource, Args...)
 
 template <class TableSource, class Allocator, class... Args>
 primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
-    -> primitive_table_pull<TableSource, Allocator>;
+    -> primitive_table_pull<
+            TableSource, primitive_table_pull_handle::all, Allocator>;
 
-template <class TableSource, class Allocator,
-    primitive_table_pull_handle Handle>
-typename primitive_table_pull<TableSource, Allocator, Handle>::handler_t::
+template <class TableSource, primitive_table_pull_handle Handle,
+            class Allocator>
+typename primitive_table_pull<TableSource, Handle, Allocator>::handler_t::
             state_queue_type
-    primitive_table_pull<TableSource, Allocator, Handle>::sq_moved_from
+    primitive_table_pull<TableSource, Handle, Allocator>::sq_moved_from
  = { std::make_pair(
         primitive_table_pull_state::eof,
-        static_cast<typename primitive_table_pull<TableSource, Allocator,
-            Handle>::handler_t::state_queue_element_type::second_type>(0)) };
+        typename primitive_table_pull<TableSource, Handle, Allocator>::
+            handler_t::state_queue_element_type::second_type(0)) };
 
-template <class TableSource, class Allocator,
-    primitive_table_pull_handle Handle>
-typename primitive_table_pull<TableSource, Allocator, Handle>::handler_t::
+template <class TableSource, primitive_table_pull_handle Handle,
+            class Allocator>
+typename primitive_table_pull<TableSource, Handle, Allocator>::handler_t::
             data_queue_type
-    primitive_table_pull<TableSource, Allocator, Handle>::dq_moved_from = {};
+    primitive_table_pull<TableSource, Handle, Allocator>::dq_moved_from = {};
 
 enum class table_pull_state : std::uint_fast8_t
 {
@@ -629,12 +630,14 @@ public:
     using view_type = std::basic_string_view<char_type, traits_type>;
 
 private:
-    using primitive_t = primitive_table_pull<TableSource, allocator_type,
+    using primitive_t = primitive_table_pull<
+        TableSource,
         (primitive_table_pull_handle::end_buffer
        | primitive_table_pull_handle::end_record
        | primitive_table_pull_handle::empty_physical_line
        | primitive_table_pull_handle::update
-       | primitive_table_pull_handle::finalize)>;
+       | primitive_table_pull_handle::finalize),
+        allocator_type>;
 
     struct reset_discarding_data
     {

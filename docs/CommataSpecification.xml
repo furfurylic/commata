@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-02-11 (UTC)</signature>
+<signature>2023-02-12 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6594,15 +6594,15 @@ namespace commata {
 
   <c>// <n><xref id="primitive_table_pull"/>, primitive_table_pull:</n></c>
   template &lt;class TableSource,
-            class Allocator = std::allocator&lt;typename TableSource::char_type>,
-            primitive_table_pull_handle Handle = primitive_table_pull_handle::all>
+            primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
+            class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class primitive_table_pull;
 
   template &lt;class TableSource, class... Args>
     primitive_table_pull(TableSource, Args...) -> primitive_table_pull&lt;TableSource>;
   template &lt;class TableSource, class Allocator, class... Args>
     primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
-      -> primitive_table_pull&lt;TableSource, Allocator>;
+      -> primitive_table_pull&lt;TableSource, primitive_table_pull_handle::all, Allocator>;
 
   enum class table_pull_state : <nc>unspecified</nc> {
     before_parse = <nc>unspecified</nc>,
@@ -6729,8 +6729,8 @@ constexpr primitive_table_pull_handle operator~(primitive_table_pull_handle hand
       <codeblock>
 namespace commata {
   template &lt;class TableSource,
-            class Allocator = std::allocator&lt;typename TableSource::char_type>,
-            primitive_table_pull_handle Handle = primitive_table_pull_handle::all>
+            primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
+            class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class primitive_table_pull {
   public:
     using char_type      = typename TableSource::char_type;
@@ -6777,7 +6777,7 @@ namespace commata {
     primitive_table_pull(TableSource, Args...) -> primitive_table_pull&lt;TableSource>;
   template &lt;class TableSource, class Allocator, class... Args>
     primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
-      -> primitive_table_pull&lt;TableSource, Allocator>;
+      -> primitive_table_pull&lt;TableSource, primitive_table_pull_handle::all, Allocator>;
 }
       </codeblock>
 
