@@ -450,7 +450,8 @@ A quotation mark found in a non-escaped value; line 2 column 20
 ```
 
 Note that line indices and column indices in string representations of
-`text_error_info` objects are one-based.
+`text_error_info` objects are one-based by default
+(you can configure the base with an argument of `text_error::info`).
 
 Class `text_error` and `text_error_info` are defined in the header
 `"commata/text_error.hpp"`.
