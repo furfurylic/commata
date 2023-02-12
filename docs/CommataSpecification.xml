@@ -5945,15 +5945,24 @@ template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
                 <td rowspan="3">Yes</td>
                 <td rowspan="2">Yes</td>
                 <td>Yes</td>
-                <td>Lets <c>w</c> be <c>static_cast&lt;T>(static_cast&lt;SV>(v) + x + 1)</c> if <c>T</c> is an unsigned integer type, <c>V</c> has a greater size than <c>T</c>, and <c>static_cast&lt;SV>(v)</c> is a negative value; <c>static_cast&lt;T>(v)</c> otherwise.
-                    Then puts <c>w</c> into the field translator sink.</td>
+                <td><p>First lets <c>w</c> be:</p>
+                    <ul>
+                      <li>if <c>T</c> is an unsigned integer type, <c>V</c> has a greater size than <c>T</c>, and <c>SV(v)</c> is a negative value, <c>T(SV(v) + x + 1)</c>,</li>
+                      <li>otherwise, <c>T(v)</c>.</li>
+                    </ul>
+                    <p>Then puts <c>w</c> into the field translator sink.</p></td>
               </tr>
 
               <tr>
                 <td>No</td>
-                <td rowspan="2">Lets <c>g</c> be a positive value of <c>int</c> if <c>T</c> is an unsigned integer type or the field value should be translated into a value above any values in the domain of <c>T</c>, a negative value of <c>int</c> if the field value should be translated into a value below any values in the domain of <c>T</c>, a zero value of <c>int</c> otherwise.
-                    Then evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and lets <c>r</c> be the return value.
-                    Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
+                <td rowspan="2"><p>First lets <c>g</c> be:</p>
+                    <ul>
+                      <li>if <c>T</c> is an unsigned integer type or the field value should be translated into a value above any values in the domain of <c>T</c>, a positive value of <c>int</c>,</li>
+                      <li>if the field value should be translated into a value below any values in the domain of <c>T</c>, a negative value of <c>int</c>,</li>
+                      <li>otherwise, a zero value of <c>int</c>.</li>
+                    </ul>
+                    <p>Then evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and lets <c>r</c> be the return value.
+                       Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</p></td>
               </tr>
 
               <tr>
