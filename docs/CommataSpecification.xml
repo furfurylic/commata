@@ -2909,12 +2909,10 @@ namespace commata {
             stored_table_builder_option Options = stored_table_builder_option::none>
     class stored_table_builder;
 
-  template &lt;class Content, class Allocator, class... Args>
-    <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                        Args&amp;&amp;... args);
-  template &lt;class Content, class Allocator, class... Args>
-    <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                                   Args&amp;&amp;... args);
+  template &lt;stored_table_builder_option Options = stored_table_builder_option::none,
+            class Content, class Allocator, class... Args>
+    stored_table_builder&lt;Content, Allocator, Options> make_stored_table_builder(
+      basic_stored_table&lt;Content, Allocator>&amp; table, Args&amp;&amp;... args);
 }
 
 namespace std {
@@ -4297,12 +4295,10 @@ namespace commata {
   };
 
   <c>// <n><xref id="stored_table_builder.creation"/>, creation functions:</n></c>
-  template &lt;class Content, class Allocator, class... Args>
-    <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                        Args&amp;&amp;... args);
-  template &lt;class Content, class Allocator, class... Args>
-    <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                                   Args&amp;&amp;... args);
+  template &lt;stored_table_builder_option Options = stored_table_builder_option::none,
+            class Content, class Allocator, class... Args>
+    stored_table_builder&lt;Content, Allocator, Options> make_stored_table_builder(
+      basic_stored_table&lt;Content, Allocator>&amp; table, Args&amp;&amp;... args);
 }
       </codeblock>
 
@@ -4391,25 +4387,14 @@ stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
 
         <code-item>
           <code>
-template &lt;class Content, class Allocator, class... Args>
-  <nc>see below</nc> make_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                      Args&amp;&amp;... args);
+template &lt;stored_table_builder_option Options = stored_table_builder_option::none,
+          class Content, class Allocator, class... Args>
+  stored_table_builder&lt;Content, Allocator, Options> make_stored_table_builder(
+    basic_stored_table&lt;Content, Allocator>&amp; table, Args&amp;&amp;... args);
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>return stored_table_builder&lt;Content, Allocator>(
+                   <code>return stored_table_builder&lt;Content, Allocator, Options>(
          table, std::forward&lt;Args>(args)...);</code>
-          </effects>
-        </code-item>
-
-        <code-item>
-          <code>
-template &lt;class Content, class Allocator, class... Args>
-  <nc>see below</nc> make_transposed_stored_table_builder(basic_stored_table&lt;Content, Allocator>&amp; table,
-                                                 Args&amp;&amp;... args);
-          </code>
-          <effects><p>Equivalent to:</p>
-                   <code>return stored_table_builder&lt;Content, Allocator, stored_table_builder_option::transpose>(
-         table, std::forward&lt;Args>(args)...));</code>
           </effects>
         </code-item>
       </section>

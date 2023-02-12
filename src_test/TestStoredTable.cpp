@@ -1810,7 +1810,8 @@ TEST_P(TestStoredTableBuilder, Transpose)
                     "AAA,BBB,CCC\n";
     stored_table table(GetParam());
     try {
-        parse_csv(s, make_transposed_stored_table_builder(table));
+        parse_csv(s, make_stored_table_builder<
+            stored_table_builder_option::transpose>(table));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
@@ -1835,7 +1836,8 @@ TEST_P(TestStoredTableBuilder, Transpose)
 
     const char* t = "AAa,BBb";
     try {
-        parse_csv(t, make_transposed_stored_table_builder(table));
+        parse_csv(t, make_stored_table_builder<
+            stored_table_builder_option::transpose>(table));
     } catch (const text_error& e) {
         FAIL() << e.info();
     }
