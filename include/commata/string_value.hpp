@@ -27,14 +27,13 @@ template <class T, class U>
 auto string_value_eq(
     const T& left,
     const U& right)
-    noexcept(noexcept(static_cast<string_value::view_t<T>>(left))
-          && noexcept(static_cast<string_value::view_t<U>>(right)))
+    noexcept(noexcept(string_value::view_t<T>(left))
+          && noexcept(string_value::view_t<U>(right)))
  -> std::enable_if_t<
         std::is_convertible_v<const T&, string_value::view_t<T>>
      && std::is_convertible_v<const U&, string_value::view_t<U>>, bool>
 {
-    return static_cast<string_value::view_t<T>>(left)
-        == static_cast<string_value::view_t<U>>(right);
+    return string_value::view_t<T>(left) == string_value::view_t<U>(right);
 }
 
 template <class T>
@@ -77,18 +76,16 @@ template <class T, class U>
 auto string_value_lt(
     const T& left,
     const U& right)
-    noexcept(noexcept(static_cast<string_value::view_t<T>>(left))
-          && noexcept(static_cast<string_value::view_t<U>>(right)))
+    noexcept(noexcept(string_value::view_t<T>(left))
+          && noexcept(string_value::view_t<U>(right)))
  -> std::enable_if_t<
         std::is_convertible_v<const T&, string_value::view_t<T>>
      && std::is_convertible_v<const U&, string_value::view_t<U>>, bool>
 {
-    return static_cast<std::basic_string_view<
-                std::remove_const_t<typename T::value_type>,
-                typename T::traits_type>>(left)
-         < static_cast<std::basic_string_view<
-                std::remove_const_t<typename U::value_type>,
-                typename U::traits_type>>(right);
+    return std::basic_string_view<std::remove_const_t<typename T::value_type>,
+            typename T::traits_type>(left)
+         < std::basic_string_view<std::remove_const_t<typename U::value_type>,
+            typename U::traits_type>(right);
 }
 
 template <class T>

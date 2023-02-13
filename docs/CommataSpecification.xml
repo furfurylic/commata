@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-02-12 (UTC)</signature>
+<signature>2023-02-13 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3390,7 +3390,7 @@ template &lt;class ChL, class ChR, class Tr>
   bool operator==(const basic_stored_value&lt;ChL, Tr>&amp; l,
                   const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
             </code>
-            <returns><c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChL>, Tr>>(l) == static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChR>, Tr>>(r)</c>.</returns>
+            <returns><c>std::basic_string_view&lt;std::remove_const_t&lt;ChL>, Tr>(l) == std::basic_string_view&lt;std::remove_const_t&lt;ChR>, Tr>(r)</c>.</returns>
           </code-item>
 
           <code-item>
@@ -3402,8 +3402,8 @@ template &lt;class ChC, class Tr, class Other>
   bool operator==(const Other&amp;                       o,
                   const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
             </code>
-            <returns><c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(v) == static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> are <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
+            <returns><c>std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(v) == std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(o)</c>.</returns>
+            <remark>The expressions inside <c>noexcept</c> are <c>true</c> unless the expression <c>std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -3422,7 +3422,7 @@ template &lt;class ChC, class Tr, class Other>
                   const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(l == r)</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -3434,7 +3434,7 @@ template &lt;class ChL, class ChR, class Tr>
   bool operator&lt; (const basic_stored_value&lt;ChL, Tr>&amp; l,
                   const basic_stored_value&lt;ChR, Tr>&amp; r) noexcept;
             </code>
-            <returns><c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChL>, Tr>>(l) &lt; static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChR>, Tr>>(r)</c>.</returns>
+            <returns><c>std::basic_string_view&lt;std::remove_const_t&lt;ChL>, Tr>(l) &lt; std::basic_string_view&lt;std::remove_const_t&lt;ChR>, Tr>(r)</c>.</returns>
           </code-item>
 
           <code-item>
@@ -3443,8 +3443,8 @@ template &lt;class ChC, class Tr, class Other>
   bool operator&lt; (const basic_stored_value&lt;ChC, Tr>&amp; v,
                   const Other&amp;                       o) noexcept(<nc>see below</nc>);
             </code>
-            <returns><c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(v) &lt; static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c>.</returns>
-            <remark>The expression inside <c>noexcept</c> is <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
+            <returns><c>std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(v) &lt; std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(o)</c>.</returns>
+            <remark>The expression inside <c>noexcept</c> is <c>true</c> unless the expression <c>std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(o)</c> is potentially-throwing.</remark>
           </code-item>
 
           <code-item>
@@ -3453,8 +3453,8 @@ template &lt;class ChC, class Tr, class Other>
   bool operator&lt; (const Other&amp;                       o,
                   const basic_stored_value&lt;ChC, Tr>&amp; v) noexcept(<nc>see below</nc>);
             </code>
-            <returns><c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o) &lt; static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(v)</c>.</returns>
-            <remark>The expression inside <c>noexcept</c> is <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
+            <returns><c>std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(o) &lt; std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(v)</c>.</returns>
+            <remark>The expression inside <c>noexcept</c> is <c>true</c> unless the expression <c>std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -3473,7 +3473,7 @@ template &lt;class ChC, class Tr, class Other>
                   const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>r &lt; l</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -3492,7 +3492,7 @@ template &lt;class ChC, class Tr, class Other>
                   const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(r &lt; l)</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
 
@@ -3511,7 +3511,7 @@ template &lt;class ChC, class Tr, class Other>
                   const basic_stored_value&lt;ChC, Tr>&amp; r) noexcept(<nc>see below</nc>);
             </code>
             <returns><c>!(l &lt; r)</c>.</returns>
-            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>static_cast&lt;std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>>(o)</c> is potentially-throwing.</remark>
+            <remark>The expressions inside <c>noexcept</c> of the second and the third overloads are <c>true</c> unless the expression <c>std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr>(o)</c> is potentially-throwing.</remark>
           </code-item>
         </section>
       </section>
