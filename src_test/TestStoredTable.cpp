@@ -1305,7 +1305,7 @@ TEST_F(TestStoredTableAllocator, Basics)
         try {
             parse_csv(s, make_stored_table_builder(table));
         } catch (const text_error& e) {
-            FAIL() << e.info();
+            FAIL() << text_error_info(e);
         }
     }
 
@@ -1334,7 +1334,7 @@ TEST_F(TestStoredTableAllocator, Basics)
         try {
             parse_csv(s, make_stored_table_builder(table2));
         } catch (const text_error& e) {
-            FAIL() << e.info();
+            FAIL() << text_error_info(e);
         }
         table2.content().pop_front();
     }
@@ -1648,7 +1648,7 @@ TEST_P(TestStoredTableBuilder, Basics)
     try {
         parse_csv(s, make_stored_table_builder(table));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(4U, table.size());
@@ -1682,7 +1682,7 @@ TEST_P(TestStoredTableBuilder, MaxRecordNum)
     try {
         parse_csv(s1, make_stored_table_builder(table, 1U));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(1U, table.size());
@@ -1702,7 +1702,7 @@ TEST_P(TestStoredTableBuilder, MaxRecordNumPathological)
     try {
         parse_csv(s1, make_stored_table_builder(table, 5U));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(1U, table.size());
@@ -1730,7 +1730,7 @@ TEST_P(TestStoredTableBuilder, EndRecordHandler)
                 return true;
             }));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(2U, table.size());
@@ -1754,7 +1754,7 @@ TEST_P(TestStoredTableBuilder, EndRecordHandlerNoArg)
                 ++n;
             }));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(2U, n);
@@ -1781,7 +1781,7 @@ TEST_P(TestStoredTableBuilder, EmptyLineAware)
         parse_csv(s, make_empty_physical_line_aware(
             make_stored_table_builder(table)));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(6U, table.size());
@@ -1813,7 +1813,7 @@ TEST_P(TestStoredTableBuilder, Transpose)
         parse_csv(s, make_stored_table_builder<
             stored_table_builder_option::transpose>(table));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     // |Col1|aaa|AAA|
@@ -1839,7 +1839,7 @@ TEST_P(TestStoredTableBuilder, Transpose)
         parse_csv(t, make_stored_table_builder<
             stored_table_builder_option::transpose>(table));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     // |Col1|aaa|AAA|AAa|
@@ -1870,7 +1870,7 @@ TEST_P(TestStoredTableBuilder, Fancy)
     try {
         parse_csv(s, make_stored_table_builder(table));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_TRUE(a.tracks(table[0][0].cbegin()));
@@ -1896,7 +1896,7 @@ TEST_F(TestStoredTableBuilderReusingBuffer, Basics)
     try {
         parse_csv(s, make_stored_table_builder(table));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     // ensure the buffer is reused after table.clear() was called
@@ -1995,7 +1995,7 @@ TEST_F(TestStoredTableConst, Build)
     try {
         parse_csv(s, make_stored_table_builder(table));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(3U, table.size());

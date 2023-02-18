@@ -90,14 +90,14 @@ TEST_F(TestTextError, Info)
     text_error e("Some error occurred");
     {
         std::ostringstream s;
-        s << e.info();
+        s << text_error_info(e);
         ASSERT_EQ(e.what(), std::move(s).str());
     }
 
     e.set_physical_position(12345);
     {
         std::ostringstream s;
-        s << e.info();
+        s << text_error_info(e);
         std::string i = std::move(s).str();
         ASSERT_NE(i, e.what());
         const auto lpos = i.find(
@@ -113,7 +113,7 @@ TEST_F(TestTextError, Info)
     std::string is;
     {
         std::ostringstream s;
-        s << e.info();
+        s << text_error_info(e);
         is = std::move(s).str();
     }
     ASSERT_NE(is, e.what());
@@ -126,13 +126,13 @@ TEST_F(TestTextError, Info)
         ASSERT_NE(cpos, std::string::npos);
         ASSERT_GT(cpos, lpos);
     }
-    ASSERT_EQ(is, to_string(e.info()));
+    ASSERT_EQ(is, to_string(text_error_info(e)));
 
     // info()'s string is aligned to right
     std::string is2;
     {
         std::ostringstream s;
-        s << std::setw(is.size() + 20) << std::setfill('_') << e.info();
+        s << std::setw(is.size() + 20) << std::setfill('_') << text_error_info(e);
         is2 = std::move(s).str();
     }
     ASSERT_EQ(is.size() + 20, is2.size());
@@ -144,7 +144,7 @@ TEST_F(TestTextError, Info)
     {
         std::ostringstream s;
         s << std::left;
-        s << std::setw(is.size() + 10) << std::setfill('#') << e.info();
+        s << std::setw(is.size() + 10) << std::setfill('#') << text_error_info(e);
         is3 = std::move(s).str();
     }
     ASSERT_EQ(is.size() + 10, is3.size());
@@ -161,11 +161,11 @@ TEST_F(TestTextError, Info)
     std::wstring is4;
     {
         std::wostringstream s;
-        s << e.info();
+        s << text_error_info(e);
         is4 = std::move(s).str();
     }
     ASSERT_EQ(isw, is4);
-    ASSERT_EQ(isw, to_wstring(e.info()));
+    ASSERT_EQ(isw, to_wstring(text_error_info(e)));
 }
 
 TEST_F(TestTextError, Allocators)

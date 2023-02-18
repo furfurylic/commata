@@ -27,8 +27,6 @@
 
 namespace commata {
 
-class text_error_info;
-
 class text_error :
     public std::exception
 {
@@ -119,8 +117,6 @@ public:
             return std::nullopt;
         }
     }
-
-    text_error_info info(std::size_t base = 1U) const noexcept;
 };
 
 class text_error_info
@@ -129,7 +125,7 @@ class text_error_info
     std::size_t base_;
 
 public:
-    text_error_info(const text_error& ex, std::size_t base) noexcept :
+    text_error_info(const text_error& ex, std::size_t base = 1) noexcept :
         ex_(std::addressof(ex)), base_(base)
     {}
 
@@ -146,11 +142,6 @@ public:
         return base_;
     }
 };
-
-inline text_error_info text_error::info(std::size_t base) const noexcept
-{
-    return text_error_info(*this, base);
-}
 
 namespace detail::ex {
 

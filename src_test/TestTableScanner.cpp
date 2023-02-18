@@ -360,7 +360,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, Replacement)
     try {
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
     ASSERT_EQ(2U, values0.size());
     ASSERT_EQ(2U, values1.size());
@@ -432,7 +432,7 @@ TEST_F(TestFieldTranslatorForIntegralRestriction, Unsigned)
     try {
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(std::numeric_limits<unsigned short>::max(), values[0]);
@@ -463,7 +463,7 @@ TYPED_TEST(TestFieldTranslatorForFloatingPointTypes, Correct)
     try {
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(2U, values.size());
@@ -575,7 +575,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
     try {
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(3U, values.size());
@@ -622,7 +622,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, View)
     try {
         parse_csv(str("1,ABC\n2\n3,XYZ"), std::move(scanner));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(str("ABC!!!XYZ"), std::move(stream).str());
@@ -782,7 +782,7 @@ TYPED_TEST(TestTableScanner, Indexed)
     try {
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     const std::deque<long> expected0 = { -3, 50 };
@@ -824,7 +824,7 @@ TYPED_TEST(TestTableScanner, RecordEndScanner)
              "Abbott";  // elaborately does not end with CR/LF
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     std::vector<std::basic_string<TypeParam>> expected;
@@ -868,7 +868,7 @@ TYPED_TEST(TestTableScanner, ComplexRecordEndScanner)
              "\"";  // Bad CSV but does not reach here
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(2U, ns.size());
@@ -894,7 +894,7 @@ TYPED_TEST(TestTableScanner, MultilinedHeader)
     try {
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     const std::deque<long> expected = { 12345 };
@@ -929,7 +929,7 @@ TYPED_TEST(TestTableScanner, SkippedWithNoErrors)
     try {
         parse_csv(s, make_empty_physical_line_aware(std::move(h)));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     const std::deque<string_t> expected0 =
@@ -994,7 +994,7 @@ TYPED_TEST(TestTableScanner, HeaderScan)
     try {
         parse_csv(s, std::move(h));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(1U, ids.size());
@@ -1231,7 +1231,7 @@ TYPED_TEST(TestTableScanner, BufferSize)
         try {
             parse_csv(&buf, std::move(h));
         } catch (const text_error& e) {
-            FAIL() << e.info() << "\nbuffer_size=" << buffer_size;
+            FAIL() << text_error_info(e) << "\nbuffer_size=" << buffer_size;
         }
 
         ASSERT_EQ(50U, values0.size());
@@ -1294,7 +1294,7 @@ TYPED_TEST(TestTableScanner, Allocators)
                 "12345678901234567890123456");
         parse_csv(s, std::move(scanner));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_GT(a0.total(), (80U + 26U) * sizeof(TypeParam));
@@ -1413,7 +1413,7 @@ TYPED_TEST(TestTableScanner, Ignored)
     try {
         parse_csv(str("100\nn/a\n\n200"), std::move(scanner));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(150, a.yield());
@@ -1455,7 +1455,7 @@ TEST_F(TestTableScannerReference, HeaderScanner)
     try {
         parse_csv("A,B\n100,200", std::move(scanner));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(1U, values.size());
@@ -1475,7 +1475,7 @@ TEST_F(TestTableScannerReference, FieldScanner)
     try {
         parse_csv("100", std::move(scanner));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(1U, values1.size());
@@ -1504,7 +1504,7 @@ TEST_F(TestTableScannerReference, RecordEndScanner)
     try {
         parse_csv("100\n200", std::move(scanner));
     } catch (const text_error& e) {
-        FAIL() << e.info();
+        FAIL() << text_error_info(e);
     }
 
     ASSERT_EQ(4U, v.size());

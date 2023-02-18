@@ -414,10 +414,8 @@ and can get a clue about what was wrong:
 A quotation mark found in a non-escaped value
 ```
 
-`text_error` has a member function `info` that returns an object of
-`commata::text_error_info`, which possibly has a useful location information
-of the error.
-
+Commata also offers class `commata::text_error_info`, whose object wraps a `text_error` object
+and possibly can make a useful location information string of the error.
 So you can write instead like this:
 
 ```C++
@@ -429,6 +427,7 @@ using commata::make_stored_table_builder;
 using commata::parse_csv;
 using commata::stored_table;
 using commata::text_error;
+using commata::text_error_info;
 
 void stored_table_error_sample2()
 {
@@ -437,7 +436,7 @@ void stored_table_error_sample2()
   try {
     parse_csv(std::ifstream("stars2.csv"), make_stored_table_builder(table));
   } catch (const text_error& e) {
-    std::cout << e.info() << std::endl;
+    std::cout << text_error_info(e) << std::endl;
     throw;
   }
 }
@@ -451,7 +450,7 @@ A quotation mark found in a non-escaped value; line 2 column 20
 
 Note that line indices and column indices in string representations of
 `text_error_info` objects are one-based by default
-(you can configure the base with an argument of `text_error::info`).
+(you can configure the base with the second argument of the constructor of `text_error_info`).
 
 Class `text_error` and `text_error_info` are defined in the header
 `"commata/text_error.hpp"`.
@@ -490,7 +489,7 @@ void one_pass_scanning_error_sample()
 ```
 
 But when you call this function, it will exit with a `text_error` exception
-object whose `info()` is likely to tell:
+object and a `text_error_info` object constructed with it is likely to tell:
 
 ```
 Cannot convert an empty string to an instance of double; line 7 column 19

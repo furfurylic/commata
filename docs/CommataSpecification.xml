@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-02-13 (UTC)</signature>
+<signature>2023-02-18 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -389,8 +389,6 @@
 #include &lt;string_view>
 
 namespace commata {
-  class text_error_info;  <c>// <n>forward declaration</n></c>
-
   <c>// <n><xref id="text_error"/>, class text_error:</n></c>
   class text_error;
 
@@ -435,9 +433,6 @@ namespace commata {
     <c>// <n><xref id="text_error.physical_position"/>, physical postion information:</n></c>
     text_error&amp; set_physical_position(std::size_t row = npos, std::size_t col = npos) noexcept;
     std::optional&lt;std::pair&lt;std::size_t, std::size_t>> get_physical_position() const noexcept;
-
-    <c>// <n><xref id="text_error.info"/>, textual information:</n></c>
-    text_error_info info(std::size_t base = 1) const noexcept;
   };
 }
       </codeblock>
@@ -533,17 +528,6 @@ std::optional&lt;std::pair&lt;std::size_t, std::size_t>> get_physical_position()
                   <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
         </code-item>
       </section>
-
-      <section id="text_error.info">
-        <name><c>text_error</c> textual information</name>
-
-        <code-item>
-          <code>
-text_error_info info(std::size_t base = 1) const noexcept;
-          </code>
-          <returns><c>text_error_info(*this, base)</c>.</returns>
-        </code-item>
-      </section>
     </section>
 
     <section id="text_error_info">
@@ -554,7 +538,7 @@ namespace commata {
   class text_error_info {
   public:
     <c>// <n><xref id="text_error_info.cons"/>, constructors and assignment operators:</n></c>
-    text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
+    text_error_info(const text_error&amp; ex, std::size_t base = 1) noexcept;
     text_error_info(const text_error_info&amp; other) = default;
     text_error_info&amp; operator=(const text_error_info&amp; other) = default;
 
@@ -589,7 +573,7 @@ namespace commata {
 
         <code-item>
           <code>
-text_error_info(const text_error&amp; ex, std::size_t base) noexcept;
+text_error_info(const text_error&amp; ex, std::size_t base = 1) noexcept;
           </code>
           <effects>Initializes <c>e</c> with <c>std::addressof(ex)</c> and <c>b</c> with <c>base</c>.</effects>
         </code-item>
