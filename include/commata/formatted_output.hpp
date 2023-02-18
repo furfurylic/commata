@@ -57,12 +57,12 @@ std::basic_ostream<Ch, Tr>& formatted_output(
                 sets_failbit = false;
             }
         }
-        // According C++17 30.7.5.2.1, setting failbit *does not seem* required
-        // when the sentry is not sound
+        // According to C++17 30.7.5.2.1, setting failbit *does not seem*
+        // required when the sentry is not sound
         if (sets_failbit) {
             os.setstate(std::ios_base::failbit);                    // throw
         }
-        // According C++17 30.7.5.2.1, setting width to 0 is not required in
+        // According to C++17 30.7.5.2.1, setting width to 0 is not required in
         // any way when the sentry is not sound
         os.width(0);
     }
