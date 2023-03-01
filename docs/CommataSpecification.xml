@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2023-02-11 (UTC)</signature>
+<signature>2023-03-01 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -5368,6 +5368,7 @@ template &lt;class T>
         <codeblock>
 namespace commata {
   template &lt;class T> class replace_if_conversion_failed {
+  public:
     <c>// <n><xref id="replace_if_conversion_failed.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class Empty = T, class InvalidFormat = T,
               class AboveUpperLimit = T>
