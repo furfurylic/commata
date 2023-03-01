@@ -1367,6 +1367,8 @@ class replace_if_skipped
     store_t store_;
 
 public:
+    using value_type = T;
+
     template <class... Args,
         std::enable_if_t<
             std::is_constructible_v<T, Args&&...>

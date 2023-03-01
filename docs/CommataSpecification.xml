@@ -5085,6 +5085,8 @@ template &lt;class T> [[noreturn]] std::optional&lt;T> operator()(T* = nullptr) 
 namespace commata {
   template &lt;class T> class replace_if_skipped {
   public:
+    using value_type = T;
+
     <c>// <n><xref id="replace_if_skipped.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class... Args> explicit replace_if_skipped(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
     explicit replace_if_skipped(replacement_fail_t) noexcept;
