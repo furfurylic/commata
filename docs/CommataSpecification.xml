@@ -5360,6 +5360,8 @@ template &lt;class T>
 namespace commata {
   template &lt;class T> class replace_if_conversion_failed {
   public:
+    using value_type = T;
+
     <c>// <n><xref id="replace_if_conversion_failed.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class Empty = T, class InvalidFormat = T,
               class AboveUpperLimit = T>

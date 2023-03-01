@@ -2037,6 +2037,8 @@ private:
         = delete;
 
 public:
+    using value_type = T;
+
     // VS2019/2022 refuses to compile "base_t<T>" here
     using detail::scanner::replace_if_conversion_failed_impl::base<T,
         detail::scanner::replace_if_conversion_failed_impl::base_n<T>>::base;
