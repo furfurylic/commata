@@ -10,4 +10,12 @@
     <DisplayString>{begin_,su}</DisplayString>
     <StringView>begin_,su</StringView>
   </Type>
+  <Type Name="commata::replace_if_skipped&lt;*&gt;">
+    <DisplayString Condition="store_.mode_ == commata::detail::scanner::replace_mode::fail">fail</DisplayString>
+    <DisplayString Condition="store_.mode_ == commata::detail::scanner::replace_mode::ignore">ignore</DisplayString>
+    <DisplayString>copy: {*((value_type*)(&amp;store_.value_))}</DisplayString>
+    <Expand>
+      <Item Name="[value]" Condition="store_.mode_ == commata::detail::scanner::replace_mode::replace">*((value_type*)(&amp;store_.value_))</Item>
+    </Expand>
+  </Type>
 </AutoVisualizer>
