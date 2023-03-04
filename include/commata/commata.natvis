@@ -10,6 +10,44 @@
     <DisplayString>{begin_,su}</DisplayString>
     <StringView>begin_,su</StringView>
   </Type>
+  <Type Name="commata::detail::stored::store_node&lt;*&gt;">
+    <DisplayString>{{ size={end_ - buffer_} hwl={hwl_ - buffer_} }}</DisplayString>
+    <Expand>
+      <ExpandedItem>*(commata::detail::stored::store_buffer&lt;char&gt;*)this,nd</ExpandedItem>
+    </Expand>
+  </Type>
+  <Type Name="commata::detail::stored::table_store&lt;*,*&gt;">
+    <DisplayString>{{ buffers: size={buffers_size_} }}</DisplayString>
+    <Expand>
+      <Synthetic Name="[buffers]" Condition="buffers_ != 0">
+        <DisplayString>{{ size={buffers_size_} }}</DisplayString>
+        <Expand>
+          <Item Name="[buffers_size]">buffers_size_</Item>
+          <LinkedListItems>
+            <Size>buffers_size_</Size>
+            <HeadPointer>buffers_</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>*this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[buffers]" Condition="buffers_ == 0">
+        <DisplayString>empty</DisplayString>
+      </Synthetic>
+      <Synthetic Name="[cleared buffers]" Condition="buffers_cleared_ != 0">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>buffers_cleared_</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>*this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[cleared buffers]" Condition="buffers_cleared_ == 0">
+        <DisplayString>empty</DisplayString>
+      </Synthetic>
+    </Expand>
+  </Type>
   <Type Name="commata::replace_if_skipped&lt;*&gt;">
     <DisplayString Condition="store_.mode_ == commata::detail::scanner::replace_mode::fail">fail</DisplayString>
     <DisplayString Condition="store_.mode_ == commata::detail::scanner::replace_mode::ignore">ignore</DisplayString>
