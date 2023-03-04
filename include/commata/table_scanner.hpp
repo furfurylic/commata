@@ -1602,6 +1602,9 @@ protected:
     {}
 
 public:
+    using value_type = T;
+    static constexpr unsigned size = N;
+
     template <class Head, class... Tails>
     trivial_store(generic_args_t, Head&& head, Tails&&... tails) :
         trivial_store(std::integral_constant<std::size_t, 0>(),
@@ -2038,6 +2041,8 @@ private:
 
 public:
     using value_type = T;
+    static constexpr unsigned size = detail::scanner::
+        replace_if_conversion_failed_impl::base_t<T>::store_t::size;
 
     // VS2019/2022 refuses to compile "base_t<T>" here
     using detail::scanner::replace_if_conversion_failed_impl::base<T,

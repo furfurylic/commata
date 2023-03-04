@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-03-01 (UTC)</signature>
+<signature>2023-03-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -5360,7 +5360,9 @@ template &lt;class T>
 namespace commata {
   template &lt;class T> class replace_if_conversion_failed {
   public:
+    <c>// <n><xref id="replace_if_conversion_failed.props"/>, properties:</n></c>
     using value_type = T;
+    static constexpr std::size_t size = <nc>see below</nc>;
 
     <c>// <n><xref id="replace_if_conversion_failed.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class Empty = T, class InvalidFormat = T,
@@ -5416,6 +5418,23 @@ namespace commata {
         <p>An object of an instance of <c>replace_if_conversion_failed</c> has five replacement actions similarly to an object of <c>replace_if_skipped</c> (<xref id="replace_if_skipped"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
            Each of these replacement actions can be configured to be either of the three types illustrated in <xref id="table.replace_if_skipped.replacement_actions"/> independently on one object of <c>replace_if_conversion_failed</c>.</p>
         <p><c>replace_if_conversion_failed&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
+
+        <section id="replace_if_conversion_failed.props">
+          <name><c>replace_if_conversion_failed</c> properties</name>
+
+          <code-item>
+            <code>
+static constexpr std::size_t size = <nc>see below</nc>;
+            </code>
+            <remark><p>The expression in the right of <c>=</c> in the initializer shall be:</p>
+                    <ul>
+                      <li><c>3</c> if <c>T</c> is an unsigned integer type,</li>
+                      <li><c>4</c> if <c>T</c> is a signed integer type,</li>
+                      <li><c>5</c> otherwise.</li>
+                    </ul>
+            </remark>
+          </code-item>
+        </section>
 
         <section id="replace_if_conversion_failed.cons">
           <name><c>replace_if_conversion_failed</c> construct/copy/destroy</name>
