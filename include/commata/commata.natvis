@@ -18,4 +18,49 @@
       <Item Name="[value]" Condition="store_.mode_ == commata::detail::scanner::replace_mode::replace">*((value_type*)(&amp;store_.value_))</Item>
     </Expand>
   </Type>
+  <Type Name="commata::replace_if_conversion_failed&lt;*&gt;">
+    <DisplayString>{{size = {size}}}</DisplayString>
+    <Expand>
+      <Synthetic Name="[Empty]">
+        <DisplayString Condition="(store_.has_ &amp; 1) != 0">copy: {*((value_type*) (store_.replacements_ + 0))}</DisplayString>
+        <DisplayString Condition="(store_.skips_ &amp; 1) != 0">ignore</DisplayString>
+        <DisplayString>fail</DisplayString>
+        <Expand>
+          <Item Name="[value]" Condition="(store_.has_ &amp; 1) != 0">*((value_type*) (store_.replacements_ + 0))</Item>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[InvalidFormat]">
+        <DisplayString Condition="(store_.has_ &amp; 2) != 0">copy: {*((value_type*) (store_.replacements_ + 1))}</DisplayString>
+        <DisplayString Condition="(store_.skips_ &amp; 2) != 0">ignore</DisplayString>
+        <DisplayString>fail</DisplayString>
+        <Expand>
+          <Item Name="[value]" Condition="(store_.has_ &amp; 2) != 0">*((value_type*) (store_.replacements_ + 1))</Item>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[AboveUpperLimit]">
+        <DisplayString Condition="(store_.has_ &amp; 4) != 0">copy: {*((value_type*) (store_.replacements_ + 2))}</DisplayString>
+        <DisplayString Condition="(store_.skips_ &amp; 4) != 0">ignore</DisplayString>
+        <DisplayString>fail</DisplayString>
+        <Expand>
+          <Item Name="[value]" Condition="(store_.has_ &amp; 4) != 0">*((value_type*) (store_.replacements_ + 2))</Item>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[BelowLowerLimit]" Condition="size > 3">
+        <DisplayString Condition="(store_.has_ &amp; 8) != 0">copy: {*((value_type*) (store_.replacements_ + 3))}</DisplayString>
+        <DisplayString Condition="(store_.skips_ &amp; 8) != 0">ignore</DisplayString>
+        <DisplayString>fail</DisplayString>
+        <Expand>
+          <Item Name="[value]" Condition="(store_.has_ &amp; 8) != 0">*((value_type*) (store_.replacements_ + 3))</Item>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[Underflow]" Condition="size > 4">
+        <DisplayString Condition="(store_.has_ &amp; 16) != 0">copy: {*((value_type*) (store_.replacements_ + 4))}</DisplayString>
+        <DisplayString Condition="(store_.skips_ &amp; 16) != 0">ignore</DisplayString>
+        <DisplayString>fail</DisplayString>
+        <Expand>
+          <Item Name="[value]" Condition="(store_.has_ &amp; 16) != 0">*((value_type*) (store_.replacements_ + 4))</Item>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
 </AutoVisualizer>
