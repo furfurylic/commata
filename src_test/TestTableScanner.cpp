@@ -106,9 +106,11 @@ struct digits
 };
 
 template <class Ch>
-std::basic_string<Ch> plus1(std::basic_string<Ch> s, std::size_t i
+std::basic_string<Ch> plus1(std::basic_string<Ch> str, std::size_t i
     = static_cast<std::size_t>(-1))
 {
+    auto s = std::move(str);
+
     i = std::min(i, static_cast<std::size_t>(s.size() - 1));
 
     const Ch (&all)[std::size(digits<Ch>::all)] = digits<Ch>::all;
