@@ -837,8 +837,7 @@ public:
             parser_type<std::decay_t<Handler>, Allocator>>
     {
         return with_allocator<std::decay_t<Handler>, Allocator>::invoke(
-            std::forward<Handler>(handler),
-            buffer_size, std::move(alloc), in_);
+            std::forward<Handler>(handler), buffer_size, alloc, in_);
     }
 
     template <class Handler, class Allocator = std::allocator<char_type>>
@@ -853,7 +852,7 @@ public:
     {
         return with_allocator<std::decay_t<Handler>, Allocator>::invoke(
             std::forward<Handler>(handler),
-            buffer_size, std::move(alloc), std::move(in_));
+            buffer_size, alloc, std::move(in_));
     }
 
     template <class Handler, class... Args>
