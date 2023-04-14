@@ -767,7 +767,12 @@ public:
         }
 
         if (n < 1) {
-            next_field();                                           // throw
+            try {
+                next_field();                                       // throw
+            } catch (...) {
+                state_ = table_pull_state::eof;
+                throw;
+            }
             return *this;
         }
 
@@ -779,7 +784,6 @@ public:
                 case primitive_table_pull_state::update:
                     break;
                 case primitive_table_pull_state::finalize:
-                    state_ = table_pull_state::field;
                     ++j_;
                     if (n == 1) {
                         d.reset();
@@ -812,7 +816,7 @@ public:
 
 private:
     void next_field()
-    try {
+    {
         assert(*this);
         for (;;) {
             switch (p_().state()) {                             // throw
@@ -854,10 +858,6 @@ private:
                 break;
             }
         }
-    } catch (...) {
-        state_ = table_pull_state::eof;
-        view_ = view_type();
-        throw;
     }
 
 public:
