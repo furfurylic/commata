@@ -316,8 +316,8 @@ void one_pass_scanning_sample3()
      table_scanner& scanner) mutable {
       if (field_value) {
         // The value of field_index-th (zero-based) header field is notified,
-        // whose value is [field_value.first, field_value.second), and
-        // field_value.second is dereferenceable and points the terminating
+        // whose value is [field_value->first, field_value->second), and
+        // field_value->second is dereferenceable and points the terminating
         // zero
         if (std::string_view(field_value->first,
                              field_value->second - field_value->first)
