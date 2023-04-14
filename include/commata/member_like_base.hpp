@@ -92,8 +92,8 @@ class base_member_pair
 public:
     template <class C, class N>
     base_member_pair(C&& first, N&& second)
-        noexcept(std::is_nothrow_constructible_v<B&&, C&&>
-              && std::is_nothrow_constructible_v<M&&, N&&>) :
+        noexcept(std::is_nothrow_constructible_v<B, C&&>
+              && std::is_nothrow_constructible_v<M, N&&>) :
         p_(std::forward<C>(first), std::forward<N>(second))
     {}
 
