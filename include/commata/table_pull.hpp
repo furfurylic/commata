@@ -860,6 +860,20 @@ private:
         }
     }
 
+    void do_update(char_type* first, char_type* last)
+    {
+        if (!value_.empty()) {
+            value_.insert(value_.cend(), first, last);              // throw
+        } else if (!view_.empty()) {
+            traits_type::move(
+                const_cast<char_type*>(view_.data() + view_.size()),
+                first, last - first);
+            view_ = view_type(view_.data(), view_.size() + last - first);
+        } else {
+            view_ = view_type(first, last - first);
+        }
+    }
+
 public:
     table_pull& skip_record(std::size_t n = 0)
     {
@@ -934,21 +948,6 @@ public:
     const view_type* operator->() const noexcept
     {
         return &view_;
-    }
-
-private:
-    void do_update(char_type* first, char_type* last)
-    {
-        if (!value_.empty()) {
-            value_.insert(value_.cend(), first, last);              // throw
-        } else if (!view_.empty()) {
-            traits_type::move(
-                const_cast<char_type*>(view_.data() + view_.size()),
-                first, last - first);
-            view_ = view_type(view_.data(), view_.size() + last - first);
-        } else {
-            view_ = view_type(first, last - first);
-        }
     }
 };
 
