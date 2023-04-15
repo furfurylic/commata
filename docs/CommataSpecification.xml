@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-03-04 (UTC)</signature>
+<signature>2023-04-15 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4532,7 +4532,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
                 <ul>
                   <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
                       Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable.
-                      Initially the range [<c>v->first</c>, <c>v->second</c>) represents the value of the header field and <c>*e</c> is the terminating zero.
+                      Initially the range [<c>v->first</c>, <c>v->second</c>) represents the value of the header field and <c>*v->second</c> is the terminating zero.
                       The range [<c>v->first</c>, <c>v->second</c>] may be invalidated after the invocation exits.</li>
                   <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> is a null pointer.</li>
                 </ul>
