@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2023-04-15 (UTC)</signature>
+<signature>2023-04-16 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -7181,7 +7181,7 @@ table_pull&amp; operator()(std::size_t n = 0);
 
         <code-item>
           <code>
-table_pull&amp; skip_records(std::size_t n = 0);
+table_pull&amp; skip_record(std::size_t n = 0);
           </code>
           <effects>If <c>state() == table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
                    Otherwise, reads the text table until <c>n + 1</c> ends of records are found or the table source is fully consumed.</effects>
@@ -7216,7 +7216,7 @@ table_pull_state state() const noexcept;
             <tr>
               <td><c>(1)</c></td>
               <td><c>before_parse</c></td>
-              <td>Neither <c>operator()</c> nor <c>skip_records</c> has never been called yet.</td>
+              <td>Neither <c>operator()</c> nor <c>skip_record</c> has never been called yet.</td>
               <td>An empty string</td>
             </tr>
 
