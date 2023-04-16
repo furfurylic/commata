@@ -881,6 +881,11 @@ public:
         last_ = empty_string();
         value_.clear();
 
+        if (last_state_ == table_pull_state::record_end) {
+            ++i_;
+            j_ = 0;
+        }
+
         p_.set_discarding_data(true);
         temporarily_discard d(&p_);
         try {
@@ -889,10 +894,6 @@ public:
                 case primitive_table_pull_state::update:
                     break;
                 case primitive_table_pull_state::finalize:
-                    if (last_state_ == table_pull_state::record_end) {
-                        ++i_;
-                        j_ = 0;
-                    }
                     last_state_ = table_pull_state::field;
                     ++j_;
                     break;
@@ -902,23 +903,16 @@ public:
                     }
                     // fall through
                 case primitive_table_pull_state::end_record:
-                    if (last_state_ == table_pull_state::record_end) {
-                        ++i_;
-                        j_ = 0;
-                    } else {
-                        last_state_ = table_pull_state::record_end;
-                    }
+                    last_state_ = table_pull_state::record_end;
                     if (n == 0) {
                         return *this;
                     } else {
+                        ++i_;
+                        j_ = 0;
                         --n;
                         break;
                     }
                 case primitive_table_pull_state::eof:
-                    if (last_state_ == table_pull_state::record_end) {
-                        ++i_;
-                        j_ = 0;
-                    }
                     last_state_ = table_pull_state::eof;
                     return *this;
                 case primitive_table_pull_state::end_buffer:
