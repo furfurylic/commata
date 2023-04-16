@@ -884,6 +884,11 @@ public:
         view_ = view_type();
         value_.clear();
 
+        if (state_ == table_pull_state::record_end) {
+            ++i_;
+            j_ = 0;
+        }
+
         p_.set_discarding_data(true);
         temporarily_discard d(&p_);
         try {
@@ -892,10 +897,6 @@ public:
                 case primitive_table_pull_state::update:
                     break;
                 case primitive_table_pull_state::finalize:
-                    if (state_ == table_pull_state::record_end) {
-                        ++i_;
-                        j_ = 0;
-                    }
                     state_ = table_pull_state::field;
                     ++j_;
                     break;
@@ -905,23 +906,16 @@ public:
                     }
                     [[fallthrough]];
                 case primitive_table_pull_state::end_record:
-                    if (state_ == table_pull_state::record_end) {
-                        ++i_;
-                        j_ = 0;
-                    } else {
-                        state_ = table_pull_state::record_end;
-                    }
+                    state_ = table_pull_state::record_end;
                     if (n == 0) {
                         return *this;
                     } else {
+                        ++i_;
+                        j_ = 0;
                         --n;
                         break;
                     }
                 case primitive_table_pull_state::eof:
-                    if (state_ == table_pull_state::record_end) {
-                        ++i_;
-                        j_ = 0;
-                    }
                     state_ = table_pull_state::eof;
                     return *this;
                 case primitive_table_pull_state::end_buffer:
