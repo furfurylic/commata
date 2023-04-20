@@ -718,7 +718,7 @@ void pull_parsing_sample()
 It can proceed to an end of a record by `skip_record` or to a further field by
 `operator()`. They take one parameter which instructs the number of ends of records
 or fields jumped over. It defaults to `0`. Note that `operator()` cannot make the
-`table_pull` object jump over an end of a record.
+`table_pull` object jump over an end of a record unless it is already at an end of a record.
 
 Also note that `skip_record` and `operator()` of a `table_pull` object return
 a reference to the `table_pull` object itself.
