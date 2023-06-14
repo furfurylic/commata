@@ -498,7 +498,9 @@ public:
 
         ++i_sq_;
         if (i_sq_ == sq_->size()) {
-            sq_->clear();
+            if (sq_ != std::addressof(sq_moved_from)) {
+                sq_->clear();
+            }
             i_sq_ = 0;
         }
 
