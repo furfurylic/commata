@@ -122,6 +122,22 @@ template <class T>
 constexpr bool has_get_physical_position_v =
     decltype(has_get_physical_position_impl::check<T>(nullptr))();
 
+struct has_nothrow_get_physical_position_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        noexcept(std::declval<std::pair<std::size_t, std::size_t>&>() =
+            std::declval<const T&>().get_physical_position()),
+        std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+constexpr bool has_nothrow_get_physical_position_v =
+    decltype(has_nothrow_get_physical_position_impl::check<T>(nullptr))();
+
 template <class Ch, class Allocator, primitive_table_pull_handle Handle>
 class handler
 {
@@ -556,11 +572,10 @@ public:
     }
 
     std::pair<std::size_t, std::size_t> get_physical_position() const
-        noexcept((!detail::pull::has_get_physical_position_v<parser_t>)
-              || noexcept(std::declval<const parser_t&>()
-                            .get_physical_position()))
+        noexcept((!physical_position_available)
+              || detail::pull::has_nothrow_get_physical_position_v<parser_t>)
     {
-        if constexpr (detail::pull::has_get_physical_position_v<parser_t>) {
+        if constexpr (physical_position_available) {
             return ap_.member().get_physical_position();
         } else {
             return { npos, npos };
