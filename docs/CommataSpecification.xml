@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-04-16 (UTC)</signature>
+<signature>2023-07-22 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6481,6 +6481,7 @@ template &lt;class Allocator, class Container, class... Appendices>
       </section>
     </section>
   </section>
+</section>
 
   <section id="pull">
     <name>Pull parsing</name>
@@ -7395,7 +7396,6 @@ template &lt;class TableSource, class Allocator, class... Appendices>
         </code-item>
       </section>
     </section>
-  </section>
 </section>
 
 </document>
