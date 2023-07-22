@@ -6483,83 +6483,83 @@ template &lt;class Allocator, class Container, class... Appendices>
   </section>
 </section>
 
-  <section id="pull">
-    <name>Pull parsing</name>
+<section id="pull">
+  <name>Pull parsing</name>
 
-    <section id="pull.general">
-      <name>General</name>
+  <section id="pull.general">
+    <name>General</name>
 
-      <p>Commata offers some tools to perform <n>pull parsing</n>, in which the users can immediately access the results of parsing text tables
-         with the control of the execution flow of parsing held by the users themselves and with the knowledge of where in the text table they are processing.</p>
-      <p>The pull parsing facilities of Commata need objects that can create the table parsers for their &#x2018;pull-parsing&#x2019; table handlers.
-         The types of these objects are abstracted into the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>).</p>
+    <p>Commata offers some tools to perform <n>pull parsing</n>, in which the users can immediately access the results of parsing text tables
+       with the control of the execution flow of parsing held by the users themselves and with the knowledge of where in the text table they are processing.</p>
+    <p>The pull parsing facilities of Commata need objects that can create the table parsers for their &#x2018;pull-parsing&#x2019; table handlers.
+       The types of these objects are abstracted into the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>).</p>
 
-      <section id="table_source.requirements">
-        <name><c>TableSource</c> requirements</name>
+    <section id="table_source.requirements">
+      <name><c>TableSource</c> requirements</name>
 
-        <p>A type <c>T</c> meets the <c>TableSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
-        <ul>
-          <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-          <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character input</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
-        </ul>
+      <p>A type <c>T</c> meets the <c>TableSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
+      <ul>
+        <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+        <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character input</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
+      </ul>
 
-        <p>In <xref id="table.table_source.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c> and <c>rt</c> is an rvalue of <c>T</c>.
-          <c>H</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.
-          <c>h</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.</p>
+      <p>In <xref id="table.table_source.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c> and <c>rt</c> is an rvalue of <c>T</c>.
+        <c>H</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.
+        <c>h</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.</p>
 
-        <table id="table.table_source.requirements">
-          <caption><c>TableSource</c> requirements</caption>
-          <col width="1"/><col width="4"/><col width="9"/><col width="14"/>
+      <table id="table.table_source.requirements">
+        <caption><c>TableSource</c> requirements</caption>
+        <col width="1"/><col width="4"/><col width="9"/><col width="14"/>
 
-          <tr>
-            <th>#</th>
-            <th>Expression</th>
-            <th>Return type</th>
-            <th>Remark</th>
-          </tr>
+        <tr>
+          <th>#</th>
+          <th>Expression</th>
+          <th>Return type</th>
+          <th>Remark</th>
+        </tr>
 
-          <tr>
-            <td>(1)</td>
-            <td><c>T::char_type</c></td>
-            <td></td>
-            <td>Shall be an identical type to <c>Ch</c>.</td>
-          </tr>
+        <tr>
+          <td>(1)</td>
+          <td><c>T::char_type</c></td>
+          <td></td>
+          <td>Shall be an identical type to <c>Ch</c>.</td>
+        </tr>
 
-          <tr>
-            <td>(2)</td>
-            <td><c>T::traits_type</c></td>
-            <td></td>
-            <td>Shall be a character traits type for <c>Ch</c>.</td>
-          </tr>
+        <tr>
+          <td>(2)</td>
+          <td><c>T::traits_type</c></td>
+          <td></td>
+          <td>Shall be a character traits type for <c>Ch</c>.</td>
+        </tr>
 
-          <tr>
-            <td>(3)</td>
-            <td><c>T::parser_type&lt;H></c></td>
-            <td></td>
-            <td>Shall be a type that meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.</td>
-          </tr>
+        <tr>
+          <td>(3)</td>
+          <td><c>T::parser_type&lt;H></c></td>
+          <td></td>
+          <td>Shall be a type that meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.</td>
+        </tr>
 
-          <tr>
-            <td>(4)</td>
-            <td><c>ct(h)</c></td>
-            <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
-            <td rowspan="2">Creates a table parser object <c>p</c> that has its tied character input object which is copy constructed (on (4)) or move constructed (on (5)) from the wrapped character input object of <c>*this</c> and
-                its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with <c>h</c> (otherwise).
-                Then returns <c>p</c>.</td>
-          </tr>
+        <tr>
+          <td>(4)</td>
+          <td><c>ct(h)</c></td>
+          <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
+          <td rowspan="2">Creates a table parser object <c>p</c> that has its tied character input object which is copy constructed (on (4)) or move constructed (on (5)) from the wrapped character input object of <c>*this</c> and
+              its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with <c>h</c> (otherwise).
+              Then returns <c>p</c>.</td>
+        </tr>
 
-          <tr>
-            <td>(5)</td>
-            <td><c>rt(h)</c></td>
-          </tr>
-        </table>
-      </section>
+        <tr>
+          <td>(5)</td>
+          <td><c>rt(h)</c></td>
+        </tr>
+      </table>
     </section>
+  </section>
 
-    <section id="hpp.table_pull.syn">
-      <name>Header <c>"commama/table_pull.hpp"</c> synopsis</name>
+  <section id="hpp.table_pull.syn">
+    <name>Header <c>"commama/table_pull.hpp"</c> synopsis</name>
 
-      <codeblock>
+    <codeblock>
 #include &lt;memory>
 #include &lt;string_view>
 #include &lt;type_traits>
@@ -6633,13 +6633,13 @@ namespace commata {
       make_table_pull(std::allocator_arg_t, const Allocator&amp; alloc,
                       TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
 }
-      </codeblock>
-    </section>
+    </codeblock>
+  </section>
 
-    <section id="primitive_table_pull_handle">
-      <name>Type <c>primitive_table_pull_handle</c></name>
+  <section id="primitive_table_pull_handle">
+    <name>Type <c>primitive_table_pull_handle</c></name>
 
-      <codeblock>
+    <codeblock>
 namespace commata {
   enum class primitive_table_pull_handle : <nc>see below</nc> {
     start_buffer        = <nc>unspecified</nc>,
@@ -6667,69 +6667,69 @@ namespace commata {
     primitive_table_pull_handle&amp; left, primitive_table_pull_handle right);
   constexpr primitive_table_pull_handle operator~(primitive_table_pull_handle handle) noexcept;
 }
-      </codeblock>
+    </codeblock>
 
-      <p>The enumarated type <c>primitive_table_pull_handle</c> defines several integral values with single one bit and with all one bit, which is used to configure the <c>primitive_table_pull</c> objects (<xref id="primitive_table_pull"/>).
-         Its underlying type is an unspecified unsigned integer type.</p>
+    <p>The enumarated type <c>primitive_table_pull_handle</c> defines several integral values with single one bit and with all one bit, which is used to configure the <c>primitive_table_pull</c> objects (<xref id="primitive_table_pull"/>).
+       Its underlying type is an unspecified unsigned integer type.</p>
 
-      <section id="primitive_table_pull_handle.ops">
-        <name><c>primitive_table_pull_handle</c> operations</name>
-        <p>In this subclause, <c>U</c> denotes <c>std::underlying_type_t&lt;primitive_table_pull_handle></c>.</p>
-        <code-item>
-          <code>
+    <section id="primitive_table_pull_handle.ops">
+      <name><c>primitive_table_pull_handle</c> operations</name>
+      <p>In this subclause, <c>U</c> denotes <c>std::underlying_type_t&lt;primitive_table_pull_handle></c>.</p>
+      <code-item>
+        <code>
 constexpr primitive_table_pull_handle operator|(
   primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
-          </code>
-          <effects>Equivalent to: <c>return primitive_table_pull_handle(static_cast&lt;U>(left) | static_cast&lt;U>(right));</c></effects>
-        </code-item>
-        <code-item>
-          <code>
+        </code>
+        <effects>Equivalent to: <c>return primitive_table_pull_handle(static_cast&lt;U>(left) | static_cast&lt;U>(right));</c></effects>
+      </code-item>
+      <code-item>
+        <code>
 constexpr primitive_table_pull_handle&amp; operator|=(
   primitive_table_pull_handle&amp; left, primitive_table_pull_handle right) noexcept;
-          </code>
-          <effects>Equivalent to: <c>return left = left | right;</c></effects>
-        </code-item>
-        <code-item>
-          <code>
+        </code>
+        <effects>Equivalent to: <c>return left = left | right;</c></effects>
+      </code-item>
+      <code-item>
+        <code>
 constexpr primitive_table_pull_handle operator&amp;(
   primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
-          </code>
-          <effects>Equivalent to: <c>return primitive_table_pull_handle(static_cast&lt;U>(left) &amp; static_cast&lt;U>(right));</c></effects>
-        </code-item>
-        <code-item>
-          <code>
+        </code>
+        <effects>Equivalent to: <c>return primitive_table_pull_handle(static_cast&lt;U>(left) &amp; static_cast&lt;U>(right));</c></effects>
+      </code-item>
+      <code-item>
+        <code>
 constexpr primitive_table_pull_handle&amp; operator&amp;=(
   primitive_table_pull_handle&amp; left, primitive_table_pull_handle right) noexcept;
-          </code>
-          <effects>Equivalent to: <c>return left = left &amp; right;</c></effects>
-        </code-item>
-        <code-item>
-          <code>
+        </code>
+        <effects>Equivalent to: <c>return left = left &amp; right;</c></effects>
+      </code-item>
+      <code-item>
+        <code>
 constexpr primitive_table_pull_handle operator^(
   primitive_table_pull_handle left, primitive_table_pull_handle right) noexcept;
-          </code>
-          <effects>Equivalent to: <c>return primitive_table_pull_handle(static_cast&lt;U>(left) ^ static_cast&lt;U>(right));</c></effects>
-        </code-item>
-        <code-item>
-          <code>
+        </code>
+        <effects>Equivalent to: <c>return primitive_table_pull_handle(static_cast&lt;U>(left) ^ static_cast&lt;U>(right));</c></effects>
+      </code-item>
+      <code-item>
+        <code>
 constexpr primitive_table_pull_handle&amp; operator^=(
   primitive_table_pull_handle&amp; left, primitive_table_pull_handle right) noexcept;
-          </code>
-          <effects>Equivalent to: <c>return left = left ^ right;</c></effects>
-        </code-item>
-        <code-item>
-          <code>
+        </code>
+        <effects>Equivalent to: <c>return left = left ^ right;</c></effects>
+      </code-item>
+      <code-item>
+        <code>
 constexpr primitive_table_pull_handle operator~(primitive_table_pull_handle handle) noexcept;
-          </code>
-          <effects>Equivalent to: <c>return primitive_table_pull_handle(~static_cast&lt;U>(handle));</c></effects>
-        </code-item>
-      </section>
+        </code>
+        <effects>Equivalent to: <c>return primitive_table_pull_handle(~static_cast&lt;U>(handle));</c></effects>
+      </code-item>
     </section>
+  </section>
 
-    <section id="primitive_table_pull">
-      <name>Class template <c>primitive_table_pull</c></name>
+  <section id="primitive_table_pull">
+    <name>Class template <c>primitive_table_pull</c></name>
 
-      <codeblock>
+    <codeblock>
 namespace commata {
   template &lt;class TableSource,
             primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
@@ -6782,283 +6782,283 @@ namespace commata {
     primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
       -> primitive_table_pull&lt;TableSource, primitive_table_pull_handle::all, Allocator>;
 }
-      </codeblock>
+    </codeblock>
 
-      <p>The class template <c>primitive_table_pull</c> describes the low-level pull parser objects for text tables (<xref id="definitions.text_table"/>).</p>
-      <p>The template parameter <c>TableSource</c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for a char-like type.
-         The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TableSource::char_type</c>.</p>
-      <p>An object of an instantiation of it holds two objects:</p>
-      <ul>
-        <li>a table parser object (<xref id="table_parser.requirements"/>), whose tied table handler object recognizes each invocation on its member functions
-            <c>start_buffer</c>, <c>end_buffer</c>, <c>start_record</c>, <c>end_record</c>, <c>empty_physical_line</c>, <c>update</c> and <c>finalize</c> as a <n>parsing event</n>
-            and enqueues it into the event queue below, and</li>
-        <li>an <n>event queue</n>, which is a queue of the parsing events, and which is enqueued on the back by the tied table handler object of the table parser object and dequeued by the user on the front.</li>
-      </ul>
-      <p>The user of this class template can configure the table handler object to ignore some parsing event with the template parameter <c>Handle</c>.
-         If <c>(Handle &amp; primitive_table_pull_handle::start_buffer) == primitive_table_pull_handle(0)</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
-         All other enumerators but <c>primitive_table_pull_handle::all</c> shall work similarly.
-         <c>primitive_table_pull_handle::all</c> has a representation of all one bits and is intended to be used to express &#x2018;ignore none&#x2019;.</p>
+    <p>The class template <c>primitive_table_pull</c> describes the low-level pull parser objects for text tables (<xref id="definitions.text_table"/>).</p>
+    <p>The template parameter <c>TableSource</c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for a char-like type.
+       The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TableSource::char_type</c>.</p>
+    <p>An object of an instantiation of it holds two objects:</p>
+    <ul>
+      <li>a table parser object (<xref id="table_parser.requirements"/>), whose tied table handler object recognizes each invocation on its member functions
+          <c>start_buffer</c>, <c>end_buffer</c>, <c>start_record</c>, <c>end_record</c>, <c>empty_physical_line</c>, <c>update</c> and <c>finalize</c> as a <n>parsing event</n>
+          and enqueues it into the event queue below, and</li>
+      <li>an <n>event queue</n>, which is a queue of the parsing events, and which is enqueued on the back by the tied table handler object of the table parser object and dequeued by the user on the front.</li>
+    </ul>
+    <p>The user of this class template can configure the table handler object to ignore some parsing event with the template parameter <c>Handle</c>.
+       If <c>(Handle &amp; primitive_table_pull_handle::start_buffer) == primitive_table_pull_handle(0)</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
+       All other enumerators but <c>primitive_table_pull_handle::all</c> shall work similarly.
+       <c>primitive_table_pull_handle::all</c> has a representation of all one bits and is intended to be used to express &#x2018;ignore none&#x2019;.</p>
 
-      <section id="primitive_table_pull.physical_position_available">
-        <name><c>primitive_table_pull</c> physical position availability</name>
-        <code-item>
-          <code>
+    <section id="primitive_table_pull.physical_position_available">
+      <name><c>primitive_table_pull</c> physical position availability</name>
+      <code-item>
+        <code>
 static constexpr bool physical_position_available = <nc>see below</nc>;
-          </code>
-          <remark>The expression in the right of <c>=</c> in the initializer shall be <c>true</c>
-                  if the internal parser implements the optional operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>);
-                  <c>false</c> otherwise.</remark>
-        </code-item>
-      </section>
+        </code>
+        <remark>The expression in the right of <c>=</c> in the initializer shall be <c>true</c>
+                if the internal parser implements the optional operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>);
+                <c>false</c> otherwise.</remark>
+      </code-item>
+    </section>
 
-      <section id="primitive_table_pull.cons">
-        <name><c>primitive_table_pull</c> construct/copy/destroy</name>
-        <code-item>
-          <code>
+    <section id="primitive_table_pull.cons">
+      <name><c>primitive_table_pull</c> construct/copy/destroy</name>
+      <code-item>
+        <code>
 template &lt;class TableSourceR>
   explicit primitive_table_pull(TableSourceR&amp;&amp; in,
                                 std::size_t buffer_size = 0);
-          </code>
-          <requires><c>std::is_default_constructible_v&lt;Allocator></c> shall be <c>true</c>.</requires>
-          <effects>First default constructs an <c>Allocator</c> object <c>a</c>.
-                   Creates the event queue that does dynamic memory allocation with <c>a</c>.
-                   Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) to allocate buffers.
-                   Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.
-                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
-          <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;TableSource, std::decay_t&lt;TableSourceR>> &amp;&amp; !std::is_base_of_v&lt;table_pull, std::decay_t&lt;TableSourceR>></c> is <c>true</c>.</remark>
-        </code-item>
+        </code>
+        <requires><c>std::is_default_constructible_v&lt;Allocator></c> shall be <c>true</c>.</requires>
+        <effects>First default constructs an <c>Allocator</c> object <c>a</c>.
+                 Creates the event queue that does dynamic memory allocation with <c>a</c>.
+                 Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) to allocate buffers.
+                 Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.
+                 <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
+        <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
+        <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;TableSource, std::decay_t&lt;TableSourceR>> &amp;&amp; !std::is_base_of_v&lt;table_pull, std::decay_t&lt;TableSourceR>></c> is <c>true</c>.</remark>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 template &lt;class TableSourceR>
   primitive_table_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
                        std::size_t buffer_size = 0);
-          </code>
-          <effects>First constructs an <c>Allocator</c> object <c>a</c> with <c>alloc</c>.
-                   Creates the event queue that does dynamic memory allocation with <c>a</c>.
-                   Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) to allocate buffers.
-                   Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.
-                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
-          <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;TableSource, std::decay_t&lt;TableSourceR>></c> is <c>true</c>.</remark>
-        </code-item>
+        </code>
+        <effects>First constructs an <c>Allocator</c> object <c>a</c> with <c>alloc</c>.
+                 Creates the event queue that does dynamic memory allocation with <c>a</c>.
+                 Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) to allocate buffers.
+                 Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.
+                 <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
+        <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
+        <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;TableSource, std::decay_t&lt;TableSourceR>></c> is <c>true</c>.</remark>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 primitive_table_pull(primitive_table_pull&amp;&amp; other) noexcept;
-          </code>
-          <effects>Initializes an object of <c>primitive_table_pull</c> that takes over all the internal state of <c>other</c>.</effects>
-        </code-item>
-      </section>
-
-      <section id="primitive_table_pull.allocator">
-        <name><c>primitive_table_pull</c> allocator access</name>
-
-        <code-item>
-          <code>
-allocator_type get_allocator() const noexcept;
-          </code>
-          <returns>A copy of the allocator object used by <c>*this</c>.</returns>
-        </code-item>
-      </section>
-
-      <section id="primitive_table_pull.tweaks">
-        <name><c>primitive_table_pull</c> tweaks</name>
-
-        <code-item>
-          <code>
-bool is_discarding_data() const noexcept;
-          </code>
-          <returns>Whether <c>*this</c> collects data of events and makes them accessible with <c>operator[]</c> (<c>false</c>) or not (otherwise).</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-primitive_table_pull&amp; set_discarding_data(bool b = true) noexcept;
-          </code>
-          <effects>Sets whether <c>*this</c> collects data of events and makes them accessible with <c>operator[]</c> (if <c>b</c> is <c>false</c>) or not (otherwise).</effects>
-          <returns><c>*this</c>.</returns>
-          <note>Setting this to <c>true</c> purely reduces the functionality of <c>*this</c>, but might improve performance.</note>
-        </code-item>
-      </section>
-
-      <section id="primitive_table_pull.inv">
-        <name><c>primitive_table_pull</c> invocation</name>
-
-        <code-item>
-          <code>
-primitive_table_pull&amp; operator()();
-          </code>
-          <effects>If <c>state() == primitive_table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
-                   Otherwise, first dequeues an event from the event queue on the front if the queue is not empty.
-                   Then iteratively calls <c>p()</c> to enqueue parsing events into the event queue on the back while the event queue is empty
-                   where <c>p</c> is the table parser held by <c>*this</c>.</effects>
-          <returns><c>*this</c>.</returns>
-          <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the table parser and the allocator.</throws>
-          <remark>If an exception is thrown, <c>*this</c> would be placed to a valid but unspecified state.</remark>
-        </code-item>
-      </section>
-
-      <section id="primitive_table_pull.state">
-        <name><c>primitive_table_pull</c> state</name>
-
-        <code-item>
-          <code>
-primitive_table_pull_state state() const noexcept;
-          </code>
-          <returns>A value of <c>primitive_table_pull_state</c> that tells the current status of <c>*this</c> as shown in <xref id="table.primitive_table_pull.state"/>.
-                   In <xref id="table.primitive_table_pull.state"/>, <c>h</c> denotes the table handler object held by <c>*this</c>.
-                   &#x2018;Maximum data size&#x2019; column shows the return value of <c>data_size()</c> if the current event was queued while <c>is_discarding_data()</c> was <c>false</c>.</returns>
-
-          <table id="table.primitive_table_pull.state">
-            <caption>The meanings of the values <c>state()</c> returns</caption>
-            <col width="5"/><col width="19"/><col width="95"/><col width="12"/>
-
-            <tr>
-              <th>#</th>
-              <th>Value</th>
-              <th>The current status of <c>*this</c></th>
-              <th>Maximum data size</th>
-            </tr>
-
-            <tr>
-              <td><c>(1)</c></td>
-              <td><c>before_parse</c></td>
-              <td><c>operator()</c> has never been called yet.</td>
-              <td>0</td>
-            </tr>
-
-            <tr>
-              <td><c>(2)</c></td>
-              <td><c>eof</c></td>
-              <td>The table parser has already consumed all content of its tied table source.</td>
-              <td>0</td>
-            </tr>
-
-            <tr>
-              <td><c>(3)</c></td>
-              <td><c>start_buffer</c></td>
-              <td>The front of the event queue is the invocation of <c>start_buffer</c> on <c>h</c>.
-                  The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
-                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
-              <td>2</td>
-            </tr>
-
-            <tr>
-              <td><c>(4)</c></td>
-              <td><c>end_buffer</c></td>
-              <td>The front of the event queue is the invocation of <c>end_buffer</c> on <c>h</c>.
-                  The argument of the invocation is available as <c>(*this)[0]</c>
-                  if and only if the event was queued while <c>is_discarding_data()</c> is <c>false</c>.
-                  All pointers that have been returned by <c>operator[]</c> will be invalidated with the next call of <c>operator()</c>.</td>
-              <td>1</td>
-            </tr>
-
-            <tr>
-              <td><c>(5)</c></td>
-              <td><c>empty_physical_line</c></td>
-              <td>The front of the event queue is the invocation of <c>empty_physical_line</c> on <c>h</c>.
-                  The argument of the invocation is available as <c>(*this)[0]</c>
-                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
-              <td>1</td>
-            </tr>
-
-            <tr>
-              <td><c>(6)</c></td>
-              <td><c>start_record</c></td>
-              <td>The front of the event queue is the invocation of <c>start_record</c> on <c>h</c>.
-                  The argument of the invocation is available as <c>(*this)[0]</c>
-                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
-              <td>1</td>
-            </tr>
-
-            <tr>
-              <td><c>(7)</c></td>
-              <td><c>end_record</c></td>
-              <td>The front of the event queue is the invocation of <c>end_record</c> on <c>h</c>.
-                  The argument of the invocation is available as <c>(*this)[0]</c>
-                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
-              <td>1</td>
-            </tr>
-
-            <tr>
-              <td><c>(8)</c></td>
-              <td><c>update</c></td>
-              <td>The front of the event queue is the invocation of <c>update</c> on <c>h</c>.
-                  The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
-                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
-              <td>2</td>
-            </tr>
-
-            <tr>
-              <td><c>(9)</c></td>
-              <td><c>finalize</c></td>
-              <td>The front of the event queue is the invocation of <c>finalize</c> on <c>h</c>.
-                  The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
-                  if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
-              <td>2</td>
-            </tr>
-          </table>
-        </code-item>
-
-        <code-item>
-          <code>
-explicit operator bool() const noexcept;
-          </code>
-          <returns><c>state() != primitive_table_pull_state::eof</c>.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<nc>see below</nc>);
-          </code>
-          <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c> where <c>p</c> is the internal table parser object.
-                   Otherwise, <c>std::make_pair(npos, npos)</c>.</returns>
-          <throws>Nothing.</throws>
-          <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>physical_position_available</c> is <c>false</c>.
-                  Otherwise, it is equivalent to <c>noexcept(p.get_physical_position()))</c> where <c>p</c> is the internal table parser object.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-char_type*       operator[](size_type i);
-const char_type* operator[](size_type i) const;
-          </code>
-          <requires><c>i</c> shall be smaller than <c>data_size()</c>.</requires>
-          <returns>The <c>i</c>-th (zero-based) argument value of the front of the event queue.</returns>
-          <throws>Nothing.</throws>
-        </code-item>
-
-        <code-item>
-          <code>
-char_type*       at(size_type i);
-const char_type* at(size_type i) const;
-          </code>
-          <throws><c>std::out_of_range</c> if <c>i >= data_size()</c>.</throws>
-          <returns><c>(*this)[i]</c>.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-size_type data_size() const noexcept;
-          </code>
-          <returns>An integer value greater by one than the maximum value that can be passed to <c>operator[]</c>.</returns>
-        </code-item>
-
-        <code-item>
-          <code>
-size_type max_data_size() const noexcept;
-          </code>
-          <returns>The largest possible number that the member function <c>data_size</c> returns.</returns>
-        </code-item>
-      </section>
+        </code>
+        <effects>Initializes an object of <c>primitive_table_pull</c> that takes over all the internal state of <c>other</c>.</effects>
+      </code-item>
     </section>
 
-    <section id="table_pull">
-      <name>Class template <c>table_pull</c></name>
+    <section id="primitive_table_pull.allocator">
+      <name><c>primitive_table_pull</c> allocator access</name>
 
-      <codeblock>
+      <code-item>
+        <code>
+allocator_type get_allocator() const noexcept;
+        </code>
+        <returns>A copy of the allocator object used by <c>*this</c>.</returns>
+      </code-item>
+    </section>
+
+    <section id="primitive_table_pull.tweaks">
+      <name><c>primitive_table_pull</c> tweaks</name>
+
+      <code-item>
+        <code>
+bool is_discarding_data() const noexcept;
+        </code>
+        <returns>Whether <c>*this</c> collects data of events and makes them accessible with <c>operator[]</c> (<c>false</c>) or not (otherwise).</returns>
+      </code-item>
+
+      <code-item>
+        <code>
+primitive_table_pull&amp; set_discarding_data(bool b = true) noexcept;
+        </code>
+        <effects>Sets whether <c>*this</c> collects data of events and makes them accessible with <c>operator[]</c> (if <c>b</c> is <c>false</c>) or not (otherwise).</effects>
+        <returns><c>*this</c>.</returns>
+        <note>Setting this to <c>true</c> purely reduces the functionality of <c>*this</c>, but might improve performance.</note>
+      </code-item>
+    </section>
+
+    <section id="primitive_table_pull.inv">
+      <name><c>primitive_table_pull</c> invocation</name>
+
+      <code-item>
+        <code>
+primitive_table_pull&amp; operator()();
+        </code>
+        <effects>If <c>state() == primitive_table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
+                 Otherwise, first dequeues an event from the event queue on the front if the queue is not empty.
+                 Then iteratively calls <c>p()</c> to enqueue parsing events into the event queue on the back while the event queue is empty
+                 where <c>p</c> is the table parser held by <c>*this</c>.</effects>
+        <returns><c>*this</c>.</returns>
+        <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the table parser and the allocator.</throws>
+        <remark>If an exception is thrown, <c>*this</c> would be placed to a valid but unspecified state.</remark>
+      </code-item>
+    </section>
+
+    <section id="primitive_table_pull.state">
+      <name><c>primitive_table_pull</c> state</name>
+
+      <code-item>
+        <code>
+primitive_table_pull_state state() const noexcept;
+        </code>
+        <returns>A value of <c>primitive_table_pull_state</c> that tells the current status of <c>*this</c> as shown in <xref id="table.primitive_table_pull.state"/>.
+                 In <xref id="table.primitive_table_pull.state"/>, <c>h</c> denotes the table handler object held by <c>*this</c>.
+                 &#x2018;Maximum data size&#x2019; column shows the return value of <c>data_size()</c> if the current event was queued while <c>is_discarding_data()</c> was <c>false</c>.</returns>
+
+        <table id="table.primitive_table_pull.state">
+          <caption>The meanings of the values <c>state()</c> returns</caption>
+          <col width="5"/><col width="19"/><col width="95"/><col width="12"/>
+
+          <tr>
+            <th>#</th>
+            <th>Value</th>
+            <th>The current status of <c>*this</c></th>
+            <th>Maximum data size</th>
+          </tr>
+
+          <tr>
+            <td><c>(1)</c></td>
+            <td><c>before_parse</c></td>
+            <td><c>operator()</c> has never been called yet.</td>
+            <td>0</td>
+          </tr>
+
+          <tr>
+            <td><c>(2)</c></td>
+            <td><c>eof</c></td>
+            <td>The table parser has already consumed all content of its tied table source.</td>
+            <td>0</td>
+          </tr>
+
+          <tr>
+            <td><c>(3)</c></td>
+            <td><c>start_buffer</c></td>
+            <td>The front of the event queue is the invocation of <c>start_buffer</c> on <c>h</c>.
+                The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
+                if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
+            <td>2</td>
+          </tr>
+
+          <tr>
+            <td><c>(4)</c></td>
+            <td><c>end_buffer</c></td>
+            <td>The front of the event queue is the invocation of <c>end_buffer</c> on <c>h</c>.
+                The argument of the invocation is available as <c>(*this)[0]</c>
+                if and only if the event was queued while <c>is_discarding_data()</c> is <c>false</c>.
+                All pointers that have been returned by <c>operator[]</c> will be invalidated with the next call of <c>operator()</c>.</td>
+            <td>1</td>
+          </tr>
+
+          <tr>
+            <td><c>(5)</c></td>
+            <td><c>empty_physical_line</c></td>
+            <td>The front of the event queue is the invocation of <c>empty_physical_line</c> on <c>h</c>.
+                The argument of the invocation is available as <c>(*this)[0]</c>
+                if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
+            <td>1</td>
+          </tr>
+
+          <tr>
+            <td><c>(6)</c></td>
+            <td><c>start_record</c></td>
+            <td>The front of the event queue is the invocation of <c>start_record</c> on <c>h</c>.
+                The argument of the invocation is available as <c>(*this)[0]</c>
+                if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
+            <td>1</td>
+          </tr>
+
+          <tr>
+            <td><c>(7)</c></td>
+            <td><c>end_record</c></td>
+            <td>The front of the event queue is the invocation of <c>end_record</c> on <c>h</c>.
+                The argument of the invocation is available as <c>(*this)[0]</c>
+                if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
+            <td>1</td>
+          </tr>
+
+          <tr>
+            <td><c>(8)</c></td>
+            <td><c>update</c></td>
+            <td>The front of the event queue is the invocation of <c>update</c> on <c>h</c>.
+                The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
+                if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
+            <td>2</td>
+          </tr>
+
+          <tr>
+            <td><c>(9)</c></td>
+            <td><c>finalize</c></td>
+            <td>The front of the event queue is the invocation of <c>finalize</c> on <c>h</c>.
+                The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
+                if and only if the event was queued while <c>is_discarding_data()</c> was <c>false</c>.</td>
+            <td>2</td>
+          </tr>
+        </table>
+      </code-item>
+
+      <code-item>
+        <code>
+explicit operator bool() const noexcept;
+        </code>
+        <returns><c>state() != primitive_table_pull_state::eof</c>.</returns>
+      </code-item>
+
+      <code-item>
+        <code>
+std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<nc>see below</nc>);
+        </code>
+        <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c> where <c>p</c> is the internal table parser object.
+                 Otherwise, <c>std::make_pair(npos, npos)</c>.</returns>
+        <throws>Nothing.</throws>
+        <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>physical_position_available</c> is <c>false</c>.
+                Otherwise, it is equivalent to <c>noexcept(p.get_physical_position()))</c> where <c>p</c> is the internal table parser object.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+char_type*       operator[](size_type i);
+const char_type* operator[](size_type i) const;
+        </code>
+        <requires><c>i</c> shall be smaller than <c>data_size()</c>.</requires>
+        <returns>The <c>i</c>-th (zero-based) argument value of the front of the event queue.</returns>
+        <throws>Nothing.</throws>
+      </code-item>
+
+      <code-item>
+        <code>
+char_type*       at(size_type i);
+const char_type* at(size_type i) const;
+        </code>
+        <throws><c>std::out_of_range</c> if <c>i >= data_size()</c>.</throws>
+        <returns><c>(*this)[i]</c>.</returns>
+      </code-item>
+
+      <code-item>
+        <code>
+size_type data_size() const noexcept;
+        </code>
+        <returns>An integer value greater by one than the maximum value that can be passed to <c>operator[]</c>.</returns>
+      </code-item>
+
+      <code-item>
+        <code>
+size_type max_data_size() const noexcept;
+        </code>
+        <returns>The largest possible number that the member function <c>data_size</c> returns.</returns>
+      </code-item>
+    </section>
+  </section>
+
+  <section id="table_pull">
+    <name>Class template <c>table_pull</c></name>
+
+    <codeblock>
 namespace commata {
   template &lt;class TableSource,
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
@@ -7118,284 +7118,284 @@ namespace commata {
       make_table_pull(std::allocator_arg_t, const Allocator&amp; alloc,
                       TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
 }
-      </codeblock>
+    </codeblock>
 
-      <p><c>table_pull</c> is another class template that describes pull parser objects for text tables (<xref id="definitions.text_table"/>) than <c>primitive_table_pull</c> (<xref id="primitive_table_pull"/>).
-         It offers higher-level parsing functionality.</p>
-      <p>The template parameter <c>TableSource</c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for a char-like type.
-         The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TableSource::char_type</c>.</p>
-      <p>An object of an instantiation of it performs field-wisely or record-wisely step-by-step parsing of a text table.
-         Its user can retrieve the field values through its <n>current string values</n>, which are null-terminated sequences of <c>TableSource::char_type</c>.</p>
+    <p><c>table_pull</c> is another class template that describes pull parser objects for text tables (<xref id="definitions.text_table"/>) than <c>primitive_table_pull</c> (<xref id="primitive_table_pull"/>).
+       It offers higher-level parsing functionality.</p>
+    <p>The template parameter <c>TableSource</c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for a char-like type.
+       The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TableSource::char_type</c>.</p>
+    <p>An object of an instantiation of it performs field-wisely or record-wisely step-by-step parsing of a text table.
+       Its user can retrieve the field values through its <n>current string values</n>, which are null-terminated sequences of <c>TableSource::char_type</c>.</p>
 
-      <section id="table_pull.physical_position_available">
-        <name><c>table_pull</c> physical position availability</name>
-        <code-item>
-          <code>
+    <section id="table_pull.physical_position_available">
+      <name><c>table_pull</c> physical position availability</name>
+      <code-item>
+        <code>
 static constexpr bool physical_position_available = <nc>see below</nc>;
-          </code>
-          <remark>The expression in the right of <c>=</c> in the initializer shall be <c>true</c>
-                  if the internal parser implements the optional operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>);
-                  <c>false</c> otherwise.</remark>
-        </code-item>
-      </section>
+        </code>
+        <remark>The expression in the right of <c>=</c> in the initializer shall be <c>true</c>
+                if the internal parser implements the optional operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>);
+                <c>false</c> otherwise.</remark>
+      </code-item>
+    </section>
 
-      <section id="table_pull.cons">
-        <name><c>table_pull</c> construct/copy/destroy</name>
-        <code-item>
-          <code>
+    <section id="table_pull.cons">
+      <name><c>table_pull</c> construct/copy/destroy</name>
+      <code-item>
+        <code>
 template &lt;class TableSourceR>
   explicit table_pull(TableSourceR&amp;&amp; in, std::size_t buffer_size = 0);
-          </code>
-          <requires><c>std::is_default_constructible_v&lt;Allocator></c> shall be <c>true</c>.</requires>
-          <effects>Initializes an object of <c>table_pull</c> with a default constructed <c>Allocator</c> object as its allocator object and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
-                   <c>buffer_size</c> serves as a hint to allocate buffers.
-                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
-          <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;TableSource, std::decay_t&lt;TableSourceR>> &amp;&amp; !std::is_base_of_v&lt;table_pull, std::decay_t&lt;TableSourceR>></c> is <c>true</c>.</remark>
-        </code-item>
+        </code>
+        <requires><c>std::is_default_constructible_v&lt;Allocator></c> shall be <c>true</c>.</requires>
+        <effects>Initializes an object of <c>table_pull</c> with a default constructed <c>Allocator</c> object as its allocator object and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
+                 <c>buffer_size</c> serves as a hint to allocate buffers.
+                 <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
+        <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
+        <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;TableSource, std::decay_t&lt;TableSourceR>> &amp;&amp; !std::is_base_of_v&lt;table_pull, std::decay_t&lt;TableSourceR>></c> is <c>true</c>.</remark>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 template &lt;class TableSourceR>
   table_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
              std::size_t buffer_size = 0);
-          </code>
-          <effects>Initializes an object of <c>table_pull</c> with an allocator object constructed from <c>alloc</c> and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
-                   <c>buffer_size</c> serves as a hint to allocate buffers.
-                   <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
-          <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
-          <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;TableSource, std::decay_t&lt;TableSourceR>></c> is <c>true</c>.</remark>
-        </code-item>
+        </code>
+        <effects>Initializes an object of <c>table_pull</c> with an allocator object constructed from <c>alloc</c> and with a table parser (<xref id="table_parser.requirements"/>) object created by invoking <c>operator()</c> on <c>std::forward&lt;TableSourceR>(in)</c>.
+                 <c>buffer_size</c> serves as a hint to allocate buffers.
+                 <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
+        <postcondition><c>is_empty_line_aware()</c> shall return <c>false</c>.</postcondition>
+        <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;TableSource, std::decay_t&lt;TableSourceR>></c> is <c>true</c>.</remark>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 table_pull(table_pull&amp;&amp; other) noexcept;
-          </code>
-          <effects>Initializes an object of <c>table_pull</c> that takes over all the internal state of <c>other</c>.</effects>
-        </code-item>
-      </section>
+        </code>
+        <effects>Initializes an object of <c>table_pull</c> that takes over all the internal state of <c>other</c>.</effects>
+      </code-item>
+    </section>
 
-      <section id="table_pull.allocator">
-        <name><c>table_pull</c> allocator access</name>
+    <section id="table_pull.allocator">
+      <name><c>table_pull</c> allocator access</name>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 allocator_type get_allocator() const noexcept;
-          </code>
-          <returns>A copy of the allocator object used by <c>*this</c>.</returns>
-        </code-item>
-      </section>
+        </code>
+        <returns>A copy of the allocator object used by <c>*this</c>.</returns>
+      </code-item>
+    </section>
 
-      <section id="table_pull.tweaks">
-        <name><c>table_pull</c> tweaks</name>
+    <section id="table_pull.tweaks">
+      <name><c>table_pull</c> tweaks</name>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 bool is_empty_physical_line_aware() const noexcept;
-          </code>
-          <returns>Whether <c>*this</c> treats empty physical lines as records with no fields (<c>true</c>) or ignore empty physical lines (<c>false</c>).</returns>
-        </code-item>
+        </code>
+        <returns>Whether <c>*this</c> treats empty physical lines as records with no fields (<c>true</c>) or ignore empty physical lines (<c>false</c>).</returns>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 table_pull&amp; set_empty_physical_line_aware(bool b = true) noexcept;
-          </code>
-          <effects>Sets whether <c>*this</c> treats empty physical lines as records with no fields (if <c>b</c> is not <c>false</c>) or ignore empty physical lines (otherwise).</effects>
-          <returns><c>*this</c>.</returns>
-        </code-item>
-      </section>
+        </code>
+        <effects>Sets whether <c>*this</c> treats empty physical lines as records with no fields (if <c>b</c> is not <c>false</c>) or ignore empty physical lines (otherwise).</effects>
+        <returns><c>*this</c>.</returns>
+      </code-item>
+    </section>
 
-      <section id="table_pull.inv">
-        <name><c>table_pull</c> invocation</name>
+    <section id="table_pull.inv">
+      <name><c>table_pull</c> invocation</name>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 table_pull&amp; operator()(std::size_t n = 0);
-          </code>
-          <effects>If <c>state() == table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
-                   Otherwise, reads the text table until next <c>n + 1</c> fields are read, an end of a record is found, or the table source is fully consumed.</effects>
-          <returns><c>*this</c>.</returns>
-          <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
-          <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::field) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
-          <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
-                  When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</remark>
-        </code-item>
+        </code>
+        <effects>If <c>state() == table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
+                 Otherwise, reads the text table until next <c>n + 1</c> fields are read, an end of a record is found, or the table source is fully consumed.</effects>
+        <returns><c>*this</c>.</returns>
+        <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
+        <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::field) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
+        <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
+                When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</remark>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 table_pull&amp; skip_record(std::size_t n = 0);
-          </code>
-          <effects>If <c>state() == table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
-                   Otherwise, reads the text table until <c>n + 1</c> ends of records are found or the table source is fully consumed.</effects>
-          <returns><c>*this</c>.</returns>
-          <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
-          <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
-          <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
-                  When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</remark>
-        </code-item>
-      </section>
+        </code>
+        <effects>If <c>state() == table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
+                 Otherwise, reads the text table until <c>n + 1</c> ends of records are found or the table source is fully consumed.</effects>
+        <returns><c>*this</c>.</returns>
+        <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
+        <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
+        <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
+                When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</remark>
+      </code-item>
+    </section>
 
-      <section id="table_pull.state">
-        <name><c>table_pull</c> state</name>
+    <section id="table_pull.state">
+      <name><c>table_pull</c> state</name>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 table_pull_state state() const noexcept;
-          </code>
-          <returns>A value of <c>table_pull_state</c> that tells the current status of <c>*this</c> as shown in <xref id="table.table_pull.state"/>.</returns>
+        </code>
+        <returns>A value of <c>table_pull_state</c> that tells the current status of <c>*this</c> as shown in <xref id="table.table_pull.state"/>.</returns>
 
-          <table id="table.table_pull.state">
-            <caption>The meanings of the values <c>state()</c> returns</caption>
-            <col width="5"/><col width="19"/><col width="92"/><col width="15"/>
+        <table id="table.table_pull.state">
+          <caption>The meanings of the values <c>state()</c> returns</caption>
+          <col width="5"/><col width="19"/><col width="92"/><col width="15"/>
 
-            <tr>
-              <th>#</th>
-              <th>Value</th>
-              <th>The current status of <c>*this</c></th>
-              <th>The current string value</th>
-            </tr>
+          <tr>
+            <th>#</th>
+            <th>Value</th>
+            <th>The current status of <c>*this</c></th>
+            <th>The current string value</th>
+          </tr>
 
-            <tr>
-              <td><c>(1)</c></td>
-              <td><c>before_parse</c></td>
-              <td>Neither <c>operator()</c> nor <c>skip_record</c> has never been called yet.</td>
-              <td>An empty string</td>
-            </tr>
+          <tr>
+            <td><c>(1)</c></td>
+            <td><c>before_parse</c></td>
+            <td>Neither <c>operator()</c> nor <c>skip_record</c> has never been called yet.</td>
+            <td>An empty string</td>
+          </tr>
 
-            <tr>
-              <td><c>(2)</c></td>
-              <td><c>eof</c></td>
-              <td><c>*this</c> has already consumed all content of the table source.</td>
-              <td>An empty string</td>
-            </tr>
+          <tr>
+            <td><c>(2)</c></td>
+            <td><c>eof</c></td>
+            <td><c>*this</c> has already consumed all content of the table source.</td>
+            <td>An empty string</td>
+          </tr>
 
-            <tr>
-              <td><c>(3)</c></td>
-              <td><c>field</c></td>
-              <td><c>*this</c> has reached a field with the latest call of <c>operator()</c>.</td>
-              <td>The field value</td>
-            </tr>
+          <tr>
+            <td><c>(3)</c></td>
+            <td><c>field</c></td>
+            <td><c>*this</c> has reached a field with the latest call of <c>operator()</c>.</td>
+            <td>The field value</td>
+          </tr>
 
-            <tr>
-              <td><c>(4)</c></td>
-              <td><c>record_end</c></td>
-              <td><c>*this</c> has reached an end of the a record with the latest call of <c>operator()</c> or <c>skip_record</c>.</td>
-              <td>An empty string</td>
-            </tr>
-          </table>
-        </code-item>
+          <tr>
+            <td><c>(4)</c></td>
+            <td><c>record_end</c></td>
+            <td><c>*this</c> has reached an end of the a record with the latest call of <c>operator()</c> or <c>skip_record</c>.</td>
+            <td>An empty string</td>
+          </tr>
+        </table>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 explicit operator bool() const noexcept;
-          </code>
-          <returns><c>state() != table_pull_state::eof</c>.</returns>
-        </code-item>
+        </code>
+        <returns><c>state() != table_pull_state::eof</c>.</returns>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<nc>see below</nc>);
-          </code>
-          <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c> where <c>p</c> is the internal table parser object.
-                   Otherwise, <c>std::make_pair(npos, npos)</c>.</returns>
-          <throws>Nothing.</throws>
-          <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>physical_position_available</c> is <c>false</c>.
-                  Otherwise, it is equivalent to <c>noexcept(p.get_physical_position()))</c> where <c>p</c> is the internal table parser object.</remark>
-        </code-item>
+        </code>
+        <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c> where <c>p</c> is the internal table parser object.
+                 Otherwise, <c>std::make_pair(npos, npos)</c>.</returns>
+        <throws>Nothing.</throws>
+        <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>physical_position_available</c> is <c>false</c>.
+                Otherwise, it is equivalent to <c>noexcept(p.get_physical_position()))</c> where <c>p</c> is the internal table parser object.</remark>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
-          </code>
-          <returns>A pair of integers that may point the logical position of the <c>*this</c> in the text table, whose meanings depends on the return value of <c>state</c> as in <xref id="table.table_pull.get_position"/>.
-                   In <xref id="table.table_pull.get_position"/>, <c>r</c> denotes the return value.</returns>
+        </code>
+        <returns>A pair of integers that may point the logical position of the <c>*this</c> in the text table, whose meanings depends on the return value of <c>state</c> as in <xref id="table.table_pull.get_position"/>.
+                 In <xref id="table.table_pull.get_position"/>, <c>r</c> denotes the return value.</returns>
 
-          <table id="table.table_pull.get_position">
-            <caption>The meanings of the values <c>get_position()</c> returns</caption>
-            <col width="1"/><col width="3"/><col width="8"/><col width="12"/>
+        <table id="table.table_pull.get_position">
+          <caption>The meanings of the values <c>get_position()</c> returns</caption>
+          <col width="1"/><col width="3"/><col width="8"/><col width="12"/>
 
-            <tr>
-              <th>#</th>
-              <th>state()</th>
-              <th><c>r.first</c></th>
-              <th><c>r.second</c></th>
-            </tr>
+          <tr>
+            <th>#</th>
+            <th>state()</th>
+            <th><c>r.first</c></th>
+            <th><c>r.second</c></th>
+          </tr>
 
-            <tr>
-              <td><c>(1)</c></td>
-              <td><c>before_parse</c></td>
-              <td>Unspecified</td>
-              <td>Unspecified</td>
-            </tr>
+          <tr>
+            <td><c>(1)</c></td>
+            <td><c>before_parse</c></td>
+            <td>Unspecified</td>
+            <td>Unspecified</td>
+          </tr>
 
-            <tr>
-              <td><c>(2)</c></td>
-              <td><c>eof</c></td>
-              <td>The number of records successfully read</td>
-              <td>The number of fields successfully read after the last record successfully read</td>
-            </tr>
+          <tr>
+            <td><c>(2)</c></td>
+            <td><c>eof</c></td>
+            <td>The number of records successfully read</td>
+            <td>The number of fields successfully read after the last record successfully read</td>
+          </tr>
 
-            <tr>
-              <td><c>(3)</c></td>
-              <td><c>field</c></td>
-              <td>The zero-based index of the record</td>
-              <td>The zero-based index of the field in the record</td>
-            </tr>
+          <tr>
+            <td><c>(3)</c></td>
+            <td><c>field</c></td>
+            <td>The zero-based index of the record</td>
+            <td>The zero-based index of the field in the record</td>
+          </tr>
 
-            <tr>
-              <td><c>(4)</c></td>
-              <td><c>record_end</c></td>
-              <td>The zero-based index of the record</td>
-              <td>The number of the fields contained in the record</td>
-            </tr>
-          </table>
-        </code-item>
+          <tr>
+            <td><c>(4)</c></td>
+            <td><c>record_end</c></td>
+            <td>The zero-based index of the record</td>
+            <td>The number of the fields contained in the record</td>
+          </tr>
+        </table>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 const char_type* c_str() const noexcept;
-          </code>
-          <returns>A pointer that points the first element of a null-terminated sequence of the current string value.</returns>
-        </code-item>
+        </code>
+        <returns>A pointer that points the first element of a null-terminated sequence of the current string value.</returns>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 const view_type&amp; operator*() const noexcept;
 const view_type* operator->() const noexcept;
-          </code>
-          <returns>A reference or a pointer to a string view object that represents the current string value.</returns>
-        </code-item>
-      </section>
+        </code>
+        <returns>A reference or a pointer to a string view object that represents the current string value.</returns>
+      </code-item>
+    </section>
 
-      <section id="table_pull.creation">
-        <name><c>table_pull</c> creation functions</name>
-        <code-item>
-          <code>
+    <section id="table_pull.creation">
+      <name><c>table_pull</c> creation functions</name>
+      <code-item>
+        <code>
 template &lt;class TableSource, class... Appendices>
   table_pull&lt;std::decay_t&lt;TableSource>>
     make_table_pull(TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
-          </code>
-          <effects><p>Equivalent to:</p>
-                   <code>return table_pull&lt;std::decay_t&lt;TableSource>>(std::forward&lt;TableSource>(in),
+        </code>
+        <effects><p>Equivalent to:</p>
+                 <code>return table_pull&lt;std::decay_t&lt;TableSource>>(std::forward&lt;TableSource>(in),
                                              std::forward&lt;Appendices>(appendices)...);</code></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible_v&lt;table_pull&lt;std::decay_t&lt;TableSource>>, TableSource&amp;&amp;, Appendices&amp;&amp;...></c> is <c>true</c>.</remark>
-        </code-item>
+        <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible_v&lt;table_pull&lt;std::decay_t&lt;TableSource>>, TableSource&amp;&amp;, Appendices&amp;&amp;...></c> is <c>true</c>.</remark>
+      </code-item>
 
-        <code-item>
-          <code>
+      <code-item>
+        <code>
 template &lt;class TableSource, class Allocator, class... Appendices>
   table_pull&lt;std::decay_t&lt;TableSource>, Allocator>
     make_table_pull(std::allocator_arg_t, const Allocator&amp; alloc,
                     TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
-          </code>
-          <effects><p>Equivalent to:</p>
-                   <code>return table_pull&lt;std::decay_t&lt;TableSource>, Allocator>(std::allocator_arg, alloc,
+        </code>
+        <effects><p>Equivalent to:</p>
+                 <code>return table_pull&lt;std::decay_t&lt;TableSource>, Allocator>(std::allocator_arg, alloc,
                                                         std::forward&lt;TableSource>(in),
                                                         std::forward&lt;Appendices>(appendices)...);</code></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible_v&lt;table_pull&lt;std::decay_t&lt;TableSource, Allocator>>, std::allocator_arg_t, const Allocator&amp;, TableSource&amp;&amp;, Appendices&amp;&amp;...></c> is <c>true</c>.</remark>
-        </code-item>
-      </section>
+        <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible_v&lt;table_pull&lt;std::decay_t&lt;TableSource, Allocator>>, std::allocator_arg_t, const Allocator&amp;, TableSource&amp;&amp;, Appendices&amp;&amp;...></c> is <c>true</c>.</remark>
+      </code-item>
     </section>
+  </section>
 </section>
 
 </document>
