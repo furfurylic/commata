@@ -6493,67 +6493,67 @@ template &lt;class Allocator, class Container, class... Appendices>
        with the control of the execution flow of parsing held by the users themselves and with the knowledge of where in the text table they are processing.</p>
     <p>The pull parsing facilities of Commata need objects that can create the table parsers for their &#x2018;pull-parsing&#x2019; table handlers.
        The types of these objects are abstracted into the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>).</p>
+  </section>
 
-    <section id="table_source.requirements">
-      <name><c>TableSource</c> requirements</name>
+  <section id="table_source.requirements">
+    <name><c>TableSource</c> requirements</name>
 
-      <p>A type <c>T</c> meets the <c>TableSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
-      <ul>
-        <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-        <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character input</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
-      </ul>
+    <p>A type <c>T</c> meets the <c>TableSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
+    <ul>
+      <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+      <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character input</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
+    </ul>
 
-      <p>In <xref id="table.table_source.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c> and <c>rt</c> is an rvalue of <c>T</c>.
-        <c>H</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.
-        <c>h</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.</p>
+    <p>In <xref id="table.table_source.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c> and <c>rt</c> is an rvalue of <c>T</c>.
+      <c>H</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.
+      <c>h</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>.</p>
 
-      <table id="table.table_source.requirements">
-        <caption><c>TableSource</c> requirements</caption>
-        <col width="1"/><col width="4"/><col width="9"/><col width="14"/>
+    <table id="table.table_source.requirements">
+      <caption><c>TableSource</c> requirements</caption>
+      <col width="1"/><col width="4"/><col width="9"/><col width="14"/>
 
-        <tr>
-          <th>#</th>
-          <th>Expression</th>
-          <th>Return type</th>
-          <th>Remark</th>
-        </tr>
+      <tr>
+        <th>#</th>
+        <th>Expression</th>
+        <th>Return type</th>
+        <th>Remark</th>
+      </tr>
 
-        <tr>
-          <td>(1)</td>
-          <td><c>T::char_type</c></td>
-          <td></td>
-          <td>Shall be an identical type to <c>Ch</c>.</td>
-        </tr>
+      <tr>
+        <td>(1)</td>
+        <td><c>T::char_type</c></td>
+        <td></td>
+        <td>Shall be an identical type to <c>Ch</c>.</td>
+      </tr>
 
-        <tr>
-          <td>(2)</td>
-          <td><c>T::traits_type</c></td>
-          <td></td>
-          <td>Shall be a character traits type for <c>Ch</c>.</td>
-        </tr>
+      <tr>
+        <td>(2)</td>
+        <td><c>T::traits_type</c></td>
+        <td></td>
+        <td>Shall be a character traits type for <c>Ch</c>.</td>
+      </tr>
 
-        <tr>
-          <td>(3)</td>
-          <td><c>T::parser_type&lt;H></c></td>
-          <td></td>
-          <td>Shall be a type that meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.</td>
-        </tr>
+      <tr>
+        <td>(3)</td>
+        <td><c>T::parser_type&lt;H></c></td>
+        <td></td>
+        <td>Shall be a type that meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.</td>
+      </tr>
 
-        <tr>
-          <td>(4)</td>
-          <td><c>ct(h)</c></td>
-          <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
-          <td rowspan="2">Creates a table parser object <c>p</c> that has its tied character input object which is copy constructed (on (4)) or move constructed (on (5)) from the wrapped character input object of <c>*this</c> and
-              its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with <c>h</c> (otherwise).
-              Then returns <c>p</c>.</td>
-        </tr>
+      <tr>
+        <td>(4)</td>
+        <td><c>ct(h)</c></td>
+        <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
+        <td rowspan="2">Creates a table parser object <c>p</c> that has its tied character input object which is copy constructed (on (4)) or move constructed (on (5)) from the wrapped character input object of <c>*this</c> and
+            its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with <c>h</c> (otherwise).
+            Then returns <c>p</c>.</td>
+      </tr>
 
-        <tr>
-          <td>(5)</td>
-          <td><c>rt(h)</c></td>
-        </tr>
-      </table>
-    </section>
+      <tr>
+        <td>(5)</td>
+        <td><c>rt(h)</c></td>
+      </tr>
+    </table>
   </section>
 
   <section id="hpp.table_pull.syn">
