@@ -22,6 +22,9 @@ using namespace std::literals::string_view_literals;
 using namespace commata;
 using namespace commata::test;
 
+static_assert(std::is_trivially_copyable_v<streambuf_input<char>>);
+static_assert(std::is_trivially_copyable_v<string_input<wchar_t>>);
+
 namespace {
 
 struct TestOwnedStringInput : BaseTest
