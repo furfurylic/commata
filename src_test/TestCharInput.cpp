@@ -25,8 +25,6 @@ using namespace commata::test;
 static_assert(std::is_trivially_copyable_v<streambuf_input<char>>);
 static_assert(std::is_trivially_copyable_v<string_input<wchar_t>>);
 
-namespace {
-
 struct TestOwnedStringInput : BaseTest
 {};
 
@@ -191,6 +189,4 @@ TEST_F(TestCharInput, MakeFromStringRvalueRef)
     std::string out(5, ' ');
     ASSERT_EQ(3, in(out.data(), 5));
     ASSERT_EQ("XYZ  ", out);
-}
-
 }
