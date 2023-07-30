@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-07-22 (UTC)</signature>
+<signature>2023-07-31 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2914,7 +2914,7 @@ namespace commata {
   template &lt;class Ch, class Tr = std::char_traits&lt;std::remove_const_t&lt;Ch>>>
     class basic_stored_value {
   public:
-    using value_type      = Ch;
+    using value_type      = std::remove_const_t&lt;Ch>;
     using reference       = Ch&amp;;
     using const_reference = const Ch&amp;;
     using pointer         = Ch*;
@@ -3106,8 +3106,7 @@ namespace commata {
 
         <tr>
           <td><c>value_type</c></td>
-          <td><c>Ch</c></td>
-          <td><c>const Ch</c></td>
+          <td colspan="2"><c>std::remove_const_t&lt;Ch></c></td>
         </tr>
 
         <tr>
@@ -3567,7 +3566,7 @@ namespace commata {
     using content_type    = Content;
     using record_type     = typename content_type::value_type;
     using value_type      = typename record_type::value_type;
-    using char_type       = std::remove_const_t&lt;typename value_type::value_type>;
+    using char_type       = typename value_type::value_type;
     using traits_type     = typename value_type::traits_type;
     using size_type       = typename content_type::size_type;
 
@@ -3677,7 +3676,7 @@ namespace commata {
         <section id="basic_stored_table.parts">
           <name><c>basic_stored_table</c> constituents</name>
 
-          <p>Let <c>Ch</c> be <c>std::remove_const_t&lt;typename Content::value_type::value_type::value_type></c>.</p>
+          <p>Let <c>Ch</c> be a type denoted with <c>Content::value_type::value_type::value_type</c>.</p>
           <p>An object of <c>basic_stored_table&lt;Content, Allocator></c> consists of the four following constituents:</p>
           <ul>
             <li>a <n>content container</n>, which is an allocator-aware container of <c>Content</c> with its size being at most one (and its possible sole element is called the <n>content</n>),</li>

@@ -52,7 +52,7 @@ public:
         "Inconsistent char type and traits type specified "
         "for commata::basic_stored_value");
 
-    using value_type      = Ch;
+    using value_type      = std::remove_const_t<Ch>;
     using reference       = Ch&;
     using const_reference = const Ch&;
     using pointer         = Ch*;
@@ -1125,8 +1125,7 @@ public:
     using content_type    = Content;
     using record_type     = typename content_type::value_type;
     using value_type      = typename record_type::value_type;
-    using char_type       = std::remove_const_t<
-                                typename value_type::value_type>;
+    using char_type       = typename value_type::value_type;
     using traits_type     = typename value_type::traits_type;
     using size_type       = typename content_type::size_type;
 
@@ -1383,7 +1382,8 @@ private:
             return value = value_type();
         }
 
-        if constexpr (!std::is_const_v<typename value_type::value_type>) {
+        if constexpr (!std::is_const_v<
+                std::remove_reference_t<typename value_type::reference>>) {
             if (new_value_size <= value.size()) {
                 detail::stored::move_chs<traits_type>(
                     new_value_begin, new_value_size, value.begin());
@@ -1657,10 +1657,11 @@ private:
         using oca_t =
             typename basic_stored_table<OtherContent, OtherAllocator>::ca_t;
         if constexpr (
-            std::is_const_v<
+            std::is_const_v<std::remove_reference_t<
                 typename basic_stored_table<OtherContent, OtherAllocator>::
-                    value_type::value_type>
-             && !std::is_const_v<typename value_type::value_type>) {
+                    value_type::reference>>
+         && !std::is_const_v<std::remove_reference_t<
+                typename value_type::reference>>) {
             append_no_singular(other);                          // throw
         } else if constexpr (std::is_same_v<ca_t, oca_t>
                    && cat_t::is_always_equal::value) {
@@ -1717,7 +1718,8 @@ private:
         detail::stored::reserve(
             records, records.size() + other.size());                // throw
 
-        if constexpr (std::is_const_v<typename value_type::value_type>) {
+        if constexpr (std::is_const_v<
+                std::remove_reference_t<typename value_type::reference>>) {
             using va_t = typename at_t::template rebind_alloc<value_type>;
             using canon_t = std::unordered_set<value_type,
                 std::hash<value_type>, std::equal_to<value_type>, va_t>;

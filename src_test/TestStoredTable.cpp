@@ -1977,8 +1977,7 @@ TEST_F(TestStoredTableConst, Value)
 TEST_F(TestStoredTableConst, Table)
 {
     cwstored_table table;
-    static_assert(
-        std::is_same_v<decltype(table)::char_type, wchar_t>);
+    static_assert(std::is_same_v<decltype(table)::char_type, wchar_t>);
     auto value = table.import_value(L"alpha-beta-gamma");
     const auto b = value.begin();
     table.rewrite_value(value, L"alpha-beta-delta");
