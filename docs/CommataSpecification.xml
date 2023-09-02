@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2023-04-16 (UTC)</signature>
+<signature>2023-09-03 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1096,7 +1096,7 @@ const handler_type&amp; base() const noexcept;
           </code>
           <effects>First calls <c>base().start_record(where)</c>, and unless the return type is contextually convertible to <c>bool</c> and the contextually converted value of the return value to <c>bool</c> is <c>false</c>, next calls <c>base().end_record(where)</c>.</effects>
           <returns>If both of the return types of <c>base().start_record(where)</c> and <c>base().end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>.
-                   Otherwise, the return type shall be <c>bool</c>, and the return value shall be <c>true</c> unless either call of <c>base().start_record(where)</c> or <c>base().end_record(where)</c> returned a value whose type is contextually convertible to <c>bool</c> and whose contexually converted value <c>bool</c> is <c>false</c>.</returns>
+                   Otherwise, the return type shall be <c>bool</c>, and the return value shall be <c>true</c> unless either call of <c>base().start_record(where)</c> or <c>base().end_record(where)</c> returned a value whose type is contextually convertible to <c>bool</c> and whose contexually converted value to <c>bool</c> is <c>false</c>.</returns>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_record(where)) &amp;&amp; noexcept(std::declval&lt;Handler&amp;>().end_record(where))</c>.</remark>
         </code-item>
 
@@ -3752,7 +3752,7 @@ bool empty() const noexcept(<nc>see below</nc>);
           <code>
 void clear() noexcept(<nc>see below</nc>);
           </code>
-          <effects>Calls <c>content().clear()</c> if and only if the content container of <c>*this</c> is not be empty. Then makes the bookkeeper object of the store recognize no memory in the buffers of the store are reserved for any text values.</effects>
+          <effects>Calls <c>content().clear()</c> if and only if the content container of <c>*this</c> is not empty. Then makes the bookkeeper object of the store recognize no memory in the buffers of the store are reserved for any text values.</effects>
           <remark>The expression inside <c>noexcept</c> is <c>false</c> if and only if <c>Content::clear</c> with no parameters is not marked as <c>noexcept</c>.</remark>
         </code-item>
       </section>
