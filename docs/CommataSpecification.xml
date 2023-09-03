@@ -3153,7 +3153,7 @@ template &lt;class OtherCh>
   basic_stored_value(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
           </code>
           <effects>Initializes <c>b</c> with <c>other.begin()</c> and <c>e</c> with <c>other.end()</c>.</effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is const-qualified and <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
         </code-item>
 
         <code-item>
@@ -3162,7 +3162,7 @@ template &lt;class OtherCh>
   basic_stored_value&amp; operator=(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
           </code>
           <effects>Assigns <c>b</c> from <c>other.begin()</c> and <c>e</c> from <c>other.end()</c>.</effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is const-qualified and <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
         </code-item>
       </section>
 

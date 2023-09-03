@@ -85,16 +85,14 @@ public:
         class OtherCh,
         // Visual Studio 2019 dislikes "is_const_v && is_same_v" order.
         // I don't know why.
-        std::enable_if_t<std::is_same_v<Ch, const OtherCh>
-                      && std::is_const_v<Ch>>* = nullptr>
+        std::enable_if_t<std::is_same_v<Ch, const OtherCh>>* = nullptr>
     basic_stored_value(const basic_stored_value<OtherCh, Tr>& other)
         noexcept : basic_stored_value(other.begin(), other.end())
     {}
 
     template <
         class OtherCh,
-        std::enable_if_t<std::is_same_v<Ch, const OtherCh>
-                      && std::is_const_v<Ch>>* = nullptr>
+        std::enable_if_t<std::is_same_v<Ch, const OtherCh>>* = nullptr>
     basic_stored_value& operator=(
         const basic_stored_value<OtherCh, Tr>& other) noexcept
     {
