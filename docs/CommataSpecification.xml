@@ -2959,7 +2959,7 @@ namespace commata {
       </codeblock>
 
       <p>The class template <c>basic_stored_value</c> describes an object that references the text value of a text field in a text table (<xref id="definitions.text_table"/>) represented by an object of an instance of <c>basic_stored_table</c> (<xref id="basic_stored_table"/>).</p>
-      <p><c>Ch</c> shall be a possibly const-qualified char-like type. <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
+      <p><c>Ch</c> shall be a possibly const-qualified char-like type. <c>Tr</c> shall be a character traits type for <c>std::remove_const_t&lt;Ch></c>.</p>
       <p>The text value is represented by the range [<c>b</c>, <c>e</c>). <c>*e</c> is always equal to <c>0</c>.
          Programs can read from the range [<c>b</c>, <c>e</c>], and write to the range [<c>b</c>, <c>e</c>) if <c>Ch</c> is not const-qualified.
          To modify the size (that is, <c>e - b</c>), programs can use the store-accessing facilities (<xref id="basic_stored_table.rewrite"/>) of the <c>basic_stored_table</c> object concerned.</p>
