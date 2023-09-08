@@ -486,7 +486,7 @@ TEST_F(TestCsvSource, Swap)
     auto abc = make_csv_source("ABC");
     csv_source xyz(string_input("XYZ"));
 
-    static_assert(noexcept(swap(abc, xyz)));
+    static_assert(std::is_nothrow_swappable_v<decltype(abc)>);
     swap(abc, xyz);
 
     std::vector<std::vector<std::string>> field_values;
