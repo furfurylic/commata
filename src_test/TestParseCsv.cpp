@@ -484,7 +484,7 @@ TEST_F(TestCsvSource, DefaultConstructAndAssign)
 TEST_F(TestCsvSource, Swap)
 {
     auto abc = make_csv_source("ABC");
-    auto xyz = make_csv_source("XYZ");
+    csv_source xyz(string_input("XYZ"));
 
     static_assert(noexcept(swap(abc, xyz)));
     swap(abc, xyz);
