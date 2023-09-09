@@ -6475,7 +6475,7 @@ template &lt;class Allocator, class Container, class... Appendices>
          std::allocator_arg, alloc,
          <n>INSERTER</n>(values), std::forward&lt;Appendices>(appendices)...);</code>
           </effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is either of a default translatable arithmetic type or a default translatable string type, and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is a default translatable string type and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
         </code-item>
       </section>
     </section>
