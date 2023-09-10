@@ -4868,7 +4868,7 @@ template &lt;class HeaderFieldScanner>
           <effects>Constructs an object of <c>basic_table_scanner</c> with an header field scanner object installed.
                    The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
                    The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first form) or a copy of <c>alloc</c> (second form).</effects>
-          <postcondition><c>*this</c> has a header field scanner object whose type is <c>T</c> constructed with <c>std::forward&lt;HeaderFieldScanner>(s)</c> installed, and no body field scanners installed.</postcondition>
+          <postcondition><c>*this</c> has a header field scanner object installed whose type is <c>T</c> and that is constructed with <c>std::forward&lt;HeaderFieldScanner>(s)</c>, and no body field scanners installed.</postcondition>
           <remark>These constructors shall not participate in overload resolution unless <c>std::is_integral_v&lt;T></c> is <c>false</c>.</remark>
         </code-item>
       </section>
