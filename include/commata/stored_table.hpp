@@ -216,7 +216,7 @@ public:
         noexcept
     {
         return std::basic_string_view<std::remove_const_t<Ch>, OtherTr>(
-            cbegin(), size());
+            data(), size());
     }
 
     template <class OtherTr = std::char_traits<std::remove_const_t<Ch>>,

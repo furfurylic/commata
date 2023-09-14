@@ -3298,7 +3298,7 @@ const_pointer data()  const noexcept;
 template &lt;class OtherTr = std::char_traits&lt;std::remove_const_t&lt;Ch>>>
   operator std::basic_string_view&lt;std::remove_const_t&lt;Ch>, OtherTr>() const noexcept;
           </code>
-          <returns><c>std::basic_string_view&lt;std::remove_const_t&lt;Ch>, OtherTr>(cbegin(), size())</c>.</returns>
+          <returns><c>std::basic_string_view&lt;std::remove_const_t&lt;Ch>, OtherTr>(data(), size())</c>.</returns>
         </code-item>
 
         <code-item>
