@@ -2288,12 +2288,9 @@ public:
         }
         assert(current_buffer_holder_);
         current_buffer_ = current_buffer_holder_;
-        // *p = Ch() may be performed where p is the "last" parameter of
-        // "update" and "finalize" functions, so the length of buffers must
-        // be shorter than the actual length by 1
         const auto effective_size = current_buffer_size_ - length;
         assert(effective_size > 1);
-        return std::make_pair(current_buffer_ + length, effective_size - 1);
+        return std::make_pair(current_buffer_ + length, effective_size);
     }
 
 private:

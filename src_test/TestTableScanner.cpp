@@ -728,6 +728,16 @@ struct TestTableScanner : BaseTest
 
 TYPED_TEST_SUITE(TestTableScanner, Chs);
 
+TYPED_TEST(TestTableScanner, BufferSizeEOF)
+{
+    const auto str = char_helper<TypeParam>::str;
+
+    basic_table_scanner<TypeParam> h(0, 10u);
+    std::vector<long> values;
+    h.set_field_scanner(0, make_field_translator(values));
+    parse_csv(str("12\n34\n5678"), std::move(h));
+}
+
 TYPED_TEST(TestTableScanner, Indexed)
 {
     using string_t = std::basic_string<TypeParam>;

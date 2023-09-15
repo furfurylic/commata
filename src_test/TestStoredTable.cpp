@@ -767,6 +767,15 @@ static_assert(std::is_nothrow_move_constructible_v<stored_table>);
 struct TestStoredTable : BaseTest
 {};
 
+TEST_F(TestStoredTable, BufferSizeEOF)
+{
+    stored_table table;
+    parse_csv("12\n34\n5678", make_stored_table_builder(table));
+    ASSERT_EQ("12", table[0][0]);
+    ASSERT_EQ("34", table[1][0]);
+    ASSERT_EQ("5678", table[2][0]);
+}
+
 TEST_F(TestStoredTable, ResizeValue)
 {
     stored_table table;

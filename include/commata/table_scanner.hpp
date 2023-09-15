@@ -551,9 +551,7 @@ public:
             value_.assign(begin_, end_);                // throw
             begin_ = nullptr;
         }
-        return { true_buffer(), static_cast<std::size_t>(buffer_size_ - 1) };
-        // We'd like to push buffer_[buffer_size_] with '\0' on EOF
-        // so we tell the driver that the buffer size is smaller by one
+        return { true_buffer(), buffer_size_ };
     }
 
     void release_buffer(const Ch*)
@@ -637,9 +635,7 @@ public:
 private:
     std::size_t sanitize_buffer_size(std::size_t buffer_size) noexcept
     {
-        return std::max(
-            static_cast<std::size_t>(2U),
-            detail::sanitize_buffer_size(buffer_size, get_allocator()));
+        return detail::sanitize_buffer_size(buffer_size, get_allocator());
     }
 
     template <class T, class... Args>
