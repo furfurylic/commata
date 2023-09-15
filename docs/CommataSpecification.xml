@@ -4814,14 +4814,14 @@ namespace commata {
     using size_type = typename std::allocator_traits&lt;Allocator>::size_type;
 
     <c>// <n><xref id="basic_table_scanner.cons"/>, construction:</n></c>
-    explicit basic_table_scanner(std::size_t header_record_count = 0, size_type buffer_size = 0);
+    explicit basic_table_scanner(std::size_t header_record_count = 0);
     basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-                        std::size_t header_record_count = 0, size_type buffer_size = 0);
+                        std::size_t header_record_count = 0);
     template &lt;class HeaderFieldScanner>
-      explicit basic_table_scanner(HeaderFieldScanner&amp;&amp; s, size_type buffer_size = 0);
+      explicit basic_table_scanner(HeaderFieldScanner&amp;&amp; s);
     template &lt;class HeaderFieldScanner>
       basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-                          HeaderFieldScanner&amp;&amp; s, size_type buffer_size = 0);
+                          HeaderFieldScanner&amp;&amp; s);
     basic_table_scanner(basic_table_scanner&amp;&amp; other) noexcept;
 
    ~basic_table_scanner();
@@ -4845,12 +4845,12 @@ namespace commata {
 
     <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
     // <n>requirements (<xref id="table_handler.requirements"/>):</n></c>
-    [[nodiscard]] std::pair&lt;Ch*, std::size_t> get_buffer();
-    void release_buffer(const Ch* buffer);
-    void start_record(const Ch* record_begin);
-    bool end_record(const Ch* record_end);
-    void update(const Ch* first, const Ch* last);
-    void finalize(const Ch* first, const Ch* last);
+    void start_buffer(Ch* buffer_begin, Ch* buffer_end);
+    void end_buffer(Ch* buffer_end);
+    void start_record(Ch* record_begin);
+    bool end_record(Ch* record_end);
+    void update(Ch* first, Ch* last);
+    void finalize(Ch* first, Ch* last);
 
     <c>// <n><xref id="basic_table_scanner.processing_state"/>, processing state:</n></c>
     bool is_in_header() const noexcept;
@@ -4869,13 +4869,12 @@ namespace commata {
 
         <code-item>
           <code>
-explicit basic_table_scanner(std::size_t header_record_count = 0, size_type buffer_size = 0);
+explicit basic_table_scanner(std::size_t header_record_count = 0);
 basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-                    std::size_t header_record_count = 0, size_type buffer_size = 0);
+                    std::size_t header_record_count = 0);
           </code>
           <effects>Constructs an object of <c>basic_table_scanner</c>.
                    The scanner shall ignore the first <c>header_record_count</c> records as header records.
-                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
                    The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first form) or a copy of <c>alloc</c> (second form).</effects>
           <postcondition><c>*this</c> has neither a header field scanner nor any body field scanners installed.</postcondition>
         </code-item>
@@ -4883,15 +4882,14 @@ basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
         <code-item>
           <code>
 template &lt;class HeaderFieldScanner>
-  explicit basic_table_scanner(HeaderFieldScanner&amp;&amp; s, size_type buffer_size = 0);
+  explicit basic_table_scanner(HeaderFieldScanner&amp;&amp; s);
 template &lt;class HeaderFieldScanner>
   basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
-                      HeaderFieldScanner&amp;&amp; s, size_type buffer_size = 0);
+                      HeaderFieldScanner&amp;&amp; s);
           </code>
           <preface>Let <c>T</c> be <c>std::decay_t&lt;HeaderFieldScanner></c>.</preface>
           <requires><c>T</c> shall meet the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>basic_table_scanner&lt;Ch, Tr, Allocator></c>.</requires>
           <effects>Constructs an object of <c>basic_table_scanner</c> with an header field scanner object installed.
-                   The length of the buffer allocated by <c>get_buffer</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.
                    The scanner shall allocate and deallocate memory with a default constructed <c>Allocator</c> object (first form) or a copy of <c>alloc</c> (second form).</effects>
           <postcondition><c>*this</c> has a header field scanner object installed whose type is <c>T</c> and that is constructed with <c>std::forward&lt;HeaderFieldScanner>(s)</c>, and no body field scanners installed.</postcondition>
           <remark>These constructors shall not participate in overload resolution unless <c>std::is_integral_v&lt;T></c> is <c>false</c>.</remark>

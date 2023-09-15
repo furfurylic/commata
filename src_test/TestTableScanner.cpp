@@ -732,10 +732,10 @@ TYPED_TEST(TestTableScanner, BufferSizeEOF)
 {
     const auto str = char_helper<TypeParam>::str;
 
-    basic_table_scanner<TypeParam> h(0, 10u);
+    basic_table_scanner<TypeParam> h(0);
     std::vector<long> values;
     h.set_field_scanner(0, make_field_translator(values));
-    parse_csv(str("12\n34\n5678"), std::move(h));
+    parse_csv(str("12\n34\n5678"), std::move(h), 10u);
 }
 
 TYPED_TEST(TestTableScanner, Indexed)
@@ -1115,27 +1115,27 @@ public:
         s_(std::move(s))
     {}
 
-    [[nodiscard]] std::pair<Ch*, std::size_t> get_buffer()
+    void start_buffer(Ch* b, Ch* e)
     {
-        return s_.get_buffer();
+        return s_.start_buffer(b, e);
     }
 
-    void release_buffer(const Ch* buffer)
+    void end_buffer(Ch* m)
     {
-        s_.release_buffer(buffer);
+        s_.end_buffer(m);
     }
 
-    void start_record(const Ch* record_begin)
+    void start_record(Ch* record_begin)
     {
         s_.start_record(record_begin);
     }
 
-    void end_record(const Ch* record_end)
+    void end_record(Ch* record_end)
     {
         s_.end_record(record_end);
     }
 
-    void update(const Ch* first, const Ch* last)
+    void update(Ch* first, Ch* last)
     {
         if (s_.is_in_header()) {
             to_upper(first, last);
@@ -1143,7 +1143,7 @@ public:
         s_.update(first, last);
     }
 
-    void finalize(const Ch* first, const Ch* last)
+    void finalize(Ch* first, Ch* last)
     {
         if (s_.is_in_header()) {
             to_upper(first, last);
@@ -1152,14 +1152,14 @@ public:
     }
 
 private:
-    void to_upper(const Ch* first, const Ch* last) const;
+    void to_upper(Ch* first, Ch* last) const;
 };
 
 template <>
 void basic_table_scanner_wrapper<char>::
-to_upper(const char* first, const char* last) const
+to_upper(char* first, char* last) const
 {
-    std::transform(first, last, const_cast<char*>(first), [](auto c) {
+    std::transform(first, last, first, [](auto c) {
         return static_cast<char>(
             std::toupper(static_cast<int>(c)));
     });
@@ -1167,9 +1167,9 @@ to_upper(const char* first, const char* last) const
 
 template <>
 void basic_table_scanner_wrapper<wchar_t>::
-to_upper(const wchar_t* first, const wchar_t* last) const
+to_upper(wchar_t* first, wchar_t* last) const
 {
-    std::transform(first, last, const_cast<wchar_t*>(first), [](auto c) {
+    std::transform(first, last, first, [](auto c) {
         return static_cast<wchar_t>(
             std::towupper(static_cast<std::wint_t>(c)));
     });
@@ -1230,7 +1230,7 @@ TYPED_TEST(TestTableScanner, BufferSize)
     std::vector<int> values1;
 
     for (std::size_t buffer_size : { 2U, 3U, 4U, 7U  }) {
-        basic_table_scanner<TypeParam> h(0U, buffer_size);
+        basic_table_scanner<TypeParam> h(0U);
         h.set_field_scanner(0, make_field_translator(values0));
         h.set_field_scanner(1, make_field_translator(values1));
 
@@ -1241,7 +1241,7 @@ TYPED_TEST(TestTableScanner, BufferSize)
         }
 
         try {
-            parse_csv(&buf, std::move(h));
+            parse_csv(&buf, std::move(h), buffer_size);
         } catch (const text_error& e) {
             FAIL() << text_error_info(e) << "\nbuffer_size=" << buffer_size;
         }
@@ -1276,7 +1276,7 @@ TYPED_TEST(TestTableScanner, Allocators)
     Alloc a2(allocated2, total2);
 
     basic_table_scanner<TypeParam, Tr, Alloc> scanner(
-        std::allocator_arg, a0, 0U, 20U);   // make underflow happen
+        std::allocator_arg, a0, 0U);
 
     // The same allocator as the scanner
     std::vector<String> v0;
@@ -1304,13 +1304,10 @@ TYPED_TEST(TestTableScanner, Allocators)
             str("ABCDEFGHIJKLMNOPQRSTUVWXYZ,"
                 "abcdefghijklmnopqrstuvwxyz,"
                 "12345678901234567890123456");
-        parse_csv(s, std::move(scanner));
+        parse_csv(s, std::move(scanner), 20);   // make underflow happen
     } catch (const text_error& e) {
         FAIL() << text_error_info(e);
     }
-
-    ASSERT_GT(a0.total(), (80U + 26U) * sizeof(TypeParam));
-        // at least allocated all buffers and v0[0]
 
     ASSERT_EQ(a0, v0[0].get_allocator());
     ASSERT_TRUE(a0.tracks(&v0[0][0]));
@@ -1360,32 +1357,6 @@ check_scanner<Ch, F> make_check_scanner(F f)
     return check_scanner<Ch, F>(f);
 }
 
-}
-
-TYPED_TEST(TestTableScanner, Fancy)
-{
-    const auto str = char_helper<TypeParam>::str;
-
-    std::vector<std::pair<char*, char*>> allocated;
-    tracking_allocator<fancy_allocator<TypeParam>> a(allocated);
-
-    auto f = [&a](TypeParam* p) {
-        if (!a.tracks(p)) {
-            throw text_error("Not tracked");
-        }
-    };
-
-    basic_table_scanner<TypeParam, std::char_traits<TypeParam>, decltype(a)>
-        scanner(std::allocator_arg, a);
-    auto g = make_check_scanner<TypeParam>(f);
-    auto h = [] {};
-    scanner.set_field_scanner(0, std::move(g));
-    scanner.set_record_end_scanner(std::move(h));
-    ASSERT_TRUE(a.tracks(scanner.template get_field_scanner<decltype(g)>(0)));
-    ASSERT_TRUE(a.tracks_relax(scanner.template
-        get_record_end_scanner<decltype(h)>()));
-
-    ASSERT_NO_THROW(parse_csv(str("abc"), std::move(scanner)));
 }
 
 namespace {

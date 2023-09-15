@@ -275,10 +275,9 @@ class basic_table_scanner
     using res_at_t = typename at_t::template rebind_traits<record_end_scanner>;
 
     std::size_t j_ = 0;
-    std::size_t buffer_size_;
-    typename at_t::pointer buffer_;
-    const Ch* begin_;
-    const Ch* end_;
+    Ch* buffer_;
+    Ch* begin_;
+    Ch* end_;
     string_t value_;
     typename hfs_at_t::pointer header_field_scanner_;
     std::vector<bfs_ptr_p_t, scanners_a_t> scanners_;
@@ -293,28 +292,23 @@ public:
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits<Allocator>::size_type;
 
-    explicit basic_table_scanner(
-        std::size_t header_record_count = 0U,
-        size_type buffer_size = 0U) :
+    explicit basic_table_scanner(std::size_t header_record_count = 0U) :
         basic_table_scanner(std::allocator_arg, Allocator(),
-            header_record_count, buffer_size)
+            header_record_count)
     {}
 
     template <class HeaderFieldScanner,
         std::enable_if_t<!std::is_integral_v<HeaderFieldScanner>>* = nullptr>
-    explicit basic_table_scanner(
-        HeaderFieldScanner&& s,
-        size_type buffer_size = 0U) :
+    explicit basic_table_scanner(HeaderFieldScanner&& s) :
         basic_table_scanner(
             std::allocator_arg, Allocator(),
-            std::forward<HeaderFieldScanner>(s), buffer_size)
+            std::forward<HeaderFieldScanner>(s))
     {}
 
     basic_table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
-        std::size_t header_record_count = 0U,
-        size_type buffer_size = 0U) :
-        buffer_size_(sanitize_buffer_size(buffer_size)), buffer_(),
+        std::size_t header_record_count = 0U) :
+        buffer_(),
         begin_(nullptr), value_(alloc),
         header_field_scanner_(
             (header_record_count > 0) ?
@@ -331,10 +325,7 @@ public:
         std::enable_if_t<
             !std::is_integral_v<std::decay_t<HeaderFieldScanner>>>* = nullptr>
     basic_table_scanner(
-        std::allocator_arg_t, const Allocator& alloc,
-        HeaderFieldScanner&& s,
-        size_type buffer_size = 0U) :
-        buffer_size_(sanitize_buffer_size(buffer_size)),
+        std::allocator_arg_t, const Allocator& alloc, HeaderFieldScanner&& s) :
         buffer_(), begin_(nullptr), value_(alloc),
         header_field_scanner_(allocate_construct<
             typed_header_field_scanner<std::decay_t<HeaderFieldScanner>>>(
@@ -343,8 +334,7 @@ public:
     {}
 
     basic_table_scanner(basic_table_scanner&& other) noexcept :
-        buffer_size_(other.buffer_size_),
-        buffer_(std::exchange(other.buffer_, nullptr)),
+        buffer_(other.buffer_),
         begin_(other.begin_), end_(other.end_),
         value_(std::move(other.value_)),
         header_field_scanner_(std::exchange(other.header_field_scanner_,
@@ -356,9 +346,6 @@ public:
     ~basic_table_scanner()
     {
         auto a = get_allocator();
-        if (buffer_) {
-            at_t::deallocate(a, buffer_, buffer_size_);
-        }
         if (header_field_scanner_) {
             destroy_deallocate(header_field_scanner_);
         }
@@ -542,28 +529,26 @@ private:
     }
 
 public:
-    [[nodiscard]] std::pair<Ch*, std::size_t> get_buffer()
+    void start_buffer(Ch* begin, Ch*)
     {
-        if (!buffer_) {
-            auto a = get_allocator();
-            buffer_ = at_t::allocate(a, buffer_size_);  // throw
-        } else if (begin_) {
+        buffer_ = begin;
+    }
+
+    void end_buffer(Ch*)
+    {
+        if (begin_) {
             value_.assign(begin_, end_);                // throw
             begin_ = nullptr;
         }
-        return { true_buffer(), buffer_size_ };
     }
 
-    void release_buffer(const Ch*)
-    {}
-
-    void start_record(const Ch* /*record_begin*/)
+    void start_record(Ch* /*record_begin*/)
     {
         sj_ = 0;
         j_ = 0;
     }
 
-    void update(const Ch* first, const Ch* last)
+    void update(Ch* first, Ch* last)
     {
         if (get_scanner().first) {
             if (begin_) {
@@ -581,7 +566,7 @@ public:
         }
     }
 
-    void finalize(const Ch* first, const Ch* last)
+    void finalize(Ch* first, Ch* last)
     {
         if (const auto scanner = get_scanner(); scanner.first) {
             if (begin_) {
@@ -593,8 +578,8 @@ public:
                     scanner.first->field_value(std::move(value_), *this);
                     value_.clear();
                 } else {
-                    *uc(end_) = Ch();
-                    scanner.first->field_value(uc(begin_), uc(end_), *this);
+                    *end_ = Ch();
+                    scanner.first->field_value(begin_, end_, *this);
                 }
                 begin_ = nullptr;
             } else if (!value_.empty()) {
@@ -602,8 +587,8 @@ public:
                 scanner.first->field_value(std::move(value_), *this);
                 value_.clear();
             } else {
-                *uc(last) = Ch();
-                scanner.first->field_value(uc(first), uc(last), *this);
+                *last = Ch();
+                scanner.first->field_value(first, last, *this);
             }
             if (scanner.second) {
                 ++sj_;
@@ -612,7 +597,7 @@ public:
         ++j_;
     }
 
-    bool end_record(const Ch* /*record_end*/)
+    bool end_record(Ch* /*record_end*/)
     {
         if (header_field_scanner_) {
             header_field_scanner_->so_much_for_header(*this);
@@ -633,11 +618,6 @@ public:
     }
 
 private:
-    std::size_t sanitize_buffer_size(std::size_t buffer_size) noexcept
-    {
-        return detail::sanitize_buffer_size(buffer_size, get_allocator());
-    }
-
     template <class T, class... Args>
     [[nodiscard]] auto allocate_construct(Args&&... args)
     {
@@ -666,12 +646,6 @@ private:
         t_at_t::deallocate(a, p, 1);
     }
 
-    Ch* true_buffer() const noexcept
-    {
-        assert(buffer_);
-        return std::addressof(*buffer_);
-    }
-
     std::pair<field_scanner*, bool> get_scanner()
     {
         if (header_field_scanner_) {
@@ -681,12 +655,6 @@ private:
         } else {
             return { nullptr, false };
         }
-    }
-
-    Ch* uc(const Ch* s) const
-    {
-        const auto tb = true_buffer();
-        return tb + (s - tb);
     }
 
     void remove_header_field_scanner(bool at_record_end)
