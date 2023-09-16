@@ -100,7 +100,7 @@ public:
         return handler_;
     }
 
-    auto empty_physical_line(const char_type* where)
+    auto empty_physical_line(char_type* where)
         noexcept(noexcept(std::declval<empty_physical_line_aware_handler&>().
                             start_record(where))
               && noexcept(std::declval<empty_physical_line_aware_handler&>().

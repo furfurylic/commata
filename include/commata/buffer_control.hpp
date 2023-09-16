@@ -81,7 +81,7 @@ struct thru_buffer_control
 
     template <class Handler>
     void do_release_buffer(
-        const typename Handler::char_type* buffer, Handler* f)
+        typename Handler::char_type* buffer, Handler* f)
     {
         return f->release_buffer(buffer);
     }
@@ -135,48 +135,48 @@ public:
         return this->do_get_buffer(std::addressof(handler_));
     }
 
-    void release_buffer(const char_type* buffer)
+    void release_buffer(char_type* buffer)
     {
         this->do_release_buffer(buffer, std::addressof(handler_));
     }
 
     void start_buffer(
-        [[maybe_unused]] const char_type* buffer_begin,
-        [[maybe_unused]] const char_type* buffer_end)
+        [[maybe_unused]] char_type* buffer_begin,
+        [[maybe_unused]] char_type* buffer_end)
     {
         if constexpr (has_start_buffer_v<Handler>) {
             handler_.start_buffer(buffer_begin, buffer_end);
         }
     }
 
-    void end_buffer([[maybe_unused]] const char_type* buffer_end)
+    void end_buffer([[maybe_unused]] char_type* buffer_end)
     {
         if constexpr (has_end_buffer_v<Handler>) {
             handler_.end_buffer(buffer_end);
         }
     }
 
-    auto start_record(const char_type* record_begin)
+    auto start_record(char_type* record_begin)
     {
         return handler_.start_record(record_begin);
     }
 
-    auto update(const char_type* first, const char_type* last)
+    auto update(char_type* first, char_type* last)
     {
         return handler_.update(first, last);
     }
 
-    auto finalize(const char_type* first, const char_type* last)
+    auto finalize(char_type* first, char_type* last)
     {
         return handler_.finalize(first, last);
     }
 
-    auto end_record(const char_type* end)
+    auto end_record(char_type* end)
     {
         return handler_.end_record(end);
     }
 
-    auto empty_physical_line([[maybe_unused]] const char_type* where)
+    auto empty_physical_line([[maybe_unused]] char_type* where)
     {
         if constexpr (has_empty_physical_line_v<Handler>) {
             return handler_.empty_physical_line(where);

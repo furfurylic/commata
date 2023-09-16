@@ -124,7 +124,7 @@
       </ul>
 
       <p>In <xref id="table.table_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>.
-         <c>b</c>, <c>bb</c>, <c>be</c>, <c>bm</c>, <c>w</c>, <c>rb</c>, <c>re</c>, <c>f</c> and <c>l</c> are rvalues of <c>const Ch*</c>.
+         <c>b</c>, <c>bb</c>, <c>be</c>, <c>bm</c>, <c>w</c>, <c>rb</c>, <c>re</c>, <c>f</c> and <c>l</c> are rvalues of <c>Ch*</c>.
          <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
 
       <p>A requirement is optional if the last column of <xref id="table.table_handler.requirements"/> specifies a default.</p>
@@ -263,7 +263,7 @@
                 <li><c>bb</c> and <c>be</c> be the arguments of the latest call of (4) in order.</li>
               </ul>
               <p>Then the pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
-              <p>After the call, the parser shall not dereference the range [<c>bb</c>, <c>l</c>) before the next call of (5). Therefore, if the table handler can reach the range as non-const, it may freely modify the elements in the range.</p>
+              <p>After the call, the parser shall not dereference the range [<c>bb</c>, <c>l</c>) before the next call of (5). Therefore, the table handler may freely modify the elements in the range.</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -282,7 +282,7 @@
                 <li><c>bb</c> and <c>be</c> be the arguments of the latest call of (4) in order.</li>
               </ul>
               <p>Then the pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
-              <p>After the call, the parser shall not dereference the range [<c>bb</c>, <c>l</c>] before the next call of (5). Therefore, if the table handler can reach the range as non-const, it may freely modify the element in the range.</p>
+              <p>After the call, the parser shall not dereference the range [<c>bb</c>, <c>l</c>] before the next call of (5). Therefore, the table handler may freely modify the element in the range.</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -293,7 +293,7 @@
           <td>A type contextually convertible to <c>bool</c></td>
           <td><p>Called when the parser reaches an execution point where the parser can suspend the execution and return the control to its caller.
                  The parser shall call this also just after calling (5).</p>
-              <p><c>p</c> is a number that can identificate the execution point where the call of this function occurred.
+              <p><c>p</c> is an rvalue whose type is <c>std::size_t</c> and whose value is a number that can identificate the execution point where the call of this function occurred.
                  Its value shall not be equal to <c>0</c>.
                  Its value of <c>-1</c> shall mean that the parser is about to complete the execution.</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is not <c>false</c>, the parser shall suspend the execution and return the control to its caller.</p></td>
@@ -740,19 +740,19 @@ namespace commata {
     handler_type&amp; base() const noexcept;
 
     <c>// <n><xref id="reference_handler.inv"/>, invocation:</n></c>
-    <nc>see below</nc> get_buffer()                                            noexcept(<nc>see below</nc>);
-    <nc>see below</nc> release_buffer(const char_type* buffer)                 noexcept(<nc>see below</nc>);
-    <nc>see below</nc> start_buffer(const char_type* buffer_begin,
-                           const char_type* buffer_end)               noexcept(<nc>see below</nc>);
-    <nc>see below</nc> end_buffer(const char_type* buffer_end)                 noexcept(<nc>see below</nc>);
-    <nc>see below</nc> empty_physical_line(const char_type* where)             noexcept(<nc>see below</nc>);
-    <nc>see below</nc> start_record(const char_type* record_begin)             noexcept(<nc>see below</nc>);
-    <nc>see below</nc> end_record(const char_type* record_end)                 noexcept(<nc>see below</nc>);
-    <nc>see below</nc> update(const char_type* first, const char_type* last)   noexcept(<nc>see below</nc>);
-    <nc>see below</nc> finalize(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
-    <nc>see below</nc> yield(std::size_t p)                                    noexcept(<nc>see below</nc>);
-    <nc>see below</nc> yield_location() const                                  noexcept(<nc>see below</nc>);
-    <nc>see below</nc> handle_exception()                                      noexcept(<nc>see below</nc>);
+    <nc>see below</nc> get_buffer()                                noexcept(<nc>see below</nc>);
+    <nc>see below</nc> release_buffer(char_type* buffer)           noexcept(<nc>see below</nc>);
+    <nc>see below</nc> start_buffer(char_type* buffer_begin,
+                           char_type* buffer_end)         noexcept(<nc>see below</nc>);
+    <nc>see below</nc> end_buffer(char_type* buffer_end)           noexcept(<nc>see below</nc>);
+    <nc>see below</nc> empty_physical_line(char_type* where)       noexcept(<nc>see below</nc>);
+    <nc>see below</nc> start_record(char_type* record_begin)       noexcept(<nc>see below</nc>);
+    <nc>see below</nc> end_record(char_type* record_end)           noexcept(<nc>see below</nc>);
+    <nc>see below</nc> update(char_type* first, char_type* last)   noexcept(<nc>see below</nc>);
+    <nc>see below</nc> finalize(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
+    <nc>see below</nc> yield(std::size_t p)                        noexcept(<nc>see below</nc>);
+    <nc>see below</nc> yield_location() const                      noexcept(<nc>see below</nc>);
+    <nc>see below</nc> handle_exception()                          noexcept(<nc>see below</nc>);
   };
 
   <c>// <n><xref id="reference_handler.creation"/>, creation functions:</n></c>
@@ -820,7 +820,7 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> release_buffer(const char_type* buffer) noexcept(<nc>see below</nc>);
+<nc>see below</nc> release_buffer(char_type* buffer) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().release_buffer(buffer);</c></effects>
           <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().release_buffer(buffer)</c> is well-formed when treated as an unevaluated operand.
@@ -829,8 +829,8 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> start_buffer(const char_type* buffer_begin,
-                       const char_type* buffer_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> start_buffer(char_type* buffer_begin,
+                       char_type* buffer_end) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
           <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.
@@ -839,7 +839,7 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> end_buffer(const char_type* buffer_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> end_buffer(char_type* buffer_end) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
           <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.
@@ -848,7 +848,7 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> empty_physical_line(const char_type* where) noexcept(<nc>see below</nc>);
+<nc>see below</nc> empty_physical_line(char_type* where) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return empty_physical_line(where);</c></effects>
           <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().empty_physical_line(where)</c> is well-formed when treated as an unevaluated operand.
@@ -857,7 +857,7 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> start_record(const char_type* record_begin) noexcept(<nc>see below</nc>);
+<nc>see below</nc> start_record(char_type* record_begin) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_record(record_begin))</c>.</remark>
@@ -865,7 +865,7 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> end_record(const char_type* record_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> end_record(char_type* record_end) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().end_record(record_end))</c>.</remark>
@@ -873,7 +873,7 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> update(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
+<nc>see below</nc> update(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().update(first, last))</c>.</remark>
@@ -881,7 +881,7 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> finalize(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
+<nc>see below</nc> finalize(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().finalize(first, last))</c>.</remark>
@@ -973,19 +973,19 @@ namespace commata {
           handler_type&amp; base()       noexcept;
 
     <c>// <n><xref id="empty_physical_line_aware_handler.inv"/>, invocation:</n></c>
-    <nc>see below</nc> get_buffer()                                            noexcept(<nc>see below</nc>);
-    <nc>see below</nc> release_buffer(const char_type* buffer)                 noexcept(<nc>see below</nc>);
-    <nc>see below</nc> start_buffer(const char_type* buffer_begin,
-                           const char_type* buffer_end)               noexcept(<nc>see below</nc>);
-    <nc>see below</nc> end_buffer(const char_type* buffer_end)                 noexcept(<nc>see below</nc>);
-    <nc>see below</nc> empty_physical_line(const char_type* where)             noexcept(<nc>see below</nc>);
-    <nc>see below</nc> start_record(const char_type* record_begin)             noexcept(<nc>see below</nc>);
-    <nc>see below</nc> end_record(const char_type* record_end)                 noexcept(<nc>see below</nc>);
-    <nc>see below</nc> update(const char_type* first, const char_type* last)   noexcept(<nc>see below</nc>);
-    <nc>see below</nc> finalize(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
-    <nc>see below</nc> yield(std::size_t p)                                    noexcept(<nc>see below</nc>);
-    <nc>see below</nc> yield_location() const                                  noexcept(<nc>see below</nc>);
-    <nc>see below</nc> handle_exception()                                      noexcept(<nc>see below</nc>);
+    <nc>see below</nc> get_buffer()                                noexcept(<nc>see below</nc>);
+    <nc>see below</nc> release_buffer(char_type* buffer)           noexcept(<nc>see below</nc>);
+    <nc>see below</nc> start_buffer(char_type* buffer_begin,
+                           char_type* buffer_end)         noexcept(<nc>see below</nc>);
+    <nc>see below</nc> end_buffer(char_type* buffer_end)           noexcept(<nc>see below</nc>);
+    <nc>see below</nc> empty_physical_line(char_type* where)       noexcept(<nc>see below</nc>);
+    <nc>see below</nc> start_record(char_type* record_begin)       noexcept(<nc>see below</nc>);
+    <nc>see below</nc> end_record(char_type* record_end)           noexcept(<nc>see below</nc>);
+    <nc>see below</nc> update(char_type* first, char_type* last)   noexcept(<nc>see below</nc>);
+    <nc>see below</nc> finalize(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
+    <nc>see below</nc> yield(std::size_t p)                        noexcept(<nc>see below</nc>);
+    <nc>see below</nc> yield_location() const                      noexcept(<nc>see below</nc>);
+    <nc>see below</nc> handle_exception()                          noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="empty_physical_line_aware_handler.modifiers"/>, modifiers:</n></c>
     void swap(empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
@@ -1106,7 +1106,7 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> release_buffer(const char_type* buffer) noexcept(<nc>see below</nc>);
+<nc>see below</nc> release_buffer(char_type* buffer) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().release_buffer(buffer);</c></effects>
           <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().release_buffer(buffer)</c> is well-formed when treated as an unevaluated operand.
@@ -1115,8 +1115,8 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> start_buffer(const char_type* buffer_begin,
-                       const char_type* buffer_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> start_buffer(char_type* buffer_begin,
+                       char_type* buffer_end) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
           <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.
@@ -1125,7 +1125,7 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> end_buffer(const char_type* buffer_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> end_buffer(char_type* buffer_end) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
           <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.
@@ -1134,7 +1134,7 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> empty_physical_line(const char_type* where) noexcept(<nc>see below</nc>);
+<nc>see below</nc> empty_physical_line(char_type* where) noexcept(<nc>see below</nc>);
           </code>
           <effects>First calls <c>base().start_record(where)</c>, and unless the return type is contextually convertible to <c>bool</c> and the contextually converted value of the return value to <c>bool</c> is <c>false</c>, next calls <c>base().end_record(where)</c>.</effects>
           <returns>If both of the return types of <c>base().start_record(where)</c> and <c>base().end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>.
@@ -1144,7 +1144,7 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> start_record(const char_type* record_begin) noexcept(<nc>see below</nc>);
+<nc>see below</nc> start_record(char_type* record_begin) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_record(record_begin))</c>.</remark>
@@ -1152,7 +1152,7 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> end_record(const char_type* record_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> end_record(char_type* record_end) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().end_record(record_end))</c>.</remark>
@@ -1160,7 +1160,7 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> update(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
+<nc>see below</nc> update(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().update(first, last))</c>.</remark>
@@ -1168,7 +1168,7 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> finalize(const char_type* first, const char_type* last) noexcept(<nc>see below</nc>);
+<nc>see below</nc> finalize(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().finalize(first, last))</c>.</remark>

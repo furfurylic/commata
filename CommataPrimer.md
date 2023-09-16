@@ -579,18 +579,18 @@ public:
     records_(&records)
   {}
 
-  void start_record(const char*)
+  void start_record(char*)
   {
     records_->emplace_back();
   }
 
-  void update(const char* first, const char* last)
+  void update(char* first, char* last)
   {
     // Append [first, last) to the current field value
     current_value_.append(first, last);
   }
 
-  void finalize(const char* first, const char* last)
+  void finalize(char* first, char* last)
   {
     // Append [first, last) to the current field value
     // as the final chunk of the value
@@ -599,7 +599,7 @@ public:
     current_value_.clear();
   }
 
-  void end_record(const char*)
+  void end_record(char*)
   {}
 };
 

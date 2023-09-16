@@ -53,7 +53,7 @@ template <>
 struct parse_step<state::after_comma>
 {
     template <class Parser>
-    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::char_type* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::comma_c:
@@ -98,8 +98,8 @@ template <>
 struct parse_step<state::in_value>
 {
     template <class Parser>
-    void normal(Parser& parser, const typename Parser::char_type*& p,
-        const typename Parser::char_type* pe) const
+    void normal(Parser& parser, typename Parser::char_type*& p,
+        typename Parser::char_type* pe) const
     {
         while (p < pe) {
             switch (*p) {
@@ -146,7 +146,7 @@ template <>
 struct parse_step<state::right_of_open_quote>
 {
     template <class Parser>
-    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::char_type* p, ...) const
     {
         parser.set_first_last();
         if (*p == key_chars<typename Parser::char_type>::dquote_c) {
@@ -172,8 +172,8 @@ template <>
 struct parse_step<state::in_quoted_value>
 {
     template <class Parser>
-    void normal(Parser& parser, const typename Parser::char_type*& p,
-        const typename Parser::char_type* pe) const
+    void normal(Parser& parser, typename Parser::char_type*& p,
+        typename Parser::char_type* pe) const
     {
         while (p < pe) {
             if (*p == key_chars<typename Parser::char_type>::dquote_c) {
@@ -206,7 +206,7 @@ template <>
 struct parse_step<state::in_quoted_value_after_quote>
 {
     template <class Parser>
-    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::char_type* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::comma_c:
@@ -249,7 +249,7 @@ template <>
 struct parse_step<state::after_cr>
 {
     template <class Parser>
-    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::char_type* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::comma_c:
@@ -292,7 +292,7 @@ template <>
 struct parse_step<state::after_lf>
 {
     template <class Parser>
-    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::char_type* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::comma_c:
@@ -347,15 +347,15 @@ class parser
 
 private:
     // Reading position
-    const char_type* p_;
+    char_type* p_;
     Handler f_;
 
     // [first, last) is the current field value
-    const char_type* first_;
-    const char_type* last_;
+    char_type* first_;
+    char_type* last_;
 
     std::size_t physical_line_index_;
-    const char_type* physical_line_or_buffer_begin_;
+    char_type* physical_line_or_buffer_begin_;
     // Number of chars of this line before physical_line_or_buffer_begin_
     std::size_t physical_line_chars_passed_away_;
 
