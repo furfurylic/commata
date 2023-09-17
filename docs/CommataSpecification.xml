@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-09-15 (UTC)</signature>
+<signature>2023-09-19 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -123,7 +123,9 @@
         <li>moved-to objects of <c>T</c> takes over the states of moved-from objects in terms of <xref id="table.table_handler.requirements"/>.</li>
       </ul>
 
-      <p>In <xref id="table.table_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>. <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
+      <p>In <xref id="table.table_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>.
+         <c>b</c>, <c>bb</c>, <c>be</c>, <c>bm</c>, <c>w</c>, <c>rb</c>, <c>re</c>, <c>f</c> and <c>l</c> are rvalues of <c>const Ch*</c>.
+         <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
 
       <p>A requirement is optional if the last column of <xref id="table.table_handler.requirements"/> specifies a default.</p>
       <p>If (2) in <xref id="table.table_handler.requirements"/> is satisfied without falling back on the default, then also (3) shall be so. Likewise, if (3) is satisfied without falling back on the default, then also (2) shall be so.
@@ -167,8 +169,8 @@
           <td><c>t.release_buffer(b)</c></td>
           <td>(Not used)</td>
           <td><p>Called when the parser unhold the buffer acquired by the latest call of (2).</p>
-              <p><c>b</c> is identical to <c>gb.first</c> where <c>gb</c> is return value of the latest call of (2).</p>
-              <p>This function shall not exit via an exception.</p></td>
+              <p><c>b</c> is <c>gb.first</c> where <c>gb</c> is return value of the latest call of (2).</p>
+              <p>Calling of this shall not exit via an exception.</p></td>
            <td>Stores <c>b</c> into a pool.</td>
         </tr>
 
@@ -178,7 +180,7 @@
           <td>(Not used)</td>
           <td><p>Called when the parser starts using its buffer.
                  Calling of this shall occur after a call of (2) and before its corresponding call of (3).</p>
-              <p><c>bb</c> is a pointer to const-qualified <c>*gb.first</c> and <c>be</c> is of const-qualified <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest call of (2).</p>
+              <p><c>bb</c> points <c>*gb.first</c>. <c>be</c> is <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest call of (2).</p>
               <p>Just after a call of this, the parser shall make an intact copy of a sequence of char-like objects retrieved from its input into the range [<c>bb</c>, <c>bm</c>) where <c>bm</c> is a pointer that resides in [<c>bb</c>, <c>be</c>] and reported with (5) later.
                  After a call of this and before the corresponding call of (5), the parser shall report (possibly past-the-end) pointers on this copy.</p></td>
           <td>Does nothing.</td>
@@ -190,7 +192,8 @@
           <td>(Not used) </td>
           <td><p>Called when the parser finishes using its buffer.
                  Calling of this shall occur after a call of (2) and before its corresponding call of (3).</p>
-              <p><c>bm</c> is the past-the-end pointer of the range in the buffer actually used and resides in [<c>bb</c>, <c>be</c>] where <c>bb</c> and <c>be</c> are the arguments of the latest call of (4).</p></td>
+              <p><c>bm</c> is an rvalue of <c>const Ch*</c>.</p>
+              <p><c>bm</c> points the one past the last element of the range in the buffer actually used, and resides in [<c>bb</c>, <c>be</c>] where <c>bb</c> and <c>be</c> are the arguments of the latest call of (4) in order.</p></td>
           <td>Does nothing.</td>
         </tr>
 
@@ -201,7 +204,13 @@
           <td><p>Called when the parser finds an empty line outside any record.
                  Calling of this shall occur after a call of (4) and before its corresponding call of (5)
                  and shall not occur between a call of (7) and its corresponding call of (8).</p>
-              <p><c>w</c> points the last line break character and resides in [<c>bb</c>, <c>gb.first + gb.second</c>) where <c>bb</c> is the argument of the latest call of (4) and gb is the return value of the latest call of (2).</p>
+              <p><c>w</c> points to the last line break character.</p>
+              <p>Here let:</p>
+              <ul>
+                <li><c>gb</c> be the return value of the latest call of (2), and</li>
+                <li><c>bb</c> be the first argument of the latest call of (4).</li>
+              </ul>
+              <p>Then the pointee of <c>w</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td>Does nothing.</td>
         </tr>
@@ -212,8 +221,13 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Called when the parser begins to process a record.
                  Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
-              <p><c>rb</c> is a pointer to the const-qualified first character of the record, not of the text value of the first field of the record. To be specific, if the text table follows the CSV text model (<xref id="definitions.csv_text"/>) and the first field of the records is quoted, <c>*rb</c> shall be a double quote.</p>
-              <p><c>rb</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>) where <c>bb</c> is the argument of the latest call of (4) and gb is the return value of the latest call of (2).</p>
+              <p><c>rb</c> points the first character of the record, not of the text value of the first field of the record. To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the first field of the records is quoted, <c>*rb</c> shall be a double quote.</p>
+              <p>Here let:</p>
+              <ul>
+                <li><c>gb</c> be the return value of the latest call of (2), and</li>
+                <li><c>bb</c> be the first argument of the latest call of (4).</li>
+              </ul>
+              <p>Then the pointee of <c>rb</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -224,9 +238,13 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Called when the parser finishes processing a record.
                  Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
-              <p><c>re</c> is the past-the-end pointer of the const-qualified characters that forms the record, not of the text value of the final field of the record. To be specific, if the text table follows the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</p>
-              <p><c>re</c> resides in [<c>vb</c>, <c>be</c>] where vb is an argument of the latest call of (4) (first argument), (7) (first argument), (9) (second argument) or (10) (second argument), and
-                 <c>be</c> is the second argument of the latest call of (4).</p>
+              <p><c>re</c> points one past the last element of the characters that forms the record, not of the text value of the final field of the record. To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</p>
+              <p>Here let:</p>
+              <ul>
+                <li><c>vb</c> be the argument of the latest call of (4) (first argument), (7), (9) (second argument) or (10) (second argument), and</li>
+                <li><c>be</c> be the second argument of the latest call of (4).</li>
+              </ul>
+              <p>Then the pointee of <c>re</c> resides in [<c>vb</c>, <c>be</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -239,9 +257,13 @@
                  Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
               <p>The range [<c>f</c>, <c>l</c>) shall not be empty.
                  The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).</p>
-              <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>), and <c>l</c> is a pointer whose pointee is const-qualified and resides in [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
-                 (4) (first argument), (7) (first argument), this (second argument) or (10) (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
-              <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the table handler can reach the range as non-const, it may modify the elements in the range.</p>
+              <p>Here let:</p>
+              <ul>
+                <li><c>vb</c> be the argument of the latest call of (4) (first argument), (7), this (second argument) or (10) (second argument), and</li>
+                <li><c>bb</c> and <c>be</c> be the arguments of the latest call of (4) in order.</li>
+              </ul>
+              <p>Then the pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
+              <p>After the call, the parser shall not dereference the range [<c>bb</c>, <c>l</c>) before the next call of (5). Therefore, if the table handler can reach the range as non-const, it may freely modify the elements in the range.</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -254,9 +276,13 @@
                  Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
               <p>The range [<c>f</c>, <c>l</c>) may be empty.
                  The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).</p>
-              <p><c>f</c> is a pointer whose pointee is const-qualified and resides in [<c>vb</c>, <c>be</c>], and <c>l</c> is a pointer whose pointee is const-qualified and resides in [<c>f</c>, <c>be</c>], where <c>vb</c> is an argument of the latest call of
-                 (4) (first argument), (7) (first argument), (9) (second argument) or this (second argument), and <c>be</c> is the second argument of the latest call of (4).</p>
-              <p>After the call, the parser shall not dereference the range [<c>f</c>, <c>l</c>]; that is, if the table handler can reach the range as non-const, it may modify the element in the range.</p>
+              <p>Here let:</p>
+              <ul>
+                <li><c>vb</c> be the argument of the latest call of (4) (first argument), (7), (9) (second argument) or this (second argument), and</li>
+                <li><c>bb</c> and <c>be</c> be the arguments of the latest call of (4) in order.</li>
+              </ul>
+              <p>Then the pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
+              <p>After the call, the parser shall not dereference the range [<c>bb</c>, <c>l</c>] before the next call of (5). Therefore, if the table handler can reach the range as non-const, it may freely modify the element in the range.</p>
               <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -287,7 +313,7 @@
           <td>(13)</td>
           <td><c>t.handle_exception()</c></td>
           <td>(Not used) </td>
-          <td><p>Called when the parser catches an exception that otherwise should cause the invocation to the parser to exit via the exception.
+          <td><p>Called when the parser catches an exception that otherwise should cause the invocation to the parser to exit via it.
                  When called, the caught exception shall be referrable as a currently handled exception.</p>
               <p>If a call of this does not exit via an exception, the parser shall rethrow the currently handled exception to make the invocation to the parser exit via it.</p></td>
           <td>Does nothing.</td>
