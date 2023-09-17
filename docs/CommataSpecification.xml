@@ -4295,11 +4295,11 @@ namespace commata {
     <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
     // <n>requirements (<xref id="table_handler.requirements"/>):</n></c>
     [[nodiscard]] std::pair&lt;char_type*, std::size_t> get_buffer();
-    void release_buffer(const char_type* buffer) noexcept;
-    void start_record(const char_type* record_begin);
-    bool end_record(const char_type* record_end);
-    void update(const char_type* first, const char_type* last);
-    void finalize(const char_type* first, const char_type* last);
+    void release_buffer(char_type* buffer) noexcept;
+    void start_record(char_type* record_begin);
+    bool end_record(char_type* record_end);
+    void update(char_type* first, char_type* last);
+    void finalize(char_type* first, char_type* last);
   };
 
   <c>// <n><xref id="stored_table_builder.creation"/>, creation functions:</n></c>

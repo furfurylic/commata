@@ -2209,23 +2209,23 @@ private:
     }
 
 public:
-    void start_record(const char_type* /*record_begin*/)
+    void start_record(char_type* /*record_begin*/)
     {
         this->new_record(table_->content());    // throw
     }
 
-    void update(const char_type* first, const char_type* last)
+    void update(char_type* first, char_type* last)
     {
         if (field_begin_) {
             table_type::traits_type::move(field_end_, first, last - first);
             field_end_ += last - first;
         } else {
-            field_begin_ = current_buffer_ + (first - current_buffer_);
-            field_end_   = current_buffer_ + (last  - current_buffer_);
+            field_begin_ = first;
+            field_end_   = last;
         }
     }
 
-    void finalize(const char_type* first, const char_type* last)
+    void finalize(char_type* first, char_type* last)
     {
         update(first, last);
         table_type::traits_type::assign(*field_end_, char_type());
@@ -2238,7 +2238,7 @@ public:
         field_begin_ = nullptr;
     }
 
-    bool end_record(const char_type* /*record_end*/)
+    bool end_record(char_type* /*record_end*/)
     {
         return (!end_record_) || end_record_->on_end_record(*table_);
     }
@@ -2312,7 +2312,7 @@ private:
     }
 
 public:
-    void release_buffer(const char_type* /*buffer*/) noexcept
+    void release_buffer(char_type* /*buffer*/) noexcept
     {}
 };
 
