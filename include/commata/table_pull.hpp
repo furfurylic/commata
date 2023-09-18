@@ -224,15 +224,15 @@ public:
     {}
 
     void start_buffer(
-        [[maybe_unused]] const Ch* buffer_begin,
-        [[maybe_unused]] const Ch* buffer_end)
+        [[maybe_unused]] char_type* buffer_begin,
+        [[maybe_unused]] char_type* buffer_end)
     {
         if constexpr (handles(primitive_table_pull_handle::start_buffer)) {
             if (collects_data_) {
                 sq_.emplace_back(
                     primitive_table_pull_state::start_buffer, dn(2));
-                dq_.push_back(uc(buffer_begin));
-                dq_.push_back(uc(buffer_end));
+                dq_.push_back(buffer_begin);
+                dq_.push_back(buffer_end);
             } else {
                 sq_.emplace_back(
                     primitive_table_pull_state::start_buffer, dn(0));
@@ -240,13 +240,13 @@ public:
         }
     }
 
-    void end_buffer([[maybe_unused]] const Ch* buffer_end)
+    void end_buffer([[maybe_unused]] char_type* buffer_end)
     {
         if constexpr (handles(primitive_table_pull_handle::end_buffer)) {
             if (collects_data_) {
                 sq_.emplace_back(
                     primitive_table_pull_state::end_buffer, dn(1));
-                dq_.push_back(uc(buffer_end));
+                dq_.push_back(buffer_end);
             } else {
                 sq_.emplace_back(
                     primitive_table_pull_state::end_buffer, dn(0));
@@ -254,13 +254,13 @@ public:
         }
     }
 
-    void start_record([[maybe_unused]] const char_type* record_begin)
+    void start_record([[maybe_unused]] char_type* record_begin)
     {
         if constexpr (handles(primitive_table_pull_handle::start_record)) {
             if (collects_data_) {
                 sq_.emplace_back(
                     primitive_table_pull_state::start_record, dn(1));
-                dq_.push_back(uc(record_begin));
+                dq_.push_back(record_begin);
             } else {
                 sq_.emplace_back(
                     primitive_table_pull_state::start_record, dn(0));
@@ -269,14 +269,14 @@ public:
     }
 
     void update(
-        [[maybe_unused]] const char_type* first,
-        [[maybe_unused]] const char_type* last)
+        [[maybe_unused]] char_type* first,
+        [[maybe_unused]] char_type* last)
     {
         if constexpr (handles(primitive_table_pull_handle::update)) {
             if (collects_data_) {
                 sq_.emplace_back(primitive_table_pull_state::update, dn(2));
-                dq_.push_back(uc(first));
-                dq_.push_back(uc(last));
+                dq_.push_back(first);
+                dq_.push_back(last);
             } else {
                 sq_.emplace_back(primitive_table_pull_state::update, dn(0));
             }
@@ -284,27 +284,27 @@ public:
     }
 
     void finalize(
-        [[maybe_unused]] const char_type* first,
-        [[maybe_unused]] const char_type* last)
+        [[maybe_unused]] char_type* first,
+        [[maybe_unused]] char_type* last)
     {
         if constexpr (handles(primitive_table_pull_handle::finalize)) {
             if (collects_data_) {
                 sq_.emplace_back(primitive_table_pull_state::finalize, dn(2));
-                dq_.push_back(uc(first));
-                dq_.push_back(uc(last));
+                dq_.push_back(first);
+                dq_.push_back(last);
             } else {
                 sq_.emplace_back(primitive_table_pull_state::finalize, dn(0));
             }
         }
     }
 
-    void end_record([[maybe_unused]] const char_type* record_end)
+    void end_record([[maybe_unused]] char_type* record_end)
     {
         if constexpr (handles(primitive_table_pull_handle::end_record)) {
             if (collects_data_) {
                 sq_.emplace_back(
                     primitive_table_pull_state::end_record, dn(1));
-                dq_.push_back(uc(record_end));
+                dq_.push_back(record_end);
             } else {
                 sq_.emplace_back(
                     primitive_table_pull_state::end_record, dn(0));
@@ -312,14 +312,14 @@ public:
         }
     }
 
-    void empty_physical_line([[maybe_unused]] const char_type* where)
+    void empty_physical_line([[maybe_unused]] char_type* where)
     {
         if constexpr (
                 handles(primitive_table_pull_handle::empty_physical_line)) {
             if (collects_data_) {
                 sq_.emplace_back(
                     primitive_table_pull_state::empty_physical_line, dn(1));
-                dq_.push_back(uc(where));
+                dq_.push_back(where);
             } else {
                 sq_.emplace_back(
                     primitive_table_pull_state::empty_physical_line, dn(0));
@@ -348,11 +348,6 @@ public:
     }
 
 private:
-    char_type* uc(const char_type* s) const noexcept
-    {
-        return buffer_ + (s - buffer_);
-    }
-
     template <class N>
     static auto dn(N n)
     {
