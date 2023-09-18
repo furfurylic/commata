@@ -45,6 +45,7 @@
     <ul>
       <li><n>table parsers</n> (<xref id="table_parser.requirements"/>), which retrieve a sequence of char-like objects in a certain format such as a CSV text (<xref id="definitions.csv_text"/>) from an input, which is, for example, a stream or a stream buffer, and emits events to their tied table handlers, and</li>
       <li><n>table handlers</n> (<xref id="table_handler.requirements"/>), which receive events from the table parser and do some operation on them.</li>
+      <li><n>table sources</n> (<xref id="table_source.requirements"/>), which hold a sequence of char-like objects and work as factories of table parsers.</li>
     </ul>
     <p>Commata offers some default implementations of above two kinds of concepts.
        Users of Commata can unsurprisingly implement their own table handlers or table parsers, and make them collaborate with the default implementations.</p>
@@ -334,7 +335,7 @@
             and the expressions shown in <xref id="table.table_parser.requirements"/> are valid and have the indicated semantics.</li>
       </ul>
 
-      <p>In <xref id="table.table_parser.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>.</p>
+      <p>In <xref id="table.table_parser.requirements"/> and <xref id="table.table_parser.optional"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>.</p>
 
       <table id="table.table_parser.requirements">
         <caption>TableParser requirements</caption>
@@ -367,8 +368,6 @@
       <p><xref id="table.table_parser.optional"/> lists operations provided for some types of <c>TableParser</c>s but not others.
          Those types for which the listed operations are provided shall implement the semantics described in <xref id="table.table_parser.optional"/> unless otherwise stated.</p>
 
-      <p>In <xref id="table.table_parser.optional"/>, <c>ct</c> is an lvalue of <c>const T</c>, where <c>T</c> is cv-unqualified.</p>
-
       <table id="table.table_parser.optional">
         <caption>Optional TableParser operations</caption>
         <col width="2"/><col width="9"/><col width="9"/><col width="28"/>
@@ -388,6 +387,133 @@
               The numbers are zero-based.
               <c>-1</c> means shall mean &#x2018;no information&#x2019;.
               Shall not exit via an exception.</td>
+        </tr>
+      </table>
+    </section>
+
+    <section id="table_source.requirements">
+      <name><c>TableSource</c> requirements</name>
+  
+      <p>A type <c>T</c> meets the <c>TableSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
+      <ul>
+        <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+        <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character input</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
+      </ul>
+  
+      <p>In <xref id="table.table_source.requirements"/> and <xref id="table.table_source.optional"/>,</p>
+      <ul>
+        <li><c>H</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>,</li>
+        <li><c>K</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and that is deemed to no have buffer control,</li>
+        <li><c>A</c> is a type that meets the <c>Allocator</c> requirements for <c>Ch</c>,</li>
+        <li><c>ct</c> is an lvalue of <c>const T</c>,</li>
+        <li><c>rt</c> is an rvalue of <c>T</c>,</li>
+        <li><c>h</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>,</li>
+        <li><c>k</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and is deemed to have no buffer control,</li>
+        <li><c>s</c> is an rvalue of <c>std::size_t</c>, and</li>
+        <li><c>a</c> is an rvalue whose type meets the <c>Allocator</c> requirement for <c>Ch</c>.</li>
+      </ul>
+  
+      <table id="table.table_source.requirements">
+        <caption><c>TableSource</c> requirements</caption>
+        <col width="2"/><col width="9"/><col width="18"/><col width="28"/>
+  
+        <tr>
+          <th>#</th>
+          <th>Expression</th>
+          <th>Return type</th>
+          <th>Remark</th>
+        </tr>
+  
+        <tr>
+          <td>(1)</td>
+          <td><c>T::char_type</c></td>
+          <td></td>
+          <td>Shall be an identical type to <c>Ch</c>.</td>
+        </tr>
+  
+        <tr>
+          <td>(2)</td>
+          <td><c>T::traits_type</c></td>
+          <td></td>
+          <td>Shall be a character traits type for <c>Ch</c>.</td>
+        </tr>
+  
+        <tr>
+          <td>(3)</td>
+          <td><c>T::parser_type&lt;H></c></td>
+          <td></td>
+          <td>Shall be a type that meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.</td>
+        </tr>
+
+        <tr>
+          <td>(4)</td>
+          <td><c>ct(h)</c></td>
+          <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
+          <td rowspan="2">
+            <p>Creates a table parser object <c>p</c> and returns it.</p>
+            <p><c>p</c> has its tied character input object which is copy constructed (on (4)) or move constructed (on (5)) from the wrapped character input object of <c>*this</c> and
+               its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with <c>h</c> (otherwise).</p>
+          </td>
+        </tr>
+  
+        <tr>
+          <td>(5)</td>
+          <td><c>rt(h)</c></td>
+        </tr>
+      </table>
+
+      <p>Some types of <c>TableSource</c>s additionally offer optional operations for <c>TableHandler</c> types that is deemed to have no buffer control, as described in <xref id="table.table_source.optional"/>.
+         Those types for which the listed operations are provided shall implement the semantics described in <xref id="table.table_source.optional"/> unless otherwise stated.</p>
+ 
+      <table id="table.table_source.optional">
+        <caption>Optional <c>TableSource</c> operations</caption>
+        <col width="2"/><col width="9"/><col width="18"/><col width="28"/>
+  
+        <tr>
+          <th>#</th>
+          <th>Expression</th>
+          <th>Return type</th>
+          <th>Remar</th>
+        </tr>
+  
+        <tr>
+          <td>(1)</td>
+          <td><c>T::parser_type&lt;K, A></c></td>
+          <td></td>
+          <td>
+            <p>Shall be a type that meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.</p>
+            <p>An object of this type holds an object of <c>A</c> and use it to allocate and deallocate buffers.</p>
+          </td>
+        </tr>
+
+        <tr>
+          <td>(2)</td>
+          <td><c>ct(k, s)</c></td>
+          <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(k)>></c></td>
+          <td rowspan="4">
+            <p>Creates a table parser object <c>p</c> and returns it.</p>
+            <p><c>p</c> has its tied character input object which is copy constructed (on (2) and (4)) or move constructed (on (3) and (5)) from the wrapped character input object of <c>*this</c> and
+               its tied table handler object which is constructed with <c>std::move(k)</c> (if <c>k</c> is an rvalue) or with <c>k</c> (otherwise).</p>
+            <p><c>p</c> refers <c>s</c> as a hint of the size (that is, the number of <c>Ch</c> objects) to allocate buffers.
+              <c>s</c> can be equal to zero, which means ‘no hint’.</p>
+            <p>On (4) and (5), <c>p</c> is also configured to hold a copy of <c>a</c> to allocate and deallocate buffers.</p>
+          </td>
+        </tr>
+  
+        <tr>
+          <td>(3)</td>
+          <td><c>rt(k, s)</c></td>
+        </tr>
+
+        <tr>
+          <td>(4)</td>
+          <td><c>ct(k, s, a)</c></td>
+          <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(k)>, std::decay_t&lt;decltype(a)>></c></td>
+        </tr>
+  
+        <tr>
+          <td>(5)</td>
+          <td><c>rt(k, s, a)</c></td>
         </tr>
       </table>
     </section>
@@ -2002,7 +2128,7 @@ namespace commata {
 
       <p>The class template <c>csv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TableParser</c> objects (<xref id="table_parser.requirements"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for a certain char-like type.</p>
-      <p><c>csv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c>.</p>
+      <p><c>csv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.</p>
 
       <section id="csv_source.types">
         <name><c>csv_source</c> member types</name>
@@ -6513,69 +6639,6 @@ template &lt;class Allocator, class Container, class... Appendices>
 
     <p>Commata offers some tools to perform <n>pull parsing</n>, in which the users can immediately access the results of parsing text tables
        with the control of the execution flow of parsing held by the users themselves and with the knowledge of where in the text table they are processing.</p>
-    <p>The pull parsing facilities of Commata need objects that can create the table parsers for their &#x2018;pull-parsing&#x2019; table handlers.
-       The types of these objects are abstracted into the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>).</p>
-  </section>
-
-  <section id="table_source.requirements">
-    <name><c>TableSource</c> requirements</name>
-
-    <p>A type <c>T</c> meets the <c>TableSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
-    <ul>
-      <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-      <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character input</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
-    </ul>
-
-    <p>In <xref id="table.table_source.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c> and <c>rt</c> is an rvalue of <c>T</c>.
-      <c>H</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and that is deemed to have buffer control.
-      <c>h</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and is deemed to have buffer control.</p>
-
-    <table id="table.table_source.requirements">
-      <caption><c>TableSource</c> requirements</caption>
-      <col width="1"/><col width="4"/><col width="9"/><col width="14"/>
-
-      <tr>
-        <th>#</th>
-        <th>Expression</th>
-        <th>Return type</th>
-        <th>Remark</th>
-      </tr>
-
-      <tr>
-        <td>(1)</td>
-        <td><c>T::char_type</c></td>
-        <td></td>
-        <td>Shall be an identical type to <c>Ch</c>.</td>
-      </tr>
-
-      <tr>
-        <td>(2)</td>
-        <td><c>T::traits_type</c></td>
-        <td></td>
-        <td>Shall be a character traits type for <c>Ch</c>.</td>
-      </tr>
-
-      <tr>
-        <td>(3)</td>
-        <td><c>T::parser_type&lt;H></c></td>
-        <td></td>
-        <td>Shall be a type that meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>Ch</c>.</td>
-      </tr>
-
-      <tr>
-        <td>(4)</td>
-        <td><c>ct(h)</c></td>
-        <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
-        <td rowspan="2">Creates a table parser object <c>p</c> that has its tied character input object which is copy constructed (on (4)) or move constructed (on (5)) from the wrapped character input object of <c>*this</c> and
-            its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with <c>h</c> (otherwise).
-            Then returns <c>p</c>.</td>
-      </tr>
-
-      <tr>
-        <td>(5)</td>
-        <td><c>rt(h)</c></td>
-      </tr>
-    </table>
   </section>
 
   <section id="hpp.table_pull.syn">
@@ -6844,7 +6907,8 @@ template &lt;class TableSourceR>
         <requires><c>std::is_default_constructible_v&lt;Allocator></c> shall be <c>true</c>.</requires>
         <effects>First default constructs an <c>Allocator</c> object <c>a</c>.
                  Creates the event queue that does dynamic memory allocation with <c>a</c>.
-                 Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) to allocate buffers.
+                 Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) to allocate buffers,
+                 thus whose type is deemed to have buffer control.
                  Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.
                  <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
         <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
@@ -6859,7 +6923,8 @@ template &lt;class TableSourceR>
         </code>
         <effects>First constructs an <c>Allocator</c> object <c>a</c> with <c>alloc</c>.
                  Creates the event queue that does dynamic memory allocation with <c>a</c>.
-                 Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) to allocate buffers.
+                 Creates a table handler object <c>h</c> configured to enqueue events into the event queue above and to use <c>a</c> to allocate buffers and refers <c>buffer_size</c> as a hint of the size (that is, the number of characters) to allocate buffers,
+                 thus whose type is deemed to have buffer control.
                  Then constructs the table parser object with <c>std::forward&lt;TableSourceR>(in)(std::move(h))</c>.
                  <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</effects>
         <postcondition><c>is_discarding_data()</c> shall return <c>false</c>.</postcondition>
