@@ -708,7 +708,7 @@ public:
     table_pull(std::allocator_arg_t, const Allocator& alloc,
         TableSourceR&& in, std::size_t buffer_size = 0) :
         p_(std::allocator_arg, alloc, std::forward<TableSourceR>(in),
-            ((buffer_size > 1) ? buffer_size : 2)),
+            buffer_size),
         empty_physical_line_aware_(false),
         state_(table_pull_state::before_parse), view_(),
         value_(alloc), i_(0), j_(0)
