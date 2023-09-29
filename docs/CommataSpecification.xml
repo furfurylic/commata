@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-09-19 (UTC)</signature>
+<signature>2023-09-29 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -473,7 +473,7 @@
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
-          <th>Remar</th>
+          <th>Remark</th>
         </tr>
   
         <tr>
