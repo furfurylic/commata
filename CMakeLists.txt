@@ -23,6 +23,7 @@ target_sources(commata INTERFACE
     include/commata/member_like_base.hpp
     include/commata/parse_csv.hpp
     include/commata/parse_error.hpp
+    include/commata/parse_tsv.hpp
     include/commata/propagation_controlled_allocator.hpp
     include/commata/record_extractor.hpp
     include/commata/stored_table.hpp

@@ -34,6 +34,7 @@ get_target_property(COMMATA_HEADERS commata INTERFACE_SOURCES)
 set(TEST_COMMATA_SOURCES
     TestCharInput.cpp
     TestParseCsv.cpp
+    TestParseTsv.cpp
     TestRecordExtractor.cpp
     TestStoredTable.cpp
     TestTablePull.cpp
