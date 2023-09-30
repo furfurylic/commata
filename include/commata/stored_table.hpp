@@ -30,7 +30,6 @@
 
 #include "buffer_size.hpp"
 #include "empty_string.hpp"
-#include "key_chars.hpp"
 #include "member_like_base.hpp"
 #include "propagation_controlled_allocator.hpp"
 #include "string_value.hpp"

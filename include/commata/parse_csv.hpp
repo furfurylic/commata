@@ -11,18 +11,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <ios>
-#include <istream>
 #include <memory>
-#include <streambuf>
-#include <string>
-#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
 #include "buffer_control.hpp"
-#include "buffer_size.hpp"
 #include "char_input.hpp"
 #include "key_chars.hpp"
 #include "member_like_base.hpp"
