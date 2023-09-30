@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-09-29 (UTC)</signature>
+<signature>2023-09-30 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -131,7 +131,7 @@
       <p>A requirement is optional if the last column of <xref id="table.table_handler.requirements"/> specifies a default.</p>
       <p>If (2) in <xref id="table.table_handler.requirements"/> is satisfied without falling back on the default, then also (3) shall be so. Likewise, if (3) is satisfied without falling back on the default, then also (2) shall be so.
          That is, <c>T</c> shall either have both of <c>get_buffer</c> and <c>release_buffer</c> member functions or have none of them.</p>
-      <p>Exiting via an exception from a call on a table handler described in <xref id="table.table_handler.requirements"/> shall make the corresponding invocation on the parser (<xref id="table_parser.requirements"/>) exit via an exception without making further calls on the table handler.</p>
+      <p>Exiting via an exception from an evaluation on a table handler described in <xref id="table.table_handler.requirements"/> shall make the corresponding invocation on the parser (<xref id="table_parser.requirements"/>) exit via an exception without making further evaluation on the table handler other than (13).</p>
 
       <table id="table.table_handler.requirements">
         <caption>TableHandler requirements</caption>
@@ -157,11 +157,11 @@
           <td>(2)</td>
           <td><c>t.get_buffer()</c></td>
           <td><c>std::pair&lt;Ch*, std::size_t&gt;</c></td>
-          <td><p>Called when the parser requires a new buffer.
-                 The parser calls this function only just after it was attached to this handler or just after it called (3).</p>
+          <td><p>Evaluated when the parser requires a new buffer.
+                 The parser evaluates this expression only just after it was attached to this handler or just after it evaluated (3).</p>
               <p>Shall return a pair of a pointer that points the first element of a secured buffer and its length.
                  The parser utilizes the range [<c>gb.first</c>, <c>gb.first + gb.second</c>) as a buffer where <c>gb</c> is the return value of this function.</p></td>
-          <td><p>At the first call, acquires a buffer of a certain length and returns it. </p>
+          <td><p>At the first evaluation, acquires a buffer of a certain length and returns it. </p>
               <p>Otherwise, returns a pooled buffer.</p></td>
         </tr>
 
@@ -169,9 +169,9 @@
           <td>(3)</td>
           <td><c>t.release_buffer(b)</c></td>
           <td>(Not used)</td>
-          <td><p>Called when the parser unhold the buffer acquired by the latest call of (2).</p>
-              <p><c>b</c> is <c>gb.first</c> where <c>gb</c> is return value of the latest call of (2).</p>
-              <p>Calling of this shall not exit via an exception.</p></td>
+          <td><p>Evaluated when the parser unhold the buffer acquired by the latest evaluation of (2).</p>
+              <p><c>b</c> is <c>gb.first</c> where <c>gb</c> is return value of the latest evaluation of (2).</p>
+              <p>Evaluating this shall not exit via an exception.</p></td>
            <td>Stores <c>b</c> into a pool.</td>
         </tr>
 
@@ -179,11 +179,11 @@
           <td>(4)</td>
           <td><c>t.start_buffer(bb, be)</c></td>
           <td>(Not used)</td>
-          <td><p>Called when the parser starts using its buffer.
-                 Calling of this shall occur after a call of (2) and before its corresponding call of (3).</p>
-              <p><c>bb</c> points <c>*gb.first</c>. <c>be</c> is <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest call of (2).</p>
-              <p>Just after a call of this, the parser shall make an intact copy of a sequence of char-like objects retrieved from its input into the range [<c>bb</c>, <c>bm</c>) where <c>bm</c> is a pointer that resides in [<c>bb</c>, <c>be</c>] and reported with (5) later.
-                 After a call of this and before the corresponding call of (5), the parser shall report (possibly past-the-end) pointers on this copy.</p></td>
+          <td><p>Evaluated when the parser starts using its buffer.
+                 Evaluating this shall occur after an caevaluationll of (2) and before its corresponding evaluation of (3).</p>
+              <p><c>bb</c> points <c>*gb.first</c>. <c>be</c> is <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest evaluation of (2).</p>
+              <p>Just after an evaluation of this, the parser shall make an intact copy of a sequence of char-like objects retrieved from its input into the range [<c>bb</c>, <c>bm</c>) where <c>bm</c> is a pointer that resides in [<c>bb</c>, <c>be</c>] and reported with (5) later.
+                 After an evaluation of this and before the corresponding evaluation of (5), the parser shall report (possibly past-the-end) pointers on this copy.</p></td>
           <td>Does nothing.</td>
         </tr>
 
@@ -191,10 +191,10 @@
           <td>(5)</td>
           <td><c>t.end_buffer(bm)</c></td>
           <td>(Not used) </td>
-          <td><p>Called when the parser finishes using its buffer.
-                 Calling of this shall occur after a call of (2) and before its corresponding call of (3).</p>
+          <td><p>Evaluated when the parser finishes using its buffer.
+                 Evaluating this shall occur after an evaluation of (2) and before its corresponding evaluation of (3).</p>
               <p><c>bm</c> is an rvalue of <c>const Ch*</c>.</p>
-              <p><c>bm</c> points the one past the last element of the range in the buffer actually used, and resides in [<c>bb</c>, <c>be</c>] where <c>bb</c> and <c>be</c> are the arguments of the latest call of (4) in order.</p></td>
+              <p><c>bm</c> points the one past the last element of the range in the buffer actually used, and resides in [<c>bb</c>, <c>be</c>] where <c>bb</c> and <c>be</c> are the arguments of the latest evaluation of (4) in order.</p></td>
           <td>Does nothing.</td>
         </tr>
 
@@ -202,17 +202,17 @@
           <td>(6)</td>
           <td><c>t.empty_physical_line(w)</c></td>
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-          <td><p>Called when the parser finds an empty line outside any record.
-                 Calling of this shall occur after a call of (4) and before its corresponding call of (5)
-                 and shall not occur between a call of (7) and its corresponding call of (8).</p>
+          <td><p>Evaluated when the parser finds an empty line outside any record.
+                 Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5)
+                 and shall not occur between an evaluation of (7) and its corresponding evaluation of (8).</p>
               <p><c>w</c> points to the last line break character.</p>
               <p>Here let:</p>
               <ul>
-                <li><c>gb</c> be the return value of the latest call of (2), and</li>
-                <li><c>bb</c> be the first argument of the latest call of (4).</li>
+                <li><c>gb</c> be the return value of the latest evaluation of (2), and</li>
+                <li><c>bb</c> be the first argument of the latest evaluation of (4).</li>
               </ul>
               <p>Then the pointee of <c>w</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
-              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+              <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td>Does nothing.</td>
         </tr>
 
@@ -220,16 +220,17 @@
           <td>(7)</td>
           <td><c>t.start_record(rb)</c></td>
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-          <td><p>Called when the parser begins to process a record.
-                 Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
-              <p><c>rb</c> points the first character of the record, not of the text value of the first field of the record. To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the first field of the records is quoted, <c>*rb</c> shall be a double quote.</p>
+          <td><p>Evaluated when the parser begins to process a record.
+                 Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5).</p>
+              <p><c>rb</c> points the first character of the record, not of the text value of the first field of the record.
+                 To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the first field of the records is quoted, <c>*rb</c> shall be a double quote.</p>
               <p>Here let:</p>
               <ul>
-                <li><c>gb</c> be the return value of the latest call of (2), and</li>
-                <li><c>bb</c> be the first argument of the latest call of (4).</li>
+                <li><c>gb</c> be the return value of the latest evaluation of (2), and</li>
+                <li><c>bb</c> be the first argument of the latest evaluation of (4).</li>
               </ul>
               <p>Then the pointee of <c>rb</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
-              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+              <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
 
@@ -237,16 +238,16 @@
           <td>(8)</td>
           <td><c>t.end_record(re)</c></td>
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-          <td><p>Called when the parser finishes processing a record.
-                 Calling of this shall occur after a call of (4) and before its corresponding call of (5).</p>
+          <td><p>Evaluated when the parser finishes processing a record.
+                 Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5).</p>
               <p><c>re</c> points one past the last element of the characters that forms the record, not of the text value of the final field of the record. To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</p>
               <p>Here let:</p>
               <ul>
-                <li><c>vb</c> be the argument of the latest call of (4) (first argument), (7), (9) (second argument) or (10) (second argument), and</li>
-                <li><c>be</c> be the second argument of the latest call of (4).</li>
+                <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or (10) (second argument), and</li>
+                <li><c>be</c> be the second argument of the latest evaluation of (4).</li>
               </ul>
               <p>Then the pointee of <c>re</c> resides in [<c>vb</c>, <c>be</c>).</p>
-              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+              <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
 
@@ -254,18 +255,19 @@
           <td>(9)</td>
           <td><c>t.update(f, l)</c></td>
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-          <td><p>Called when the parser finds a non-final chunk of a field value.
-                 Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
+          <td><p>Evaluated when the parser finds a non-final chunk of a field value.
+                 Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5), and after an evaluation of (7) and before its corresponding evaluation of (8).</p>
               <p>The range [<c>f</c>, <c>l</c>) shall not be empty.
                  The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).</p>
               <p>Here let:</p>
               <ul>
-                <li><c>vb</c> be the argument of the latest call of (4) (first argument), (7), this (second argument) or (10) (second argument), and</li>
-                <li><c>bb</c> and <c>be</c> be the arguments of the latest call of (4) in order.</li>
+                <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), this (second argument) or (10) (second argument), and</li>
+                <li><c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</li>
               </ul>
               <p>Then the pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
-              <p>After the call, the parser shall not dereference the range [<c>bb</c>, <c>l</c>) before the next call of (5). Therefore, the table handler may freely modify the elements in the range.</p>
-              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+              <p>After the evaluation, the parser shall not dereference the range [<c>bb</c>, <c>l</c>) before the next evaluation of (5).
+                 Therefore, the table handler may freely modify the elements in the range.</p>
+              <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
 
@@ -273,18 +275,19 @@
           <td>(10)</td>
           <td><c>t.finalize(f, l)</c></td>
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
-          <td><p>Called when the parser finds a final chunk of a field value.
-                 Calling of this shall occur after a call of (4) and before its corresponding call of (5), and after a call of (7) and before its corresponding call of (8).</p>
+          <td><p>Evaluated when the parser finds a final chunk of a field value.
+                 Evaluating of this shall occur after an evaluation of (4) and before its corresponding evaluation of (5), and after an evaluation of (7) and before its corresponding evaluation of (8).</p>
               <p>The range [<c>f</c>, <c>l</c>) may be empty.
                  The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).</p>
               <p>Here let:</p>
               <ul>
-                <li><c>vb</c> be the argument of the latest call of (4) (first argument), (7), (9) (second argument) or this (second argument), and</li>
-                <li><c>bb</c> and <c>be</c> be the arguments of the latest call of (4) in order.</li>
+                <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or this (second argument), and</li>
+                <li><c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</li>
               </ul>
               <p>Then the pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
-              <p>After the call, the parser shall not dereference the range [<c>bb</c>, <c>l</c>] before the next call of (5). Therefore, the table handler may freely modify the element in the range.</p>
-              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is <c>false</c>, the parser shall aborts the parsing process.</p></td>
+              <p>After evaluating, the parser shall not dereference the range [<c>bb</c>, <c>l</c>] before the next evaluation of (5).
+                 Therefore, the table handler may freely modify the element in the range.</p>
+              <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
 
@@ -292,12 +295,12 @@
           <td>(11)</td>
           <td><c>t.yield(p)</c></td>
           <td>A type contextually convertible to <c>bool</c></td>
-          <td><p>Called when the parser reaches an execution point where the parser can suspend the execution and return the control to its caller.
-                 The parser shall call this also just after calling (5).</p>
-              <p><c>p</c> is an rvalue whose type is <c>std::size_t</c> and whose value is a number that can identificate the execution point where the call of this function occurred.
+          <td><p>Evaluated when the parser reaches an execution point where the parser can suspend the execution and return the control to its invoker.
+                 The parser shall evaluate this also just after evaluating (5).</p>
+              <p><c>p</c> is an rvalue whose type is <c>std::size_t</c> and whose value is a number that can identificate the execution point where the evaluation of this occurred.
                  Its value shall not be equal to <c>0</c>.
                  Its value of <c>-1</c> shall mean that the parser is about to complete the execution.</p>
-              <p>If the contextually converted value to <c>bool</c> of the return value of a call of this is not <c>false</c>, the parser shall suspend the execution and return the control to its caller.</p></td>
+              <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td>Returns <c>false</c>.</td>
         </tr>
 
@@ -305,8 +308,8 @@
           <td>(12)</td>
           <td><c>ct.yield_location()</c></td>
           <td><c>std::size_t</c></td>
-          <td><p>Called when the parser is about to start the execution or restart the execution after a suspension due to the latest return value of (11).</p>
-              <p>Shall return the value of the parameter <c>p</c> of the latest call of (11) with the return value being <c>true</c>; otherwise shall return <c>0</c>.</p></td>
+          <td><p>Evaluated when the parser is about to start the execution or restart the execution after a suspension due to the latest return value of (11).</p>
+              <p>Shall return the value of the parameter <c>p</c> of the latest evaluation of (11) with the return value being <c>true</c>; otherwise shall return <c>0</c>.</p></td>
           <td>Returns <c>0</c>.</td>
         </tr>
 
@@ -314,9 +317,9 @@
           <td>(13)</td>
           <td><c>t.handle_exception()</c></td>
           <td>(Not used) </td>
-          <td><p>Called when the parser catches an exception that otherwise should cause the invocation to the parser to exit via it.
-                 When called, the caught exception shall be referrable as a currently handled exception.</p>
-              <p>If a call of this does not exit via an exception, the parser shall rethrow the currently handled exception to make the invocation to the parser exit via it.</p></td>
+          <td><p>Evaluated when the parser catches an exception that otherwise should cause the invocation to the parser to exit via it.
+                 When evaluated, the caught exception shall be referrable as a currently handled exception.</p>
+              <p>If evaluating this does not exit via an exception, the parser shall rethrow the currently handled exception to make the invocation to the parser exit via it.</p></td>
           <td>Does nothing.</td>
          </tr>
       </table>
@@ -408,7 +411,7 @@
         <li><c>ct</c> is an lvalue of <c>const T</c>,</li>
         <li><c>rt</c> is an rvalue of <c>T</c>,</li>
         <li><c>h</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>,</li>
-        <li><c>k</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and is deemed to have no buffer control,</li>
+        <li><c>k</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and that is deemed to have no buffer control,</li>
         <li><c>s</c> is an rvalue of <c>std::size_t</c>, and</li>
         <li><c>a</c> is an rvalue whose type meets the <c>Allocator</c> requirement for <c>Ch</c>.</li>
       </ul>
