@@ -12,6 +12,7 @@ target_include_directories(commata INTERFACE
 cmake_policy(SET CMP0076 NEW)
 target_sources(commata INTERFACE
     include/commata/allocation_only_allocator.hpp
+    include/commata/base_source.hpp
     include/commata/buffer_control.hpp
     include/commata/buffer_size.hpp
     include/commata/char_input.hpp
