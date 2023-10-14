@@ -66,49 +66,6 @@
       </ul>
     </section>
 
-    <section id="definitions.csv_text">
-      <name>CSV texts</name>
-
-      <p>The CSV parser of Commata (<xref id="parse_csv"/>) conforms the <n>CSV text</n> model following:</p>
-      <ul>
-        <li>A CSV text is a representation of a text table (<xref id="definitions.text_table"/>) as a sequence of objects whose type is the char type of the text table.</li>
-        <li>Each CSV text has its <n>char type</n> that is equal to the char type of the text table.</li>
-        <li>Each text field of a text table represented as a CSV text is either of a <n>quoted field</n> or a <n>unquoted field</n>.</li>
-        <li>A quoted field is represented as a sequence of the char type objects that starts with a double quote and ends with a double quote.
-            Its representation cannot contain odd number of contiguous double quotes after the the starting double quote and before the ending double quote.</li>
-        <li>An unquoted field is represented as a sequence of the char type objects that does not contain any double quotes, commas and <n>line breaks</n>.</li>
-        <li>The text value of a quoted field is defined as follows:
-            <ul>
-              <li>first make a copy of the sequence of characters of the range [the next character of the starting double quote, the previous character of the ending double quote],</li>
-              <li>then replace every occurrence of two contiguous double quotes in it into one double quote.</li>
-            </ul>
-        </li>
-        <li>The text value of an unquoted field is the representation as a sequence of the char type objects itself.</li>
-        <li>In a CSV text, each text record is represented as a comma-delimited sequence of representations of its text fields.
-            The representation of the final text field in a text record is not followed by a comma.</li>
-        <li>In a CSV text, the representations of its text records are delimited by a line break.
-            The representation of the final record is or is not followed by a line break.</li>
-        <li>Each line break is either of CR, LF, or CRsLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRsLF is a character sequence of one or more CR(s) and an LF in order.</li>
-      </ul>
-    </section>
-
-    <section id="definitions.tsv_text">
-      <name>TSV texts</name>
-
-      <p>The TSV parser of Commata (<xref id="parse_tsv"/>) conforms the <n>TSV text</n> model following:</p>
-      <ul>
-        <li>A TSV text is a representation of a text table (<xref id="definitions.text_table"/>) as a sequence of objects whose type is the char type of the text table.</li>
-        <li>Each TSV text has its <n>char type</n> that is equal to the char type of the text table.</li>
-        <li>The text value of a field is the representation as a sequence of the char type objects itself.</li>
-        <li>In a TSV text, each text record is represented as a tab-delimited sequence of representations of its text fields.
-            The representation of the final text field in a text record is not followed by a tab.</li>
-        <li>In a TSV text, the representations of its text records are delimited by a line break.
-            The representation of the final record is or is not followed by a line break.</li>
-        <li>Each line break is either of CR, LF, or CRsLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRsLF is a character sequence of one or more CR(s) and an LF in order.</li>
-      </ul>
-      <p><span class="note">This TSV text model forbids each text field to have tabs in its text value and does not do any special treatment to double quotes, as IANA's "Definition of tab-separated-values (tsv)".</span></p>
-    </section>
-
     <section id="definitions.others">
       <name>Other definitions</name>
 
@@ -2060,6 +2017,32 @@ template &lt;class Ch, class Tr, class Allocator>
 
     <p>This subclause describes facilities to create or utilize the table parser (<xref id="concepts"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
 
+    <section id="definitions.csv_text">
+      <name>CSV texts</name>
+
+      <p>The CSV parser of Commata conforms the <n>CSV text</n> model following:</p>
+      <ul>
+        <li>A CSV text is a representation of a text table (<xref id="definitions.text_table"/>) as a sequence of objects whose type is the char type of the text table.</li>
+        <li>Each CSV text has its <n>char type</n> that is equal to the char type of the text table.</li>
+        <li>Each text field of a text table represented as a CSV text is either of a <n>quoted field</n> or a <n>unquoted field</n>.</li>
+        <li>A quoted field is represented as a sequence of the char type objects that starts with a double quote and ends with a double quote.
+            Its representation cannot contain odd number of contiguous double quotes after the the starting double quote and before the ending double quote.</li>
+        <li>An unquoted field is represented as a sequence of the char type objects that does not contain any double quotes, commas and <n>line breaks</n>.</li>
+        <li>The text value of a quoted field is defined as follows:
+            <ul>
+              <li>first make a copy of the sequence of characters of the range [the next character of the starting double quote, the previous character of the ending double quote],</li>
+              <li>then replace every occurrence of two contiguous double quotes in it into one double quote.</li>
+            </ul>
+        </li>
+        <li>The text value of an unquoted field is the representation as a sequence of the char type objects itself.</li>
+        <li>In a CSV text, each text record is represented as a comma-delimited sequence of representations of its text fields.
+            The representation of the final text field in a text record is not followed by a comma.</li>
+        <li>In a CSV text, the representations of its text records are delimited by a line break.
+            The representation of the final record is or is not followed by a line break.</li>
+        <li>Each line break is either of CR, LF, or CRsLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRsLF is a character sequence of one or more CR(s) and an LF in order.</li>
+      </ul>
+    </section>
+
     <section id="hpp.parse_csv.syn">
       <name>Header <c>"commama/parse_csv.hpp"</c> synopsis</name>
       <codeblock>
@@ -2358,6 +2341,23 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
     <name>Parsing TSV format texts</name>
 
     <p>This subclause describes facilities to create or utilize the table parser (<xref id="concepts"/>) of the TSV text format (<xref id="definitions.tsv_text"/>).</p>
+
+    <section id="definitions.tsv_text">
+      <name>TSV texts</name>
+
+      <p>The TSV parser of Commata conforms the <n>TSV text</n> model following:</p>
+      <ul>
+        <li>A TSV text is a representation of a text table (<xref id="definitions.text_table"/>) as a sequence of objects whose type is the char type of the text table.</li>
+        <li>Each TSV text has its <n>char type</n> that is equal to the char type of the text table.</li>
+        <li>The text value of a field is the representation as a sequence of the char type objects itself.</li>
+        <li>In a TSV text, each text record is represented as a tab-delimited sequence of representations of its text fields.
+            The representation of the final text field in a text record is not followed by a tab.</li>
+        <li>In a TSV text, the representations of its text records are delimited by a line break.
+            The representation of the final record is or is not followed by a line break.</li>
+        <li>Each line break is either of CR, LF, or CRsLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRsLF is a character sequence of one or more CR(s) and an LF in order.</li>
+      </ul>
+      <p><span class="note">This TSV text model forbids each text field to have tabs in its text value and does not do any special treatment to double quotes, as IANA's "Definition of tab-separated-values (tsv)".</span></p>
+    </section>
 
     <section id="hpp.parse_tsv.syn">
       <name>Header <c>"commama/parse_tsv.hpp"</c> synopsis</name>
