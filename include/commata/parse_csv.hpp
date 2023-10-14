@@ -288,29 +288,25 @@ struct parse_step<state::after_lf>
     template <class Parser>
     void normal(Parser& parser, typename Parser::char_type* p, ...) const
     {
+        parser.new_physical_line();
         switch (*p) {
         case key_chars<typename Parser::char_type>::comma_c:
-            parser.new_physical_line();
             parser.set_first_last();
             parser.finalize();
             parser.change_state(state::after_comma);
             break;
         case key_chars<typename Parser::char_type>::dquote_c:
-            parser.new_physical_line();
             parser.force_start_record();
             parser.change_state(state::right_of_open_quote);
             break;
         case key_chars<typename Parser::char_type>::cr_c:
-            parser.new_physical_line();
             parser.empty_physical_line();
             parser.change_state(state::after_cr);
             break;
         case key_chars<typename Parser::char_type>::lf_c:
-            parser.new_physical_line();
             parser.empty_physical_line();
             break;
         default:
-            parser.new_physical_line();
             parser.set_first_last();
             parser.renew_last();
             parser.change_state(state::in_value);
