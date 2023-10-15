@@ -88,7 +88,7 @@
             The representation of the final text field in a text record is not followed by a comma.</li>
         <li>In a CSV text, the representations of its text records are delimited by a line break.
             The representation of the final record is or is not followed by a line break.</li>
-        <li>Each line break is either of CR, LF, or CRLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRLF is a two-character sequence whose first character is CR and whose second is LF.</li>
+        <li>Each line break is either of CR, LF, or CRsLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRsLF is a character sequence of one or more CR(s) and an LF in order.</li>
       </ul>
     </section>
 

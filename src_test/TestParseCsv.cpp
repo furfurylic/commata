@@ -271,6 +271,21 @@ TEST_P(TestParseCsvBasics, AlreadyEmptyPhysicalLineAware)
     ASSERT_STREQ("ABC", field_values[1][0].c_str());
 }
 
+TEST_P(TestParseCsvBasics, CrCrLf)
+{
+    std::string s = "AB\r\r\nCD\r\r\r\nEF\r\r\r\r\n";
+    std::vector<std::vector<std::string>> field_values;
+    ASSERT_TRUE(parse_csv(s,
+        test_collector_empty_line_aware(field_values), GetParam()));
+    ASSERT_EQ(3U, field_values.size());
+    ASSERT_EQ(1U, field_values[0].size());
+    ASSERT_STREQ("AB", field_values[0][0].c_str());
+    ASSERT_EQ(1U, field_values[1].size());
+    ASSERT_STREQ("CD", field_values[1][0].c_str());
+    ASSERT_EQ(1U, field_values[2].size());
+    ASSERT_STREQ("EF", field_values[2][0].c_str());
+}
+
 INSTANTIATE_TEST_SUITE_P(,
     TestParseCsvBasics, testing::Values(1, 10, 1024));
 
