@@ -205,7 +205,7 @@ TEST_P(TestParseCsvBasics, Narrow)
     std::stringbuf buf(s);
     std::vector<std::vector<std::string>> field_values;
     test_collector<char> collector(field_values);
-    ASSERT_TRUE(parse_csv(&buf, collector, GetParam()));
+    ASSERT_TRUE(parse_csv(buf, collector, GetParam()));
     ASSERT_EQ(2U, field_values.size());
     std::vector<std::string> expected_row0 =
         { "", "col1", " col2 ", "col3", "" };
@@ -349,7 +349,7 @@ TYPED_TEST(TestParseCsvFancy, Basics)
             throw text_error("Not tracked");
         }
     };
-    ASSERT_NO_THROW(parse_csv(&in, make_check_handler<char_t>(f), 0, a));
+    ASSERT_NO_THROW(parse_csv(in, make_check_handler<char_t>(f), 0, a));
 }
 
 struct TestParseCsvEndsWithoutLF :
@@ -456,7 +456,7 @@ struct TestCsvSource : commata::test::BaseTest
 TEST_F(TestCsvSource, AcceptFullFledged)
 {
     std::basic_stringbuf<char> in1("abc");
-    make_csv_source(&in1)(full_fledged<char>())();
+    make_csv_source(in1)(full_fledged<char>())();
 
     make_csv_source(L"def")(full_fledged<wchar_t>())();
 }

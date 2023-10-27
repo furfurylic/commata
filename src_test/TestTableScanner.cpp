@@ -1241,7 +1241,7 @@ TYPED_TEST(TestTableScanner, BufferSize)
         }
 
         try {
-            parse_csv(&buf, std::move(h), buffer_size);
+            parse_csv(buf, std::move(h), buffer_size);
         } catch (const text_error& e) {
             FAIL() << text_error_info(e) << "\nbuffer_size=" << buffer_size;
         }
