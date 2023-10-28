@@ -132,10 +132,29 @@ auto write_ntmbs(std::streambuf* sb, const std::locale& loc,
     }
 }
 
+// An unformatted output function (C++17 30.7.5.3)
 template <class InputIterator, class InputIteratorEnd>
 void write_ntmbs(std::ostream& os, InputIterator begin, InputIteratorEnd end)
 {
-    write_ntmbs(os.rdbuf(), os.getloc(), begin, end);
+    std::ostream::sentry s(os);                             // throw
+    if (!s) {
+        return;
+    }
+    try {
+        write_ntmbs(os.rdbuf(), os.getloc(), begin, end);   // throw
+    } catch (...) {
+        // Set badbit without causing an std::ios::failure to be thrown
+        // (C++17 30.7.5.3.1)
+        try {
+            os.setstate(std::ios_base::badbit);             // throw
+        } catch (std::ios::failure&) {
+        }
+        // And then rethrow the exception if an exception is expected by
+        // badbit (C++17 30.7.5.3.1)
+        if ((os.exceptions() & std::ios_base::badbit) != 0) {
+            throw;                                          // throw
+        }
+    }
 }
 
 }
