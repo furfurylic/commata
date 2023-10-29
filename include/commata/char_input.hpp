@@ -257,10 +257,9 @@ public:
     {}
 
     owned_string_input(owned_string_input&& other) noexcept :
-        s_(std::move(other.s_)), head_(other.head_)
-    {
-        other.head_ = other.s_.size();
-    }
+        s_(std::move(other.s_)),
+        head_(std::exchange(other.head_, other.s_.size()))
+    {}
 
     ~owned_string_input() = default;
 
@@ -269,8 +268,7 @@ public:
             std::basic_string<Ch, Tr, Allocator>>)
     {
         s_ = std::move(other.s_);
-        head_ = other.head_;
-        other.head_ = other.s_.size();
+        head_ = std::exchange(other.head_, other.s_.size());
         return *this;
     }
 
