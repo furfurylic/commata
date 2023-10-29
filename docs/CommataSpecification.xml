@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-10-01 (UTC)</signature>
+<signature>2023-10-29 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2228,7 +2228,7 @@ template &lt;class Handler, class... Args>
           <code>
 template &lt;class Handler, class... Args>
   <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                       Args&amp;&amp;... args) &amp;&amp; noexcept;
+                       Args&amp;&amp;... args)     &amp;&amp; noexcept;
           </code>
           <effects>Equivalent to: <c>return std::move(*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
           <remark>This operator shall not participate in overload resolution unless <c>std::is_invocable_v&lt;csv_source&amp;&amp;, reference_handler&lt;Handler>&amp;&amp;, Args&amp;&amp;...></c> is <c>true</c>.
