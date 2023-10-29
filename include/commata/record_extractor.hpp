@@ -259,7 +259,7 @@ public:
         std::enable_if_t<!std::is_integral_v<FieldNamePredR>>* = nullptr>
     impl(
             std::allocator_arg_t, const Allocator& alloc,
-            std::basic_streambuf<Ch, Tr>* out,
+            std::basic_streambuf<Ch, Tr>& out,
             FieldNamePredR&& field_name_pred,
             FieldValuePredR&& field_value_pred,
             bool includes_header, std::size_t max_record_num) :
@@ -273,7 +273,7 @@ public:
     template <class FieldValuePredR>
     impl(
             std::allocator_arg_t, const Allocator& alloc,
-            std::basic_streambuf<Ch, Tr>* out,
+            std::basic_streambuf<Ch, Tr>& out,
             std::size_t target_field_index, FieldValuePredR&& field_value_pred,
             bool has_header,
             bool includes_header, std::size_t max_record_num) :
@@ -288,13 +288,13 @@ private:
     template <class FieldNamePredR, class FieldValuePredR>
     impl(
         std::allocator_arg_t, const Allocator& alloc,
-        std::basic_streambuf<Ch, Tr>* out,
+        std::basic_streambuf<Ch, Tr>& out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
         std::size_t target_field_index, bool has_header,
         bool includes_header, std::size_t max_record_num) :
         record_num_to_include_(max_record_num),
         target_field_index_(target_field_index), field_index_(0),
-        current_begin_(nullptr), out_(out),
+        current_begin_(nullptr), out_(std::addressof(out)),
         nf_(std::forward<FieldNamePredR>(field_name_pred),
             std::vector<Ch, alloc_t>(alloc_t(alloc))),
         vr_(std::forward<FieldValuePredR>(field_value_pred),
@@ -565,7 +565,7 @@ public:
          && std::is_constructible<FieldValuePred, FieldValuePredR&&>::value>*
         = nullptr>
     record_extractor(
-        std::basic_streambuf<Ch, Tr>* out,
+        std::basic_streambuf<Ch, Tr>& out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
         header_forwarding header = header_forwarding::yes,
         std::size_t max_record_num = 0) :
@@ -583,7 +583,7 @@ public:
         = nullptr>
     record_extractor(
         std::allocator_arg_t, const Allocator& alloc,
-        std::basic_streambuf<Ch, Tr>* out,
+        std::basic_streambuf<Ch, Tr>& out,
         FieldNamePredR&& field_name_pred, FieldValuePredR&& field_value_pred,
         header_forwarding header = header_forwarding::yes,
         std::size_t max_record_num = 0) :
@@ -599,7 +599,7 @@ public:
 
 template <class FieldNamePred, class FieldValuePred, class Ch, class Tr,
           class... Args>
-record_extractor(std::basic_streambuf<Ch, Tr>*, FieldNamePred, FieldValuePred,
+record_extractor(std::basic_streambuf<Ch, Tr>&, FieldNamePred, FieldValuePred,
                  Args...)
  -> record_extractor<FieldNamePred, FieldValuePred, Ch, Tr,
                      std::allocator<Ch>>;
@@ -607,7 +607,7 @@ record_extractor(std::basic_streambuf<Ch, Tr>*, FieldNamePred, FieldValuePred,
 template <class FieldNamePred, class FieldValuePred, class Ch, class Tr,
           class Allocator, class... Args>
 record_extractor(std::allocator_arg_t, Allocator,
-    std::basic_streambuf<Ch, Tr>*, FieldNamePred, FieldValuePred, Args...)
+    std::basic_streambuf<Ch, Tr>&, FieldNamePred, FieldValuePred, Args...)
  -> record_extractor<FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
 
 template <class FieldValuePred, class Ch,
@@ -632,7 +632,7 @@ public:
             std::is_constructible<FieldValuePred, FieldValuePredR&&>::value>*
         = nullptr>
     record_extractor_with_indexed_key(
-        std::basic_streambuf<Ch, Tr>* out,
+        std::basic_streambuf<Ch, Tr>& out,
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
         std::optional<header_forwarding> header = header_forwarding::yes,
         std::size_t max_record_num = 0) :
@@ -648,7 +648,7 @@ public:
         = nullptr>
     record_extractor_with_indexed_key(
         std::allocator_arg_t, const Allocator& alloc,
-        std::basic_streambuf<Ch, Tr>* out,
+        std::basic_streambuf<Ch, Tr>& out,
         std::size_t target_field_index, FieldValuePredR&& field_value_pred,
         std::optional<header_forwarding> header = header_forwarding::yes,
         std::size_t max_record_num = 0) :
@@ -679,7 +679,7 @@ private:
 };
 
 template <class FieldValuePred, class Ch, class Tr, class... Args>
-record_extractor_with_indexed_key(std::basic_streambuf<Ch, Tr>*, std::size_t,
+record_extractor_with_indexed_key(std::basic_streambuf<Ch, Tr>&, std::size_t,
     FieldValuePred, Args...)
  -> record_extractor_with_indexed_key<FieldValuePred, Ch, Tr,
                                       std::allocator<Ch>>;
@@ -687,7 +687,7 @@ record_extractor_with_indexed_key(std::basic_streambuf<Ch, Tr>*, std::size_t,
 template <class FieldValuePred, class Ch, class Tr, class Allocator,
           class... Args>
 record_extractor_with_indexed_key(std::allocator_arg_t, Allocator,
-    std::basic_streambuf<Ch, Tr>*, std::size_t, FieldValuePred, Args...)
+    std::basic_streambuf<Ch, Tr>&, std::size_t, FieldValuePred, Args...)
  -> record_extractor_with_indexed_key<FieldValuePred, Ch, Tr, Allocator>;
 
 namespace detail::record_extraction {
@@ -712,7 +712,7 @@ template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr, class Allocator, class... Appendices>
 auto make_record_extractor(
     std::allocator_arg_t, const Allocator& alloc,
-    std::basic_streambuf<Ch, Tr>* out,
+    std::basic_streambuf<Ch, Tr>& out,
     FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
  -> std::enable_if_t<
@@ -745,7 +745,7 @@ template <class FieldValuePred,
     class Ch, class Tr, class Allocator, class... Appendices>
 auto make_record_extractor(
     std::allocator_arg_t, const Allocator& alloc,
-    std::basic_streambuf<Ch, Tr>* out,
+    std::basic_streambuf<Ch, Tr>& out,
     std::size_t target_field_index, FieldValuePred&& field_value_pred,
     Appendices&&... appendices)
  -> std::enable_if_t<
@@ -765,32 +765,9 @@ auto make_record_extractor(
         std::forward<Appendices>(appendices)...);
 }
 
-template <class Ch, class Tr, class Allocator, class... Appendices>
-auto make_record_extractor(
-    std::allocator_arg_t, const Allocator& alloc,
-    std::basic_ostream<Ch, Tr>& out, Appendices&&... appendices)
- -> decltype(make_record_extractor(
-        std::allocator_arg, alloc, out.rdbuf(),
-        std::forward<Appendices>(appendices)...))
-{
-    return make_record_extractor(
-        std::allocator_arg, alloc, out.rdbuf(),
-        std::forward<Appendices>(appendices)...);
-}
-
 template <class Ch, class Tr, class... Appendices>
 auto make_record_extractor(
-    std::basic_streambuf<Ch, Tr>* out, Appendices&&... appendices)
- -> decltype(make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
-        out, std::forward<Appendices>(appendices)...))
-{
-    return make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
-        out, std::forward<Appendices>(appendices)...);
-}
-
-template <class Ch, class Tr, class... Appendices>
-auto make_record_extractor(
-    std::basic_ostream<Ch, Tr>& out, Appendices&&... appendices)
+    std::basic_streambuf<Ch, Tr>& out, Appendices&&... appendices)
  -> decltype(make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
         out, std::forward<Appendices>(appendices)...))
 {
