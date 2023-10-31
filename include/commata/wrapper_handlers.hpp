@@ -38,6 +38,12 @@ public:
     }
 };
 
+// The ctor reference_handler(Handler&) is the best match for non-const lvalue
+// of reference_handler<T> and defeats the copy deduction candidate, so this
+// deduction guide is needed
+template <class Handler>
+reference_handler(reference_handler<Handler>) -> reference_handler<Handler>;
+
 template <class Handler>
 reference_handler<Handler> wrap_ref(Handler& handler) noexcept
 {
@@ -48,14 +54,14 @@ template <class Handler>
 reference_handler<Handler> wrap_ref(std::reference_wrapper<Handler> handler)
     noexcept
 {
-    return wrap_ref(handler.get());
+    return reference_handler(handler.get());
 }
 
 template <class Handler>
 reference_handler<Handler> wrap_ref(reference_handler<Handler> handler)
     noexcept
 {
-    return wrap_ref(handler.base());
+    return reference_handler(handler);
 }
 
 template <class Handler>
