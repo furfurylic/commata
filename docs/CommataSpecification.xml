@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-10-29 (UTC)</signature>
+<signature>2023-11-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -833,9 +833,6 @@ namespace commata {
   <c>// <n><xref id="empty_physical_line_aware_handler"/>, empty_physical_line_aware_handler:</n></c>
   template &lt;class Handler> class empty_physical_line_aware_handler;
 
-　template &lt;class Handler>
-    empty_physical_line_aware_handler(Handler) -> empty_physical_line_aware_handler&lt;Handler>;
-
   template &lt;class Handler> void swap(
     empty_physical_line_aware_handler&lt;Handler>&amp; left,
     empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(<nc>see below</nc>);
@@ -1086,8 +1083,8 @@ namespace commata {
     using handler_type = Handler;
 
     <c>// <n><xref id="empty_physical_line_aware_handler.cons"/>, construct/copy/destroy:</n></c>
-    template &lt;class... Args> explicit empty_physical_line_aware_handler(
-      Args&amp;&amp;... args)                                  noexcept(<nc>see below</nc>);
+    explicit empty_physical_line_aware_handler(const Handler&amp;  handler) noexcept(<nc>see below</nc>);
+    explicit empty_physical_line_aware_handler(      Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
     empty_physical_line_aware_handler(
       const empty_physical_line_aware_handler&amp;  other) noexcept(<nc>see below</nc>);
     empty_physical_line_aware_handler(
@@ -1121,9 +1118,6 @@ namespace commata {
     void swap(empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
   };
 
-　template &lt;class Handler>
-    empty_physical_line_aware_handler(Handler) -> empty_physical_line_aware_handler&lt;Handler>;
-
   <c>// <n><xref id="empty_physical_line_aware_handler.special"/>, specialized algorithms:</n></c>
   template &lt;class Handler> void swap(
     empty_physical_line_aware_handler&lt;Handler>&amp; left,
@@ -1150,13 +1144,19 @@ namespace commata {
 
         <code-item>
           <code>
-template &lt;class... Args>
-  explicit empty_physical_line_aware_handler(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+explicit empty_physical_line_aware_handler(const Handler&amp; handler) noexcept(<nc>see below</nc>);
           </code>
-          <requires><c>std::is_constructible_v&lt;Handler, Args&amp;&amp;...></c> shall be <c>true</c>.</requires>
-          <effects>Constructs an <c>empty_physical_line_aware_handler</c> object that stores a <c>Handler</c> object constructed with <c>std::forward&lt;Args>(args)...</c>.</effects>
-          <remark>This constructor shall not participate in overload resolution if <c>sizeof...(Args) == 1</c> and <c>std::is_base_of_v&lt;empty_physical_line_aware_handler, std::decay_t&lt;Args>...></c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;Handler, Args&amp;&amp;...></c>.</remark>
+          <requires><c>std::is_copy_constructible_v&lt;Handler></c> shall be <c>true</c>.</requires>
+          <effects>Constructs an <c>empty_physical_line_aware_handler</c> object that stores a <c>Handler</c> object constructed with <c>handler</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;Handler></c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+explicit empty_physical_line_aware_handler(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Constructs an <c>empty_physical_line_aware_handler</c> object that stores a <c>Handler</c> object constructed with <c>std::move(handler)</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Handler></c>.</remark>
         </code-item>
 
         <code-item>
