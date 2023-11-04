@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2023-10-29 (UTC)</signature>
+<signature>2023-11-05 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1188,10 +1188,11 @@ template &lt;class HandlerR>
   <nc>see below</nc>
     make_empty_physical_line_aware(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
           </code>
-          <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
+          <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.
+                   Also let <c>T</c> be <c>Handler</c> if <c>Handler</c> has <c>empty_physical_line</c> member function that meets to the <c>TableHandler</c> requirements,
+                   <c>empty_physical_line_aware_handler&lt;Handler></c> otherwise.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</requires>
-          <returns>If <c>Handler</c> has <c>empty_physical_line</c> member function that meets to the <c>TableHandler</c> requirements, an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c>.
-                   Otherwise, an object of <c>empty_physical_line_aware_handler&lt;Handler></c> constructed with <c>std::forward&lt;HandlerR>(handler)</c>.</returns>
+          <returns>An object of <c>T</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c>.</returns>
           <remark>This overload shall not participate in overload resolution unless <c>Handler</c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible&lt;Handler, HandlerR&amp;&amp;>::value</c>.</remark>
         </code-item>
