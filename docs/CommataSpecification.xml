@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-10-29 (UTC)</signature>
+<signature>2023-11-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2047,7 +2047,6 @@ template &lt;class Ch, class Tr, class Allocator>
 namespace commata {
   <c>// <n><xref id="csv_source"/>, csv_source:</n></c>
   template &lt;class CharInput> class csv_source;
-  template &lt;class CharInput> csv_source(CharInput) -> csv_source&lt;CharInput>;
   template &lt;class CharInput>
     void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(<nc>see below</nc>);
   template &lt;class... Args>   auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
@@ -2074,12 +2073,14 @@ namespace commata {
   template &lt;class CharInput> class csv_source {
   public:
     <c>// <n><xref id="csv_source.types"/>, member types:</n></c>
+    using input_type = CharInput;
     using char_type = typename CharInput::char_type;
     using traits_type = typename CharInput::traits_type;
     template &lt;class Handler, class Allocator = void> using parser_type = <nc>see below</nc>;
   
     <c>// <n><xref id="csv_source.cons"/>, construct/copy/destroy:</n></c>
-    template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+    explicit csv_source(const CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
+    explicit csv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
     csv_source(const csv_source&amp; other) = default;
     csv_source(csv_source&amp;&amp; other) = default;
    ~csv_source() = default;
@@ -2112,8 +2113,6 @@ namespace commata {
   private:
     CharInput in;   <c>// <n>exposition only</n></c>
   };
-
-  template &lt;class CharInput> csv_source(CharInput) -> csv_source&lt;CharInput>;
 
   <c>// <n><xref id="csv_source.special"/>, specialized algorithms:</n></c>
   template &lt;class CharInput>
@@ -2156,15 +2155,19 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
 
         <code-item>
           <code>
-template &lt;class... Args> explicit csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+explicit csv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Initializes <c>in</c> with <c>std::forward&lt;Args>(args)...</c>.</effects>
-          <remark><p>This constructor shall not participate in overload resolution unless:</p>
-                  <ul>
-                    <li><c>std::is_constructible_v&lt;CharInput, Args&amp;&amp;...></c> is <c>true</c> and</li>
-                    <li><c>sizeof...(Args)</c> is not equal to <c>1</c> or <c>std::is_base_of_v&lt;csv_source&lt;CharInput>, std::decay_t&lt;Args...>></c> is <c>false</c>.</li>
-                  </ul>
-                  <p>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CharInput, Args&amp;&amp;...></c>.</p></remark>
+          <requires><c>std::is_copy_constructible_v&lt;CharInput></c> shall be <c>true</c>.</requires>
+          <effects>Initializes <c>in</c> with <c>input</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;CharInput></c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+explicit csv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
+          </code>
+          <effects>Initializes <c>in</c> with <c>std::move(input)</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;CharInput></c>.</remark>
         </code-item>
       </section>
 
@@ -2272,7 +2275,7 @@ template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcep
   -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
           </code>
           <preface>Let <c>CharInput</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
-          <effects>Equivalent to: <c>return csv_source&lt;CharInput>(std::forward&lt;Args>(args)...);</c></effects>
+          <effects>Equivalent to: <c>return csv_source&lt;CharInput>(make_char_input(std::forward&lt;Args>(args)...));</c></effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CharInput, Args&amp;&amp;...></c>.</remark>
         </code-item>
 

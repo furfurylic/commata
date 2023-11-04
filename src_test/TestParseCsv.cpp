@@ -461,12 +461,11 @@ TEST_F(TestCsvSource, AcceptFullFledged)
     make_csv_source(L"def")(full_fledged<wchar_t>())();
 }
 
-TEST_F(TestCsvSource, DefaultConstructAndAssign)
+TEST_F(TestCsvSource, Assign)
 {
     auto abc = make_csv_source("ABC");
-    auto xyz = decltype(abc)();
+    auto xyz = make_csv_source("");
 
-    static_assert(std::is_nothrow_default_constructible_v<decltype(abc)>);
     static_assert(std::is_nothrow_move_constructible_v<decltype(abc)>);
     static_assert(std::is_nothrow_move_assignable_v<decltype(abc)>);
 
