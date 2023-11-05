@@ -1410,7 +1410,7 @@ namespace commata {
     using size_type      = std::make_unsigned_t&lt;std::streamsize>;
 
     <c>// <n><xref id="owned_streambuf_input.cons"/>, construct/copy/destroy:</n></c>
-    owned_streambuf_input() = default;
+    owned_streambuf_input();
     explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</nc>);
     owned_streambuf_input(owned_streambuf_input&amp;&amp; other) = default;
    ~owned_streambuf_input() = default;
@@ -1434,11 +1434,21 @@ namespace commata {
       </codeblock>
 
       <p>The class template <c>owned_streambuf_input</c> describes thin wrappers of an object of an derived type of an instance of <c>std::basic_streambuf</c> with the ownership of it.</p>
-      <p>The template parameter <c>Streambuf</c> shall be the same type as, or be a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</p>
+      <p>The template parameter <c>Streambuf</c> shall be the same type as, or be a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>,
+         and shall meet the <c>MoveConstructible</c> requirements.</p>
       <p>An instance of <c>owned_streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
 
       <section id="owned_streambuf_input.cons">
         <name><c>owned_streambuf_input</c> construct/copy/destroy</name>
+
+        <code-item>
+          <code>
+owned_streambuf_input() noexcept(<nc>see below</nc>);
+          </code>
+          <requires><c>std::is_default_constructible&lt;Streambuf>::value</c> shall be <c>true</c>.</requires>
+          <effects>Value-initializes <c>in</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible&lt;Streambuf>::value</c>.</remark>
+        </code-item>
 
         <code-item>
           <code>
@@ -1528,11 +1538,21 @@ namespace commata {
       </codeblock>
 
       <p>The class template <c>owned_istream_input</c> describes thin wrappers of an object of an derived type of an instance of <c>std::basic_istream</c> with the ownership of it.</p>
-      <p>The template parameter <c>IStream</c> shall be the same type as, or be a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</p>
+      <p>The template parameter <c>IStream</c> shall be the same type as, or be a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>,
+         and shall meet the <c>MoveConstructible</c> requirements.</p>
       <p>An instance of <c>owned_istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>IStream::char_type</c>.</p>
 
       <section id="owned_istream_input.cons">
         <name><c>owned_istream_input</c> construct/copy/destroy</name>
+
+        <code-item>
+          <code>
+owned_istream_input() noexcept(<nc>see below</nc>);
+          </code>
+          <requires><c>std::is_default_constructible&lt;IStream>::value</c> shall be <c>true</c>.</requires>
+          <effects>Value-initializes <c>in</c>.</effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible&lt;IStream>::value</c>.</remark>
+        </code-item>
 
         <code-item>
           <code>
