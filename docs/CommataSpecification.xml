@@ -2771,11 +2771,10 @@ bool is_in_header() const noexcept;
 
       <p>For a range-accessible type <c>T</c>, <c>decltype(std::begin(std::declval&lt;T&amp;>()))></c> is called its iterator type.</p>
 
-      <p>Additionally, in this subclause, for a certain expression <c>t</c> whose type is <c>T</c>, <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c>,
-         which is an expression of a unary predicate that takes a <c>std::basic_string_view&lt;Ch, Tr></c> parameter denoted by <c>a</c> here, is defined as following:</p>
+      <p>Additionally, in this subclause, for a certain expression <c>t</c> whose type is <c>T</c>, an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c> is defined as following:</p>
       <ul>
         <li>if <c>std::is_convertible_v&lt;T&amp;, const Ch*></c> (if <c>t</c> is an lvalue) or <c>std::is_convertible_v&lt;T, const Ch*></c> (otherwise) is <c>true</c>,
-            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds an <c>std::basic_string_view&lt;Ch, Tr></c> object (hereinafter called <c>v</c>) initialized with a value of <c>const Ch*</c> converted from an lvaue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>,</li>
               <li>that tells if a string view object is equal to <c>v</c>, and</li>
@@ -2783,7 +2782,7 @@ bool is_in_header() const noexcept;
             </ul>
         </li>
         <li>otherwise, if <c>t</c> is an lvalue and <c>T</c> is a range-accessible type for <c>Ch</c>,
-            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds the return value of <c>std::addressof(t)</c> (hereinafter called <c>p</c>),</li>
               <li>that tells if a string view object is equal to the range [<c>std::begin(*p)</c>, <c>std::end(*p)</c>) in terms of <c>Tr::eq</c>, and</li>
@@ -2791,14 +2790,14 @@ bool is_in_header() const noexcept;
             </ul>
         </li>
         <li>otherwise, if <c>T</c> is a range-accessible type for <c>Ch</c>,
-            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds a copy of <c>t</c> (hereinafter called <c>u</c>) constructed with an xvalue of <c>t</c>,</li>
               <li>that tells if a string view object is equal to the range [<c>std::begin(u)</c>, <c>std::end(u)</c>) in terms of <c>Tr::eq</c>, and</li>
               <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == std::is_nothrow_move_constructible_v&lt;T></c>,</li>
             </ul>
         </li>
-        <li>otherwise, an lvalue (if <c>t</c> is an lvalue) or xvalue (otherwise) of <c>t</c>.</li>
+        <li>otherwise, an lvalue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>.</li>
       </ul>
 
       <code-item>
