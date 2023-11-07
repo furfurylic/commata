@@ -68,6 +68,8 @@ enum class state : std::int_fast8_t
     right_of_open_quote,
     in_quoted_value,
     in_quoted_value_after_quote,
+    in_quoted_value_after_cr,
+    in_quoted_value_after_lf,
     after_cr,
     after_lf
 };
@@ -203,15 +205,25 @@ struct parse_step<state::in_quoted_value>
         const typename Parser::char_type* pe) const
     {
         while (p < pe) {
-            if (*p == key_chars<typename Parser::char_type>::dquote_c) {
+            switch (*p) {
+            case key_chars<typename Parser::char_type>::dquote_c:
                 parser.update();
                 parser.set_first_last();
                 parser.change_state(state::in_quoted_value_after_quote);
                 return;
-            } else {
+            case key_chars<typename Parser::char_type>::cr_c:
                 parser.renew_last();
-                ++p;
+                parser.change_state(state::in_quoted_value_after_cr);
+                return;
+            case key_chars<typename Parser::char_type>::lf_c:
+                parser.renew_last();
+                parser.change_state(state::in_quoted_value_after_lf);
+                return;
+            default:
+                parser.renew_last();
+                break;
             }
+            ++p;
         }
         --p;
     }
@@ -269,6 +281,90 @@ struct parse_step<state::in_quoted_value_after_quote>
     void eof(Parser& parser) const
     {
         parser.finalize();
+    }
+};
+
+template <>
+struct parse_step<state::in_quoted_value_after_cr>
+{
+    template <class Parser>
+    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
+    {
+        switch (*p) {
+        case key_chars<typename Parser::char_type>::dquote_c:
+            parser.new_physical_line();
+            parser.update();
+            parser.set_first_last();
+            parser.change_state(state::in_quoted_value_after_quote);
+            break;
+        case key_chars<typename Parser::char_type>::cr_c:
+            parser.new_physical_line();
+            parser.renew_last();
+            break;
+        case key_chars<typename Parser::char_type>::lf_c:
+            parser.renew_last();
+            parser.change_state(state::in_quoted_value_after_lf);
+            break;
+        default:
+            parser.new_physical_line();
+            parser.renew_last();
+            parser.change_state(state::in_quoted_value);
+            break;
+        }
+    }
+
+    template <class Parser>
+    void underflow(Parser& parser) const
+    {
+        parser.update();
+    }
+
+    template <class Parser>
+    void eof(Parser& /*parser*/) const
+    {
+        throw parse_error("EOF reached with an open escaped value");
+    }
+};
+
+template <>
+struct parse_step<state::in_quoted_value_after_lf>
+{
+    template <class Parser>
+    void normal(Parser& parser, const typename Parser::char_type* p, ...) const
+    {
+        switch (*p) {
+        case key_chars<typename Parser::char_type>::dquote_c:
+            parser.new_physical_line();
+            parser.update();
+            parser.set_first_last();
+            parser.change_state(state::in_quoted_value_after_quote);
+            break;
+        case key_chars<typename Parser::char_type>::cr_c:
+            parser.renew_last();
+            parser.change_state(state::in_quoted_value_after_cr);
+            break;
+        case key_chars<typename Parser::char_type>::lf_c:
+            parser.new_physical_line();
+            parser.renew_last();
+            break;
+        default:
+            parser.new_physical_line();
+            parser.renew_last();
+            parser.change_state(state::in_quoted_value);
+            break;
+        }
+    }
+
+    template <class Parser>
+    void underflow(Parser& parser) const
+    {
+        parser.update();
+    }
+
+    template <class Parser>
+    void eof(Parser& /*parser*/) const
+    {
+        throw parse_error("EOF reached with an open escaped value");
     }
 };
 
@@ -667,6 +763,12 @@ private:
             break;
         case state::in_quoted_value_after_quote:
             f(parse_step<state::in_quoted_value_after_quote>());
+            break;
+        case state::in_quoted_value_after_cr:
+            f(parse_step<state::in_quoted_value_after_cr>());
+            break;
+        case state::in_quoted_value_after_lf:
+            f(parse_step<state::in_quoted_value_after_lf>());
             break;
         case state::after_cr:
             f(parse_step<state::after_cr>());

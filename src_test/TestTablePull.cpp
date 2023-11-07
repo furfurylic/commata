@@ -38,7 +38,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
     const auto csv = str(R"(,"col1", col2 ,col3,)" "\r\n"
                          "\n"
                          R"( cell10 ,,"cell)" "\r\n"
-                         R"(12","cell""13""","")" "\n");
+                         R"(12","cell""13 ""","")" "\n");
     auto source = make_csv_source(csv);
     primitive_table_pull<decltype(source)> pull(
         std::move(source), TypeParam::second_type::value);
@@ -94,7 +94,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
     }
     ASSERT_EQ(str("<<[][col1][ col2 ][col3][]>>@0,20"
                   "--"
-                  "<<[ cell10 ][][cell\r\n12][cell\"13\"][]>>@2,36"),
+                  "<<[ cell10 ][][cell\r\n12][cell\"13 \"][]>>@3,20"),
               s);
 
     static_assert(std::is_nothrow_move_constructible<decltype(pull)>::value,
@@ -151,7 +151,7 @@ TYPED_TEST_P(TestTablePull, Basics)
     const auto csv = str(R"(,"col1", col2 ,col3,)" "\r\n"
                          "\n"
                          R"( cell10 ,,"cell)" "\r\n"
-                         R"(12","cell""13""","")" "\n");
+                         R"(12","cell""13 ""","")" "\n");
 
     for (auto e : { false, true }) {
         auto pull = make_table_pull(
@@ -259,29 +259,29 @@ TYPED_TEST_P(TestTablePull, Basics)
         ASSERT_EQ(str("cell\r\n12"),
             string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
-        ASSERT_EQ(pos_t(2, 20), pull.get_physical_position()) << e;
+        ASSERT_EQ(pos_t(3, 3), pull.get_physical_position()) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::field, pull.state()) << e;
-        ASSERT_EQ(str("cell\"13\""),
+        ASSERT_EQ(str("cell\"13 \""),
             string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
-        ASSERT_EQ(pos_t(2, 33), pull.get_physical_position()) << e;
+        ASSERT_EQ(pos_t(3, 17), pull.get_physical_position()) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::field, pull.state()) << e;
         ASSERT_EQ(str(""), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
-        ASSERT_EQ(pos_t(2, 36), pull.get_physical_position()) << e;
+        ASSERT_EQ(pos_t(3, 20), pull.get_physical_position()) << e;
         ++j;
 
         ASSERT_TRUE(pull()) << e;
         ASSERT_EQ(table_pull_state::record_end, pull.state()) << e;
         ASSERT_EQ(str(""), string_t(pull.cbegin(), pull.cend())) << e;
         ASSERT_EQ(std::make_pair(i, j), pull.get_position()) << e;
-        ASSERT_EQ(pos_t(2, 36), pull.get_physical_position()) << e;
+        ASSERT_EQ(pos_t(3, 20), pull.get_physical_position()) << e;
         ++i;
         j = 0;
 
