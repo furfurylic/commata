@@ -713,15 +713,15 @@ private:
             using input_size_t = typename Input::size_type;
             using min_t = std::common_type_t<std::size_t, input_size_t>;
             constexpr auto x = std::numeric_limits<input_size_t>::max();
-            const auto length = static_cast<std::size_t>(
-                in_(buffer_ + loaded_size,
-                    static_cast<std::size_t>(
-                        std::min<min_t>(buffer_size - loaded_size, x))));
-            if (length == 0) {
+            const auto n = static_cast<std::size_t>(
+                            std::min<min_t>(buffer_size - loaded_size, x));
+            const auto length =
+                static_cast<std::size_t>(in_(buffer_ + loaded_size, n));
+            loaded_size += length;
+            if (length < n) {
                 eof_reached_ = true;
                 break;
             }
-            loaded_size += length;
         } while (buffer_size > loaded_size);
 
         return { buffer_size, loaded_size };

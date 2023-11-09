@@ -1447,8 +1447,15 @@ template &lt;class Handler>
           <td>(4)</td>
           <td><c>t(d, n)</c></td>
           <td><c>T::size_type</c></td>
-          <td>Assigns at most <c>n</c> characters to [<c>d</c>, <c>d + m</c>) where <c>m</c> denotes the number of characters actually assigned.
-              Then returns <c>m</c>.</td>
+          <td>
+            <p>Extracts characters and stores them into successive locations of an array whose first element is designated by <c>d</c>.</p>
+            <p>Characters are extracted and stored until either of the following occurs:</p>
+            <ul>
+              <li><c>n</c> characters are stored, or</li>
+              <li>end-of-file occurs on the input sequence.</li>
+            </ul>
+            <p>And then returns the number of characters stored.</p>
+          </td>
         </tr>
       </table>
     </section>
@@ -1576,7 +1583,8 @@ explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
 size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>If <c>in</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in</c> to successive elements of the array whose first element is designated by <c>out</c>.</effects>
+          <effects>If <c>in</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+                   Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
           <returns>The number of characters assigned.</returns>
         </code-item>
       </section>
@@ -1643,7 +1651,8 @@ explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</n
 size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>Assigns up to <c>n</c> characters obtained from <c>in</c> to successive elements of the array whose first element is designated by <c>out</c>.</effects>
+          <effects>Assigns up to <c>n</c> characters obtained from <c>in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+                   Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
           <returns>The number of characters assigned.</returns>
         </code-item>
       </section>
