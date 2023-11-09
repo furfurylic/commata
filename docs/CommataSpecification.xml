@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-11-04 (UTC)</signature>
+<signature>2023-11-05 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -88,7 +88,7 @@
             The representation of the final text field in a text record is not followed by a comma.</li>
         <li>In a CSV text, the representations of its text records are delimited by a line break.
             The representation of the final record is or is not followed by a line break.</li>
-        <li>Each line break is either of CR, LF, or CRLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRLF is a two-character sequence whose first character is CR and whose second is LF.</li>
+        <li>Each line break is either of CR, LF, or CRsLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRsLF is a character sequence of one or more CR(s) and an LF in order.</li>
       </ul>
     </section>
 
@@ -1370,10 +1370,11 @@ template &lt;class HandlerR>
   <nc>see below</nc>
     make_empty_physical_line_aware(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
           </code>
-          <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
+          <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.
+                   Also let <c>T</c> be <c>Handler</c> if <c>Handler</c> has <c>empty_physical_line</c> member function that meets to the <c>TableHandler</c> requirements,
+                   <c>empty_physical_line_aware_handler&lt;Handler></c> otherwise.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</requires>
-          <returns>If <c>Handler</c> has <c>empty_physical_line</c> member function that meets to the <c>TableHandler</c> requirements, <c>std::forward&lt;HandlerR>(handler)</c>.
-                   Otherwise, an object of <c>empty_physical_line_aware_handler&lt;Handler></c> constructed with <c>std::forward&lt;HandlerR>(handler)</c>.</returns>
+          <returns>An object of <c>T</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c>.</returns>
           <remark>This overload shall not participate in overload resolution unless <c>Handler</c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;></c>.</remark>
         </code-item>
@@ -2773,11 +2774,10 @@ bool is_in_header() const noexcept;
 
       <p>For a range-accessible type <c>T</c>, <c>decltype(std::begin(std::declval&lt;T&amp;>()))></c> is called its iterator type.</p>
 
-      <p>Additionally, in this subclause, for a certain expression <c>t</c> whose type is <c>T</c>, <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c>,
-         which is an expression of a unary predicate that takes a <c>std::basic_string_view&lt;Ch, Tr></c> parameter denoted by <c>a</c> here, is defined as following:</p>
+      <p>Additionally, in this subclause, for a certain expression <c>t</c> whose type is <c>T</c>, an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c> is defined as following:</p>
       <ul>
         <li>if <c>std::is_convertible_v&lt;T&amp;, const Ch*></c> (if <c>t</c> is an lvalue) or <c>std::is_convertible_v&lt;T, const Ch*></c> (otherwise) is <c>true</c>,
-            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds an <c>std::basic_string_view&lt;Ch, Tr></c> object (hereinafter called <c>v</c>) initialized with a value of <c>const Ch*</c> converted from an lvaue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>,</li>
               <li>that tells if a string view object is equal to <c>v</c>, and</li>
@@ -2785,7 +2785,7 @@ bool is_in_header() const noexcept;
             </ul>
         </li>
         <li>otherwise, if <c>t</c> is an lvalue and <c>T</c> is a range-accessible type for <c>Ch</c>,
-            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds the return value of <c>std::addressof(t)</c> (hereinafter called <c>p</c>),</li>
               <li>that tells if a string view object is equal to the range [<c>std::begin(*p)</c>, <c>std::end(*p)</c>) in terms of <c>Tr::eq</c>, and</li>
@@ -2793,14 +2793,14 @@ bool is_in_header() const noexcept;
             </ul>
         </li>
         <li>otherwise, if <c>T</c> is a range-accessible type for <c>Ch</c>,
-            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds a copy of <c>t</c> (hereinafter called <c>u</c>) constructed with an xvalue of <c>t</c>,</li>
               <li>that tells if a string view object is equal to the range [<c>std::begin(u)</c>, <c>std::end(u)</c>) in terms of <c>Tr::eq</c>, and</li>
               <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == std::is_nothrow_move_constructible_v&lt;T></c>,</li>
             </ul>
         </li>
-        <li>otherwise, an lvalue (if <c>t</c> is an lvalue) or xvalue (otherwise) of <c>t</c>.</li>
+        <li>otherwise, an lvalue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>.</li>
       </ul>
 
       <code-item>
