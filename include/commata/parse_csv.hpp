@@ -551,6 +551,7 @@ private:
     }
 
 private:
+    // Makes p_ become the first char of the new line
     void new_physical_line() noexcept
     {
         if (physical_line_index_ == parse_error::npos) {
@@ -567,12 +568,14 @@ private:
         s_ = s;
     }
 
+    // Makes both of first_ and last_ point p_
     void set_first_last() noexcept
     {
         first_ = p_;
         last_ = p_;
     }
 
+    // Makes last_ point the next char of p_
     void renew_last() noexcept
     {
         last_ = p_ + 1;
