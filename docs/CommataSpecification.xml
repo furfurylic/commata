@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-11-05 (UTC)</signature>
+<signature>2023-11-10 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6119,7 +6119,7 @@ template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
                       <li>otherwise, a zero value of <c>int</c>.</li>
                     </ul>
                     <p>Then evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and lets <c>r</c> be the return value.
-                       Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</p></td>
+                       Then puts <c>*r</c> into the field translator sink if <c>r.has_value()</c> is <c>true</c>.</p></td>
               </tr>
 
               <tr>
@@ -6132,7 +6132,7 @@ template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
                 <td>&#8211;</td>
                 <td>&#8211;</td>
                 <td>Evaluates <c>ceh.empty()</c> or <c>ceh.empty(n)</c> and lets <c>r</c> be the return value.
-                    Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
+                    Then puts <c>*r</c> into the field translator sink if <c>r.has_value()</c> is <c>true</c>.</td>
               </tr>
 
               <tr>
@@ -6141,7 +6141,7 @@ template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
                 <td>&#8211;</td>
                 <td>&#8211;</td>
                 <td>Evaluates <c>ceh.invalid_format(begin, end)</c> or <c>ceh.invalid_format(begin, end, n)</c> and lets <c>r</c> be the return value.
-                    Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
+                    Then puts <c>*r</c> into the field translator sink if <c>r.has_value()</c> is <c>true</c>.</td>
               </tr>
             </table>
           </code-item>
