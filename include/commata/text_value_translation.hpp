@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cwctype>
+#include <memory>
 #include <optional>
 #include <string_view>
 #include <type_traits>
@@ -19,6 +20,7 @@
 #include "member_like_base.hpp"
 #include "replacement.hpp"
 #include "text_error.hpp"
+#include "typing_aid.hpp"
 #include "write_ntmbs.hpp"
 
 namespace commata {
@@ -1154,6 +1156,231 @@ template <class... Ts,
             detail::replaced_type_from_t<Ts...>>>* = nullptr>
 replace_if_conversion_failed(Ts...)
  -> replace_if_conversion_failed<detail::replaced_type_from_t<Ts...>>;
+
+namespace detail::xlate {
+
+template <class T>
+constexpr auto default_conversion_error_handler_ptr()
+{
+    if constexpr (detail::is_std_optional_v<T>) {
+        return (replace_if_conversion_failed<typename T::value_type>*) nullptr;
+    } else {
+        return (fail_if_conversion_failed*) nullptr;
+    }
+}
+
+template <class T>
+constexpr bool is_fail_if_conversion_failed =
+    std::is_same_v<T, fail_if_conversion_failed>;
+
+template <class A>
+auto do_c_str(const A& a) -> decltype(a.c_str())
+{
+    return a.c_str();
+}
+
+template <class A>
+auto do_c_str(const A& a, ...) -> decltype(a->c_str())
+{
+    return a->c_str();
+}
+
+template <class A>
+auto do_size(const A& a) -> decltype(a.size())
+{
+    return a.size();
+}
+
+template <class A>
+auto do_size(const A& a, ...) -> decltype(a->size())
+{
+    return a->size();
+}
+
+template <class Converter, class A>
+auto do_convert(Converter& converter, const A& a)
+{
+    const auto* const c_str = do_c_str(a);
+    const auto size = do_size(a);
+    return converter.convert(c_str, c_str + size);
+}
+
+} // end detail::xlate
+
+template <class T, class ConversionErrorHandler =
+    std::remove_pointer_t<
+        decltype(detail::xlate::default_conversion_error_handler_ptr<T>())>>
+class arithmetic_converter :
+    detail::member_like_base<detail::converter<T, ConversionErrorHandler>>
+{
+public:
+    using target_type = T;
+    using conversion_error_handler_type = ConversionErrorHandler;
+
+    arithmetic_converter()
+            noexcept(
+                std::is_nothrow_default_constructible_v<ConversionErrorHandler>
+             && std::is_nothrow_move_constructible_v<ConversionErrorHandler>) :
+        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
+            ConversionErrorHandler())
+    {}
+
+    explicit arithmetic_converter(const ConversionErrorHandler& handler)
+            noexcept(
+                std::is_nothrow_copy_constructible_v<ConversionErrorHandler>) :
+        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
+            handler)
+    {}
+
+    explicit arithmetic_converter(ConversionErrorHandler&& handler)
+            noexcept(
+                std::is_nothrow_move_constructible_v<ConversionErrorHandler>) :
+        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
+            std::move(handler))
+    {}
+
+    template <class A>
+    T operator()(const A& a)
+    {
+        const auto opt = detail::xlate::do_convert(this->get(), a);
+        if constexpr (detail::xlate::
+                is_fail_if_conversion_failed<ConversionErrorHandler>) {
+            // Visual Studio 2022 refuses "if constexpr (std::is_same_v<
+            // ConversionErrorHandler, fail_if_conversion_failed>)" here
+            return *opt;
+        } else {
+            return opt.value();
+        }
+    }
+
+    ConversionErrorHandler& get_conversion_error_handler() noexcept
+    {
+        return this->get().get_conversion_error_handler();
+    }
+
+    const ConversionErrorHandler& get_conversion_error_handler() const noexcept
+    {
+        return this->get().get_conversion_error_handler();
+    }
+};
+
+template <class T, class ConversionErrorHandler>
+class arithmetic_converter<std::optional<T>, ConversionErrorHandler> :
+    detail::member_like_base<detail::converter<T, ConversionErrorHandler>>
+{
+public:
+    using target_type = T;
+    using conversion_error_handler_type = ConversionErrorHandler;
+
+    arithmetic_converter()
+            noexcept(arithmetic_converter::
+                        is_make_conversion_error_handler_noexcept()) :
+        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
+            arithmetic_converter::make_conversion_error_handler())
+    {}
+
+    explicit arithmetic_converter(const ConversionErrorHandler& handler)
+            noexcept(
+                std::is_nothrow_copy_constructible_v<ConversionErrorHandler>) :
+        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
+            handler)
+    {}
+
+    explicit arithmetic_converter(ConversionErrorHandler&& handler)
+            noexcept(
+                std::is_nothrow_move_constructible_v<ConversionErrorHandler>) :
+        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
+            std::move(handler))
+    {}
+
+    template <class A>
+    std::optional<T> operator()(const A& a)
+    {
+        return detail::xlate::do_convert(this->get(), a);
+    }
+
+    ConversionErrorHandler& get_conversion_error_handler() noexcept
+    {
+        return this->get().get_conversion_error_handler();
+    }
+
+    const ConversionErrorHandler& get_conversion_error_handler() const noexcept
+    {
+        return this->get().get_conversion_error_handler();
+    }
+
+private:
+    static ConversionErrorHandler make_conversion_error_handler()
+    {
+        using H = ConversionErrorHandler;
+        if constexpr (std::is_same_v<H, replace_if_conversion_failed<T>>) {
+            using i_t = replacement_ignore_t;
+            constexpr auto i = replacement_ignore;
+            if constexpr (
+                    std::is_constructible_v<H, i_t, i_t, i_t, i_t, i_t>) {
+                return H(i, i, i, i, i);
+            } else if constexpr (
+                    std::is_constructible_v<H, i_t, i_t, i_t, i_t>) {
+                return H(i, i, i, i);
+            } else {
+                return H(i, i, i);
+            }
+        } else {
+            return H();
+        }
+    }
+
+    static constexpr bool is_make_conversion_error_handler_noexcept()
+    {
+        using H = ConversionErrorHandler;
+        if constexpr (std::is_same_v<H, replace_if_conversion_failed<T>>) {
+            using i_t = replacement_ignore_t;
+            if constexpr (
+                    std::is_constructible_v<H, i_t, i_t, i_t, i_t, i_t>) {
+                return std::is_nothrow_constructible_v<
+                                H, i_t, i_t, i_t, i_t, i_t>;
+            } else if constexpr (
+                    std::is_constructible_v<H, i_t, i_t, i_t, i_t>) {
+                return std::is_nothrow_constructible_v<H, i_t, i_t, i_t, i_t>;
+            } else {
+                return std::is_nothrow_constructible_v<H, i_t, i_t, i_t>;
+            }
+        } else {
+            return std::is_nothrow_default_constructible_v<H>;
+        }
+    }
+};
+
+template <class T, class ConversionErrorHandler>
+arithmetic_converter<T, std::decay_t<ConversionErrorHandler>>
+make_arithmetic_converter(ConversionErrorHandler&& handler)
+    noexcept(std::is_nothrow_constructible_v<
+        arithmetic_converter<T, std::decay_t<ConversionErrorHandler>>,
+        ConversionErrorHandler&&>)
+{
+    return arithmetic_converter<T, std::decay_t<ConversionErrorHandler>>(
+            std::forward<ConversionErrorHandler>(handler));
+}
+
+template <class T>
+arithmetic_converter<T> make_arithmetic_converter()
+    noexcept(std::is_nothrow_default_constructible_v<arithmetic_converter<T>>)
+{
+    return arithmetic_converter<T>();
+}
+
+template <class T, class ConversionErrorHandler, class A>
+T to_arithmetic(const A& a, ConversionErrorHandler&& handler)
+{
+    return make_arithmetic_converter<T>(
+            std::forward<ConversionErrorHandler>(handler))(a);
+}
+
+template <class T, class A>
+T to_arithmetic(const A& a)
+{
+    return make_arithmetic_converter<T>()(a);
+}
 
 }
 

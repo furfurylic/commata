@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-11-28 (UTC)</signature>
+<signature>2023-12-01 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1366,6 +1366,1102 @@ template &lt;class Handler>
     make_empty_physical_line_aware(std::reference_wrapper&lt;Handler> handler) noexcept;
           </code>
           <effects>Equivalent to: <c>return make_empty_physical_line_aware(wrap_ref(handler));</c></effects>
+        </code-item>
+      </section>
+    </section>
+  </section>
+
+  <section id="xlate">
+    <name>Text value translation</name>
+
+    <section id="xlate.general">
+      <name>General</name>
+      <p>To <n>translate a text value</n> means making a value that is not necessarily a string value from a text value in a text table (<xref id="definitions.text_table"/>).
+        The resulted value of the translation is called a <n>translated text value</n>.</p>
+      <p>Commata offers some facilities to do these translation of text values.</p>
+    </section>
+
+    <section id="replacement_action">
+      <name>Replacement action</name>
+
+      <p>When a text value translator object fails at translation, it should take an action, hereinafter called <n>replacement action</n>, instead of make a translated text value.
+          Commata offers three types for it: <n>copy</n>, <n>ignore</n> and <n>fail</n> as illustrated in <xref id="table.replacement_action"/>.</p>
+
+      <table id="table.replacement_action">
+        <caption>Types of a replacement action</caption>
+        <col width="1"/><col width="2"/><col width="27"/>
+
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>Effects</th>
+        </tr>
+
+        <tr>
+          <td>(1)</td>
+          <td><c>copy</c></td>
+          <td>Copy constructs an object of <c>T</c> from an object installed into this replacement action and use it instead of a translated text value.</td>
+        </tr>
+
+        <tr>
+          <td>(2)</td>
+          <td><c>ignore</c></td>
+          <td>Silently ignores the conversion error.</td>
+        </tr>
+
+        <tr>
+          <td>(3)</td>
+          <td><c>fail</c></td>
+          <td>Throws an exception.</td>
+        </tr>
+      </table>
+    </section>
+
+    <section id="hpp_replacement.syn">
+      <name>Header <c>"commama/replacement.hpp"</c> synopsis</name>
+      <codeblock>
+namespace commata {
+  struct replacement_ignore_t {};
+  inline constexpr replacement_ignore_t{};
+
+  struct replacement_fail_t {};
+  inline constexpr replacement_fail_t{};
+}
+      </codeblock>
+
+      <p>The header <c>"commama/replacement.hpp"</c> defines two empty stuctures and their variables used to specify a replacement action (<xref id="replacement_action"/>).</p>
+    </section>
+
+    <section id="hpp_text_value_translation.syn">
+      <name>Header <c>"commama/text_value_translation.hpp"</c> synopsis</name>
+      <codeblock>
+#include &lt;cstddef>
+#include &lt;optional>
+
+#include "replacement.hpp"
+#include "text_error.hpp"
+
+namespace commata {
+  <c>// <n><xref id="xlate.builtin.exceptions"/>, exception classes:</n></c>
+  class field_translation_error;
+    class field_invalid_format;
+      class field_empty;
+    class field_out_of_range;
+
+  <c>// <n>Conversion error tags for the ConversionErrorHandler requirements (<xref id="conversion_error_handler.requirements"/>)</n></c>
+  struct invalid_format_t {};
+  struct out_of_range_t {};
+  struct empty_t {};
+
+  <c>// <n><xref id="fail_if_conversion_failed"/>, fail_if_conversion_failed:</n></c>
+  struct fail_if_conversion_failed;
+
+  <c>// <n><xref id="replace_if_conversion_failed"/>, replace_if_conversion_failed:</n></c>
+  template &lt;class T> class replace_if_conversion_failed;
+  template &lt;class... Ts>
+    replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
+  template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
+                               replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
+
+  <c>// <n><xref id="arithmetic_converter"/>, arithmetic_converter:</n></c>
+  template &lt;class T, class ConversionErrorHandler = <nc>see below</nc>>
+    class arithmetic_converter;
+
+  <c>// <n><xref id="arithmetic_converter.optional"/>, arithmetic_converter&lt;std::optional&lt;T>, ConversionErrorHandler>:</n></c>
+  template &lt;class T, class ConversionErrorHandler>
+    class arithmetic_converter&lt;std::optional&lt;T>, ConversionErrorHandler>;
+
+  <c>// <n><xref id="arithmetic_converter.create"/>, arithmetic_converter creation functions:</n></c>
+  template &lt;class T, class ConversionErrorHandler>
+    arithmetic_converter&lt;T, std::decay_t&lt;ConversionErrorHandler>>
+      make_arithmetic_converter(ConversionErrorHandler&amp;&amp; handler) noexcept(<nc>see below</nc>);
+  template &lt;class T> arithmetic_converter&lt;T> make_arithmetic_converter() noexcept(<nc>see below</nc>);
+
+  <c>// <n><xref id="to_arithmetic"/>, functions that utilize the arithmetic conversion facilities:</n></c>
+  template &lt;class T, class ConversionErrorHandler, class A>
+    T to_arithmetic(const A&amp; a, ConversionErrorHandler&amp;&amp; handler);
+  template &lt;class T, class A> T to_arithmetic(const A&amp; a);
+}
+      </codeblock>
+
+      <p>The header <c>"commama/text_value_translation.hpp"</c> defines some facilities to do text value translation (<xref id="xlate.general"/>).</p>
+    </section>
+
+    <section id="conversion_error_handler.requirements">
+      <name><c>ConversionErrorHandler</c> requirements</name>
+
+      <p>A <c>ConversionErrorHandler</c> type is a function object type used to instruct how to handle text translation errors to some class templates and function templates defined in this header.
+         A type <c>H</c> meets the <c>ConversionErrorHandler</c> requirements for a char-like type <c>Ch</c> and the target type <c>T</c> if:</p>
+      <ul>
+        <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+        <li>the expressions shown in <xref id="table.conversion_error_handler.requirements"/> are valid and have the indicated semantics.</li>
+      </ul>
+
+      <p><xref id="table.conversion_error_handler.requirements"/> shows two expressions per row.
+          It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.</p>
+
+      <p>In <xref id="table.conversion_error_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
+          <c>i</c>, <c>o</c> and <c>e</c> are values of <c>invalid_format_t</c>, <c>out_of_range_t</c> and <c>empty_t</c> respectively.
+          <c>b</c> and <c>e</c> are pointers to cv-unqualified <c>Ch</c> object.
+          The range [<c>b</c>, <c>e</c>) is the value of the field.
+          <c>e</c> can be dereferenced and points the terminating zero.
+          The type of <c>s</c> is <c>int</c>.
+          <c>n</c> is a null pointer whose type is <c>T*</c>.</p>
+
+      <table id="table.conversion_error_handler.requirements">
+        <caption><c>ConversionErrorHandler</c> requirements</caption>
+        <col width="1"/><col width="3"/><col width="3"/><col width="16"/>
+
+        <tr>
+          <th>#</th>
+          <th>Expression</th>
+          <th>Return type</th>
+          <th>Remark</th>
+        </tr>
+
+        <tr>
+          <td rowspan="2">(1)</td>
+          <td><c>h(i, b, e)</c></td>
+          <td rowspan="2"><c>std::optional&lt;T></c></td>
+          <td rowspan="2">Evaluated when the corresponding text value can not be converted a value of <c>T</c> due to a format error.</td>
+        </tr>
+
+        <tr>
+          <td><c>h(i, b, e, n)</c></td>
+        </tr>
+
+        <tr>
+          <td rowspan="2">(2)</td>
+          <td><c>h(o, b, e, s)</c></td>
+          <td rowspan="2"><c>std::optional&lt;T></c></td>
+          <td rowspan="2">Evaluated when the corresponding text value can not be converted a value of <c>T</c> due to a range error.</td>
+        </tr>
+
+        <tr>
+          <td><c>h(o, b, e, s, n)</c></td>
+        </tr>
+
+        <tr>
+          <td rowspan="2">(3)</td>
+          <td><c>h(e)</c></td>
+          <td rowspan="2"><c>std::optional&lt;T></c></td>
+          <td rowspan="2">Evaluated when the corresponding text value is empty.</td>
+        </tr>
+
+        <tr>
+          <td><c>h(e, n)</c></td>
+        </tr>
+      </table>
+    </section>
+
+    <section id="xlate.builtin.exceptions">
+      <name>Exception classes for text value translation error</name>
+
+      <section id="field_translation_error">
+        <name>Class <c>field_translation_error</c></name>
+
+        <codeblock>
+namespace commata {
+  class field_translation_error : public text_error {
+  public:
+    using text_error::text_error;
+  };
+}
+        </codeblock>
+
+        <p>The class <c>field_translation_error</c> defines the type of the objects thrown by default text value translators of Commata library.</p>
+      </section>
+
+      <section id="field_invalid_format">
+        <name>Class <c>field_invalid_format</c></name>
+
+        <codeblock>
+namespace commata {
+  class field_invalid_format : public field_translation_error {
+  public:
+    using field_translation_error::field_translation_error;
+  };
+}
+        </codeblock>
+
+        <p>The class <c>field_invalid_format</c> defines the type of the objects thrown by default text value translators of Commata library to report text value format errors.</p>
+      </section>
+
+      <section id="field_empty">
+        <name>Class <c>field_empty</c></name>
+
+        <codeblock>
+namespace commata {
+  class field_empty : public field_invalid_format {
+  public:
+    using field_invalid_format::field_invalid_format;
+  };
+}
+        </codeblock>
+
+        <p>The class <c>field_empty</c> defines the type of the objects thrown by default text value translators of Commata library to report an empty text value.</p>
+      </section>
+
+      <section id="field_out_of_range">
+        <name>Class <c>field_out_of_range</c></name>
+
+        <codeblock>
+namespace commata {
+  class field_out_of_range : public field_translation_error {
+  public:
+    using field_translation_error::field_translation_error;
+  };
+}
+        </codeblock>
+
+        <p>The class <c>field_out_of_range</c> defines the type of the objects thrown by default text value translators of Commata library to report they found a translated text value out of its domain.</p>
+      </section>
+    </section>
+
+    <section id="xlate.builtin.conversion_error_handlers">
+      <name>Default conversion error handler classes</name>
+
+      <section id="xlate.builtin.conversion_error_handlers.general">
+        <name>General</name>
+
+        <p>This subclause describes struct <c>fail_if_conversion_failed</c> (<xref id="fail_if_conversion_failed"/>) and class template <c>replace_if_conversion_failed</c> (<xref id="replace_if_conversion_failed"/>),
+           which gives the default conversion error handler (<xref id="conversion_error_handler.requirements"/>) types of Commata.</p>
+        <p>When the implementations of these throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c>, that is, with C's global locale.</p>
+      </section>
+
+      <section id="fail_if_conversion_failed">
+        <name>Struct <c>fail_if_conversion_failed</c></name>
+
+        <codeblock>
+namespace commata {
+  struct fail_if_conversion_failed {
+    template &lt;class T, class Ch>
+      [[noreturn]] std::optional&lt;T> operator()(invalid_format_t,
+                                               const Ch*, const Ch*, T* = nullptr) const;
+    template &lt;class T, class Ch>
+      [[noreturn]] std::optional&lt;T> operator()(out_of_range_t,
+                                               const Ch*, const Ch*, int, T* = nullptr) const;
+    template &lt;class T>
+      [[noreturn]] std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
+  };
+}
+        </codeblock>
+
+        <p>The struct <c>fail_if_conversion_failed</c> is a type that meets the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for any target types.
+           An object of it makes the text value translation process fail on any conversion errors.</p>
+
+        <code-item>
+          <code>
+template &lt;class T, class Ch>
+  [[noreturn]] std::optional&lt;T> operator()(invalid_format_t,
+                                           const Ch*, const Ch*, T* = nullptr) const;
+          </code>
+          <effects>Throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class T, class Ch>
+  [[noreturn]] std::optional&lt;T> operator()(out_of_range_t,
+                                           const Ch*, const Ch*, int, T* = nullptr) const;
+          </code>
+          <effects>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</effects>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class T>
+  [[noreturn]] std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
+          </code>
+          <effects>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</effects>
+        </code-item>
+      </section>
+
+      <section id="replace_if_conversion_failed">
+        <name>Class template <c>replace_if_conversion_failed</c></name>
+
+        <codeblock>
+namespace commata {
+  template &lt;class T> class replace_if_conversion_failed {
+  public:
+    <c>// <n><xref id="replace_if_conversion_failed.props"/>, properties:</n></c>
+    using value_type = T;
+    static constexpr std::size_t size = <nc>see below</nc>;
+
+    <c>// <n><xref id="replace_if_conversion_failed.cons"/>, construct/copy/destroy:</n></c>
+    template &lt;class Empty = T, class InvalidFormat = T,
+              class AboveUpperLimit = T>
+      explicit
+        replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
+                                     InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
+                                     AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
+          noexcept(<nc>see below</nc>);
+    template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit>
+      replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
+                                   InvalidFormat&amp;&amp;   on_invalid_format,
+                                   AboveUpperLimit&amp;&amp; on_above_upper_limit,
+                                   BelowLowerLimit&amp;&amp; on_below_lower_limit) noexcept(<nc>see below</nc>);
+    template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit,
+              class Underflow>
+      replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
+                                   InvalidFormat&amp;&amp;   on_invalid_format,
+                                   AboveUpperLimit&amp;&amp; on_above_upper_limit,
+                                   BelowLowerLimit&amp;&amp; on_below_lower_limit,
+                                   Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
+    replace_if_conversion_failed(const replace_if_conversion_failed&amp;  other) noexcept(<nc>see below</nc>);
+    replace_if_conversion_failed(      replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
+   ~replace_if_conversion_failed();
+    replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&amp;  other)
+      noexcept(<nc>see below</nc>);
+    replace_if_conversion_failed&amp; operator=(      replace_if_conversion_failed&amp;&amp; other)
+      noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="replace_if_conversion_failed.inv"/>, invocation:</n></c>
+    template &lt;class Ch> std::optional&lt;T> operator()(invalid_format_t,
+                                                    const Ch*, const Ch*) const;
+    template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
+                                                    const Ch*, const Ch*, int sign) const;
+                        std::optional&lt;T> operator()(empty_t) const;
+
+    <c>// <n><xref id="replace_if_conversion_failed.modifiers"/>, modifiers:</n></c>
+    void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
+  };
+
+  template &lt;class... Ts>
+    replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
+
+  <c>// <n><xref id="replace_if_conversion_failed.special"/>, specialized algorithms:</n></c>
+  template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
+                               replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
+}
+        </codeblock>
+
+        <p>The class template <c>replace_if_conversion_failed</c> offers types that meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) whose target type is the template parameter <c>T</c>.
+           On a conversion error, an object of them can make the text value translation process fail, ignore it, or offer a substitution of the field value, depending on the category of the error.</p>
+        <p><c>T</c> shall be <c>CopyConstructible</c> and <c>Destructible</c>.</p>
+        <p>An object of an instance of <c>replace_if_conversion_failed</c> is configured with five replacement actions (<xref id="replacement_action"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
+           Each of these replacement actions is configured to be either of the three types illustrated in <xref id="table.replacement_action"/> independently for one object of <c>replace_if_conversion_failed</c>.</p>
+        <p><c>replace_if_conversion_failed&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
+
+        <section id="replace_if_conversion_failed.props">
+          <name><c>replace_if_conversion_failed</c> properties</name>
+
+          <code-item>
+            <code>
+static constexpr std::size_t size = <nc>see below</nc>;
+            </code>
+            <remark><p>The expression in the right of <c>=</c> in the initializer shall be:</p>
+                    <ul>
+                      <li><c>3</c> if <c>T</c> is an unsigned integer type,</li>
+                      <li><c>4</c> if <c>T</c> is a signed integer type,</li>
+                      <li><c>5</c> otherwise.</li>
+                    </ul>
+            </remark>
+          </code-item>
+        </section>
+
+        <section id="replace_if_conversion_failed.cons">
+          <name><c>replace_if_conversion_failed</c> construct/copy/destroy</name>
+
+          <p>In this subclause, a type <c>A</c> <n>implies a fail action</n> if and only if <c>std::is_base_of_v&lt;replacement_fail_t, std::decay_t&lt;A>></c> is <c>true</c>.
+             Similarly, a type <c>A</c> <n>implies an ignore action</n> if and only if <c>std::is_base_of_v&lt;replacement_ignore_t, std::decay_t&lt;A>></c> is <c>true</c>.
+             In addition, let <c><nc>IS_ACCEPTABLE</nc>&lt;A></c> be a <c>bool</c> value that is <c>true</c> if and only if:</p>
+          <ul>
+            <li><c>A</c> implies a fail action,</li>
+            <li><c>A</c> implies an ignore action,</li>
+            <li><c>std::is_contructible_v&lt;T, A&amp;&amp;></c> is <c>true</c>.</li>
+          </ul>
+          <p>And let <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;A></c> be a <c>bool</c> value that is <c>true</c> if and only if:</p>
+          <ul>
+            <li><c>A</c> implies a fail action,</li>
+            <li><c>A</c> implies an ignore action,</li>
+            <li><c>std::is_nothrow_contructible_v&lt;T, A&amp;&amp;></c> is <c>true</c>.</li>
+          </ul>
+
+          <code-item>
+            <code>
+template &lt;class Empty = T, class InvalidFormat = T, class AboveUpperLimit = T>
+  explicit
+    replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
+                                 InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
+                                 AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
+      noexcept(<nc>see below</nc>);
+            </code>
+            <effects>If <c>Empty</c> implies a fail action, configures <c>action_on_empty</c> to be <c>fail</c>.
+                     Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
+                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
+                     Does the same with <c>action_on_invalid_format</c> and <c>action_on_above_upper_limit</c>.
+                     Configures <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
+            <remark>This overload shall not be declared if <c>std::is_default_constructible_v&lt;T></c> is <c>false</c>.
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if <c>std::is_nothrow_default_constructible_v&lt;T></c> is <c>true</c> and none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit>
+  replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
+                               InvalidFormat&amp;&amp;   on_invalid_format,
+                               AboveUpperLimit&amp;&amp; on_above_upper_limit,
+                               BelowLowerLimit&amp;&amp; on_below_lower_limit) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>If <c>Empty</c> implies a fail action, configures <c>action_on_empty</c> to be <c>fail</c>.
+                     Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
+                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
+                     Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c>.
+                     Configures <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
+            <remark>This overload shall not be declared if <c>T</c> is an unsigned integer type or <c>std::is_default_constructible_v&lt;T></c> is <c>false</c>.
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if <c>std::is_nothrow_default_constructible_v&lt;T></c> is <c>true</c> and none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit,
+          class Underflow>
+  replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
+                               InvalidFormat&amp;&amp;   on_invalid_format,
+                               AboveUpperLimit&amp;&amp; on_above_upper_limit,
+                               BelowLowerLimit&amp;&amp; on_below_lower_limit,
+                               Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>If <c>Empty</c> implies a fail action, configures <c>action_on_empty</c> to be <c>fail</c>.
+                     Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
+                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
+                     Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>.</effects>
+            <remark>This overload shall not be declared if <c>T</c> is an integer type.
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+replace_if_conversion_failed(const replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>Configures all the replacement actions to be the same as <c>other</c>'s.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T></c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>Configures all the replacement actions to be what <c>other</c> had as its replacement actions before the call.</effects>
+            <remark>If an exception is thrown, <c>other</c> may be left in a valid but unspecified state.
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class... Ts>
+  replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
+            </code>
+            <remark>This deduction guide participates in overload resolution if and only if <c>std::common_type_t&lt;Us...></c> is defined where <c>Us</c> denotes types in <c>Ts...</c> excluding types which imply neither a fail action nor a ignore action.
+                    In that case, the deduced type is <c>std::common_type_t&lt;Us...></c> above.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&amp; other)
+  noexcept(<nc>see below</nc>);
+            </code>
+            <requires><c>T</c> shall be <c>CopyAssignable</c>.</requires>
+            <effects>Configures all the replacement actions to be the same as <c>other</c>'s.</effects>
+            <returns><c>*this</c>.</returns>
+            <remark>If an exception is thrown, <c>*this</c> may be left in a valid but unspecified state.
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T> &amp;&amp; std::is_nothrow_copy_assignable_v&lt;T></c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&amp; other)
+  noexcept(<nc>see below</nc>);
+            </code>
+            <requires><c>T</c> shall be <c>MoveAssignable</c>.</requires>
+            <effects>Configures all the replacement actions to be what <c>other</c> had as its replacement actions before the call.</effects>
+            <returns><c>*this</c>.</returns>
+            <remark>If an exception is thrown, <c>*this</c> and <c>other</c> may be left in a valid but unspecified state.
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T> &amp;&amp; std::is_nothrow_move_assignable_v&lt;T></c>.</remark>
+          </code-item>
+        </section>
+
+        <section id="replace_if_conversion_failed.inv">
+          <name><c>replace_if_conversion_failed</c> invocation</name>
+
+          <code-item>
+            <code>
+template &lt;class Ch> std::optional&lt;T> operator()(invalid_format_t,
+                                                const Ch*, const Ch*) const;
+            </code>
+            <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.invalid_format"/> in reference to the <c>action_on_invalid_format</c> of <c>*this</c>.</effects>
+
+            <table id="table.replace_if_conversion_failed.invalid_format">
+              <caption>Effects of invocation with <c>invalid_format_t</c></caption>
+              <col width="5"/><col width="8"/><col width="5"/><col width="18"/>
+
+              <tr>
+                <th>#</th>
+                <th>Referenced action</th>
+                <th>Type of the action</th>
+                <th>Effects</th>
+              </tr>
+
+              <tr>
+                <td>(1)</td>
+                <td rowspan="3"><c>action_on_invalid_format</c></td>
+                <td><c>copy</c></td>
+                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+              </tr>
+
+              <tr>
+                <td>(2)</td>
+                <td><c>ignore</c></td>
+                <td>Returns <c>std::none</c>.</td>
+              </tr>
+
+              <tr>
+                <td>(3)</td>
+                <td><c>fail</c></td>
+                <td>Throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</td>
+              </tr>
+            </table>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
+                                                const Ch*, const Ch*, int sign) const;
+            </code>
+            <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.out_of_range"/> in reference to <c>sign</c> and the <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> of <c>*this</c>.</effects>
+
+            <table id="table.replace_if_conversion_failed.out_of_range">
+              <caption>Effects of invocation with <c>out_of_range_t</c></caption>
+              <col width="2"/><col width="3"/><col width="8"/><col width="5"/><col width="18"/>
+
+              <tr>
+                <th>#</th>
+                <th><c>sign</c></th>
+                <th>Referenced action</th>
+                <th>Type of the action</th>
+                <th>Effects</th>
+              </tr>
+
+              <tr>
+                <td>(1)</td>
+                <td rowspan="3">positive</td>
+                <td rowspan="3"><c>action_on_above_upper_limit</c></td>
+                <td><c>copy</c></td>
+                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+              </tr>
+
+              <tr>
+                <td>(2)</td>
+                <td><c>ignore</c></td>
+                <td>Returns <c>std::none</c>.</td>
+              </tr>
+
+              <tr>
+                <td>(3)</td>
+                <td><c>fail</c></td>
+                <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
+              </tr>
+
+              <tr>
+                <td>(4)</td>
+                <td rowspan="3">negative</td>
+                <td rowspan="3"><c>action_on_below_lower_limit</c></td>
+                <td><c>copy</c></td>
+                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+              </tr>
+
+              <tr>
+                <td>(5)</td>
+                <td><c>ignore</c></td>
+                <td>Returns <c>std::none</c>.</td>
+              </tr>
+
+              <tr>
+                <td>(6)</td>
+                <td><c>fail</c></td>
+                <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
+              </tr>
+
+              <tr>
+                <td>(7)</td>
+                <td rowspan="3"><c>0</c></td>
+                <td rowspan="3"><c>action_on_underflow</c></td>
+                <td><c>copy</c></td>
+                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+              </tr>
+
+              <tr>
+                <td>(8)</td>
+                <td><c>ignore</c></td>
+                <td>Returns <c>std::none</c>.</td>
+              </tr>
+
+              <tr>
+                <td>(9)</td>
+                <td><c>fail</c></td>
+                <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
+              </tr>
+            </table>
+          </code-item>
+
+          <code-item>
+            <code>
+std::optional&lt;T> operator()(empty_t) const;
+            </code>
+            <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.empty"/> in reference to the <c>action_on_empty</c> of <c>*this</c>.</effects>
+
+            <table id="table.replace_if_conversion_failed.empty">
+              <caption>Effects of invocation with <c>empty_t</c></caption>
+              <col width="5"/><col width="8"/><col width="5"/><col width="18"/>
+
+              <tr>
+                <th>#</th>
+                <th>Referenced action</th>
+                <th>Type of the action</th>
+                <th>Effects</th>
+              </tr>
+
+              <tr>
+                <td>(1)</td>
+                <td rowspan="3"><c>action_on_empty</c></td>
+                <td><c>copy</c></td>
+                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+              </tr>
+
+              <tr>
+                <td>(2)</td>
+                <td><c>ignore</c></td>
+                <td>Returns <c>std::none</c>.</td>
+              </tr>
+
+              <tr>
+                <td>(3)</td>
+                <td><c>fail</c></td>
+                <td>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</td>
+              </tr>
+            </table>
+          </code-item>
+        </section>
+
+        <section id="replace_if_conversion_failed.modifiers">
+          <name><c>replace_if_conversion_failed</c> modifiers</name>
+
+          <code-item>
+            <code>
+void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
+            </code>
+            <requires>For each of at most five replacement actions (<c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>),
+                      if both of the replacement action of <c>*this</c> and <c>other</c> are of the type <c>copy</c>, two lvalues of the object of type <c>T</c> installed with the replacement action shall be swappable with each onther.</requires>
+            <effects>Exchanges all the replacement actions between <c>*this</c> and <c>other</c>.</effects>
+            <remark>If an exception is thrown, <c>*this</c> and <c>other</c> may be left in a valid but unspecified state.
+                    The expression inside <c>noexcept</c> is equivalent to the value of <c>std::is_nothrow_move_constructible_v&lt;T> &amp;&amp; noexcept(swap(std::declval&lt;T&amp;>(), std::declval&lt;T&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
+          </code-item>
+        </section>
+
+        <section id="replace_if_conversion_failed.special">
+          <name><c>replace_if_conversion_failed</c> specialized algorithms</name>
+
+          <code-item>
+            <code>
+template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
+                             replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>Equivalent to: <c>left.swap(right);</c></effects>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;T></c> is <c>true</c>.
+                    The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          </code-item>
+        </section>
+      </section>
+    </section>
+
+    <section id="xlate.arithmetic">
+      <name>Arithmetic conversion</name>
+
+      <p>This subclause describes the text value translation facilities (<xref id="xlate.general"/>) built-in to Commata the type of whose translated text value is either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, <c>double</c>, or <c>long double</c>.
+         These arithmetic types are referred as <n>default translatable arithmeric types</n>.</p>
+
+      <section id="arithmetic_convertible.requirements">
+        <name><c>ArithmeticConvertible</c> requirements</name>
+
+        <p>A type <c>T</c> meets the <c>ArithmeticConvertible</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
+        <ul>
+          <li>each object of <c>T</c> has its text value, which is (possibly reference to) a sequence of objects of <c>Ch</c> whose highest-addressed element with defined content has a value zero, and</li>
+          <li>the expressions shown in <xref id="table.arithmetic_convertible.requirements"/> are valid and have the indicated semantics.</li>
+        </ul>
+
+        <p><xref id="table.arithmetic_convertible.requirements"/> shows two expressions per row.
+           It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.</p>
+
+        <p>In <xref id="table.arithmetic_convertible.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c>.</p>
+
+        <table id="table.arithmetic_convertible.requirements">
+          <caption><c>ArithmeticConvertible</c> requirements</caption>
+          <col width="2"/><col width="9"/><col width="24"/><col width="22"/>
+
+          <tr>
+            <th>#</th>
+            <th>Expression</th>
+            <th>Return type</th>
+            <th>Remark</th>
+          </tr>
+
+          <tr>
+            <td rowspan="2">(1)</td>
+            <td><c>cv.c_str()</c></td>
+            <td rowspan="2"><c>const Ch*</c></td>
+            <td rowspan="2">Returns a pointer to the first element of the text value.</td>
+          </tr>
+
+          <tr>
+            <td><c>cv->c_str()</c></td>
+          </tr>
+
+          <tr>
+            <td rowspan="2">(2)</td>
+            <td><c>cv.size()</c></td>
+            <td rowspan="2">An integer type whose integer conversion rank is not greater than <c>std::ptrdiff_t</c></td>
+            <td rowspan="2">Returns the number of the elements of the text value.</td>
+          </tr>
+
+          <tr>
+            <td><c>cv->size()</c></td>
+          </tr>
+        </table>
+
+        <p>For a type <c>T</c> that meets the <c>ArithmeticConvertible</c> requirements for <c>Ch</c>, <c>Ch</c> is called the <n>character type</n> of <c>T</c>.</p>
+      </section>
+
+      <section id="arithmetic_converter">
+        <name>Class template <c>arithmetic_converter</c></name>
+
+        <codeblock>
+namespace commata {
+  template &lt;class T, class ConversionErrorHandler = <nc>see below</nc>>
+    class arithmetic_converter {
+  public:
+    using target_type = T;
+    using conversion_error_handler_type = ConversionErrorHandler;
+
+    <c>// <n><xref id="arithmetic_converter.cons"/>, construct/copy/destroy:</n></c>
+    arithmetic_converter() noexcept(<nc>see below</nc>);
+    explicit arithmetic_converter(const ConversionErrorHandler&amp;  handler) noexcept(<nc>see below</nc>);
+    explicit arithmetic_converter(      ConversionErrorHandler&amp;&amp; handler) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="arithmetic_converter.handler"/>, handler access:</n></c>
+    const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
+          ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
+
+    <c>// <n><xref id="arithmetic_converter.inv"/>, invocaton:</n></c>
+    template &lt;class A> T operator()(const A&amp; a);
+  };
+}
+        </codeblock>
+
+        <p>The class template <c>arithmetic_converter</c> describes a text value translator (<xref id="xlate.general"/>) implemented in terms of string conversion functions declared in <c>&lt;cstdlib></c>.</p>
+        <p>An object of an instance of <c>arithmetic_converter&lt;T, ConversionErrorHandler></c> holds an object of <c>ConversionErrorHandler</c>.</p>
+        <p>The template parameter <c>T</c> shall be a default translatable arithmeric type.</p>
+        <p>The default template parameter of <c>ConversionErrorHandler</c> shall be:</p>
+        <ul>
+          <li><c>fail_if_conversion_failed</c> if <c>T</c> is not an instance of <c>std::optional</c>, or</li>
+          <li><c>replace_if_conversion_failed&lt;T::value_type></c> otherwise.</li>
+        </ul>
+        <p>The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>) requirements for the target type being:</p>
+        <ul>
+          <li><c>T</c> if <c>T</c> is not an instance of <c>std::optional</c>, or</li>
+          <li><c>T::value_type</c> otherwise.</li>
+        </ul>
+        <p>Commata offers a partial specialization of the class template <c>arithmetic_converter&lt;T, ConversionErrorHandler></c> for the first template parameter <c>T</c> being an instance of <c>std::optional</c> (<xref id="arithmetic_converter.optional"/>).</p>
+
+        <section id="arithmetic_converter.cons">
+          <name><c>arithmetic_converter</c> construct/copy/destroy</name>
+
+          <code-item>
+            <code>
+arithmetic_converter() noexcept(<nc>see below</nc>);
+            </code>
+            <requires><c>std::is_default_constructible_v&lt;ConversionErrorHandler></c> shall be <c>true</c>.</requires>
+            <effects>Default constructs an object of <c>ConversionErrorHandler</c> and stores it.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible_v&lt;ConversionErrorHandler> &amp;&amp; std::is_nothrow_move_constructible_v&lt;ConversionErrorHandler></c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+explicit arithmetic_converter(const ConversionErrorHandler&amp; handler) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>Constructs an object of <c>ConversionErrorHandler</c> with <c>handler</c> and stores it.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;ConversionErrorHandler></c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+explicit arithmetic_converter(ConversionErrorHandler&amp;&amp; handler) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>Constructs an object of <c>ConversionErrorHandler</c> with <c>std::move(handler)</c> and stores it.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;ConversionErrorHandler></c>.</remark>
+          </code-item>
+        </section>
+
+        <section id="arithmetic_converter.inv">
+          <name><c>arithmetic_converter</c> invocation</name>
+
+          <code-item>
+            <code>
+const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
+      ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
+            </code>
+            <returns>A reference to the stored <c>ConversionErrorHandler</c> object.</returns>
+          </code-item>
+        </section>
+
+        <section id="arithmetic_converter.handler">
+          <name><c>arithmetic_converter</c> handler access</name>
+
+          <code-item>
+            <code>
+template &lt;class V> T operator()(const V&amp; v);
+            </code>
+            <effects><p>Equivalent to:</p>
+              <code>
+return arithmetic_converter&lt;std::optional&lt;T>, ConversionErrorHandler>(std::ref(get_conversion_error_handler()))(v).value();
+              </code>
+            </effects>
+          </code-item>
+        </section>
+      </section>
+
+      <section id="arithmetic_converter.optional">
+        <name>Class template partial specialization <c>arithmetic_converter&lt;std::optional&lt;T>, ConversionErrorHandler></c></name>
+
+        <codeblock>
+namespace commata {
+  template &lt;class T, class ConversionErrorHandler>
+    class arithmetic_converter&lt;std::optional&lt;T>, ConversionErrorHandler> {
+  public:
+    using target_type = T;
+    using conversion_error_handler_type = ConversionErrorHandler;
+
+    <c>// <n><xref id="arithmetic_converter.optional.cons"/>, construct/copy/destroy:</n></c>
+    arithmetic_converter() noexcept(<nc>see below</nc>);
+    explicit arithmetic_converter(const ConversionErrorHandler&amp;  handler) noexcept(<nc>see below</nc>);
+    explicit arithmetic_converter(      ConversionErrorHandler&amp;&amp; handler) noexcept(<nc>see below</nc>);
+
+    <c>// <n>handler access:</n></c>
+    const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
+          ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
+
+    <c>// <n><xref id="arithmetic_converter.optional.inv"/>, invocation:</n></c>
+    template &lt;class A> std::optional&lt;T> operator()(const A&amp; a);
+}
+        </codeblock>
+
+        <p>A partial specialization of the class template <c>arithmetic_converter&lt;T, ConversionErrorHandler></c> (<xref id="arithmetic_converter"/>) for the first template parameter <c>T</c> being an instance of <c>std::optional</c> is provided.
+           Descriptions are provided here only for operations where there is additional semantic information to the primary template (<xref id="arithmetic_converter"/>).</p>
+
+        <section id="arithmetic_converter.optional.cons">
+          <name><c>arithmetic_converter&lt;std::optional&lt;T>, ConversionErrorHandler></c> construct/copy/destroy</name>
+
+          <code-item>
+            <code>
+arithmetic_converter() noexcept(<nc>see below</nc>);
+            </code>
+            <requires><c>ConversionErrorHandler</c> shall be an identical type to <c>replace_if_conversion_failed&lt;T></c> or <c>std::is_default_constructible_v&lt;ConversionErrorHandler></c> shall be <c>true</c>.</requires>
+            <effects><p>Constructs an object of <c>ConversionErrorHandler</c> with the arguments described below and stores it:</p>
+                    <ul>
+                      <li>if <c>ConversionErrorHandler</c> is not an identical type to <c>replace_if_conversion_failed&lt;T></c>, then with no arguments,</li>
+                      <li>otherwise, if <c>std::is_constructible&lt;ConversionErrorHandler, replace_ignore_t, replace_ignore_t, replace_ignore_t, replace_ignore_t, replace_ignore_t></c> is <c>true</c>, then with arguments being <c>replace_ignore</c>, <c>replace_ignore</c>, <c>replace_ignore</c>, <c>replace_ignore</c> and <c>replace_ignore</c>,</li>
+                      <li>otherwise, if <c>std::is_constructible&lt;ConversionErrorHandler, replace_ignore_t, replace_ignore_t, replace_ignore_t, replace_ignore_t></c> is <c>true</c>, then with arguments being <c>replace_ignore</c>, <c>replace_ignore</c>, <c>replace_ignore</c> and <c>replace_ignore</c>,</li>
+                      <li>otherwise, with arguments being <c>replace_ignore</c>, <c>replace_ignore</c> and <c>replace_ignore</c>.</li>
+                    </ul></effects>
+            <remark>The expression inside <c>noexcept</c> is <c>true</c> if and only if the constructor of <c>ConversionErrorHandler</c> invoked as described above is not known to throw any exceptions.</remark>
+          </code-item>
+        </section>
+
+        <section id="arithmetic_converter.optional.inv">
+          <name><c>arithmetic_converter&lt;std::optional&lt;T>, ConversionErrorHandler></c> invocation</name>
+          <code-item>
+            <code>
+template &lt;class A> std::optional&lt;T> operator()(const A&amp; a);
+            </code>
+            <requires><c>A</c> shall meet the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char</c> or <c>wchar_t</c>.
+                      <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the character type of <c>V</c>.</requires>
+            <effects><p>First calls a parsing function indicated in <xref id="table.arithmetic_converter.parsing_functions"/> to get an arithmetic value <c>v</c> of the NTBS whose first element is pointed by <c>a.c_str()</c> or <c>a->c_str()</c>.
+                        Then does an operation indicated in <xref id="table.arithmetic_converter.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
+                        In <xref id="table.arithmetic_converter.parsing_functions"/> and <xref id="table.arithmetic_converter.branching"/>,</p>
+                      <ul>
+                        <li><c>Ch</c> is the character type of <c>V</c>,</li>
+                        <li><c>ceh</c> is an lvalue of the stored conversion error handler,</li>
+                        <li><c>begin</c> denotes <c>v.c_str()</c> or <c>v->c_str()</c>,</li>
+                        <li><c>end</c> denotes <c>begin + v.size()</c> or <c>begin + v->size()</c>,</li>
+                        <li><c>n</c> is a null pointer of type <c>T*</c>,</li>
+                        <li><c>V</c> denotes <c>decltype(v)</c>,</li>
+                        <li><c>SV</c> denotes <c>std::make_signed&lt;V>::type</c>,</li>
+                        <li><c>x</c> denotes <c>std::numeric_limits&lt;T>::max()</c>, and</li>
+                        <li>the domain of <c>T</c> denotes
+                          <ul>
+                            <li>the range [<c>-x</c>, <c>x</c>] in <c>SV</c> mapped by a conversion to <c>V</c> if <c>T</c> is an unsigned integer type,</li>
+                            <li>a union of the range [<c>std::numeric_limits&lt;T>::lowest()</c>, <c>x</c>] and a set of other non-finite values (for example, positive or negative infinities and &#x2018;Not-a-Number&#x2019; values) otherwise.</li>
+                          </ul>
+                        </li>
+                      </ul>
+            </effects>
+
+            <table id="table.arithmetic_converter.parsing_functions">
+              <caption>The parsing functions used by <c>arithmetic_converter</c></caption>
+              <col width="6"/><col width="2"/><col width="2"/>
+
+              <tr>
+                <th><c>T</c></th>
+                <th><c>Ch</c> is <c>char</c></th>
+                <th><c>Ch</c> is <c>wchar_t</c></th>
+              </tr>
+
+              <tr>
+                <td><c>char</c> (only if signed), <c>signed char</c>, <c>short</c>, <c>int</c>, or <c>long</c></td>
+                <td><c>std::strtol</c></td>
+                <td><c>std::wcstol</c></td>
+              </tr>
+
+              <tr>
+                <td><c>char</c> (only if unsigned), <c>unsigned char</c>, <c>unsigned short</c>, <c>unsigned</c>, or <c>unsigned long</c></td>
+                <td><c>std::strtoul</c></td>
+                <td><c>std::wcstoul</c></td>
+              </tr>
+
+              <tr>
+                <td><c>long long</c></td>
+                <td><c>std::strtoll</c></td>
+                <td><c>std::wcstoll</c></td>
+              </tr>
+
+              <tr>
+                <td><c>unsigned long long</c></td>
+                <td><c>std::strtoull</c></td>
+                <td><c>std::wcstoull</c></td>
+              </tr>
+
+              <tr>
+                <td><c>float</c></td>
+                <td><c>std::strtof</c></td>
+                <td><c>std::wcstof</c></td>
+              </tr>
+
+              <tr>
+                <td><c>double</c></td>
+                <td><c>std::strtod</c></td>
+                <td><c>std::wcstod</c></td>
+              </tr>
+
+              <tr>
+                <td><c>long double</c></td>
+                <td><c>std::strtold</c></td>
+                <td><c>std::wcstold</c></td>
+              </tr>
+            </table>
+
+            <table id="table.arithmetic_converter.branching">
+              <caption>The operations done by an <c>arithmetic_converter</c> in response to the consequence of calling the parsing function</caption>
+              <col width="1"/><col width="1"/><col width="1"/><col width="1"/><col width="4"/>
+
+              <tr>
+                <th>The call consumed all characters in the text value</th>
+                <th>The text value contains at least one character</th>
+                <th><c>errno != ERANGE</c></th>
+                <th><c>v</c> is in the domain of <c>T</c></th>
+                <th>Operation</th>
+              </tr>
+
+              <tr>
+                <td rowspan="4">Yes</td>
+                <td rowspan="3">Yes</td>
+                <td rowspan="2">Yes</td>
+                <td>Yes</td>
+                <td><p>First lets <c>w</c> be:</p>
+                    <ul>
+                      <li>if <c>T</c> is an unsigned integer type, <c>V</c> has a greater size than <c>T</c>, and <c>SV(v)</c> is a negative value, <c>T(SV(v) + x + 1)</c>,</li>
+                      <li>otherwise, <c>T(v)</c>.</li>
+                    </ul>
+                    <p>Then returns <c>std::optional&lt;T>(w)</c>.</p></td>
+              </tr>
+
+              <tr>
+                <td>No</td>
+                <td rowspan="2"><p>First lets <c>g</c> be:</p>
+                    <ul>
+                      <li>if <c>T</c> is an unsigned integer type or the field value should be translated into a value above any values in the domain of <c>T</c>, a positive value of <c>int</c>,</li>
+                      <li>if the field value should be translated into a value below any values in the domain of <c>T</c>, a negative value of <c>int</c>,</li>
+                      <li>otherwise, a zero value of <c>int</c>.</li>
+                    </ul>
+                    <p>Then evaluates <c>ceh(out_of_range_t(), begin, end, g)</c> or <c>ceh(out_of_range_t(), begin, end, g, n)</c> and returns the result of the evaluation.</p></td>
+              </tr>
+
+              <tr>
+                <td>No</td>
+                <td>&#8211;</td>
+              </tr>
+
+              <tr>
+                <td>No</td>
+                <td>&#8211;</td>
+                <td>&#8211;</td>
+                <td>Evaluates <c>ceh(empty_t())</c> or <c>ceh(empty_t(), n)</c> and returns the result of the evaluation.</td>
+              </tr>
+
+              <tr>
+                <td>No</td>
+                <td>&#8211;</td>
+                <td>&#8211;</td>
+                <td>&#8211;</td>
+                <td>Evaluates <c>ceh(invalid_format_t(), begin, end)</c> or <c>ceh(invalid_format_t(), begin, end, n)</c> and returns the result of the evaluation.</td>
+              </tr>
+            </table>
+          </code-item>
+        </section>
+      </section>
+
+      <section id="arithmetic_converter.create">
+        <name><c>arithmetic_converter</c> creation functions</name>
+
+        <code-item>
+          <code>
+template &lt;class T, class ConversionErrorHandler>
+  arithmetic_converter&lt;T, std::decay_t&lt;ConversionErrorHandler>>
+    make_arithmetic_converter(ConversionErrorHandler&amp;&amp; handler) noexcept(<nc>see below</nc>);
+          </code>
+          <preface>Let <c>C</c> be <c>arithmetic_converter&lt;T, std::decay_t&lt;ConversionErrorHandler>></c>.</preface>
+          <effects>Equivalent to: <c>return C(std::forward&lt;ConversionErrorHandler>(handler));</c></effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;C, ConversionErrorHandler&amp;&amp;></c>.</remark>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class T> arithmetic_converter&lt;T> make_arithmetic_converter() noexcept(<nc>see below</nc>);
+          </code>
+          <preface>Let <c>C</c> be <c>arithmetic_converter&lt;T></c>.</preface>
+          <effects>Equivalent to: <c>return C();</c></effects>
+          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible_v&lt;C></c>.</remark>
+        </code-item>
+      </section>
+
+      <section id="to_arithmetic">
+        <name>Functions that utilize the arithmetic conversion facilities</name>
+
+        <code-item>
+          <code>
+template &lt;class T, class ConversionErrorHandler, class A>
+  T to_arithmetic(const A&amp; a, ConversionErrorHandler&amp;&amp; handler);
+          </code>
+          <effects>Equivalent to: <c>return make_arithmetic_converter&lt;T>(std::forward&lt;ConversionErrorHandler>(handler))(a);</c></effects>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class T, class A> T to_arithmetic(const A&amp; a);
+          </code>
+          <effects>Equivalent to: <c>return make_arithmetic_converter&lt;T>()(a);</c></effects>
         </code-item>
       </section>
     </section>
@@ -3595,13 +4691,13 @@ namespace commata {
       <p>The text value is represented by the range [<c>b</c>, <c>e</c>). <c>*e</c> is always equal to <c>0</c>.
          Programs can read from the range [<c>b</c>, <c>e</c>], and write to the range [<c>b</c>, <c>e</c>) if <c>Ch</c> is not const-qualified.
          To modify the size (that is, <c>e - b</c>), programs can use the store-accessing facilities (<xref id="basic_stored_table.rewrite"/>) of the <c>basic_stored_table</c> object concerned.</p>
+      <p>An instance of <c>basic_stored_value</c> is a trivially copyable type and meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>value_type</c>.</p>
       <p>On the types <c>basic_stored_value&lt;Ch, Tr>::iterator</c> and <c>basic_stored_value&lt;Ch, Tr>::const_iterator</c>, it shall be satisfied that:</p>
       <ul>
         <li>they shall meet the requirements of a random access iterator and a contiguous iterator,</li>
         <li><c>basic_stored_value&lt;Ch, Tr>::iterator</c> shall be convertible to <c>basic_stored_value&lt;Ch, Tr>::const_iterator</c>, and</li>
         <li>each instance of <c>std::iterator_traits</c> on them shall have a set of member typedefs indicated in <xref id="table.basic_stored_value.iterator.typedefs"/>.</li>
       </ul>
-      <p>An instance of <c>basic_stored_value</c> is a trivially copyable type.</p>
 
       <table id="table.basic_stored_value.iterator.typedefs">
         <caption>Member typedefs of each instance of <c>std::iterator_traits&lt;T></c> where <c>T</c> is either of <c>iterator</c> or <c>const_iterator</c> of <c>basic_stored_value&lt;Ch, Tr></c></caption>
@@ -5118,79 +6214,6 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
           </tr>
         </table>
       </section>
-
-      <section id="conversion_error_handler.requirements">
-        <name><c>ConversionErrorHandler</c> requirements</name>
-
-        <p>A type <c>H</c> meets the <c>ConversionErrorHandler</c> requirements for a char-like type <c>Ch</c> and the target type <c>T</c> if:</p>
-        <ul>
-          <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-          <li>the expressions shown in <xref id="table.conversion_error_handler.requirements"/> are valid and have the indicated semantics.</li>
-        </ul>
-
-        <p><xref id="table.conversion_error_handler.requirements"/> shows two expressions per row.
-           It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.</p>
-
-        <p>In <xref id="table.conversion_error_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
-           <c>i</c>, <c>o</c> and <c>e</c> are values of <c>invalid_format_t</c>, <c>out_of_range_t</c> and <c>empty_t</c> respectively.
-           <c>b</c> and <c>e</c> are pointers to cv-unqualified <c>Ch</c>.
-           The range [<c>b</c>, <c>e</c>) is the value of the field.
-           <c>e</c> can be dereferenced and points the terminating zero.
-           The type of <c>s</c> is <c>int</c>.
-           <c>n</c> is a null pointer whose type is <c>T*</c>.</p>
-
-        <table id="table.conversion_error_handler.requirements">
-          <caption><c>ConversionErrorHandler</c> requirements</caption>
-          <col width="1"/><col width="3"/><col width="3"/><col width="16"/>
-
-          <tr>
-            <th>#</th>
-            <th>Expression</th>
-            <th>Return type</th>
-            <th>Remark</th>
-          </tr>
-
-          <tr>
-            <td rowspan="2">(1)</td>
-            <td><c>h(i, b, e)</c></td>
-            <td rowspan="2"><c>std::optional&lt;T></c></td>
-            <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a format error.
-                If <c>r.has_value()</c> is not <c>false</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
-                otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
-          </tr>
-
-          <tr>
-            <td><c>h(i, b, e, n)</c></td>
-          </tr>
-
-          <tr>
-            <td rowspan="2">(2)</td>
-            <td><c>h(o, b, e, s)</c></td>
-            <td rowspan="2"><c>std::optional&lt;T></c></td>
-            <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a range error.
-                <c>s</c> shall has a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, or <c>0</c> otherwise.
-                If <c>r.has_value()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
-                otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
-          </tr>
-
-          <tr>
-            <td><c>h(o, b, e, s, n)</c></td>
-          </tr>
-
-          <tr>
-            <td rowspan="2">(3)</td>
-            <td><c>h(e)</c></td>
-            <td rowspan="2"><c>std::optional&lt;T></c></td>
-            <td rowspan="2">Called when the corresponding field has a value that is empty.
-                If <c>r.has_value()</c> is not <c>false</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
-                otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
-          </tr>
-
-          <tr>
-            <td><c>h(e, n)</c></td>
-          </tr>
-        </table>
-      </section>
     </section>
 
     <section id="hpp.table_scanner.syn">
@@ -5205,7 +6228,9 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
 #include &lt;typeinfo>
 #include &lt;utility>
 
+#include "replacement.hpp"
 #include "text_error.hpp"
+#include "text_value_translation.hpp"
 
 namespace commata {
   <c>// <n><xref id="basic_table_scanner"/>, basic_table_scanner:</n></c>
@@ -5216,21 +6241,7 @@ namespace commata {
   using wtable_scanner = basic_table_scanner&lt;wchar_t>;
 
   <c>// <n><xref id="scan.builtin.exceptions"/>, exception classes:</n></c>
-  class field_translation_error;
-    class field_not_found;
-    class field_invalid_format;
-      class field_empty;
-    class field_out_of_range;
-
-  struct replacement_ignore_t {};
-  inline constexpr replacement_ignore_t replacement_ignore{};
-
-  struct replacement_fail_t {};
-  inline constexpr replacement_fail_t replacement_fail{};
-
-  struct invalid_format_t {};
-  struct out_of_range_t {};
-  struct empty_t {};
+  class field_not_found;
 
   <c>// <n><xref id="scan.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
   struct fail_if_skipped;
@@ -5239,15 +6250,6 @@ namespace commata {
   template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
   template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
                                replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
-
-  <c>// <n><xref id="scan.builtin.conversion_error_handlers"/>, default conversion error handler classes:</n></c>
-  struct fail_if_conversion_failed;
-
-  template &lt;class T> class replace_if_conversion_failed;
-  template &lt;class... Ts>
-    replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
-  template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
-                               replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
 
   <c>// <n><xref id="arithmetic_field_translator"/>, arithmetic_field_translator:</n></c>
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
@@ -5486,21 +6488,6 @@ bool is_in_header() const noexcept;
     <section id="scan.builtin.exceptions">
       <name>Exception classes</name>
 
-      <section id="field_translation_error">
-        <name>Class <c>field_translation_error</c></name>
-
-        <codeblock>
-namespace commata {
-  class field_translation_error : public text_error {
-  public:
-    using text_error::text_error;
-  };
-}
-        </codeblock>
-
-        <p>The class <c>field_translation_error</c> defines the type of the objects thrown by default field scanners of Commata library.</p>
-      </section>
-
       <section id="field_not_found">
         <name>Class <c>field_not_found</c></name>
 
@@ -5514,51 +6501,6 @@ namespace commata {
         </codeblock>
 
         <p>The class <c>field_not_found</c> defines the type of the objects thrown by default field scanners of Commata library to report that a record that has too few fields to reach the field scanner concerned was found.</p>
-      </section>
-
-      <section id="field_invalid_format">
-        <name>Class <c>field_invalid_format</c></name>
-
-        <codeblock>
-namespace commata {
-  class field_invalid_format : public field_translation_error {
-  public:
-    using field_translation_error::field_translation_error;
-  };
-}
-        </codeblock>
-
-        <p>The class <c>field_invalid_format</c> defines the type of the objects thrown by default field scanners of Commata library to report field format errors.</p>
-      </section>
-
-      <section id="field_empty">
-        <name>Class <c>field_empty</c></name>
-
-        <codeblock>
-namespace commata {
-  class field_empty : public field_invalid_format {
-  public:
-    using field_invalid_format::field_invalid_format;
-  };
-}
-        </codeblock>
-
-        <p>The class <c>field_empty</c> defines the type of the objects thrown by default field scanners of Commata library to report an empty field.</p>
-      </section>
-
-      <section id="field_out_of_range">
-        <name>Class <c>field_out_of_range</c></name>
-
-        <codeblock>
-namespace commata {
-  class field_out_of_range : public field_translation_error {
-  public:
-    using field_translation_error::field_translation_error;
-  };
-}
-        </codeblock>
-
-        <p>The class <c>field_out_of_range</c> defines the type of the objects thrown by default field scanners of Commata library to report they found a translated field value out of its domain.</p>
       </section>
     </section>
 
@@ -5625,38 +6567,7 @@ namespace commata {
         <p>The class template <c>replace_if_skipped</c> offers types that meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) whose target type is the template parameter <c>T</c>.
            An object of them supplements the corresponding field that is not found in a record with a fixed value.</p>
         <p><c>T</c> shall be <c>CopyConstructible</c> and <c>Destructible</c>.</p>
-        <p>An object of an instance of <c>replace_if_skipped</c> has a <n>replacement action</n>.
-           A replacement action can be configured to be either of the three types illustrated in <xref id="table.replace_if_skipped.replacement_actions"/>.</p>
-
-        <table id="table.replace_if_skipped.replacement_actions">
-          <caption>Types of replacement actions</caption>
-          <col width="1"/><col width="2"/><col width="27"/>
-
-          <tr>
-            <th>#</th>
-            <th>Type</th>
-            <th>Effects</th>
-          </tr>
-
-          <tr>
-            <td>(1)</td>
-            <td><c>copy</c></td>
-            <td>Copy constructs an object of <c>T</c> from an object installed into this replacement action and put it to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
-          </tr>
-
-          <tr>
-            <td>(2)</td>
-            <td><c>ignore</c></td>
-            <td>Silently ignores the conversion error without doing anything on the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
-          </tr>
-
-          <tr>
-            <td>(3)</td>
-            <td><c>fail</c></td>
-            <td>Throws an exception without doing anything on the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
-          </tr>
-        </table>
-
+        <p>An object of an instance of <c>replace_if_skipped</c> has a replacement action (<xref id="replacement_action"/>).</p>
         <p><c>replace_if_skipped&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
 
         <section id="replace_if_skipped.cons">
@@ -5804,473 +6715,12 @@ template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
       </section>
     </section>
 
-    <section id="scan.builtin.conversion_error_handlers">
-      <name>Default conversion error handler classes</name>
-
-      <section id="scan.builtin.conversion_error_handlers.general">
-        <name>General</name>
-
-        <p>This subclause describes struct <c>fail_if_conversion_failed</c> (<xref id="fail_if_conversion_failed"/>) and class template <c>replace_if_conversion_failed</c> (<xref id="replace_if_conversion_failed"/>),
-           which gives the default conversion error handler (<xref id="conversion_error_handler.requirements"/>) types of Commata.</p>
-        <p>When the implementations of these throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c>, that is, with C's global locale.</p>
-      </section>
-
-      <section id="fail_if_conversion_failed">
-        <name>Struct <c>fail_if_conversion_failed</c></name>
-
-        <codeblock>
-namespace commata {
-  struct fail_if_conversion_failed {
-    template &lt;class T, class Ch>
-      [[noreturn]] std::optional&lt;T> operator()(invalid_format_t,
-                                               const Ch*, const Ch*, T* = nullptr) const;
-    template &lt;class T, class Ch>
-      [[noreturn]] std::optional&lt;T> operator()(out_of_range_t,
-                                               const Ch*, const Ch*, int, T* = nullptr) const;
-    template &lt;class T>
-      [[noreturn]] std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
-  };
-}
-        </codeblock>
-
-        <p>The struct <c>fail_if_conversion_failed</c> is a type that meets the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for any target types.
-           An object of it makes the parsing process fail on any conversion errors.</p>
-
-        <code-item>
-          <code>
-template &lt;class T, class Ch>
-  [[noreturn]] std::optional&lt;T> operator()(invalid_format_t,
-                                           const Ch*, const Ch*, T* = nullptr) const;
-          </code>
-          <effects>Throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</effects>
-        </code-item>
-
-        <code-item>
-          <code>
-template &lt;class T, class Ch>
-  [[noreturn]] std::optional&lt;T> operator()(out_of_range_t,
-                                           const Ch*, const Ch*, int, T* = nullptr) const;
-          </code>
-          <effects>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</effects>
-        </code-item>
-
-        <code-item>
-          <code>
-template &lt;class T>
-  [[noreturn]] std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
-          </code>
-          <effects>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</effects>
-        </code-item>
-      </section>
-
-      <section id="replace_if_conversion_failed">
-        <name>Class template <c>replace_if_conversion_failed</c></name>
-
-        <codeblock>
-namespace commata {
-  template &lt;class T> class replace_if_conversion_failed {
-  public:
-    <c>// <n><xref id="replace_if_conversion_failed.props"/>, properties:</n></c>
-    using value_type = T;
-    static constexpr std::size_t size = <nc>see below</nc>;
-
-    <c>// <n><xref id="replace_if_conversion_failed.cons"/>, construct/copy/destroy:</n></c>
-    template &lt;class Empty = T, class InvalidFormat = T,
-              class AboveUpperLimit = T>
-      explicit
-        replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
-                                     InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
-                                     AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
-          noexcept(<nc>see below</nc>);
-    template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit>
-      replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
-                                   InvalidFormat&amp;&amp;   on_invalid_format,
-                                   AboveUpperLimit&amp;&amp; on_above_upper_limit,
-                                   BelowLowerLimit&amp;&amp; on_below_lower_limit) noexcept(<nc>see below</nc>);
-    template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit,
-              class Underflow>
-      replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
-                                   InvalidFormat&amp;&amp;   on_invalid_format,
-                                   AboveUpperLimit&amp;&amp; on_above_upper_limit,
-                                   BelowLowerLimit&amp;&amp; on_below_lower_limit,
-                                   Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
-    replace_if_conversion_failed(const replace_if_conversion_failed&amp;  other) noexcept(<nc>see below</nc>);
-    replace_if_conversion_failed(      replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
-   ~replace_if_conversion_failed();
-    replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&amp;  other)
-      noexcept(<nc>see below</nc>);
-    replace_if_conversion_failed&amp; operator=(      replace_if_conversion_failed&amp;&amp; other)
-      noexcept(<nc>see below</nc>);
-
-    <c>// <n><xref id="replace_if_conversion_failed.inv"/>, invocation:</n></c>
-    template &lt;class Ch> std::optional&lt;T> operator()(invalid_format_t,
-                                                    const Ch*, const Ch*) const;
-    template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
-                                                    const Ch*, const Ch*, int sign) const;
-                        std::optional&lt;T> operator()(empty_t) const;
-
-    <c>// <n><xref id="replace_if_conversion_failed.modifiers"/>, modifiers:</n></c>
-    void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
-  };
-
-  template &lt;class... Ts>
-    replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
-
-  <c>// <n><xref id="replace_if_conversion_failed.special"/>, specialized algorithms:</n></c>
-  template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
-                               replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
-}
-        </codeblock>
-
-        <p>The class template <c>replace_if_conversion_failed</c> offers types that meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) whose target type is the template parameter <c>T</c>.
-           On a conversion error, an object of them can make the parsing process fail or offer a substitution of the field value, depending on the category of the error.</p>
-        <p><c>T</c> shall be <c>CopyConstructible</c> and <c>Destructible</c>.</p>
-        <p>An object of an instance of <c>replace_if_conversion_failed</c> has five replacement actions similarly to an object of <c>replace_if_skipped</c> (<xref id="replace_if_skipped"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
-           Each of these replacement actions can be configured to be either of the three types illustrated in <xref id="table.replace_if_skipped.replacement_actions"/> independently on one object of <c>replace_if_conversion_failed</c>.</p>
-        <p><c>replace_if_conversion_failed&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
-
-        <section id="replace_if_conversion_failed.props">
-          <name><c>replace_if_conversion_failed</c> properties</name>
-
-          <code-item>
-            <code>
-static constexpr std::size_t size = <nc>see below</nc>;
-            </code>
-            <remark><p>The expression in the right of <c>=</c> in the initializer shall be:</p>
-                    <ul>
-                      <li><c>3</c> if <c>T</c> is an unsigned integer type,</li>
-                      <li><c>4</c> if <c>T</c> is a signed integer type,</li>
-                      <li><c>5</c> otherwise.</li>
-                    </ul>
-            </remark>
-          </code-item>
-        </section>
-
-        <section id="replace_if_conversion_failed.cons">
-          <name><c>replace_if_conversion_failed</c> construct/copy/destroy</name>
-
-          <p>In this subclause, a type <c>A</c> <n>implies a fail action</n> if and only if <c>std::is_base_of_v&lt;replacement_fail_t, std::decay_t&lt;A>></c> is <c>true</c>.
-             Similarly, a type <c>A</c> <n>implies an ignore action</n> if and only if <c>std::is_base_of_v&lt;replacement_ignore_t, std::decay_t&lt;A>></c> is <c>true</c>.
-             In addition, let <c><nc>IS_ACCEPTABLE</nc>&lt;A></c> be a <c>bool</c> value that is <c>true</c> if and only if:</p>
-          <ul>
-            <li><c>A</c> implies a fail action,</li>
-            <li><c>A</c> implies an ignore action,</li>
-            <li><c>std::is_contructible_v&lt;T, A&amp;&amp;></c> is <c>true</c>.</li>
-          </ul>
-          <p>And let <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;A></c> be a <c>bool</c> value that is <c>true</c> if and only if:</p>
-          <ul>
-            <li><c>A</c> implies a fail action,</li>
-            <li><c>A</c> implies an ignore action,</li>
-            <li><c>std::is_nothrow_contructible_v&lt;T, A&amp;&amp;></c> is <c>true</c>.</li>
-          </ul>
-
-          <code-item>
-            <code>
-template &lt;class Empty = T, class InvalidFormat = T, class AboveUpperLimit = T>
-  explicit
-    replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
-                                 InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
-                                 AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
-      noexcept(<nc>see below</nc>);
-            </code>
-            <effects>If <c>Empty</c> implies a fail action, configures <c>action_on_empty</c> to be <c>fail</c>.
-                     Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
-                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
-                     Does the same with <c>action_on_invalid_format</c> and <c>action_on_above_upper_limit</c>.
-                     Configures <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-            <remark>This overload shall not be declared if <c>std::is_default_constructible_v&lt;T></c> is <c>false</c>.
-                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.
-                    The expression inside <c>noexcept</c> is <c>true</c> if and only if <c>std::is_nothrow_default_constructible_v&lt;T></c> is <c>true</c> and none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.</remark>
-          </code-item>
-
-          <code-item>
-            <code>
-template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit>
-  replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
-                               InvalidFormat&amp;&amp;   on_invalid_format,
-                               AboveUpperLimit&amp;&amp; on_above_upper_limit,
-                               BelowLowerLimit&amp;&amp; on_below_lower_limit) noexcept(<nc>see below</nc>);
-            </code>
-            <effects>If <c>Empty</c> implies a fail action, configures <c>action_on_empty</c> to be <c>fail</c>.
-                     Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
-                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
-                     Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c>.
-                     Configures <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-            <remark>This overload shall not be declared if <c>T</c> is an unsigned integer type or <c>std::is_default_constructible_v&lt;T></c> is <c>false</c>.
-                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.
-                    The expression inside <c>noexcept</c> is <c>true</c> if and only if <c>std::is_nothrow_default_constructible_v&lt;T></c> is <c>true</c> and none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.</remark>
-          </code-item>
-
-          <code-item>
-            <code>
-template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit,
-          class Underflow>
-  replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
-                               InvalidFormat&amp;&amp;   on_invalid_format,
-                               AboveUpperLimit&amp;&amp; on_above_upper_limit,
-                               BelowLowerLimit&amp;&amp; on_below_lower_limit,
-                               Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
-            </code>
-            <effects>If <c>Empty</c> implies a fail action, configures <c>action_on_empty</c> to be <c>fail</c>.
-                     Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
-                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
-                     Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>.</effects>
-            <remark>This overload shall not be declared if <c>T</c> is an integer type.
-                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.
-                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.</remark>
-          </code-item>
-
-          <code-item>
-            <code>
-replace_if_conversion_failed(const replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
-            </code>
-            <effects>Configures all the replacement actions to be the same as <c>other</c>'s.</effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T></c>.</remark>
-          </code-item>
-
-          <code-item>
-            <code>
-replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
-            </code>
-            <effects>Configures all the replacement actions to be what <c>other</c> had as its replacement actions before the call.</effects>
-            <remark>If an exception is thrown, <c>other</c> may be left in a valid but unspecified state.
-                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
-          </code-item>
-
-          <code-item>
-            <code>
-template &lt;class... Ts>
-  replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
-            </code>
-            <remark>This deduction guide participates in overload resolution if and only if <c>std::common_type_t&lt;Us...></c> is defined where <c>Us</c> denotes types in <c>Ts...</c> excluding types which imply neither a fail action nor a ignore action.
-                    In that case, the deduced type is <c>std::common_type_t&lt;Us...></c> above.</remark>
-          </code-item>
-
-          <code-item>
-            <code>
-replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&amp; other)
-  noexcept(<nc>see below</nc>);
-            </code>
-            <requires><c>T</c> shall be <c>CopyAssignable</c>.</requires>
-            <effects>Configures all the replacement actions to be the same as <c>other</c>'s.</effects>
-            <returns><c>*this</c>.</returns>
-            <remark>If an exception is thrown, <c>*this</c> may be left in a valid but unspecified state.
-                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T> &amp;&amp; std::is_nothrow_copy_assignable_v&lt;T></c>.</remark>
-          </code-item>
-
-          <code-item>
-            <code>
-replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&amp; other)
-  noexcept(<nc>see below</nc>);
-            </code>
-            <requires><c>T</c> shall be <c>MoveAssignable</c>.</requires>
-            <effects>Configures all the replacement actions to be what <c>other</c> had as its replacement actions before the call.</effects>
-            <returns><c>*this</c>.</returns>
-            <remark>If an exception is thrown, <c>*this</c> and <c>other</c> may be left in a valid but unspecified state.
-                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T> &amp;&amp; std::is_nothrow_move_assignable_v&lt;T></c>.</remark>
-          </code-item>
-        </section>
-
-        <section id="replace_if_conversion_failed.inv">
-          <name><c>replace_if_conversion_failed</c> invocation</name>
-
-          <code-item>
-            <code>
-template &lt;class Ch> std::optional&lt;T> operator()(invalid_format_t,
-                                                const Ch*, const Ch*) const;
-            </code>
-            <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.invalid_format"/> in reference to the <c>action_on_invalid_format</c> of <c>*this</c>.</effects>
-
-            <table id="table.replace_if_conversion_failed.invalid_format">
-              <caption>Effects of invocation with <c>invalid_format_t</c></caption>
-              <col width="5"/><col width="8"/><col width="5"/><col width="18"/>
-
-              <tr>
-                <th>#</th>
-                <th>Referenced action</th>
-                <th>Type of the action</th>
-                <th>Effects</th>
-              </tr>
-
-              <tr>
-                <td>(1)</td>
-                <td rowspan="3"><c>action_on_invalid_format</c></td>
-                <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
-              </tr>
-
-              <tr>
-                <td>(2)</td>
-                <td><c>ignore</c></td>
-                <td>Returns <c>std::optional&lt;T>()</c>.</td>
-              </tr>
-
-              <tr>
-                <td>(3)</td>
-                <td><c>fail</c></td>
-                <td>Throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</td>
-              </tr>
-            </table>
-          </code-item>
-
-          <code-item>
-            <code>
-template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
-                                                const Ch*, const Ch*, int sign) const;
-            </code>
-            <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.out_of_range"/> in reference to <c>sign</c> and the <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> of <c>*this</c>.</effects>
-
-            <table id="table.replace_if_conversion_failed.out_of_range">
-              <caption>Effects of invocation with <c>out_of_range_t</c></caption>
-              <col width="2"/><col width="3"/><col width="8"/><col width="5"/><col width="18"/>
-
-              <tr>
-                <th>#</th>
-                <th><c>sign</c></th>
-                <th>Referenced action</th>
-                <th>Type of the action</th>
-                <th>Effects</th>
-              </tr>
-
-              <tr>
-                <td>(1)</td>
-                <td rowspan="3">positive</td>
-                <td rowspan="3"><c>action_on_above_upper_limit</c></td>
-                <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
-              </tr>
-
-              <tr>
-                <td>(2)</td>
-                <td><c>ignore</c></td>
-                <td>Returns <c>std::optional&lt;T>()</c>.</td>
-              </tr>
-
-              <tr>
-                <td>(3)</td>
-                <td><c>fail</c></td>
-                <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
-              </tr>
-
-              <tr>
-                <td>(4)</td>
-                <td rowspan="3">negative</td>
-                <td rowspan="3"><c>action_on_below_lower_limit</c></td>
-                <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
-              </tr>
-
-              <tr>
-                <td>(5)</td>
-                <td><c>ignore</c></td>
-                <td>Returns <c>std::optional&lt;T>()</c>.</td>
-              </tr>
-
-              <tr>
-                <td>(6)</td>
-                <td><c>fail</c></td>
-                <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
-              </tr>
-
-              <tr>
-                <td>(7)</td>
-                <td rowspan="3"><c>0</c></td>
-                <td rowspan="3"><c>action_on_underflow</c></td>
-                <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
-              </tr>
-
-              <tr>
-                <td>(8)</td>
-                <td><c>ignore</c></td>
-                <td>Returns <c>std::optional&lt;T>()</c>.</td>
-              </tr>
-
-              <tr>
-                <td>(9)</td>
-                <td><c>fail</c></td>
-                <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
-              </tr>
-            </table>
-          </code-item>
-
-          <code-item>
-            <code>
-std::optional&lt;T> operator()(empty_t) const;
-            </code>
-            <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.empty"/> in reference to the <c>action_on_empty</c> of <c>*this</c>.</effects>
-
-            <table id="table.replace_if_conversion_failed.empty">
-              <caption>Effects of invocation with <c>empty_t</c></caption>
-              <col width="5"/><col width="8"/><col width="5"/><col width="18"/>
-
-              <tr>
-                <th>#</th>
-                <th>Referenced action</th>
-                <th>Type of the action</th>
-                <th>Effects</th>
-              </tr>
-
-              <tr>
-                <td>(1)</td>
-                <td rowspan="3"><c>action_on_empty</c></td>
-                <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
-              </tr>
-
-              <tr>
-                <td>(2)</td>
-                <td><c>ignore</c></td>
-                <td>Returns <c>std::optional&lt;T>()</c>.</td>
-              </tr>
-
-              <tr>
-                <td>(3)</td>
-                <td><c>fail</c></td>
-                <td>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</td>
-              </tr>
-            </table>
-          </code-item>
-        </section>
-
-        <section id="replace_if_conversion_failed.modifiers">
-          <name><c>replace_if_conversion_failed</c> modifiers</name>
-
-          <code-item>
-            <code>
-void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
-            </code>
-            <requires>For each of at most five replacement actions (<c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>),
-                      if both of the replacement action of <c>*this</c> and <c>other</c> are of the type <c>copy</c>, two lvalues of the object of type <c>T</c> installed with the replacement action shall be swappable with each onther.</requires>
-            <effects>Exchanges all the replacement actions between <c>*this</c> and <c>other</c>.</effects>
-            <remark>If an exception is thrown, <c>*this</c> and <c>other</c> may be left in a valid but unspecified state.
-                    The expression inside <c>noexcept</c> is equivalent to the value of <c>std::is_nothrow_move_constructible_v&lt;T> &amp;&amp; noexcept(swap(std::declval&lt;T&amp;>(), std::declval&lt;T&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
-          </code-item>
-        </section>
-
-        <section id="replace_if_conversion_failed.special">
-          <name><c>replace_if_conversion_failed</c> specialized algorithms</name>
-
-          <code-item>
-            <code>
-template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
-                             replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
-            </code>
-            <effects>Equivalent to: <c>left.swap(right);</c></effects>
-            <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;T></c> is <c>true</c>.
-                    The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
-          </code-item>
-        </section>
-      </section>
-    </section>
-
     <section id="scan.builtin.body_field_scanners">
       <name>Default body field scanner classes</name>
 
       <p>This subclause describes the body field scanner classes (<xref id="body_field_scanner.requirements"/>) built-in to Commata.</p>
       <p>In this subclause, terms on the possible target types of these built-in body field scanner classes are used as follows:</p>
       <ul>
-        <li>A type <c>T</c> is a <n>default translatable arithmeric type</n> if <c>T</c> is the same type as either of <c>char</c>, <c>signed char</c>, <c>unsigned char</c>, <c>short</c>, <c>unsigned short</c>, <c>int</c>, <c>unsigned</c>, <c>long</c>, <c>unsigned long</c>, <c>long long</c>, <c>unsigned long long</c>, <c>float</c>, <c>double</c>, or <c>long double</c>.</li>
         <li>A type <c>T</c> is a <n>default translatable string type</n> if <c>T</c> is the same type as <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain combination of <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>.</li>
         <li>A type <c>T</c> is a <n>default translatable string view type</n> if <c>T</c> is the same type as <c>std::basic_string_view&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</li>
         <li>A type <c>T</c> is a <n>default translatable type</n> if <c>T</c> is a default translatable arithmeric type, a default translatable string type or a default translatable string view type.</li>
@@ -6305,12 +6755,15 @@ namespace commata {
     <c>// <n><xref id="arithmetic_field_translator.inv"/>, invocation:</n></c>
     template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
                         void operator()();
+
+  private:
+    arithmetic_converter&lt;std::optional&lt;T>, ConversionErrorHandler> conv;    // exposition only
   };
 }
         </codeblock>
 
         <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c>.</p>
-        <p>The template parameter <c>T</c> shall be a default translatable arithmeric type.
+        <p>The template parameter <c>T</c> shall be a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
            The template parameters <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>), the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>) requirements for the target type <c>T</c> respectively.</p>
 
         <section id="arithmetic_field_translator.cons">
@@ -6325,8 +6778,9 @@ template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
       std::decay_t&lt;ConversionErrorHandlerR>());
             </code>
             <requires><c>std::is_constructible_v&lt;Sink, SinkR&amp;&amp;></c>, <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> and <c>std::is_constructible_v&lt;ConversionErrorHandler, ConversionErrorHandlerR&amp;&amp;></c> shall all be <c>true</c>.</requires>
-            <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds objects of <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandlerR>(handle_conversion_error)</c>
-                     as the field translator sink object, the skipping handler object and the conversion error handler object respectively.</effects>
+            <effects>Initializes <c>conv</c> with <c>ConversionErrorHandler(std::forward&lt;ConversionErrorHandlerR>(handle_conversion_error))</c>.
+                     Also initializes objects of <c>Sink</c> and <c>SkippingHandler</c> with <c>std::forward&lt;SinkR>(sink)</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c>
+                     as the field translator sink object and the skipping handler object.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler>, std::decay_t&lt;SinkR>></c> is <c>false</c>.</remark>
           </code-item>
 
@@ -6335,7 +6789,8 @@ template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
 arithmetic_field_translator(const arithmetic_field_translator&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>CopyConstructible</c>.</requires>
-            <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
+            <effects>Initializes <c>conv</c> with <c>other.conv</c>.
+                     Also initializes a sink object and a skipping handler object with lvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;SkippingHandler> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;ConversionErrorHandler></c>.</remark>
           </code-item>
 
@@ -6343,7 +6798,8 @@ arithmetic_field_translator(const arithmetic_field_translator&amp; other) noexce
             <code>
 arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
             </code>
-            <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
+            <effects>Initializes <c>conv</c> with <c>std::move(other.conv)</c>.
+                     Also initializes a sink object and a skipping handler object with xvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_move_constructible_v&lt;SkippingHandler> &amp;&amp; std::is_nothrow_move_constructible_v&lt;ConversionErrorHandler></c>.
                     When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
           </code-item>
@@ -6364,7 +6820,7 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
 const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
       ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
             </code>
-            <returns>A reference of the conversion error handler held by <c>*this</c>.</returns>
+            <returns><c>conv.get_conversion_error_handler()</c>.</returns>
           </code-item>
         </section>
 
@@ -6375,136 +6831,18 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
 template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
             </code>
             <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
-            <effects><p>First calls a parsing function indicated in <xref id="table.arithmetic_field_translator.parsing_functions"/> for <c>T</c> and <c>Ch</c> to get an arithmetic value <c>v</c> of the range [<c>begin</c>, <c>end</c>).
-                        Then does an action indicated in <xref id="table.arithmetic_field_translator.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
-                        In <xref id="table.arithmetic_field_translator.branching"/>,</p>
-                     <ul>
-                       <li><c>ceh</c> is the conversion error handler,</li>
-                       <li><c>n</c> is a null pointer of type <c>T*</c>,</li>
-                       <li><c>V</c> denotes <c>decltype(v)</c>,</li>
-                       <li><c>SV</c> denotes <c>std::make_signed&lt;V>::type</c>,</li>
-                       <li><c>x</c> denotes <c>std::numeric_limits&lt;T>::max()</c>, and</li>
-                       <li>the domain of <c>T</c> denotes
-                         <ul>
-                           <li>the range [<c>-x</c>, <c>x</c>] in <c>SV</c> mapped by a conversion to <c>V</c> if <c>T</c> is an unsigned integer type,</li>
-                           <li>a union of the range [<c>std::numeric_limits&lt;T>::lowest()</c>, <c>x</c>] and a set of other non-finite values (for example, positive or negative infinities and &#x2018;Not-a-Number&#x2019; values) otherwise.</li>
-                         </ul>
-                       </li>
-                     </ul>
+            <effects><p>Given an exposition-only class template:</p>
+              <code>
+template &lt;class Ch> struct arithmetic_convertible {
+  const Ch* b;
+  const Ch* e;
+  auto c_str() const { return b; }
+  auto size() const { return e - b; }
+};
+              </code>
+              <p>first makes an object <c>w</c> of <c>std::optional&lt;T></c> initialized with <c>conv(arithmetic_convertible&lt;Ch>{ b, e })</c>,
+                 and then puts <c>*w</c> into the field translator sink if <c>w.has_value()</c> is <c>true</c>.</p>
             </effects>
-
-            <table id="table.arithmetic_field_translator.parsing_functions">
-              <caption>The parsing functions used by <c>arithmetic_field_translator</c></caption>
-              <col width="6"/><col width="2"/><col width="2"/>
-
-              <tr>
-                <th><c>T</c></th>
-                <th><c>Ch</c> is <c>char</c></th>
-                <th><c>Ch</c> is <c>wchar_t</c></th>
-              </tr>
-
-              <tr>
-                <td><c>char</c> (only if signed), <c>signed char</c>, <c>short</c>, <c>int</c>, or <c>long</c></td>
-                <td><c>std::strtol</c></td>
-                <td><c>std::wcstol</c></td>
-              </tr>
-
-              <tr>
-                <td><c>char</c> (only if unsigned), <c>unsigned char</c>, <c>unsigned short</c>, <c>unsigned</c>, or <c>unsigned long</c></td>
-                <td><c>std::strtoul</c></td>
-                <td><c>std::wcstoul</c></td>
-              </tr>
-
-              <tr>
-                <td><c>long long</c></td>
-                <td><c>std::strtoll</c></td>
-                <td><c>std::wcstoll</c></td>
-              </tr>
-
-              <tr>
-                <td><c>unsigned long long</c></td>
-                <td><c>std::strtoull</c></td>
-                <td><c>std::wcstoull</c></td>
-              </tr>
-
-              <tr>
-                <td><c>float</c></td>
-                <td><c>std::strtof</c></td>
-                <td><c>std::wcstof</c></td>
-              </tr>
-
-              <tr>
-                <td><c>double</c></td>
-                <td><c>std::strtod</c></td>
-                <td><c>std::wcstod</c></td>
-              </tr>
-
-              <tr>
-                <td><c>long double</c></td>
-                <td><c>std::strtold</c></td>
-                <td><c>std::wcstold</c></td>
-              </tr>
-            </table>
-
-            <table id="table.arithmetic_field_translator.branching">
-              <caption>The actions done by an <c>arithmetic_field_translator</c> in response to the consequence of calling the parsing function</caption>
-              <col width="1"/><col width="1"/><col width="1"/><col width="1"/><col width="4"/>
-
-              <tr>
-                <th>The call consumed all characters in the range</th>
-                <th>The range contains at least one character</th>
-                <th><c>errno != ERANGE</c></th>
-                <th><c>v</c> is in the domain of <c>T</c></th>
-                <th>Action</th>
-              </tr>
-
-              <tr>
-                <td rowspan="4">Yes</td>
-                <td rowspan="3">Yes</td>
-                <td rowspan="2">Yes</td>
-                <td>Yes</td>
-                <td><p>First lets <c>w</c> be:</p>
-                    <ul>
-                      <li>if <c>T</c> is an unsigned integer type, <c>V</c> has a greater size than <c>T</c>, and <c>SV(v)</c> is a negative value, <c>T(SV(v) + x + 1)</c>,</li>
-                      <li>otherwise, <c>T(v)</c>.</li>
-                    </ul>
-                    <p>Then puts <c>w</c> into the field translator sink.</p></td>
-              </tr>
-
-              <tr>
-                <td>No</td>
-                <td rowspan="2"><p>First lets <c>g</c> be:</p>
-                    <ul>
-                      <li>if <c>T</c> is an unsigned integer type or the field value should be translated into a value above any values in the domain of <c>T</c>, a positive value of <c>int</c>,</li>
-                      <li>if the field value should be translated into a value below any values in the domain of <c>T</c>, a negative value of <c>int</c>,</li>
-                      <li>otherwise, a zero value of <c>int</c>.</li>
-                    </ul>
-                    <p>Then evaluates <c>ceh(out_of_range_t(), begin, end, g)</c> or <c>ceh(out_of_range_t(), begin, end, g, n)</c> and lets <c>r</c> be the return value.
-                       Then puts <c>*r</c> into the field translator sink if <c>r.has_value()</c> is <c>true</c>.</p></td>
-              </tr>
-
-              <tr>
-                <td>No</td>
-                <td>&#8211;</td>
-              </tr>
-
-              <tr>
-                <td>No</td>
-                <td>&#8211;</td>
-                <td>&#8211;</td>
-                <td>Evaluates <c>ceh(empty_t())</c> or <c>ceh(empty_t(), n)</c> and lets <c>r</c> be the return value.
-                    Then puts <c>*r</c> into the field translator sink if <c>r.has_value()</c> is <c>true</c>.</td>
-              </tr>
-
-              <tr>
-                <td>No</td>
-                <td>&#8211;</td>
-                <td>&#8211;</td>
-                <td>&#8211;</td>
-                <td>Evaluates <c>ceh(invalid_format_t(), begin, end)</c> or <c>ceh(invalid_format_t(), begin, end, n)</c> and lets <c>r</c> be the return value.
-                    Then puts <c>*r</c> into the field translator sink if <c>r.has_value()</c> is <c>true</c>.</td>
-              </tr>
-            </table>
           </code-item>
 
           <code-item>
@@ -6548,13 +6886,16 @@ namespace commata {
     <c>// <n><xref id="locale_based_arithmetic_field_translator.inv"/>, invocation:</n></c>
     template &lt;class Ch> void operator()(Ch* begin, Ch* end);
                         void operator()();
+
+  private:
+    arithmetic_converter&lt;std::optional&lt;T>, ConversionErrorHandler> conv;    // exposition only
   };
 }
         </codeblock>
 
         <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
           The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C-language locale.</p>
-        <p>The template parameter <c>T</c> shall be a default translatable arithmeric type.
+        <p>The template parameter <c>T</c> shall be a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
            The template parameters <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>), the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c>T</c> respectively.</p>
 
         <section id="locale_based_arithmetic_field_translator.cons">
@@ -6570,8 +6911,9 @@ explicit locale_based_arithmetic_field_translator(
     std::decay_t&lt;ConversionErrorHandlerR>());
             </code>
             <requires><c>std::is_constructible_v&lt;Sink, SinkR&amp;&amp;></c>, <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> and <c>std::is_constructible_v&lt;ConversionErrorHandler, ConversionErrorHandlerR&amp;&amp;></c> shall all be <c>true</c>.</requires>
-            <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds objects of <c>Sink</c>, <c>std::locale</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c>, <c>loc</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandlerR>(handle_conversion_error)</c>
-                     as the field translator sink object, the locale object, the skipping handler object and the conversion error handler object respectively.</effects>
+            <effects>Initializes <c>conv</c> with <c>ConversionErrorHandler(std::forward&lt;ConversionErrorHandlerR>(handle_conversion_error))</c>.
+                     Also initializes objects of <c>Sink</c>, <c>std::locale</c> and <c>SkippingHandler</c> with <c>std::forward&lt;SinkR>(sink)</c>, <c>loc</c> and <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c>
+                     as the field translator sink object, the locale object and the skipping handler object respectively.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;locale_based_arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler>, std::decay_t&lt;SinkR>></c> is <c>false</c>.</remark>
           </code-item>
 
@@ -6581,7 +6923,8 @@ locale_based_arithmetic_field_translator(
   const locale_based_arithmetic_field_translator&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>CopyConstructible</c>.</requires>
-            <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
+            <effects>Initializes <c>conv</c> with <c>other.conv</c>.
+                     Also initializes a field translator sink object, a locale object and a skipping handler object with lvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;SkippingHandler> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;ConversionErrorHandler></c>.</remark>
           </code-item>
 
@@ -6590,7 +6933,8 @@ locale_based_arithmetic_field_translator(
 locale_based_arithmetic_field_translator(
   locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
             </code>
-            <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
+            <effects>Initializes <c>conv</c> with <c>std::move(other.conv)</c>.
+                     Also initializes a field translator sink object, a locale object and a skipping handler object with xvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_move_constructible_v&lt;SkippingHandler> &amp;&amp; std::is_nothrow_move_constructible_v&lt;ConversionErrorHandler></c>.
                     When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
           </code-item>
@@ -6611,7 +6955,7 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
 const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
       ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
             </code>
-            <returns>A reference of the conversion error handler held by <c>*this</c>.</returns>
+            <returns><c>conv.get_conversion_error_handler()</c>.</returns>
           </code-item>
         </section>
 
@@ -6625,7 +6969,7 @@ template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             <effects>Let <c>npf</c> be <c>std::use_facet&lt;std::numpunct&lt;Ch>>(loc)</c> where <c>loc</c> is the specified locale.
                      First, if <c>npf.grouping().empty()</c> is <c>false</c>, removes all occurrences of <c>npf.thousands_sep()</c> in the range [<c>begin</c>, <c>end</c>) in place.
                      Second, replaces the first occurrence of <c>npf.decimal_point()</c> in the resulted range with <c>*std::localeconv()->decimal_point</c> conditionally widen with <c>std::btowc</c> to get a value of the type <c>Ch</c> in place.
-                     Then calls a parsing function with the resulted range and puts a value into the field translator sink as if a <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>) object does.</effects>
+                     Then behaves as if <c>arithmetic_field_translator::operator()</c> (<xref id="arithmetic_field_translator.inv"/>) is called with the resulted range.</effects>
           </code-item>
 
           <code-item>
@@ -7575,6 +7919,7 @@ namespace commata {
        The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TableSource::char_type</c>.</p>
     <p>An object of an instantiation of it performs field-wisely or record-wisely step-by-step parsing of a text table.
        Its user can retrieve the field values through its <n>current string values</n>, which are null-terminated sequences of <c>TableSource::char_type</c>.</p>
+    <p>An instance of <c>table_pull</c> meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char_type</c>.</p>
 
     <section id="table_pull.physical_position_available">
       <name><c>table_pull</c> physical position availability</name>

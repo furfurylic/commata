@@ -31,6 +31,12 @@ constexpr bool is_std_reference_wrapper_v = false;
 template <class T>
 constexpr bool is_std_reference_wrapper_v<std::reference_wrapper<T>> = true;
 
+template <class T>
+constexpr bool is_std_optional_v = false;
+
+template <class T>
+constexpr bool is_std_optional_v<std::optional<T>> = true;
+
 template <class... Ts>
 struct first;
 
