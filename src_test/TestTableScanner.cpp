@@ -9,9 +9,11 @@
 #endif
 
 #include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <cstdlib>
 #include <cwchar>
+#include <cwctype>
 #include <deque>
 #include <iomanip>
 #include <iterator>

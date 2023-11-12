@@ -5223,10 +5223,10 @@ namespace commata {
     class field_out_of_range;
 
   struct replacement_ignore_t {};
-  constexpr replacement_ignore_t replacement_ignore = replacement_ignore_t{};
+  inline constexpr replacement_ignore_t replacement_ignore{};
 
   struct replacement_fail_t {};
-  constexpr replacement_fail_t replacement_fail = replacement_fail_t{};
+  inline constexpr replacement_fail_t replacement_fail{};
 
   struct invalid_format_t {};
   struct out_of_range_t {};
