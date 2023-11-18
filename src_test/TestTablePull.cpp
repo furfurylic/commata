@@ -452,7 +452,7 @@ TYPED_TEST_P(TestTablePull, ToArithmetic)
 
     pull(); // to "1.9"
     // As int
-    ASSERT_THROW(to_arithmetic<int>(pull), field_invalid_format);
+    ASSERT_THROW(to_arithmetic<int>(pull), text_value_invalid_format);
     const auto x2i = to_arithmetic<std::optional<int>>(pull);
     ASSERT_FALSE(x2i.has_value());
     // As double

@@ -253,7 +253,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, UpperLimit)
     try {
         parse_csv(s, std::move(h));
         FAIL();
-    } catch (const field_out_of_range& e) {
+    } catch (const text_value_out_of_range& e) {
         ASSERT_TRUE(e.get_physical_position());
         ASSERT_EQ(1U, e.get_physical_position()->first);
         const string_t message = widen(e.what());
@@ -298,7 +298,7 @@ TYPED_TEST(TestFieldTranslatorForIntegralTypes, LowerLimit)
     try {
         parse_csv(s, std::move(h));
         FAIL() << values[0] << ',' << values[1];
-    } catch (const field_out_of_range& e) {
+    } catch (const text_value_out_of_range& e) {
         ASSERT_TRUE(e.get_physical_position());
         ASSERT_EQ(1U, e.get_physical_position()->first);
         const string_t message = widen(e.what());
@@ -1885,11 +1885,11 @@ TYPED_TEST(TestReplaceIfConversionFailed, CtorsFail)
 
     for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
         const auto& r = rs[i];
-        ASSERT_THROW(r(empty_t()), field_empty);
-        ASSERT_THROW(r(invalid_format_t(), d, de), field_invalid_format) << i;
-        ASSERT_THROW(r(out_of_range_t(), d, de, 1), field_out_of_range) << i;
-        ASSERT_THROW(r(out_of_range_t(), d, de, -1), field_out_of_range) << i;
-        ASSERT_THROW(r(out_of_range_t(), d, de, 0), field_out_of_range) << i;
+        ASSERT_THROW(r(empty_t()), text_value_empty);
+        ASSERT_THROW(r(invalid_format_t(), d, de), text_value_invalid_format) << i;
+        ASSERT_THROW(r(out_of_range_t(), d, de, 1), text_value_out_of_range) << i;
+        ASSERT_THROW(r(out_of_range_t(), d, de, -1), text_value_out_of_range) << i;
+        ASSERT_THROW(r(out_of_range_t(), d, de, 0), text_value_out_of_range) << i;
     }
 }
 
@@ -1994,11 +1994,11 @@ TYPED_TEST(TestReplaceIfConversionFailed, CopyAssign)
         rs[2] = r0;
         for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
             const auto& r = rs[i];
-            ASSERT_THROW(r(empty_t()), field_empty) << i;
-            ASSERT_THROW(r(invalid_format_t(), d, de), field_invalid_format) << i;
-            ASSERT_THROW(r(out_of_range_t(), d, de, 1), field_out_of_range) << i;
-            ASSERT_THROW(r(out_of_range_t(), d, de, -1), field_out_of_range) << i;
-            ASSERT_THROW(r(out_of_range_t(), d, de, 0), field_out_of_range) << i;
+            ASSERT_THROW(r(empty_t()), text_value_empty) << i;
+            ASSERT_THROW(r(invalid_format_t(), d, de), text_value_invalid_format) << i;
+            ASSERT_THROW(r(out_of_range_t(), d, de, 1), text_value_out_of_range) << i;
+            ASSERT_THROW(r(out_of_range_t(), d, de, -1), text_value_out_of_range) << i;
+            ASSERT_THROW(r(out_of_range_t(), d, de, 0), text_value_out_of_range) << i;
         }
 
 #ifdef __clang__
@@ -2009,11 +2009,11 @@ TYPED_TEST(TestReplaceIfConversionFailed, CopyAssign)
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-        ASSERT_THROW(r0(empty_t()), field_empty);
-        ASSERT_THROW(r0(invalid_format_t(), d, de), field_invalid_format);
-        ASSERT_THROW(r0(out_of_range_t(), d, de, 1), field_out_of_range);
-        ASSERT_THROW(r0(out_of_range_t(), d, de, -1), field_out_of_range);
-        ASSERT_THROW(r0(out_of_range_t(), d, de, 0), field_out_of_range);
+        ASSERT_THROW(r0(empty_t()), text_value_empty);
+        ASSERT_THROW(r0(invalid_format_t(), d, de), text_value_invalid_format);
+        ASSERT_THROW(r0(out_of_range_t(), d, de, 1), text_value_out_of_range);
+        ASSERT_THROW(r0(out_of_range_t(), d, de, -1), text_value_out_of_range);
+        ASSERT_THROW(r0(out_of_range_t(), d, de, 0), text_value_out_of_range);
     }
 }
 
@@ -2104,19 +2104,19 @@ TYPED_TEST(TestReplaceIfConversionFailed, MoveAssign)
         rs[2] = r_t(r0);
         for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
             const auto& r = rs[i];
-            ASSERT_THROW(r(empty_t()), field_empty) << i;
-            ASSERT_THROW(r(invalid_format_t(), d, de), field_invalid_format) << i;
-            ASSERT_THROW(r(out_of_range_t(), d, de, 1), field_out_of_range) << i;
-            ASSERT_THROW(r(out_of_range_t(), d, de, -1), field_out_of_range) << i;
-            ASSERT_THROW(r(out_of_range_t(), d, de, 0), field_out_of_range) << i;
+            ASSERT_THROW(r(empty_t()), text_value_empty) << i;
+            ASSERT_THROW(r(invalid_format_t(), d, de), text_value_invalid_format) << i;
+            ASSERT_THROW(r(out_of_range_t(), d, de, 1), text_value_out_of_range) << i;
+            ASSERT_THROW(r(out_of_range_t(), d, de, -1), text_value_out_of_range) << i;
+            ASSERT_THROW(r(out_of_range_t(), d, de, 0), text_value_out_of_range) << i;
         }
 
         r0 = std::move(r0);
-        ASSERT_THROW(r0(empty_t()), field_empty);
-        ASSERT_THROW(r0(invalid_format_t(), d, de), field_invalid_format);
-        ASSERT_THROW(r0(out_of_range_t(), d, de, 1), field_out_of_range);
-        ASSERT_THROW(r0(out_of_range_t(), d, de, -1), field_out_of_range);
-        ASSERT_THROW(r0(out_of_range_t(), d, de, 0), field_out_of_range);
+        ASSERT_THROW(r0(empty_t()), text_value_empty);
+        ASSERT_THROW(r0(invalid_format_t(), d, de), text_value_invalid_format);
+        ASSERT_THROW(r0(out_of_range_t(), d, de, 1), text_value_out_of_range);
+        ASSERT_THROW(r0(out_of_range_t(), d, de, -1), text_value_out_of_range);
+        ASSERT_THROW(r0(out_of_range_t(), d, de, 0), text_value_out_of_range);
     }
 }
 
@@ -2169,11 +2169,11 @@ TYPED_TEST(TestReplaceIfConversionFailed, Swap)
 
     // ignore vs fail
     swap(rs[1], rs[2]);
-    ASSERT_THROW(rs[1](empty_t()), field_empty);
-    ASSERT_THROW(rs[1](invalid_format_t(), d, de), field_invalid_format);
-    ASSERT_THROW(rs[1](out_of_range_t(), d, de, 1), field_out_of_range);
-    ASSERT_THROW(rs[1](out_of_range_t(), d, de, -1), field_out_of_range);
-    ASSERT_THROW(rs[1](out_of_range_t(), d, de, 0), field_out_of_range);
+    ASSERT_THROW(rs[1](empty_t()), text_value_empty);
+    ASSERT_THROW(rs[1](invalid_format_t(), d, de), text_value_invalid_format);
+    ASSERT_THROW(rs[1](out_of_range_t(), d, de, 1), text_value_out_of_range);
+    ASSERT_THROW(rs[1](out_of_range_t(), d, de, -1), text_value_out_of_range);
+    ASSERT_THROW(rs[1](out_of_range_t(), d, de, 0), text_value_out_of_range);
     ASSERT_TRUE(!rs[2](empty_t()));
     ASSERT_TRUE(!rs[2](invalid_format_t(), d, de));
     ASSERT_TRUE(!rs[2](out_of_range_t(), d, de, 1));
@@ -2185,11 +2185,11 @@ TYPED_TEST(TestReplaceIfConversionFailed, Swap)
     ASSERT_TRUE(!rs[1](out_of_range_t(), d, de, 1));
     ASSERT_TRUE(!rs[1](out_of_range_t(), d, de, -1));
     ASSERT_TRUE(!rs[1](out_of_range_t(), d, de, 0));
-    ASSERT_THROW(rs[2](empty_t()), field_empty);
-    ASSERT_THROW(rs[2](invalid_format_t(), d, de), field_invalid_format);
-    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 1), field_out_of_range);
-    ASSERT_THROW(rs[2](out_of_range_t(), d, de, -1), field_out_of_range);
-    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 0), field_out_of_range);
+    ASSERT_THROW(rs[2](empty_t()), text_value_empty);
+    ASSERT_THROW(rs[2](invalid_format_t(), d, de), text_value_invalid_format);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 1), text_value_out_of_range);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, -1), text_value_out_of_range);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 0), text_value_out_of_range);
 
     // fail vs copy
     swap(rs[2], rs[3]);
@@ -2198,17 +2198,17 @@ TYPED_TEST(TestReplaceIfConversionFailed, Swap)
     ASSERT_EQ(num_5, *rs[2](out_of_range_t(), d, de, 1));
     ASSERT_EQ(num_1, *rs[2](out_of_range_t(), d, de, -1));
     ASSERT_EQ(num_2, *rs[2](out_of_range_t(), d, de, 0));
-    ASSERT_THROW(rs[3](empty_t()), field_empty);
-    ASSERT_THROW(rs[3](invalid_format_t(), d, de), field_invalid_format);
-    ASSERT_THROW(rs[3](out_of_range_t(), d, de, 1), field_out_of_range);
-    ASSERT_THROW(rs[3](out_of_range_t(), d, de, -1), field_out_of_range);
-    ASSERT_THROW(rs[3](out_of_range_t(), d, de, 0), field_out_of_range);
+    ASSERT_THROW(rs[3](empty_t()), text_value_empty);
+    ASSERT_THROW(rs[3](invalid_format_t(), d, de), text_value_invalid_format);
+    ASSERT_THROW(rs[3](out_of_range_t(), d, de, 1), text_value_out_of_range);
+    ASSERT_THROW(rs[3](out_of_range_t(), d, de, -1), text_value_out_of_range);
+    ASSERT_THROW(rs[3](out_of_range_t(), d, de, 0), text_value_out_of_range);
     swap(rs[2], rs[3]);
-    ASSERT_THROW(rs[2](empty_t()), field_empty);
-    ASSERT_THROW(rs[2](invalid_format_t(), d, de), field_invalid_format);
-    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 1), field_out_of_range);
-    ASSERT_THROW(rs[2](out_of_range_t(), d, de, -1), field_out_of_range);
-    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 0), field_out_of_range);
+    ASSERT_THROW(rs[2](empty_t()), text_value_empty);
+    ASSERT_THROW(rs[2](invalid_format_t(), d, de), text_value_invalid_format);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 1), text_value_out_of_range);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, -1), text_value_out_of_range);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 0), text_value_out_of_range);
     ASSERT_EQ(num_3, *rs[3](empty_t()));
     ASSERT_EQ(num_4, *rs[3](invalid_format_t(), d, de));
     ASSERT_EQ(num_5, *rs[3](out_of_range_t(), d, de, 1));
@@ -2253,11 +2253,11 @@ TYPED_TEST(TestReplaceIfConversionFailed, Swap)
     ASSERT_TRUE(!rs[1](out_of_range_t(), d, de, -1));
     ASSERT_TRUE(!rs[1](out_of_range_t(), d, de, 0));
     swap(rs[2], rs[2]);
-    ASSERT_THROW(rs[2](empty_t()), field_empty);
-    ASSERT_THROW(rs[2](invalid_format_t(), d, de), field_invalid_format);
-    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 1), field_out_of_range);
-    ASSERT_THROW(rs[2](out_of_range_t(), d, de, -1), field_out_of_range);
-    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 0), field_out_of_range);
+    ASSERT_THROW(rs[2](empty_t()), text_value_empty);
+    ASSERT_THROW(rs[2](invalid_format_t(), d, de), text_value_invalid_format);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 1), text_value_out_of_range);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, -1), text_value_out_of_range);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 0), text_value_out_of_range);
 }
 
 TYPED_TEST(TestReplaceIfConversionFailed, DeductionGuides)
@@ -2281,7 +2281,7 @@ TYPED_TEST(TestReplaceIfConversionFailed, DeductionGuides)
         std::is_same_v<replace_if_conversion_failed<TypeParam>, decltype(r)>);
     ASSERT_EQ(num_1, *r(empty_t()));
     ASSERT_EQ(TypeParam(), *r(invalid_format_t(), s, s));
-    ASSERT_THROW(r(out_of_range_t(), s, s, 1), field_out_of_range);
+    ASSERT_THROW(r(out_of_range_t(), s, s, 1), text_value_out_of_range);
     ASSERT_TRUE(!r(out_of_range_t(), s, s, -1));
     ASSERT_EQ(num_2, *r(out_of_range_t(), s, s, 0));
 

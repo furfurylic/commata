@@ -671,10 +671,10 @@ private:
 using table_scanner = basic_table_scanner<char>;
 using wtable_scanner = basic_table_scanner<wchar_t>;
 
-class field_not_found : public field_translation_error
+class field_not_found : public text_value_translation_error
 {
 public:
-    using field_translation_error::field_translation_error;
+    using text_value_translation_error::text_value_translation_error;
 };
 
 struct fail_if_skipped

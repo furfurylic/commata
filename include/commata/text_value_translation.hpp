@@ -25,28 +25,28 @@
 
 namespace commata {
 
-class field_translation_error : public text_error
+class text_value_translation_error : public text_error
 {
 public:
     using text_error::text_error;
 };
 
-class field_invalid_format : public field_translation_error
+class text_value_invalid_format : public text_value_translation_error
 {
 public:
-    using field_translation_error::field_translation_error;
+    using text_value_translation_error::text_value_translation_error;
 };
 
-class field_empty : public field_invalid_format
+class text_value_empty : public text_value_invalid_format
 {
 public:
-    using field_invalid_format::field_invalid_format;
+    using text_value_invalid_format::text_value_invalid_format;
 };
 
-class field_out_of_range : public field_translation_error
+class text_value_out_of_range : public text_value_translation_error
 {
 public:
-    using field_translation_error::field_translation_error;
+    using text_value_translation_error::text_value_translation_error;
 };
 
 struct invalid_format_t {};
@@ -524,11 +524,11 @@ struct fail_if_conversion_failed
             detail::xlate::sputn(&s, "Cannot convert"sv);
         }
         write_name<T>(&s, " to an instance of "sv);
-        throw field_invalid_format(std::move(s).str());
-    } catch (const field_invalid_format&) {
+        throw text_value_invalid_format(std::move(s).str());
+    } catch (const text_value_invalid_format&) {
         throw;
     } catch (...) {
-        std::throw_with_nested(field_invalid_format());
+        std::throw_with_nested(text_value_invalid_format());
     }
 
     template <class T, class Ch>
@@ -547,11 +547,11 @@ struct fail_if_conversion_failed
             detail::xlate::sputn(&s, "Out of range"sv);
         }
         write_name<T>(&s, " of "sv);
-        throw field_out_of_range(std::move(s).str());
-    } catch (const field_out_of_range&) {
+        throw text_value_out_of_range(std::move(s).str());
+    } catch (const text_value_out_of_range&) {
         throw;
     } catch (...) {
-        std::throw_with_nested(field_out_of_range());
+        std::throw_with_nested(text_value_invalid_format());
     }
 
     template <class T>
@@ -562,11 +562,11 @@ struct fail_if_conversion_failed
         std::stringbuf s;
         detail::xlate::sputn(&s, "Cannot convert an empty string"sv);
         write_name<T>(&s, " to an instance of "sv);
-        throw field_empty(std::move(s).str());
-    } catch (const field_empty&) {
+        throw text_value_empty(std::move(s).str());
+    } catch (const text_value_empty&) {
         throw;
     } catch (...) {
-        std::throw_with_nested(field_empty());
+        std::throw_with_nested(text_value_empty());
     }
 
 private:

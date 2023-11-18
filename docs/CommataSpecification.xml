@@ -1443,10 +1443,10 @@ namespace commata {
 
 namespace commata {
   <c>// <n><xref id="xlate.builtin.exceptions"/>, exception classes:</n></c>
-  class field_translation_error;
-    class field_invalid_format;
-      class field_empty;
-    class field_out_of_range;
+  class text_value_translation_error;
+    class text_value_invalid_format;
+      class text_value_empty;
+    class text_value_out_of_range;
 
   <c>// <n>Conversion error tags for the ConversionErrorHandler requirements (<xref id="conversion_error_handler.requirements"/>)</n></c>
   struct invalid_format_t {};
@@ -1557,64 +1557,64 @@ namespace commata {
     <section id="xlate.builtin.exceptions">
       <name>Exception classes for text value translation error</name>
 
-      <section id="field_translation_error">
-        <name>Class <c>field_translation_error</c></name>
+      <section id="text_value_translation_error">
+        <name>Class <c>text_value_translation_error</c></name>
 
         <codeblock>
 namespace commata {
-  class field_translation_error : public text_error {
+  class text_value_translation_error : public text_error {
   public:
     using text_error::text_error;
   };
 }
         </codeblock>
 
-        <p>The class <c>field_translation_error</c> defines the type of the objects thrown by default text value translators of Commata library.</p>
+        <p>The class <c>text_value_translation_error</c> defines the type of the objects thrown by default text value translators of Commata library.</p>
       </section>
 
-      <section id="field_invalid_format">
-        <name>Class <c>field_invalid_format</c></name>
+      <section id="text_value_invalid_format">
+        <name>Class <c>text_value_invalid_format</c></name>
 
         <codeblock>
 namespace commata {
-  class field_invalid_format : public field_translation_error {
+  class text_value_invalid_format : public text_value_translation_error {
   public:
-    using field_translation_error::field_translation_error;
+    using text_value_translation_error::text_value_translation_error;
   };
 }
         </codeblock>
 
-        <p>The class <c>field_invalid_format</c> defines the type of the objects thrown by default text value translators of Commata library to report text value format errors.</p>
+        <p>The class <c>text_value_invalid_format</c> defines the type of the objects thrown by default text value translators of Commata library to report text value format errors.</p>
       </section>
 
-      <section id="field_empty">
-        <name>Class <c>field_empty</c></name>
+      <section id="text_value_empty">
+        <name>Class <c>text_value_empty</c></name>
 
         <codeblock>
 namespace commata {
-  class field_empty : public field_invalid_format {
+  class text_value_empty : public text_value_invalid_format {
   public:
-    using field_invalid_format::field_invalid_format;
+    using text_value_invalid_format::text_value_invalid_format;
   };
 }
         </codeblock>
 
-        <p>The class <c>field_empty</c> defines the type of the objects thrown by default text value translators of Commata library to report an empty text value.</p>
+        <p>The class <c>text_value_empty</c> defines the type of the objects thrown by default text value translators of Commata library to report an empty text value.</p>
       </section>
 
-      <section id="field_out_of_range">
-        <name>Class <c>field_out_of_range</c></name>
+      <section id="text_value_out_of_range">
+        <name>Class <c>text_value_out_of_range</c></name>
 
         <codeblock>
 namespace commata {
-  class field_out_of_range : public field_translation_error {
+  class text_value_out_of_range : public text_value_translation_error {
   public:
-    using field_translation_error::field_translation_error;
+    using text_value_translation_error::text_value_translation_error;
   };
 }
         </codeblock>
 
-        <p>The class <c>field_out_of_range</c> defines the type of the objects thrown by default text value translators of Commata library to report they found a translated text value out of its domain.</p>
+        <p>The class <c>text_value_out_of_range</c> defines the type of the objects thrown by default text value translators of Commata library to report they found a translated text value out of its domain.</p>
       </section>
     </section>
 
@@ -1656,7 +1656,7 @@ template &lt;class T, class Ch>
   [[noreturn]] std::optional&lt;T> operator()(invalid_format_t,
                                            const Ch*, const Ch*, T* = nullptr) const;
           </code>
-          <effects>Throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</effects>
+          <effects>Throws an object of <c>text_value_invalid_format</c> (<xref id="text_value_invalid_format"/>).</effects>
         </code-item>
 
         <code-item>
@@ -1665,7 +1665,7 @@ template &lt;class T, class Ch>
   [[noreturn]] std::optional&lt;T> operator()(out_of_range_t,
                                            const Ch*, const Ch*, int, T* = nullptr) const;
           </code>
-          <effects>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</effects>
+          <effects>Throws an object of <c>text_value_out_of_range</c> (<xref id="text_value_out_of_range"/>).</effects>
         </code-item>
 
         <code-item>
@@ -1673,7 +1673,7 @@ template &lt;class T, class Ch>
 template &lt;class T>
   [[noreturn]] std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
           </code>
-          <effects>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</effects>
+          <effects>Throws an object of <c>text_value_empty</c> (<xref id="text_value_empty"/>).</effects>
         </code-item>
       </section>
 
@@ -1922,7 +1922,7 @@ template &lt;class Ch> std::optional&lt;T> operator()(invalid_format_t,
               <tr>
                 <td>(3)</td>
                 <td><c>fail</c></td>
-                <td>Throws an object of <c>field_invalid_format</c> (<xref id="field_invalid_format"/>).</td>
+                <td>Throws an object of <c>text_value_invalid_format</c> (<xref id="text_value_invalid_format"/>).</td>
               </tr>
             </table>
           </code-item>
@@ -1963,7 +1963,7 @@ template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
               <tr>
                 <td>(3)</td>
                 <td><c>fail</c></td>
-                <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
+                <td>Throws an object of <c>text_value_out_of_range</c> (<xref id="text_value_out_of_range"/>).</td>
               </tr>
 
               <tr>
@@ -1983,7 +1983,7 @@ template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
               <tr>
                 <td>(6)</td>
                 <td><c>fail</c></td>
-                <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
+                <td>Throws an object of <c>text_value_out_of_range</c> (<xref id="text_value_out_of_range"/>).</td>
               </tr>
 
               <tr>
@@ -2003,7 +2003,7 @@ template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
               <tr>
                 <td>(9)</td>
                 <td><c>fail</c></td>
-                <td>Throws an object of <c>field_out_of_range</c> (<xref id="field_out_of_range"/>).</td>
+                <td>Throws an object of <c>text_value_out_of_range</c> (<xref id="text_value_out_of_range"/>).</td>
               </tr>
             </table>
           </code-item>
@@ -2041,7 +2041,7 @@ std::optional&lt;T> operator()(empty_t) const;
               <tr>
                 <td>(3)</td>
                 <td><c>fail</c></td>
-                <td>Throws an object of <c>field_empty</c> (<xref id="field_empty"/>).</td>
+                <td>Throws an object of <c>text_value_empty</c> (<xref id="text_value_empty"/>).</td>
               </tr>
             </table>
           </code-item>
@@ -6493,9 +6493,9 @@ bool is_in_header() const noexcept;
 
         <codeblock>
 namespace commata {
-  class field_not_found : public field_translation_error {
+  class field_not_found : public text_value_translation_error {
   public:
-    using field_translation_error::field_translation_error;
+    using text_value_translation_error::text_value_translation_error;
   };
 }
         </codeblock>
