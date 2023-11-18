@@ -17,6 +17,7 @@ target_sources(commata INTERFACE
     include/commata/buffer_size.hpp
     include/commata/char_input.hpp
     include/commata/empty_string.hpp
+    include/commata/field_scanners.hpp
     include/commata/formatted_output.hpp
     include/commata/handler_decorator.hpp
     include/commata/key_chars.hpp

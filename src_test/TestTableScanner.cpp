@@ -29,6 +29,7 @@
 
 #include <gtest/gtest.h>
 
+#include <commata/field_scanners.hpp>
 #include <commata/parse_csv.hpp>
 #include <commata/text_error.hpp>
 #include <commata/table_scanner.hpp>

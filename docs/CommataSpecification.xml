@@ -6150,87 +6150,14 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
       </section>
     </section>
 
-    <section id="scan.builtin.body_field_scanners.requirements">
-      <name>Requirements for default body field scanners</name>
-
-      <p>The Commata library offers four default body field scanner types that meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>):
-         <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>), <c>locale_based_arithmetic_field_translator</c> (<xref id="locale_based_arithmetic_field_translator"/>), <c>string_field_translator</c> (<xref id="string_field_translator"/>) and <c>string_view_field_translator</c> (<xref id="string_view_field_translator"/>).</p>
-      <p>An object of these types <n>translates</n> a field value into a value of its <n>target type</n> and forwards it into its installed <n>sink</n>.</p>
-      <p>Behaviours of these default body scanner objects can be customized through the three concepts: <c>FieldTranslatorSink</c> (<xref id="field_translator_sink.requirements"/>), <c>SkippingHandler</c> (<xref id="skipping_handler.requirements"/>) and <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>).</p>
-
-      <section id="field_translator_sink.requirements">
-        <name><c>FieldTranslatorSink</c> requirements</name>
-
-        <p>A type <c>S</c> is a <c>FieldTranslatorSink</c> type for the target type <c>T</c> if:</p>
-        <ul>
-          <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-          <li>it is an output iterator type for the type <c>T</c> or a callable type for an argument of an rvalue of cv-unqualified <c>T</c>.</li>
-        </ul>
-
-        <p>To <n>put</n> an object expressed by an rvalue <c>rt</c> of the cv-unqualified type <c>T</c> to an object expressed by an lvalue <c>s</c> of the cv-unqualified type <c>S</c> that is a <c>FieldTranslatorSink</c> type is:</p>
-        <ul>
-          <li>if <c>S</c> is an output iterator type, to evaluate <c>*s = rt</c>,</li>
-          <li>otherwise, to evaluate <c>s(rt)</c>.</li>
-        </ul>
-      </section>
-
-      <section id="skipping_handler.requirements">
-        <name><c>SkippingHandler</c> requirements</name>
-
-        <p>A type <c>H</c> meets the <c>SkippingHandler</c> requirements for the target type <c>T</c> if:</p>
-        <ul>
-          <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-          <li>the expression shown in <xref id="table.skipping_handler.requirements"/> is valid and have the indicated semantics.</li>
-        </ul>
-
-        <p><xref id="table.skipping_handler.requirements"/> shows two expressions per row.
-           It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.</p>
-
-        <p>In <xref id="table.skipping_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
-           <c>n</c> is a null pointer whose type is <c>T*</c>.</p>
-
-        <table id="table.skipping_handler.requirements">
-          <caption><c>SkippingHandler</c> requirements</caption>
-          <col width="1"/><col width="3"/><col width="3"/><col width="16"/>
-
-          <tr>
-            <th>#</th>
-            <th>Expression</th>
-            <th>Return type</th>
-            <th>Remark</th>
-          </tr>
-
-          <tr>
-            <td rowspan="2">(1)</td>
-            <td><c>h()</c></td>
-            <td rowspan="2"><c>std::optional&lt;T></c></td>
-            <td rowspan="2">Called when the corresponding field has been skipped, that is, the record has had too few fields to reach the field.
-                If <c>r.has_value()</c> is not <c>false</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
-                otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
-          </tr>
-
-          <tr>
-            <td><c>h(n)</c></td>
-          </tr>
-        </table>
-      </section>
-    </section>
-
     <section id="hpp.table_scanner.syn">
       <name>Header <c>"commama/table_scanner.hpp"</c> synopsis</name>
 
       <codeblock>
 #include &lt;cstddef>
-#include &lt;locale>
 #include &lt;memory>
-#include &lt;optional>
 #include &lt;string>
 #include &lt;typeinfo>
-#include &lt;utility>
-
-#include "replacement.hpp"
-#include "text_error.hpp"
-#include "text_value_translation.hpp"
 
 namespace commata {
   <c>// <n><xref id="basic_table_scanner"/>, basic_table_scanner:</n></c>
@@ -6239,52 +6166,9 @@ namespace commata {
 
   using table_scanner = basic_table_scanner&lt;char>;
   using wtable_scanner = basic_table_scanner&lt;wchar_t>;
-
-  <c>// <n><xref id="scan.builtin.exceptions"/>, exception classes:</n></c>
-  class field_not_found;
-
-  <c>// <n><xref id="scan.builtin.skipping_handlers"/>, default skipping handler classes:</n></c>
-  struct fail_if_skipped;
-
-  template &lt;class T> class replace_if_skipped;
-  template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
-  template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
-                               replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
-
-  <c>// <n><xref id="arithmetic_field_translator"/>, arithmetic_field_translator:</n></c>
-  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
-            class ConversionErrorHandler = fail_if_conversion_failed>
-    class arithmetic_field_translator;
-
-  <c>// <n><xref id="locale_based_arithmetic_field_translator"/>, locale_based_arithmetic_field_translator:</n></c>
-  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
-            class ConversionErrorHandler = fail_if_conversion_failed>
-    class locale_based_arithmetic_field_translator;
-
-  <c>// <n><xref id="string_field_translator"/>, string_field_translator:</n></c>
-  template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
-            class Allocator = std::allocator&lt;Ch>,
-            class SkippingHandler = fail_if_skipped>
-    class string_field_translator;
-
-  <c>// <n><xref id="string_view_field_translator"/>, string_view_field_translator:</n></c>
-  template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
-            class SkippingHandler = fail_if_skipped>
-    class string_view_field_translator;
-
-  <c>// <n><xref id="scan.builtin.body_field_scanners.creation"/>, creation of default field scanners:</n></c>
-  template &lt;class T, class SinkR, class... Appendices>
-    <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
-  template &lt;class T, class Allocator, class SinkR, class... Appendices>
-    <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
-  template &lt;class Container, class... Appendices>
-    <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
-  template &lt;class Allocator, class Container, class... Appendices>
-    <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    Container&amp; values, Appendices&amp;&amp;... appendices);
 }
       </codeblock>
+      <p>The header <c>"commama/table_scanner.hpp"</c> defines <c>basic_table_scanner</c> class template (<xref id="basic_table_scanner"/>), which describes table scanner objects.</p>
     </section>
 
     <section id="basic_table_scanner">
@@ -6485,8 +6369,140 @@ bool is_in_header() const noexcept;
       </section>
     </section>
 
+    <section id="scan.builtin.body_field_scanners.requirements">
+      <name>Requirements for default body field scanners</name>
+
+      <p>The Commata library offers four default body field scanner types that meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>):
+         <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>), <c>locale_based_arithmetic_field_translator</c> (<xref id="locale_based_arithmetic_field_translator"/>), <c>string_field_translator</c> (<xref id="string_view_field_translator"/>) and <c>string_view_field_translator</c> (<xref id="string_view_field_translator"/>).</p>
+      <p>An object of these types translates a text value of a text field (<xref id="xlate.general"/>) into a value of its <n>target type</n> and forwards it into its installed <n>sink</n>.</p>
+      <p>Behaviours of these default body scanner objects can be customized through the three concepts: <c>FieldTranslatorSink</c> (<xref id="field_translator_sink.requirements"/>), <c>SkippingHandler</c> (<xref id="skipping_handler.requirements"/>) and <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>).</p>
+
+      <section id="field_translator_sink.requirements">
+        <name><c>FieldTranslatorSink</c> requirements</name>
+
+        <p>A type <c>S</c> is a <c>FieldTranslatorSink</c> type for the target type <c>T</c> if:</p>
+        <ul>
+          <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+          <li>it is an output iterator type for the type <c>T</c> or a callable type for an argument of an rvalue of cv-unqualified <c>T</c>.</li>
+        </ul>
+
+        <p>To <n>put</n> an object expressed by an rvalue <c>rt</c> of the cv-unqualified type <c>T</c> to an object expressed by an lvalue <c>s</c> of the cv-unqualified type <c>S</c> that is a <c>FieldTranslatorSink</c> type is:</p>
+        <ul>
+          <li>if <c>S</c> is an output iterator type, to evaluate <c>*s = rt</c>,</li>
+          <li>otherwise, to evaluate <c>s(rt)</c>.</li>
+        </ul>
+      </section>
+
+      <section id="skipping_handler.requirements">
+        <name><c>SkippingHandler</c> requirements</name>
+
+        <p>A type <c>H</c> meets the <c>SkippingHandler</c> requirements for the target type <c>T</c> if:</p>
+        <ul>
+          <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+          <li>the expression shown in <xref id="table.skipping_handler.requirements"/> is valid and have the indicated semantics.</li>
+        </ul>
+
+        <p><xref id="table.skipping_handler.requirements"/> shows two expressions per row.
+           It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.</p>
+
+        <p>In <xref id="table.skipping_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
+           <c>n</c> is a null pointer whose type is <c>T*</c>.</p>
+
+        <table id="table.skipping_handler.requirements">
+          <caption><c>SkippingHandler</c> requirements</caption>
+          <col width="1"/><col width="3"/><col width="3"/><col width="16"/>
+
+          <tr>
+            <th>#</th>
+            <th>Expression</th>
+            <th>Return type</th>
+            <th>Remark</th>
+          </tr>
+
+          <tr>
+            <td rowspan="2">(1)</td>
+            <td><c>h()</c></td>
+            <td rowspan="2"><c>std::optional&lt;T></c></td>
+            <td rowspan="2">Called when the corresponding field has been skipped, that is, the record has had too few fields to reach the field.
+                If <c>r.has_value()</c> is not <c>false</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
+                otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
+          </tr>
+
+          <tr>
+            <td><c>h(n)</c></td>
+          </tr>
+        </table>
+      </section>
+    </section>
+
+    <section id="hpp.field_scanners.syn">
+      <name>Header <c>"commama/field_scanners.hpp"</c> synopsis</name>
+
+      <codeblock>
+#include &lt;cstddef>
+#include &lt;locale>
+#include &lt;memory>
+#include &lt;optional>
+#include &lt;string>
+#include &lt;string_view>
+#include &lt;type_traits>
+
+#include "replacement.hpp"
+#include "text_error.hpp"
+#include "text_value_translation.hpp"
+
+namespace commata {
+  <c>// <n><xref id="scan.builtin.exceptions"/>, exception classes:</n></c>
+  class field_not_found;
+
+  <c>// <n><xref id="fail_if_skipped"/>, fail_if_skipped:</n></c>
+  struct fail_if_skipped;
+
+  <c>// <n><xref id="replace_if_skipped"/>, replace_if_skipped:</n></c>
+  template &lt;class T> class replace_if_skipped;
+  template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
+  template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
+                               replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
+
+  <c>// <n><xref id="arithmetic_field_translator"/>, arithmetic_field_translator:</n></c>
+  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
+            class ConversionErrorHandler = fail_if_conversion_failed>
+    class arithmetic_field_translator;
+
+  <c>// <n><xref id="locale_based_arithmetic_field_translator"/>, locale_based_arithmetic_field_translator:</n></c>
+  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
+            class ConversionErrorHandler = fail_if_conversion_failed>
+    class locale_based_arithmetic_field_translator;
+
+  <c>// <n><xref id="string_field_translator"/>, string_field_translator:</n></c>
+  template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
+            class Allocator = std::allocator&lt;Ch>,
+            class SkippingHandler = fail_if_skipped>
+    class string_field_translator;
+
+  <c>// <n><xref id="string_view_field_translator"/>, string_view_field_translator:</n></c>
+  template &lt;class Sink, class Ch, class Tr = std::char_traits&lt;Ch>,
+            class SkippingHandler = fail_if_skipped>
+    class string_view_field_translator;
+
+  <c>// <n><xref id="scan.builtin.body_field_scanners.creation"/>, creation of default field scanners:</n></c>
+  template &lt;class T, class SinkR, class... Appendices>
+    <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
+  template &lt;class T, class Allocator, class SinkR, class... Appendices>
+    <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
+                                    SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
+  template &lt;class Container, class... Appendices>
+    <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
+  template &lt;class Allocator, class Container, class... Appendices>
+    <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
+                                    Container&amp; values, Appendices&amp;&amp;... appendices);
+}
+      </codeblock>
+      <p>The header <c>"commama/field_scanners.hpp"</c> defines default body field scanners (<xref id="body_field_scanner.requirements"/>) and some accompanying facilities of them.</p>
+    </section>
+
     <section id="scan.builtin.exceptions">
-      <name>Exception classes</name>
+      <name>Exception classes for default body field scanners</name>
 
       <section id="field_not_found">
         <name>Class <c>field_not_found</c></name>
@@ -7207,7 +7223,7 @@ void operator()();
       </section>
 
       <section id="scan.builtin.body_field_scanners.creation">
-        <name>Creation of default field scanners</name>
+        <name>Creation of default body field scanners</name>
 
         <p>In this subclause, a type <c>S</c> is <n>deemed to be an acceptable sink</n> of type <c>T</c> if:</p>
         <ul>
