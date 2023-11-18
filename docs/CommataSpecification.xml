@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2023-11-05 (UTC)</signature>
+<signature>2023-11-18 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -5810,7 +5810,7 @@ template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
       std::decay_t&lt;ConversionErrorHandlerR>());
             </code>
             <requires><c>std::is_constructible&lt;Sink, SinkR>::value</c>, <c>std::is_constructible&lt;SkippingHandler, SkippingHandlerR>::value</c> and <c>std::is_constructible&lt;ConversionErrorHandler, ConversionErrorHandlerR>::value</c> shall all be <c>true</c>.</requires>
-            <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds objects of <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandler>(handle_conversion_error)</c>
+            <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds objects of <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandlerR>(handle_conversion_error)</c>
                      as the field translator sink object, the skipping handler object and the conversion error handler object respectively.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of&lt;arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler>, std::decay_t&lt;SinkR>>::value</c> is <c>false</c>.</remark>
           </code-item>
@@ -5955,7 +5955,7 @@ template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
               <tr>
                 <td>No</td>
                 <td rowspan="2">Lets <c>g</c> be a positive value of <c>int</c> if <c>T</c> is an unsigned integer type or the field value should be translated into a value above any values in the domain of <c>T</c>, a negative value of <c>int</c> if the field value should be translated into a value below any values in the domain of <c>T</c>, a zero value of <c>int</c> otherwise.
-                    Then evaluates <c>ceh.out_of_range(begin, end, g)</c> or <c>ceh.out_of_range(begin, end, g, n)</c> and lets <c>r</c> be the return value.
+                    Then evaluates <c>ceh(out_of_range(), begin, end, g)</c> or <c>ceh(out_of_range(), begin, end, g, n)</c> and lets <c>r</c> be the return value.
                     Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
               </tr>
 
@@ -5968,7 +5968,7 @@ template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
                 <td>No</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
-                <td>Evaluates <c>ceh.empty()</c> or <c>ceh.empty(n)</c> and lets <c>r</c> be the return value.
+                <td>Evaluates <c>ceh(empty_t())</c> or <c>ceh(empty_t(), n)</c> and lets <c>r</c> be the return value.
                     Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
               </tr>
 
@@ -5977,7 +5977,7 @@ template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
                 <td>&#8211;</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
-                <td>Evaluates <c>ceh.invalid_format(begin, end)</c> or <c>ceh.invalid_format(begin, end, n)</c> and lets <c>r</c> be the return value.
+                <td>Evaluates <c>ceh(invalid_format_t(), begin, end)</c> or <c>ceh(invalid_format_t(), begin, end, n)</c> and lets <c>r</c> be the return value.
                     Then puts <c>*r</c> into the field translator sink if <c>r.get() == nullptr</c> is <c>false</c>.</td>
               </tr>
             </table>
@@ -6046,7 +6046,7 @@ explicit locale_based_arithmetic_field_translator(
     std::decay_t&lt;ConversionErrorHandlerR>());
             </code>
             <requires><c>std::is_constructible&lt;Sink, SinkR>::value</c>, <c>std::is_constructible&lt;SkippingHandler, SkippingHandlerR>::value</c> and <c>std::is_constructible&lt;ConversionErrorHandler, ConversionErrorHandlerR>::value</c> shall all be <c>true</c>.</requires>
-            <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds objects of <c>Sink</c>, <c>std::locale</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c>, <c>loc</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandler>(handle_conversion_error)</c>
+            <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds objects of <c>Sink</c>, <c>std::locale</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c>, <c>loc</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandlerR>(handle_conversion_error)</c>
                      as the field translator sink object, the locale object, the skipping handler object and the conversion error handler object respectively.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of&lt;locale_based_arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler>, std::decay_t&lt;SinkR>>::value</c> is <c>false</c>.</remark>
           </code-item>
