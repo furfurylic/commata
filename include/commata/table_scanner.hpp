@@ -1490,39 +1490,61 @@ struct fail_if_conversion_failed
     [[noreturn]]
     std::optional<T> operator()(invalid_format_t,
         const Ch* begin, const Ch* end, T* = nullptr) const
-    {
+    try {
         using namespace std::string_view_literals;
         assert(*end == Ch());
         std::stringbuf s;
-        detail::write_ntmbs(&s, std::locale(), begin, end);
-        detail::scanner::sputn(&s, ": cannot convert"sv);
+        if constexpr (
+                std::is_same_v<Ch, char> || std::is_same_v<Ch, wchar_t>) {
+            detail::write_ntmbs(&s, std::locale(), begin, end);
+            detail::scanner::sputn(&s, ": cannot convert"sv);
+        } else {
+            detail::scanner::sputn(&s, "Cannot convert"sv);
+        }
         write_name<T>(&s, " to an instance of "sv);
         throw field_invalid_format(std::move(s).str());
+    } catch (const field_invalid_format&) {
+        throw;
+    } catch (...) {
+        std::throw_with_nested(field_invalid_format());
     }
 
     template <class T, class Ch>
     [[noreturn]]
     std::optional<T> operator()(out_of_range_t,
         const Ch* begin, const Ch* end, int, T* = nullptr) const
-    {
+    try {
         using namespace std::string_view_literals;
         assert(*end == Ch());
         std::stringbuf s;
-        detail::write_ntmbs(&s, std::locale(), begin, end);
-        detail::scanner::sputn(&s, ": out of range"sv);
+        if constexpr (
+                std::is_same_v<Ch, char> || std::is_same_v<Ch, wchar_t>) {
+            detail::write_ntmbs(&s, std::locale(), begin, end);
+            detail::scanner::sputn(&s, ": out of range"sv);
+        } else {
+            detail::scanner::sputn(&s, "Out of range"sv);
+        }
         write_name<T>(&s, " of "sv);
         throw field_out_of_range(std::move(s).str());
+    } catch (const field_out_of_range&) {
+        throw;
+    } catch (...) {
+        std::throw_with_nested(field_out_of_range());
     }
 
     template <class T>
     [[noreturn]]
     std::optional<T> operator()(empty_t, T* = nullptr) const
-    {
+    try {
         using namespace std::string_view_literals;
         std::stringbuf s;
         detail::scanner::sputn(&s, "Cannot convert an empty string"sv);
         write_name<T>(&s, " to an instance of "sv);
         throw field_empty(std::move(s).str());
+    } catch (const field_empty&) {
+        throw;
+    } catch (...) {
+        std::throw_with_nested(field_empty());
     }
 
 private:
