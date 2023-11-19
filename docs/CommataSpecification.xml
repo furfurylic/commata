@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-11-18 (UTC)</signature>
+<signature>2023-11-19 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4696,8 +4696,8 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
     <section id="scan.builtin.body_field_scanners.requirements">
       <name>Requirements for default body field scanners</name>
 
-      <p>The Commata library offers three default body field scanner types that meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>):
-         <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>), <c>locale_based_arithmetic_field_translator</c> (<xref id="locale_based_arithmetic_field_translator"/>) and <c>string_field_translator</c> (<xref id="string_field_translator"/>).</p>
+      <p>The Commata library offers four default body field scanner types that meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>):
+         <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>), <c>locale_based_arithmetic_field_translator</c> (<xref id="locale_based_arithmetic_field_translator"/>), <c>string_field_translator</c> (<xref id="string_field_translator"/>) and <c>string_view_field_translator</c> (<xref id="string_view_field_translator"/>).</p>
       <p>An object of these types <n>translates</n> a field value into a value of its <n>target type</n> and forwards it into its installed <n>sink</n>.</p>
       <p>Behaviours of these default body scanner objects can be customized through the three concepts: <c>FieldTranslatorSink</c> (<xref id="field_translator_sink.requirements"/>), <c>SkippingHandler</c> (<xref id="skipping_handler.requirements"/>) and <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>).</p>
 
