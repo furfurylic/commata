@@ -26,6 +26,7 @@ target_sources(commata INTERFACE
     include/commata/parse_tsv.hpp
     include/commata/propagation_controlled_allocator.hpp
     include/commata/record_extractor.hpp
+    include/commata/replacement.hpp
     include/commata/stored_table.hpp
     include/commata/string_value.hpp
     include/commata/table_pull.hpp
