@@ -368,26 +368,20 @@ struct typed_conversion_error_handler :
     }
 };
 
-} // end xlate
-
 // For types without corresponding "raw_type"
 template <class T, class H, class = void>
 struct converter :
-    private xlate::raw_converter<T,
-        xlate::typed_conversion_error_handler<T, H>>
+    private raw_converter<T, typed_conversion_error_handler<T, H>>
 {
     template <class K,
         std::enable_if_t<!std::is_base_of_v<converter, std::decay_t<K>>>*
             = nullptr>
     converter(K&& h) :
-        xlate::raw_converter<T,
-            xlate::typed_conversion_error_handler<T, H>>(
-                xlate::typed_conversion_error_handler<T, H>(
-                    std::forward<K>(h)))
+        raw_converter<T, typed_conversion_error_handler<T, H>>(
+            typed_conversion_error_handler<T, H>(std::forward<K>(h)))
     {}
 
-    using xlate::raw_converter<T,
-        xlate::typed_conversion_error_handler<T, H>>::
+    using raw_converter<T, typed_conversion_error_handler<T, H>>::
             get_conversion_error_handler;
 
     template <class Ch>
@@ -396,8 +390,6 @@ struct converter :
         return this->convert_raw(begin, end);
     }
 };
-
-namespace xlate {
 
 template <class T, class H, class U, class = void>
 struct restrained_converter :
@@ -469,22 +461,18 @@ struct restrained_converter<T, H, U,
     }
 };
 
-} // end xlate
-
 // For types which have corresponding "raw_type"
 template <class T, class H>
 struct converter<T, H,
                  std::void_t<typename numeric_type_traits<T>::raw_type>> :
-    xlate::restrained_converter<T,
-        xlate::typed_conversion_error_handler<T, H>,
+    restrained_converter<T,
+        typed_conversion_error_handler<T, H>,
         typename numeric_type_traits<T>::raw_type>
 {
-    using xlate::restrained_converter<T,
-        xlate::typed_conversion_error_handler<T, H>,
+    using restrained_converter<T,
+        typed_conversion_error_handler<T, H>,
         typename numeric_type_traits<T>::raw_type>::restrained_converter;
 };
-
-namespace xlate {
 
 template <class Ch, class Tr, class Tr2>
 auto sputn(std::basic_streambuf<Ch, Tr>* sb, std::basic_string_view<Ch, Tr2> s)
@@ -1211,7 +1199,8 @@ template <class T, class ConversionErrorHandler =
     std::remove_pointer_t<
         decltype(detail::xlate::default_conversion_error_handler_ptr<T>())>>
 class arithmetic_converter :
-    detail::member_like_base<detail::converter<T, ConversionErrorHandler>>
+    detail::member_like_base<
+        detail::xlate::converter<T, ConversionErrorHandler>>
 {
 public:
     using target_type = T;
@@ -1221,22 +1210,24 @@ public:
             noexcept(
                 std::is_nothrow_default_constructible_v<ConversionErrorHandler>
              && std::is_nothrow_move_constructible_v<ConversionErrorHandler>) :
-        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
-            ConversionErrorHandler())
+        detail::member_like_base<
+            detail::xlate::converter<T, ConversionErrorHandler>>(
+                ConversionErrorHandler())
     {}
 
     explicit arithmetic_converter(const ConversionErrorHandler& handler)
             noexcept(
                 std::is_nothrow_copy_constructible_v<ConversionErrorHandler>) :
-        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
-            handler)
+        detail::member_like_base<
+            detail::xlate::converter<T, ConversionErrorHandler>>(handler)
     {}
 
     explicit arithmetic_converter(ConversionErrorHandler&& handler)
             noexcept(
                 std::is_nothrow_move_constructible_v<ConversionErrorHandler>) :
-        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
-            std::move(handler))
+        detail::member_like_base<
+            detail::xlate::converter<T, ConversionErrorHandler>>(
+                std::move(handler))
     {}
 
     template <class A>
@@ -1266,7 +1257,8 @@ public:
 
 template <class T, class ConversionErrorHandler>
 class arithmetic_converter<std::optional<T>, ConversionErrorHandler> :
-    detail::member_like_base<detail::converter<T, ConversionErrorHandler>>
+    detail::member_like_base<
+        detail::xlate::converter<T, ConversionErrorHandler>>
 {
 public:
     using target_type = T;
@@ -1275,22 +1267,24 @@ public:
     arithmetic_converter()
             noexcept(arithmetic_converter::
                         is_make_conversion_error_handler_noexcept()) :
-        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
-            arithmetic_converter::make_conversion_error_handler())
+        detail::member_like_base<
+            detail::xlate::converter<T, ConversionErrorHandler>>(
+                arithmetic_converter::make_conversion_error_handler())
     {}
 
     explicit arithmetic_converter(const ConversionErrorHandler& handler)
             noexcept(
                 std::is_nothrow_copy_constructible_v<ConversionErrorHandler>) :
-        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
-            handler)
+        detail::member_like_base<
+            detail::xlate::converter<T, ConversionErrorHandler>>(handler)
     {}
 
     explicit arithmetic_converter(ConversionErrorHandler&& handler)
             noexcept(
                 std::is_nothrow_move_constructible_v<ConversionErrorHandler>) :
-        detail::member_like_base<detail::converter<T, ConversionErrorHandler>>(
-            std::move(handler))
+        detail::member_like_base<
+            detail::xlate::converter<T, ConversionErrorHandler>>(
+                std::move(handler))
     {}
 
     template <class A>

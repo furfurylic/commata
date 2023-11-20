@@ -385,7 +385,8 @@ template <class T, class Sink,
     class ConversionErrorHandler = fail_if_conversion_failed>
 class arithmetic_field_translator
 {
-    using converter_t = detail::converter<T, ConversionErrorHandler>;
+    using converter_t =
+        arithmetic_converter<std::optional<T>, ConversionErrorHandler>;
     using translator_t = detail::scanner::translator<T, Sink, SkippingHandler>;
 
     detail::base_member_pair<converter_t, translator_t> ct_;
@@ -442,8 +443,29 @@ public:
     void operator()(const Ch* begin, const Ch* end)
     {
         assert(*end == Ch());
-        ct_.member().put(ct_.base().convert(begin, end));
+        auto converted = ct_.base()(arithmetic_convertible<Ch>{ begin, end });
+        if (converted) {
+            ct_.member().put(*converted);
+        }
     }
+
+private:
+    template <class Ch>
+    struct arithmetic_convertible
+    {
+        const Ch* begin;
+        const Ch* end;
+
+        const Ch* c_str() const noexcept
+        {
+            return begin;
+        }
+
+        std::size_t size() const noexcept
+        {
+            return std::size_t(end - begin);
+        }
+    };
 };
 
 template <class T, class Sink,
