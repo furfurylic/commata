@@ -180,21 +180,16 @@ constexpr bool is_convertible_numeric_type_v =
 
 namespace xlate {
 
-// D must derive from raw_converter_base<D, H> (CRTP)
-// and must have member functions "engine" for const char* and const wchar_t*
-template <class D, class H>
-class raw_converter_base :
-    member_like_base<H>
+template <class T>
+class raw_converter
 {
 public:
-    using member_like_base<H>::member_like_base;
-
-    template <class Ch>
-    auto convert_raw(const Ch* begin, const Ch* end)
+    template <class Ch, class H>
+    auto operator()(const Ch* begin, const Ch* end, H h) const
     {
         Ch* middle;
         errno = 0;
-        const auto r = static_cast<const D*>(this)->engine(begin, &middle);
+        const auto r = engine(begin, &middle);
         using ret_t = std::optional<std::remove_const_t<decltype(r)>>;
 
         const auto has_postfix =
@@ -203,29 +198,47 @@ public:
             });
         if (has_postfix) {
             // if a not-whitespace-extra-character found, it is NG
-            return ret_t(this->get().invalid_format(begin, end));
+            return ret_t(h.invalid_format(begin, end));
         } else if (begin == middle) {
             // whitespace only
-            return ret_t(this->get().empty());
+            return ret_t(h.empty());
         } else if (errno == ERANGE) {
-            return ret_t(this->get().out_of_range(begin, end,
-                static_cast<const D*>(this)->erange(r)));
+            return ret_t(h.out_of_range(begin, end, erange(r)));
         } else {
             return ret_t(r);
         }
     }
 
-    decltype(auto) get_conversion_error_handler() noexcept
-    {
-        return this->get().get();
-    }
-
-    decltype(auto) get_conversion_error_handler() const noexcept
-    {
-        return this->get().get();
-    }
-
 private:
+    auto engine(const char* s, char** e) const
+    {
+        if constexpr (std::is_floating_point_v<T>) {
+            return numeric_type_traits<T>::strto(s, e);
+        } else {
+            return numeric_type_traits<T>::strto(s, e, 10);
+        }
+    }
+
+    auto engine(const wchar_t* s, wchar_t** e) const
+    {
+        if constexpr (std::is_floating_point_v<T>) {
+            return numeric_type_traits<T>::wcsto(s, e);
+        } else {
+            return numeric_type_traits<T>::wcsto(s, e, 10);
+        }
+    }
+
+    int erange([[maybe_unused]] T v) const
+    {
+        if constexpr (std::is_floating_point_v<T>) {
+            return (v > T()) ? 1 : (v < T()) ? -1 : 0;
+        } else if constexpr (std::is_signed_v<T>) {
+            return (v > T()) ? 1 : -1;
+        } else {
+            return 1;
+        }
+    }
+
     // To mimic space skipping by std::strtol and its comrades,
     // we have to refer current C locale
     static bool is_space(char c)
@@ -240,239 +253,55 @@ private:
     }
 };
 
-template <class T, class H, class = void>
-struct raw_converter;
-
-// For integral types
-template <class T, class H>
-struct raw_converter<T, H, std::enable_if_t<std::is_integral_v<T>,
-        std::void_t<decltype(numeric_type_traits<T>::strto)>>> :
-    raw_converter_base<raw_converter<T, H>, H>
+template <class T, class U>
+struct restrained_converter
 {
-    using raw_converter_base<raw_converter<T, H>, H>
-        ::raw_converter_base;
-    using raw_converter_base<raw_converter<T, H>, H>
-        ::get_conversion_error_handler;
-
-    auto engine(const char* s, char** e) const
+    template <class Ch, class H>
+    std::optional<T> operator()(const Ch* begin, const Ch* end, H h) const
     {
-        return numeric_type_traits<T>::strto(s, e, 10);
-    }
-
-    auto engine(const wchar_t* s, wchar_t** e) const
-    {
-        return numeric_type_traits<T>::wcsto(s, e, 10);
-    }
-
-    int erange([[maybe_unused]] T v) const
-    {
-        if constexpr (std::is_signed_v<T>) {
-            return (v > T()) ? 1 : -1;
-        } else {
-            return 1;
+        const auto result = raw_converter<U>()(begin, end, h);
+        if (!result.has_value()) {
+            return std::nullopt;
         }
-    }
-};
-
-// For floating-point types
-template <class T, class H>
-struct raw_converter<T, H, std::enable_if_t<std::is_floating_point_v<T>,
-        std::void_t<decltype(numeric_type_traits<T>::strto)>>> :
-    raw_converter_base<raw_converter<T, H>, H>
-{
-    using raw_converter_base<raw_converter<T, H>, H>
-        ::raw_converter_base;
-    using raw_converter_base<raw_converter<T, H>, H>
-        ::get_conversion_error_handler;
-
-    auto engine(const char* s, char** e) const
-    {
-        return numeric_type_traits<T>::strto(s, e);
-    }
-
-    auto engine(const wchar_t* s, wchar_t** e) const
-    {
-        return numeric_type_traits<T>::wcsto(s, e);
-    }
-
-    int erange(T v) const
-    {
-        return (v > T()) ? 1 : (v < T()) ? -1 : 0;
-    }
-};
-
-template <class T>
-struct conversion_error_facade
-{
-    template <class H, class Ch>
-    static std::optional<T> invalid_format(
-        H& h,const Ch* begin, const Ch* end)
-    {
-        if constexpr (std::is_invocable_v<H,
-                invalid_format_t, const Ch*, const Ch*>) {
-            return h(invalid_format_t(), begin, end);
+        const auto r = *result;
+        if constexpr (std::is_unsigned_v<T>) {
+            if constexpr (sizeof(T) < sizeof(U)) {
+                constexpr auto t_max = std::numeric_limits<T>::max();
+                if (r > t_max) {
+                    const auto s = static_cast<std::make_signed_t<U>>(r);
+                    if (s < 0) {
+                        // -t_max is the lowest number that can be wrapped
+                        // around and then returned
+                        const auto s_wrapped_around = s + t_max + 1;
+                        if (s_wrapped_around > 0) {
+                            return static_cast<T>(s_wrapped_around);
+                        }
+                    }
+                    return h.out_of_range(begin, end, 1);
+                }
+            }
         } else {
-            return h(invalid_format_t(), begin, end, static_cast<T*>(nullptr));
+            if (r < std::numeric_limits<T>::lowest()) {
+                return h.out_of_range(begin, end, -1);
+            } else if (std::numeric_limits<T>::max() < r) {
+                return h.out_of_range(begin, end, 1);
+            }
         }
-    }
-
-    template <class H, class Ch>
-    static std::optional<T> out_of_range(
-        H& h, const Ch* begin, const Ch* end, int sign)
-    {
-        if constexpr (std::is_invocable_v<H,
-                out_of_range_t, const Ch*, const Ch*, int>) {
-            return h(out_of_range_t(), begin, end, sign);
-        } else {
-            return h(out_of_range_t(),
-                     begin, end, sign, static_cast<T*>(nullptr));
-        }
-    }
-
-    template <class H>
-    static std::optional<T> empty(H& h)
-    {
-        if constexpr (std::is_invocable_v<H, empty_t>) {
-            return h(empty_t());
-        } else {
-            return h(empty_t(), static_cast<T*>(nullptr));
-        }
-    }
-};
-
-template <class T, class H>
-struct typed_conversion_error_handler :
-    private member_like_base<H>
-{
-    using member_like_base<H>::member_like_base;
-    using member_like_base<H>::get;
-
-    template <class Ch>
-    std::optional<T> invalid_format(const Ch* begin, const Ch* end) const
-    {
-        return conversion_error_facade<T>::
-            invalid_format(this->get(), begin, end);
-    }
-
-    template <class Ch>
-    std::optional<T> out_of_range(
-        const Ch* begin, const Ch* end, int sign) const
-    {
-        return conversion_error_facade<T>::
-            out_of_range(this->get(), begin, end, sign);
-    }
-
-    std::optional<T> empty() const
-    {
-        return conversion_error_facade<T>::empty(this->get());
+        return static_cast<T>(r);
     }
 };
 
 // For types without corresponding "raw_type"
-template <class T, class H, class = void>
+template <class T, class = void>
 struct converter :
-    private raw_converter<T, typed_conversion_error_handler<T, H>>
-{
-    template <class K,
-        std::enable_if_t<!std::is_base_of_v<converter, std::decay_t<K>>>*
-            = nullptr>
-    converter(K&& h) :
-        raw_converter<T, typed_conversion_error_handler<T, H>>(
-            typed_conversion_error_handler<T, H>(std::forward<K>(h)))
-    {}
-
-    using raw_converter<T, typed_conversion_error_handler<T, H>>::
-            get_conversion_error_handler;
-
-    template <class Ch>
-    auto convert(const Ch* begin, const Ch* end)
-    {
-        return this->convert_raw(begin, end);
-    }
-};
-
-template <class T, class H, class U, class = void>
-struct restrained_converter :
-    private raw_converter<U, H>
-{
-    static_assert(!std::is_floating_point_v<T>);
-
-    using raw_converter<U, H>::raw_converter;
-    using raw_converter<U, H>::get_conversion_error_handler;
-
-    template <class Ch>
-    std::optional<T> convert(const Ch* begin, const Ch* end)
-    {
-        const auto result = this->convert_raw(begin, end);
-        if (!result.has_value()) {
-            return std::nullopt;
-        }
-        const auto r = *result;
-        if (r < std::numeric_limits<T>::lowest()) {
-            return conversion_error_facade<T>::out_of_range(
-                this->get_conversion_error_handler(), begin, end, -1);
-        } else if (std::numeric_limits<T>::max() < r) {
-            return conversion_error_facade<T>::out_of_range(
-                this->get_conversion_error_handler(), begin, end, 1);
-        } else {
-            return static_cast<T>(r);
-        }
-    }
-};
-
-template <class T, class H, class U>
-struct restrained_converter<T, H, U,
-        std::enable_if_t<std::is_unsigned_v<T>>> :
-    private raw_converter<U, H>
-{
-    static_assert(!std::is_floating_point_v<T>);
-
-    using raw_converter<U, H>::raw_converter;
-    using raw_converter<U, H>::get_conversion_error_handler;
-
-    template <class Ch>
-    std::optional<T> convert(const Ch* begin, const Ch* end)
-    {
-        const auto result = this->convert_raw(begin, end);
-        if (!result.has_value()) {
-            return std::nullopt;
-        }
-        const auto r = *result;
-        if constexpr (sizeof(T) < sizeof(U)) {
-            constexpr auto t_max = std::numeric_limits<T>::max();
-            if (r <= t_max) {
-                return static_cast<T>(r);
-            } else {
-                const auto s = static_cast<std::make_signed_t<U>>(r);
-                if (s < 0) {
-                    // -t_max is the lowest number that can be wrapped around
-                    // and then returned
-                    const auto s_wrapped_around = s + t_max + 1;
-                    if (s_wrapped_around > 0) {
-                        return static_cast<T>(s_wrapped_around);
-                    }
-                }
-            }
-            return conversion_error_facade<T>::out_of_range(
-                this->get_conversion_error_handler(), begin, end, 1);
-        } else {
-            return static_cast<T>(r);
-        }
-    }
-};
+    raw_converter<T>
+{};
 
 // For types which have corresponding "raw_type"
-template <class T, class H>
-struct converter<T, H,
-                 std::void_t<typename numeric_type_traits<T>::raw_type>> :
-    restrained_converter<T,
-        typed_conversion_error_handler<T, H>,
-        typename numeric_type_traits<T>::raw_type>
-{
-    using restrained_converter<T,
-        typed_conversion_error_handler<T, H>,
-        typename numeric_type_traits<T>::raw_type>::restrained_converter;
-};
+template <class T>
+struct converter<T, std::void_t<typename numeric_type_traits<T>::raw_type>> :
+    restrained_converter<T, typename numeric_type_traits<T>::raw_type>
+{};
 
 template <class Ch, class Tr, class Tr2>
 auto sputn(std::basic_streambuf<Ch, Tr>* sb, std::basic_string_view<Ch, Tr2> s)
@@ -1185,12 +1014,58 @@ auto do_size(const A& a, ...) -> decltype(a->size())
     return a->size();
 }
 
-template <class Converter, class A>
-auto do_convert(Converter& converter, const A& a)
+template <class T, class H>
+class typed_conversion_error_handler
+{
+    std::reference_wrapper<H> handler_;
+
+public:
+    explicit typed_conversion_error_handler(H& handler) :
+        handler_(handler)
+    {}
+
+    template <class Ch>
+    std::optional<T> invalid_format(const Ch* begin, const Ch* end) const
+    {
+        if constexpr (std::is_invocable_v<H,
+                invalid_format_t, const Ch*, const Ch*>) {
+            return handler_(invalid_format_t(), begin, end);
+        } else {
+            return handler_(invalid_format_t(), begin, end,
+                            static_cast<T*>(nullptr));
+        }
+    }
+
+    template <class Ch>
+    std::optional<T> out_of_range(
+        const Ch* begin, const Ch* end, int sign) const
+    {
+        if constexpr (std::is_invocable_v<H,
+                out_of_range_t, const Ch*, const Ch*, int>) {
+            return handler_(out_of_range_t(), begin, end, sign);
+        } else {
+            return handler_(out_of_range_t(), begin, end, sign,
+                            static_cast<T*>(nullptr));
+        }
+    }
+
+    std::optional<T> empty() const
+    {
+        if constexpr (std::is_invocable_v<H, empty_t>) {
+            return handler_(empty_t());
+        } else {
+            return handler_(empty_t(), static_cast<T*>(nullptr));
+        }
+    }
+};
+
+template <class T, class A, class H>
+auto do_convert(const A& a, H&& h)
 {
     const auto* const c_str = do_c_str(a);
     const auto size = do_size(a);
-    return converter.convert(c_str, c_str + size);
+    return converter<T>()(c_str, c_str + size,
+        typed_conversion_error_handler<T, std::remove_reference_t<H>>(h));
 }
 
 } // end detail::xlate
@@ -1199,8 +1074,7 @@ template <class T, class ConversionErrorHandler =
     std::remove_pointer_t<
         decltype(detail::xlate::default_conversion_error_handler_ptr<T>())>>
 class arithmetic_converter :
-    detail::member_like_base<
-        detail::xlate::converter<T, ConversionErrorHandler>>
+    detail::member_like_base<ConversionErrorHandler>
 {
 public:
     using target_type = T;
@@ -1210,30 +1084,25 @@ public:
             noexcept(
                 std::is_nothrow_default_constructible_v<ConversionErrorHandler>
              && std::is_nothrow_move_constructible_v<ConversionErrorHandler>) :
-        detail::member_like_base<
-            detail::xlate::converter<T, ConversionErrorHandler>>(
-                ConversionErrorHandler())
+        detail::member_like_base<ConversionErrorHandler>()
     {}
 
     explicit arithmetic_converter(const ConversionErrorHandler& handler)
             noexcept(
                 std::is_nothrow_copy_constructible_v<ConversionErrorHandler>) :
-        detail::member_like_base<
-            detail::xlate::converter<T, ConversionErrorHandler>>(handler)
+        detail::member_like_base<ConversionErrorHandler>(handler)
     {}
 
     explicit arithmetic_converter(ConversionErrorHandler&& handler)
             noexcept(
                 std::is_nothrow_move_constructible_v<ConversionErrorHandler>) :
-        detail::member_like_base<
-            detail::xlate::converter<T, ConversionErrorHandler>>(
-                std::move(handler))
+        detail::member_like_base<ConversionErrorHandler>(std::move(handler))
     {}
 
     template <class A>
     T operator()(const A& a)
     {
-        const auto opt = detail::xlate::do_convert(this->get(), a);
+        const auto opt = detail::xlate::do_convert<T>(a, this->get());
         if constexpr (detail::xlate::
                 is_fail_if_conversion_failed<ConversionErrorHandler>) {
             // Visual Studio 2022 refuses "if constexpr (std::is_same_v<
@@ -1257,8 +1126,7 @@ public:
 
 template <class T, class ConversionErrorHandler>
 class arithmetic_converter<std::optional<T>, ConversionErrorHandler> :
-    detail::member_like_base<
-        detail::xlate::converter<T, ConversionErrorHandler>>
+    detail::member_like_base<ConversionErrorHandler>
 {
 public:
     using target_type = T;
@@ -1267,30 +1135,27 @@ public:
     arithmetic_converter()
             noexcept(arithmetic_converter::
                         is_make_conversion_error_handler_noexcept()) :
-        detail::member_like_base<
-            detail::xlate::converter<T, ConversionErrorHandler>>(
+        detail::member_like_base<ConversionErrorHandler>(
                 arithmetic_converter::make_conversion_error_handler())
     {}
 
     explicit arithmetic_converter(const ConversionErrorHandler& handler)
             noexcept(
                 std::is_nothrow_copy_constructible_v<ConversionErrorHandler>) :
-        detail::member_like_base<
-            detail::xlate::converter<T, ConversionErrorHandler>>(handler)
+        detail::member_like_base<ConversionErrorHandler>(handler)
     {}
 
     explicit arithmetic_converter(ConversionErrorHandler&& handler)
             noexcept(
                 std::is_nothrow_move_constructible_v<ConversionErrorHandler>) :
-        detail::member_like_base<
-            detail::xlate::converter<T, ConversionErrorHandler>>(
+        detail::member_like_base<ConversionErrorHandler>(
                 std::move(handler))
     {}
 
     template <class A>
     std::optional<T> operator()(const A& a)
     {
-        return detail::xlate::do_convert(this->get(), a);
+        return detail::xlate::do_convert<T>(a, this->get());
     }
 
     ConversionErrorHandler& get_conversion_error_handler() noexcept
