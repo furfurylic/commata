@@ -303,22 +303,6 @@ struct converter<T, std::void_t<typename numeric_type_traits<T>::raw_type>> :
     restrained_converter<T, typename numeric_type_traits<T>::raw_type>
 {};
 
-template <class Ch, class Tr, class Tr2>
-auto sputn(std::basic_streambuf<Ch, Tr>* sb, std::basic_string_view<Ch, Tr2> s)
-{
-    using max_t = std::common_type_t<
-        std::make_unsigned_t<std::streamsize>,
-        typename std::basic_string_view<Ch, Tr2>::size_type>;
-    constexpr max_t max =
-        static_cast<max_t>(std::numeric_limits<std::streamsize>::max());
-
-    while (s.size() > max) {
-        sb->sputn(s.data(), max);
-        s.remove_prefix(max);
-    }
-    return sb->sputn(s.data(), s.size());
-}
-
 } // end xlate
 
 } // end detail
@@ -336,11 +320,11 @@ struct fail_if_conversion_failed
         if constexpr (
                 std::is_same_v<Ch, char> || std::is_same_v<Ch, wchar_t>) {
             detail::write_ntmbs(&s, std::locale(), begin, end);
-            detail::xlate::sputn(&s, ": cannot convert"sv);
+            sputn(s, ": cannot convert"sv);
         } else {
-            detail::xlate::sputn(&s, "Cannot convert"sv);
+            sputn(s, "Cannot convert"sv);
         }
-        write_name<T>(&s, " to an instance of "sv);
+        write_name<T>(s, " to an instance of "sv);
         throw text_value_invalid_format(std::move(s).str());
     } catch (const text_value_invalid_format&) {
         throw;
@@ -359,11 +343,11 @@ struct fail_if_conversion_failed
         if constexpr (
                 std::is_same_v<Ch, char> || std::is_same_v<Ch, wchar_t>) {
             detail::write_ntmbs(&s, std::locale(), begin, end);
-            detail::xlate::sputn(&s, ": out of range"sv);
+            sputn(s, ": out of range"sv);
         } else {
-            detail::xlate::sputn(&s, "Out of range"sv);
+            sputn(s, "Out of range"sv);
         }
-        write_name<T>(&s, " of "sv);
+        write_name<T>(s, " of "sv);
         throw text_value_out_of_range(std::move(s).str());
     } catch (const text_value_out_of_range&) {
         throw;
@@ -377,8 +361,8 @@ struct fail_if_conversion_failed
     try {
         using namespace std::string_view_literals;
         std::stringbuf s;
-        detail::xlate::sputn(&s, "Cannot convert an empty string"sv);
-        write_name<T>(&s, " to an instance of "sv);
+        sputn(s, "Cannot convert an empty string"sv);
+        write_name<T>(s, " to an instance of "sv);
         throw text_value_empty(std::move(s).str());
     } catch (const text_value_empty&) {
         throw;
@@ -388,7 +372,7 @@ struct fail_if_conversion_failed
 
 private:
     template <class T>
-    static void write_name(std::streambuf* sb, std::string_view prefix,
+    static void write_name(std::streambuf& sb, std::string_view prefix,
         decltype(detail::numeric_type_traits<T>::name)* = nullptr)
     {
         using namespace detail::xlate;
@@ -397,8 +381,25 @@ private:
     }
 
     template <class T, class... Args>
-    static void write_name(std::streambuf*, Args&&...)
+    static void write_name(std::streambuf&, Args&&...)
     {}
+
+    template <class Ch, class Tr, class Tr2>
+    static void sputn(std::basic_streambuf<Ch, Tr>& sb,
+                      std::basic_string_view<Ch, Tr2> s)
+    {
+        using max_t = std::common_type_t<
+            std::make_unsigned_t<std::streamsize>,
+            typename std::basic_string_view<Ch, Tr2>::size_type>;
+        constexpr max_t max =
+            static_cast<max_t>(std::numeric_limits<std::streamsize>::max());
+
+        while (s.size() > max) {
+            sb.sputn(s.data(), max);
+            s.remove_prefix(max);
+        }
+        sb.sputn(s.data(), s.size());
+    }
 };
 
 namespace detail::xlate::replace_if_conversion_failed_impl {
