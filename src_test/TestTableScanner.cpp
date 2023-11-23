@@ -46,6 +46,8 @@ template <class Ch>
 struct TestFieldTranslatorForArithmeticTypes : BaseTest
 {};
 
+static_assert(is_default_translatable_arithmetic_type_v<int>);
+
 TYPED_TEST_SUITE(TestFieldTranslatorForArithmeticTypes, Chs);
 
 TYPED_TEST(TestFieldTranslatorForArithmeticTypes, Correct)

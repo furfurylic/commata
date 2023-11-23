@@ -53,7 +53,7 @@ struct invalid_format_t {};
 struct out_of_range_t {};
 struct empty_t {};
 
-namespace detail {
+namespace detail::xlate {
 
 template <class T>
 struct numeric_type_traits;
@@ -163,22 +163,6 @@ struct numeric_type_traits<long double>
     static constexpr const auto strto = std::strtold;
     static constexpr const auto wcsto = std::wcstold;
 };
-
-struct is_convertible_numeric_type_impl
-{
-    template <class T>
-    static auto check(T* = nullptr)
-     -> decltype(numeric_type_traits<T>::name, std::true_type());
-
-    template <class T>
-    static auto check(...) -> std::false_type;
-};
-
-template <class T>
-constexpr bool is_convertible_numeric_type_v =
-    decltype(is_convertible_numeric_type_impl::check<T>(nullptr))();
-
-namespace xlate {
 
 template <class T>
 class raw_converter
@@ -303,9 +287,7 @@ struct converter<T, std::void_t<typename numeric_type_traits<T>::raw_type>> :
     restrained_converter<T, typename numeric_type_traits<T>::raw_type>
 {};
 
-} // end xlate
-
-} // end detail
+} // end detail::xlate
 
 struct fail_if_conversion_failed
 {
@@ -373,11 +355,11 @@ struct fail_if_conversion_failed
 private:
     template <class T>
     static void write_name(std::streambuf& sb, std::string_view prefix,
-        decltype(detail::numeric_type_traits<T>::name)* = nullptr)
+        decltype(detail::xlate::numeric_type_traits<T>::name)* = nullptr)
     {
         using namespace detail::xlate;
         sputn(sb, prefix);
-        sputn(sb, detail::numeric_type_traits<T>::name);
+        sputn(sb, detail::xlate::numeric_type_traits<T>::name);
     }
 
     template <class T, class... Args>
@@ -1070,7 +1052,26 @@ replace_if_conversion_failed<T> make_ignore_if_conversion_failed()
     }
 }
 
+struct is_default_translatable_arithmetic_type_impl
+{
+    template <class T>
+    static auto check(T* = nullptr) -> decltype(
+        numeric_type_traits<std::remove_cv_t<T>>::name, std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
 } // end detail::xlate
+
+template <class T>
+struct is_default_translatable_arithmetic_type : decltype(detail::xlate::
+    is_default_translatable_arithmetic_type_impl::check<T>(nullptr))
+{};
+
+template <class T>
+inline constexpr bool is_default_translatable_arithmetic_type_v =
+    is_default_translatable_arithmetic_type<T>::value;
 
 template <class T, class ConversionErrorHandler, class A>
 T to_arithmetic(const A& a, ConversionErrorHandler&& handler)

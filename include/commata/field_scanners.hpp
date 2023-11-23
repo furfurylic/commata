@@ -841,7 +841,7 @@ string_view_field_translator<Sink,
 template <class T, class Sink, class... Appendices>
 auto make_field_translator(Sink&& sink, Appendices&&... appendices)
  -> std::enable_if_t<
-        (detail::is_convertible_numeric_type_v<T>
+        (is_default_translatable_arithmetic_type_v<T>
       || detail::is_std_string_v<T>
       || detail::is_std_string_view_v<T>)
      && (detail::scanner::is_output_iterator_v<std::decay_t<Sink>>
@@ -948,7 +948,8 @@ using back_insert_iterator_t = typename back_insert_iterator<Container>::type;
 template <class Container, class... Appendices>
 auto make_field_translator(Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
-        (detail::is_convertible_numeric_type_v<typename Container::value_type>
+        (is_default_translatable_arithmetic_type_v<
+            typename Container::value_type>
       || detail::is_std_string_v<typename Container::value_type>)
      && (detail::scanner::is_back_insertable_v<Container>
       || detail::scanner::is_insertable_v<Container>),

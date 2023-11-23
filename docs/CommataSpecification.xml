@@ -1463,6 +1463,11 @@ namespace commata {
   template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
                                replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
 
+  <c>// <n><xref id="is_default_translatable_arithmetic_type"/>, is_default_translatable_arithmetic_type:</n></c>
+  template &lt;class T> struct is_default_translatable_arithmetic_type;
+  template &lt;class T> inline constexpr bool is_default_translatable_arithmetic_type_v =
+    is_default_translatable_arithmetic_type&lt;T>::value;
+
   <c>// <n><xref id="to_arithmetic"/>, arithmetic conversion functions:</n></c>
   template &lt;class T, class ConversionErrorHandler, class V>
     T to_arithmetic(const V&amp; v, ConversionErrorHandler&amp;&amp; handler);
@@ -2120,6 +2125,22 @@ template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
         </table>
 
         <p>For a type <c>T</c> that meets the <c>ArithmeticConvertible</c> requirements for <c>Ch</c>, <c>Ch</c> is called the <n>character type</n> of <c>T</c>.</p>
+      </section>
+
+      <section id="is_default_translatable_arithmetic_type">
+        <name>Class template <c>is_default_translatable_arithmetic_type</c></name>
+
+        <codeblock>
+namespace commata {
+  template &lt;class T> struct is_default_translatable_arithmetic_type;
+  template &lt;class T> inline constexpr bool is_default_translatable_arithmetic_type_v =
+    is_default_translatable_arithmetic_type&lt;T>::value;
+  };
+}
+        </codeblock>
+
+        <p>Class template <c>is_default_translatable_arithmetic_type</c> is a <c>UnaryTypeTrait</c> with a base characteristic of <c>std::true_type</c> if the template type argument is a default translatable arithmetic type, otherwise <c>std::false_type</c>.
+           For any given type <c>T</c>, the result of applying this template to <c>T</c> and <c><nc>cv</nc> T</c> shall yield the same result.</p>
       </section>
 
       <section id="to_arithmetic">
