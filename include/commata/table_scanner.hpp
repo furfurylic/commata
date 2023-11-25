@@ -2027,7 +2027,7 @@ private:
 
 public:
     using value_type = T;
-    static constexpr unsigned size = detail::scanner::
+    static constexpr std::size_t size = detail::scanner::
         replace_if_conversion_failed_impl::base_t<T>::store_t::size;
 
     // VS2019/2022 refuses to compile "base_t<T>" here
