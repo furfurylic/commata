@@ -824,6 +824,9 @@ namespace commata {
   template &lt;class Handler> class reference_handler;
 
   template &lt;class Handler>
+    reference_handler(reference_handler&lt;Handler>) -> reference_handler&lt;Handler>;
+
+  template &lt;class Handler>
     reference_handler&lt;Handler> wrap_ref(Handler&amp; handler)                        noexcept;
   template &lt;class Handler>
     reference_handler&lt;Handler> wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
@@ -884,6 +887,9 @@ namespace commata {
     <nc>see below</nc> yield_location() const                      noexcept(<nc>see below</nc>);
     <nc>see below</nc> handle_exception()                          noexcept(<nc>see below</nc>);
   };
+
+  template &lt;class Handler>
+    reference_handler(reference_handler&lt;Handler>) -> reference_handler&lt;Handler>;
 
   <c>// <n><xref id="reference_handler.creation"/>, creation functions:</n></c>
   template &lt;class Handler>
@@ -1062,7 +1068,7 @@ template &lt;class Handler>
 template &lt;class Handler>
   reference_handler&lt;Handler> wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
           </code>
-          <effects>Equivalent to: <c>return wrap_ref(handler.get());</c></effects>
+          <effects>Equivalent to: <c>return reference_handler&lt;Handler>(handler.get());</c></effects>
         </code-item>
 
         <code-item>
@@ -1070,7 +1076,7 @@ template &lt;class Handler>
 template &lt;class Handler>
   reference_handler&lt;Handler> wrap_ref(reference_handler&lt;Handler> handler) noexcept;
           </code>
-          <effects>Equivalent to: <c>return wrap_ref(handler.base());</c></effects>
+          <effects>Equivalent to: <c>return reference_handler&lt;Handler>(handler.base());</c></effects>
         </code-item>
       </section>
     </section>
