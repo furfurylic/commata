@@ -452,13 +452,6 @@ private:
         init<Slot>(std::forward<Head>(head));
     }
 
-    template <std::size_t Slot>
-    trivial_store(std::integral_constant<std::size_t, Slot>) :
-        trivial_store(std::integral_constant<std::size_t, Slot + 1>())
-    {
-        init<Slot>();
-    }
-
     trivial_store(std::integral_constant<std::size_t, N>) noexcept :
         has_(0), skips_(0)
     {}
@@ -750,18 +743,30 @@ protected:
 template <class T>
 struct base<T, 3> : base<T, 0>
 {
-    using base<T, 0>::base;
+    template <class All = T,
+        std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
+    explicit base(const All& for_all = All()) :
+        base(for_all, for_all, for_all)
+    {}
 
-    template <class Empty = T, class InvalidFormat = T,
-        class AboveUpperLimit = T,
+    template <class Empty, class AllButEmpty,
+        std::enable_if_t<
+            is_acceptable_arg_v<T, Empty&&>
+         && is_acceptable_arg_v<T, const AllButEmpty&>>* = nullptr>
+    base(Empty&& on_empty, const AllButEmpty& for_all_but_empty) :
+        base(std::forward<Empty>(on_empty),
+             for_all_but_empty, for_all_but_empty)
+    {}
+
+    template <class Empty, class InvalidFormat, class AboveUpperLimit,
         std::enable_if_t<
             is_acceptable_arg_v<T, Empty&&>
          && is_acceptable_arg_v<T, InvalidFormat&&>
          && is_acceptable_arg_v<T, AboveUpperLimit&&>>* = nullptr>
     explicit base(
-        Empty&& on_empty = Empty(),
-        InvalidFormat&& on_invalid_format = InvalidFormat(),
-        AboveUpperLimit&& on_above_upper_limit = AboveUpperLimit())
+        Empty&& on_empty,
+        InvalidFormat&& on_invalid_format,
+        AboveUpperLimit&& on_above_upper_limit)
             noexcept(std::is_nothrow_default_constructible_v<T>
                   && is_nothrow_arg_v<T, Empty>
                   && is_nothrow_arg_v<T, InvalidFormat>
@@ -775,9 +780,34 @@ struct base<T, 3> : base<T, 0>
 };
 
 template <class T>
-struct base<T, 4> : base<T, 3>
+struct base<T, 4> : base<T, 0>
 {
-    using base<T, 3>::base;
+    template <class All = T,
+        std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
+    explicit base(const All& for_all = All()) :
+        base(for_all, for_all, for_all, for_all)
+    {}
+
+    template <class Empty, class AllButEmpty,
+        std::enable_if_t<
+            is_acceptable_arg_v<T, Empty&&>
+         && is_acceptable_arg_v<T, const AllButEmpty&>>* = nullptr>
+    explicit base(Empty&& on_empty, const AllButEmpty& for_all_but_empty) :
+        base(std::forward<Empty>(on_empty),
+             for_all_but_empty, for_all_but_empty, for_all_but_empty)
+    {}
+
+    template <class Empty, class InvalidFormat, class AllOutOfRange,
+        std::enable_if_t<
+            is_acceptable_arg_v<T, Empty&&>
+         && is_acceptable_arg_v<T, InvalidFormat&&>
+         && is_acceptable_arg_v<T, const AllOutOfRange&>>* = nullptr>
+    base(Empty&& on_empty, InvalidFormat&& on_invalid_format,
+            const AllOutOfRange& for_all_out_of_range) :
+        base(std::forward<Empty>(on_empty),
+             std::forward<InvalidFormat>(on_invalid_format),
+             for_all_out_of_range, for_all_out_of_range)
+    {}
 
     template <class Empty, class InvalidFormat,
         class AboveUpperLimit, class BelowLowerLimit,
@@ -796,7 +826,7 @@ struct base<T, 4> : base<T, 3>
                   && is_nothrow_arg_v<T, InvalidFormat&&>
                   && is_nothrow_arg_v<T, AboveUpperLimit&&>
                   && is_nothrow_arg_v<T, BelowLowerLimit&&>) :
-        base<T, 3>(
+        base<T, 0>(
             generic_args_t(),
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
@@ -806,9 +836,34 @@ struct base<T, 4> : base<T, 3>
 };
 
 template <class T>
-struct base<T, 5> : base<T, std::is_default_constructible_v<T> ? 4 : 0>
+struct base<T, 5> : base<T, 0>
 {
-    using base<T, std::is_default_constructible_v<T> ? 4 : 0>::base;
+    template <class All = T,
+        std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
+    explicit base(const All& for_all = All()) :
+        base(for_all, for_all, for_all, for_all, for_all)
+    {}
+
+    template <class Empty, class AllButEmpty,
+        std::enable_if_t<
+            is_acceptable_arg_v<T, Empty&&>
+         && is_acceptable_arg_v<T, const AllButEmpty&>>* = nullptr>
+    explicit base(Empty&& on_empty, const AllButEmpty& for_all_but_empty) :
+        base(std::forward<Empty>(on_empty), for_all_but_empty,
+            for_all_but_empty, for_all_but_empty, for_all_but_empty)
+    {}
+
+    template <class Empty, class InvalidFormat, class AllOutOfRange,
+        std::enable_if_t<
+            is_acceptable_arg_v<T, Empty&&>
+         && is_acceptable_arg_v<T, InvalidFormat&&>
+         && is_acceptable_arg_v<T, const AllOutOfRange&>>* = nullptr>
+    base(Empty&& on_empty, InvalidFormat&& on_invalid_format,
+            const AllOutOfRange& for_all_out_of_range) :
+        base(std::forward<Empty>(on_empty),
+             std::forward<InvalidFormat>(on_invalid_format),
+             for_all_out_of_range, for_all_out_of_range, for_all_out_of_range)
+    {}
 
     template <class Empty, class InvalidFormat,
         class AboveUpperLimit, class BelowLowerLimit,
@@ -830,7 +885,7 @@ struct base<T, 5> : base<T, std::is_default_constructible_v<T> ? 4 : 0>
                   && is_nothrow_arg_v<T, AboveUpperLimit>
                   && is_nothrow_arg_v<T, BelowLowerLimit>
                   && is_nothrow_arg_v<T, Underflow>) :
-        base<T, std::is_default_constructible_v<T> ? 4 : 0>(
+        base<T, 0>(
             generic_args_t(),
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),

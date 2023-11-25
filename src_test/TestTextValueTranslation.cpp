@@ -161,6 +161,75 @@ typedef testing::Types<double, std::string> ReplacedTypes;
 
 TYPED_TEST_SUITE(TestReplaceIfConversionFailed, ReplacedTypes);
 
+TYPED_TEST(TestReplaceIfConversionFailed, WithOneArgCtor)
+{
+    using r_t = replace_if_conversion_failed<TypeParam>;
+
+    char d[] = "dummy";
+    char* de = d + sizeof d - 1;
+
+    TypeParam num_1 = from_str("10");
+
+    std::deque<r_t> rs;
+    /*0*/rs.emplace_back(num_1);
+    /*1*/rs.emplace_back(replacement_ignore);
+    /*2*/rs.emplace_back(replacement_fail);
+
+    ASSERT_EQ(num_1, rs[0](empty_t()));
+    ASSERT_EQ(num_1, rs[0](invalid_format_t(), d, de));
+    ASSERT_EQ(num_1, rs[0](out_of_range_t(), d, de, 1));
+    ASSERT_EQ(num_1, rs[0](out_of_range_t(), d, de, -1));
+    ASSERT_EQ(num_1, rs[0](out_of_range_t(), d, de, 0));
+
+    ASSERT_TRUE(!rs[1](empty_t()));
+    ASSERT_TRUE(!rs[1](invalid_format_t(), d, de));
+    ASSERT_TRUE(!rs[1](out_of_range_t(), d, de, 1));
+    ASSERT_TRUE(!rs[1](out_of_range_t(), d, de, -1));
+    ASSERT_TRUE(!rs[1](out_of_range_t(), d, de, 0));
+
+    ASSERT_THROW(rs[2](empty_t()), text_value_empty);
+    ASSERT_THROW(rs[2](invalid_format_t(), d, de), text_value_invalid_format);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 1), text_value_out_of_range);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, -1), text_value_out_of_range);
+    ASSERT_THROW(rs[2](out_of_range_t(), d, de, 0), text_value_out_of_range);
+}
+
+TYPED_TEST(TestReplaceIfConversionFailed, WithTwoArgCtor)
+{
+    using r_t = replace_if_conversion_failed<TypeParam>;
+
+    char d[] = "dummy";
+    char* de = d + sizeof d - 1;
+
+    TypeParam num_1 = from_str("10");
+
+    const r_t r(replacement_ignore, num_1);
+
+    ASSERT_TRUE(!r(empty_t()));
+    ASSERT_EQ(num_1, r(invalid_format_t(), d, de));
+    ASSERT_EQ(num_1, r(out_of_range_t(), d, de, 1));
+    ASSERT_EQ(num_1, r(out_of_range_t(), d, de, -1));
+    ASSERT_EQ(num_1, r(out_of_range_t(), d, de, 0));
+}
+
+TYPED_TEST(TestReplaceIfConversionFailed, WithThreeArgCtor)
+{
+    using r_t = replace_if_conversion_failed<TypeParam>;
+
+    char d[] = "dummy";
+    char* de = d + sizeof d - 1;
+
+    TypeParam num_1 = from_str("10");
+
+    const r_t r(replacement_fail, replacement_ignore, num_1);
+
+    ASSERT_THROW(r(empty_t()), text_value_empty);
+    ASSERT_TRUE(!r(invalid_format_t(), d, de));
+    ASSERT_EQ(num_1, r(out_of_range_t(), d, de, 1));
+    ASSERT_EQ(num_1, r(out_of_range_t(), d, de, -1));
+    ASSERT_EQ(num_1, r(out_of_range_t(), d, de, 0));
+}
+
 TYPED_TEST(TestReplaceIfConversionFailed, CtorsCopy)
 {
     using r_t = replace_if_conversion_failed<TypeParam>;
@@ -174,7 +243,7 @@ TYPED_TEST(TestReplaceIfConversionFailed, CtorsCopy)
     TypeParam num_4 = from_str("55");
 
     std::deque<r_t> rs;
-    /*0*/rs.emplace_back(num_1, num_2, num_3, num_4);
+    /*0*/rs.emplace_back(num_1, num_2, num_3, num_4, replacement_ignore);
     /*1*/rs.emplace_back(rs[0]);
     /*2*/rs.emplace_back(std::move(r_t(rs[0])));
 
@@ -184,7 +253,7 @@ TYPED_TEST(TestReplaceIfConversionFailed, CtorsCopy)
         ASSERT_EQ(num_2, *r(invalid_format_t(), d, de)) << i;
         ASSERT_EQ(num_3, *r(out_of_range_t(), d, de, 1)) << i;
         ASSERT_EQ(num_4, *r(out_of_range_t(), d, de, -1)) << i;
-        ASSERT_EQ(TypeParam(), *r(out_of_range_t(), d, de, 0)) << i;
+        ASSERT_TRUE(!r(out_of_range_t(), d, de, 0)) << i;
     }
 }
 
@@ -670,22 +739,6 @@ static_assert(!std::is_constructible<replace_if_conversion_failed<int>,
     int, int, int, int, int>::value);
 static_assert(!std::is_constructible<replace_if_conversion_failed<unsigned>,
     unsigned, replacement_fail_t, replacement_ignore_t, long>::value);
-
-namespace {
-
-struct ndc  // not default constructible
-{
-    ndc(int) {}
-};
-
-}
-
-static_assert(!std::is_constructible<replace_if_conversion_failed<ndc>,
-    ndc, ndc, ndc>::value);
-static_assert(!std::is_constructible<replace_if_conversion_failed<ndc>,
-    ndc, ndc, ndc, ndc>::value);
-static_assert(std::is_constructible<replace_if_conversion_failed<ndc>,
-    ndc, ndc, ndc, ndc, ndc>::value);
 
 }
 
