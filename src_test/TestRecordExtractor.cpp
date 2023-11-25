@@ -79,7 +79,7 @@ TEST_P(TestRecordExtractor, LeftmostKey)
                        LR"(ka1,kb3,vb3,"vb3")" L"\r";
     std::wstringbuf out;
     std::wstring key_a = L"key_a";
-    parse_csv(s, make_record_extractor(&out, key_a, L"ka1"), GetParam());
+    parse_csv(s, make_record_extractor(out, key_a, L"ka1"), GetParam());
     ASSERT_EQ(L"key_a,key_b,value_a,value_b\n"
               L"\"ka1\",kb1,va1,vb1\n"
               L"ka1,kb3,vb3,\"vb3\"\n",
@@ -95,7 +95,7 @@ TEST_P(TestRecordExtractor, InnerKey)
                     "ka2,kb12,va2,vb2\n"
                     R"(ka1,kb13,"vb)" "\n"
                     R"(3",vb3)";
-    std::ostringstream out;
+    std::stringbuf out;
     parse_csv(s, make_record_extractor(out, "key_b",
         [](std::string_view s) {
             return s.substr(0, 3) == "kb1";
@@ -116,7 +116,7 @@ TEST_P(TestRecordExtractor, NoSuchKey)
     std::wstringbuf out;
     try {
         parse_csv(s,
-            make_record_extractor(&out, L"key_c", L"kc1"), GetParam());
+            make_record_extractor(out, L"key_c", L"kc1"), GetParam());
         FAIL();
     } catch (const record_extraction_error& e) {
         ASSERT_TRUE(e.get_physical_position());
@@ -133,7 +133,7 @@ TEST_P(TestRecordExtractor, NoSuchField)
                     "k0,k1,k2\r";
     std::stringbuf out;
     ASSERT_TRUE(parse_csv(s,
-        make_record_extractor(&out, "key_b", "k1"), GetParam()));
+        make_record_extractor(out, "key_b", "k1"), GetParam()));
     ASSERT_EQ("key_a,key_b\n"
               "k0,k1,k2\n",
               std::move(out).str());
@@ -155,7 +155,7 @@ TEST_P(TestRecordExtractor, MoveCtor)
         // a non-heder record
     std::wstringbuf out;
     std::wstring key_a = L"key_b";
-    auto ex = make_record_extractor(&out, key_a, L"kb3");
+    auto ex = make_record_extractor(out, key_a, L"kb3");
     auto ey = std::move(ex);
 
     try {
@@ -187,7 +187,7 @@ TEST_P(TestRecordExtractorLimit, Basics)
                     "ka2,kb2,va2,vb2\n"
                     "ka1,kb3,vb3,vb3\n";
     std::stringbuf out;
-    const auto result = parse_csv(s, make_record_extractor(&out,
+    const auto result = parse_csv(s, make_record_extractor(out,
         "key_a", "ka1"s, header, max_record_num), 2);
     ASSERT_EQ(max_record_num > 1, result);
     std::string expected;
@@ -218,7 +218,7 @@ TEST_F(TestRecordExtractorIndexed, Basics)
                     "ka2,kb12,va2,vb2\n"
                     R"(ka1,kb13,"vb)" "\n"
                     R"(3",vb3)";
-    std::ostringstream out;
+    std::stringbuf out;
     parse_csv(s, make_record_extractor(out, 1,
         [](std::string_view s) {
             return s.substr(0, 3) == "kb1";
@@ -236,7 +236,7 @@ TEST_F(TestRecordExtractorIndexed, FirstLineIncluded)
     const char* s = "assets,1100\n"
                     "lialibities,600\n"
                     "net assets,500\n";
-    std::ostringstream out;
+    std::stringbuf out;
     parse_csv(s, make_record_extractor(out, 1,
         [](std::string_view s) {
             const int value = std::stoi(std::string(s));
@@ -250,7 +250,7 @@ TEST_F(TestRecordExtractorIndexed, TooLargeTargetFieldIndex)
 {
     std::stringbuf out;
     ASSERT_THROW(
-        make_record_extractor(&out, record_extractor_npos, "ABC"),
+        make_record_extractor(out, record_extractor_npos, "ABC"),
         std::out_of_range);
 }
 
@@ -260,7 +260,7 @@ TEST_F(TestRecordExtractorIndexed, ConstRValueRefString)
     auto extractor = [&out] {
         const std::wstring s = L"star";
         return make_record_extractor(
-            &out, 0, std::move(s), header_forwarding::no);
+            out, 0, std::move(s), header_forwarding::no);
     }();
     // If the range of the const rvalue of s has been grabbed in the lambda,
     // extractor will have a dangling range here;
@@ -300,7 +300,7 @@ TEST_F(TestRecordExtractorFinalPredicateForValue, Basics)
                     R"(3",vb3)";
     std::stringbuf out;
     parse_csv(s,
-        make_record_extractor(&out, 1, final_predicate_for_value()), 1024);
+        make_record_extractor(out, 1, final_predicate_for_value()), 1024);
     ASSERT_EQ(R"(key_a,key_b,value_a,value_b
 ka2,kb12,va2,vb2
 ka1,kb13,"vb
@@ -329,7 +329,7 @@ TEST_F(TestRecordExtractorMiscellaneous, Reference)
     };
 
     auto ex = make_record_extractor(
-        &out, std::ref(key_pred), std::ref(value_pred));
+        out, std::ref(key_pred), std::ref(value_pred));
     parse_csv(s, std::move(ex));
     ASSERT_EQ("instrument,type\n"
               "tuba,brass\n"
@@ -347,7 +347,7 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
                     "clarinet,woodwind\n";
     std::stringbuf out;
 
-    auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
+    auto ex = make_record_extractor(std::allocator_arg, alloc, out,
         "instrument", "clarinet"s);
     parse_csv(s, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
@@ -365,7 +365,7 @@ TEST_F(TestRecordExtractorMiscellaneous, Fancy)
                        L"clarinet,woodwind\n";
     std::wstringbuf out;
 
-     auto ex = make_record_extractor(std::allocator_arg, alloc, &out,
+     auto ex = make_record_extractor(std::allocator_arg, alloc, out,
         L"instrument", std::wstring(L"clarinet"));
     parse_csv(s, std::move(ex), 8U);
     ASSERT_GT(total, 0U);
@@ -454,7 +454,7 @@ TEST_F(TestRecordExtractorMiscellaneous, IsInHeader)
                     "clarinet,woodwind\n";
     std::stringbuf out;
 
-    auto x = make_record_extractor(&out, "[instrument]", "clarinet");
+    auto x = make_record_extractor(out, "[instrument]", "clarinet");
     parse_csv(s, record_extractor_wrapper(std::move(x)));
 
     ASSERT_STREQ("[instrument],[type]\n"
@@ -468,7 +468,7 @@ TEST_F(TestRecordExtractorMiscellaneous, IsInHeaderIndexed)
                     "clarinet,woodwind\n";
     std::stringbuf out;
 
-    auto x = make_record_extractor(&out, 1U, "woodwind");
+    auto x = make_record_extractor(out, 1U, "woodwind");
     parse_csv(s, record_extractor_wrapper(std::move(x)));
 
     ASSERT_STREQ("[instrument],[type]\n"
@@ -493,14 +493,14 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuide)
 
     {
         std::stringbuf out;
-        parse_csv(s, record_extractor(&out, is_type, is_woodwind));
+        parse_csv(s, record_extractor(out, is_type, is_woodwind));
         ASSERT_STREQ("instrument,type\n"
                      "clarinet,woodwind\n", std::move(out).str().c_str());
     }
 
     {
         std::stringbuf out;
-        parse_csv(s, record_extractor(&out,
+        parse_csv(s, record_extractor(out,
             is_type, std::not_fn(is_woodwind), header_forwarding::no, 1));
         ASSERT_STREQ("castanets,idiophone\n", std::move(out).str().c_str());
     }
@@ -510,7 +510,7 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuide)
         tracking_allocator<std::allocator<char>> a(total);
         std::stringbuf out;
         parse_csv(s, record_extractor(std::allocator_arg, a,
-            &out, is_type, is_woodwind), 5);
+            out, is_type, is_woodwind), 5);
         ASSERT_STREQ("instrument,type\n"
                      "clarinet,woodwind\n", std::move(out).str().c_str());
         ASSERT_GT(total, 0U);
@@ -520,7 +520,7 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuide)
         std::size_t total = 0;
         tracking_allocator<std::allocator<char>> a(total);
         std::stringbuf out;
-        parse_csv(s, record_extractor(std::allocator_arg, a, &out,
+        parse_csv(s, record_extractor(std::allocator_arg, a, out,
             is_type, std::not_fn(is_woodwind), header_forwarding::no, 1), 5);
         ASSERT_STREQ("castanets,idiophone\n", std::move(out).str().c_str());
         ASSERT_GT(total, 0U);
@@ -542,7 +542,7 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuideIndexed)
     {
         std::stringbuf out;
         parse_csv(s, record_extractor_with_indexed_key(
-            &out, 1, is_woodwind));
+            out, 1, is_woodwind));
         ASSERT_STREQ("instrument,type\n"
                      "clarinet,woodwind\n", std::move(out).str().c_str());
     }
@@ -550,7 +550,7 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuideIndexed)
     {
         std::stringbuf out;
         parse_csv(s, record_extractor_with_indexed_key(
-            &out, 1, std::not_fn(is_woodwind), header_forwarding::no, 1));
+            out, 1, std::not_fn(is_woodwind), header_forwarding::no, 1));
         ASSERT_STREQ("castanets,idiophone\n", std::move(out).str().c_str());
     }
 
@@ -559,7 +559,7 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuideIndexed)
         tracking_allocator<std::allocator<char>> a(total);
         std::stringbuf out;
         parse_csv(s, record_extractor_with_indexed_key(std::allocator_arg, a,
-            &out, 1, is_woodwind), 5);
+            out, 1, is_woodwind), 5);
         ASSERT_STREQ("instrument,type\n"
                      "clarinet,woodwind\n", std::move(out).str().c_str());
         ASSERT_GT(total, 0U);
@@ -570,7 +570,7 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuideIndexed)
         tracking_allocator<std::allocator<char>> a(total);
         std::stringbuf out;
         parse_csv(s, record_extractor_with_indexed_key(std::allocator_arg, a,
-            &out, 1, std::not_fn(is_woodwind), header_forwarding::no, 1), 5);
+            out, 1, std::not_fn(is_woodwind), header_forwarding::no, 1), 5);
         ASSERT_STREQ("castanets,idiophone\n", std::move(out).str().c_str());
         ASSERT_GT(total, 0U);
     }

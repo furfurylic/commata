@@ -2439,11 +2439,11 @@ namespace commata {
     class record_extractor;
 
   template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class... Args>
-    record_extractor(std::basic_streambuf&lt;Ch, Tr>*, FieldNamePred, FieldValuePred, Args...)
+    record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp;, FieldNamePred, FieldValuePred, Args...)
       -> record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, std::allocator&lt;Ch>>;
   template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr,class Allocator,
             class... Args>
-    record_extractor(std::allocator_arg_t, Allocator, std::basic_streambuf&lt;Ch, Tr>*,
+    record_extractor(std::allocator_arg_t, Allocator, std::basic_streambuf&lt;Ch, Tr>&amp;,
                      FieldNamePred, FieldValuePred, Args...)
       -> record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
 
@@ -2452,12 +2452,12 @@ namespace commata {
     class record_extractor_with_indexed_key;
 
   template &lt;class FieldValuePred, class Ch, class Tr, class... Args>
-    record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>*, std::size_t, FieldValuePred,
+    record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>&amp;, std::size_t, FieldValuePred,
                                       Args...)
       -> record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, std::allocator&lt;Ch>>;
   template &lt;class FieldValuePred, class Ch, class Tr,class Allocator, class... Args>
     record_extractor_with_indexed_key(std::allocator_arg_t, Allocator,
-                                      std::basic_streambuf&lt;Ch, Tr>*, std::size_t, FieldValuePred,
+                                      std::basic_streambuf&lt;Ch, Tr>&amp;, std::size_t, FieldValuePred,
                                       Args...)
       -> record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, Allocator>;
 
@@ -2465,28 +2465,22 @@ namespace commata {
   template &lt;class FieldNamePred, class FieldValuePred,
             class Ch, class Tr, class Allocator, class... Appendices>
     <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    std::basic_streambuf&lt;Ch, Tr>* out,
+                                    std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                     FieldNamePred&amp;&amp; field_name_pred,
                                     FieldValuePred&amp;&amp; field_value_pred,
                                     Appendices&amp;&amp;... appendices);
   template &lt;class FieldValuePred,
             class Ch, class Tr, class Allocator, class... Appendices>
     <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    std::basic_streambuf&lt;Ch, Tr>* out,
+                                    std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                     std::size_t target_field_index,
                                     FieldValuePred&amp;&amp; field_value_pred,
                                     Appendices&amp;&amp;... appendices);
-  template &lt;class Ch, class Tr, class Allocator, class... Appendices>
-    <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    std::basic_ostream&lt;Ch, Tr>&amp; out, Appendices&amp;&amp;... appendices);
   template &lt;class FieldIdentifier, class FieldValuePred, class Ch, class Tr, class... Appendices>
-    <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
+    <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                     FieldIdentifier&amp;&amp; field_id,
                                     FieldValuePred&amp;&amp; field_value_pred,
                                     Appendices&amp;&amp;... appendices);
-  template &lt;class Ch, class Tr, class... Appendices>
-    <nc>see below</nc> make_record_extractor(std::basic_ostream&lt;Ch, Tr>&amp; out,
-                                    Appendices&amp;... appendices);
 }
       </codeblock>
     </section>
@@ -2521,13 +2515,13 @@ namespace commata {
 
     <c>// <n><xref id="record_extractor.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class FieldNamePredR, class FieldValuePredR>
-      record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
+      record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                        header_forwarding header = header_forwarding::yes,
                        std::size_t max_record_num = 0);
     template &lt;class FieldNamePredR, class FieldValuePredR>
       record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                       std::basic_streambuf&lt;Ch, Tr>* out,
+                       std::basic_streambuf&lt;Ch, Tr>&amp; out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                        header_forwarding header = header_forwarding::yes,
                        std::size_t max_record_num = 0);
@@ -2551,11 +2545,11 @@ namespace commata {
   };
 
   template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class... Args>
-    record_extractor(std::basic_streambuf&lt;Ch, Tr>*, FieldNamePred, FieldValuePred, Args...)
+    record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp;, FieldNamePred, FieldValuePred, Args...)
       -> record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, std::allocator&lt;Ch>>;
   template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr,class Allocator,
             class... Args>
-    record_extractor(std::allocator_arg_t, Allocator, std::basic_streambuf&lt;Ch, Tr>*,
+    record_extractor(std::allocator_arg_t, Allocator, std::basic_streambuf&lt;Ch, Tr>&amp;,
                      FieldNamePred, FieldValuePred, Args...)
       -> record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
 }
@@ -2577,18 +2571,18 @@ namespace commata {
         <code-item>
           <code>
 template &lt;class FieldNamePredR, class FieldValuePredR>
-  record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
+  record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
                    FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                    header_forwarding header = header_forwarding::yes,
                    std::size_t max_record_num = record_extractor_npos);
 template &lt;class FieldNamePredR, class FieldValuePredR>
   record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                   std::basic_streambuf&lt;Ch, Tr>* out,
+                   std::basic_streambuf&lt;Ch, Tr>&amp; out,
                    FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                    header_forwarding header = header_forwarding::yes,
                    std::size_t max_record_num = record_extractor_npos);
           </code>
-          <requires><c>out</c> shall be a valid pointer. For the first form, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
+          <requires>For the first form, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Constructs an object <c>record_extractor</c>. The parameters work as <xref id="table.record_extractor.cons"/> shows.
                    An object constructed by the first form uses a default constructed <c>Allocator</c> object to allocate memory.
                    One constructed by the second form uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
@@ -2603,7 +2597,7 @@ template &lt;class FieldNamePredR, class FieldValuePredR>
             </tr>
             <tr>
               <td><c>out</c></td>
-              <td>Points a stream buffer object that receives the extracted records.</td>
+              <td>References a stream buffer object that receives the extracted records.</td>
             </tr>
             <tr>
               <td><c>field_name_pred</c></td>
@@ -2678,7 +2672,7 @@ namespace commata {
 
     <c>// <n><xref id="record_extractor_with_indexed_key.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class FieldValuePredR>
-      record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
+      record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                         std::size_t target_field_index,
                                         FieldValuePredR&amp;&amp; field_value_pred,
                                         std::optional&lt;header_forwarding> header
@@ -2686,7 +2680,7 @@ namespace commata {
                                         std::size_t max_record_num = 0);
     template &lt;class FieldValuePredR>
       record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
-                                        std::basic_streambuf&lt;Ch, Tr>* out,
+                                        std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                         std::size_t target_field_index,
                                         FieldValuePredR&amp;&amp; field_value_pred,
                                         std::optional&lt;header_forwarding> header
@@ -2713,12 +2707,12 @@ namespace commata {
   };
 
   template &lt;class FieldValuePred, class Ch, class Tr, class... Args>
-    record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>*, std::size_t, FieldValuePred,
+    record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>&amp;, std::size_t, FieldValuePred,
                                       Args...)
       -> record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, std::allocator&lt;Ch>>;
   template &lt;class FieldValuePred, class Ch, class Tr,class Allocator, class... Args>
     record_extractor_with_indexed_key(std::allocator_arg_t, Allocator,
-                                      std::basic_streambuf&lt;Ch, Tr>*, std::size_t, FieldValuePred,
+                                      std::basic_streambuf&lt;Ch, Tr>&amp;, std::size_t, FieldValuePred,
                                       Args...)
       -> record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, Allocator>;
 }
@@ -2738,7 +2732,7 @@ namespace commata {
         <code-item>
           <code>
 template &lt;class FieldValuePredR>
-  record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>* out,
+  record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                     std::size_t target_field_index,
                                     FieldValuePredR&amp;&amp; field_value_pred,
                                     std::optional&lt;header_forwarding> header
@@ -2746,14 +2740,14 @@ template &lt;class FieldValuePredR>
                                     std::size_t max_record_num = record_extractor_npos);
 template &lt;class FieldValuePredR>
   record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    std::basic_streambuf&lt;Ch, Tr>* out,
+                                    std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                     std::size_t target_field_index,
                                     FieldValuePredR&amp;&amp; field_value_pred,
                                     std::optional&lt;header_forwarding> header
                                       = header_forwarding::yes,
                                     std::size_t max_record_num = record_extractor_npos);
           </code>
-          <requires><c>out</c> shall be a valid pointer. For the first form, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
+          <requires>For the first form, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Constructs an object <c>record_extractor_with_indexed_key</c>. The parameters work as <xref id="table.record_extractor_with_indexed_key.cons"/> shows.
                    An object constructed by the first form uses a default constructed <c>Allocator</c> object to allocate memory.
                    One constructed by the second form uses an <c>Allocator</c> object copy constructed from <c>alloc</c>.</effects>
@@ -2768,7 +2762,7 @@ template &lt;class FieldValuePredR>
             </tr>
             <tr>
               <td><c>out</c></td>
-              <td>Points a stream buffer object that receives the extracted records.</td>
+              <td>References a stream buffer object that receives the extracted records.</td>
             </tr>
             <tr>
               <td><c>target_field_index</c></td>
@@ -2873,7 +2867,7 @@ bool is_in_header() const noexcept;
 template &lt;class FieldNamePred, class FieldValuePred,
           class Ch, class Tr, class Allocator, class... Appendices>
   <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                  std::basic_streambuf&lt;Ch, Tr>* out,
+                                  std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                   FieldNamePred&amp;&amp; field_name_pred,
                                   FieldValuePred&amp;&amp; field_value_pred,
                                   Appendices&amp;&amp;... appendices);
@@ -2901,7 +2895,7 @@ return record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
 template &lt;class FieldValuePred,
           class Ch, class Tr, class Allocator, class... Appendices>
   <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                  std::basic_streambuf&lt;Ch, Tr>* out,
+                                  std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                   std::size_t target_field_index,
                                   FieldValuePred&amp;&amp; field_value_pred,
                                   Appendices&amp;&amp;... appendices);
@@ -2920,41 +2914,15 @@ return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(
 
       <code-item>
         <code>
-template &lt;class Ch, class Tr, class Allocator, class... Appendices>
-  <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                  std::basic_ostream&lt;Ch, Tr>&amp; out, Appendices&amp;&amp;... appendices);
-        </code>
-        <effects><p>Equivalent to:</p>
-                 <code>return make_record_extractor(std::allocator_arg, alloc,
-                             out.rdbuf(), std::forward&lt;Appendices>(appendices)...);</code>
-        </effects>
-        <remark>This overload shall not participate in overload resolution unless <c>make_record_extractor(std::declval&lt;std::allocator_arg_t>(), std::declval&lt;const Allocator&amp;>(), std::declval&lt;std::basic_streambuf&lt;Ch, Tr>*>(), std::declval&lt;Appendices>()...)</c> is well-formed when treated as an unevaluated operand.</remark>
-      </code-item>
-
-      <code-item>
-        <code>
 template &lt;class Ch, class Tr, class... Appendices>
-  <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>* out,
+  <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                   Appendices&amp;&amp;... appendices);
         </code>
         <effects><p>Equivalent to:</p>
                  <code>return make_record_extractor(std::allocator_arg, std::allocator&lt;Ch>(),
                              out, std::forward&lt;Appendices>(appendices)...);</code>
         </effects>
-        <remark>This overload shall not participate in overload resolution unless <c>make_record_extractor(std::declval&lt;std::allocator_arg_t>(), std::declval&lt;std::allocator&lt;Ch>>(), std::declval&lt;std::basic_streambuf&lt;Ch, Tr>*>(), std::declval&lt;Appendices>()...)</c> is well-formed when treated as an unevaluated operand.</remark>
-      </code-item>
-
-      <code-item>
-        <code>
-template &lt;class Ch, class Tr, class... Appendices>
-  <nc>see below</nc> make_record_extractor(std::basic_ostream&lt;Ch, Tr>&amp; out,
-                                  Appendices&amp;&amp;... appendices);
-        </code>
-        <effects><p>Equivalent to:</p>
-                 <code>return make_record_extractor(std::allocator_arg, std::allocator&lt;Ch>(),
-                             out, std::forward&lt;Appendices>(appendices)...);</code>
-        </effects>
-        <remark>This overload shall not participate in overload resolution unless <c>make_record_extractor(std::declval&lt;std::allocator_arg_t>(), std::declval&lt;std::allocator&lt;Ch>>(), std::declval&lt;std::basic_ostream&lt;Ch, Tr>&amp;>(), std::declval&lt;Appendices>()...)</c> is well-formed when treated as an unevaluated operand.</remark>
+        <remark>This overload shall not participate in overload resolution unless <c>make_record_extractor(std::declval&lt;std::allocator_arg_t>(), std::declval&lt;std::allocator&lt;Ch>>(), std::declval&lt;std::basic_streambuf&lt;Ch, Tr>&amp;>(), std::declval&lt;Appendices>()...)</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
     </section>
   </section>
