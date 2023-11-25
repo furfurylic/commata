@@ -1428,6 +1428,9 @@ namespace commata {
   <c>// <n><xref id="fail_if_conversion_failed"/>, fail_if_conversion_failed:</n></c>
   struct fail_if_conversion_failed;
 
+  <c>// <n><xref id="ignore_if_conversion_failed"/>, ignore_if_conversion_failed:</n></c>
+  struct ignore_if_conversion_failed;
+
   <c>// <n><xref id="replace_if_conversion_failed"/>, replace_if_conversion_failed:</n></c>
   template &lt;class T> class replace_if_conversion_failed;
   template &lt;class... Ts>
@@ -1637,6 +1640,38 @@ template &lt;class T>
   [[noreturn]] std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>text_value_empty</c> (<xref id="text_value_empty"/>).</effects>
+        </code-item>
+      </section>
+
+      <section id="ignore_if_conversion_failed">
+        <name>Struct <c>ignore_if_conversion_failed</c></name>
+
+        <codeblock>
+namespace commata {
+  struct ignore_if_conversion_failed {
+    template &lt;class T, class Ch>
+      std::optional&lt;T> operator()(invalid_format_t, const Ch*, const Ch*, T* = nullptr) const;
+    template &lt;class T, class Ch>
+      std::optional&lt;T> operator()(out_of_range_t, const Ch*, const Ch*, int, T* = nullptr) const;
+    template &lt;class T>
+      std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
+  };
+}
+        </codeblock>
+
+        <p>The struct <c>ignore_if_conversion_failed</c> is a type that meets the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for any target types.
+           An object of it makes the text value translation process ignore all conversion errors without producing any target type values.</p>
+
+        <code-item>
+          <code>
+template &lt;class T, class Ch>
+  std::optional&lt;T> operator()(invalid_format_t, const Ch*, const Ch*, T* = nullptr) const;
+template &lt;class T, class Ch>
+  std::optional&lt;T> operator()(out_of_range_t, const Ch*, const Ch*, int, T* = nullptr) const;
+template &lt;class T>
+  std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
+          </code>
+          <returns><c>std::nullopt</c>.</returns>
         </code-item>
       </section>
 
@@ -2263,14 +2298,8 @@ template &lt;class T, class ConversionErrorHandler, class A>
           <code>
 template &lt;class T, class A> T to_arithmetic(const A&amp; a);
           </code>
-          <effects><p>Let <c>H</c> be <c>replace_if_conversion_failed&lt;typename T::value_type></c> if <c>T</c> is an instance of <c>std::optional</c>, <c>fail_if_conversion_failed</c> otherwise.
-                      Then:</p>
-                   <ul>
-                     <li>if <c>H</c> is the same type as <c>fail_if_conversion_failed</c>, equivalent to: <c>return to_arithmetic&lt;T>(a, H());</c></li>
-                     <li>otherwise, if <c>std::is_constructible&lt;H, replace_ignore_t, replace_ignore_t, replace_ignore_t, replace_ignore_t, replace_ignore_t></c> is <c>true</c>, equivalent to <c>return to_arithmetic&lt;T>(a, H(replaceme_ignore, replaceme_ignore, replaceme_ignore, replaceme_ignore, replaceme_ignore));</c></li>
-                     <li>otherwise, if <c>std::is_constructible&lt;H, replace_ignore_t, replace_ignore_t, replace_ignore_t, replace_ignore_t></c> is <c>true</c>, equivalent to <c>return to_arithmetic&lt;T>(a, H(replaceme_ignore, replaceme_ignore, replaceme_ignore, replaceme_ignore));</c> or</li>
-                     <li>otherwise, equivalent to <c>return to_arithmetic&lt;T>(a, H(replaceme_ignore, replaceme_ignore, replaceme_ignore));</c></li>
-                   </ul></effects>
+          <effects>Let <c>H</c> be <c>ignore_if_conversion_failed</c> if <c>T</c> is an instance of <c>std::optional</c>, <c>fail_if_conversion_failed</c> otherwise.
+                   Then equivalent to: <c>return to_arithmetic&lt;T>(a, H());</c></effects>
         </code-item>
       </section>
     </section>

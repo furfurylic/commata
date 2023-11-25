@@ -384,6 +384,29 @@ private:
     }
 };
 
+struct ignore_if_conversion_failed
+{
+    template <class T, class Ch>
+    std::optional<T> operator()(invalid_format_t,
+        const Ch*, const Ch*, T* = nullptr) const
+    {
+        return std::nullopt;
+    }
+
+    template <class T, class Ch>
+    std::optional<T> operator()(out_of_range_t,
+        const Ch*, const Ch*, int, T* = nullptr) const
+    {
+        return std::nullopt;
+    }
+
+    template <class T>
+    std::optional<T> operator()(empty_t, T* = nullptr) const
+    {
+        return std::nullopt;
+    }
+};
+
 namespace detail::xlate::replace_if_conversion_failed_impl {
 
 enum slot : unsigned {
@@ -1037,21 +1060,6 @@ auto do_convert(const A& a, H&& h)
         typed_conversion_error_handler<T, std::remove_reference_t<H>>(h));
 }
 
-template <class T>
-replace_if_conversion_failed<T> make_ignore_if_conversion_failed()
-{
-    using H = replace_if_conversion_failed<T>;
-    using i_t = replacement_ignore_t;
-    constexpr auto i = replacement_ignore;
-    if constexpr (std::is_constructible_v<H, i_t, i_t, i_t, i_t, i_t>) {
-        return H(i, i, i, i, i);
-    } else if constexpr (std::is_constructible_v<H, i_t, i_t, i_t, i_t>) {
-        return H(i, i, i, i);
-    } else {
-        return H(i, i, i);
-    }
-}
-
 struct is_default_translatable_arithmetic_type_impl
 {
     template <class T>
@@ -1093,8 +1101,7 @@ T to_arithmetic(const A& a)
 {
     if constexpr (detail::is_std_optional_v<T>) {
         using U = typename T::value_type;
-        return detail::xlate::do_convert<U>(a,
-            detail::xlate::make_ignore_if_conversion_failed<U>());
+        return detail::xlate::do_convert<U>(a, ignore_if_conversion_failed());
     } else {
         return *detail::xlate::do_convert<T>(a, fail_if_conversion_failed());
     }
