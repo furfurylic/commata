@@ -706,28 +706,23 @@ constexpr bool is_nothrow_arg_v =
  || std::is_base_of_v<replacement_ignore_t, std::decay_t<A>>
  || std::is_nothrow_constructible_v<T, A>;
 
-template <class T>
-constexpr unsigned base_n =
-    std::is_integral_v<T> ? std::is_signed_v<T> ? 4 : 3 : 5;
-
 template <class T, unsigned N>
-struct base;
-
-template <class T>
-struct base<T, 0>
+struct base_base
 {
 protected:
     using store_t = std::conditional_t<std::is_trivially_copyable_v<T>,
-        trivial_store<T, base_n<T>>, nontrivial_store<T, base_n<T>>>;
+        trivial_store<T, N>, nontrivial_store<T, N>>;
 
 private:
     store_t store_;
 
 protected:
     template <class... As>
-    base(generic_args_t, As&&... as) :
+    base_base(generic_args_t, As&&... as) :
         store_(generic_args_t(), std::forward<As>(as)...)
-    {}
+    {
+        static_assert(sizeof...(As) == N);
+    }
 
     const store_t& store() const
     {
@@ -740,8 +735,11 @@ protected:
     }
 };
 
+template <class T, unsigned N>
+struct base;
+
 template <class T>
-struct base<T, 3> : base<T, 0>
+struct base<T, 3> : base_base<T, 3>
 {
     template <class All = T,
         std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
@@ -771,7 +769,7 @@ struct base<T, 3> : base<T, 0>
                   && is_nothrow_arg_v<T, Empty>
                   && is_nothrow_arg_v<T, InvalidFormat>
                   && is_nothrow_arg_v<T, AboveUpperLimit>) :
-        base<T, 0>(
+        base_base<T, 3>(
             generic_args_t(),
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
@@ -780,7 +778,7 @@ struct base<T, 3> : base<T, 0>
 };
 
 template <class T>
-struct base<T, 4> : base<T, 0>
+struct base<T, 4> : base_base<T, 4>
 {
     template <class All = T,
         std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
@@ -826,7 +824,7 @@ struct base<T, 4> : base<T, 0>
                   && is_nothrow_arg_v<T, InvalidFormat&&>
                   && is_nothrow_arg_v<T, AboveUpperLimit&&>
                   && is_nothrow_arg_v<T, BelowLowerLimit&&>) :
-        base<T, 0>(
+        base_base<T, 4>(
             generic_args_t(),
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
@@ -836,7 +834,7 @@ struct base<T, 4> : base<T, 0>
 };
 
 template <class T>
-struct base<T, 5> : base<T, 0>
+struct base<T, 5> : base_base<T, 5>
 {
     template <class All = T,
         std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
@@ -885,7 +883,7 @@ struct base<T, 5> : base<T, 0>
                   && is_nothrow_arg_v<T, AboveUpperLimit>
                   && is_nothrow_arg_v<T, BelowLowerLimit>
                   && is_nothrow_arg_v<T, Underflow>) :
-        base<T, 0>(
+        base_base<T, 5>(
             generic_args_t(),
             std::forward<Empty>(on_empty),
             std::forward<InvalidFormat>(on_invalid_format),
@@ -894,6 +892,10 @@ struct base<T, 5> : base<T, 0>
             std::forward<Underflow>(on_underflow))
     {}
 };
+
+template <class T>
+constexpr unsigned base_n =
+    std::is_integral_v<T> ? std::is_signed_v<T> ? 4 : 3 : 5;
 
 template <class T>
 using base_t = base<T, base_n<T>>;
