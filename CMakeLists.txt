@@ -12,6 +12,7 @@ target_include_directories(commata INTERFACE
 cmake_policy(SET CMP0076 NEW)
 target_sources(commata INTERFACE
     include/commata/allocation_only_allocator.hpp
+    include/commata/base_source.hpp
     include/commata/buffer_control.hpp
     include/commata/buffer_size.hpp
     include/commata/char_input.hpp
@@ -22,6 +23,7 @@ target_sources(commata INTERFACE
     include/commata/member_like_base.hpp
     include/commata/parse_csv.hpp
     include/commata/parse_error.hpp
+    include/commata/parse_tsv.hpp
     include/commata/propagation_controlled_allocator.hpp
     include/commata/record_extractor.hpp
     include/commata/stored_table.hpp

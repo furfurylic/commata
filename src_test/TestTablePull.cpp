@@ -14,6 +14,7 @@
 #include <gtest/gtest.h>
 
 #include <commata/parse_csv.hpp>
+#include <commata/parse_tsv.hpp>
 #include <commata/table_pull.hpp>
 
 #include "BaseTest.hpp"
@@ -21,34 +22,22 @@
 using namespace commata;
 using namespace commata::test;
 
-template <class ChB>
-struct TestTablePull : BaseTest
-{};
+namespace {
 
-TYPED_TEST_SUITE_P(TestTablePull);
-
-TYPED_TEST_P(TestTablePull, PrimitiveBasics)
+template <class PrimitiveTablePull>
+auto transcript_primitive(PrimitiveTablePull&& pull)
 {
-    using char_t = typename TypeParam::first_type;
+    using char_t = typename std::decay_t<PrimitiveTablePull>::char_type;
 
     const auto str = char_helper<char_t>::str;
     const auto ch  = char_helper<char_t>::ch;
-   
-    const auto csv = str(R"(,"col1", col2 ,col3,)" "\r\n"
-                         "\n"
-                         R"( cell10 ,,"cell)" "\r\r\n"
-                         R"(12","cell""13 ""","")" "\n");
-    auto source = make_csv_source(csv);
-    primitive_table_pull pull(
-        std::move(source), TypeParam::second_type::value);
-    ASSERT_EQ(2U, pull.max_data_size());
     std::basic_string<char_t> s;
     bool in_value = false;
     while (pull()) {
         switch (pull.state()) {
         case primitive_table_pull_state::update:
-            ASSERT_EQ(2U, pull.data_size());
-            ASSERT_THROW(pull.at(2), std::out_of_range);
+            EXPECT_EQ(2U, pull.data_size());
+            EXPECT_THROW(pull.at(2), std::out_of_range);
             if (!in_value) {
                 s.push_back(ch('['));
                 in_value = true;
@@ -56,8 +45,8 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
             s.append(pull.at(0), pull[1]);
             break;
         case primitive_table_pull_state::finalize:
-            ASSERT_EQ(2U, pull.data_size());
-            ASSERT_THROW(pull.at(2), std::out_of_range);
+            EXPECT_EQ(2U, pull.data_size());
+            EXPECT_THROW(pull.at(2), std::out_of_range);
             if (!in_value) {
                 s.push_back(ch('['));
             }
@@ -66,13 +55,13 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
             in_value = false;
             break;
         case primitive_table_pull_state::start_record:
-            ASSERT_EQ(1U, pull.data_size());
-            ASSERT_THROW(pull.at(1), std::out_of_range);
+            EXPECT_EQ(1U, pull.data_size());
+            EXPECT_THROW(pull.at(1), std::out_of_range);
             s.append(str("<<"));
             break;
         case primitive_table_pull_state::end_record:
-            ASSERT_EQ(1U, pull.data_size());
-            ASSERT_THROW(pull.at(1), std::out_of_range);
+            EXPECT_EQ(1U, pull.data_size());
+            EXPECT_THROW(pull.at(1), std::out_of_range);
             s.append(str(">>"));
             {
                 const auto pos = pull.get_physical_position();
@@ -83,17 +72,65 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
             }
             break;
         case primitive_table_pull_state::empty_physical_line:
-            ASSERT_EQ(1U, pull.data_size());
-            ASSERT_THROW(pull.at(1), std::out_of_range);
+            EXPECT_EQ(1U, pull.data_size());
+            EXPECT_THROW(pull.at(1), std::out_of_range);
             s.append(str("--"));
             break;
         default:
             break;
         }
     }
+    return s;
+}
+
+}
+
+template <class ChB>
+struct TestTablePull : BaseTest
+{};
+
+TYPED_TEST_SUITE_P(TestTablePull);
+
+TYPED_TEST_P(TestTablePull, PrimitiveBasicsOnCsv)
+{
+    using char_t = typename TypeParam::first_type;
+
+    const auto str = char_helper<char_t>::str;
+   
+    const auto csv = str(R"(,"col1", col2 ,col3,)" "\r\n"
+                         "\n"
+                         R"( cell10 ,,"cell)" "\r\r\n"
+                         R"(12","cell""13 ""","")" "\n");
+    auto source = make_csv_source(csv);
+    primitive_table_pull pull(
+        std::move(source), TypeParam::second_type::value);
+    ASSERT_EQ(2U, pull.max_data_size());
+    std::basic_string<char_t> s = transcript_primitive(pull);
     ASSERT_EQ(str("<<[][col1][ col2 ][col3][]>>@0,20"
                   "--"
                   "<<[ cell10 ][][cell\r\r\n12][cell\"13 \"][]>>@3,20"),
+              s);
+
+    static_assert(std::is_nothrow_move_constructible_v<decltype(pull)>);
+}
+
+TYPED_TEST_P(TestTablePull, PrimitiveBasicsOnTsv)
+{
+    using char_t = typename TypeParam::first_type;
+
+    const auto str = char_helper<char_t>::str;
+   
+    const auto csv = str("\t" "col1\t" " col2 \t" "col3\t" "\r\n"
+                         "\n"
+                         " cell10 \t" "\t" "cell\"12\"" "\n");
+    auto source = make_tsv_source(csv);
+    primitive_table_pull pull(
+        std::move(source), TypeParam::second_type::value);
+    ASSERT_EQ(2U, pull.max_data_size());
+    std::basic_string<char_t> s = transcript_primitive(pull);
+    ASSERT_EQ(str("<<[][col1][ col2 ][col3][]>>@0,18"
+                  "--"
+                  "<<[ cell10 ][][cell\"12\"]>>@2,18"),
               s);
 
     static_assert(std::is_nothrow_move_constructible_v<decltype(pull)>);
@@ -396,7 +433,7 @@ TYPED_TEST_P(TestTablePull, Move)
 }
 
 REGISTER_TYPED_TEST_SUITE_P(TestTablePull,
-    PrimitiveBasics, PrimitiveMove,
+    PrimitiveBasicsOnCsv, PrimitiveBasicsOnTsv, PrimitiveMove,
     Basics, SkipRecord, SkipField, Error, Move);
 
 typedef testing::Types<

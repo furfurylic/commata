@@ -767,3 +767,14 @@ In addition, with `state` member function, you can make a `table_pull` object te
 status, for example, 'points an end of a record', 'points a field', 'reached the EOF',
 and so on. This functionality is essential to handle texts whose structure is not known
 in advance.
+
+## Tab-separated values (TSV)
+
+Commata also offers support for tab-separated values (TSV) format as with CSV format.
+The supported TSV format is, however, much simpler than the supported CSV format and
+lacks escaping and quoting, similarly to [IANA's TSV format](https://www.iana.org/assignments/media-types/text/tab-separated-values).
+To be specific, field values cannot contain tab characters in this format.
+
+Commata's TSV support facilities are defined in the header `"commata/parse_tsv.hpp"`.
+These facilities have very similar interfaces to those of CSV; for example,
+you can parse a TSV text with `parse_tsv(std::ifstream("stars.txt"), std::move(handler))` function template and make a `text_pull` object with `make_text_pull(make_tsv_source(std::ifstream("stars.txt")))` where `handler` is a table handler object and `stars.txt` is a TSV text file.

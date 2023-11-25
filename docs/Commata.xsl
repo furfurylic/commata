@@ -28,6 +28,7 @@
         #signature { text-align: right; margin-bottom: 2em }
 
         span.name { font-style: italic }
+        span.meta { font-style: italic }
         code { color: #32308a; font-family: Courier, monospace; font-variant-ligatures: none }
         code a:link, pre a:visited, pre a:hover, pre a:active { color: inherit; text-decoration: none }
         code a:hover, pre a:active { text-decoration: underline }
@@ -212,6 +213,7 @@
 <xsl:template match="c/n" mode="code"><span class="note"><xsl:apply-templates/></span></xsl:template>
 <xsl:template match="nc" mode="code"><span class="not-a-code"><xsl:apply-templates/></span></xsl:template>
 <xsl:template match="n" mode="code"><span class="name"><xsl:apply-templates/></span></xsl:template>
+<xsl:template match="span[@class='note']">[ <span class="meta">Note: </span><xsl:apply-templates/><span class="meta"> &#x2014;end note</span> ]</xsl:template>
 
 <xsl:template match="text()" mode="code">
   <xsl:choose>
