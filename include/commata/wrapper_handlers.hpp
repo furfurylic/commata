@@ -75,15 +75,14 @@ public:
     using char_type = typename Handler::char_type;
     using handler_type = Handler;
 
-    template <class... Args,
-        std::enable_if_t<
-            (sizeof...(Args) != 1)
-         || !std::is_base_of_v<
-                empty_physical_line_aware_handler,
-                detail::first_t<Args...>>>* = nullptr>
-    explicit empty_physical_line_aware_handler(Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<Handler, Args&&...>) :
-        handler_(std::forward<Args>(args)...)
+    explicit empty_physical_line_aware_handler(const Handler& handler)
+        noexcept(std::is_nothrow_copy_constructible_v<Handler>) :
+        handler_(handler)
+    {}
+
+    explicit empty_physical_line_aware_handler(Handler&& handler)
+        noexcept(std::is_nothrow_move_constructible_v<Handler>) :
+        handler_(std::move(handler))
     {}
 
     empty_physical_line_aware_handler(
@@ -152,10 +151,6 @@ private:
         }
     }
 };
-
-template <class Handler>
-empty_physical_line_aware_handler(Handler)
- -> empty_physical_line_aware_handler<Handler>;
 
 template <class Handler>
 auto swap(
