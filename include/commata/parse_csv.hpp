@@ -786,19 +786,18 @@ class csv_source
     CharInput in_;
 
 public:
+    using input_type = CharInput;
     using char_type = typename CharInput::char_type;
     using traits_type = typename CharInput::traits_type;
 
-    template <class... Args,
-        std::enable_if_t<
-            std::is_constructible_v<CharInput, Args&&...>
-         && ((sizeof...(Args) != 1)
-          || !std::is_base_of_v<
-                csv_source,
-                std::decay_t<detail::first_t<Args...>>>)>* = nullptr>
-    explicit csv_source(Args&&... args) noexcept(
-            std::is_nothrow_constructible_v<CharInput, Args&&...>) :
-        in_(std::forward<Args>(args)...)
+    explicit csv_source(const CharInput& input) noexcept(
+            std::is_nothrow_copy_constructible_v<CharInput>) :
+        in_(input)
+    {}
+
+    explicit csv_source(CharInput&& input) noexcept(
+            std::is_nothrow_move_constructible_v<CharInput>) :
+        in_(std::move(input))
     {}
 
     csv_source(const csv_source&)  = default;
@@ -981,9 +980,6 @@ public:
     }
 };
 
-template <class TextInput>
-csv_source(TextInput) -> csv_source<TextInput>;
-
 template <class CharInput>
 auto swap(csv_source<CharInput>& left, csv_source<CharInput>& right)
     noexcept(noexcept(left.swap(right)))
@@ -1018,7 +1014,7 @@ auto make_csv_source(Args&&... args)
  -> csv_source<decltype(make_char_input(std::forward<Args>(args)...))>
 {
     return csv_source<decltype(make_char_input(std::forward<Args>(args)...))>(
-        std::forward<Args>(args)...);
+        make_char_input(std::forward<Args>(args)...));
 }
 
 template <class CharInput>
