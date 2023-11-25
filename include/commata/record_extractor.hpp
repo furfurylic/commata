@@ -165,7 +165,7 @@ template <class Tr, class Ch, class T,
 void write_formatted_field_name_of(
     std::ostream& o, std::string_view prefix, const T& t, const Ch*)
 {
-    o.rdbuf()->sputn(prefix.data(), prefix.size());
+    o.write(prefix.data(), prefix.size());
     o << t;
 }
 
@@ -179,7 +179,7 @@ void write_formatted_field_name_of(
 {
     std::wstringstream wo;
     wo << t;
-    o.rdbuf()->sputn(prefix.data(), prefix.size());
+    o.write(prefix.data(), prefix.size());
     using it_t = std::istreambuf_iterator<wchar_t>;
     detail::write_ntmbs(o, it_t(wo), it_t());
 }
@@ -189,7 +189,7 @@ void write_formatted_field_name_of(
     std::ostream& o, std::string_view prefix,
     const eq<wchar_t, Tr, Args...>& t, const wchar_t*)
 {
-    o.rdbuf()->sputn(prefix.data(), prefix.size());
+    o.write(prefix.data(), prefix.size());
     detail::write_ntmbs(o, t.begin(), t.end());
 }
 
