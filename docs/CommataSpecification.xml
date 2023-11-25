@@ -1480,6 +1480,9 @@ namespace commata {
     void swap(owned_streambuf_input&lt;Streambuf>&amp; left,
               owned_streambuf_input&lt;Streambuf>&amp; right) noexcept(<nc>see below</nc>);
 
+  <c>// <n><xref id="istream_input"/>, istream_input:</n></c>
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class istream_input;
+
   <c>// <n><xref id="owned_istream_input"/>, owned_istream_input:</n></c>
   template &lt;class IStream> class owned_istream_input;
   template &lt;class IStream>
@@ -1498,11 +1501,11 @@ namespace commata {
 
   <c>// <n><xref id="char_input.creation"/>, CharInput creation functions:</n></c>
   template &lt;class Ch, class Tr>
-    streambuf_input&lt;Ch, Tr> make_char_input(std::basic_streambuf&lt;Ch, Tr>* in);
-  template &lt;class Ch, class Tr>
-    streambuf_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+    streambuf_input&lt;Ch, Tr> make_char_input(std::basic_streambuf&lt;Ch, Tr>&amp; in) noexcept;
   template &lt;class Streambuf>
     owned_streambuf_input&lt;Streambuf> make_char_input(Streambuf&amp;&amp; in) noexcept(<nc>see below</nc>);
+  template &lt;class Ch, class Tr>
+    istream_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
   template &lt;class IStream>
     owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept(<nc>see below</nc>);
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
@@ -1537,8 +1540,7 @@ namespace commata {
 
     <c>// <n><xref id="streambuf_input.cons"/>, construct/copy/destroy:</n></c>
     streambuf_input() noexcept : in(nullptr) {}
-    explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>* sb);
-    explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
+    explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
     streambuf_input(const streambuf_input&amp; other) = default;
     streambuf_input&amp; operator=(const streambuf_input&amp; other) = default;
 
@@ -1560,18 +1562,11 @@ namespace commata {
 
         <code-item>
           <code>
-explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>* sb);
+explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
           </code>
           <requires><c>sb</c> shall be <c>nullptr</c> or a pointer to a valid stream buffer object.</requires>
-          <effects>Initializes <c>in</c> with <c>sb</c>.</effects>
+          <effects>Initializes <c>in</c> with <c>std::addressof(sb)</c>.</effects>
           <throws>Nothing.</throws>
-        </code-item>
-
-        <code-item>
-          <code>
-explicit streambuf_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
-          </code>
-          <effects>Initializes <c>in</c> with <c>s.rdbuf()</c>.</effects>
         </code-item>
       </section>
 
@@ -1686,6 +1681,64 @@ template &lt;class Streambuf>
       </section>
     </section>
 
+    <section id="istream_input">
+      <name>Class template <c>istream_input</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class istream_input {
+  public:
+    using istream_type = std::basic_istream&lt;Ch, Tr>;
+    using char_type    = Ch;
+    using traits_type  = Tr;
+    using size_type    = std::make_unsigned_t&lt;std::streamsize>;
+
+    <c>// <n><xref id="istream_input.cons"/>, construct/copy/destroy:</n></c>
+    istream_input() noexcept : in(nullptr) {}
+    explicit istream_input(std::basic_streambuf&lt;Ch, Tr>&amp; s) noexcept;
+    istream_input(const istream_input&amp; other) = default;
+    istream_input&amp; operator=(const istream_input&amp; other) = default;
+
+    <c>// <n><xref id="istream_input.inv"/>, invocation:</n></c>
+    size_type operator()(Ch* out, size_type n);
+
+  private:
+    std::basic_istream&lt;Ch, Tr>* in;    <c>// <n>exposition only</n></c>
+  };
+}
+      </codeblock>
+
+      <p>The class template <c>istream_input</c> describes thin wrappers of input stream objects without any ownership of them.</p>
+      <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
+      <p>An instance of <c>istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c> and is a trivially copyable type.</p>
+
+      <section id="istream_input.cons">
+        <name><c>istream_input</c> construct/copy/destroy</name>
+
+        <code-item>
+          <code>
+explicit istream_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
+          </code>
+          <effects>Initializes <c>in</c> with <c>std::addressof(s)</c>.</effects>
+        </code-item>
+      </section>
+
+      <section id="istream_input.inv">
+        <name><c>istream_input</c> invocation</name>
+
+        <code-item>
+          <code>
+size_type operator()(Ch* out, size_type n);
+          </code>
+          <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
+          <effects>If <c>in</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+                   Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
+          <returns>The number of characters assigned.</returns>
+          <remark>This member function shall obtain characters from <c>*in</c> only by means of invoking <c>std::basic_istream&lt;Ch, Tr>::read</c> on <c>*in</c>.</remark>
+        </code-item>
+      </section>
+    </section>
+
     <section id="owned_istream_input">
       <name>Class template <c>owned_istream_input</c></name>
 
@@ -1747,8 +1800,10 @@ explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
 size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>Assigns up to <c>n</c> characters obtained from <c>*in.rdbuf()</c> to successive elements of the array whose first element is designated by <c>out</c>.</effects>
+          <effects>Assigns up to <c>n</c> characters obtained from <c>in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+                   Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
           <returns>The number of characters assigned.</returns>
+          <remark>This member function shall obtain characters from <c>*in</c> only by means of invoking <c>IStream::read</c> on <c>in</c>.</remark>
         </code-item>
       </section>
 
@@ -1980,13 +2035,9 @@ template &lt;class Ch, class Tr, class Allocator>
       <code-item>
         <code>
 template &lt;class Ch, class Tr>
-  streambuf_input&lt;Ch, Tr> make_char_input(std::basic_streambuf&lt;Ch, Tr>* in);
-template &lt;class Ch, class Tr>
-  streambuf_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+  streambuf_input&lt;Ch, Tr> make_char_input(std::basic_streambuf&lt;Ch, Tr>&amp; in) noexcept;
         </code>
-        <requires>In the first form, <c>in</c> shall be a valid pointer to a stream buffer object.</requires>
         <returns><c>streambuf_input&lt;Ch, Tr>(in)</c>.</returns>
-        <throws>Nothing.</throws>
       </code-item>
 
       <code-item>
@@ -1997,6 +2048,14 @@ template &lt;class Streambuf>
         <returns><c>owned_streambuf_input&lt;Streambuf>(std::move(in))</c>.</returns>
         <remark>This overload shall not participate in overload resolution unless the template parameter <c>Streambuf</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.
                 The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Streambuf></c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class Ch, class Tr>
+  istream_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+        </code>
+        <returns><c>sitream_input&lt;Ch, Tr>(in)</c>.</returns>
       </code-item>
 
       <code-item>

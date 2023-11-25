@@ -8,6 +8,7 @@
 #endif
 
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include <gtest/gtest.h>
@@ -24,6 +25,32 @@ using namespace commata::test;
 
 static_assert(std::is_trivially_copyable_v<streambuf_input<char>>);
 static_assert(std::is_trivially_copyable_v<string_input<wchar_t>>);
+
+struct TestIStreamInput : BaseTest
+{};
+
+TEST_F(TestIStreamInput, ThrowAsStream)
+{
+    std::istringstream s("XYZ");
+    s.exceptions(std::ios_base::eofbit);
+    istream_input in(s);
+    char b[4];
+    ASSERT_THROW(in(b, 4), std::ios_base::failure); // EOF sets the state
+                                                    // to failbit|eofbit
+}
+
+struct TestOwnedIStreamInput : BaseTest
+{};
+
+TEST_F(TestOwnedIStreamInput, ThrowAsStream)
+{
+    std::istringstream s("XYZ");
+    s.exceptions(std::ios_base::failbit);
+    owned_istream_input in(std::move(s));
+    char b[4];
+    ASSERT_THROW(in(b, 4), std::ios_base::failure); // EOF sets the state
+                                                    // to failbit|eofbit
+}
 
 struct TestOwnedStringInput : BaseTest
 {};
@@ -112,7 +139,7 @@ struct TestCharInput : BaseTest
 TEST_F(TestCharInput, MakeFromStreambufPtr)
 {
     std::wstringbuf buf(L"XYZ");
-    streambuf_input<wchar_t> in = make_char_input(&buf);
+    streambuf_input<wchar_t> in = make_char_input(buf);
     std::wstring out(5, L' ');
     ASSERT_EQ(3, in(out.data(), 5));
     ASSERT_EQ(L"XYZ  ", out);
@@ -121,7 +148,7 @@ TEST_F(TestCharInput, MakeFromStreambufPtr)
 TEST_F(TestCharInput, MakeFromIStreamLvalueRef)
 {
     std::istringstream buf("XYZ");
-    streambuf_input<char> in = make_char_input(buf);
+    istream_input<char> in = make_char_input(buf);
     std::string out(5, ' ');
     ASSERT_EQ(3, in(out.data(), 5));
     ASSERT_EQ("XYZ  ", out);
