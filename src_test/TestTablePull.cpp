@@ -36,7 +36,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
    
     const auto csv = str(R"(,"col1", col2 ,col3,)" "\r\n"
                          "\n"
-                         R"( cell10 ,,"cell)" "\r\n"
+                         R"( cell10 ,,"cell)" "\r\r\n"
                          R"(12","cell""13 ""","")" "\n");
     auto source = make_csv_source(csv);
     primitive_table_pull pull(
@@ -93,7 +93,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasics)
     }
     ASSERT_EQ(str("<<[][col1][ col2 ][col3][]>>@0,20"
                   "--"
-                  "<<[ cell10 ][][cell\r\n12][cell\"13 \"][]>>@3,20"),
+                  "<<[ cell10 ][][cell\r\r\n12][cell\"13 \"][]>>@3,20"),
               s);
 
     static_assert(std::is_nothrow_move_constructible_v<decltype(pull)>);
