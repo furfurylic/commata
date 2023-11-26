@@ -7,8 +7,6 @@
 #define COMMATA_GUARD_A9C3A92A_F9E8_4582_B398_F0138CD813FB
 
 #include <cassert>
-#include <clocale>
-#include <cwchar>
 #include <locale>
 #include <iterator>
 #include <memory>
@@ -471,17 +469,9 @@ template <class T, class Sink,
     class ConversionErrorHandler = fail_if_conversion_failed>
 class locale_based_arithmetic_field_translator
 {
-    std::locale loc_;
+    numpunct_replacer_to_c remove_;
     arithmetic_field_translator<
         T, Sink, SkippingHandler, ConversionErrorHandler> out_;
-
-    // These are initialized after parsing has started
-    wchar_t decimal_point_ = L'\0';     // of specified loc in the ctor
-    wchar_t thousands_sep_ = L'\0';     // ditto
-    wchar_t decimal_point_c_ = L'\0';   // of C's global to mimic
-                                        // std::strtol and its comrades
-    wchar_t thousands_sep_c_ = L'\0';   // ditto
-    bool mimics_ = false;
 
 public:
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
@@ -496,11 +486,10 @@ public:
             std::decay_t<SkippingHandlerR>(),
         ConversionErrorHandlerR&& handle_conversion_error =
             std::decay_t<ConversionErrorHandlerR>()) :
-        loc_(loc),
+        remove_(loc),
         out_(std::forward<SinkR>(sink),
              std::forward<SkippingHandlerR>(handle_skipping),
-             std::forward<ConversionErrorHandlerR>(handle_conversion_error)),
-        decimal_point_c_(), mimics_()
+             std::forward<ConversionErrorHandlerR>(handle_conversion_error))
     {}
 
     locale_based_arithmetic_field_translator(
@@ -537,54 +526,10 @@ public:
     template <class Ch>
     void operator()(Ch* begin, Ch* end)
     {
-        if (decimal_point_c_ == wchar_t()) {
-            decimal_point_c_ = widen(*std::localeconv()->decimal_point, Ch());
-            thousands_sep_c_ = widen(*std::localeconv()->thousands_sep, Ch());
-
-            const auto& facet = std::use_facet<std::numpunct<Ch>>(loc_);
-            thousands_sep_ = facet.grouping().empty() ?
-                Ch() : facet.thousands_sep();
-            decimal_point_ = facet.decimal_point();
-
-            mimics_ = (decimal_point_ != decimal_point_c_)
-                   || ((thousands_sep_ != Ch()) // means needs to take care of
-                                                // separators in field values
-                    && (thousands_sep_ != thousands_sep_c_));
-        }
         assert(*end == Ch());   // shall be null-terminated
-        if (mimics_) {
-            bool decimal_point_appeared = false;
-            Ch* head = begin;
-            for (Ch* b = begin; b != end; ++b) {
-                Ch c = *b;
-                assert(c != Ch());
-                if (c == static_cast<Ch>(decimal_point_)) {
-                    if (!decimal_point_appeared) {
-                        c = static_cast<Ch>(decimal_point_c_);
-                        decimal_point_appeared = true;
-                    }
-                } else if (c == static_cast<Ch>(thousands_sep_)) {
-                    continue;
-                }
-                *head = c;
-                ++head;
-            }
-            *head = Ch();
-            out_(begin, head);
-        } else {
-            out_(begin, end);
-        }
-    }
-
-private:
-    static char widen(char c, char)
-    {
-        return c;
-    }
-
-    static wchar_t widen(char c, wchar_t)
-    {
-        return std::btowc(static_cast<unsigned char>(c));
+        const auto new_end = remove_(begin, end);
+        *new_end = Ch();
+        return out_(begin, new_end);
     }
 };
 
