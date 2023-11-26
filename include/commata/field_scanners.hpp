@@ -385,11 +385,9 @@ template <class T, class Sink,
     class ConversionErrorHandler = fail_if_conversion_failed>
 class arithmetic_field_translator
 {
-    using converter_t =
-        arithmetic_converter<std::optional<T>, ConversionErrorHandler>;
     using translator_t = detail::scanner::translator<T, Sink, SkippingHandler>;
 
-    detail::base_member_pair<converter_t, translator_t> ct_;
+    detail::base_member_pair<ConversionErrorHandler, translator_t> ct_;
 
 public:
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
@@ -404,8 +402,7 @@ public:
             std::decay_t<SkippingHandlerR>(),
         ConversionErrorHandlerR&& handle_conversion_error =
             std::decay_t<ConversionErrorHandlerR>()) :
-        ct_(converter_t(std::forward<ConversionErrorHandlerR>(
-                            handle_conversion_error)),
+        ct_(std::forward<ConversionErrorHandlerR>(handle_conversion_error),
             translator_t(std::forward<SinkR>(sink),
                          std::forward<SkippingHandlerR>(handle_skipping)))
     {}
@@ -431,19 +428,20 @@ public:
 
     ConversionErrorHandler& get_conversion_error_handler() noexcept
     {
-        return ct_.base().get_conversion_error_handler();
+        return ct_.base();
     }
 
     const ConversionErrorHandler& get_conversion_error_handler() const noexcept
     {
-        return ct_.base().get_conversion_error_handler();
+        return ct_.base();
     }
 
     template <class Ch>
     void operator()(const Ch* begin, const Ch* end)
     {
         assert(*end == Ch());
-        auto converted = ct_.base()(arithmetic_convertible<Ch>{ begin, end });
+        auto converted = to_arithmetic<std::optional<T>>(
+            arithmetic_convertible<Ch>{ begin, end }, ct_.base());
         if (converted) {
             ct_.member().put(*converted);
         }
