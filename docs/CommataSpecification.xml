@@ -6957,6 +6957,8 @@ namespace commata {
         <p>The <c>string_view_field_translator</c> class template provides a simple implementation for the standard string view type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is <c>std::basic_string_view&lt;Ch, Tr></c>.</p>
         <p><c>Sink</c> shall be a <c>FieldTranslatorSink</c> type for <c>std::basic_string_view&lt;Ch, Tr></c> (<xref id="field_translator_sink.requirements"/>).
           The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type for the type <c>std::basic_string_view&lt;Ch, Tr></c> (<xref id="skipping_handler.requirements"/>).</p>
+        <p><span class="note">A range referenced by a <c>basic_string_view</c> objects put to a <c>Sink</c> object by an object of <c>string_view_field_translator</c> will be invalidated soon after being put.
+           Therefore, <c>Sink</c> objects should not store received ranges to a store that remains alive after the putting operation.</span></p>
 
         <section id="string_view_field_translator.cons">
           <name><c>string_view_field_translator</c> construct/copy/destroy</name>
