@@ -1601,6 +1601,8 @@ namespace commata {
         <codeblock>
 namespace commata {
   struct fail_if_conversion_failed {
+    explicit fail_if_conversion_failed(replacement_fail_t = replacement_fail) {}
+
     template &lt;class T, class Ch>
       [[noreturn]] std::optional&lt;T> operator()(invalid_format_t,
                                                const Ch*, const Ch*, T* = nullptr) const;
@@ -1649,6 +1651,8 @@ template &lt;class T>
         <codeblock>
 namespace commata {
   struct ignore_if_conversion_failed {
+    explicit ignore_if_conversion_failed(replacement_ignore_t = replacement_ignore) {}
+
     template &lt;class T, class Ch>
       std::optional&lt;T> operator()(invalid_format_t, const Ch*, const Ch*, T* = nullptr) const;
     template &lt;class T, class Ch>
@@ -7124,18 +7128,35 @@ void operator()();
       <section id="scan.builtin.body_field_scanners.creation">
         <name>Creation of default body field scanners</name>
 
-        <p>In this subclause, a type <c>S</c> is <n>deemed to be an acceptable sink</n> of type <c>T</c> if:</p>
+        <p>In this subclause, following terms and notations are used.</p>
         <ul>
-          <li><c>std::iterator_traits&lt;S>::iterator_category</c> is a type equal to <c>std::output_iterator_tag</c>, <c>std::forward_iterator_tag</c>, or their derived type; or</li>
-          <li><c>s(t)</c> is a valid expression where <c>s</c> is an lvalue of <c>S</c> and <c>t</c> is an rvalue of <c>T</c>.</li>
+          <li>A type <c>S</c> is <n>deemed to be an acceptable sink</n> of type <c>T</c> if:
+              <ul>
+                <li><c>std::iterator_traits&lt;S>::iterator_category</c> is a type equal to <c>std::output_iterator_tag</c>, <c>std::forward_iterator_tag</c>, or their derived type; or</li>
+                <li><c>s(t)</c> is a valid expression where <c>s</c> is an lvalue of <c>S</c> and <c>t</c> is an rvalue of <c>T</c>.</li>
+              </ul></li>
+          <li>A type <c><n>DEDUCED_SKIPPING_HANDLER_TYPE</n>&lt;T, U></c> for types <c>T</c> and <c>U</c> is defined as follows:
+              <ul>
+                <li>if <c>std::is_base_of_v&lt;replacement_fail_t, std::decay_t&lt;U>></c> is <c>true</c>, <c>fail_if_skipped</c>,</li>
+                <li>otherwise, if <c>std::is_base_of_v&lt;replacement_ignore_t, std::decay_t&lt;U>></c> is <c>true</c>, <c>ignore_if_skipped</c>,</li>
+                <li>otherwise, if <c>!std::is_base_of_v&lt;replace_if_skipped&lt;T>, std::decay_t&lt;U>> &amp;&amp; std::is_constructible_v&lt;replace_if_skipped&lt;T>, U></c> is <c>true</c>, <c>replace_if_skipped&lt;T></c>,</li>
+                <li>otherwise, <c>std::decay_t&lt;U></c>.</li>
+              </ul></li>
+          <li>A type <c><n>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</n>&lt;T, U></c> for types <c>T</c> and <c>U</c> is defined as follows:
+              <ul>
+                <li>if <c>std::is_base_of_v&lt;replacement_fail_t, std::decay_t&lt;U>></c> is <c>true</c>, <c>fail_if_conversion_failed</c>,</li>
+                <li>otherwise, if <c>std::is_base_of_v&lt;replacement_ignore_t, std::decay_t&lt;U>></c> is <c>true</c>, <c>ignore_if_conversion_failed</c>,</li>
+                <li>otherwise, if <c>!std::is_base_of_v&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;U>> &amp;&amp; std::is_constructible_v&lt;replace_if_conversion_failed&lt;T>, U></c> is <c>true</c>, <c>replace_if_conversion_failed&lt;T></c>,</li>
+                <li>otherwise, <c>std::decay_t&lt;U></c>.</li>
+              </ul></li>
+          <li>For a template parameter pack <c>As</c>, <c>As...[i]</c> denotes the <c>i</c>-th (zero-based) of <c>As...</c>.</li>
+          <li>An expression <c><n>INSERTER</n>(s)</c> for an lvalue <c>s</c> of a cv-unqualified type <c>S</c> is defined as follows:
+              <ul>
+                <li>if <c>s.push_back(std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::back_inserter(s)</c>,</li>
+                <li>otherwise, if <c>s.insert(s.end(), std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::inserter(s, s.end())</c>,</li>
+                <li>otherwise, the program is ill-formed.</li>
+              </ul></li>
         </ul>
-
-        <p>In addition, an expression <c><n>INSERTER</n>(s)</c> for an lvalue <c>s</c> of a cv-unqualified type <c>S</c> is defined as follows:</p>
-         <ul>
-           <li>if <c>s.push_back(std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::back_inserter(s)</c>,</li>
-           <li>otherwise, if <c>s.insert(s.end(), std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::inserter(s, s.end())</c>,</li>
-           <li>otherwise, the program is ill-formed.</li>
-         </ul>
 
         <code-item>
           <code>
@@ -7149,53 +7170,31 @@ template &lt;class T, class SinkR, class... Appendices>
                      <li>if <c>T</c> is a default translatable string type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
-                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
-                           <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>DF</c> is <c>replacement_ignore_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, ignore_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, std::decay_t&lt;Appendices>...></c>;</li>
-                           </ul>
-                         </li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
+                         <li>otherwise, the program is ill-formed.</li>
                        </ul>
                      </li>
                      <li>otherwise, if <c>T</c> is a default translatable string view type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type></c>,</li>
-                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
-                           <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>DF</c> is <c>replacement_ignore_t</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, ignore_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, std::decay_t&lt;Appendices>...></c>;</li>
-                           </ul>
-                         </li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
+                         <li>otherwise, the program is ill-formed.</li>
                        </ul>
                      </li>
-                     <li>otherwise, if <c>sizeof...(Appendices)</c> is greater than <c>0</c> and the reference-removed type of the first type of <c>Appendices</c> is possibly cv-qualified <c>std::locale</c> or its derived type:
+                     <li>otherwise, if <c>sizeof...(Appendices)</c> is greater than <c>0</c> and <c>std::remove_reference_t&lt;Appendices...[0]></c> is possibly cv-qualified <c>std::locale</c> or its derived type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T></c>,</li>
-                         <li>otherwise, with <c>F</c> being the second type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices2...</c> representing the types of <c>Appendices...</c> without its first two types:
-                           <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, fail_if_skipped, std::decay_t&lt;Appendices2>...></c>,</li>
-                             <li>otherwise, if <c>DF</c> is <c>replacement_ignore_t</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, ignore_if_skipped, std::decay_t&lt;Appendices2>...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices2>...></c>,</li>
-                             <li>otherwise, <c>locale_based_arithmetic_field_translator&lt;Sink, T, std::decay_t&lt;Appendices1>...></c>;</li>
-                           </ul>
-                         </li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>2</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>></c>,</li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>3</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, Appendices...[2]>></c>,</li>
+                         <li>otherwise, the program is ill-formed.</li>
                        </ul>
                      </li>
                      <li>otherwise:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>arithmetic_field_translator&lt;Sink, T></c>,</li>
-                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
-                           <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>arithmetic_field_translator&lt;Sink, T, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>DF</c> is <c>replacement_ignore_t</c>, <c>arithmetic_field_translator&lt;Sink, T, ignore_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, <c>arithmetic_field_translator&lt;Sink, T, std::decay_t&lt;Appendices>...></c>.</li>
-                           </ul>
-                         </li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>2</c>, <c>arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>></c>,</li>
+                         <li>otherwise, the program is ill-formed.</li>
                        </ul>
                      </li>
                    </ul>
@@ -7212,17 +7211,11 @@ template &lt;class T, class Allocator, class SinkR, class... Appendices>
           <effects><p>Equivalent to:</p>
                    <code>return <n>R</n>(std::allocator_arg, alloc, std::forward&lt;SinkR>(sink), std::forward&lt;Appendices>(appendices)...);</code>
                    <p>where <c><n>R</n></c> is a type decided as follows with <c>Sink</c> being <c>std::decay_t&lt;SinkR></c>:</p>
-                     <ul>
-                       <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
-                       <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
-                         <ul>
-                           <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                           <li>otherwise, if <c>DF</c> is <c>replacement_ignore_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, ignore_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                           <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
-                           <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, std::decay_t&lt;Appendices>...></c>;</li>
-                         </ul>
-                       </li>
-                     </ul>
+                   <ul>
+                     <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
+                     <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
+                     <li>otherwise, the program is ill-formed.</li>
+                   </ul>
           </effects>
           <remark>This overload shall not participate in overload resolution unless <c>T</c> is a default translatable string type with its <c>allocator_type</c> member typedef naming <c>Allocator</c>, and <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
         </code-item>
@@ -7236,7 +7229,7 @@ template &lt;class Container, class... Appendices>
                    <code>return make_field_translator&lt;typename Container::value_type>(
          <n>INSERTER</n>(values), std::forward&lt;Appendices>(appendices)...);</code>
           </effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is either of a default translatable arithmetic type or a default translatable string type, and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is either of a default translatable arithmetic type or a default translatable string type, and <c><n>INSERTER</n>(values)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -7250,7 +7243,7 @@ template &lt;class Allocator, class Container, class... Appendices>
          std::allocator_arg, alloc,
          <n>INSERTER</n>(values), std::forward&lt;Appendices>(appendices)...);</code>
           </effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is a default translatable string type and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is a default translatable string type and <c><n>INSERTER</n>(values)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
       </section>
     </section>
