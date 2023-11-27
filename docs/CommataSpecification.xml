@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-03 (UTC)</signature>
+<signature>2023-12-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -7757,6 +7757,9 @@ namespace commata {
     const char_type* c_str() const noexcept;
     const view_type&amp; operator*() const noexcept;
     const view_type* operator->() const noexcept;
+
+    <c>// <n><xref id="table_pull.mod"/>, in-place string value modification:</n></c>
+    template &lt;class F> table_pull&amp; rewrite(F f);
   };
 
   template &lt;class TableSource, class... Args>
@@ -8021,6 +8024,25 @@ const view_type&amp; operator*() const noexcept;
 const view_type* operator->() const noexcept;
         </code>
         <returns>A reference or a pointer to a string view object that represents the current string value.</returns>
+      </code-item>
+    </section>
+
+    <section id="table_pull.mod">
+      <name><c>table_pull</c> in-place string value modification</name>
+
+      <code-item>
+        <code>
+template &lt;class F> table_pull&amp; rewrite(F f);
+        </code>
+        <requires><c>std::is_invocable_r_v&lt;char_type*, F, char_type*, char_type*></c> shall be true.
+                  When evaluated as <c>f(first, last)</c>, <c>f</c> shall read and write at most the range [<c>first</c>, <c>last</c>).</requires>
+        <effects>First evaluates <c>f(const_cast&lt;char_type*>(c_str()), const_cast&lt;char_type*>(c_str()) + (*this)->size())</c> and initialize an <c>char_type*</c> object <c>new_end</c> with its result.
+                 Then shorten the current string value, preserving its null-terminated property, to have <c>new_end - data()</c> characters if <c>new_end - data()</c> is smaller than <c>size()</c>.</effects>
+        <returns><c>*this</c>.</returns>
+        <postcondition><c>state</c> member function shall return the same value as before the invocation.</postcondition>
+        <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
+                When an exception is thrown, the state of <c>*this</c> shall not be changed.</remark>
+        <note>This member function template is primarily intended to be invoked with a <c>numpunct_replacer_to_c</c> (<xref id="numpunct_replacer_to_c"/>) object.</note>
       </code-item>
     </section>
 
