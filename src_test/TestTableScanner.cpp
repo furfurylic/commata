@@ -173,34 +173,6 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, View)
     ASSERT_EQ(str("ABC!!!XYZ"), std::move(stream).str());
 }
 
-namespace {
-
-template <class Ch>
-struct french_style_numpunct : std::numpunct<Ch>
-{
-    explicit french_style_numpunct(std::size_t r = 0) :
-        std::numpunct<Ch>(r)
-    {}
-
-protected:
-    Ch do_decimal_point() const override
-    {
-        return char_helper<Ch>::ch(',');
-    }
-
-    Ch do_thousands_sep() const override
-    {
-        return char_helper<Ch>::ch(' ');
-    }
-
-    std::string do_grouping() const override
-    {
-        return "\003";
-    }
-};
-
-}
-
 template <class Ch>
 struct TestLocaleBased : BaseTest
 {};

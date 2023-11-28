@@ -146,6 +146,30 @@ template <class Ch>
 const std::ctype<Ch>& char_helper<Ch>::facet_ =
     std::use_facet<std::ctype<Ch>>(std::locale::classic());
 
+template <class Ch>
+struct french_style_numpunct : std::numpunct<Ch>
+{
+    explicit french_style_numpunct(std::size_t r = 0) :
+        std::numpunct<Ch>(r)
+    {}
+
+protected:
+    Ch do_decimal_point() const override
+    {
+        return char_helper<Ch>::ch(',');
+    }
+
+    Ch do_thousands_sep() const override
+    {
+        return char_helper<Ch>::ch(' ');
+    }
+
+    std::string do_grouping() const override
+    {
+        return "\003";
+    }
+};
+
 }
 
 #endif
