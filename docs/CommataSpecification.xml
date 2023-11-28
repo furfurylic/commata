@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2023-11-18 (UTC)</signature>
+<signature>2023-11-28 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -5569,7 +5569,7 @@ template &lt;class Ch> replacement&lt;T> operator()(invalid_format_t,
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.invalid_format"/> in reference to the <c>action_on_invalid_format</c> of <c>*this</c>.</effects>
 
             <table id="table.replace_if_conversion_failed.invalid_format">
-              <caption>Effects of calling of <c>invalid_format</c></caption>
+              <caption>Effects of invocation with <c>invalid_format_t</c></caption>
               <col width="5"/><col width="8"/><col width="5"/><col width="18"/>
 
               <tr>
@@ -5608,7 +5608,7 @@ template &lt;class Ch> replacement&lt;T> operator()(out_of_range_t,
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.out_of_range"/> in reference to <c>sign</c> and the <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> of <c>*this</c>.</effects>
 
             <table id="table.replace_if_conversion_failed.out_of_range">
-              <caption>Effects of calling of <c>out_of_range</c></caption>
+              <caption>Effects of invocation with <c>out_of_range_t</c></caption>
               <col width="2"/><col width="3"/><col width="8"/><col width="5"/><col width="18"/>
 
               <tr>
@@ -5688,7 +5688,7 @@ replacement&lt;T> operator()(empty_t) const;
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.empty"/> in reference to the <c>action_on_empty</c> of <c>*this</c>.</effects>
 
             <table id="table.replace_if_conversion_failed.empty">
-              <caption>Effects of a call to <c>empty</c></caption>
+              <caption>Effects of invocation with <c>empty_t</c></caption>
               <col width="5"/><col width="8"/><col width="5"/><col width="18"/>
 
               <tr>
