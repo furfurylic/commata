@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-02 (UTC)</signature>
+<signature>2023-12-03 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -115,7 +115,7 @@
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
-          <th>Remark</th>
+          <th>Remarks</th>
           <th>Default behaviour</th>
         </tr>
 
@@ -322,7 +322,7 @@
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
-          <th>Remark</th>
+          <th>Remarks</th>
         </tr>
 
         <tr>
@@ -353,7 +353,7 @@
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
-          <th>Remark</th>
+          <th>Remarks</th>
         </tr>
 
         <tr>
@@ -398,7 +398,7 @@
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
-          <th>Remark</th>
+          <th>Remarks</th>
         </tr>
   
         <tr>
@@ -450,7 +450,7 @@
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
-          <th>Remark</th>
+          <th>Remarks</th>
         </tr>
   
         <tr>
@@ -1479,7 +1479,7 @@ namespace commata {
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
-          <th>Remark</th>
+          <th>Remarks</th>
         </tr>
 
         <tr>
@@ -2070,7 +2070,7 @@ template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
             <th>#</th>
             <th>Expression</th>
             <th>Return type</th>
-            <th>Remark</th>
+            <th>Remarks</th>
           </tr>
 
           <tr>
@@ -2304,7 +2304,7 @@ template &lt;class T, class A> T to_arithmetic(const A&amp; a);
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
-          <th>Remark</th>
+          <th>Remarks</th>
         </tr>
 
         <tr>
@@ -3823,7 +3823,7 @@ template &lt;class FieldNamePredR, class FieldValuePredR>
             <col width="2"/><col width="12"/>
             <tr>
               <th>Parameter</th>
-              <th>Remark</th>
+              <th>Remarks</th>
             </tr>
             <tr>
               <td><c>out</c></td>
@@ -3988,7 +3988,7 @@ template &lt;class FieldValuePredR>
             <col width="2"/><col width="12"/>
             <tr>
               <th>Parameter</th>
-              <th>Remark</th>
+              <th>Remarks</th>
             </tr>
             <tr>
               <td><c>out</c></td>
@@ -5841,7 +5841,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <th>#</th>
             <th>Expression</th>
             <th>Return type</th>
-            <th>Remark</th>
+            <th>Remarks</th>
             <th>Default behaviour</th>
           </tr>
 
@@ -5899,7 +5899,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <th>#</th>
             <th>Expression</th>
             <th>Return type</th>
-            <th>Remark</th>
+            <th>Remarks</th>
           </tr>
 
           <tr>
@@ -5938,7 +5938,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <th>#</th>
             <th>Expression</th>
             <th>Return type</th>
-            <th>Remark</th>
+            <th>Remarks</th>
           </tr>
 
           <tr>
@@ -6225,7 +6225,7 @@ bool is_in_header() const noexcept;
             <th>#</th>
             <th>Expression</th>
             <th>Return type</th>
-            <th>Remark</th>
+            <th>Remarks</th>
           </tr>
 
           <tr>
