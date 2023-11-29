@@ -183,6 +183,7 @@
         <xsl:variable name="heading">
           <xsl:choose>
             <xsl:when test="local-name(.) = 'alias-template'"><span class="code-item-heading-nocap">Alias template: </span></xsl:when>
+            <xsl:when test="local-name(.) = 'remark'"><span class="code-item-heading">Remarks: </span></xsl:when>
             <xsl:otherwise><span class="code-item-heading"><xsl:value-of select="local-name(.)"/>: </span></xsl:otherwise>
           </xsl:choose>
         </xsl:variable>
