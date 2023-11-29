@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-11-28 (UTC)</signature>
+<signature>2023-11-29 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3199,8 +3199,8 @@ template &lt;class FieldNamePred, class FieldValuePred,
         </code>
         <requires><p>Let <c>FieldNamePredD</c> and <c>FieldValuePredD</c> be <c>std::remove_reference_t&lt;FieldNamePred></c> and <c>std::remove_reference_t&lt;FieldValuePred></c> respectively. Then:</p>
                   <ul>
-                    <li>if <c>std::is_convertible_v&lt;FieldNamePred, const Ch*></c> is <c>false</c> and <c>FieldNamePredD</c> is a range-accessible type, the iterator type of <c>FieldNameD</c> shall meet the <c>ForwardIterator</c> requirements, and</li>
-                    <li>if <c>std::is_convertible_v&lt;FieldValuePred, const Ch*></c> is <c>false</c> and <c>FieldValuePredD</c> is a range-accessible type, the iterator type of <c>FieldValuePredD</c> shall meet the <c>ForwardIterator</c> requirements.</li>
+                    <li>if <c>std::is_convertible_v&lt;FieldNamePred, const Ch*></c> is <c>false</c> and <c>FieldNamePredD</c> is a range-accessible type, the iterator type of <c>FieldNameD</c> shall be a forward iterator type, and</li>
+                    <li>if <c>std::is_convertible_v&lt;FieldValuePred, const Ch*></c> is <c>false</c> and <c>FieldValuePredD</c> is a range-accessible type, the iterator type of <c>FieldValuePredD</c> shall be a forward iterator type.</li>
                   </ul>
         </requires>
         <effects><p>Equivalent to:</p>
@@ -3226,7 +3226,7 @@ template &lt;class FieldValuePred,
                                   Appendices&amp;&amp;... appendices);
         </code>
         <requires>Let <c>FieldValuePredD</c> be <c>std::remove_reference_t&lt;FieldValuePred></c>.
-                  If <c>std::is_convertible_v&lt;FieldValuePred, const Ch*></c> is <c>false</c> and <c>FieldValuePredD</c> is a range-accessible type, the iterator type of <c>FieldValuePredD</c> shall meet the <c>ForwardIterator</c> requirements.</requires>
+                  If <c>std::is_convertible_v&lt;FieldValuePred, const Ch*></c> is <c>false</c> and <c>FieldValuePredD</c> is a range-accessible type, the iterator type of <c>FieldValuePredD</c> shall be a forward iterator type.</requires>
         <effects><p>Equivalent to:</p>
                  <code>auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred));
 return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(
@@ -4428,8 +4428,8 @@ template &lt;class InputIterator, class InputIteratorEnd>
   value_type&amp; rewrite_value(value_type&amp; value,
                             InputIterator new_value_begin, InputIteratorEnd new_value_end);
           </code>
-          <requires>The template parameter <c>InputIterator</c> shall meet the <c>InputIterator</c> requirements for <c>char_type</c>.
-                    The template parameter <c>InputIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
+          <requires><c>InputIterator</c> shall be an input iterator type whose value type is <c>char_type</c>.
+                    <c>InputIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
                     <c>std::declval&lt;const InputIterator&amp;>() == std::declval&lt;const InputIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.
                     <c>value</c> shall be backed by <c>*this</c>.
                     <c>new_value_begin</c> shall point an element in, or be a past-the-end iterator of, a valid range.</requires>
