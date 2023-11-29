@@ -1025,12 +1025,25 @@ TYPED_TEST(TestNumPunctReplacerToC, Usual)
 
     const auto str = char_helper<char_t>::str;
 
-    string_t s = str("-98 765,25");
     numpunct_replacer_to_c engine(std::locale(std::locale::classic(),
         new french_style_numpunct<char_t>));
-    s.erase(engine(s.begin(), s.end()), s.end());
-    const double d = std::stod(s);
-    ASSERT_EQ(-98765.25, d) << s;
+
+    // in place
+    {
+        string_t s = str("-98 765,25");
+        s.erase(engine(s.begin(), s.end()), s.end());
+        const double d = std::stod(s);
+        ASSERT_EQ(-98765.25, d) << s;
+    }
+
+    // copy
+    {
+        string_t s = str("-98 765,25");
+        string_t t;
+        engine(s.cbegin(), s.cend(), std::back_inserter(t));
+        const double d = std::stod(t);
+        ASSERT_EQ(-98765.25, d) << t;
+    }
 }
 
 TYPED_TEST(TestNumPunctReplacerToC, Nop)
@@ -1040,10 +1053,23 @@ TYPED_TEST(TestNumPunctReplacerToC, Nop)
 
     const auto str = char_helper<char_t>::str;
 
-    string_t s = str("12345");
     numpunct_replacer_to_c engine(std::locale(std::locale::classic(),
         new french_style_numpunct<char_t>));
-    s.erase(engine(s.begin(), s.end()), s.end());
-    const double d = std::stod(s);
-    ASSERT_EQ(12345.0, d) << s;
+
+    // in place
+    {
+        string_t s = str("12345");
+        s.erase(engine(s.begin(), s.end()), s.end());
+        const double d = std::stod(s);
+        ASSERT_EQ(12345.0, d) << s;
+    }
+
+    // copy
+    {
+        string_t s = str("12345");
+        string_t t;
+        engine(s.cbegin(), s.cend(), std::back_inserter(t));
+        const double d = std::stod(t);
+        ASSERT_EQ(12345.0, d) << t;
+    }
 }
