@@ -17,6 +17,7 @@ target_sources(commata INTERFACE
     include/commata/buffer_size.hpp
     include/commata/char_input.hpp
     include/commata/empty_string.hpp
+    include/commata/field_handling.hpp
     include/commata/field_scanners.hpp
     include/commata/formatted_output.hpp
     include/commata/handler_decorator.hpp
@@ -27,7 +28,6 @@ target_sources(commata INTERFACE
     include/commata/parse_tsv.hpp
     include/commata/propagation_controlled_allocator.hpp
     include/commata/record_extractor.hpp
-    include/commata/replacement.hpp
     include/commata/stored_table.hpp
     include/commata/string_value.hpp
     include/commata/table_pull.hpp

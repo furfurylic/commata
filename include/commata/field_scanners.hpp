@@ -337,17 +337,11 @@ public:
 #endif
     void field_skipped()
     {
-        std::optional<T> r;
-        if constexpr (std::is_invocable_v<SkippingHandler&>) {
-            r = get_skipping_handler()();
-        } else {
-            r = get_skipping_handler()(static_cast<T*>(nullptr));
-        }
+        std::optional<T> r = invoke_typing_as<T>(get_skipping_handler());
         if (r) {
             put(std::move(*r));
         }
     }
-
 #if _MSC_VER
 #pragma warning(pop)
 #endif
