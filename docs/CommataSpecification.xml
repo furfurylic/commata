@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-11-29 (UTC)</signature>
+<signature>2023-11-30 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6511,7 +6511,7 @@ template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
             <code>
 void operator()();
             </code>
-            <effects>Evaluates <c>get_skipping_handler()()</c> and puts the result into the field translator sink.</effects>
+            <effects>Evaluates <c>get_skipping_handler()()</c> or <c>get_skipping_handler()(static_cast&lt;T*>(nullptr))</c> and puts the result into the field translator sink.</effects>
           </code-item>
         </section>
       </section>
@@ -6632,7 +6632,7 @@ template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             <code>
 void operator()();
             </code>
-            <effects>Evaluates <c>get_skipping_handler()()</c> and puts the result into the field translator sink.</effects>
+            <effects>Evaluates <c>get_skipping_handler()()</c> or <c>get_skipping_handler()(static_cast&lt;T*>(nullptr))</c> and puts the result into the field translator sink.</effects>
           </code-item>
         </section>
       </section>
@@ -6764,7 +6764,7 @@ void operator()(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; value);
             <code>
 void operator()();
             </code>
-            <effects>Evaluates <c>get_skipping_handler()()</c> and puts the result into the field translator sink.</effects>
+            <effects>Evaluates <c>get_skipping_handler()()</c> or <c>get_skipping_handler()(static_cast&lt;std::basic_string&lt;Ch, Tr, Allocator>*>(nullptr))</c> and puts the result into the field translator sink.</effects>
           </code-item>
         </section>
       </section>
@@ -6857,7 +6857,7 @@ void operator()(const Ch* begin, const Ch* end);
             <code>
 void operator()();
             </code>
-            <effects>Evaluates <c>get_skipping_handler()()</c> and puts the result into the field translator sink.</effects>
+            <effects>Evaluates <c>get_skipping_handler()()</c> or <c>get_skipping_handler()(static_cast&lt;std::basic_string_view&lt;Ch, Tr>*>(nullptr))</c> and puts the result into the field translator sink.</effects>
           </code-item>
         </section>
       </section>
