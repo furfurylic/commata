@@ -16,6 +16,7 @@
 #include <commata/parse_csv.hpp>
 #include <commata/parse_tsv.hpp>
 #include <commata/table_pull.hpp>
+#include <commata/text_value_translation.hpp>
 
 #include "BaseTest.hpp"
 
@@ -432,9 +433,37 @@ TYPED_TEST_P(TestTablePull, Move)
     ASSERT_EQ(table_pull_state::eof, pull3.state());
 }
 
+TYPED_TEST_P(TestTablePull, ToArithmetic)
+{
+    using char_t = typename TypeParam::first_type;
+
+    const auto str = char_helper<char_t>::str;
+
+    auto pull = make_table_pull(make_csv_source(str("X,Y\n"
+                                                    "1,-51.3\n"
+                                                    "1.9")));
+    pull.skip_record();
+
+    const auto x1 = to_arithmetic<unsigned>(pull());
+    ASSERT_EQ(1U, x1);
+    const auto y1 = to_arithmetic<double>(pull());
+    ASSERT_EQ(std::stod("-51.3"), y1);
+    pull(); // to record-end
+
+    pull(); // to "1.9"
+    // As int
+    ASSERT_THROW(to_arithmetic<int>(pull), text_value_invalid_format);
+    const auto x2i = to_arithmetic<std::optional<int>>(pull);
+    ASSERT_FALSE(x2i.has_value());
+    // As double
+    const auto x2d = to_arithmetic<std::optional<double>>(pull);
+    ASSERT_TRUE(x2d.has_value());
+    ASSERT_EQ(std::stod("1.9"), x2d);
+}
+
 REGISTER_TYPED_TEST_SUITE_P(TestTablePull,
     PrimitiveBasicsOnCsv, PrimitiveBasicsOnTsv, PrimitiveMove,
-    Basics, SkipRecord, SkipField, Error, Move);
+    Basics, SkipRecord, SkipField, Error, Move, ToArithmetic);
 
 typedef testing::Types<
     std::pair<char, std::integral_constant<std::size_t, 1>>,

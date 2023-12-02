@@ -192,8 +192,9 @@ of CSV texts. Here is an example to parse `stars.csv` and extract only the
 names and the apparent magnitudes of the stars with those facilities:
 
 ```C++
+#include <commata/field_scanners.hpp>   // for make_field_translator
 #include <commata/parse_csv.hpp>
-#include <commata/table_scanner.hpp>
+#include <commata/table_scanner.hpp>    // for table_scanner
 
 using commata::table_scanner;
 using commata::make_field_translator;
@@ -245,6 +246,7 @@ must be specified explicitly as the first template parameter of
 `make_field_translator`. See the following sample:
 
 ```C++
+#include <commata/field_scanners.hpp>
 #include <commata/parse_csv.hpp>
 #include <commata/table_scanner.hpp>
 
@@ -300,6 +302,7 @@ and can be set body field scanners lazily. See the following (somewhat lengthy)
 example:
 
 ```C++
+#include <commata/field_scanners.hpp>
 #include <commata/parse_csv.hpp>
 #include <commata/table_scanner.hpp>
 
@@ -462,6 +465,7 @@ Suppose that you would like to get the average distance of the stars in
 `stars.csv`. Then you might write codes like these:
 
 ```C++
+#include <commata/field_scanners.hpp>
 #include <commata/parse_csv.hpp>
 #include <commata/table_scanner.hpp>
 
@@ -504,6 +508,7 @@ average of the explicitly specified values of distance, in other words,
 if you want to ignore any occurrences of empty field values, you can do this:
 
 ```C++
+#include <commata/field_scanners.hpp>
 #include <commata/parse_csv.hpp>
 #include <commata/table_scanner.hpp>
 
@@ -549,7 +554,7 @@ instructs the body field scanner to ignore every case that a value of the field
 is an empty string; it is to solve the problem we have faced.
 
 Class templates `replace_if_skipped` and `replace_if_conversion_failed` are
-defined in the header `"commata/table_scanner.hpp"`.
+defined by including the header `"commata/field_scanners.hpp"`.
 
 ## Making your own table handler types
 

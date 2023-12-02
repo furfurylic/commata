@@ -28,6 +28,7 @@
 
 #include <commata/parse_csv.hpp>
 #include <commata/stored_table.hpp>
+#include <commata/text_value_translation.hpp>
 #include <commata/wrapper_handlers.hpp>
 
 #include "BaseTest.hpp"
@@ -472,6 +473,28 @@ TYPED_TEST(TestStoredValueNoModification, Write)
        << setfill(ch('+')) << setw(4) << v
        << 10;
     ASSERT_EQ(std::move(o1).str(), std::move(o2).str());
+}
+
+TYPED_TEST(TestStoredValueNoModification, ToArithmetic)
+{
+    using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using value_t = basic_stored_value<char_t>;
+    using string_t = std::basic_string<decayed_char_t>;
+
+    const auto str0 = char_helper<decayed_char_t>::str0;
+
+    {
+        string_t s = str0("-12345");
+        const value_t v(&s[0], &s[s.size() - 1]);
+        ASSERT_EQ(-12345, to_arithmetic<int>(v));
+    }
+
+    {
+        string_t s = str0("12.345");
+        const value_t v(&s[0], &s[s.size() - 1]);
+        ASSERT_EQ(std::strtod("12.345", nullptr), to_arithmetic<double>(v));
+    }
 }
 
 template <class Ch>

@@ -40,6 +40,7 @@ set(TEST_COMMATA_SOURCES
     TestTablePull.cpp
     TestTableScanner.cpp
     TestTextError.cpp
+    TestTextValueTranslation.cpp
     TestWriteNTMBS.cpp
 )
 
