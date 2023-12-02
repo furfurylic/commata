@@ -293,7 +293,7 @@ struct fail_if_conversion_failed
 {
     template <class T, class Ch>
     [[noreturn]]
-    std::optional<T> operator()(invalid_format_t,
+    std::nullopt_t operator()(invalid_format_t,
         const Ch* begin, const Ch* end, T* = nullptr) const
     try {
         using namespace std::string_view_literals;
@@ -316,7 +316,7 @@ struct fail_if_conversion_failed
 
     template <class T, class Ch>
     [[noreturn]]
-    std::optional<T> operator()(out_of_range_t,
+    std::nullopt_t operator()(out_of_range_t,
         const Ch* begin, const Ch* end, int, T* = nullptr) const
     try {
         using namespace std::string_view_literals;
@@ -339,7 +339,7 @@ struct fail_if_conversion_failed
 
     template <class T>
     [[noreturn]]
-    std::optional<T> operator()(empty_t, T* = nullptr) const
+    std::nullopt_t operator()(empty_t, T* = nullptr) const
     try {
         using namespace std::string_view_literals;
         std::stringbuf s;
@@ -386,22 +386,19 @@ private:
 
 struct ignore_if_conversion_failed
 {
-    template <class T, class Ch>
-    std::optional<T> operator()(invalid_format_t,
-        const Ch*, const Ch*, T* = nullptr) const
+    template <class Ch>
+    std::nullopt_t operator()(invalid_format_t, const Ch*, const Ch*) const
     {
         return std::nullopt;
     }
 
-    template <class T, class Ch>
-    std::optional<T> operator()(out_of_range_t,
-        const Ch*, const Ch*, int, T* = nullptr) const
+    template <class Ch>
+    std::nullopt_t operator()(out_of_range_t, const Ch*, const Ch*, int) const
     {
         return std::nullopt;
     }
 
-    template <class T>
-    std::optional<T> operator()(empty_t, T* = nullptr) const
+    std::nullopt_t operator()(empty_t) const
     {
         return std::nullopt;
     }
@@ -1017,7 +1014,7 @@ public:
     {}
 
     template <class Ch>
-    std::optional<T> invalid_format(const Ch* begin, const Ch* end) const
+    decltype(auto) invalid_format(const Ch* begin, const Ch* end) const
     {
         if constexpr (std::is_invocable_v<H,
                 invalid_format_t, const Ch*, const Ch*>) {
@@ -1029,7 +1026,7 @@ public:
     }
 
     template <class Ch>
-    std::optional<T> out_of_range(
+    decltype(auto) out_of_range(
         const Ch* begin, const Ch* end, int sign) const
     {
         if constexpr (std::is_invocable_v<H,
@@ -1041,7 +1038,7 @@ public:
         }
     }
 
-    std::optional<T> empty() const
+    decltype(auto) empty() const
     {
         if constexpr (std::is_invocable_v<H, empty_t>) {
             return handler_(empty_t());

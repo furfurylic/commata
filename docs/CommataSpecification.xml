@@ -1488,7 +1488,7 @@ namespace commata {
         <tr>
           <td rowspan="2">(1)</td>
           <td><c>h(i, b, e)</c></td>
-          <td rowspan="2"><c>std::optional&lt;T></c></td>
+          <td rowspan="2">Convertible to <c>std::optional&lt;T></c></td>
           <td rowspan="2">Evaluated when the corresponding text value can not be converted a value of <c>T</c> due to a format error.</td>
         </tr>
 
@@ -1499,7 +1499,7 @@ namespace commata {
         <tr>
           <td rowspan="2">(2)</td>
           <td><c>h(o, b, e, s)</c></td>
-          <td rowspan="2"><c>std::optional&lt;T></c></td>
+          <td rowspan="2">Convertible to <c>std::optional&lt;T></c></td>
           <td rowspan="2">Evaluated when the corresponding text value can not be converted a value of <c>T</c> due to a range error.</td>
         </tr>
 
@@ -1510,7 +1510,7 @@ namespace commata {
         <tr>
           <td rowspan="2">(3)</td>
           <td><c>h(e)</c></td>
-          <td rowspan="2"><c>std::optional&lt;T></c></td>
+          <td rowspan="2">Convertible to <c>std::optional&lt;T></c></td>
           <td rowspan="2">Evaluated when the corresponding text value is empty.</td>
         </tr>
 
@@ -1602,13 +1602,13 @@ namespace commata {
 namespace commata {
   struct fail_if_conversion_failed {
     template &lt;class T, class Ch>
-      [[noreturn]] std::optional&lt;T> operator()(invalid_format_t,
-                                               const Ch*, const Ch*, T* = nullptr) const;
+      [[noreturn]] std::nullopt_t operator()(invalid_format_t,
+                                             const Ch*, const Ch*, T* = nullptr) const;
     template &lt;class T, class Ch>
-      [[noreturn]] std::optional&lt;T> operator()(out_of_range_t,
-                                               const Ch*, const Ch*, int, T* = nullptr) const;
+      [[noreturn]] std::nullopt_t operator()(out_of_range_t,
+                                             const Ch*, const Ch*, int, T* = nullptr) const;
     template &lt;class T>
-      [[noreturn]] std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
+      [[noreturn]] std::nullopt_t operator()(empty_t, T* = nullptr) const;
   };
 }
         </codeblock>
@@ -1619,8 +1619,8 @@ namespace commata {
         <code-item>
           <code>
 template &lt;class T, class Ch>
-  [[noreturn]] std::optional&lt;T> operator()(invalid_format_t,
-                                           const Ch*, const Ch*, T* = nullptr) const;
+  [[noreturn]] std::nullopt_t operator()(invalid_format_t,
+                                         const Ch*, const Ch*, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>text_value_invalid_format</c> (<xref id="text_value_invalid_format"/>).</effects>
         </code-item>
@@ -1628,8 +1628,8 @@ template &lt;class T, class Ch>
         <code-item>
           <code>
 template &lt;class T, class Ch>
-  [[noreturn]] std::optional&lt;T> operator()(out_of_range_t,
-                                           const Ch*, const Ch*, int, T* = nullptr) const;
+  [[noreturn]] std::nullopt_t operator()(out_of_range_t,
+                                         const Ch*, const Ch*, int, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>text_value_out_of_range</c> (<xref id="text_value_out_of_range"/>).</effects>
         </code-item>
@@ -1637,7 +1637,7 @@ template &lt;class T, class Ch>
         <code-item>
           <code>
 template &lt;class T>
-  [[noreturn]] std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
+  [[noreturn]] std::nullopt_t operator()(empty_t, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>text_value_empty</c> (<xref id="text_value_empty"/>).</effects>
         </code-item>
@@ -1649,12 +1649,9 @@ template &lt;class T>
         <codeblock>
 namespace commata {
   struct ignore_if_conversion_failed {
-    template &lt;class T, class Ch>
-      std::optional&lt;T> operator()(invalid_format_t, const Ch*, const Ch*, T* = nullptr) const;
-    template &lt;class T, class Ch>
-      std::optional&lt;T> operator()(out_of_range_t, const Ch*, const Ch*, int, T* = nullptr) const;
-    template &lt;class T>
-      std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
+    template &lt;class Ch> std::nullopt_t operator()(invalid_format_t, const Ch*, const Ch*) const;
+    template &lt;class Ch> std::nullopt_t operator()(out_of_range_t, const Ch*, const Ch*, int) const;
+    std::nullopt_t operator()(empty_t) const;
   };
 }
         </codeblock>
@@ -1664,12 +1661,9 @@ namespace commata {
 
         <code-item>
           <code>
-template &lt;class T, class Ch>
-  std::optional&lt;T> operator()(invalid_format_t, const Ch*, const Ch*, T* = nullptr) const;
-template &lt;class T, class Ch>
-  std::optional&lt;T> operator()(out_of_range_t, const Ch*, const Ch*, int, T* = nullptr) const;
-template &lt;class T>
-  std::optional&lt;T> operator()(empty_t, T* = nullptr) const;
+template &lt;class Ch> std::nullopt_t operator()(invalid_format_t, const Ch*, const Ch*) const;
+template &lt;class Ch> std::nullopt_t operator()(out_of_range_t, const Ch*, const Ch*, int) const;
+std::nullopt_t operator()(empty_t) const;
           </code>
           <returns><c>std::nullopt</c>.</returns>
         </code-item>
