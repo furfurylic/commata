@@ -1589,7 +1589,7 @@ namespace commata {
 
         <p>This subclause describes struct <c>fail_if_conversion_failed</c> (<xref id="fail_if_conversion_failed"/>) and class template <c>replace_if_conversion_failed</c> (<xref id="replace_if_conversion_failed"/>),
            which gives the default conversion error handler (<xref id="conversion_error_handler.requirements"/>) types of Commata.</p>
-        <p>When the implementations of these throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c>, that is, with C's global locale.</p>
+        <p>When the implementations of these throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c>, that is, with the C library locale.</p>
       </section>
 
       <section id="fail_if_conversion_failed">
@@ -3793,7 +3793,7 @@ namespace commata {
          <c>Ch</c> shall be a char-like type.
          <c>Tr</c> shall be a character traits type of <c>std::remove_const_t&lt;Ch></c>.
          <c>Allocator</c> shall meet the <c>Allocator</c> requirements.</p>
-      <p>When the implementations of this class template throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c>, that is, with C's global locale.</p>
+      <p>When the implementations of this class template throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c>, that is, with the C library locale.</p>
 
       <section id="record_extractor.cons">
         <name><c>record_extractor</c> constructors and assignment operators</name>
@@ -6710,7 +6710,7 @@ namespace commata {
         </codeblock>
 
         <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
-          The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C-language locale.</p>
+          The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C library locale.</p>
         <p>The template parameter <c>T</c> shall be a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
            The template parameters <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>), the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c>T</c> respectively.</p>
 
