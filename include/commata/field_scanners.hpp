@@ -36,7 +36,7 @@ struct fail_if_skipped
 
     template <class T>
     [[noreturn]]
-    std::optional<T> operator()(T* = nullptr) const
+    std::nullopt_t operator()(T* = nullptr) const
     {
         throw field_not_found("This field did not appear in this record");
     }
@@ -47,8 +47,7 @@ struct ignore_if_skipped
     explicit ignore_if_skipped(replacement_ignore_t = replacement_ignore)
     {}
 
-    template <class T>
-    std::optional<T> operator()(T* = nullptr) const
+    std::nullopt_t operator()() const
     {
         return std::nullopt;
     }

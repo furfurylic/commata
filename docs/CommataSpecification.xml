@@ -6254,7 +6254,7 @@ bool is_in_header() const noexcept;
           <tr>
             <td rowspan="2">(1)</td>
             <td><c>h()</c></td>
-            <td rowspan="2"><c>std::optional&lt;T></c></td>
+            <td rowspan="2">Convertible to <c>std::optional&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has been skipped, that is, the record has had too few fields to reach the field.
                 If <c>r.has_value()</c> is not <c>false</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
                 otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
@@ -6365,7 +6365,7 @@ namespace commata {
 namespace commata {
   struct fail_if_skipped {
     explicit fail_if_skipped(replacement_fail_t = replacement_fail) {}
-    template &lt;class T> [[noreturn]] std::optional&lt;T> operator()(T* = nullptr) const;
+    template &lt;class T> [[noreturn]] std::nullopt_t operator()(T* = nullptr) const;
   };
 }
         </codeblock>
@@ -6375,7 +6375,7 @@ namespace commata {
 
         <code-item>
           <code>
-template &lt;class T> [[noreturn]] std::optional&lt;T> operator()(T* = nullptr) const;
+template &lt;class T> [[noreturn]] std::nullopt_t operator()(T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_not_found</c> (<xref id="field_not_found"/>).</effects>
         </code-item>
@@ -6388,7 +6388,7 @@ template &lt;class T> [[noreturn]] std::optional&lt;T> operator()(T* = nullptr) 
 namespace commata {
   struct ignore_if_skipped {
     explicit ignore_if_skipped(replacement_ignore_t = replacement_ignore) {}
-    template &lt;class T> std::optional&lt;T> operator()(T* = nullptr) const;
+    std::nullopt_t operator()() const;
   };
 }
         </codeblock>
@@ -6398,7 +6398,7 @@ namespace commata {
 
         <code-item>
           <code>
-template &lt;class T> std::optional&lt;T> operator()(T* = nullptr) const;
+std::nullopt_t operator()() const;
           </code>
           <returns><c>std::nullopt</c>.</returns>
         </code-item>
