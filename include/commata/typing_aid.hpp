@@ -84,6 +84,17 @@ constexpr bool is_range_accessible_v =
     decltype(is_range_accessible_impl<E, Category>::
         template check<T>(nullptr))::value;
 
+template <class F, class... As>
+bool invoke_returning_bool(F&& f, As&&... as)
+{
+    if constexpr (std::is_void_v<std::invoke_result_t<F, As...>>) {
+        std::invoke(std::forward<F>(f), std::forward<As>(as)...);
+        return true;
+    } else {
+        return std::invoke(std::forward<F>(f), std::forward<As>(as)...);
+    }
+}
+
 }
 
 #endif

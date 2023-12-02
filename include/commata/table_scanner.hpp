@@ -214,19 +214,9 @@ class basic_table_scanner
         {
             auto& f = this->get();
             if constexpr (std::is_invocable_v<T&, basic_table_scanner&>) {
-                if constexpr (std::is_void_v<decltype(f(me))>) {
-                    f(me);
-                    return true;
-                } else {
-                    return f(me);
-                }
+                return detail::invoke_returning_bool(f, me);
             } else {
-                if constexpr (std::is_void_v<decltype(f())>) {
-                    f();
-                    return true;
-                } else {
-                    return f();
-                }
+                return detail::invoke_returning_bool(f);
             }
         }
 

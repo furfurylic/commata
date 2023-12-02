@@ -120,8 +120,10 @@ public:
             this->start_record(where);
             this->end_record(where);
         } else {
-            return essay([this, where] { return this->start_record(where); })
-                && essay([this, where] { return this->end_record(where); });
+            return detail::invoke_returning_bool(
+                        [this, where] { return this->start_record(where); })
+                && detail::invoke_returning_bool(
+                        [this, where] { return this->end_record(where); });
         }
     }
 
@@ -132,18 +134,6 @@ public:
         if (this != std::addressof(other)) {
             using std::swap;
             base().swap(other.base());
-        }
-    }
-
-private:
-    template <class F>
-    static bool essay(F f) noexcept(noexcept(f()))
-    {
-        if constexpr (std::is_void_v<decltype(f())>) {
-            f();
-            return true;
-        } else {
-            return f();
         }
     }
 };
