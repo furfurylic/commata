@@ -126,8 +126,7 @@ struct get_buffer_t<Handler, D,
     std::enable_if_t<has_get_buffer_v<Handler>>>
 {
     [[nodiscard]]
-    auto get_buffer() noexcept(noexcept(std::declval<Handler&>().get_buffer()))
-     -> decltype(std::declval<Handler&>().get_buffer())
+    auto get_buffer() -> decltype(std::declval<Handler&>().get_buffer())
     {
         return static_cast<D*>(this)->base().get_buffer();
     }
@@ -146,7 +145,6 @@ struct release_buffer_t<Handler, D,
     std::enable_if_t<has_release_buffer_v<Handler>>>
 {
     auto release_buffer(typename Handler::char_type* buffer)
-        noexcept(noexcept(std::declval<Handler&>().release_buffer(buffer)))
      -> decltype(std::declval<Handler&>().release_buffer(buffer))
     {
         return static_cast<D*>(this)->base().release_buffer(buffer);
@@ -168,8 +166,6 @@ struct start_buffer_t<Handler, D,
     auto start_buffer(
         typename Handler::char_type* buffer_begin,
         typename Handler::char_type* buffer_end)
-        noexcept(noexcept(
-            std::declval<Handler&>().start_buffer(buffer_begin, buffer_end)))
      -> decltype(std::declval<Handler&>()
                     .start_buffer(buffer_begin, buffer_end))
     {
@@ -191,7 +187,6 @@ struct end_buffer_t<Handler, D,
     std::enable_if_t<has_end_buffer_v<Handler>>>
 {
     auto end_buffer(typename Handler::char_type* buffer_end)
-        noexcept(noexcept(std::declval<Handler&>().end_buffer(buffer_end)))
      -> decltype(std::declval<Handler&>().end_buffer(buffer_end))
     {
         return static_cast<D*>(this)->base().end_buffer(buffer_end);
@@ -212,7 +207,6 @@ struct empty_physical_line_t<Handler, D,
     std::enable_if_t<has_empty_physical_line_v<Handler>>>
 {
     auto empty_physical_line(typename Handler::char_type* where)
-        noexcept(noexcept(std::declval<Handler&>().empty_physical_line(where)))
      -> decltype(std::declval<Handler&>().empty_physical_line(where))
     {
         return static_cast<D*>(this)->base().empty_physical_line(where);
@@ -231,7 +225,6 @@ template <class Handler, class D>
 struct yield_t<Handler, D, std::enable_if_t<has_yield_v<Handler>>>
 {
     auto yield(std::size_t p)
-        noexcept(noexcept(std::declval<Handler&>().yield(p)))
      -> decltype(std::declval<Handler&>().yield(p))
     {
         return static_cast<D*>(this)->base().yield(p);
@@ -251,7 +244,6 @@ struct yield_location_t<Handler, D,
     std::enable_if_t<has_yield_location_v<Handler>>>
 {
     auto yield_location() const
-        noexcept(noexcept(std::declval<const Handler&>().yield_location()))
      -> decltype(std::declval<const Handler&>().yield_location())
     {
         return static_cast<const D*>(this)->base().yield_location();
@@ -271,7 +263,6 @@ struct handle_exception_t<Handler, D,
     std::enable_if_t<has_handle_exception_v<Handler>>>
 {
     auto handle_exception()
-        noexcept(noexcept(std::declval<Handler&>().handle_exception()))
      -> decltype(std::declval<Handler&>().handle_exception())
     {
         return static_cast<D*>(this)->base().handle_exception();
@@ -292,28 +283,24 @@ struct handler_decorator :
     using char_type = typename Handler::char_type;
 
     auto start_record(char_type* record_begin)
-        noexcept(noexcept(std::declval<Handler&>().start_record(record_begin)))
      -> decltype(std::declval<Handler&>().start_record(record_begin))
     {
         return static_cast<D*>(this)->base().start_record(record_begin);
     }
 
     auto update(char_type* first, char_type* last)
-        noexcept(noexcept(std::declval<Handler&>().update(first, last)))
      -> decltype(std::declval<Handler&>().update(first, last))
     {
         return static_cast<D*>(this)->base().update(first, last);
     }
 
     auto finalize(char_type* first, char_type* last)
-        noexcept(noexcept(std::declval<Handler&>().finalize(first, last)))
      -> decltype(std::declval<Handler&>().finalize(first, last))
     {
         return static_cast<D*>(this)->base().finalize(first, last);
     }
 
     auto end_record(char_type* end)
-        noexcept(noexcept(std::declval<Handler&>().end_record(end)))
      -> decltype(std::declval<Handler&>().end_record(end))
     {
         return static_cast<D*>(this)->base().end_record(end);

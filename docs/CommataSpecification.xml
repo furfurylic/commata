@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-11-30 (UTC)</signature>
+<signature>2023-12-02 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -844,19 +844,18 @@ namespace commata {
     handler_type&amp; base() const noexcept;
 
     <c>// <n><xref id="reference_handler.inv"/>, invocation:</n></c>
-    <nc>see below</nc> get_buffer()                                noexcept(<nc>see below</nc>);
-    <nc>see below</nc> release_buffer(char_type* buffer)           noexcept(<nc>see below</nc>);
-    <nc>see below</nc> start_buffer(char_type* buffer_begin,
-                           char_type* buffer_end)         noexcept(<nc>see below</nc>);
-    <nc>see below</nc> end_buffer(char_type* buffer_end)           noexcept(<nc>see below</nc>);
-    <nc>see below</nc> empty_physical_line(char_type* where)       noexcept(<nc>see below</nc>);
-    <nc>see below</nc> start_record(char_type* record_begin)       noexcept(<nc>see below</nc>);
-    <nc>see below</nc> end_record(char_type* record_end)           noexcept(<nc>see below</nc>);
-    <nc>see below</nc> update(char_type* first, char_type* last)   noexcept(<nc>see below</nc>);
-    <nc>see below</nc> finalize(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
-    <nc>see below</nc> yield(std::size_t p)                        noexcept(<nc>see below</nc>);
-    <nc>see below</nc> yield_location() const                      noexcept(<nc>see below</nc>);
-    <nc>see below</nc> handle_exception()                          noexcept(<nc>see below</nc>);
+    <nc>see below</nc> get_buffer();
+    <nc>see below</nc> release_buffer(char_type* buffer);
+    <nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
+    <nc>see below</nc> end_buffer(char_type* buffer_end);
+    <nc>see below</nc> empty_physical_line(char_type* where);
+    <nc>see below</nc> start_record(char_type* record_begin);
+    <nc>see below</nc> end_record(char_type* record_end);
+    <nc>see below</nc> update(char_type* first, char_type* last);
+    <nc>see below</nc> finalize(char_type* first, char_type* last);
+    <nc>see below</nc> yield(std::size_t p);
+    <nc>see below</nc> yield_location() const;
+    <nc>see below</nc> handle_exception();
   };
 
   template &lt;class Handler>
@@ -918,107 +917,94 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> get_buffer() noexcept(<nc>see below</nc>);
+<nc>see below</nc> get_buffer();
           </code>
           <effects>Equivalent to: <c>return base().get_buffer();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().get_buffer()</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().get_buffer())</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().get_buffer()</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> release_buffer(char_type* buffer) noexcept(<nc>see below</nc>);
+<nc>see below</nc> release_buffer(char_type* buffer);
           </code>
           <effects>Equivalent to: <c>return base().release_buffer(buffer);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().release_buffer(buffer)</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().release_buffer(buffer))</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().release_buffer(buffer)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> start_buffer(char_type* buffer_begin,
-                       char_type* buffer_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end))</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_buffer(char_type* buffer_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> end_buffer(char_type* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().end_buffer(buffer_end))</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> empty_physical_line(char_type* where) noexcept(<nc>see below</nc>);
+<nc>see below</nc> empty_physical_line(char_type* where);
           </code>
           <effects>Equivalent to: <c>return empty_physical_line(where);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().empty_physical_line(where)</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().empty_physical_line(where))</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().empty_physical_line(where)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> start_record(char_type* record_begin) noexcept(<nc>see below</nc>);
+<nc>see below</nc> start_record(char_type* record_begin);
           </code>
           <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_record(record_begin))</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_record(char_type* record_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> end_record(char_type* record_end);
           </code>
           <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().end_record(record_end))</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> update(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
+<nc>see below</nc> update(char_type* first, char_type* last);
           </code>
           <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().update(first, last))</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> finalize(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
+<nc>see below</nc> finalize(char_type* first, char_type* last);
           </code>
           <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().finalize(first, last))</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> yield(std::size_t p) noexcept(<nc>see below</nc>);
+<nc>see below</nc> yield(std::size_t p);
           </code>
           <effects>Equivalent to: <c>return base().yield(p);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().yield(p)</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().yield(p))</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().yield(p)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> yield_location() const noexcept(<nc>see below</nc>);
+<nc>see below</nc> yield_location() const;
           </code>
           <effects>Equivalent to: <c>return base().yield_location();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;const Handler&amp;>().yield_location()</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;const Handler&amp;>().yield_location())</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;const Handler&amp;>().yield_location()</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> handle_exception() noexcept(<nc>see below</nc>);
+<nc>see below</nc> handle_exception();
           </code>
           <effects>Equivalent to: <c>return base().handle_exception();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().handle_exception()</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().handle_exception())</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().handle_exception()</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
       </section>
 
@@ -1080,19 +1066,18 @@ namespace commata {
           handler_type&amp; base()       noexcept;
 
     <c>// <n><xref id="empty_physical_line_aware_handler.inv"/>, invocation:</n></c>
-    <nc>see below</nc> get_buffer()                                noexcept(<nc>see below</nc>);
-    <nc>see below</nc> release_buffer(char_type* buffer)           noexcept(<nc>see below</nc>);
-    <nc>see below</nc> start_buffer(char_type* buffer_begin,
-                           char_type* buffer_end)         noexcept(<nc>see below</nc>);
-    <nc>see below</nc> end_buffer(char_type* buffer_end)           noexcept(<nc>see below</nc>);
-    <nc>see below</nc> empty_physical_line(char_type* where)       noexcept(<nc>see below</nc>);
-    <nc>see below</nc> start_record(char_type* record_begin)       noexcept(<nc>see below</nc>);
-    <nc>see below</nc> end_record(char_type* record_end)           noexcept(<nc>see below</nc>);
-    <nc>see below</nc> update(char_type* first, char_type* last)   noexcept(<nc>see below</nc>);
-    <nc>see below</nc> finalize(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
-    <nc>see below</nc> yield(std::size_t p)                        noexcept(<nc>see below</nc>);
-    <nc>see below</nc> yield_location() const                      noexcept(<nc>see below</nc>);
-    <nc>see below</nc> handle_exception()                          noexcept(<nc>see below</nc>);
+    <nc>see below</nc> get_buffer();
+    <nc>see below</nc> release_buffer(char_type* buffer);
+    <nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
+    <nc>see below</nc> end_buffer(char_type* buffer_end);
+    <nc>see below</nc> empty_physical_line(char_type* where);
+    <nc>see below</nc> start_record(char_type* record_begin);
+    <nc>see below</nc> end_record(char_type* record_end);
+    <nc>see below</nc> update(char_type* first, char_type* last);
+    <nc>see below</nc> finalize(char_type* first, char_type* last);
+    <nc>see below</nc> yield(std::size_t p);
+    <nc>see below</nc> yield_location() const;
+    <nc>see below</nc> handle_exception();
 
     <c>// <n><xref id="empty_physical_line_aware_handler.modifiers"/>, modifiers:</n></c>
     void swap(empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
@@ -1207,108 +1192,95 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> get_buffer() noexcept(<nc>see below</nc>);
+<nc>see below</nc> get_buffer();
           </code>
           <effects>Equivalent to: <c>return base().get_buffer();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().get_buffer()</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().get_buffer())</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().get_buffer()</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> release_buffer(char_type* buffer) noexcept(<nc>see below</nc>);
+<nc>see below</nc> release_buffer(char_type* buffer);
           </code>
           <effects>Equivalent to: <c>return base().release_buffer(buffer);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().release_buffer(buffer)</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().release_buffer(buffer))</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().release_buffer(buffer)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> start_buffer(char_type* buffer_begin,
-                       char_type* buffer_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end))</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_buffer(char_type* buffer_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> end_buffer(char_type* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().end_buffer(buffer_end))</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> empty_physical_line(char_type* where) noexcept(<nc>see below</nc>);
+<nc>see below</nc> empty_physical_line(char_type* where);
           </code>
           <effects>First calls <c>base().start_record(where)</c>, and unless the return type is contextually convertible to <c>bool</c> and the contextually converted value of the return value to <c>bool</c> is <c>false</c>, next calls <c>base().end_record(where)</c>.</effects>
           <returns>If both of the return types of <c>base().start_record(where)</c> and <c>base().end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>.
                    Otherwise, the return type shall be <c>bool</c>, and the return value shall be <c>true</c> unless either call of <c>base().start_record(where)</c> or <c>base().end_record(where)</c> returned a value whose type is contextually convertible to <c>bool</c> and whose contexually converted value to <c>bool</c> is <c>false</c>.</returns>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_record(where)) &amp;&amp; noexcept(std::declval&lt;Handler&amp;>().end_record(where))</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> start_record(char_type* record_begin) noexcept(<nc>see below</nc>);
+<nc>see below</nc> start_record(char_type* record_begin);
           </code>
           <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().start_record(record_begin))</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_record(char_type* record_end) noexcept(<nc>see below</nc>);
+<nc>see below</nc> end_record(char_type* record_end);
           </code>
           <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().end_record(record_end))</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> update(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
+<nc>see below</nc> update(char_type* first, char_type* last);
           </code>
           <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().update(first, last))</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> finalize(char_type* first, char_type* last) noexcept(<nc>see below</nc>);
+<nc>see below</nc> finalize(char_type* first, char_type* last);
           </code>
           <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().finalize(first, last))</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> yield(std::size_t p) noexcept(<nc>see below</nc>);
+<nc>see below</nc> yield(std::size_t p);
           </code>
           <effects>Equivalent to: <c>return base().yield(p);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().yield(p)</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().yield(p))</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().yield(p)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> yield_location() const noexcept(<nc>see below</nc>);
+<nc>see below</nc> yield_location() const;
           </code>
           <effects>Equivalent to: <c>return base().yield_location();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;const Handler&amp;>().yield_location()</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;const Handler&amp;>().yield_location())</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;const Handler&amp;>().yield_location()</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> handle_exception() noexcept(<nc>see below</nc>);
+<nc>see below</nc> handle_exception();
           </code>
           <effects>Equivalent to: <c>return base().handle_exception();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().handle_exception()</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(std::declval&lt;Handler&amp;>().handle_exception())</c>.</remark>
+          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().handle_exception()</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
       </section>
 

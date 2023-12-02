@@ -106,10 +106,6 @@ public:
     }
 
     auto empty_physical_line(char_type* where)
-        noexcept(noexcept(std::declval<empty_physical_line_aware_handler&>().
-                            start_record(where))
-              && noexcept(std::declval<empty_physical_line_aware_handler&>().
-                            end_record(where)))
      -> std::conditional_t<
             std::is_void_v<decltype(
                 std::declval<empty_physical_line_aware_handler&>().
