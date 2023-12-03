@@ -18,7 +18,7 @@
 #include <type_traits>
 
 #include "member_like_base.hpp"
-#include "replacement.hpp"
+#include "field_handling.hpp"
 #include "text_error.hpp"
 #include "typing_aid.hpp"
 #include "write_ntmbs.hpp"
@@ -1016,35 +1016,20 @@ public:
     template <class Ch>
     decltype(auto) invalid_format(const Ch* begin, const Ch* end) const
     {
-        if constexpr (std::is_invocable_v<H,
-                invalid_format_t, const Ch*, const Ch*>) {
-            return handler_(invalid_format_t(), begin, end);
-        } else {
-            return handler_(invalid_format_t(), begin, end,
-                            static_cast<T*>(nullptr));
-        }
+        return invoke_typing_as<T>(handler_, invalid_format_t(), begin, end);
     }
 
     template <class Ch>
     decltype(auto) out_of_range(
         const Ch* begin, const Ch* end, int sign) const
     {
-        if constexpr (std::is_invocable_v<H,
-                out_of_range_t, const Ch*, const Ch*, int>) {
-            return handler_(out_of_range_t(), begin, end, sign);
-        } else {
-            return handler_(out_of_range_t(), begin, end, sign,
-                            static_cast<T*>(nullptr));
-        }
+        return invoke_typing_as<T>(
+                    handler_, out_of_range_t(), begin, end, sign);
     }
 
     decltype(auto) empty() const
     {
-        if constexpr (std::is_invocable_v<H, empty_t>) {
-            return handler_(empty_t());
-        } else {
-            return handler_(empty_t(), static_cast<T*>(nullptr));
-        }
+        return invoke_typing_as<T>(handler_, empty_t());
     }
 };
 

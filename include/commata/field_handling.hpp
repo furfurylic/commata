@@ -88,6 +88,16 @@ using replaced_type_from_t =
 
 } // end detail
 
+template <class T, class... As>
+decltype(auto) invoke_typing_as(As&&... as)
+{
+    if constexpr (std::is_invocable_v<As&&...>) {
+        return std::invoke(std::forward<As>(as)...);
+    } else {
+        return std::invoke(std::forward<As>(as)..., static_cast<T*>(nullptr));
+    }
+}
+
 }
 
 #endif
