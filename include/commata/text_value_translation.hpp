@@ -355,11 +355,13 @@ struct fail_if_conversion_failed
 private:
     template <class T>
     static void write_name(std::streambuf& sb, std::string_view prefix,
-        decltype(detail::xlate::numeric_type_traits<T>::name)* = nullptr)
+        decltype(detail::xlate::numeric_type_traits<std::remove_cv_t<T>>
+                    ::name)* = nullptr)
     {
         using namespace detail::xlate;
         sputn(sb, prefix);
-        sputn(sb, detail::xlate::numeric_type_traits<T>::name);
+        sputn(sb, detail::xlate::numeric_type_traits<std::remove_cv_t<T>>
+                    ::name);
     }
 
     template <class T, class... Args>
@@ -1053,8 +1055,9 @@ auto do_convert(const A& a, H&& h)
 {
     const auto* const c_str = do_c_str(a);
     const auto size = do_size(a);
-    return converter<T>()(c_str, c_str + size,
-        typed_conversion_error_handler<T, std::remove_reference_t<H>>(h));
+    using U = std::remove_cv_t<T>;
+    return converter<U>()(c_str, c_str + size,
+        typed_conversion_error_handler<U, std::remove_reference_t<H>>(h));
 }
 
 struct is_default_translatable_arithmetic_type_impl
