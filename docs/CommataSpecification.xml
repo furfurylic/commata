@@ -6598,6 +6598,10 @@ namespace commata {
             class ConversionErrorHandler = fail_if_conversion_failed>
     class arithmetic_field_translator {
   public:
+    using value_type = T;
+    using skipping_handler_type = SkippingHandler;
+    using conversion_error_handler_type = ConversionErrorHandler;
+
     <c>// <n><xref id="arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler>
@@ -6720,6 +6724,10 @@ namespace commata {
             class ConversionErrorHandler = fail_if_conversion_failed>
     class locale_based_arithmetic_field_translator {
   public:
+    using value_type = T;
+    using skipping_handler_type = SkippingHandler;
+    using conversion_error_handler_type = ConversionErrorHandler;
+
     <c>// <n><xref id="locale_based_arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler>
@@ -6842,7 +6850,9 @@ namespace commata {
             class SkippingHandler = fail_if_skipped>
     class string_field_translator {
   public:
+    using value_type = std::basic_string&lt;Ch, Tr, Allocator>;
     using allocator_type = Allocator;
+    using skipping_handler_type = SkippingHandler;
 
     <c>// <n><xref id="string_field_translator.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
@@ -6959,7 +6969,7 @@ void operator()(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; value);
             <code>
 void operator()();
             </code>
-            <effects>Evaluates <c>invoke_typing_as&lt;std::basic_string&lt;Ch, Tr, Allocator>>(get_skipping_handler())</c> and puts the result into the field translator sink.</effects>
+            <effects>Evaluates <c>invoke_typing_as&lt;value_type>(get_skipping_handler())</c> and puts the result into the field translator sink.</effects>
           </code-item>
         </section>
       </section>
@@ -6973,6 +6983,9 @@ namespace commata {
             class SkippingHandler = fail_if_skipped>
     class string_view_field_translator {
   public:
+    using value_type = std::basic_string_view&lt;Ch, Tr>;
+    using skipping_handler_type = SkippingHandler;
+
     <c>// <n><xref id="string_view_field_translator.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
       explicit string_view_field_translator(
@@ -7054,7 +7067,7 @@ void operator()(const Ch* begin, const Ch* end);
             <code>
 void operator()();
             </code>
-            <effects>Evaluates <c>invoke_typing_as&lt;std::basic_string_view&lt;Ch, Tr>>(get_skipping_handler())</c> and puts the result into the field translator sink.</effects>
+            <effects>Evaluates <c>invoke_typing_as&lt;value_type>(get_skipping_handler())</c> and puts the result into the field translator sink.</effects>
           </code-item>
         </section>
       </section>

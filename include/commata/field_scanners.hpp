@@ -384,6 +384,10 @@ class arithmetic_field_translator
     detail::base_member_pair<ConversionErrorHandler, translator_t> ct_;
 
 public:
+    using value_type = T;
+    using skipping_handler_type = SkippingHandler;
+    using conversion_error_handler_type = ConversionErrorHandler;
+
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler,
               std::enable_if_t<
@@ -478,6 +482,10 @@ class locale_based_arithmetic_field_translator
     bool mimics_ = false;
 
 public:
+    using value_type = T;
+    using skipping_handler_type = SkippingHandler;
+    using conversion_error_handler_type = ConversionErrorHandler;
+
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler,
               std::enable_if_t<
@@ -587,15 +595,18 @@ template <class Sink, class Ch,
     class SkippingHandler = fail_if_skipped>
 class string_field_translator
 {
+public:
+    using value_type = std::basic_string<Ch, Tr, Allocator>;
+    using allocator_type = Allocator;
+    using skipping_handler_type = SkippingHandler;
+
+private:
     using translator_t =
-        detail::scanner::translator<std::basic_string<Ch, Tr, Allocator>,
-        Sink, SkippingHandler>;
+        detail::scanner::translator<value_type, Sink, SkippingHandler>;
 
     detail::base_member_pair<Allocator, translator_t> at_;
 
 public:
-    using allocator_type = Allocator;
-
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
               std::enable_if_t<
                 !std::is_base_of_v<
@@ -671,8 +682,13 @@ class string_view_field_translator :
         detail::scanner::translator<
             std::basic_string_view<Ch, Tr>, Sink, SkippingHandler>>
 {
-    using translator_t = detail::scanner::translator<
-        std::basic_string_view<Ch, Tr>, Sink, SkippingHandler>;
+public:
+    using value_type = std::basic_string_view<Ch, Tr>;
+    using skipping_handler_type = SkippingHandler;
+
+private:
+    using translator_t =
+        detail::scanner::translator<value_type, Sink, SkippingHandler>;
     using base_t = detail::member_like_base<translator_t>;
 
 public:
