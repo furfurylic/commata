@@ -293,7 +293,7 @@ struct fail_if_conversion_failed
 {
     template <class T, class Ch>
     [[noreturn]]
-    std::optional<T> operator()(invalid_format_t,
+    std::nullopt_t operator()(invalid_format_t,
         const Ch* begin, const Ch* end, T* = nullptr) const
     try {
         using namespace std::string_view_literals;
@@ -316,7 +316,7 @@ struct fail_if_conversion_failed
 
     template <class T, class Ch>
     [[noreturn]]
-    std::optional<T> operator()(out_of_range_t,
+    std::nullopt_t operator()(out_of_range_t,
         const Ch* begin, const Ch* end, int, T* = nullptr) const
     try {
         using namespace std::string_view_literals;
@@ -339,7 +339,7 @@ struct fail_if_conversion_failed
 
     template <class T>
     [[noreturn]]
-    std::optional<T> operator()(empty_t, T* = nullptr) const
+    std::nullopt_t operator()(empty_t, T* = nullptr) const
     try {
         using namespace std::string_view_literals;
         std::stringbuf s;
@@ -381,6 +381,26 @@ private:
             s.remove_prefix(max);
         }
         sb.sputn(s.data(), s.size());
+    }
+};
+
+struct ignore_if_conversion_failed
+{
+    template <class Ch>
+    std::nullopt_t operator()(invalid_format_t, const Ch*, const Ch*) const
+    {
+        return std::nullopt;
+    }
+
+    template <class Ch>
+    std::nullopt_t operator()(out_of_range_t, const Ch*, const Ch*, int) const
+    {
+        return std::nullopt;
+    }
+
+    std::nullopt_t operator()(empty_t) const
+    {
+        return std::nullopt;
     }
 };
 
@@ -994,7 +1014,7 @@ public:
     {}
 
     template <class Ch>
-    std::optional<T> invalid_format(const Ch* begin, const Ch* end) const
+    decltype(auto) invalid_format(const Ch* begin, const Ch* end) const
     {
         if constexpr (std::is_invocable_v<H,
                 invalid_format_t, const Ch*, const Ch*>) {
@@ -1006,7 +1026,7 @@ public:
     }
 
     template <class Ch>
-    std::optional<T> out_of_range(
+    decltype(auto) out_of_range(
         const Ch* begin, const Ch* end, int sign) const
     {
         if constexpr (std::is_invocable_v<H,
@@ -1018,7 +1038,7 @@ public:
         }
     }
 
-    std::optional<T> empty() const
+    decltype(auto) empty() const
     {
         if constexpr (std::is_invocable_v<H, empty_t>) {
             return handler_(empty_t());
@@ -1035,21 +1055,6 @@ auto do_convert(const A& a, H&& h)
     const auto size = do_size(a);
     return converter<T>()(c_str, c_str + size,
         typed_conversion_error_handler<T, std::remove_reference_t<H>>(h));
-}
-
-template <class T>
-replace_if_conversion_failed<T> make_ignore_if_conversion_failed()
-{
-    using H = replace_if_conversion_failed<T>;
-    using i_t = replacement_ignore_t;
-    constexpr auto i = replacement_ignore;
-    if constexpr (std::is_constructible_v<H, i_t, i_t, i_t, i_t, i_t>) {
-        return H(i, i, i, i, i);
-    } else if constexpr (std::is_constructible_v<H, i_t, i_t, i_t, i_t>) {
-        return H(i, i, i, i);
-    } else {
-        return H(i, i, i);
-    }
 }
 
 struct is_default_translatable_arithmetic_type_impl
@@ -1093,8 +1098,7 @@ T to_arithmetic(const A& a)
 {
     if constexpr (detail::is_std_optional_v<T>) {
         using U = typename T::value_type;
-        return detail::xlate::do_convert<U>(a,
-            detail::xlate::make_ignore_if_conversion_failed<U>());
+        return detail::xlate::do_convert<U>(a, ignore_if_conversion_failed());
     } else {
         return *detail::xlate::do_convert<T>(a, fail_if_conversion_failed());
     }
