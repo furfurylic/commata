@@ -227,19 +227,14 @@ class replace_if_skipped
 public:
     using value_type = T;
 
-    template <class... Args,
-        std::enable_if_t<
-            std::is_constructible_v<T, Args&&...>
-         && !((sizeof...(Args) == 1)
-           && (std::is_base_of_v<replace_if_skipped,
-                detail::first_t<std::decay_t<Args>...>>
-            || std::is_base_of_v<replacement_ignore_t,
-                detail::first_t<std::decay_t<Args>...>>
-            || std::is_base_of_v<replacement_fail_t,
-                detail::first_t<std::decay_t<Args>...>>))>* = nullptr>
-    explicit replace_if_skipped(Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<T, Args&&...>) :
-        store_(generic_args_t(), std::forward<Args>(args)...)
+    explicit replace_if_skipped(const T& t)
+        noexcept(std::is_nothrow_copy_constructible_v<T>) :
+        store_(generic_args_t(), t)
+    {}
+
+    explicit replace_if_skipped(T&& t = T())
+        noexcept(std::is_nothrow_move_constructible_v<T>) :
+        store_(generic_args_t(), std::move(t))
     {}
 
     explicit replace_if_skipped(replacement_fail_t) noexcept :
