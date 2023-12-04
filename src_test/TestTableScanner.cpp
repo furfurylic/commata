@@ -1041,7 +1041,7 @@ TEST_F(TestReplaceIfSkipped, ActionInstallmentWithCtors)
 
     // copy
     {
-        replace_if_skipped<std::string> r(3, 'A');
+        replace_if_skipped<std::string> r(std::string(3, 'A'));
         ASSERT_STREQ("AAA", r()->c_str());
     }
 
