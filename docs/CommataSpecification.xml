@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-03 (UTC)</signature>
+<signature>2023-12-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -7194,38 +7194,35 @@ void operator()();
 template &lt;class T, class SinkR, class... Appendices>
   <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
           </code>
+          <preface>Let <c>Sink</c> be <c>std::decay_t&lt;SinkR></c>.</preface>
           <effects><p>Equivalent to:</p>
                    <code>return <n>R</n>(std::forward&lt;SinkR>(sink), std::forward&lt;Appendices>(appendices)...);</code>
-                   <p>where <c><n>R</n></c> is a type decided as follows with <c>Sink</c> being <c>std::decay_t&lt;SinkR></c>:</p>
+                   <p>where <c><n>R</n></c> is a type decided as follows:</p>
                    <ul>
                      <li>if <c>T</c> is a default translatable string type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
-                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
-                         <li>otherwise, the program is ill-formed.</li>
+                         <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>.</li>
                        </ul>
                      </li>
                      <li>otherwise, if <c>T</c> is a default translatable string view type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type></c>,</li>
-                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
-                         <li>otherwise, the program is ill-formed.</li>
+                         <li>otherwise, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>.</li>
                        </ul>
                      </li>
                      <li>otherwise, if <c>sizeof...(Appendices)</c> is greater than <c>0</c> and <c>std::remove_reference_t&lt;Appendices...[0]></c> is possibly cv-qualified <c>std::locale</c> or its derived type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T></c>,</li>
                          <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>2</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>></c>,</li>
-                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>3</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, Appendices...[2]>></c>,</li>
-                         <li>otherwise, the program is ill-formed.</li>
+                         <li>otherwise, <c>locale_based_arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, Appendices...[2]>></c>.</li>
                        </ul>
                      </li>
                      <li>otherwise:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>arithmetic_field_translator&lt;Sink, T></c>,</li>
                          <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
-                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>2</c>, <c>arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>></c>,</li>
-                         <li>otherwise, the program is ill-formed.</li>
+                         <li>otherwise, <c>arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>></c>.</li>
                        </ul>
                      </li>
                    </ul>
@@ -7239,13 +7236,13 @@ template &lt;class T, class Allocator, class SinkR, class... Appendices>
   <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
                                   SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
           </code>
+          <preface>Let <c>Sink</c> be <c>std::decay_t&lt;SinkR></c>.</preface>
           <effects><p>Equivalent to:</p>
                    <code>return <n>R</n>(std::allocator_arg, alloc, std::forward&lt;SinkR>(sink), std::forward&lt;Appendices>(appendices)...);</code>
-                   <p>where <c><n>R</n></c> is a type decided as follows with <c>Sink</c> being <c>std::decay_t&lt;SinkR></c>:</p>
+                   <p>where <c><n>R</n></c> is a type decided as follows:</p>
                    <ul>
                      <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
-                     <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
-                     <li>otherwise, the program is ill-formed.</li>
+                     <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>.</li>
                    </ul>
           </effects>
           <remark>This overload shall not participate in overload resolution unless <c>T</c> is a default translatable string type with its <c>allocator_type</c> member typedef naming <c>Allocator</c>, and <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>

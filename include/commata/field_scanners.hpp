@@ -778,7 +778,7 @@ template <class T, class Sink, class S,
 arithmetic_field_translator<T, Sink, skipping_handler_t<T, S>>
     make_field_translator_na(Sink, S&&);
 
-template <class T, class Sink, class S, class C,
+template <class T, class Sink, class S, class C, class... As,
     std::enable_if_t<
         !detail::is_std_string_v<T>
      && !detail::is_std_string_view_v<T>
@@ -786,7 +786,7 @@ template <class T, class Sink, class S, class C,
         std::nullptr_t> = nullptr>
 arithmetic_field_translator<T, Sink,
         skipping_handler_t<T, S>, conversion_error_handler_t<T, C>>
-    make_field_translator_na(Sink, S&&, C&&);
+    make_field_translator_na(Sink, S&&, C&&, As&&...);
 
 // locale_based_arithmetic_field_translator
 template <class T, class Sink,
@@ -803,13 +803,13 @@ template <class T, class Sink, class S,
 locale_based_arithmetic_field_translator<T, Sink, skipping_handler_t<T, S>>
     make_field_translator_na(Sink, std::locale, S&&);
 
-template <class T, class Sink, class S, class C,
+template <class T, class Sink, class S, class C, class... As,
     std::enable_if_t<
         !detail::is_std_string_v<T>
      && !detail::is_std_string_view_v<T>, std::nullptr_t> = nullptr>
 locale_based_arithmetic_field_translator<T, Sink,
         skipping_handler_t<T, S>, conversion_error_handler_t<T, C>>
-    make_field_translator_na(Sink, std::locale, S&&, C&&);
+    make_field_translator_na(Sink, std::locale, S&&, C&&, As&&...);
 
 // string_field_translator
 template <class T, class Sink,
@@ -818,11 +818,11 @@ string_field_translator<Sink, typename T::value_type, typename T::traits_type,
         typename T::allocator_type>
     make_field_translator_na(Sink);
 
-template <class T, class Sink, class S,
+template <class T, class Sink, class S, class... As,
     std::enable_if_t<detail::is_std_string_v<T>, std::nullptr_t> = nullptr>
 string_field_translator<Sink, typename T::value_type, typename T::traits_type,
         typename T::allocator_type, skipping_handler_t<T, S>>
-    make_field_translator_na(Sink, S&&);
+    make_field_translator_na(Sink, S&&, As&&...);
 
 // string_view_field_translator
 template <class T, class Sink,
@@ -832,12 +832,12 @@ string_view_field_translator<Sink, typename T::value_type,
         typename T::traits_type>
     make_field_translator_na(Sink);
 
-template <class T, class Sink, class S,
+template <class T, class Sink, class S, class... As,
     std::enable_if_t<
         detail::is_std_string_view_v<T>, std::nullptr_t> = nullptr>
 string_view_field_translator<Sink, typename T::value_type,
         typename T::traits_type, skipping_handler_t<T, S>>
-    make_field_translator_na(Sink, S&&);
+    make_field_translator_na(Sink, S&&, As&&...);
 
 } // end detail::scanner
 
