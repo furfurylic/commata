@@ -941,6 +941,19 @@ public:
         }
     }
 
+    template <class F>
+    table_pull& rewrite(F f)
+    {
+        auto* const begin = const_cast<char_type*>(view_.data());
+        auto* const end = begin + view_.size();
+        auto* const new_end = f(begin, end);
+        if (new_end < end) {
+            *new_end = char_type();
+            view_.remove_suffix(end - new_end);
+        }
+        return *this;
+    }
+
     const char_type* c_str() const noexcept
     {
         return view_.data();

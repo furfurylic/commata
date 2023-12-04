@@ -1062,3 +1062,67 @@ TYPED_TEST(TestToArithmeticFloatingPoints, LowerLimit)
     }
     ASSERT_FALSE(to_arithmetic<opt_t>(minn_by_10).has_value());
 }
+
+template <class T>
+struct TestNumPunctReplacerToC : BaseTestWithParam<T>
+{};
+
+typedef testing::Types<char, wchar_t> Chs;
+
+TYPED_TEST_SUITE(TestNumPunctReplacerToC, Chs);
+
+TYPED_TEST(TestNumPunctReplacerToC, Usual)
+{
+    using char_t = TypeParam;
+    using string_t = std::basic_string<char_t>;
+
+    const auto str = char_helper<char_t>::str;
+
+    numpunct_replacer_to_c engine(std::locale(std::locale::classic(),
+        new french_style_numpunct<char_t>));
+
+    // in place
+    {
+        string_t s = str("-98 765,25");
+        s.erase(engine(s.begin(), s.end()), s.end());
+        const double d = std::stod(s);
+        ASSERT_EQ(-98765.25, d) << s;
+    }
+
+    // copy
+    {
+        string_t s = str("-98 765,25");
+        string_t t;
+        engine(s.cbegin(), s.cend(), std::back_inserter(t));
+        const double d = std::stod(t);
+        ASSERT_EQ(-98765.25, d) << t;
+    }
+}
+
+TYPED_TEST(TestNumPunctReplacerToC, Nop)
+{
+    using char_t = TypeParam;
+    using string_t = std::basic_string<char_t>;
+
+    const auto str = char_helper<char_t>::str;
+
+    numpunct_replacer_to_c engine(std::locale(std::locale::classic(),
+        new french_style_numpunct<char_t>));
+
+    // in place
+    {
+        string_t s = str("12345");
+        s.erase(engine(s.begin(), s.end()), s.end());
+        const double d = std::stod(s);
+        ASSERT_EQ(12345.0, d) << s;
+    }
+
+    // copy
+    {
+        string_t s = str("12345");
+        string_t t;
+        engine(s.cbegin(), s.cend(), std::back_inserter(t));
+        const double d = std::stod(t);
+        ASSERT_EQ(12345.0, d) << t;
+    }
+}

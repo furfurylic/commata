@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-03 (UTC)</signature>
+<signature>2023-12-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1447,6 +1447,7 @@ if constexpr (std::is_invocable_v&lt;As&amp;&amp;...>) {
 
       <codeblock>
 #include &lt;cstddef>
+#include &lt;locale>
 #include &lt;optional>
 
 #include "field_handling.hpp"
@@ -1486,6 +1487,9 @@ namespace commata {
   template &lt;class T, class ConversionErrorHandler, class V>
     T to_arithmetic(const V&amp; v, ConversionErrorHandler&amp;&amp; handler);
   template &lt;class T, class V> T to_arithmetic(const V&amp; v);
+
+  <c>// <n><xref id="numpunct_replacer_to_c"/>, numpunct_replacer_to_c:</n></c>
+  class numpunct_replacer_to_c;
 }
       </codeblock>
 
@@ -2381,6 +2385,83 @@ template &lt;class T, class A> T to_arithmetic(const A&amp; a);
           <preface>Let <c>H</c> be <c>ignore_if_conversion_failed</c> if <c>T</c> is an instance of <c>std::optional</c>, <c>fail_if_conversion_failed</c> otherwise.</preface>
           <effects>Equivalent to: <c>return to_arithmetic&lt;T>(a, H());</c></effects>
         </code-item>
+      </section>
+
+      <section id="numpunct_replacer_to_c">
+        <name>Class <c>numpunct_replacer_to_c</c></name>
+
+        <codeblock>
+namespace commata {
+  class numpunct_replacer_to_c {
+    <c>// <n><xref id="numpunct_replacer_to_c.cons"/>, construct/copy/destroy:</n></c>
+    explicit numpunct_replacer_to_c(const std::locale&amp; loc) noexcept;
+    numpunct_replacer_to_c(const numpunct_replacer_to_c&amp; other) noexcept;
+    numpunct_replacer_to_c&amp; operator=(const numpunct_replacer_to_c&amp; other) noexcept;
+   ~numpunct_replacer_to_c();
+
+    <c>// <n><xref id="numpunct_replacer_to_c.inv"/>, invocation:</n></c>
+    template &lt;class ForwardIterator, class ForwardIteratorEnd>
+      ForwardIterator operator()(ForwardIterator first, ForwardIteratorEnd last);
+    template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
+      OutputIterator operator()(InputIterator first, InputIteratorEnd last, OutputIterator result);
+  };
+}
+        </codeblock>
+
+        <p>The class <c>numpunct_replacer_to_c</c> describes an function object that removes or replaces the decimal radix separator character and the digit group separator character that are different those of the C library locale from NTBSes.
+           <span class="note">This is designed to preprocess NTBSes before they are passed to <c>to_arithmetic</c> (<xref id="to_arithmetic"/>).</span></p>
+        <p>An object of <c>numpunct_replacer_to_c</c> holds an object of <c>std::locale</c> that has information about the numeric punctuation characters to be removed or replaced.</p>
+        <p>The behaviour of a program is undefined if it modifies the C library locale between the construction of an object (possibly copied-from one) of this class and the invocation of <c>operator()</c> on it.
+           <span class="note">This allows and encourages the implementation to cache information about the C library locale into an object of this class.</span></p>
+
+        <section id="numpunct_replacer_to_c.cons">
+          <name><c>numpunct_replacer_to_c</c> construct/copy/destroy</name>
+
+          <code-item>
+            <code>
+explicit numpunct_replacer_to_c(const std::locale&amp; loc) noexcept;
+            </code>
+            <effects>Copy constructs an <c>std::locale</c> object from <c>loc</c> and stores it in <c>*this</c>.</effects>
+          </code-item>
+        </section>
+
+        <section id="numpunct_replacer_to_c.inv">
+          <name><c>numpunct_replacer_to_c</c> invocation</name>
+
+          <p>In this subclause, let <c>Ch</c> be the type <c>std::iterator_traits&lt;ForwardIterator>::value_type</c> or <c>std::iterator_traits&lt;InputIterator>::value_type</c>
+             and <c>npf</c> be <c>std::use_facet&lt;std::numpunct&lt;Ch>>(loc)</c> where <c>loc</c> is an lvalue to the an object of <c>std::locale</c> stored in <c>*this</c>.</p>
+
+          <code-item>
+            <code>
+template &lt;class ForwardIterator, class ForwardIteratorEnd>
+  ForwardIterator operator()(ForwardIterator first, ForwardIteratorEnd last);
+            </code>
+            <requires><c>ForwardIterator</c> shall be an forward iterator type for <c>char</c> or <c>wchar_t</c>.
+                      <c>ForwardIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
+                      <c>std::declval&lt;const ForwardIterator&amp;>() == std::declval&lt;const ForwardIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.</requires>
+            <effects>For each iterator <c>i</c>, whose first value is <c>first</c> and incremented until <c>i == last</c> becomes <c>true</c>,
+                     eliminates <c>*i</c> in place if <c>(!npf.grouping().empty()) &amp;&amp; (*i == npf.thousands_sep())</c> is <c>true</c>,
+                     and replaces <c>*i</c> in place with <c>*std::localeconv()->decimal_point</c> conditionally widen with <c>std::btowc</c> to get a value of the type <c>Ch</c> if <c>*i</c> is equal to <c>npf.decimal_point()</c>.</effects>
+            <returns>The last of the resulting range.</returns>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
+  OutputIterator operator()(InputIterator first, InputIteratorEnd last, OutputIterator result);
+            </code>
+            <requires><c>InputIterator</c> shall be an input iterator type for <c>char</c> or <c>wchar_t</c>.
+                      <c>InputIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
+                      <c>std::declval&lt;const InputIterator&amp;>() == std::declval&lt;const InputIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.
+                      <c>OutputIterator</c> shall be an output iterator type for <c>char</c> or <c>wchar_t</c>.</requires>
+            <effects>For each iterator <c>i</c>, whose first value is <c>first</c> and incremented until <c>i == last</c> becomes <c>true</c>,
+                     copies <c>*i</c> if <c>npf.grouping().empty() || (*i != npf.thousands_sep())</c> is <c>true</c>,
+                     replacing <c>npf.decimal_point()</c> with <c>*std::localeconv()->decimal_point</c> conditionally widen with <c>std::btowc</c> to get a value of the type <c>Ch</c>,
+                     into the range that begins with <c>result</c>.</effects>
+            <returns>The last of the resulting range.</returns>
+            <remark><c>result</c> may be equal to <c>first</c>.</remark>
+          </code-item>
+        </section>
       </section>
     </section>
   </section>
@@ -6826,10 +6907,10 @@ namespace commata {
       ConversionErrorHandlerR&amp;&amp; handle_conversion_error =
         std::decay_t&lt;ConversionErrorHandlerR>());
     locale_based_arithmetic_field_translator(
-      const locale_based_arithmetic_field_translator&amp;  other) noexcept(<nc>see below</nc>);
+      const locale_based_arithmetic_field_translator&amp;  other) = default;
     locale_based_arithmetic_field_translator(
-            locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
-   ~locale_based_arithmetic_field_translator();
+            locale_based_arithmetic_field_translator&amp;&amp; other) = default;
+   ~locale_based_arithmetic_field_translator() = default;
 
     <c>// <n><xref id="locale_based_arithmetic_field_translator.handler"/>, handler access:</n></c>
     const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -6840,6 +6921,11 @@ namespace commata {
     <c>// <n><xref id="locale_based_arithmetic_field_translator.inv"/>, invocation:</n></c>
     template &lt;class Ch> void operator()(Ch* begin, Ch* end);
                         void operator()();
+
+private:
+    arithmetic_field_translator&lt;T, Sink,
+                                SkippingHandler, ConversionErrorHandler> base;  // exposition only
+    numpunct_replacer_to_c replace;                                             // exposition only
   };
 }
         </codeblock>
@@ -6862,29 +6948,9 @@ explicit locale_based_arithmetic_field_translator(
     std::decay_t&lt;ConversionErrorHandlerR>());
             </code>
             <requires><c>std::is_constructible_v&lt;Sink, SinkR&amp;&amp;></c>, <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> and <c>std::is_constructible_v&lt;ConversionErrorHandler, ConversionErrorHandlerR&amp;&amp;></c> shall all be <c>true</c>.</requires>
-            <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds objects of <c>Sink</c>, <c>std::locale</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c>, <c>loc</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandlerR>(handle_conversion_error)</c>
-                     as the field translator sink object, the locale object, the skipping handler object and the conversion error handler object respectively.</effects>
+            <effects>Initializes <c>base</c> with <c>std::forward&lt;SinkR>(sink)</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandlerR>(handle_conversion_error)</c>.
+                     Initializes <c>replace</c> with <c>loc</c>.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;locale_based_arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler>, std::decay_t&lt;SinkR>></c> is <c>false</c>.</remark>
-          </code-item>
-
-          <code-item>
-            <code>
-locale_based_arithmetic_field_translator(
-  const locale_based_arithmetic_field_translator&amp; other) noexcept(<nc>see below</nc>);
-            </code>
-            <requires><c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall be <c>CopyConstructible</c>.</requires>
-            <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with lvalues of the corresponding objects of <c>other</c>.</effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;SkippingHandler> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;ConversionErrorHandler></c>.</remark>
-          </code-item>
-
-          <code-item>
-            <code>
-locale_based_arithmetic_field_translator(
-  locale_based_arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
-            </code>
-            <effects>Initializes an object of <c>locale_based_arithmetic_field_translator</c> that holds a field translator sink object, a locale object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_move_constructible_v&lt;SkippingHandler> &amp;&amp; std::is_nothrow_move_constructible_v&lt;ConversionErrorHandler></c>.
-                    When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
           </code-item>
         </section>
 
@@ -6895,7 +6961,7 @@ locale_based_arithmetic_field_translator(
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
       SkippingHandler&amp; get_skipping_handler()       noexcept;
             </code>
-            <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
+            <effects>Equivalent to: <c>base.get_skipping_handler()</c>.</effects>
           </code-item>
 
           <code-item>
@@ -6903,7 +6969,7 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
 const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
       ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
             </code>
-            <returns>A reference of the conversion error handler held by <c>*this</c>.</returns>
+            <effects>Equivalent to: <c>base.get_conversion_error_handler()</c>.</effects>
           </code-item>
         </section>
 
@@ -6914,17 +6980,20 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
 template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             </code>
             <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
-            <effects>Let <c>npf</c> be <c>std::use_facet&lt;std::numpunct&lt;Ch>>(loc)</c> where <c>loc</c> is the specified locale.
-                     First, if <c>npf.grouping().empty()</c> is <c>false</c>, removes all occurrences of <c>npf.thousands_sep()</c> in the range [<c>begin</c>, <c>end</c>) in place.
-                     Second, replaces the first occurrence of <c>npf.decimal_point()</c> in the resulted range with <c>*std::localeconv()->decimal_point</c> conditionally widen with <c>std::btowc</c> to get a value of the type <c>Ch</c> in place.
-                     Then behaves as if <c>arithmetic_field_translator::operator()</c> (<xref id="arithmetic_field_translator.inv"/>) is called with the resulted range.</effects>
+            <effects><p>Equivalent to:</p>
+              <code>
+Ch* const new_end = replace(begin, end);
+*new_end = Ch();
+base(begin, new_end);
+              </code>
+            </effects>
           </code-item>
 
           <code-item>
             <code>
 void operator()();
             </code>
-            <effects>Evaluates <c>invoke_typing_as&lt;T>(get_skipping_handler())</c> and puts the result into the field translator sink.</effects>
+            <effects>Equivalent to: <c>base();</c></effects>
           </code-item>
         </section>
       </section>
@@ -7838,6 +7907,9 @@ namespace commata {
     const char_type* c_str() const noexcept;
     const view_type&amp; operator*() const noexcept;
     const view_type* operator->() const noexcept;
+
+    <c>// <n><xref id="table_pull.mod"/>, in-place string value modification:</n></c>
+    template &lt;class F> table_pull&amp; rewrite(F f);
   };
 
   template &lt;class TableSource, class... Args>
@@ -8102,6 +8174,25 @@ const view_type&amp; operator*() const noexcept;
 const view_type* operator->() const noexcept;
         </code>
         <returns>A reference or a pointer to a string view object that represents the current string value.</returns>
+      </code-item>
+    </section>
+
+    <section id="table_pull.mod">
+      <name><c>table_pull</c> in-place string value modification</name>
+
+      <code-item>
+        <code>
+template &lt;class F> table_pull&amp; rewrite(F f);
+        </code>
+        <requires><c>std::is_invocable_r_v&lt;char_type*, F, char_type*, char_type*></c> shall be true.
+                  When evaluated as <c>f(first, last)</c>, <c>f</c> shall read and write at most the range [<c>first</c>, <c>last</c>).</requires>
+        <effects>First evaluates <c>f(const_cast&lt;char_type*>(c_str()), const_cast&lt;char_type*>(c_str()) + (*this)->size())</c> and initialize an <c>char_type*</c> object <c>new_end</c> with its result.
+                 Then shorten the current string value, preserving its null-terminated property, to have <c>new_end - data()</c> characters if <c>new_end - data()</c> is smaller than <c>size()</c>.</effects>
+        <returns><c>*this</c>.</returns>
+        <postcondition><c>state</c> member function shall return the same value as before the invocation.</postcondition>
+        <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
+                When an exception is thrown, the state of <c>*this</c> shall not be changed.</remark>
+        <note>This member function template is primarily intended to be invoked with a <c>numpunct_replacer_to_c</c> (<xref id="numpunct_replacer_to_c"/>) object.</note>
       </code-item>
     </section>
 

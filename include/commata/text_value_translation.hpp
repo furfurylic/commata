@@ -7,11 +7,16 @@
 #define COMMATA_GUARD_0DE728A7_BABE_4C3A_94B1_A05CB3D0C9E4
 
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 #include <cerrno>
+#include <clocale>
 #include <cstdint>
 #include <cstdlib>
+#include <cwchar>
 #include <cwctype>
+#include <iterator>
+#include <locale>
 #include <memory>
 #include <optional>
 #include <string_view>
@@ -1152,6 +1157,136 @@ T to_arithmetic(const A& a)
         return *detail::xlate::do_convert<T>(a, fail_if_conversion_failed());
     }
 }
+
+class numpunct_replacer_to_c
+{
+    std::locale loc_;
+
+    // These are initialized on the first invocation for the character type
+    wchar_t decimal_point_ = L'\0';     // of specified loc in the ctor
+    wchar_t thousands_sep_ = L'\0';     // ditto
+    wchar_t decimal_point_c_ = L'\0';   // of C's global to mimic
+                                        // std::strtol and its comrades
+    wchar_t thousands_sep_c_ = L'\0';   // ditto
+    bool mimics_ = false;
+    std::size_t prepared_for_ = 0U;
+
+public:
+    explicit numpunct_replacer_to_c(const std::locale& loc) noexcept :
+        loc_(loc)
+    {}
+
+    numpunct_replacer_to_c(const numpunct_replacer_to_c&) noexcept = default;
+    numpunct_replacer_to_c& operator=(const numpunct_replacer_to_c&) noexcept
+        = default;
+    ~numpunct_replacer_to_c() = default;
+
+    template <class ForwardIterator, class ForwardIteratorEnd>
+    ForwardIterator operator()(ForwardIterator first, ForwardIteratorEnd last)
+    {
+        using char_t =
+            typename std::iterator_traits<ForwardIterator>::value_type;
+        if (ensure_prepared<char_t>()) {
+            return impl(first, last ,first);
+        } else if constexpr (
+                std::is_same_v<ForwardIterator, ForwardIteratorEnd>) {
+            return last;
+        } else if constexpr (std::is_pointer_v<ForwardIterator>
+                          && std::is_pointer_v<ForwardIteratorEnd>) {
+            using f_t = std::remove_pointer_t<ForwardIterator>;
+            using l_t = std::remove_pointer_t<ForwardIteratorEnd>;
+            if constexpr (std::is_same_v<l_t, std::remove_cv_t<f_t>>) {
+                // f_t is cv qualified
+                return last;
+            } else if constexpr (std::is_same_v<f_t, std::remove_cv_t<l_t>>) {
+                // l_t is cv qualified
+                return const_cast<ForwardIterator>(last);
+                    // last is reachable as first + (last - first), so this
+                    // cast is safe
+            }
+        } else {
+            for (; !(first == last); ++first);
+            return first;
+        }
+    }
+
+    template <class InputIterator, class InputIteratorEnd,
+        class OutputIterator>
+    OutputIterator operator()(InputIterator first, InputIteratorEnd last,
+        OutputIterator result)
+    {
+        using char_t =
+            typename std::iterator_traits<InputIterator>::value_type;
+        if (ensure_prepared<char_t>()) {
+            return impl(first, last, result);
+        } else {
+            for (; !(first == last); ++first, ++result) {
+                *result = *first;
+            }
+            return result;
+        }
+    }
+
+private:
+    template <class Ch>
+    bool ensure_prepared()
+    {
+        constexpr std::size_t now = sizeof(Ch);
+        if (prepared_for_ != now) {
+            const auto& lconv = *std::localeconv();
+            decimal_point_c_ = widen(*lconv.decimal_point, Ch());
+            thousands_sep_c_ = widen(*lconv.thousands_sep, Ch());
+
+            const auto& facet = std::use_facet<std::numpunct<Ch>>(loc_);
+            thousands_sep_ = facet.grouping().empty() ?
+                Ch() : facet.thousands_sep();
+            decimal_point_ = facet.decimal_point();
+
+            mimics_ = (decimal_point_ != decimal_point_c_)
+                   || ((thousands_sep_ != Ch())
+                    && (thousands_sep_ != thousands_sep_c_));
+
+            prepared_for_ = now;
+        }
+        return mimics_;
+    }
+
+    template <class InputIterator, class InputIteratorEnd,
+        class OutputIterator>
+    OutputIterator impl(InputIterator first, InputIteratorEnd last,
+        OutputIterator result)
+    {
+        using char_t =
+            typename std::iterator_traits<InputIterator>::value_type;
+        static_assert(std::is_same_v<char, char_t>
+                   || std::is_same_v<wchar_t, char_t>);
+        bool decimal_point_appeared = false;
+        for (; !(first == last); ++first) {
+            char_t c = *first;
+            if (c == static_cast<char_t>(decimal_point_)) {
+                if (!decimal_point_appeared) {
+                    c = static_cast<char_t>(decimal_point_c_);
+                    decimal_point_appeared = true;
+                }
+            } else if (c == static_cast<char_t>(thousands_sep_)) {
+                continue;
+            }
+            *result = c;
+            ++result;
+        }
+        return result;
+    }
+
+    static char widen(char c, char)
+    {
+        return c;
+    }
+
+    static wchar_t widen(char c, wchar_t)
+    {
+        return std::btowc(static_cast<unsigned char>(c));
+    }
+};
 
 }
 

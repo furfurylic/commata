@@ -441,7 +441,7 @@ TYPED_TEST_P(TestTablePull, ToArithmetic)
 
     auto pull = make_table_pull(make_csv_source(str("X,Y\n"
                                                     "1,-51.3\n"
-                                                    "1.9")));
+                                                    "1.9,\"1 234,5\"")));
     pull.skip_record();
 
     const auto x1 = to_arithmetic<unsigned>(pull());
@@ -459,6 +459,12 @@ TYPED_TEST_P(TestTablePull, ToArithmetic)
     const auto x2d = to_arithmetic<std::optional<double>>(pull);
     ASSERT_TRUE(x2d.has_value());
     ASSERT_EQ(std::stod("1.9"), x2d);
+
+    pull(); // to "\"1 234,5\""
+    pull.rewrite(numpunct_replacer_to_c(std::locale(std::locale::classic(),
+        new french_style_numpunct<char_t>)));
+    const double y2 = to_arithmetic<double>(pull);
+    ASSERT_EQ(std::stod("1234.5"), y2);
 }
 
 REGISTER_TYPED_TEST_SUITE_P(TestTablePull,

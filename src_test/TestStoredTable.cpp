@@ -674,6 +674,23 @@ TYPED_TEST(TestStoredValue, Data)
     ASSERT_EQ(str("wrong"), cv);
 }
 
+TYPED_TEST(TestStoredValue, NumPunctReplacerToC)
+{
+    using char_t = TypeParam;
+    using decayed_char_t = std::remove_const_t<char_t>;
+    using value_t = basic_stored_value<char_t>;
+    using string_t = std::basic_string<decayed_char_t>;
+
+    const auto str0 = char_helper<decayed_char_t>::str0;
+
+    string_t s = str0("-99 999,5");
+    value_t v(&s[0], &s[s.size() - 1]);
+    numpunct_replacer_to_c engine(std::locale(std::locale::classic(),
+        new french_style_numpunct<char_t>));
+    v.erase(engine(v.begin(), v.end()), v.end());
+    ASSERT_EQ(-99999.5, to_arithmetic<double>(v));
+}
+
 namespace privy {
 
 using store_t = detail::stored::table_store<char, std::allocator<char>>;
