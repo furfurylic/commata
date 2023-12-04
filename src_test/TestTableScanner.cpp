@@ -58,8 +58,7 @@ TYPED_TEST(TestFieldTranslatorForArithmeticTypes, Correct)
     std::deque<double> ys;
 
     basic_table_scanner<TypeParam> h(1U);
-    h.set_field_scanner(0, make_field_translator(xs,
-        replacement_fail, replace_if_conversion_failed<int>(300)));
+    h.set_field_scanner(0, make_field_translator(xs, replacement_fail, 300));
     h.set_field_scanner(1, make_field_translator(ys,
         replacement_ignore, replace_if_conversion_failed<double>(1.0, -1.0)));
 
@@ -250,8 +249,7 @@ TYPED_TEST(TestLocaleBased, Copy)
     auto s0 = str0("12 345 678,5");
     auto s1 = str0("-9 999");
 
-    auto t = make_field_translator<double>(f, loc, 33.33,
-        replace_if_conversion_failed<double>(777.77));
+    auto t = make_field_translator<double>(f, loc, 33.33, 777.77);
     auto u = t;
 
     t(&s0[0], &s0[0] + (s0.size() - 1));

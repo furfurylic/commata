@@ -1640,6 +1640,8 @@ namespace commata {
         <codeblock>
 namespace commata {
   struct fail_if_conversion_failed {
+    explicit fail_if_conversion_failed(replacement_fail_t = replacement_fail) {}
+
     template &lt;class T, class Ch>
       [[noreturn]] std::nullopt_t operator()(invalid_format_t,
                                              const Ch*, const Ch*, T* = nullptr) const;
@@ -1688,6 +1690,8 @@ template &lt;class T>
         <codeblock>
 namespace commata {
   struct ignore_if_conversion_failed {
+    explicit ignore_if_conversion_failed(replacement_ignore_t = replacement_ignore) {}
+
     template &lt;class Ch> std::nullopt_t operator()(invalid_format_t, const Ch*, const Ch*) const;
     template &lt;class Ch> std::nullopt_t operator()(out_of_range_t, const Ch*, const Ch*, int) const;
     std::nullopt_t operator()(empty_t) const;
@@ -1720,13 +1724,19 @@ namespace commata {
     static constexpr std::size_t size = <nc>see below</nc>;
 
     <c>// <n><xref id="replace_if_conversion_failed.cons"/>, construct/copy/destroy:</n></c>
-    template &lt;class Empty = T, class InvalidFormat = T,
-              class AboveUpperLimit = T>
-      explicit
-        replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
-                                     InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
-                                     AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
-          noexcept(<nc>see below</nc>);
+    template &lt;class All = T>
+      explicit replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
+    template &lt;class Empty, class AllButEmpty>
+      replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
+                                   const AllButEmpty&amp; for_all_but_empty) noexcept(<nc>see below</nc>);
+    template &lt;class Empty, class InvalidFormat, class AllOutOfRanges>
+      replace_if_conversion_failed(Empty&amp;&amp;               on_empty,
+                                   InvalidFormat&amp;&amp;       on_invalid_format,
+                                   const AllOutOfRanges&amp; for_all_out_of_ranges) noexcept(<nc>see below</nc>);
+    template &lt;class Empty, class InvalidFormat, class AboveUpperLimit>
+      replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
+                                   InvalidFormat&amp;&amp;   on_invalid_format,
+                                   AboveUpperLimit&amp;&amp; on_above_upper_limit) noexcept(<nc>see below</nc>);
     template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class BelowLowerLimit>
       replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
                                    InvalidFormat&amp;&amp;   on_invalid_format,
@@ -1770,9 +1780,16 @@ namespace commata {
         <p>The class template <c>replace_if_conversion_failed</c> offers types that meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) whose target type is the template parameter <c>T</c>.
            On a conversion error, an object of them can make the text value translation process fail, ignore it, or offer a substitution of the field value, depending on the category of the error.</p>
         <p><c>T</c> shall be <c>CopyConstructible</c> and <c>Destructible</c>.</p>
+        <p><c>replace_if_conversion_failed&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
         <p>An object of an instance of <c>replace_if_conversion_failed</c> is configured with five replacement actions (<xref id="replacement_action"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
            Each of these replacement actions is configured to be either of the three types illustrated in <xref id="table.replacement_action"/> independently for one object of <c>replace_if_conversion_failed</c>.</p>
-        <p><c>replace_if_conversion_failed&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
+        <p>In this subclause, a replacement action <c>r</c> of an object of <c>replace_if_conversion_failed</c> is called <n>unconfigurable</n> if:</p>
+        <ul>
+          <li><c>r</c> is <c>action_on_below_lower_limit</c> or <c>action_on_underflow</c> when <c>T</c> is an unsigned integer type, or</li>
+          <li><c>r</c> is <c>action_on_underflow</c> when <c>T</c> is an signed integer type.</li>
+        </ul>
+        <p>Similarly, a replacement action of an object of <c>replace_if_conversion_failed</c> is called <n>configurable</n> if it is not unconfigurable.</p>
+        <p>Each unconfigurable replacement action of an object of <c>replace_if_conversion_failed</c> is fixed to be <c>fail</c>.</p>
 
         <section id="replace_if_conversion_failed.props">
           <name><c>replace_if_conversion_failed</c> properties</name>
@@ -1781,7 +1798,7 @@ namespace commata {
             <code>
 static constexpr std::size_t size = <nc>see below</nc>;
             </code>
-            <remark><p>The expression in the right of <c>=</c> in the initializer shall be:</p>
+            <remark><p>The expression in the right of <c>=</c> in the initializer shall be the number of configurable replacement actions, thus shall be:</p>
                     <ul>
                       <li><c>3</c> if <c>T</c> is an unsigned integer type,</li>
                       <li><c>4</c> if <c>T</c> is a signed integer type,</li>
@@ -1808,24 +1825,62 @@ static constexpr std::size_t size = <nc>see below</nc>;
             <li><c>A</c> implies an ignore action,</li>
             <li><c>std::is_nothrow_contructible_v&lt;T, A&amp;&amp;></c> is <c>true</c>.</li>
           </ul>
+          <p>To <n>arrage</n> a replacement action from an expression <c>a</c> means:</p>
+          <ul>
+            <li>if <c>decltype(a)</c> implies a fail action, the replace action is configured to be <c>fail</c>,</li>
+            <li>if <c>decltype(a)</c> implies a ignore action, the replace action is configured to be <c>ignore</c>,</li>
+            <li>otherwise, the replace action is configured to be <c>copy</c> with an object of <c>T</c> constructed from <c>a</c>.</li>
+          </ul>
+          <p>To <n>move-arrage</n> a replacement action from an lvalue <c>a</c> means to arrange a replacement action from <c>std::move(a)</c>.</p>
 
           <code-item>
             <code>
-template &lt;class Empty = T, class InvalidFormat = T, class AboveUpperLimit = T>
-  explicit
-    replace_if_conversion_failed(Empty&amp;&amp;           on_empty             = Empty(),
-                                 InvalidFormat&amp;&amp;   on_invalid_format    = InvalidFormat(),
-                                 AboveUpperLimit&amp;&amp; on_above_upper_limit = AboveUpperLimit())
-      noexcept(<nc>see below</nc>);
+template &lt;class All = T>
+  explicit replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
             </code>
-            <effects>If <c>Empty</c> implies a fail action, configures <c>action_on_empty</c> to be <c>fail</c>.
-                     Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
-                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
-                     Does the same with <c>action_on_invalid_format</c> and <c>action_on_above_upper_limit</c>.
-                     Configures <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-            <remark>This overload shall not be declared if <c>std::is_default_constructible_v&lt;T></c> is <c>false</c>.
-                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.
-                    The expression inside <c>noexcept</c> is <c>true</c> if and only if <c>std::is_nothrow_default_constructible_v&lt;T></c> is <c>true</c> and none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.</remark>
+            <effects>Arranges all configurable replacement actions from <c>for_all</c>.</effects>
+            <remark>This overload shall not participate in overload resolution unless <c><nc>IS_ACCEPTABLE</nc>&lt;const All&amp;></c> is <c>true</c>.
+                    The expression inside <c>noexcept</c> is equvalent to <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, const All&amp;></c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class Empty, class AllButEmpty>
+  replace_if_conversion_failed(Empty&amp;&amp;            on_empty,
+                               const AllButEmpty&amp; for_all_but_empty) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>Move-arranges <c>action_on_empty</c> from <c>on_empty</c>.
+                     Arranges all other configurable replacement actions from <c>for_all_but_empty</c>.</effects>
+            <remark>This overload shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c> and <c>const AllButEmpty&amp;</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c> and <c>const AllButEmpty&amp;</c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class Empty, class InvalidFormat, class AllOutOfRanges>
+  replace_if_conversion_failed(Empty&amp;&amp;               on_empty,
+                               InvalidFormat&amp;&amp;       on_invalid_format,
+                               const AllOutOfRanges&amp; for_all_out_of_ranges) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>Move-arranges <c>action_on_empty</c> and <c>action_on_invalid_format</c> from <c>on_empty</c> and <c>on_invalid_format</c> respectively.
+                     Arranges all other configurable replacement actions from <c>for_all_out_of_ranges</c>.</effects>
+            <remark>This overload shall not be declared if <c>T</c> is an unsigned integer type.
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c>, <c>InvalidFormat&amp;&amp;</c> and <c>const AllOutOfRanges&amp;</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c>, <c>InvalidFormat&amp;&amp;</c> and <c>const AllOutOfRanges&amp;</c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class Empty, class InvalidFormat, class AboveUpperLimit>
+  replace_if_conversion_failed(Empty&amp;&amp;           on_empty,
+                               InvalidFormat&amp;&amp;   on_invalid_format,
+                               AboveUpperLimit&amp;&amp; on_above_upper_limit) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>Move-arranges <c>action_on_empty</c>, <c>action_on_invalid_format</c> and <c>action_on_above_upper_limit</c> from <c>on_empty</c>, <c>on_invalid_format</c> and <c>on_above_upper_limit</c> respectively.
+                     Configures <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> to be <c>fail</c>.</effects>
+            <remark>This overload shall not be declared unless <c>T</c> is an unsigned integer type.
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.</remark>
           </code-item>
 
           <code-item>
@@ -1836,14 +1891,11 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                                AboveUpperLimit&amp;&amp; on_above_upper_limit,
                                BelowLowerLimit&amp;&amp; on_below_lower_limit) noexcept(<nc>see below</nc>);
             </code>
-            <effects>If <c>Empty</c> implies a fail action, configures <c>action_on_empty</c> to be <c>fail</c>.
-                     Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
-                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
-                     Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c>.
-                     Configures <c>action_on_underflow</c> to be <c>copy</c> with a value-initialized object of <c>T</c>.</effects>
-            <remark>This overload shall not be declared if <c>T</c> is an unsigned integer type or <c>std::is_default_constructible_v&lt;T></c> is <c>false</c>.
-                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.
-                    The expression inside <c>noexcept</c> is <c>true</c> if and only if <c>std::is_nothrow_default_constructible_v&lt;T></c> is <c>true</c> and none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.</remark>
+            <effects>Move-arranges <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c> from <c>on_empty</c>, <c>on_invalid_format</c>, <c>on_above_upper_limit</c> and <c>on_below_lower_limit</c> respectively.
+                     Configures <c>action_on_underflow</c> to be <c>fail</c>.</effects>
+            <remark>This overload shall not be declared unless <c>T</c> is an signed integer type.
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.</remark>
           </code-item>
 
           <code-item>
@@ -1856,13 +1908,10 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
                                BelowLowerLimit&amp;&amp; on_below_lower_limit,
                                Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
             </code>
-            <effects>If <c>Empty</c> implies a fail action, configures <c>action_on_empty</c> to be <c>fail</c>.
-                     Otherwise, if it implies an ignore action, configures it to be <c>ignore</c>.
-                     Otherwise, configures it to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;Empty>(on_empty)</c>.
-                     Does the same with <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>.</effects>
+            <effects>Move-arranges <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> from <c>on_empty</c>, <c>on_invalid_format</c>, <c>on_above_upper_limit</c>, <c>on_below_lower_limit</c> and <c>on_below_lower_limit</c> respectively.</effects>
             <remark>This overload shall not be declared if <c>T</c> is an integer type.
-                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.
-                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.</remark>
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.</remark>
           </code-item>
 
           <code-item>
@@ -7110,18 +7159,35 @@ void operator()();
       <section id="scan.builtin.body_field_scanners.creation">
         <name>Creation of default body field scanners</name>
 
-        <p>In this subclause, a type <c>S</c> is <n>deemed to be an acceptable sink</n> of type <c>T</c> if:</p>
+        <p>In this subclause, following terms and notations are used.</p>
         <ul>
-          <li><c>std::iterator_traits&lt;S>::iterator_category</c> is a type equal to <c>std::output_iterator_tag</c>, <c>std::forward_iterator_tag</c>, or their derived type; or</li>
-          <li><c>s(t)</c> is a valid expression where <c>s</c> is an lvalue of <c>S</c> and <c>t</c> is an rvalue of <c>T</c>.</li>
+          <li>A type <c>S</c> is <n>deemed to be an acceptable sink</n> of type <c>T</c> if:
+              <ul>
+                <li><c>std::iterator_traits&lt;S>::iterator_category</c> is a type equal to <c>std::output_iterator_tag</c>, <c>std::forward_iterator_tag</c>, or their derived type; or</li>
+                <li><c>s(t)</c> is a valid expression where <c>s</c> is an lvalue of <c>S</c> and <c>t</c> is an rvalue of <c>T</c>.</li>
+              </ul></li>
+          <li>A type <c><n>DEDUCED_SKIPPING_HANDLER_TYPE</n>&lt;T, U></c> for types <c>T</c> and <c>U</c> is defined as follows:
+              <ul>
+                <li>if <c>std::is_base_of_v&lt;replacement_fail_t, std::decay_t&lt;U>></c> is <c>true</c>, <c>fail_if_skipped</c>,</li>
+                <li>otherwise, if <c>std::is_base_of_v&lt;replacement_ignore_t, std::decay_t&lt;U>></c> is <c>true</c>, <c>ignore_if_skipped</c>,</li>
+                <li>otherwise, if <c>!std::is_base_of_v&lt;replace_if_skipped&lt;T>, std::decay_t&lt;U>> &amp;&amp; std::is_constructible_v&lt;replace_if_skipped&lt;T>, U></c> is <c>true</c>, <c>replace_if_skipped&lt;T></c>,</li>
+                <li>otherwise, <c>std::decay_t&lt;U></c>.</li>
+              </ul></li>
+          <li>A type <c><n>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</n>&lt;T, U></c> for types <c>T</c> and <c>U</c> is defined as follows:
+              <ul>
+                <li>if <c>std::is_base_of_v&lt;replacement_fail_t, std::decay_t&lt;U>></c> is <c>true</c>, <c>fail_if_conversion_failed</c>,</li>
+                <li>otherwise, if <c>std::is_base_of_v&lt;replacement_ignore_t, std::decay_t&lt;U>></c> is <c>true</c>, <c>ignore_if_conversion_failed</c>,</li>
+                <li>otherwise, if <c>!std::is_base_of_v&lt;replace_if_conversion_failed&lt;T>, std::decay_t&lt;U>> &amp;&amp; std::is_constructible_v&lt;replace_if_conversion_failed&lt;T>, U></c> is <c>true</c>, <c>replace_if_conversion_failed&lt;T></c>,</li>
+                <li>otherwise, <c>std::decay_t&lt;U></c>.</li>
+              </ul></li>
+          <li>For a template parameter pack <c>As</c>, <c>As...[i]</c> denotes the <c>i</c>-th (zero-based) of <c>As...</c>.</li>
+          <li>An expression <c><n>INSERTER</n>(s)</c> for an lvalue <c>s</c> of a cv-unqualified type <c>S</c> is defined as follows:
+              <ul>
+                <li>if <c>s.push_back(std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::back_inserter(s)</c>,</li>
+                <li>otherwise, if <c>s.insert(s.end(), std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::inserter(s, s.end())</c>,</li>
+                <li>otherwise, the program is ill-formed.</li>
+              </ul></li>
         </ul>
-
-        <p>In addition, an expression <c><n>INSERTER</n>(s)</c> for an lvalue <c>s</c> of a cv-unqualified type <c>S</c> is defined as follows:</p>
-         <ul>
-           <li>if <c>s.push_back(std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::back_inserter(s)</c>,</li>
-           <li>otherwise, if <c>s.insert(s.end(), std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::inserter(s, s.end())</c>,</li>
-           <li>otherwise, the program is ill-formed.</li>
-         </ul>
 
         <code-item>
           <code>
@@ -7135,53 +7201,31 @@ template &lt;class T, class SinkR, class... Appendices>
                      <li>if <c>T</c> is a default translatable string type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
-                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
-                           <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>DF</c> is <c>replacement_ignore_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, ignore_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, std::decay_t&lt;Appendices>...></c>;</li>
-                           </ul>
-                         </li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
+                         <li>otherwise, the program is ill-formed.</li>
                        </ul>
                      </li>
                      <li>otherwise, if <c>T</c> is a default translatable string view type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type></c>,</li>
-                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
-                           <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>DF</c> is <c>replacement_ignore_t</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, ignore_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, std::decay_t&lt;Appendices>...></c>;</li>
-                           </ul>
-                         </li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>string_view_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
+                         <li>otherwise, the program is ill-formed.</li>
                        </ul>
                      </li>
-                     <li>otherwise, if <c>sizeof...(Appendices)</c> is greater than <c>0</c> and the reference-removed type of the first type of <c>Appendices</c> is possibly cv-qualified <c>std::locale</c> or its derived type:
+                     <li>otherwise, if <c>sizeof...(Appendices)</c> is greater than <c>0</c> and <c>std::remove_reference_t&lt;Appendices...[0]></c> is possibly cv-qualified <c>std::locale</c> or its derived type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T></c>,</li>
-                         <li>otherwise, with <c>F</c> being the second type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices2...</c> representing the types of <c>Appendices...</c> without its first two types:
-                           <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, fail_if_skipped, std::decay_t&lt;Appendices2>...></c>,</li>
-                             <li>otherwise, if <c>DF</c> is <c>replacement_ignore_t</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, ignore_if_skipped, std::decay_t&lt;Appendices2>...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices2>...></c>,</li>
-                             <li>otherwise, <c>locale_based_arithmetic_field_translator&lt;Sink, T, std::decay_t&lt;Appendices1>...></c>;</li>
-                           </ul>
-                         </li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>2</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>></c>,</li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>3</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, Appendices...[2]>></c>,</li>
+                         <li>otherwise, the program is ill-formed.</li>
                        </ul>
                      </li>
                      <li>otherwise:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>arithmetic_field_translator&lt;Sink, T></c>,</li>
-                         <li>otherwise, with <c>F</c> being the first type of <c>Appendices...</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
-                           <ul>
-                             <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>arithmetic_field_translator&lt;Sink, T, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>DF</c> is <c>replacement_ignore_t</c>, <c>arithmetic_field_translator&lt;Sink, T, ignore_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>arithmetic_field_translator&lt;Sink, T, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
-                             <li>otherwise, <c>arithmetic_field_translator&lt;Sink, T, std::decay_t&lt;Appendices>...></c>.</li>
-                           </ul>
-                         </li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>2</c>, <c>arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>></c>,</li>
+                         <li>otherwise, the program is ill-formed.</li>
                        </ul>
                      </li>
                    </ul>
@@ -7198,17 +7242,11 @@ template &lt;class T, class Allocator, class SinkR, class... Appendices>
           <effects><p>Equivalent to:</p>
                    <code>return <n>R</n>(std::allocator_arg, alloc, std::forward&lt;SinkR>(sink), std::forward&lt;Appendices>(appendices)...);</code>
                    <p>where <c><n>R</n></c> is a type decided as follows with <c>Sink</c> being <c>std::decay_t&lt;SinkR></c>:</p>
-                     <ul>
-                       <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
-                       <li>otherwise, with <c>F</c> being the first type of <c>Appendices</c>, <c>DF</c> being <c>std:decay_t&lt;F></c>, and <c>Appendices1...</c> representing the types of <c>Appendices...</c> without its first type:
-                         <ul>
-                           <li>if <c>DF</c> is <c>replacement_fail_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, fail_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                           <li>otherwise, if <c>DF</c> is <c>replacement_ignore_t</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, ignore_if_skipped, std::decay_t&lt;Appendices1>...></c>,</li>
-                           <li>otherwise, if <c>std::is_constructible_v&lt;replace_if_skipped&lt;T>, F&amp;&amp;></c> is <c>true</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, replace_if_skipped&lt;T>, std::decay_t&lt;Appendices1>...></c>,</li>
-                           <li>otherwise, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, std::decay_t&lt;Appendices>...></c>;</li>
-                         </ul>
-                       </li>
-                     </ul>
+                   <ul>
+                     <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type></c>,</li>
+                     <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>string_field_translator&lt;Sink, typename T::value_type, typename T::traits_type, typename T::allocator_type, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
+                     <li>otherwise, the program is ill-formed.</li>
+                   </ul>
           </effects>
           <remark>This overload shall not participate in overload resolution unless <c>T</c> is a default translatable string type with its <c>allocator_type</c> member typedef naming <c>Allocator</c>, and <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
         </code-item>
@@ -7222,7 +7260,7 @@ template &lt;class Container, class... Appendices>
                    <code>return make_field_translator&lt;typename Container::value_type>(
          <n>INSERTER</n>(values), std::forward&lt;Appendices>(appendices)...);</code>
           </effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is either of a default translatable arithmetic type or a default translatable string type, and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is either of a default translatable arithmetic type or a default translatable string type, and <c><n>INSERTER</n>(values)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -7236,7 +7274,7 @@ template &lt;class Allocator, class Container, class... Appendices>
          std::allocator_arg, alloc,
          <n>INSERTER</n>(values), std::forward&lt;Appendices>(appendices)...);</code>
           </effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is a default translatable string type and <c><n>INSERTER</n>(values)</c> is a valid expression.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is a default translatable string type and <c><n>INSERTER</n>(values)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
       </section>
     </section>
