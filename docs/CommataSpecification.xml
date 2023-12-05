@@ -1783,7 +1783,8 @@ namespace commata {
 
         <p>The class template <c>replace_if_conversion_failed</c> offers types that meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) whose target type is the template parameter <c>T</c>.
            On a conversion error, an object of them can make the text value translation process fail, ignore it, or offer a substitution of the field value, depending on the category of the error.</p>
-        <p><c>T</c> shall be <c>CopyConstructible</c> and <c>Destructible</c>.</p>
+        <p><c>T</c> shall meet the <c>CopyConstructible</c> requirements and the <c>Destructible</c> requirements.
+           <c>T</c> shall not be equal to possibly cv-qualified types <c>replacement_fail_t</c> or <c>replacement_ignore_t</c>.</p>
         <p><c>replace_if_conversion_failed&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
         <p>An object of an instance of <c>replace_if_conversion_failed</c> is configured with five replacement actions (<xref id="replacement_action"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
            Each of these replacement actions is configured to be either of the three types illustrated in <xref id="table.replacement_action"/> independently for one object of <c>replace_if_conversion_failed</c>.</p>
@@ -6608,7 +6609,8 @@ namespace commata {
 
         <p>The class template <c>replace_if_skipped</c> offers types that meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) whose target type is the template parameter <c>T</c>.
            An object of them supplements the corresponding field that is not found in a record with a fixed value.</p>
-        <p><c>T</c> shall be <c>CopyConstructible</c> and <c>Destructible</c>.</p>
+        <p><c>T</c> shall meet the <c>CopyConstructible</c> requirements and the <c>Destructible</c> requirements.
+           <c>T</c> shall not be equal to possibly cv-qualified types <c>replacement_fail_t</c> or <c>replacement_ignore_t</c>.</p>
         <p>An object of an instance of <c>replace_if_skipped</c> has a replacement action (<xref id="replacement_action"/>).</p>
         <p><c>replace_if_skipped&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
 
