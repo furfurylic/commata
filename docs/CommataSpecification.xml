@@ -519,10 +519,10 @@
 #include &lt;string_view>
 
 namespace commata {
-  <c>// <n><xref id="text_error"/>, class text_error:</n></c>
+  <c>// <n><xref id="text_error"/>, text_error:</n></c>
   class text_error;
 
-  <c>// <n><xref id="text_error_info"/>, class text_error_info:</n></c>
+  <c>// <n><xref id="text_error_info"/>, text_error_info:</n></c>
   class text_error_info;
 
   template &lt;class Tr>
@@ -1393,14 +1393,14 @@ template &lt;class Handler>
       <name>Header <c>"commama/field_handling.hpp"</c> synopsis</name>
       <codeblock>
 namespace commata {
-  <c>// <n><xref id="replacement_action_tag"/>, replacement action tags</n></c>
+  <c>// <n><xref id="replacement_action_tag"/>, replacement action tags:</n></c>
   struct replacement_fail_t {};
   inline constexpr replacement_fail_t{};
 
   struct replacement_ignore_t {};
   inline constexpr replacement_ignore_t{};
 
-  <c>// <n><xref id="invoke_typing_as"/>, </n>invoke_typing_as</c>
+  <c>// <n><xref id="invoke_typing_as"/>, invoke_typing_as:</n></c>
   template &lt;class T, class... As> decltype(auto) invoke_typing_as(As&amp;&amp;... as);
 }
       </codeblock>
@@ -1460,7 +1460,7 @@ namespace commata {
       class text_value_empty;
     class text_value_out_of_range;
 
-  <c>// <n>Conversion error tags for the ConversionErrorHandler requirements (<xref id="conversion_error_handler.requirements"/>)</n></c>
+  <c>// <n>Conversion error tags for the ConversionErrorHandler requirements (<xref id="conversion_error_handler.requirements"/>):</n></c>
   struct invalid_format_t {};
   struct out_of_range_t {};
   struct empty_t {};
