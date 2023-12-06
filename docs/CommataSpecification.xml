@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-05 (UTC)</signature>
+<signature>2023-12-06 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2353,7 +2353,7 @@ template &lt;class T, class ConversionErrorHandler, class A>
                     <li>if the field value should be translated into a value below any values in the domain of <c>U</c>, a negative value of <c>int</c>,</li>
                       <li>otherwise, a zero value of <c>int</c>.</li>
                     </ul>
-                  <p>Then evaluates <c>invoke_typing_as&lt;U>(handler, out_of_range_t(), begin, end, g)</c>.</p></td>
+                  <p>Then evaluates <c>invoke_typing_as&lt;U>(std::forward&lt;ConversionErrorHandler>(handler), out_of_range_t(), begin, end, g)</c>.</p></td>
               </tr>
 
               <tr>
@@ -2365,7 +2365,7 @@ template &lt;class T, class ConversionErrorHandler, class A>
                 <td>No</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
-              <td>Evaluates <c>invoke_typing_as&lt;U>(handler, empty_t())</c>.</td>
+              <td>Evaluates <c>invoke_typing_as&lt;U>(std::forward&lt;ConversionErrorHandler>(handler), empty_t())</c>.</td>
               </tr>
 
               <tr>
@@ -2373,7 +2373,7 @@ template &lt;class T, class ConversionErrorHandler, class A>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
-              <td>Evaluates <c>invoke_typing_as&lt;U>(handler, invalid_format_t(), begin, end)</c>.</td>
+              <td>Evaluates <c>invoke_typing_as&lt;U>(std::forward&lt;ConversionErrorHandler>(handler), invalid_format_t(), begin, end)</c>.</td>
               </tr>
             </table>
         </code-item>

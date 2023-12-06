@@ -1075,7 +1075,7 @@ auto do_size(const A& a, ...) -> decltype(a->size())
 template <class T, class H>
 class typed_conversion_error_handler
 {
-    std::reference_wrapper<H> handler_;
+    std::reference_wrapper<std::remove_reference_t<H>> handler_;
 
 public:
     explicit typed_conversion_error_handler(H& handler) :
@@ -1085,20 +1085,21 @@ public:
     template <class Ch>
     decltype(auto) invalid_format(const Ch* begin, const Ch* end) const
     {
-        return invoke_typing_as<T>(handler_, invalid_format_t(), begin, end);
+        return invoke_typing_as<T>(std::forward<H>(handler_.get()),
+                    invalid_format_t(), begin, end);
     }
 
     template <class Ch>
     decltype(auto) out_of_range(
         const Ch* begin, const Ch* end, int sign) const
     {
-        return invoke_typing_as<T>(
-                    handler_, out_of_range_t(), begin, end, sign);
+        return invoke_typing_as<T>(std::forward<H>(handler_.get()),
+                    out_of_range_t(), begin, end, sign);
     }
 
     decltype(auto) empty() const
     {
-        return invoke_typing_as<T>(handler_, empty_t());
+        return invoke_typing_as<T>(std::forward<H>(handler_.get()), empty_t());
     }
 };
 
@@ -1108,7 +1109,7 @@ auto do_convert(const A& a, H&& h)
     const auto* const c_str = do_c_str(a);
     const auto size = do_size(a);
     return converter<T>()(c_str, c_str + size,
-        typed_conversion_error_handler<T, std::remove_reference_t<H>>(h));
+        typed_conversion_error_handler<T, H>(h));
 }
 
 struct is_default_translatable_arithmetic_type_impl
@@ -1136,14 +1137,17 @@ template <class T, class ConversionErrorHandler, class A>
 T to_arithmetic(const A& a, ConversionErrorHandler&& handler)
 {
     if constexpr (detail::is_std_optional_v<T>) {
-        return detail::xlate::do_convert<typename T::value_type>(a, handler);
+        return detail::xlate::do_convert<typename T::value_type>(
+                    a, std::forward<ConversionErrorHandler>(handler));
     } else if constexpr (std::is_same_v<fail_if_conversion_failed,
                                     std::decay_t<ConversionErrorHandler>>) {
         // We know that an empty optional would never be returned when handler
         // is a fail_if_conversion_failed
-        return *detail::xlate::do_convert<T>(a, handler);
+        return *detail::xlate::do_convert<T>(
+                    a, std::forward<ConversionErrorHandler>(handler));
     } else {
-        return detail::xlate::do_convert<T>(a, handler).value();
+        return detail::xlate::do_convert<T>(
+                    a, std::forward<ConversionErrorHandler>(handler)).value();
     }
 }
 

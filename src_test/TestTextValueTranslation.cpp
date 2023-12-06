@@ -1063,6 +1063,38 @@ TYPED_TEST(TestToArithmeticFloatingPoints, LowerLimit)
     ASSERT_FALSE(to_arithmetic<opt_t>(minn_by_10).has_value());
 }
 
+struct TestToArithmeticMiscellaneous : BaseTest
+{};
+
+namespace {
+
+struct rvalue_handler
+{
+    template <class Ch>
+    std::optional<int> operator()(invalid_format_t, const Ch*, const Ch*) &&
+    {
+        return 100;
+    }
+
+    template <class Ch>
+    std::optional<int> operator()(out_of_range_t, const Ch*, const Ch*, int) &&
+    {
+        return -100;
+    }
+
+    std::optional<int> operator()(empty_t) &&
+    {
+        return 0;
+    }
+};
+
+}
+
+TEST_F(TestToArithmeticMiscellaneous, Rvalue)
+{
+    ASSERT_EQ(100, to_arithmetic<int>("42x"s, rvalue_handler()));
+}
+
 template <class T>
 struct TestNumPunctReplacerToC : BaseTestWithParam<T>
 {};
