@@ -1075,7 +1075,11 @@ auto do_size(const A& a, ...) -> decltype(a->size())
 template <class T, class H>
 class typed_conversion_error_handler
 {
-    std::reference_wrapper<std::remove_reference_t<H>> handler_;
+    using handler_t = std::conditional_t<
+        detail::is_std_reference_wrapper_v<std::decay_t<H>>,
+        std::decay_t<H>,
+        std::reference_wrapper<std::remove_reference_t<H>>>;
+    handler_t handler_;
 
 public:
     explicit typed_conversion_error_handler(H& handler) :
@@ -1083,23 +1087,41 @@ public:
     {}
 
     template <class Ch>
-    decltype(auto) invalid_format(const Ch* begin, const Ch* end) const
+    decltype(auto) invalid_format(const Ch* begin, const Ch* end)
     {
-        return invoke_typing_as<T>(std::forward<H>(handler_.get()),
-                    invalid_format_t(), begin, end);
+        return forward(invalid_format_t(), begin, end);
     }
 
     template <class Ch>
     decltype(auto) out_of_range(
-        const Ch* begin, const Ch* end, int sign) const
+        const Ch* begin, const Ch* end, int sign)
     {
-        return invoke_typing_as<T>(std::forward<H>(handler_.get()),
-                    out_of_range_t(), begin, end, sign);
+        return forward(out_of_range_t(), begin, end, sign);
     }
 
-    decltype(auto) empty() const
+    decltype(auto) empty()
     {
-        return invoke_typing_as<T>(std::forward<H>(handler_.get()), empty_t());
+        return forward(empty_t());
+    }
+
+private:
+    template <class... As>
+    decltype(auto) forward(As&&... as)
+    {
+        return invoke_typing_as<T>(
+            std::forward<H>(as_lvalue()), std::forward<As>(as)...);
+    }
+
+    H& as_lvalue()
+    {
+        // We wouldn't think there are many points on perfect forwarding
+        // reference wrappers as is, but we would like to go ahead with this
+        // to keep the spec simple
+        if constexpr (detail::is_std_reference_wrapper_v<std::decay_t<H>>) {
+            return handler_;
+        } else {
+            return handler_.get();
+        }
     }
 };
 

@@ -1071,20 +1071,37 @@ namespace {
 struct rvalue_handler
 {
     template <class Ch>
-    std::optional<int> operator()(invalid_format_t, const Ch*, const Ch*) &&
+    int operator()(invalid_format_t, const Ch*, const Ch*) &
+    {
+        return 1;
+    }
+
+    template <class Ch>
+    int operator()(invalid_format_t, const Ch*, const Ch*) &&
     {
         return 100;
     }
 
     template <class Ch>
-    std::optional<int> operator()(out_of_range_t, const Ch*, const Ch*, int) &&
+    int operator()(out_of_range_t, const Ch*, const Ch*, int) &
     {
-        return -100;
+        return 2;
+    }
+
+    template <class Ch>
+    int operator()(out_of_range_t, const Ch*, const Ch*, int) &&
+    {
+        return 200;
+    }
+
+    int operator()(empty_t) &
+    {
+        return 3;
     }
 
     std::optional<int> operator()(empty_t) &&
     {
-        return 0;
+        return 300;
     }
 };
 
@@ -1093,6 +1110,12 @@ struct rvalue_handler
 TEST_F(TestToArithmeticMiscellaneous, Rvalue)
 {
     ASSERT_EQ(100, to_arithmetic<int>("42x"s, rvalue_handler()));
+}
+
+TEST_F(TestToArithmeticMiscellaneous, ReferenceWrapper)
+{
+    replace_if_conversion_failed<int> h(100);
+    ASSERT_EQ(100, to_arithmetic<int>("42x"s, std::ref(h)));
 }
 
 template <class T>
