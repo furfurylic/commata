@@ -222,6 +222,11 @@ class replace_if_skipped
     store_t store_;
 
 public:
+    static_assert(
+        !std::is_base_of_v<replacement_fail_t, std::remove_cv_t<T>>);
+    static_assert(
+        !std::is_base_of_v<replacement_ignore_t, std::remove_cv_t<T>>);
+
     using value_type = T;
 
     explicit replace_if_skipped(const T& t)
