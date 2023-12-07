@@ -1063,6 +1063,23 @@ TYPED_TEST(TestToArithmeticFloatingPoints, LowerLimit)
     ASSERT_FALSE(to_arithmetic<opt_t>(minn_by_10).has_value());
 }
 
+struct TestToArithmeticMiscellaneous : BaseTest
+{};
+
+TEST_F(TestToArithmeticMiscellaneous, Const)
+{
+    ASSERT_EQ(42, to_arithmetic<const int>("42"s));
+    try {
+        to_arithmetic<const int>("42x"s);
+        FAIL();
+    } catch (const text_value_invalid_format& e) {
+        ASSERT_NE(std::string_view(e.what()).find("int"),
+                  std::string_view::npos) << e.what();
+    }
+    ASSERT_EQ(55, to_arithmetic<int>(""s,
+        replace_if_conversion_failed<const int>(55)));
+}
+
 template <class T>
 struct TestNumPunctReplacerToC : BaseTestWithParam<T>
 {};
