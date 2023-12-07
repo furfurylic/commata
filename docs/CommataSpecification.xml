@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2023-11-30 (UTC)</signature>
+<signature>2023-12-07 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4437,9 +4437,9 @@ template &lt;class Content, class Allocator, class... Args>
 
         <p>In <xref id="table.conversion_error_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
            <c>i</c>, <c>o</c> and <c>e</c> are values of <c>invalid_format_t</c>, <c>out_of_range_t</c> and <c>empty_t</c> respectively.
-           <c>b</c> and <c>e</c> are pointers to cv-unqualified <c>Ch</c>.
-           The range [<c>b</c>, <c>e</c>) is the value of the field.
-           <c>e</c> can be dereferenced and points the terminating zero.
+           <c>f</c> and <c>l</c> are pointers to cv-unqualified <c>Ch</c>.
+           The range [<c>f</c>, <c>l</c>) is the value of the field.
+           <c>l</c> can be dereferenced and points the terminating zero.
            The type of <c>s</c> is <c>int</c>.
            <c>n</c> is a null pointer whose type is <c>T*</c>.</p>
 
@@ -4456,7 +4456,7 @@ template &lt;class Content, class Allocator, class... Args>
 
           <tr>
             <td rowspan="2">(1)</td>
-            <td><c>h(i, b, e)</c></td>
+            <td><c>h(i, f, l)</c></td>
             <td rowspan="2"><c>replacement&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a format error.
                 If <c>r.get()</c> is not <c>nullptr</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
@@ -4464,12 +4464,12 @@ template &lt;class Content, class Allocator, class... Args>
           </tr>
 
           <tr>
-            <td><c>h(i, b, e, n)</c></td>
+            <td><c>h(i, f, l, n)</c></td>
           </tr>
 
           <tr>
             <td rowspan="2">(2)</td>
-            <td><c>h(o, b, e, s)</c></td>
+            <td><c>h(o, f, l, s)</c></td>
             <td rowspan="2"><c>replacement&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has a value that can not be converted a value of <c>T</c> due to a range error.
                 <c>s</c> shall has a positive value if the field value should be translated into a value above the domain of <c>T</c>, a negative value if the field value should be translated into a value below the domain of <c>T</c>, or <c>0</c> otherwise.
@@ -4478,7 +4478,7 @@ template &lt;class Content, class Allocator, class... Args>
           </tr>
 
           <tr>
-            <td><c>h(o, b, e, s, n)</c></td>
+            <td><c>h(o, f, l, s, n)</c></td>
           </tr>
 
           <tr>
