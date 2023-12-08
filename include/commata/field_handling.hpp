@@ -91,10 +91,31 @@ using replaced_type_from_t =
 template <class T, class... As>
 decltype(auto) invoke_typing_as(As&&... as)
 {
-    if constexpr (std::is_invocable_v<As&&...>) {
+    if constexpr (std::is_invocable_v<As...>) {
         return std::invoke(std::forward<As>(as)...);
     } else {
         return std::invoke(std::forward<As>(as)..., static_cast<T*>(nullptr));
+    }
+}
+
+template <class T, class F, class X, class Ch, class... As>
+decltype(auto) invoke_with_range_typing_as(
+    F&& f, X x, [[maybe_unused]] Ch* first, [[maybe_unused]] Ch* last,
+    [[maybe_unused]] As&&... as)
+{
+    [[maybe_unused]] constexpr T* n = static_cast<T*>(nullptr);
+    if constexpr (std::is_invocable_v<F, X, Ch*, Ch*, As...>) {
+        return std::invoke(std::forward<F>(f), x, first, last, std::forward<As>(as)...);
+    } else if constexpr (std::is_invocable_v<F, X, Ch*, Ch*, As..., T*>) {
+        return std::invoke(std::forward<F>(f), x, first, last, std::forward<As>(as)..., n);
+    } else if constexpr (std::is_invocable_v<F, X, As...>) {
+        return std::invoke(std::forward<F>(f), x, std::forward<As>(as)...);
+    } else if constexpr (std::is_invocable_v<F, X, As..., T*>) {
+        return std::invoke(std::forward<F>(f), x, std::forward<As>(as)..., n);
+    } else if constexpr (std::is_invocable_v<F, X>) {
+        return std::invoke(std::forward<F>(f), x);
+    } else {
+        return std::invoke(std::forward<F>(f), x, n);
     }
 }
 

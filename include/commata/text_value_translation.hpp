@@ -400,14 +400,12 @@ struct ignore_if_conversion_failed
         replacement_ignore_t = replacement_ignore)
     {}
 
-    template <class Ch>
-    std::nullopt_t operator()(invalid_format_t, const Ch*, const Ch*) const
+    std::nullopt_t operator()(invalid_format_t) const
     {
         return std::nullopt;
     }
 
-    template <class Ch>
-    std::nullopt_t operator()(out_of_range_t, const Ch*, const Ch*, int) const
+    std::nullopt_t operator()(out_of_range_t) const
     {
         return std::nullopt;
     }
@@ -1092,14 +1090,15 @@ public:
     template <class Ch>
     decltype(auto) invalid_format(const Ch* begin, const Ch* end) const
     {
-        return invoke_typing_as<T>(handler_, invalid_format_t(), begin, end);
+        return invoke_with_range_typing_as<T>(
+                    handler_, invalid_format_t(), begin, end);
     }
 
     template <class Ch>
     decltype(auto) out_of_range(
         const Ch* begin, const Ch* end, int sign) const
     {
-        return invoke_typing_as<T>(
+        return invoke_with_range_typing_as<T>(
                     handler_, out_of_range_t(), begin, end, sign);
     }
 
