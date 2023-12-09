@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-07 (UTC)</signature>
+<signature>2023-12-08 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1400,8 +1400,10 @@ namespace commata {
   struct replacement_ignore_t {};
   inline constexpr replacement_ignore_t{};
 
-  <c>// <n><xref id="invoke_typing_as"/>, invoke_typing_as:</n></c>
+  <c>// <n><xref id="invoke_typing_as"/>, invoke_typing_as and invoke_with_range_typing_as:</n></c>
   template &lt;class T, class... As> decltype(auto) invoke_typing_as(As&amp;&amp;... as);
+  template &lt;class T, class F, class X, class Ch, class... As>
+    decltype(auto) invoke_with_range_typing_as(F&amp;&amp; f, X x, Ch* first, Ch* last, As&amp;&amp;... as);
 }
       </codeblock>
 
@@ -1422,7 +1424,7 @@ namespace commata {
       </section>
 
       <section id="invoke_typing_as">
-        <name>Function template <c>invoke_typing_as</c></name>
+        <name>Function templates <c>invoke_typing_as</c> and <c>invoke_with_range_typing_as</c></name>
 
         <code-item>
           <code>
@@ -1430,14 +1432,40 @@ template &lt;class T, class... As> decltype(auto) invoke_typing_as(As&amp;&amp;.
           </code>
           <effects><p>Equivalent to:</p>
             <code>
-if constexpr (std::is_invocable_v&lt;As&amp;&amp;...>) {
+if constexpr (std::is_invocable_v&lt;As...>) {
   return std::invoke(std::forward&lt;As>(as)...);
 } else {
   return std::invoke(std::forward&lt;As>(as)..., static_cast&lt;T*>(nullptr));
 }
             </code>
           </effects>
-          <note>This function template may be useful when invoking <c>ConversionErrorHandler</c> objects (<xref id="conversion_error_handler.requirements"/>) and <c>SkippingHandler</c> objects (<xref id="skipping_handler.requirements"/>).</note>
+          <note>This function template may be useful when invoking <c>ConversionErrorHandler</c> objects (<xref id="conversion_error_handler.requirements"/>) or <c>SkippingHandler</c> objects (<xref id="skipping_handler.requirements"/>).</note>
+        </code-item>
+
+        <code-item>
+          <code>
+template &lt;class T, class F, class X, class Ch, class... As>
+  decltype(auto) invoke_with_range_typing_as(F&amp;&amp; f, X x, Ch* first, Ch* last, As&amp;&amp;... as);
+          </code>
+          <effects><p>Equivalent to:</p>
+            <code>
+constexpr T* n = static_cast&lt;T*>(nullptr);
+if constexpr (std::is_invocable_v&lt;F, X, Ch*, Ch*, As...>) {
+  return std::invoke(std::forward&lt;F>(f), x, first, last, std::forward&lt;As>(as)...);
+} else if constexpr (std::is_invocable_v&lt;F, X, Ch*, Ch*, As..., T*>) {
+  return std::invoke(std::forward&lt;F>(f), x, first, last, std::forward&lt;As>(as)..., n);
+} else if constexpr (std::is_invocable_v&lt;F, X, As...>) {
+  return std::invoke(std::forward&lt;F>(f), x, std::forward&lt;As>(as)...);
+} else if constexpr (std::is_invocable_v&lt;F, X, As..., T*>) {
+  return std::invoke(std::forward&lt;F>(f), x, std::forward&lt;As>(as)..., n);
+} else if constexpr (std::is_invocable_v&lt;F, X>) {
+  return std::invoke(std::forward&lt;F>(f), x);
+} else {
+  return std::invoke(std::forward&lt;F>(f), x, n);
+}
+            </code>
+          </effects>
+          <note>This function template may be useful when invoking <c>ConversionErrorHandler</c> objects (<xref id="conversion_error_handler.requirements"/>).</note>
         </code-item>
       </section>
     </section>
@@ -1506,8 +1534,8 @@ namespace commata {
         <li>the expressions shown in <xref id="table.conversion_error_handler.requirements"/> are valid and have the indicated semantics.</li>
       </ul>
 
-      <p><xref id="table.conversion_error_handler.requirements"/> shows two expressions per row.
-          It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.</p>
+      <p><xref id="table.conversion_error_handler.requirements"/> shows two, four or six expressions per row.
+          It is required that at least one of these two expression qualifies, that is, it is not needed that more than one of them do.</p>
 
       <p>In <xref id="table.conversion_error_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
           <c>i</c>, <c>o</c> and <c>e</c> are values of <c>invalid_format_t</c>, <c>out_of_range_t</c> and <c>empty_t</c> respectively.
@@ -1529,25 +1557,41 @@ namespace commata {
         </tr>
 
         <tr>
-          <td rowspan="2">(1)</td>
+          <td rowspan="4">(1)</td>
           <td><c>h(i, f, l)</c></td>
-          <td rowspan="2">Convertible to <c>std::optional&lt;T></c></td>
-          <td rowspan="2">Evaluated when the corresponding text value can not be converted a value of <c>T</c> due to a format error.</td>
+          <td rowspan="4">Convertible to <c>std::optional&lt;T></c></td>
+          <td rowspan="4">Evaluated when the corresponding text value can not be converted a value of <c>T</c> due to a format error.</td>
         </tr>
-
         <tr>
           <td><c>h(i, f, l, n)</c></td>
         </tr>
-
         <tr>
-          <td rowspan="2">(2)</td>
-          <td><c>h(o, f, l, s)</c></td>
-          <td rowspan="2">Convertible to <c>std::optional&lt;T></c></td>
-          <td rowspan="2">Evaluated when the corresponding text value can not be converted a value of <c>T</c> due to a range error.</td>
+          <td><c>h(i)</c></td>
+        </tr>
+        <tr>
+          <td><c>h(i, n)</c></td>
         </tr>
 
         <tr>
+          <td rowspan="6">(2)</td>
+          <td><c>h(o, f, l, s)</c></td>
+          <td rowspan="6">Convertible to <c>std::optional&lt;T></c></td>
+          <td rowspan="6">Evaluated when the corresponding text value can not be converted a value of <c>T</c> due to a range error.</td>
+        </tr>
+        <tr>
           <td><c>h(o, f, l, s, n)</c></td>
+        </tr>
+        <tr>
+          <td><c>h(o, s)</c></td>
+        </tr>
+        <tr>
+          <td><c>h(o, s, n)</c></td>
+        </tr>
+        <tr>
+          <td><c>h(o)</c></td>
+        </tr>
+        <tr>
+          <td><c>h(o, n)</c></td>
         </tr>
 
         <tr>
@@ -1556,7 +1600,6 @@ namespace commata {
           <td rowspan="2">Convertible to <c>std::optional&lt;T></c></td>
           <td rowspan="2">Evaluated when the corresponding text value is empty.</td>
         </tr>
-
         <tr>
           <td><c>h(e, n)</c></td>
         </tr>
@@ -1696,8 +1739,8 @@ namespace commata {
   struct ignore_if_conversion_failed {
     explicit ignore_if_conversion_failed(replacement_ignore_t = replacement_ignore) {}
 
-    template &lt;class Ch> std::nullopt_t operator()(invalid_format_t, const Ch*, const Ch*) const;
-    template &lt;class Ch> std::nullopt_t operator()(out_of_range_t, const Ch*, const Ch*, int) const;
+    std::nullopt_t operator()(invalid_format_t) const;
+    std::nullopt_t operator()(out_of_range_t) const;
     std::nullopt_t operator()(empty_t) const;
   };
 }
@@ -1708,8 +1751,8 @@ namespace commata {
 
         <code-item>
           <code>
-template &lt;class Ch> std::nullopt_t operator()(invalid_format_t, const Ch*, const Ch*) const;
-template &lt;class Ch> std::nullopt_t operator()(out_of_range_t, const Ch*, const Ch*, int) const;
+std::nullopt_t operator()(invalid_format_t) const;
+std::nullopt_t operator()(out_of_range_t) const;
 std::nullopt_t operator()(empty_t) const;
           </code>
           <returns><c>std::nullopt</c>.</returns>
@@ -2354,7 +2397,7 @@ template &lt;class T, class ConversionErrorHandler, class A>
                     <li>if the field value should be translated into a value below any values in the domain of <c>U</c>, a negative value of <c>int</c>,</li>
                       <li>otherwise, a zero value of <c>int</c>.</li>
                     </ul>
-                  <p>Then evaluates <c>invoke_typing_as&lt;U>(std::forward&lt;ConversionErrorHandler>(handler), out_of_range_t(), begin, end, g)</c>.</p></td>
+                  <p>Then evaluates <c>invoke_with_range_typing_as&lt;U>(std::forward&lt;ConversionErrorHandler>(handler), out_of_range_t(), begin, end, g)</c>.</p></td>
               </tr>
 
               <tr>
@@ -2374,7 +2417,7 @@ template &lt;class T, class ConversionErrorHandler, class A>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
                 <td>&#8211;</td>
-              <td>Evaluates <c>invoke_typing_as&lt;U>(std::forward&lt;ConversionErrorHandler>(handler), invalid_format_t(), begin, end)</c>.</td>
+              <td>Evaluates <c>invoke_with_range_typing_as&lt;U>(std::forward&lt;ConversionErrorHandler>(handler), invalid_format_t(), begin, end)</c>.</td>
               </tr>
             </table>
         </code-item>

@@ -400,14 +400,12 @@ struct ignore_if_conversion_failed
         replacement_ignore_t = replacement_ignore)
     {}
 
-    template <class Ch>
-    std::nullopt_t operator()(invalid_format_t, const Ch*, const Ch*) const
+    std::nullopt_t operator()(invalid_format_t) const
     {
         return std::nullopt;
     }
 
-    template <class Ch>
-    std::nullopt_t operator()(out_of_range_t, const Ch*, const Ch*, int) const
+    std::nullopt_t operator()(out_of_range_t) const
     {
         return std::nullopt;
     }
@@ -1096,27 +1094,27 @@ public:
     template <class Ch>
     decltype(auto) invalid_format(const Ch* begin, const Ch* end)
     {
-        return forward(invalid_format_t(), begin, end);
+        return invoke_with_range_typing_as<T>(
+                    as_forwarded(), invalid_format_t(), begin, end);
     }
 
     template <class Ch>
     decltype(auto) out_of_range(
         const Ch* begin, const Ch* end, int sign)
     {
-        return forward(out_of_range_t(), begin, end, sign);
+        return invoke_with_range_typing_as<T>(
+                    as_forwarded(), out_of_range_t(), begin, end, sign);
     }
 
     decltype(auto) empty()
     {
-        return forward(empty_t());
+        return invoke_typing_as<T>(as_forwarded(), empty_t());
     }
 
 private:
-    template <class... As>
-    decltype(auto) forward(As&&... as)
+    H&& as_forwarded()
     {
-        return invoke_typing_as<T>(
-            std::forward<H>(as_lvalue()), std::forward<As>(as)...);
+        return std::forward<H>(as_lvalue());
     }
 
     H& as_lvalue()
