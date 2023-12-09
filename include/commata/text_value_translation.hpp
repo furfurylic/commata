@@ -1082,7 +1082,11 @@ auto do_size(const A& a, ...) -> decltype(a->size())
 template <class T, class H>
 class typed_conversion_error_handler
 {
-    std::reference_wrapper<H> handler_;
+    using handler_t = std::conditional_t<
+        detail::is_std_reference_wrapper_v<std::decay_t<H>>,
+        std::decay_t<H>,
+        std::reference_wrapper<std::remove_reference_t<H>>>;
+    handler_t handler_;
 
 public:
     explicit typed_conversion_error_handler(H& handler) :
@@ -1090,22 +1094,41 @@ public:
     {}
 
     template <class Ch>
-    decltype(auto) invalid_format(const Ch* begin, const Ch* end) const
+    decltype(auto) invalid_format(const Ch* begin, const Ch* end)
     {
-        return invoke_typing_as<T>(handler_, invalid_format_t(), begin, end);
+        return forward(invalid_format_t(), begin, end);
     }
 
     template <class Ch>
     decltype(auto) out_of_range(
-        const Ch* begin, const Ch* end, int sign) const
+        const Ch* begin, const Ch* end, int sign)
     {
-        return invoke_typing_as<T>(
-                    handler_, out_of_range_t(), begin, end, sign);
+        return forward(out_of_range_t(), begin, end, sign);
     }
 
-    decltype(auto) empty() const
+    decltype(auto) empty()
     {
-        return invoke_typing_as<T>(handler_, empty_t());
+        return forward(empty_t());
+    }
+
+private:
+    template <class... As>
+    decltype(auto) forward(As&&... as)
+    {
+        return invoke_typing_as<T>(
+            std::forward<H>(as_lvalue()), std::forward<As>(as)...);
+    }
+
+    H& as_lvalue()
+    {
+        // We wouldn't think there are many points on perfect forwarding
+        // reference wrappers as is, but we would like to go ahead with this
+        // to keep the spec simple
+        if constexpr (detail::is_std_reference_wrapper_v<std::decay_t<H>>) {
+            return handler_;
+        } else {
+            return handler_.get();
+        }
     }
 };
 
@@ -1116,7 +1139,7 @@ auto do_convert(const A& a, H&& h)
     const auto size = do_size(a);
     using U = std::remove_cv_t<T>;
     return converter<U>()(c_str, c_str + size,
-        typed_conversion_error_handler<U, std::remove_reference_t<H>>(h));
+        typed_conversion_error_handler<U, H>(h));
 }
 
 struct is_default_translatable_arithmetic_type_impl
@@ -1144,14 +1167,17 @@ template <class T, class ConversionErrorHandler, class A>
 T to_arithmetic(const A& a, ConversionErrorHandler&& handler)
 {
     if constexpr (detail::is_std_optional_v<T>) {
-        return detail::xlate::do_convert<typename T::value_type>(a, handler);
+        return detail::xlate::do_convert<typename T::value_type>(
+                    a, std::forward<ConversionErrorHandler>(handler));
     } else if constexpr (std::is_same_v<fail_if_conversion_failed,
                                     std::decay_t<ConversionErrorHandler>>) {
         // We know that an empty optional would never be returned when handler
         // is a fail_if_conversion_failed
-        return *detail::xlate::do_convert<T>(a, handler);
+        return *detail::xlate::do_convert<T>(
+                    a, std::forward<ConversionErrorHandler>(handler));
     } else {
-        return detail::xlate::do_convert<T>(a, handler).value();
+        return detail::xlate::do_convert<T>(
+                    a, std::forward<ConversionErrorHandler>(handler)).value();
     }
 }
 
