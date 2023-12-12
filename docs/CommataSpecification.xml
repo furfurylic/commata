@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-11 (UTC)</signature>
+<signature>2023-12-12 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -798,9 +798,6 @@ namespace commata {
   template &lt;class Handler> class reference_handler;
 
   template &lt;class Handler>
-    reference_handler(reference_handler&lt;Handler>) -> reference_handler&lt;Handler>;
-
-  template &lt;class Handler>
     reference_handler&lt;Handler> wrap_ref(Handler&amp; handler)                        noexcept;
   template &lt;class Handler>
     reference_handler&lt;Handler> wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
@@ -1501,8 +1498,6 @@ namespace commata {
 
   <c>// <n><xref id="replace_if_conversion_failed"/>, replace_if_conversion_failed:</n></c>
   template &lt;class T> class replace_if_conversion_failed;
-  template &lt;class... Ts>
-    replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
   template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
                                replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
 
@@ -3902,28 +3897,9 @@ namespace commata {
   template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class Allocator>
     class record_extractor;
 
-  template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class... Args>
-    record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp;, FieldNamePred, FieldValuePred, Args...)
-      -> record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, std::allocator&lt;Ch>>;
-  template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr,class Allocator,
-            class... Args>
-    record_extractor(std::allocator_arg_t, Allocator, std::basic_streambuf&lt;Ch, Tr>&amp;,
-                     FieldNamePred, FieldValuePred, Args...)
-      -> record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, Allocator>;
-
   <c>// <n><xref id="record_extractor_with_indexed_key"/>, record_extractor_with_indexed_key:</n></c>
   template &lt;class FieldValuePred, class Ch, class Tr, class Allocator>
     class record_extractor_with_indexed_key;
-
-  template &lt;class FieldValuePred, class Ch, class Tr, class... Args>
-    record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>&amp;, std::size_t, FieldValuePred,
-                                      Args...)
-      -> record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, std::allocator&lt;Ch>>;
-  template &lt;class FieldValuePred, class Ch, class Tr,class Allocator, class... Args>
-    record_extractor_with_indexed_key(std::allocator_arg_t, Allocator,
-                                      std::basic_streambuf&lt;Ch, Tr>&amp;, std::size_t, FieldValuePred,
-                                      Args...)
-      -> record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, Allocator>;
 
   <c>// <n><xref id="record_extractor.creation"/>, creation functions:</n></c>
   template &lt;class FieldNamePred, class FieldValuePred,
@@ -6506,7 +6482,6 @@ namespace commata {
 
   <c>// <n><xref id="replace_if_skipped"/>, replace_if_skipped:</n></c>
   template &lt;class T> class replace_if_skipped;
-  template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
   template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
                                replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
 
@@ -7462,12 +7437,6 @@ namespace commata {
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class primitive_table_pull;
 
-  template &lt;class TableSource, class... Args>
-    primitive_table_pull(TableSource, Args...) -> primitive_table_pull&lt;TableSource>;
-  template &lt;class TableSource, class Allocator, class... Args>
-    primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
-      -> primitive_table_pull&lt;TableSource, primitive_table_pull_handle::all, Allocator>;
-
   enum class table_pull_state : <nc>unspecified</nc> {
     before_parse = <nc>unspecified</nc>,
     eof          = <nc>unspecified</nc>,
@@ -7479,12 +7448,6 @@ namespace commata {
   template &lt;class TableSource,
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class table_pull;
-
-  template &lt;class TableSource, class... Args>
-    table_pull(TableSource, Args...) -> table_pull&lt;TableSource>;
-  template &lt;class TableSource, class Allocator, class... Args>
-    table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
-      -> table_pull&lt;TableSource, Allocator>;
 
   template &lt;class TableSource, class... Appendices>
     table_pull&lt;std::decay_t&lt;TableSource>>
