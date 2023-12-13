@@ -6600,8 +6600,8 @@ namespace commata {
     using value_type = T;
 
     <c>// <n><xref id="replace_if_skipped.cons"/>, construct/copy/destroy:</n></c>
-    explicit replace_if_skipped(const T&amp; t) noexcept(<nc>see below</nc>);
-    explicit replace_if_skipped(T&amp;&amp; t = T()) noexcept(<nc>see below</nc>);
+    explicit replace_if_skipped(const T&amp;  t)       noexcept(<nc>see below</nc>);
+    explicit replace_if_skipped(      T&amp;&amp; t = T()) noexcept(<nc>see below</nc>);
     explicit replace_if_skipped(replacement_fail_t) noexcept;
     explicit replace_if_skipped(replacement_ignore_t) noexcept;
     replace_if_skipped(const replace_if_skipped&amp;  other) noexcept(<nc>see below</nc>);
