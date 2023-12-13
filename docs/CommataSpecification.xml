@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-12 (UTC)</signature>
+<signature>2023-12-13 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -7953,8 +7953,9 @@ namespace commata {
        It offers higher-level parsing functionality.</p>
     <p>The template parameter <c>TableSource</c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for a char-like type.
        The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>TableSource::char_type</c>.</p>
-    <p>An object of an instantiation of it performs field-wisely or record-wisely step-by-step parsing of a text table.
-       Its user can retrieve the field values through its <n>current string values</n>, which are null-terminated sequences of <c>TableSource::char_type</c>.</p>
+    <p>An object of an instantiation of it holds a table parser object (<xref id="table_parser.requirements"/>) obtained from the table source object (<xref id="table_source.requirements"/>) passed to the constructor
+       and performs field-wisely or record-wisely step-by-step parsing of a text table using it.
+       Its user can retrieve the text values of the text fields through its <n>current string values</n>, which are null-terminated sequences of <c>TableSource::char_type</c>.</p>
     <p>An instance of <c>table_pull</c> meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char_type</c>.</p>
 
     <section id="table_pull.physical_position_available">
@@ -7964,7 +7965,7 @@ namespace commata {
 static constexpr bool physical_position_available = <nc>see below</nc>;
         </code>
         <remark>The expression in the right of <c>=</c> in the initializer shall be <c>true</c>
-                if the internal parser implements the optional operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>);
+                if the internal table parser implements the optional operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>);
                 <c>false</c> otherwise.</remark>
       </code-item>
     </section>
@@ -8023,14 +8024,14 @@ allocator_type get_allocator() const noexcept;
         <code>
 bool is_empty_physical_line_aware() const noexcept;
         </code>
-        <returns>Whether <c>*this</c> treats empty physical lines as records with no fields (<c>true</c>) or ignore empty physical lines (<c>false</c>).</returns>
+        <returns>Whether <c>*this</c> treats an empty physical line as a text record with no text fields (<c>true</c>) or ignore it (<c>false</c>).</returns>
       </code-item>
 
       <code-item>
         <code>
 table_pull&amp; set_empty_physical_line_aware(bool b = true) noexcept;
         </code>
-        <effects>Sets whether <c>*this</c> treats empty physical lines as records with no fields (if <c>b</c> is not <c>false</c>) or ignore empty physical lines (otherwise).</effects>
+        <effects>Sets whether <c>*this</c> treats an empty physical line as a text record with no text fields (if <c>b</c> is not <c>false</c>) or ignore it (otherwise).</effects>
         <returns><c>*this</c>.</returns>
       </code-item>
     </section>
@@ -8043,12 +8044,12 @@ table_pull&amp; set_empty_physical_line_aware(bool b = true) noexcept;
 table_pull&amp; operator()(std::size_t n = 0);
         </code>
         <effects>If <c>state() == table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
-                 Otherwise, reads the text table until next <c>n + 1</c> fields are read, an end of a record is found, or the table source is fully consumed.</effects>
+                 Otherwise, reads the text table until next <c>n + 1</c> text fields are read, an end of a text record is found, or the table source is fully consumed.</effects>
         <returns><c>*this</c>.</returns>
         <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
         <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::field) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
-        <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
-                When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</remark>
+        <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.</remark>
+        <note>When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</note>
       </code-item>
 
       <code-item>
@@ -8056,12 +8057,12 @@ table_pull&amp; operator()(std::size_t n = 0);
 table_pull&amp; skip_record(std::size_t n = 0);
         </code>
         <effects>If <c>state() == table_pull_state::eof</c> is <c>true</c>, returns without doing anything.
-                 Otherwise, reads the text table until <c>n + 1</c> ends of records are found or the table source is fully consumed.</effects>
+                 Otherwise, reads the text table until <c>n + 1</c> ends of text records are found or the table source is fully consumed.</effects>
         <returns><c>*this</c>.</returns>
         <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
         <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
-        <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
-                When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</remark>
+        <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.</remark>
+        <note>When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</note>
       </code-item>
     </section>
 
@@ -8076,7 +8077,7 @@ table_pull_state state() const noexcept;
 
         <table id="table.table_pull.state">
           <caption>The meanings of the values <c>state()</c> returns</caption>
-          <col width="5"/><col width="19"/><col width="92"/><col width="15"/>
+          <col width="5"/><col width="18"/><col width="81"/><col width="27"/>
 
           <tr>
             <th>#</th>
@@ -8102,14 +8103,14 @@ table_pull_state state() const noexcept;
           <tr>
             <td><c>(3)</c></td>
             <td><c>field</c></td>
-            <td><c>*this</c> has reached a field with the latest call of <c>operator()</c>.</td>
-            <td>The field value</td>
+            <td><c>*this</c> has reached a text field with the latest call of <c>operator()</c>.</td>
+            <td>The text value of the text field</td>
           </tr>
 
           <tr>
             <td><c>(4)</c></td>
             <td><c>record_end</c></td>
-            <td><c>*this</c> has reached an end of the a record with the latest call of <c>operator()</c> or <c>skip_record</c>.</td>
+            <td><c>*this</c> has reached an end of the a text record with the latest call of <c>operator()</c> or <c>skip_record</c>.</td>
             <td>An empty string</td>
           </tr>
         </table>
@@ -8142,7 +8143,7 @@ std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
 
         <table id="table.table_pull.get_position">
           <caption>The meanings of the values <c>get_position()</c> returns</caption>
-          <col width="1"/><col width="3"/><col width="8"/><col width="12"/>
+          <col width="5"/><col width="18"/><col width="36"/><col width="72"/>
 
           <tr>
             <th>#</th>
@@ -8161,22 +8162,22 @@ std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
           <tr>
             <td><c>(2)</c></td>
             <td><c>eof</c></td>
-            <td>The number of records successfully read</td>
-            <td>The number of fields successfully read after the last record successfully read</td>
+            <td>The number of text records successfully read</td>
+            <td>The number of text fields successfully read after the last text record successfully read</td>
           </tr>
 
           <tr>
             <td><c>(3)</c></td>
             <td><c>field</c></td>
-            <td>The zero-based index of the record</td>
-            <td>The zero-based index of the field in the record</td>
+            <td>The zero-based index of the text record</td>
+            <td>The zero-based index of the field in the text record</td>
           </tr>
 
           <tr>
             <td><c>(4)</c></td>
             <td><c>record_end</c></td>
-            <td>The zero-based index of the record</td>
-            <td>The number of the fields contained in the record</td>
+            <td>The zero-based index of the text record</td>
+            <td>The number of the text fields contained in the text record</td>
           </tr>
         </table>
       </code-item>
@@ -8207,7 +8208,7 @@ template &lt;class F> table_pull&amp; rewrite(F f);
         <requires><c>std::is_invocable_r_v&lt;char_type*, F, char_type*, char_type*></c> shall be true.
                   When evaluated as <c>f(first, last)</c>, <c>f</c> shall read and write at most the range [<c>first</c>, <c>last</c>).</requires>
         <effects>First evaluates <c>f(const_cast&lt;char_type*>(c_str()), const_cast&lt;char_type*>(c_str()) + (*this)->size())</c> and initialize an <c>char_type*</c> object <c>new_end</c> with its result.
-                 Then shorten the current string value, preserving its null-terminated property, to have <c>new_end - data()</c> characters if <c>new_end - data()</c> is smaller than <c>size()</c>.</effects>
+                 Then conditionally shorten the current string value, preserving its null-terminated property, so that its size should be <c>new_end - data()</c>.</effects>
         <returns><c>*this</c>.</returns>
         <postcondition><c>state</c> member function shall return the same value as before the invocation.</postcondition>
         <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
