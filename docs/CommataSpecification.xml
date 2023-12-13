@@ -2178,7 +2178,7 @@ std::optional&lt;T> operator()(empty_t) const;
 void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <requires>For each of at most five replacement actions (<c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>),
-                      if both of the replacement action of <c>*this</c> and <c>other</c> are of the type <c>copy</c>, two lvalues of the object of type <c>T</c> installed with the replacement action shall be swappable with each onther.</requires>
+                      if both of the replacement action of <c>*this</c> and <c>other</c> are of the type <c>copy</c>, two lvalues of the object of type <c>T</c> installed with the replacement action shall be swappable with each other.</requires>
             <effects>Exchanges all the replacement actions between <c>*this</c> and <c>other</c>.</effects>
             <remark>If an exception is thrown, <c>*this</c> and <c>other</c> may be left in a valid but unspecified state.
                     The expression inside <c>noexcept</c> is equivalent to the value of <c>std::is_nothrow_move_constructible_v&lt;T> &amp;&amp; noexcept(swap(std::declval&lt;T&amp;>(), std::declval&lt;T&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
