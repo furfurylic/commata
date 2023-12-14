@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++14 CSV parser</title>
-<signature>2023-12-07 (UTC)</signature>
+<signature>2023-12-14 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1951,10 +1951,10 @@ namespace commata {
                    const Allocator&amp; alloc = Allocator())     &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
       <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                           Args&amp;&amp;... args) const&amp; noexcept;
+                           Args&amp;&amp;... args) const&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
       <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                           Args&amp;&amp;... args)     &amp;&amp; noexcept;
+                           Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="csv_source.modifiers"/>, modifiers:</n></c>
     void swap(csv_source&amp; other) noexcept(<nc>see below</nc>);
@@ -2066,22 +2066,22 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
           <code>
 template &lt;class Handler, class... Args>
   <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                       Args&amp;&amp;... args) const&amp; noexcept;
+                       Args&amp;&amp;... args) const&amp; noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return (*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
           <remark>This operator shall not participate in overload resolution unless a function call expression to <c>std::declval&lt;const csv_source&amp;>()</c> with the arguments being <c>std::declval&lt;reference_handler&lt;Handler>>(), std::declval&lt;Args>()...</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible&lt;CharInput>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is <c>true</c> if the operand of the return statement above is not potentially-throwing.</remark>
         </code-item>
 
         <code-item>
           <code>
 template &lt;class Handler, class... Args>
   <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                       Args&amp;&amp;... args)     &amp;&amp; noexcept;
+                       Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return std::move(*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
           <remark>This operator shall not participate in overload resolution unless a function call expression to <c>std::declval&lt;csv_source>()</c> with the arguments being <c>std::declval&lt;reference_handler&lt;Handler>>(), std::declval&lt;Args>()...</c> is well-formed when treated as an unevaluated operand.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible&lt;CharInput>::value</c>.</remark>
+                  The expression inside <c>noexcept</c> is <c>true</c> if the operand of the return statement above is not potentially-throwing.</remark>
         </code-item>
       </section>
 
