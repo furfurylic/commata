@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-13 (UTC)</signature>
+<signature>2023-12-14 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1970,7 +1970,7 @@ replace_if_conversion_failed(const replace_if_conversion_failed&amp; other) noex
 replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <effects>Configures all the replacement actions to be what <c>other</c> had as its replacement actions before the call.</effects>
-            <remark>If an exception is thrown, <c>other</c> may be left in a valid but unspecified state.
+            <remark>If exits via an exception, <c>other</c> will be left in a valid but unspecified state.
                     The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
           </code-item>
 
@@ -1991,7 +1991,7 @@ replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&a
             <requires><c>T</c> shall be <c>CopyAssignable</c>.</requires>
             <effects>Configures all the replacement actions to be the same as <c>other</c>'s.</effects>
             <returns><c>*this</c>.</returns>
-            <remark>If an exception is thrown, <c>*this</c> may be left in a valid but unspecified state.
+            <remark>If exits via an exception, <c>*this</c> will be left in a valid but unspecified state.
                     The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T> &amp;&amp; std::is_nothrow_copy_assignable_v&lt;T></c>.</remark>
           </code-item>
 
@@ -2003,7 +2003,7 @@ replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&am
             <requires><c>T</c> shall be <c>MoveAssignable</c>.</requires>
             <effects>Configures all the replacement actions to be what <c>other</c> had as its replacement actions before the call.</effects>
             <returns><c>*this</c>.</returns>
-            <remark>If an exception is thrown, <c>*this</c> and <c>other</c> may be left in a valid but unspecified state.
+            <remark>If exits via an exception, <c>*this</c> and <c>other</c> will be left in a valid but unspecified state.
                     The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T> &amp;&amp; std::is_nothrow_move_assignable_v&lt;T></c>.</remark>
           </code-item>
         </section>
@@ -2180,7 +2180,7 @@ void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
             <requires>For each of at most five replacement actions (<c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c>),
                       if both of the replacement action of <c>*this</c> and <c>other</c> are of the type <c>copy</c>, two lvalues of the object of type <c>T</c> installed with the replacement action shall be swappable with each other.</requires>
             <effects>Exchanges all the replacement actions between <c>*this</c> and <c>other</c>.</effects>
-            <remark>If an exception is thrown, <c>*this</c> and <c>other</c> may be left in a valid but unspecified state.
+            <remark>If exits via an exception, <c>*this</c> and <c>other</c> will be left in a valid but unspecified state.
                     The expression inside <c>noexcept</c> is equivalent to the value of <c>std::is_nothrow_move_constructible_v&lt;T> &amp;&amp; noexcept(swap(std::declval&lt;T&amp;>(), std::declval&lt;T&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
           </code-item>
         </section>
@@ -4070,7 +4070,7 @@ record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
           <effects>Move constructs from an rvalue <c>other</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;FieldNamePred> &amp;&amp; std::is_nothrow_move_constructible_v&lt;FieldValuePred></c>.
-                  When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
+                  If exits via an exception, <c>other</c> will be left in a valid but unspecified state.</remark>
         </code-item>
       </section>
 
@@ -6862,7 +6862,7 @@ arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcep
             </code>
             <effects>Initializes an object of <c>arithmetic_field_translator</c> that holds a field translator sink object, a skipping handler object and a conversion error handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_move_constructible_v&lt;SkippingHandler> &amp;&amp; std::is_nothrow_move_constructible_v&lt;ConversionErrorHandler></c>.
-                    When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
+                    If exits via an exception, <c>other</c> will be left in a valid but unspecified state.</remark>
           </code-item>
         </section>
 
@@ -7112,7 +7112,7 @@ string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>se
             </code>
             <effects>Initializes an object of <c>string_field_translator</c> that holds an allocator object, a field translator sink object, and a skipping handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_move_constructible_v&lt;SkippingHandler></c>.
-                    When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
+                    If exits via an exception, <c>other</c> will be left in a valid but unspecified state.</remark>
           </code-item>
         </section>
 
@@ -7227,7 +7227,7 @@ string_view_field_translator(string_view_field_translator&amp;&amp; other) noexc
             </code>
             <effects>Initializes an object of <c>string_view_field_translator</c> that holds a field translator sink object and a skipping handler object initialized with xvalues of the corresponding objects of <c>other</c>.</effects>
             <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Sink> &amp;&amp; std::is_nothrow_move_constructible_v&lt;SkippingHandler></c>.
-                    When this constructor exits via an exception, <c>other</c> will be placed in a valid but unspecified state.</remark>
+                    If exits via an exception, <c>other</c> will be left in a valid but unspecified state.</remark>
           </code-item>
         </section>
 
@@ -7722,7 +7722,7 @@ primitive_table_pull&amp; operator()();
                  where <c>p</c> is the table parser held by <c>*this</c>.</effects>
         <returns><c>*this</c>.</returns>
         <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the table parser and the allocator.</throws>
-        <remark>If an exception is thrown, <c>*this</c> would be placed to a valid but unspecified state.</remark>
+        <remark>If exits via an exception, <c>*this</c> will be left in a valid but unspecified state.</remark>
       </code-item>
     </section>
 
@@ -8049,7 +8049,7 @@ table_pull&amp; operator()(std::size_t n = 0);
         <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
         <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::field) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
         <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.</remark>
-        <note>When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</note>
+        <note>If exits via an exception, <c>*this</c> will be left in a valid but unspecified state.</note>
       </code-item>
 
       <code-item>
@@ -8062,7 +8062,7 @@ table_pull&amp; skip_record(std::size_t n = 0);
         <throws><c>parse_error</c> (<xref id="parse_error"/>) or any exception thrown by the internal table parser and the allocator.</throws>
         <postcondition><c>(state() == table_pull_state::eof) || (state() == table_pull_state::record_end)</c> shall be <c>true</c>.</postcondition>
         <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.</remark>
-        <note>When exits via an exception, <c>*this</c> will be placed a valid but unspecified state.</note>
+        <note>If exits via an exception, <c>*this</c> will be left in a valid but unspecified state.</note>
       </code-item>
     </section>
 
