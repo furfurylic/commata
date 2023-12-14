@@ -180,6 +180,41 @@ static_assert(std::is_nothrow_move_constructible_v<
 
 } // unnamed
 
+// Precondition
+static_assert(std::is_nothrow_move_constructible_v<test_collector<char>>);
+
+// csv_source invocation
+// ... with an rvalue of test_collector (move)
+static_assert(std::is_nothrow_invocable_v<
+    const csv_source<string_input<char>>&,
+    test_collector<char>>);
+static_assert(std::is_nothrow_invocable_v<
+    csv_source<string_input<char>>,
+    test_collector<char>>);
+// ... with a reference-wrapped test_collector
+static_assert(std::is_nothrow_invocable_v<
+    const csv_source<string_input<char>>&,
+    const std::reference_wrapper<test_collector<char>>&>);
+static_assert(std::is_nothrow_invocable_v<
+    csv_source<string_input<char>>,
+    const std::reference_wrapper<test_collector<char>>&>);
+// ... with a reference-wrapped test_collector and an allocator
+static_assert(std::is_nothrow_invocable_v<
+    const csv_source<string_input<char>>&,
+    const std::reference_wrapper<test_collector<char>>&,
+    std::size_t,
+    tracking_allocator<std::allocator<char>>>);
+static_assert(std::is_nothrow_invocable_v<
+    csv_source<string_input<char>>,
+    const std::reference_wrapper<test_collector<char>>&,
+    std::size_t,
+    tracking_allocator<std::allocator<char>>>);
+
+// Parser's nothrow move constructibility
+static_assert(std::is_nothrow_move_constructible_v<
+    std::invoke_result_t<
+        csv_source<string_input<char>>, test_collector<char>>>);
+
 static_assert(
     std::is_nothrow_swappable_v<reference_handler<test_collector<char>>>);
 static_assert(

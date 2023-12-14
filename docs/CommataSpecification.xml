@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-14 (UTC)</signature>
+<signature>2023-12-15 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3311,10 +3311,10 @@ namespace commata {
                    const Allocator&amp; alloc = Allocator())     &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
       <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                           Args&amp;&amp;... args) const&amp; noexcept;
+                           Args&amp;&amp;... args) const&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
       <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                           Args&amp;&amp;... args)     &amp;&amp; noexcept;
+                           Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="csv_source.modifiers"/>, modifiers:</n></c>
     void swap(csv_source&amp; other) noexcept(<nc>see below</nc>);
@@ -3351,7 +3351,7 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
                     Otherwise, <c>Allocator</c> shall be <c>void</c> or meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
           <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c>.
                           <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.
-                          <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler></c> is <c>true</c>.
+                          <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character input and an object of <c>Handler</c> as its tied table handler.
                           If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it.
                           Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character input object, its tied table handler object, and the allocator object held by it if any.</alias-template>
@@ -3421,30 +3421,30 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
           <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
                   The expression inside <c>noexcept</c> is equivalent to
-                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;CharInput></c> (first form) or
-                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible_v&lt;CharInput></c> (second form).</remark>
+                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (first form) or
+                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (second form).</remark>
         </code-item>
 
         <code-item>
           <code>
 template &lt;class Handler, class... Args>
   <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                       Args&amp;&amp;... args) const&amp; noexcept;
+                       Args&amp;&amp;... args) const&amp; noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return (*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
           <remark>This operator shall not participate in overload resolution unless <c>std::is_invocable_v&lt;const csv_source&amp;, reference_handler&lt;Handler>&amp;&amp;, Args&amp;&amp;...></c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;CharInput></c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_invocable_v&lt;const csv_source&amp;, reference_handler&lt;Handler>, Args...></c>.</remark>
         </code-item>
 
         <code-item>
           <code>
 template &lt;class Handler, class... Args>
   <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                       Args&amp;&amp;... args)     &amp;&amp; noexcept;
+                       Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return std::move(*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
           <remark>This operator shall not participate in overload resolution unless <c>std::is_invocable_v&lt;csv_source&amp;&amp;, reference_handler&lt;Handler>&amp;&amp;, Args&amp;&amp;...></c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;CharInput></c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_invocable_v&lt;csv_source, reference_handler&lt;Handler>, Args...></c>.</remark>
         </code-item>
       </section>
 
@@ -3627,10 +3627,10 @@ namespace commata {
                    const Allocator&amp; alloc = Allocator())     &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
       <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                           Args&amp;&amp;... args) const&amp; noexcept;
+                           Args&amp;&amp;... args) const&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
       <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                           Args&amp;&amp;... args)     &amp;&amp; noexcept;
+                           Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="tsv_source.modifiers"/>, modifiers:</n></c>
     void swap(tsv_source&amp; other) noexcept(<nc>see below</nc>);
@@ -3667,7 +3667,7 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
                     Otherwise, <c>Allocator</c> shall be <c>void</c> or meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
           <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c>.
                           <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.
-                          <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler></c> is <c>true</c>.
+                          <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character input and an object of <c>Handler</c> as its tied table handler.
                           If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it.
                           Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character input object, its tied table handler object, and the allocator object held by it if any.</alias-template>
@@ -3737,30 +3737,30 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
           <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
                   The expression inside <c>noexcept</c> is equivalent to
-                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;CharInput></c> (first form) or
-                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible_v&lt;CharInput></c> (second form).</remark>
+                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (first form) or
+                  <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (second form).</remark>
         </code-item>
 
         <code-item>
           <code>
 template &lt;class Handler, class... Args>
   <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                       Args&amp;&amp;... args) const&amp; noexcept;
+                       Args&amp;&amp;... args) const&amp; noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return (*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
           <remark>This operator shall not participate in overload resolution unless <c>std::is_invocable_v&lt;const tsv_source&amp;, reference_handler&lt;Handler>&amp;&amp;, Args&amp;&amp;...></c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;CharInput></c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_invocable_v&lt;const tsv_source&amp;, reference_handler&lt;Handler>, Args...></c>.</remark>
         </code-item>
 
         <code-item>
           <code>
 template &lt;class Handler, class... Args>
   <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
-                       Args&amp;&amp;... args)     &amp;&amp; noexcept;
+                       Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return std::move(*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
           <remark>This operator shall not participate in overload resolution unless <c>std::is_invocable_v&lt;tsv_source&amp;&amp;, reference_handler&lt;Handler>&amp;&amp;, Args&amp;&amp;...></c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;CharInput></c>.</remark>
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_invocable_v&lt;tsv_source, reference_handler&lt;Handler>, Args...></c>.</remark>
         </code-item>
       </section>
 
