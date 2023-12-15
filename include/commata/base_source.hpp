@@ -165,7 +165,8 @@ public:
             const Allocator& alloc = Allocator()) const&
         noexcept(
             std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
-         && std::is_nothrow_copy_constructible_v<CharInput>)
+         && std::is_nothrow_copy_constructible_v<CharInput>
+         && std::is_nothrow_copy_constructible_v<Allocator>)
      -> std::enable_if_t<
             with_allocator<std::decay_t<Handler>, Allocator>::enabled,
             parser_type<std::decay_t<Handler>, Allocator>>
@@ -179,7 +180,8 @@ public:
         std::size_t buffer_size = 0, const Allocator& alloc = Allocator()) &&
         noexcept(
             std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
-         && std::is_nothrow_move_constructible_v<CharInput>)
+         && std::is_nothrow_move_constructible_v<CharInput>
+         && std::is_nothrow_copy_constructible_v<Allocator>)
      -> std::enable_if_t<
             with_allocator<std::decay_t<Handler>, Allocator>::enabled,
             parser_type<std::decay_t<Handler>, Allocator>>
@@ -192,7 +194,8 @@ public:
     template <class Handler, class... Args>
     auto operator()(std::reference_wrapper<Handler> handler,
             Args&&... args) const&
-        noexcept(std::is_nothrow_copy_constructible_v<CharInput>)
+        noexcept(std::is_nothrow_invocable_v<const base_source&,
+            reference_handler<Handler>, Args...>)
      -> decltype((*this)(reference_handler(
             handler.get()), std::forward<Args>(args)...))
     {
@@ -202,7 +205,8 @@ public:
     template <class Handler, class... Args>
     auto operator()(std::reference_wrapper<Handler> handler,
             Args&&... args) &&
-        noexcept(std::is_nothrow_move_constructible_v<CharInput>)
+        noexcept(std::is_nothrow_invocable_v<base_source,
+            reference_handler<Handler>, Args...>)
      -> decltype(std::move(*this)(reference_handler(
             handler.get()), std::forward<Args>(args)...))
     {

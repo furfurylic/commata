@@ -28,7 +28,7 @@ struct TestParseTsv :
 
 namespace {
 
-template <class Ch, class Tr>
+template <class Ch, class Tr = std::char_traits<Ch>>
 class simple_transcriptor
 {
     std::basic_ostream<Ch, Tr>* out_;
@@ -97,6 +97,41 @@ protected:
         return *out_;
     }
 };
+
+// Precondition
+static_assert(std::is_nothrow_move_constructible_v<simple_transcriptor<char>>);
+
+// tsv_source invocation
+// ... with an rvalue of test_collector (move)
+static_assert(std::is_nothrow_invocable_v<
+    const tsv_source<string_input<char>>&,
+    simple_transcriptor<char>>);
+static_assert(std::is_nothrow_invocable_v<
+    tsv_source<string_input<char>>,
+    simple_transcriptor<char>>);
+// ... with a reference-wrapped test_collector
+static_assert(std::is_nothrow_invocable_v<
+    const tsv_source<string_input<char>>&,
+    const std::reference_wrapper<simple_transcriptor<char>>&>);
+static_assert(std::is_nothrow_invocable_v<
+    tsv_source<string_input<char>>,
+    const std::reference_wrapper<simple_transcriptor<char>>&>);
+// ... with a reference-wrapped test_collector and an allocator
+static_assert(std::is_nothrow_invocable_v<
+    const tsv_source<string_input<char>>&,
+    const std::reference_wrapper<simple_transcriptor<char>>&,
+    std::size_t,
+    std::allocator<char>>);
+static_assert(std::is_nothrow_invocable_v<
+    tsv_source<string_input<char>>,
+    const std::reference_wrapper<simple_transcriptor<char>>&,
+    std::size_t,
+    std::allocator<char>>);
+
+// Parser's nothrow move constructibility
+static_assert(std::is_nothrow_move_constructible_v<
+    std::invoke_result_t<
+        tsv_source<string_input<char>>, simple_transcriptor<char>>>);
 
 template <class Ch, class Tr>
 class empty_physical_line_intolerant_simple_transcriptor :

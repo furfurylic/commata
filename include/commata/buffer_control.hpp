@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <memory>
 #include <type_traits>
+#include <utility>
 
 #include "buffer_size.hpp"
 #include "handler_decorator.hpp"
@@ -35,19 +36,19 @@ class default_buffer_control :
 
 public:
     default_buffer_control(
-        std::size_t buffer_size, const Allocator& alloc) noexcept :
+        std::size_t buffer_size, const Allocator& alloc)
+        noexcept(std::is_nothrow_copy_constructible_v<Allocator>) :
         detail::member_like_base<Allocator>(alloc),
         buffer_size_(detail::sanitize_buffer_size(buffer_size, this->get())),
         buffer_()
     {}
 
-    default_buffer_control(default_buffer_control&& other) noexcept :
+    default_buffer_control(default_buffer_control&& other)
+        noexcept(std::is_nothrow_move_constructible_v<Allocator>) :
         detail::member_like_base<Allocator>(std::move(other.get())),
         buffer_size_(other.buffer_size_),
-        buffer_(other.buffer_)
-    {
-        other.buffer_ = nullptr;
-    }
+        buffer_(std::exchange(other.buffer_, nullptr))
+    {}
 
     ~default_buffer_control()
     {
@@ -125,7 +126,9 @@ public:
                                std::decay_t<HandlerR>>>* = nullptr>
     explicit full_fledged_handler(HandlerR&& handler,
         BufferControlR&& buffer_engine = BufferControl())
-        noexcept(std::is_nothrow_constructible_v<Handler, HandlerR&&>) :
+        noexcept(
+            std::is_nothrow_constructible_v<Handler, HandlerR&&>
+         && std::is_nothrow_constructible_v<BufferControl, BufferControlR&&>) :
         BufferControl(std::forward<BufferControlR>(buffer_engine)),
         handler_(std::forward<HandlerR>(handler))
     {}
