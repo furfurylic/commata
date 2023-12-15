@@ -54,14 +54,14 @@ public:
                     return Tr::eq(l, r);
                 });
         } else {
-            while ((i != ie) && (j != je)) {
+            while (!((i == ie) || (j == je))) {
                 if (!Tr::eq(*i, *j)) {
                     return false;
                 }
                 ++i;
                 ++j;
             }
-            return !((i != ie) || (j != je));
+            return (i == ie) && (j == je);
         }
     }
 

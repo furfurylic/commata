@@ -32,9 +32,9 @@ namespace {
 struct null_termination
 {};
 
-bool operator!=(const char* str, null_termination)
+bool operator==(const char* str, null_termination)
 {
-    return *str != '\0';
+    return *str == '\0';
 }
 
 struct null_terminated
@@ -52,7 +52,7 @@ struct null_terminated
     }
 };
 
-}
+} // end unnamed
 
 struct TestRecordExtractorStringPred : BaseTest
 {};
