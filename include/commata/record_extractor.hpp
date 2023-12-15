@@ -696,7 +696,7 @@ template <class Ch, class Tr, class T>
 decltype(auto) make_string_pred(T&& s)
 {
     if constexpr (std::is_convertible_v<T, const Ch*>) {
-        const Ch* const str = s;
+        const Ch* const str = std::forward<T>(s);
         return make_eq<Ch, Tr>(std::basic_string_view<Ch, Tr>(str));
     } else if constexpr (is_range_accessible_v<
                 std::remove_reference_t<T>, Ch, std::forward_iterator_tag>) {
