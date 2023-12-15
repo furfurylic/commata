@@ -3,23 +3,22 @@
  * http://unlicense.org
  */
 
-#ifdef _MSC_VER
-//#pragma warning(disable:4494)
-//#pragma warning(disable:4996)
-#endif
-
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
+#include <cwchar>
+#include <cwctype>
 #include <deque>
 #include <functional>
+#include <iterator>
 #include <list>
 #include <locale>
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
+#include <stdexcept>
 #include <string>
-#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -32,15 +31,16 @@
 #include <commata/table_scanner.hpp>
 
 #include "BaseTest.hpp"
-#include "fancy_allocator.hpp"
 #include "tracking_allocator.hpp"
-
-using namespace std::literals::string_literals;
 
 using namespace commata;
 using namespace commata::test;
 
-typedef testing::Types<char, wchar_t> Chs;
+namespace {
+
+using Chs = testing::Types<char, wchar_t>;
+
+} // end unnamed
 
 template <class Ch>
 struct TestFieldTranslatorForArithmeticTypes : BaseTest
@@ -589,7 +589,7 @@ public:
     }
 };
 
-}
+} // end unnamed
 
 TYPED_TEST(TestTableScanner, MultilinedHeaderScan)
 {
@@ -688,7 +688,7 @@ to_upper(wchar_t* first, wchar_t* last) const
     });
 }
 
-}
+} // end unnamed
 
 TYPED_TEST(TestTableScanner, IsInHeader)
 {
@@ -851,29 +851,6 @@ TYPED_TEST(TestTableScanner, MovedFromState)
 
 namespace {
 
-template <class Ch, class F>
-class check_scanner
-{
-    F f_;
-
-public:
-    explicit check_scanner(F f) : f_(f) {}
-
-    void operator()(Ch* b, Ch* e) { f_(b); f_(e - 1); }
-
-    void operator()() {}
-};
-
-template <class Ch, class F>
-check_scanner<Ch, F> make_check_scanner(F f)
-{
-    return check_scanner<Ch, F>(f);
-}
-
-}
-
-namespace {
-
 template <class T>
 class calc_average
 {
@@ -893,7 +870,7 @@ public:
     }
 };
 
-}
+} // end unnamed
 
 TYPED_TEST(TestTableScanner, IgnoreSkipped)
 {
@@ -952,7 +929,7 @@ struct stateful_header_scanner
     }
 };
 
-}
+} // end unnamed
 
 struct TestTableScannerReference : BaseTest
 {};
@@ -1320,7 +1297,7 @@ TEST_F(TestReplaceIfSkipped, DeductionGuides)
     ASSERT_STREQ("skipped", r2()->c_str());
 }
 
-namespace replace_if_skipped_static_asserts {
+namespace {
 
 using ri_t = replace_if_skipped<int>;
 using rv_t = replace_if_skipped<std::vector<int>>;
@@ -1339,4 +1316,4 @@ static_assert(std::is_nothrow_swappable_v<rv_t>);
 
 static_assert(std::is_trivially_copyable<ri_t>::value);
 
-}
+} // end unnamed
