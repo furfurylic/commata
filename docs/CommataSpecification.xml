@@ -4312,12 +4312,9 @@ template &lt;class FieldNamePred, class FieldValuePred,
                                   FieldValuePred&amp;&amp; field_value_pred,
                                   Appendices&amp;&amp;... appendices);
         </code>
-        <requires><p>Let <c>FieldNamePredD</c> and <c>FieldValuePredD</c> be <c>std::remove_reference_t&lt;FieldNamePred></c> and <c>std::remove_reference_t&lt;FieldValuePred></c> respectively. Then:</p>
-                  <ul>
-                    <li>if <c>std::is_convertible_v&lt;FieldNamePred, const Ch*></c> is <c>false</c> and <c>FieldNamePredD</c> is a range-accessible type, the iterator type of <c>FieldNameD</c> shall be a forward iterator type, and</li>
-                    <li>if <c>std::is_convertible_v&lt;FieldValuePred, const Ch*></c> is <c>false</c> and <c>FieldValuePredD</c> is a range-accessible type, the iterator type of <c>FieldValuePredD</c> shall be a forward iterator type.</li>
-                  </ul>
-        </requires>
+        <requires>For each <c>P</c> in <c>FieldNamePred</c> and <c>FieldValuePred</c>,
+                  if <c>std::is_convertible_v&lt;P, const Ch*></c> is <c>false</c> and <c>std::remove_reference_t&lt;P></c> is a range-accessible type,
+                  the iterator type of <c>std::remove_reference_t&lt;P></c> shall be a forward iterator type.</requires>
         <effects><p>Equivalent to:</p>
                  <code>auto fnp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred));
 auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred));
@@ -4340,8 +4337,8 @@ template &lt;class FieldValuePred,
                                   FieldValuePred&amp;&amp; field_value_pred,
                                   Appendices&amp;&amp;... appendices);
         </code>
-        <requires>Let <c>FieldValuePredD</c> be <c>std::remove_reference_t&lt;FieldValuePred></c>.
-                  If <c>std::is_convertible_v&lt;FieldValuePred, const Ch*></c> is <c>false</c> and <c>FieldValuePredD</c> is a range-accessible type, the iterator type of <c>FieldValuePredD</c> shall be a forward iterator type.</requires>
+        <requires>If <c>std::is_convertible_v&lt;FieldValuePred, const Ch*></c> is <c>false</c> and <c>std::remove_reference_t&lt;FieldValuePred></c> is a range-accessible type,
+                  the iterator type of <c>std::remove_reference_t&lt;FieldValuePred></c> shall be a forward iterator type.</requires>
         <effects><p>Equivalent to:</p>
                  <code>auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred));
 return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(
