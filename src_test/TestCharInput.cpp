@@ -24,10 +24,27 @@ using namespace commata;
 using namespace commata::test;
 
 static_assert(std::is_trivially_copyable_v<streambuf_input<char>>);
+static_assert(std::is_trivially_copyable_v<istream_input<char>>);
 static_assert(std::is_trivially_copyable_v<string_input<wchar_t>>);
 
 struct TestIStreamInput : BaseTest
 {};
+
+TEST_F(TestIStreamInput, CopyAssign)
+{
+    std::istringstream s("1234567");
+    istream_input in1(s);
+    char b[5];
+
+    decltype(in1) in2;
+    ASSERT_EQ(0U, in2(b, 4));
+
+    in2 = in1;
+    ASSERT_EQ(4U, in1(b, 4));
+    ASSERT_EQ(3U, in2(b, 4));
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
 
 TEST_F(TestIStreamInput, ThrowAsStream)
 {

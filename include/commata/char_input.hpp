@@ -164,7 +164,7 @@ public:
 
     size_type operator()(Ch* out, size_type n)
     {
-        return detail::input::read(*in_, out, n);
+        return in_ ? detail::input::read(*in_, out, n) : 0;
     }
 };
 
