@@ -18,7 +18,8 @@ class member_like_base;
 
 template <class F>
 class member_like_base<F,
-    std::enable_if_t<!std::is_reference_v<F> && std::is_final_v<F>>>
+    std::enable_if_t<(!std::is_reference_v<F>)
+                  && ((!std::is_class_v<F>) || std::is_final_v<F>)>>
 {
     F f_;
 
@@ -46,7 +47,8 @@ public:
 
 template <class F>
 class member_like_base<F,
-    std::enable_if_t<!std::is_reference_v<F> && !std::is_final_v<F>>> :
+    std::enable_if_t<(!std::is_reference_v<F>)
+                  && std::is_class_v<F> && (!std::is_final_v<F>)>> :
     F
 {
 public:
