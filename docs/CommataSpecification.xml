@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-15 (UTC)</signature>
+<signature>2023-12-16 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1429,10 +1429,11 @@ template &lt;class T, class... As> decltype(auto) invoke_typing_as(As&amp;&amp;.
           </code>
           <effects><p>Equivalent to:</p>
             <code>
+constexpr T* n = static_cast&lt;T*>(nullptr);
 if constexpr (std::is_invocable_v&lt;As...>) {
   return std::invoke(std::forward&lt;As>(as)...);
 } else {
-  return std::invoke(std::forward&lt;As>(as)..., static_cast&lt;T*>(nullptr));
+  return std::invoke(std::forward&lt;As>(as)..., n);
 }
             </code>
           </effects>
