@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-16 (UTC)</signature>
+<signature>2023-12-18 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -586,7 +586,7 @@ text_error() noexcept;
 template &lt;class Tr>
   explicit text_error(std::basic_string_view&lt;char, Tr> what_arg);
           </code>
-          <postcondition><c>(std::strcmp(what(), w.c_str()) == 0) &amp;&amp; !get_physical_position()</c> shall be <c>true</c> where <c>w</c> is an object of <c>std::string</c> constructed with <c>what_arg.cbegin()</c> and <c>what_arg.cend()</c>.</postcondition>
+          <postcondition><c>(std::strcmp(what(), w.c_str()) == 0) &amp;&amp; !get_physical_position()</c> shall be <c>true</c> where <c>w</c> is an object of <c>std::string</c> constructed with <c>what_arg</c>.</postcondition>
         </code-item>
 
         <code-item>
