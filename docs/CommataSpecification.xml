@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-18 (UTC)</signature>
+<signature>2023-12-19 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4015,13 +4015,13 @@ template &lt;class FieldNamePredR, class FieldValuePredR>
   record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
                    FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                    header_forwarding header = header_forwarding::yes,
-                   std::size_t max_record_num = record_extractor_npos);
+                   std::size_t max_record_num = 0);
 template &lt;class FieldNamePredR, class FieldValuePredR>
   record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
                    std::basic_streambuf&lt;Ch, Tr>&amp; out,
                    FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
                    header_forwarding header = header_forwarding::yes,
-                   std::size_t max_record_num = record_extractor_npos);
+                   std::size_t max_record_num = 0);
           </code>
           <requires>For the first form, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Constructs an object <c>record_extractor</c>. The parameters work as <xref id="table.record_extractor.cons"/> shows.
@@ -4178,7 +4178,7 @@ template &lt;class FieldValuePredR>
                                     FieldValuePredR&amp;&amp; field_value_pred,
                                     std::optional&lt;header_forwarding> header
                                       = header_forwarding::yes,
-                                    std::size_t max_record_num = record_extractor_npos);
+                                    std::size_t max_record_num = 0);
 template &lt;class FieldValuePredR>
   record_extractor_with_indexed_key(std::allocator_arg_t, const Allocator&amp; alloc,
                                     std::basic_streambuf&lt;Ch, Tr>&amp; out,
@@ -4186,7 +4186,7 @@ template &lt;class FieldValuePredR>
                                     FieldValuePredR&amp;&amp; field_value_pred,
                                     std::optional&lt;header_forwarding> header
                                       = header_forwarding::yes,
-                                    std::size_t max_record_num = record_extractor_npos);
+                                    std::size_t max_record_num = 0);
           </code>
           <requires>For the first form, <c>Allocator</c> shall be <c>DefaultConstructible</c>.</requires>
           <effects>Constructs an object <c>record_extractor_with_indexed_key</c>. The parameters work as <xref id="table.record_extractor_with_indexed_key.cons"/> shows.
