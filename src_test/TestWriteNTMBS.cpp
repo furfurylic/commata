@@ -4,7 +4,10 @@
  */
 
 #include <locale>
+#include <string>
 #include <sstream>
+#include <utility>
+#include <vector>
 
 #include <gtest/gtest.h>
 

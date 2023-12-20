@@ -4,8 +4,6 @@
  */
 
 #ifdef _MSC_VER
-#pragma warning(disable:4494)
-#pragma warning(disable:4503)
 #pragma warning(disable:4996)
 #endif
 
@@ -70,7 +68,12 @@ template <class Ch>
 struct TestStoredValueNoModification : BaseTest
 {};
 
-typedef testing::Types<char, wchar_t, const char, const wchar_t> ChsAlsoConst;
+namespace {
+
+using Chs = testing::Types<char, wchar_t>;
+using ChsAlsoConst = testing::Types<char, wchar_t, const char, const wchar_t>;
+
+} // end unnamed
 
 TYPED_TEST_SUITE(TestStoredValueNoModification, ChsAlsoConst);
 
@@ -500,8 +503,6 @@ TYPED_TEST(TestStoredValueNoModification, ToArithmetic)
 template <class Ch>
 struct TestStoredValue : BaseTest
 {};
-
-typedef testing::Types<char, wchar_t> Chs;
 
 TYPED_TEST_SUITE(TestStoredValue, Chs);
 
@@ -1175,7 +1176,9 @@ template <class ContentLR>
 struct TestStoredTableMerge : BaseTest
 {};
 
-typedef testing::Types<
+namespace {
+
+using ContentLRs =testing::Types<
     std::pair<
         std::vector<std::vector<stored_value>>,
         std::vector<std::vector<stored_value>>>,
@@ -1190,7 +1193,9 @@ typedef testing::Types<
         std::deque<std::vector<stored_value>>>,
     std::pair<
         std::list<std::vector<stored_value>>,
-        std::deque<std::vector<stored_value>>>> ContentLRs;
+        std::deque<std::vector<stored_value>>>>;
+
+} // end unnamed
 
 TYPED_TEST_SUITE(TestStoredTableMerge, ContentLRs);
 
@@ -1404,7 +1409,9 @@ TEST_F(TestStoredTableAllocator, Basics)
     ASSERT_TRUE(a0.tracks(&table[3].front().front()));
 }
 
-typedef testing::Types<
+namespace {
+
+using TF3 = testing::Types<
     std::tuple<std::true_type, std::true_type, std::true_type>,
     std::tuple<std::true_type, std::true_type, std::false_type>,
     std::tuple<std::true_type, std::false_type, std::true_type>,
@@ -1413,7 +1420,9 @@ typedef testing::Types<
     std::tuple<std::false_type, std::true_type, std::false_type>,
     std::tuple<std::false_type, std::false_type, std::true_type>,
     std::tuple<std::false_type, std::false_type, std::false_type>
-> TF3;
+>;
+
+} // end unnamed
 
 template <class T>
 struct TestStoredTableAllocatorPropagation : BaseTest

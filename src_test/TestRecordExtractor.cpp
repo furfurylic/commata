@@ -3,13 +3,14 @@
  * http://unlicense.org
  */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4494)
-#endif
-
+#include <cstddef>
+#include <functional>
 #include <limits>
+#include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 
@@ -159,7 +160,14 @@ TEST_P(TestRecordExtractor, MoveCtor)
     auto ey = std::move(ex);
 
     try {
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:26800)  // use of moved-from objects, elaborated
+#endif
         parse_csv(s, std::move(ex), GetParam());
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
         ASSERT_TRUE(out.str().empty());
     } catch (const record_extraction_error&) {
         // "no such field" is all right
@@ -259,8 +267,15 @@ TEST_F(TestRecordExtractorIndexed, ConstRValueRefString)
     std::wstringbuf out;
     auto extractor = [&out] {
         const std::wstring s = L"star";
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:26478)  // move of const objects, elaborated
+#endif
         return make_record_extractor(
             out, 0, std::move(s), header_forwarding::no);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
     }();
     // If the range of the const rvalue of s has been grabbed in the lambda,
     // extractor will have a dangling range here;
@@ -284,7 +299,7 @@ struct final_predicate_for_value final
     }
 };
 
-}
+} // end unnamed
 
 struct TestRecordExtractorFinalPredicateForValue : BaseTest
 {};
@@ -383,7 +398,7 @@ class record_extractor_wrapper
 public:
     using char_type = char;
 
-    record_extractor_wrapper(RecordExtractor&& x) :
+    explicit record_extractor_wrapper(RecordExtractor&& x) :
         x_(std::move(x)), in_header_field_value_(false), buffer_end_(nullptr)
     {}
 

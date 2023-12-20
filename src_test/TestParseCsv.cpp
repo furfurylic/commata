@@ -3,18 +3,14 @@
  * http://unlicense.org
  */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4494)
-#pragma warning(disable:4996)
-#endif
-
-#include <algorithm>
+#include <cstddef>
 #include <exception>
-#include <iterator>
+#include <functional>
+#include <memory>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -178,7 +174,7 @@ check_handler<Ch, F> make_check_handler(F f)
 static_assert(std::is_nothrow_move_constructible_v<
     detail::csv::parser<streambuf_input<char>, test_collector<char>>>);
 
-} // unnamed
+} // end unnamed
 
 // Precondition
 static_assert(std::is_nothrow_move_constructible_v<test_collector<char>>);
@@ -216,16 +212,24 @@ static_assert(std::is_nothrow_move_constructible_v<
         csv_source<string_input<char>>, test_collector<char>>>);
 
 static_assert(
-    std::is_nothrow_swappable_v<reference_handler<test_collector<char>>>);
-static_assert(
-    std::is_trivially_copyable_v<reference_handler<test_collector<char>>>);
-
-static_assert(
     std::is_same_v<
         typename csv_source<string_input<char>>::template
             parser_type<test_collector<char>>,
         typename csv_source<string_input<char>>::template
             parser_type<test_collector<char>, std::allocator<char>>>);
+static_assert(
+    std::is_same_v<
+        std::invoke_result_t<const csv_source<string_input<wchar_t>>&,
+            std::reference_wrapper<test_collector2<wchar_t>>>,
+        typename csv_source<string_input<wchar_t>>::template parser_type<
+            reference_handler<test_collector2<wchar_t>>,
+            std::allocator<wchar_t>>>);
+
+// On reference_handler
+static_assert(
+    std::is_nothrow_swappable_v<reference_handler<test_collector<char>>>);
+static_assert(
+    std::is_trivially_copyable_v<reference_handler<test_collector<char>>>);
 
 struct TestParseCsvBasics :
     commata::test::BaseTestWithParam<std::size_t>
@@ -369,14 +373,6 @@ TEST_F(TestParseCsvReference, AlreadyEmptyPhysicalLineAware)
     ASSERT_STREQ("ABC", field_values[1][0].c_str());
 }
 
-static_assert(std::is_same_v<
-    decltype(
-        std::declval<const csv_source<string_input<wchar_t>>&>()(
-            std::declval<std::reference_wrapper<test_collector2<wchar_t>>>())),
-    typename csv_source<string_input<wchar_t>>::template parser_type<
-        reference_handler<test_collector2<wchar_t>>,
-        std::allocator<wchar_t>>>);
-
 template <class Ch>
 struct TestParseCsvFancy : BaseTest
 {};
@@ -497,7 +493,7 @@ struct full_fledged
     void finalize(const Ch*, const Ch*) {}
 };
 
-} // unnamed
+} // end unnamed
 
 struct TestCsvSource : commata::test::BaseTest
 {};

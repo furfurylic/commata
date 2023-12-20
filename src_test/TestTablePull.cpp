@@ -3,10 +3,6 @@
  * http://unlicense.org
  */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4996)
-#endif
-
 #include <string>
 #include <vector>
 #include <utility>
@@ -84,7 +80,7 @@ auto transcript_primitive(PrimitiveTablePull&& pull)
     return s;
 }
 
-}
+} // end unnamed
 
 template <class ChB>
 struct TestTablePull : BaseTest
@@ -441,7 +437,8 @@ TYPED_TEST_P(TestTablePull, ToArithmetic)
 
     auto pull = make_table_pull(make_csv_source(str("X,Y\n"
                                                     "1,-51.3\n"
-                                                    "1.9,\"1 234,5\"")));
+                                                    "1.9,\"1 234,5\"")),
+                                TypeParam::second_type::value);
     pull.skip_record();
 
     const auto x1 = to_arithmetic<unsigned>(pull());
@@ -471,7 +468,9 @@ REGISTER_TYPED_TEST_SUITE_P(TestTablePull,
     PrimitiveBasicsOnCsv, PrimitiveBasicsOnTsv, PrimitiveMove,
     Basics, SkipRecord, SkipField, Error, Move, ToArithmetic);
 
-typedef testing::Types<
+namespace {
+
+using ChBs = testing::Types<
     std::pair<char, std::integral_constant<std::size_t, 1>>,
     std::pair<char, std::integral_constant<std::size_t, 2>>,
     std::pair<char, std::integral_constant<std::size_t, 4>>,
@@ -479,5 +478,8 @@ typedef testing::Types<
     std::pair<wchar_t, std::integral_constant<std::size_t, 1>>,
     std::pair<wchar_t, std::integral_constant<std::size_t, 2>>,
     std::pair<wchar_t, std::integral_constant<std::size_t, 4>>,
-    std::pair<wchar_t, std::integral_constant<std::size_t, 1024>>> ChBs;
+    std::pair<wchar_t, std::integral_constant<std::size_t, 1024>>>;
+
+} // end unnamed
+
 INSTANTIATE_TYPED_TEST_SUITE_P(CharsBufferSizes, TestTablePull, ChBs);
