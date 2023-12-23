@@ -32,6 +32,8 @@ using namespace commata::test;
 
 namespace {
 
+using Chs = testing::Types<char, wchar_t>;
+
 template <class Ch>
 struct digit;
 
@@ -157,7 +159,11 @@ template <class T>
 struct TestReplaceIfConversionFailed : BaseTestWithParam<T>
 {};
 
-typedef testing::Types<double, std::string> ReplacedTypes;
+namespace {
+
+using ReplacedTypes = testing::Types<double, std::string>;
+
+} // end unnamed
 
 TYPED_TEST_SUITE(TestReplaceIfConversionFailed, ReplacedTypes);
 
@@ -706,17 +712,21 @@ TYPED_TEST(TestReplaceIfConversionFailed, DeductionGuides)
     ASSERT_THROW(r(out_of_range_t(), s, s, 1), text_value_out_of_range);
     ASSERT_TRUE(!r(out_of_range_t(), s, s, -1));
     ASSERT_EQ(num_2, *r(out_of_range_t(), s, s, 0));
-
-    replace_if_conversion_failed r2(replacement_fail, 0, 10l,
-                                    replacement_ignore);
-    static_assert(std::is_same_v<replace_if_conversion_failed<long>,
-                  decltype(r2)>);
-
-    // The code below should not compile by a "no viable deduction guide" error
-    // replace_if_conversion_failed r3(replacement_fail, 0, std::string("XY"));
 }
 
-namespace replace_if_conversion_failed_static_asserts {
+namespace {
+
+// Just to check compilation
+[[maybe_unused]] void use_replace_if_conversion_failed_deduction_guide()
+{
+    replace_if_conversion_failed r(replacement_fail, 0, 10L,
+                                   replacement_ignore);
+    static_assert(std::is_same_v<replace_if_conversion_failed<long>,
+                                 decltype(r)>);
+
+    // The code below should not compile by a "no viable deduction guide" error
+    // replace_if_conversion_failed r2(replacement_fail, 0, std::string("XY"));
+}
 
 using ri_t = replace_if_conversion_failed<int>;
 using rv_t = replace_if_conversion_failed<std::vector<int>>;
@@ -740,11 +750,7 @@ static_assert(!std::is_constructible<replace_if_conversion_failed<int>,
 static_assert(!std::is_constructible<replace_if_conversion_failed<unsigned>,
     unsigned, replacement_fail_t, replacement_ignore_t, long>::value);
 
-}
-
-typedef testing::Types<char, wchar_t> Chs;
-
-typedef testing::Types<
+using ChIntegrals = testing::Types<
     std::pair<char, char>,
     std::pair<char, signed char>,
     std::pair<char, unsigned char>,
@@ -767,16 +773,18 @@ typedef testing::Types<
     std::pair<wchar_t, unsigned long>,
     std::pair<wchar_t, long long>,
     std::pair<wchar_t, unsigned long long>
-> ChIntegrals;
+>;
 
-typedef testing::Types<
+using ChFloatingPoints = testing::Types<
     std::pair<char, float>,
     std::pair<char, double>,
     std::pair<char, long double>,
     std::pair<wchar_t, float>,
     std::pair<wchar_t, double>,
     std::pair<wchar_t, long double>
-> ChFloatingPoints;
+>;
+
+} // end unnamed
 
 template <class ChNum>
 struct TestToArithmeticIntegrals : BaseTest
@@ -1084,26 +1092,22 @@ namespace {
 
 struct rvalue_handler
 {
-    template <class Ch>
-    int operator()(invalid_format_t, const Ch*, const Ch*) &
+    int operator()(invalid_format_t) &
     {
         return 1;
     }
 
-    template <class Ch>
-    int operator()(invalid_format_t, const Ch*, const Ch*) &&
+    int operator()(invalid_format_t) &&
     {
         return 100;
     }
 
-    template <class Ch>
-    int operator()(out_of_range_t, const Ch*, const Ch*, int) &
+    int operator()(out_of_range_t) &
     {
         return 2;
     }
 
-    template <class Ch>
-    int operator()(out_of_range_t, const Ch*, const Ch*, int) &&
+    int operator()(out_of_range_t) &&
     {
         return 200;
     }
@@ -1128,15 +1132,13 @@ TEST_F(TestToArithmeticMiscellaneous, Rvalue)
 
 TEST_F(TestToArithmeticMiscellaneous, ReferenceWrapper)
 {
-    replace_if_conversion_failed<int> h(100);
-    ASSERT_EQ(100, to_arithmetic<int>("42x"s, std::ref(h)));
+    rvalue_handler h;
+    ASSERT_EQ(1, to_arithmetic<int>("42x"s, std::ref(h)));
 }
 
 template <class T>
 struct TestNumPunctReplacerToC : BaseTestWithParam<T>
 {};
-
-typedef testing::Types<char, wchar_t> Chs;
 
 TYPED_TEST_SUITE(TestNumPunctReplacerToC, Chs);
 

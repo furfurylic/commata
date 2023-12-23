@@ -3,13 +3,13 @@
  * http://unlicense.org
  */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4996)
-#endif
-
+#include <ios>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -27,8 +27,99 @@ static_assert(std::is_trivially_copyable_v<streambuf_input<char>>);
 static_assert(std::is_trivially_copyable_v<istream_input<char>>);
 static_assert(std::is_trivially_copyable_v<string_input<wchar_t>>);
 
+struct TestStreambufInput : BaseTest
+{};
+
+TEST_F(TestStreambufInput, Basics)
+{
+    std::stringbuf s("1234567");
+    streambuf_input in(s);
+    char b[5];
+
+    ASSERT_EQ(4U, in(b, 4));    // reads 1234
+    b[4] = '\0';
+    ASSERT_STREQ("1234", b);
+
+    ASSERT_EQ(3U, in(b, 4));    // read 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestStreambufInput, CopyConstruct)
+{
+    std::stringbuf s("1234567");
+    streambuf_input in1(s);
+    streambuf_input in2(in1);
+    char b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+    ASSERT_EQ(3U, in2(b, 4));   // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestStreambufInput, CopyAssign)
+{
+    std::stringbuf s("1234567");
+    streambuf_input in1(s);
+    char b[5];
+
+    decltype(in1) in2;
+    ASSERT_EQ(0U, in2(b, 4));   // reads nothing (default constructed)
+
+    in2 = in1;
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+    ASSERT_EQ(3U, in2(b, 4));   // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestStreambufInput, Swap)
+{
+    std::wstringbuf s(L"1234567");
+    std::wstringbuf t(L"XYZUVW");
+    streambuf_input in1(s);
+    streambuf_input in2(t);
+    wchar_t b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+    using std::swap;
+    swap(in1, in2);
+    ASSERT_EQ(4U, in1(b, 4));   // reads XYZU
+    b[4] = L'\0';
+    ASSERT_STREQ(L"XYZU", b);
+}
+
 struct TestIStreamInput : BaseTest
 {};
+
+TEST_F(TestIStreamInput, Basics)
+{
+    std::istringstream s("1234567");
+    istream_input in(s);
+    char b[5];
+
+    ASSERT_EQ(4U, in(b, 4));    // reads 1234
+    b[4] = '\0';
+    ASSERT_STREQ("1234", b);
+
+    ASSERT_EQ(3U, in(b, 4));    // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestIStreamInput, CopyConstruct)
+{
+    std::istringstream s("1234567");
+    istream_input in1(s);
+    istream_input in2(in1);
+    char b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+    ASSERT_EQ(3U, in2(b, 4));   // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
 
 TEST_F(TestIStreamInput, CopyAssign)
 {
@@ -37,13 +128,29 @@ TEST_F(TestIStreamInput, CopyAssign)
     char b[5];
 
     decltype(in1) in2;
-    ASSERT_EQ(0U, in2(b, 4));
+    ASSERT_EQ(0U, in2(b, 4));   // reads nothing (default constructed)
 
     in2 = in1;
-    ASSERT_EQ(4U, in1(b, 4));
-    ASSERT_EQ(3U, in2(b, 4));
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+    ASSERT_EQ(3U, in2(b, 4));   // reads 567
     b[3] = '\0';
     ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestIStreamInput, Swap)
+{
+    std::wistringstream s(L"1234567");
+    std::wistringstream t(L"XYZUVW");
+    istream_input in1(s);
+    istream_input in2(t);
+    wchar_t b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+    using std::swap;
+    swap(in1, in2);
+    ASSERT_EQ(4U, in1(b, 4));   // reads XYZU
+    b[4] = L'\0';
+    ASSERT_STREQ(L"XYZU", b);
 }
 
 TEST_F(TestIStreamInput, ThrowAsStream)
@@ -56,8 +163,125 @@ TEST_F(TestIStreamInput, ThrowAsStream)
                                                     // to failbit|eofbit
 }
 
+struct TestOwnedStreambufInput : BaseTest
+{};
+
+TEST_F(TestOwnedStreambufInput, Basics)
+{
+    owned_streambuf_input in(std::stringbuf("1234567"));
+    char b[5];
+
+    ASSERT_EQ(4U, in(b, 4));    // reads 1234
+    b[4] = '\0';
+    ASSERT_STREQ("1234", b);
+
+    ASSERT_EQ(3U, in(b, 4));    // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestOwnedStreambufInput, MoveConstruct)
+{
+    owned_streambuf_input in1(std::stringbuf("1234567"));
+    char b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+
+    owned_streambuf_input in2(std::move(in1));
+    ASSERT_EQ(3U, in2(b, 4));   // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestOwnedStreambufInput, MoveAssign)
+{
+    owned_streambuf_input in1(std::stringbuf("1234567"));
+    owned_streambuf_input in2(std::stringbuf("XYZ"));
+    char b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+
+    in2 = std::move(in1);
+    ASSERT_EQ(3U, in2(b, 4));   // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestOwnedStreambufInput, Swap)
+{
+    std::wstringbuf s(L"1234567");
+    std::wstringbuf t(L"XYZUVW");
+    owned_streambuf_input in1(std::move(s));
+    owned_streambuf_input in2(std::move(t));
+    wchar_t b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+    using std::swap;
+    swap(in1, in2);
+    ASSERT_EQ(4U, in1(b, 4));   // reads XYZU
+    b[4] = L'\0';
+    ASSERT_STREQ(L"XYZU", b);
+}
+
 struct TestOwnedIStreamInput : BaseTest
 {};
+
+TEST_F(TestOwnedIStreamInput, Basics)
+{
+    owned_istream_input in(std::istringstream("1234567"));
+    char b[5];
+
+    ASSERT_EQ(4U, in(b, 4));    // reads 1234
+    b[4] = '\0';
+    ASSERT_STREQ("1234", b);
+
+    ASSERT_EQ(3U, in(b, 4));    // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestOwnedIStreamInput, MoveConstruct)
+{
+    owned_istream_input in1(std::istringstream("1234567"));
+    char b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+
+    owned_istream_input in2(std::move(in1));
+    ASSERT_EQ(3U, in2(b, 4));   // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestOwnedIStreamInput, MoveAssign)
+{
+    owned_istream_input in1(std::istringstream("1234567"));
+    owned_istream_input in2(std::istringstream("XYZ"));
+    char b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+
+    in2 = std::move(in1);
+    ASSERT_EQ(3U, in2(b, 4));   // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestOwnedIStreamInput, Swap)
+{
+    std::wistringstream s(L"1234567");
+    std::wistringstream t(L"XYZUVW");
+    owned_istream_input in1(std::move(s));
+    owned_istream_input in2(std::move(t));
+    wchar_t b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+    using std::swap;
+    swap(in1, in2);
+    ASSERT_EQ(4U, in1(b, 4));   // reads XYZU
+    b[4] = L'\0';
+    ASSERT_STREQ(L"XYZU", b);
+}
 
 TEST_F(TestOwnedIStreamInput, ThrowAsStream)
 {
@@ -67,6 +291,74 @@ TEST_F(TestOwnedIStreamInput, ThrowAsStream)
     char b[4];
     ASSERT_THROW(in(b, 4), std::ios_base::failure); // EOF sets the state
                                                     // to failbit|eofbit
+}
+
+struct TestStringInput : BaseTest
+{};
+
+TEST_F(TestStringInput, Basics)
+{
+    string_input in("1234567"sv);
+    char b[5];
+
+    ASSERT_EQ(4U, in(b, 4));    // reads 1234
+    b[4] = '\0';
+    ASSERT_STREQ("1234", b);
+
+    ASSERT_EQ(3U, in(b, 4));    // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestStringInput, CopyConstruct)
+{
+    string_input in1("1234567"sv);
+    char b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+
+    string_input in2(in1);
+    ASSERT_EQ(3U, in2(b, 4));   // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+
+    ASSERT_EQ(3U, in1(b, 4));   // reads 567 again
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestStringInput, CopyAssign)
+{
+    string_input in1("1234567"sv);
+    char b[5];
+
+    decltype(in1) in2;
+    ASSERT_EQ(0U, in2(b, 4));   // reads nothing (default constructed)
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+
+    in2 = in1;
+    ASSERT_EQ(3U, in2(b, 4));   // reads 567
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+
+    ASSERT_EQ(3U, in1(b, 4));   // reads 567 again
+    b[3] = '\0';
+    ASSERT_STREQ("567", b);
+}
+
+TEST_F(TestStringInput, Swap)
+{
+    string_input in1(L"1234567"sv);
+    string_input in2(L"XYZUVW"sv);
+    wchar_t b[5];
+
+    ASSERT_EQ(4U, in1(b, 4));   // reads 1234
+    using std::swap;
+    swap(in1, in2);
+    ASSERT_EQ(4U, in1(b, 4));   // reads XYZU
+    b[4] = L'\0';
+    ASSERT_STREQ(L"XYZU", b);
 }
 
 struct TestOwnedStringInput : BaseTest
@@ -99,10 +391,10 @@ TEST_F(TestOwnedStringInput, MoveConstruct)
 
     std::vector<char> a(2);
     std::vector<char> b(3);
-    const auto lenp = (*p)(a.data(), 2);
+    const auto lenp = (*p)(a.data(), 2);    // reads AB
     auto q = std::move(*p);
     p.reset();
-    const auto lenq = q(b.data(), 3);
+    const auto lenq = q(b.data(), 3);       // reads C
 
     ASSERT_EQ(2U, lenp);
     ASSERT_EQ("AB", std::string(a.data(), 2));

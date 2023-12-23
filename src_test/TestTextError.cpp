@@ -108,7 +108,7 @@ TEST_F(TestTextError, Info)
         ASSERT_GT(cpos, lpos);
     }
 
-    // info()'s string contains positions
+    // text_error_info's string representation contains positions
     e.set_physical_position(text_error::npos - 1, text_error::npos - 2);
     std::string is;
     {
@@ -128,23 +128,25 @@ TEST_F(TestTextError, Info)
     }
     ASSERT_EQ(is, to_string(text_error_info(e)));
 
-    // info()'s string is aligned to right
+    // text_error_info's string representation is aligned to right
     std::string is2;
     {
         std::ostringstream s;
-        s << std::setw(is.size() + 20) << std::setfill('_') << text_error_info(e);
+        s << std::setw(is.size() + 20) << std::setfill('_')
+          << text_error_info(e);
         is2 = std::move(s).str();
     }
     ASSERT_EQ(is.size() + 20, is2.size());
     ASSERT_EQ(std::string(20, '_'), is2.substr(0, 20));
     ASSERT_EQ(is, is2.substr(20));
 
-    // info()'s string is aligned to left
+    // text_error_info's string representation is aligned to left
     std::string is3;
     {
         std::ostringstream s;
         s << std::left;
-        s << std::setw(is.size() + 10) << std::setfill('#') << text_error_info(e);
+        s << std::setw(is.size() + 10) << std::setfill('#')
+          << text_error_info(e);
         is3 = std::move(s).str();
     }
     ASSERT_EQ(is.size() + 10, is3.size());
@@ -173,8 +175,8 @@ TEST_F(TestTextError, Allocators)
     std::vector<std::pair<char*, char*>> allocated;
     tracking_allocator<std::allocator<char>> a(allocated);
 
-    const char* message = "A certain very lengthy message that tells "
-                          "the details of the text error";
+    const char* const message = "A certain very lengthy message that tells "
+                                "the details of the text error";
 
     using traits_t = std::char_traits<char>;
     using string_t = std::basic_string<char, traits_t, decltype(a)>;

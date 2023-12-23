@@ -5,12 +5,16 @@
 
 #include <cstddef>
 #include <exception>
+#include <functional>
 #include <memory>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -22,12 +26,66 @@
 using namespace commata;
 using namespace commata::test;
 
-struct TestParseTsv :
-    commata::test::BaseTest
-{};
-
 namespace {
 
+template <class T>
+class logging_allocator
+{
+    std::vector<std::size_t>* allocations_;
+
+public:
+    using value_type = T;
+    using size_type = std::size_t;
+
+    logging_allocator() noexcept : allocations_(nullptr)
+    {}
+
+    explicit logging_allocator(std::vector<std::size_t>& allocations)
+        noexcept :
+        allocations_(std::addressof(allocations))
+    {}
+
+    template <class U>
+    logging_allocator(const logging_allocator<U>& other) noexcept :
+        allocations_(other.allocations_)
+    {}
+
+    T* allocate(std::size_t n)
+    {
+        if (allocations_) {
+            allocations_->emplace_back();
+        }
+        const std::size_t nn = sizeof(T) * n;
+        const auto p = static_cast<T*>(static_cast<void*>(new char[nn]));
+        if (allocations_) {
+            allocations_->back() = nn;
+        }
+        return p;
+    }
+
+    void deallocate(T* p, std::size_t)
+    {
+        delete [] static_cast<char*>(static_cast<void*>(p));
+    }
+
+    template <class U>
+    bool operator==(const logging_allocator<U>&) const
+    {
+        return true;
+    }
+
+    template <class U>
+    bool operator!=(const logging_allocator<U>&) const
+    {
+        return false;
+    }
+};
+
+// <                <- buffer start (suppressible)
+// {(field)(field)} <- record
+// *                <- empty physical line
+// {(field)(field)} <- record
+// >                <- buffer end   (suppressible)
 template <class Ch, class Tr = std::char_traits<Ch>>
 class simple_transcriptor
 {
@@ -41,21 +99,21 @@ public:
     explicit simple_transcriptor(
         std::basic_ostream<Ch, Tr>& out,
         bool suppresses_buffer_events = false) :
-        out_(&out), in_value_(false),
+        out_(std::addressof(out)), in_value_(false),
         suppresses_buffer_events_(suppresses_buffer_events)
     {}
 
     void start_buffer(Ch* /*buffer_begin*/, Ch* /*buffer_end*/)
     {
         if (!suppresses_buffer_events_) {
-            this->out() << '<';
+            out() << '<';
         }
     }
 
     void end_buffer(Ch* /*buffer_last*/)
     {
         if (!suppresses_buffer_events_) {
-            this->out() << '>';
+            out() << '>';
         }
     }
 
@@ -98,41 +156,6 @@ protected:
     }
 };
 
-// Precondition
-static_assert(std::is_nothrow_move_constructible_v<simple_transcriptor<char>>);
-
-// tsv_source invocation
-// ... with an rvalue of test_collector (move)
-static_assert(std::is_nothrow_invocable_v<
-    const tsv_source<string_input<char>>&,
-    simple_transcriptor<char>>);
-static_assert(std::is_nothrow_invocable_v<
-    tsv_source<string_input<char>>,
-    simple_transcriptor<char>>);
-// ... with a reference-wrapped test_collector
-static_assert(std::is_nothrow_invocable_v<
-    const tsv_source<string_input<char>>&,
-    const std::reference_wrapper<simple_transcriptor<char>>&>);
-static_assert(std::is_nothrow_invocable_v<
-    tsv_source<string_input<char>>,
-    const std::reference_wrapper<simple_transcriptor<char>>&>);
-// ... with a reference-wrapped test_collector and an allocator
-static_assert(std::is_nothrow_invocable_v<
-    const tsv_source<string_input<char>>&,
-    const std::reference_wrapper<simple_transcriptor<char>>&,
-    std::size_t,
-    std::allocator<char>>);
-static_assert(std::is_nothrow_invocable_v<
-    tsv_source<string_input<char>>,
-    const std::reference_wrapper<simple_transcriptor<char>>&,
-    std::size_t,
-    std::allocator<char>>);
-
-// Parser's nothrow move constructibility
-static_assert(std::is_nothrow_move_constructible_v<
-    std::invoke_result_t<
-        tsv_source<string_input<char>>, simple_transcriptor<char>>>);
-
 template <class Ch, class Tr>
 class empty_physical_line_intolerant_simple_transcriptor :
     public simple_transcriptor<Ch, Tr>
@@ -155,6 +178,13 @@ public:
     }
 };
 
+// +                <- get buffer
+// <                <- buffer start
+// {(field)(field)} <- record
+// *                <- empty physical line
+// {(field)(field)} <- record
+// >                <- buffer end   (suppressible)
+// -                <- release buffer
 template <class Ch, class Tr>
 class transcriptor : public simple_transcriptor<Ch, Tr>
 {
@@ -197,59 +227,46 @@ public:
     }
 };
 
-template <class T>
-class logging_allocator
-{
-    std::vector<std::size_t>* allocations_;
+// Precondition
+static_assert(std::is_nothrow_move_constructible_v<simple_transcriptor<char>>);
 
-public:
-    using value_type = T;
-    using size_type = std::size_t;
+// tsv_source invocation
+// ... with an rvalue of test_collector (move)
+static_assert(std::is_nothrow_invocable_v<
+    const tsv_source<string_input<char>>&,
+    simple_transcriptor<char>>);
+static_assert(std::is_nothrow_invocable_v<
+    tsv_source<string_input<char>>,
+    simple_transcriptor<char>>);
+// ... with a reference-wrapped test_collector
+static_assert(std::is_nothrow_invocable_v<
+    const tsv_source<string_input<char>>&,
+    const std::reference_wrapper<simple_transcriptor<char>>&>);
+static_assert(std::is_nothrow_invocable_v<
+    tsv_source<string_input<char>>,
+    const std::reference_wrapper<simple_transcriptor<char>>&>);
+// ... with a reference-wrapped test_collector and an allocator
+static_assert(std::is_nothrow_invocable_v<
+    const tsv_source<string_input<char>>&,
+    const std::reference_wrapper<simple_transcriptor<char>>&,
+    std::size_t,
+    logging_allocator<char>>);
+static_assert(std::is_nothrow_invocable_v<
+    tsv_source<string_input<char>>,
+    const std::reference_wrapper<simple_transcriptor<char>>&,
+    std::size_t,
+    logging_allocator<char>>);
 
-    logging_allocator() : allocations_(nullptr)
-    {}
+// Parser's nothrow move constructibility
+static_assert(std::is_nothrow_move_constructible_v<
+    std::invoke_result_t<
+        tsv_source<string_input<char>>, simple_transcriptor<char>>>);
 
-    explicit logging_allocator(std::vector<std::size_t>& allocations) :
-        allocations_(&allocations)
-    {}
+} // end unnamed
 
-    template <class U>
-    logging_allocator(const logging_allocator<U>& other) :
-        allocations_(other.allocations_)
-    {}
-
-    T* allocate(std::size_t n)
-    {
-        if (allocations_) {
-            allocations_->emplace_back();
-        }
-        const std::size_t nn = sizeof(T) * n;
-        const auto p = static_cast<T*>(static_cast<void*>(new char[nn]));
-        if (allocations_) {
-            allocations_->back() = nn;
-        }
-        return p;
-    }
-
-    void deallocate(T* p, std::size_t)
-    {
-        delete [] static_cast<char*>(static_cast<void*>(p));
-    }
-
-    template <class U>
-    bool operator==(const logging_allocator<U>&) const
-    {
-        return true;
-    }
-
-    template <class U>
-    bool operator!=(const logging_allocator<U>&) const
-    {
-        return false;
-    }
-};
-
-}
+struct TestParseTsv :
+    commata::test::BaseTest
+{};
 
 // Tests full events emitted by the parser but "yield" with a buffer whose
 // length is 1
