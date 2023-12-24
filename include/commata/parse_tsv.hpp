@@ -636,7 +636,11 @@ auto make_tsv_source(CharInput&& input)
     noexcept(std::is_nothrow_constructible_v<
         std::decay_t<CharInput>, CharInput&&>)
  -> std::enable_if_t<
-        !detail::are_make_char_input_args_v<CharInput&&>,
+        !detail::are_make_char_input_args_v<CharInput&&>
+     && std::is_invocable_r_v<typename std::decay_t<CharInput>::size_type,
+            std::decay_t<CharInput>&,
+            typename std::decay_t<CharInput>::char_type*,
+            typename std::decay_t<CharInput>::size_type>,
         tsv_source<std::decay_t<CharInput>>>
 {
     return tsv_source<std::decay_t<CharInput>>(std::forward<CharInput>(input));
