@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-24 (UTC)</signature>
+<signature>2023-12-25 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3496,7 +3496,8 @@ template &lt;class CharInputR> auto make_csv_source(CharInputR&amp;&amp; in) noe
           </code>
           <preface>Let <c>CharInput</c> be <c>std::decay_t&lt;CharInputR></c>.</preface>
           <effects>Equivalent to: <c>return csv_source&lt;CharInput>(std::forward&lt;CharInputR>(in));</c></effects>
-          <remark>This overload shall not participate in overload resolution if <c>make_char_input(std::declval&lt;CharInputR&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.
+          <remark>This overload shall participate in overload resolution if and only if <c>make_char_input(std::declval&lt;CharInputR&amp;&amp;>())</c> is not well-formed when treated as an unevaluated operand
+                  and <c>std::is_invocable_r_v&lt;typename CharInput::size_type, CharInput&amp;, typename CharInput::char_type*, typename CharInput::size_type></c> is <c>true</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CharInput, CharInputR&amp;&amp;></c>.</remark>
         </code-item>
       </section>
@@ -3812,7 +3813,8 @@ template &lt;class CharInputR> auto make_tsv_source(CharInputR&amp;&amp; in) noe
           </code>
           <preface>Let <c>CharInput</c> be <c>std::decay_t&lt;CharInputR></c>.</preface>
           <effects>Equivalent to: <c>return tsv_source&lt;CharInput>(make_char_input(std::forward&lt;CharInputR>(in)));</c></effects>
-          <remark>This overload shall not participate in overload resolution if <c>make_char_input(std::declval&lt;CharInputR&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.
+          <remark>This overload shall participate in overload resolution if and only if <c>make_char_input(std::declval&lt;CharInputR&amp;&amp;>())</c> is not well-formed when treated as an unevaluated operand
+                  and <c>std::is_invocable_r_v&lt;typename CharInput::size_type, CharInput&amp;, typename CharInput::char_type*, typename CharInput::size_type></c> is <c>true</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CharInput, CharInputR&amp;&amp;></c>.</remark>
         </code-item>
       </section>
