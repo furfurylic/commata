@@ -28,6 +28,8 @@ using namespace commata::test;
 
 namespace {
 
+static_assert(std::is_trivially_copyable_v<tsv_source<streambuf_input<char>>>);
+
 template <class T>
 class logging_allocator
 {
