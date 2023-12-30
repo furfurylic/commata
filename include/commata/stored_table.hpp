@@ -1144,6 +1144,8 @@ private:
             at_t::propagate_on_container_swap::value>>;
     using ca_t = typename cat_t::allocator_type;
     using store_type = detail::stored::table_store<char_type, ca_t>;
+    static constexpr bool shares_buffers = std::is_const_v<
+        std::remove_reference_t<typename value_type::reference>>;
 
     template <class OtherContent, class OtherAllocator>
     friend class basic_stored_table;
@@ -1163,7 +1165,8 @@ public:
         std::size_t buffer_size = 0U) :
         store_(std::allocator_arg, ca_t(ca_base_t(alloc))),
         records_(allocate_create_content(alloc)),
-        buffer_size_(sanitize_buffer_size(buffer_size, store_.get_allocator()))
+        buffer_size_(detail::sanitize_buffer_size(
+            buffer_size, store_.get_allocator()))
     {}
 
     basic_stored_table(const basic_stored_table& other) :
@@ -1224,14 +1227,6 @@ public:
     }
 
 private:
-    static std::size_t sanitize_buffer_size(
-        std::size_t buffer_size, const ca_t& alloc) noexcept
-    {
-        return std::max(
-            static_cast<std::size_t>(2U),
-            detail::sanitize_buffer_size(buffer_size, alloc));
-    }
-
     template <class... Args>
     [[nodiscard]]
     static auto allocate_create_content(Allocator a, Args&&... args)
@@ -1379,8 +1374,7 @@ private:
             return value = value_type();
         }
 
-        if constexpr (!std::is_const_v<
-                std::remove_reference_t<typename value_type::reference>>) {
+        if constexpr (!shares_buffers) {
             if (new_value_size <= value.size()) {
                 detail::stored::move_chs<traits_type>(
                     new_value_begin, new_value_size, value.begin());
@@ -1640,6 +1634,11 @@ private:
         return *this;
     }
 
+    // append_no_singular: appends all records of "other" into records of *this
+    // at its past-the-end position with care of exceptions with an assumption
+    // that neither *this nor "other" is singular
+
+    // append_no_singular: copy version
     template <class OtherContent, class OtherAllocator>
     void append_no_singular(
         const basic_stored_table<OtherContent, OtherAllocator>& other)
@@ -1647,18 +1646,14 @@ private:
         other.copy_to(*this);
     }
 
+    // append_no_singular: possibly-move version
     template <class OtherContent, class OtherAllocator>
     void append_no_singular(
         basic_stored_table<OtherContent, OtherAllocator>&& other)
     {
-        using oca_t =
-            typename basic_stored_table<OtherContent, OtherAllocator>::ca_t;
-        if constexpr (
-            std::is_const_v<std::remove_reference_t<
-                typename basic_stored_table<OtherContent, OtherAllocator>::
-                    value_type::reference>>
-         && !std::is_const_v<std::remove_reference_t<
-                typename value_type::reference>>) {
+        using o_t = basic_stored_table<OtherContent, OtherAllocator>;
+        using oca_t = typename o_t::ca_t;
+        if constexpr (o_t::shares_buffers && (!shares_buffers)) {
             append_no_singular(other);                          // throw
         } else if constexpr (std::is_same_v<ca_t, oca_t>
                    && cat_t::is_always_equal::value) {
@@ -1677,6 +1672,11 @@ private:
         // but such striving comes to nothing by Visual Studio's warning C4702
     }
 
+    // copy_to: copies all records of *this into "to"'s records at its past-
+    // the-end position with care of exceptions with an assumption that neither
+    // *this nor "to" is singular
+
+    // copy_to: generic version
     template <class ContentTo, class AllocatorTo>
     void copy_to(basic_stored_table<ContentTo, AllocatorTo>& to) const
     {
@@ -1697,6 +1697,7 @@ private:
         });
     }
 
+    // copy_to: list version
     template <class RecordTo, class AllocatorRTo, class AllocatorTo>
     void copy_to(basic_stored_table<std::list<RecordTo, AllocatorRTo>,
                                     AllocatorTo>& to) const
@@ -1709,14 +1710,17 @@ private:
         to.content().splice(to.content().cend(), r2);
     }
 
+    // Copies all elements (records) of "other" into "records" at its past-the-
+    // end position with no care of exceptions (that is, when exits via an
+    // exception, no appended elements in "records" will be removed and no
+    // buffer operations will be revoked)
     template <class OtherContent>
     void import_leaky(const OtherContent& other, content_type& records)
     {
         detail::stored::reserve(
             records, records.size() + other.size());                // throw
 
-        if constexpr (std::is_const_v<
-                std::remove_reference_t<typename value_type::reference>>) {
+        if constexpr (shares_buffers) {
             using va_t = typename at_t::template rebind_alloc<value_type>;
             using canon_t = std::unordered_set<value_type,
                 std::hash<value_type>, std::equal_to<value_type>, va_t>;
@@ -1784,6 +1788,7 @@ struct invoke_clear
     }
 };
 
+// Inserts all elements of "from" to "to" at its past-end position
 template <class ContainerFrom, class ContainerTo>
 void emigrate(ContainerFrom&& from, ContainerTo& to)
 {
@@ -1804,6 +1809,12 @@ void emigrate(ContainerFrom&& from, ContainerTo& to)
     }
 }
 
+// append_content: moves all elements (records) of l to r at its past-end
+// position with care of exceptions (that is, when exits via an exception,
+// removes inserted elements from l) with an assumption that all values will
+// become backed by one merged store
+
+// append_content: generic version
 template <class ContentL, class ContentR>
 void append_content(ContentL& l, ContentR&& r)
 {
@@ -1826,6 +1837,7 @@ void append_content(ContentL& l, ContentR&& r)
     }
 }
 
+// append_content: lists-with-different-allocators version
 template <class Record, class AllocatorL, class AllocatorR>
 void append_content(
     std::list<Record, AllocatorL>& l, std::list<Record, AllocatorR>&& r,
@@ -1836,6 +1848,7 @@ void append_content(
     l.splice(l.cend(), r2);
 }
 
+// append_content: lists-with-possibly-equal-allocators version
 template <class Record, class Allocator>
 void append_content(
     std::list<Record, Allocator>& l, std::list<Record, Allocator>&& r)
@@ -1851,7 +1864,7 @@ void append_content(
 }
 
 template <class ContentL, class AllocatorL, class TableR>
-auto plus_impl(
+basic_stored_table<ContentL, AllocatorL> plus_impl(
     const basic_stored_table<ContentL, AllocatorL>& left, TableR&& right)
 {
     auto l(left);                           // throw
@@ -1860,7 +1873,7 @@ auto plus_impl(
 }
 
 template <class ContentL, class AllocatorL, class TableR>
-auto plus_impl(
+basic_stored_table<ContentL, AllocatorL> plus_impl(
     basic_stored_table<ContentL, AllocatorL>&& left, TableR&& right)
 {
     left += std::forward<TableR>(right);    // throw
@@ -1880,7 +1893,7 @@ void basic_stored_table<Content, Allocator>::append_no_singular_merge(
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-auto operator+(
+basic_stored_table<ContentL, AllocatorL> operator+(
     const basic_stored_table<ContentL, AllocatorL>& left,
     const basic_stored_table<ContentR, AllocatorR>& right)
 {
@@ -1888,7 +1901,7 @@ auto operator+(
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-auto operator+(
+basic_stored_table<ContentL, AllocatorL> operator+(
     const basic_stored_table<ContentL, AllocatorL>& left,
     basic_stored_table<ContentR, AllocatorR>&& right)
 {
@@ -1896,7 +1909,7 @@ auto operator+(
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-auto operator+(
+basic_stored_table<ContentL, AllocatorL> operator+(
     basic_stored_table<ContentL, AllocatorL>&& left,
     const basic_stored_table<ContentR, AllocatorR>& right)
 {
@@ -1904,12 +1917,11 @@ auto operator+(
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-auto operator+(
+basic_stored_table<ContentL, AllocatorL> operator+(
     basic_stored_table<ContentL, AllocatorL>&& left,
     basic_stored_table<ContentR, AllocatorR>&& right)
 {
-    return detail::stored::plus_impl(
-        std::move(left), std::move(right));
+    return detail::stored::plus_impl(std::move(left), std::move(right));
 }
 
 using stored_table  =
