@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-19 (UTC)</signature>
+<signature>2024-01-09 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1535,7 +1535,7 @@ namespace commata {
 
       <p>In <xref id="table.conversion_error_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
           <c>i</c>, <c>o</c> and <c>e</c> are values of <c>invalid_format_t</c>, <c>out_of_range_t</c> and <c>empty_t</c> respectively.
-          <c>f</c> and <c>l</c> are pointers to cv-unqualified <c>Ch</c> object.
+          <c>f</c> and <c>l</c> are pointers to volatile-unqualified <c>const Ch</c> object.
           The range [<c>f</c>, <c>l</c>) is the value of the field.
           <c>l</c> can be dereferenced and points the terminating zero.
           The type of <c>s</c> is <c>int</c>.
