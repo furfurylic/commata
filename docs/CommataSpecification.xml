@@ -495,6 +495,68 @@
       </table>
     </section>
   </section>
+
+  <section id="requirements.other">
+    <name>Other library-wide requirements</name>
+
+    <p>This subclause specifies requirements that apply to the entire Commata library other than basic ones (<xref id="requirements"/>).</p>
+
+    <section id="iterator_end.requirements">
+      <name><c>IteratorEnd</c> requirements</name>
+
+      <p>A type <c>J</c> meets the <c>IteratorEnd</c> requirements for an iterator type <c>I</c> if:</p>
+      <ul>
+        <li><c>J</c> meets the <c>CopyConstructible</c>, <c>CopyAssignable</c> and <c>Destructible</c> requirements,</li>
+        <li><c>std::declval&lt;const I&amp;>() == std::declval&lt;const J&amp;>()</c> is well-formed when treated as an unevaluated operand and is able to be contextually converted to <c>bool</c>.</li>
+      </ul>
+      <p><span class="note">That a type <c>J</c> meets this requirements for an iterator type <c>I</c> means that an object of <c>J</c> can work as a so-called &#x2018;sentinel&#x2019; of a range that contains an element pointed by an object of <c>I</c>.</span></p>
+    </section>
+
+    <section id="accessible_range.requirements">
+      <name><c>AccessibleRange</c> and <c>ForwardAccessibleRange</c> requirements</name>
+
+      <p>A non-reference type <c>R</c> meets the <c>AccessibleRange</c> requirements for a type <c>E</c> if:</p>
+      <ul>
+        <li><c>std::cbegin(std::declval&lt;const R&amp;>())</c> and <c>std::cend(std::declval&lt;const R&amp;>())</c> are well-formed when treated as unevaluated operands,</li>
+        <li>The type of the expression <c>std::cbegin(std::declval&lt;const R&amp;>())</c> is an input iterator type whose value type <c>D</c> satisfies that <c>std::is_convertible_v&lt;D, E></c> is <c>true</c>, and</li>
+        <li>The type of the expression <c>std::cend(std::declval&lt;const R&amp;>())</c> meets the <c>IteratorEnd</c> requirements for the type of the expression <c>std::cbegin(std::declval&lt;const R&amp;>())</c>.</li>
+      </ul>
+
+      <p>A type <c>R</c> meets the <c>ForwardAccessibleRange</c> requirements for a type <c>E</c> if:</p>
+      <ul>
+        <li><c>R</c> meets the <c>AccessibleRange</c> requirements, and</li>
+        <li>The type of the expression <c>std::cbegin(std::declval&lt;const R&amp;>())</c> is a forward iterator type (not necessarily a mutable iterator type).</li>
+      </ul>
+    </section>
+
+    <section id="form_accessible_range">
+      <name>Forming an accessible range</name>
+
+      <p>In this subclause, let <c>f</c> and <c>l</c> are expressions, and let <c>F</c> and <c>L</c> are the types of <c>f</c> and <c>l</c> respectively.</p>
+
+      <p><c>f</c> and <c>l</c> <n>form an accessible range</n> for a type <c>T</c> if and only if:</p>
+      <ul>
+        <li><c>F</c> is a input iterator type whose value type <c>U</c> satisfies that <c>std::is_convertible_v&lt;U, T></c> is <c>true</c>,</li>
+        <li><c>L</c> meets the <c>IteratorEnd</c> requirements for <c>F</c> (<xref id="iterator_end.requirements"/>), and</li>
+        <li>there exists an non-negative integer <c>n</c> whose type is <c>std::iterator_traits&lt;F>::difference_type</c> that satisfies:
+            <ul>
+              <li><c>std::next(f, n) == l</c> holds <c>true</c>, and</li>
+              <li>for each integer <c>i</c> in [0, <c>n</c>), <c>std::next(f, i)</c> is dereferenceable and <c>std::next(f, i) == l</c> holds <c>false</c>.</li>
+            </ul>
+        </li>
+      </ul>
+
+      <p>When <c>f</c> and <c>l</c> form an accessible range:</p>
+      <ul>
+        <li>with <c>n</c> above, the range [<c>f</c>, <c>std::next(f, n)</c>) is referred as [<c>f</c>, <c>l</c>) in shorthand,</li>
+        <li>the range [<c>f</c>, <c>l</c>) is called the range <n>formed by</n> <c>f</c> and <c>l</c>, and</li>
+        <li><c>n</c> above is called the <n>size</n> of the range [<c>f</c>, <c>l</c>).</li>
+      </ul>
+
+      <p>Additionally, let <c>t</c> is an expression whose type <c>T</c> meets the <c>RangeAccessible</c> requirements.
+         Then if <c>std::cbegin(t)</c> and <c>std::cend(t)</c> form an accessible range, the range [<c>std::cbegin(t)</c>, <c>std::cend(t)</c>) is called the range <n>formed by</n> <c>t</c>.</p>
+    </section>
+  </section>
 </section>
 
 <section id="utility">
@@ -4267,16 +4329,7 @@ bool is_in_header() const noexcept;
     <section id="record_extractor.creation">
       <name><c>record_extractor</c> and <c>record_extractor_with_indexed_key</c> creation functions</name>
 
-      <p>In this subclause, a type <c>T</c> is called <n>range-accessible</n> for a type <c>E</c> if:</p>
-      <ul>
-        <li><c>std::begin(std::declval&lt;T&amp;>()) == std::end(std::declval&lt;T&amp;>())</c> is well-formed when treated as an unevaluated operand and is able to be contextually converted to <c>bool</c>,</li>
-        <li><c>std::iterator_traits&lt;decltype(std::begin(std::declval&lt;T&amp;>()))>::iterator_category</c> denotes a type (hereinafter called <c>C</c>) and <c>std::is_base_of_v&lt;std::forward_iterator_tag, C></c> is <c>true</c>, and</li>
-        <li><c>std::iterator_traits&lt;decltype(std::begin(std::declval&lt;T&amp;>()))>::value_type</c> denotes a type (hereinafter called <c>V</c>) and <c>std::is_convertible_v&lt;V, E></c> is <c>true</c>.</li>
-      </ul>
-
-      <p>For a range-accessible type <c>T</c>, <c>std::remove_reference_t&lt;decltype(std::begin(std::declval&lt;T&amp;>()))></c> is called the <n>iterator type</n> of <c>T</c>.</p>
-
-      <p>Additionally, in this subclause, for a certain expression <c>t</c> whose type is <c>T</c>, an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c> is defined as following:</p>
+      <p>In this subclause, for a certain expression <c>t</c> whose type is <c>T</c>, an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c> is defined as following:</p>
       <ul>
         <li>if <c>std::is_convertible_v&lt;T&amp;, const Ch*></c> (if <c>t</c> is an lvalue) or <c>std::is_convertible_v&lt;T, const Ch*></c> (otherwise) is <c>true</c>,
             a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
@@ -4286,19 +4339,19 @@ bool is_in_header() const noexcept;
               <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
             </ul>
         </li>
-        <li>otherwise, if <c>t</c> is an lvalue and <c>T</c> is a range-accessible type for <c>Ch</c>,
+        <li>otherwise, if <c>t</c> is an lvalue and <c>T</c> meets the <c>ForwardAccessibleRange</c> requirements for <c>Ch</c> (<xref id="accessible_range.requirements"/>),
             a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds the return value of <c>std::addressof(t)</c> (hereinafter called <c>p</c>),</li>
-              <li>that tells if a string view object is equal to the range [<c>std::begin(*p)</c>, <c>std::end(*p)</c>) in terms of <c>Tr::eq</c>, and</li>
+              <li>that tells if a string view object is equal to the range formed by <c>*p</c> (<xref id="form_accessible_range"/>) in terms of <c>Tr::eq</c>, and</li>
               <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
             </ul>
         </li>
-        <li>otherwise, if <c>T</c> is a range-accessible type for <c>Ch</c>,
+        <li>otherwise, if <c>T</c> meets the <c>ForwardAccessibleRange</c> requirements for <c>Ch</c> (<xref id="accessible_range.requirements"/>),
             a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds a copy of <c>t</c> (hereinafter called <c>u</c>) constructed with an xvalue of <c>t</c>,</li>
-              <li>that tells if a string view object is equal to the range [<c>std::begin(u)</c>, <c>std::end(u)</c>) in terms of <c>Tr::eq</c>, and</li>
+              <li>that tells if a string view object is equal to the range formed by <c>u</c> (<xref id="form_accessible_range"/>) in terms of <c>Tr::eq</c>, and</li>
               <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == std::is_nothrow_move_constructible_v&lt;T></c>,</li>
             </ul>
         </li>
@@ -4315,9 +4368,6 @@ template &lt;class FieldNamePred, class FieldValuePred,
                                   FieldValuePred&amp;&amp; field_value_pred,
                                   Appendices&amp;&amp;... appendices);
         </code>
-        <requires>For each <c>P</c> in <c>FieldNamePred</c> and <c>FieldValuePred</c>,
-                  if <c>std::is_convertible_v&lt;P, const Ch*></c> is <c>false</c> and <c>std::remove_reference_t&lt;P></c> is a range-accessible type,
-                  the iterator type of <c>std::remove_reference_t&lt;P></c> shall be a forward iterator type.</requires>
         <effects><p>Equivalent to:</p>
                  <code>auto fnp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred));
 auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred));
@@ -4327,7 +4377,7 @@ return record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
         </effects>
         <remark>This overload shall not participate in overload resolution unless both of <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldNamePred>())</c> and
                 <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>())</c> are well-formed when treated as unevaluated operands, and
-                   for each type (hereinafter called <c>T</c>) of their types, <c>std::declval&lt;bool&amp;>() = std::declval&lt;T&amp;>()(std::declval&lt;std::basic_string_view&lt;Ch, Tr>&amp;>()</c> is well-formed when treated as an unevaluated operand.</remark>
+                for each type (hereinafter called <c>T</c>) of their types, <c>std::declval&lt;bool&amp;>() = std::declval&lt;T&amp;>()(std::declval&lt;std::basic_string_view&lt;Ch, Tr>&amp;>()</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
 
       <code-item>
@@ -4340,8 +4390,6 @@ template &lt;class FieldValuePred,
                                   FieldValuePred&amp;&amp; field_value_pred,
                                   Appendices&amp;&amp;... appendices);
         </code>
-        <requires>If <c>std::is_convertible_v&lt;FieldValuePred, const Ch*></c> is <c>false</c> and <c>std::remove_reference_t&lt;FieldValuePred></c> is a range-accessible type,
-                  the iterator type of <c>std::remove_reference_t&lt;FieldValuePred></c> shall be a forward iterator type.</requires>
         <effects><p>Equivalent to:</p>
                  <code>auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred));
 return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(
@@ -5543,15 +5591,11 @@ template &lt;class InputIterator, class InputIteratorEnd>
   value_type&amp; rewrite_value(value_type&amp; value,
                             InputIterator new_value_begin, InputIteratorEnd new_value_end);
           </code>
-          <requires><c>InputIterator</c> shall be an input iterator type whose value type is <c>char_type</c>.
-                    <c>InputIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
-                    <c>std::declval&lt;const InputIterator&amp;>() == std::declval&lt;const InputIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.
-                    <c>value</c> shall be backed by <c>*this</c>.
-                    <c>new_value_begin</c> shall point an element in, or be a past-the-end iterator of, a valid range.</requires>
+          <requires><c>InputIterator</c> shall be a input iterator type whose value type <c>T</c> satisfies that <c>std::is_convertible_v&lt;T, char_type></c> is <c>true</c>.
+                    <c>InputIteratorEnd</c> shall meet the <c>IteratorEnd</c> requirements for <c>InputIterator</c> (<xref id="iterator_end.requirements"/>).
+                    <c>value</c> shall be backed by <c>*this</c>.</requires>
           <postcondition><c>value</c> shall be unchangedly backed by <c>*this</c>.
-                         Let <c>n</c> is the smallest non-negative integer which makes the value of <c>std::next(new_value_begin, n) == new_value_end</c> contextually converted to <c>bool</c> be <c>true</c>.
-                         Then <c>std::equal(value.cbegin(), value.cend(), new_value_begin, std::next(new_value_begin, n), p)</c> shall not be <c>false</c>
-                         where <c>p</c> is an equivalent predicate to <c>traits_type::eq</c>.</postcondition>
+                         <c>value</c> shall be equal to the range [<c>new_value_begin</c>, <c>new_value_end</c>) (<xref id="form_accessible_range"/>) before the call in terms of <c>traits_type::eq</c>.</postcondition>
           <returns><c>value</c>.</returns>
         </code-item>
 
@@ -5561,8 +5605,7 @@ template &lt;class InputIterator>
   value_type&amp; rewrite_value(value_type&amp; value, InputIterator new_value);
           </code>
           <effects>Equivalent to: <c>return rewrite_value(value, new_value, null_termination());</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::iterator_traits&lt;InputIterator>::iterator_category</c> is a type
-                  that is equal to or a derived class of <c>std::input_iterator_tag</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>InputIterator</c> is an input iterator type.</remark>
         </code-item>
 
         <code-item>
@@ -5571,15 +5614,7 @@ template &lt;class OtherValue>
   value_type&amp; rewrite_value(value_type&amp; value, const OtherValue&amp; new_value);
           </code>
           <effects>Equivalent to: <c>return rewrite_value(value, std::begin(new_value), std::end(new_value));</c></effects>
-          <remark><p>Let <c>ItTr</c> be <c>std::iterator_traits&lt;decltype(std::begin(std::declval&lt;const OtherValue&amp;>()))></c>.
-                     Then this overload shall not participate in overload resolution unless:</p>
-            <ul>
-              <li><c>std::is_convertible_v&lt;const OtherValue&amp;, const char_type*></c> is <c>false</c>,</li>
-              <li><c>std::begin(std::declval&lt;const OtherValue&amp;>()) == std::end(std::declval&lt;const OtherValue&amp;>())</c> is well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>,</li>
-              <li><c>ItTr::iterator_category</c> denotes a type and <c>std::is_base_of_v&lt;std::input_iterator_tag, ItTr::iterator_category></c> is <c>true</c>, and</li>
-              <li><c>ItTr::value_type</c> denotes a type and <c>std::is_convertible_v&lt;ItTr::value_type, char_type></c> is <c>true</c>.</li>
-            </ul>
-          </remark>
+          <remark>This overload shall not participate in overload resolution unless <c>OtherValue</c> meets the <c>AccessibleRange</c> requirements (<xref id="accessible_range.requirements"/>) for <c>char_type</c>.</remark>
         </code-item>
 
         <code-item>
