@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2023-12-29 (UTC)</signature>
+<signature>2023-12-30 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3401,6 +3401,7 @@ namespace commata {
       <p>The class template <c>csv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TableParser</c> objects (<xref id="table_parser.requirements"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for a certain char-like type.</p>
       <p><c>csv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.</p>
+      <p><c>csv_source&lt;CharInput></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;CharInput></c> is <c>true</c>.</p>
 
       <section id="csv_source.types">
         <name><c>csv_source</c> member types</name>
@@ -3718,6 +3719,7 @@ namespace commata {
       <p>The class template <c>tsv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TableParser</c> objects (<xref id="table_parser.requirements"/>) of the TSV text format (<xref id="definitions.tsv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for a certain char-like type.</p>
       <p><c>tsv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.</p>
+      <p><c>tsv_source&lt;CharInput></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;CharInput></c> is <c>true</c>.</p>
 
       <section id="tsv_source.types">
         <name><c>tsv_source</c> member types</name>
