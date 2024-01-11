@@ -516,7 +516,6 @@ using commata::table_scanner;
 using commata::make_field_translator;
 using commata::parse_csv;
 using commata::replacement_ignore;
-using commata::replace_if_skipped;
 
 void one_pass_scanning_error_sample2()
 {
@@ -530,8 +529,8 @@ void one_pass_scanning_error_sample2()
         distance_sum += distance;
         ++distance_num;
       },
-      replace_if_skipped<double>(replacement_ignore),               /* added */
-      replace_if_conversion_failed<double>(replacement_ignore)));   /* added */
+      replacement_ignore,     /* added (1) */
+      replacement_ignore));   /* added (2) */
 
   parse_csv(std::ifstream("stars.csv"), std::move(scanner));
 
@@ -540,21 +539,24 @@ void one_pass_scanning_error_sample2()
 }
 ```
 
-The argument
-`replace_if_skipped<double>(replacement_ignore)`
+The second argument `replacement_ignore` (with `added (1)` comment)
 instructs the body field scanner to ignore every case that a record contains
 too few fields to reach the field (in this case, third field
 (zero-based)); but it is irrelevant to the above-mentioned exception. (Note
 that the second field is followed by a comma, which makes the third field
 exist.)
 
-On the other hand, the argument
-`replace_if_conversion_failed<double>(replacement_ignore)`
+On the other hand, the third argument
+`replacement_ignore` (with `added (2)` comment)
 instructs the body field scanner to ignore every case that a value of the field
 is an empty string; it is to solve the problem we have faced.
 
-Class templates `replace_if_skipped` and `replace_if_conversion_failed` are
-defined by including the header `"commata/field_scanners.hpp"`.
+The constant variable `replacement_ignore` is defined by including the header
+`"commata/field_scanners.hpp"`.
+
+If necessary, you can do more elaborate treatment for anomalous conditions with
+class templates `replace_if_skipped` and `replace_if_conversion_failed`
+defined by including the same header `"commata/field_scanners.hpp"`.
 
 ## Making your own table handler types
 
