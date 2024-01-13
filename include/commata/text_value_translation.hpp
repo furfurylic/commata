@@ -22,11 +22,12 @@
 #include <string_view>
 #include <type_traits>
 
-#include "member_like_base.hpp"
 #include "field_handling.hpp"
 #include "text_error.hpp"
-#include "typing_aid.hpp"
-#include "write_ntmbs.hpp"
+
+#include "detail/member_like_base.hpp"
+#include "detail/typing_aid.hpp"
+#include "detail/write_ntmbs.hpp"
 
 namespace commata {
 

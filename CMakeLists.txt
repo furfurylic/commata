@@ -11,32 +11,32 @@ target_include_directories(commata INTERFACE
 )
 cmake_policy(SET CMP0076 NEW)
 target_sources(commata INTERFACE
-    include/commata/allocation_only_allocator.hpp
-    include/commata/base_source.hpp
-    include/commata/buffer_control.hpp
-    include/commata/buffer_size.hpp
     include/commata/char_input.hpp
-    include/commata/empty_string.hpp
     include/commata/field_handling.hpp
     include/commata/field_scanners.hpp
-    include/commata/formatted_output.hpp
-    include/commata/handler_decorator.hpp
-    include/commata/key_chars.hpp
-    include/commata/member_like_base.hpp
     include/commata/parse_csv.hpp
     include/commata/parse_error.hpp
     include/commata/parse_tsv.hpp
-    include/commata/propagation_controlled_allocator.hpp
     include/commata/record_extractor.hpp
     include/commata/stored_table.hpp
-    include/commata/string_value.hpp
     include/commata/table_pull.hpp
     include/commata/table_scanner.hpp
     include/commata/text_error.hpp
     include/commata/text_value_translation.hpp
-    include/commata/typing_aid.hpp
     include/commata/wrapper_handlers.hpp
-    include/commata/write_ntmbs.hpp
+    include/commata/detail/allocation_only_allocator.hpp
+    include/commata/detail/base_source.hpp
+    include/commata/detail/buffer_control.hpp
+    include/commata/detail/buffer_size.hpp
+    include/commata/detail/empty_string.hpp
+    include/commata/detail/formatted_output.hpp
+    include/commata/detail/handler_decorator.hpp
+    include/commata/detail/key_chars.hpp
+    include/commata/detail/member_like_base.hpp
+    include/commata/detail/propagation_controlled_allocator.hpp
+    include/commata/detail/string_value.hpp
+    include/commata/detail/typing_aid.hpp
+    include/commata/detail/write_ntmbs.hpp
 )
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_sources(commata INTERFACE

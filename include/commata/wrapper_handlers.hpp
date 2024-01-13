@@ -11,8 +11,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "handler_decorator.hpp"
-#include "typing_aid.hpp"
+#include "detail/handler_decorator.hpp"
+#include "detail/typing_aid.hpp"
 
 namespace commata {
 

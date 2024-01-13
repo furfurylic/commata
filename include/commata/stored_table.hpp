@@ -28,12 +28,12 @@
 #include <utility>
 #include <vector>
 
-#include "buffer_size.hpp"
-#include "empty_string.hpp"
-#include "member_like_base.hpp"
-#include "propagation_controlled_allocator.hpp"
-#include "string_value.hpp"
-#include "typing_aid.hpp"
+#include "detail/buffer_size.hpp"
+#include "detail/empty_string.hpp"
+#include "detail/member_like_base.hpp"
+#include "detail/propagation_controlled_allocator.hpp"
+#include "detail/string_value.hpp"
+#include "detail/typing_aid.hpp"
 
 namespace commata {
 

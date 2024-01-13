@@ -22,12 +22,13 @@
 #include <utility>
 #include <vector>
 
-#include "allocation_only_allocator.hpp"
-#include "key_chars.hpp"
-#include "member_like_base.hpp"
 #include "text_error.hpp"
-#include "typing_aid.hpp"
-#include "write_ntmbs.hpp"
+
+#include "detail/allocation_only_allocator.hpp"
+#include "detail/key_chars.hpp"
+#include "detail/member_like_base.hpp"
+#include "detail/typing_aid.hpp"
+#include "detail/write_ntmbs.hpp"
 
 namespace commata {
 namespace detail::record_extraction {
