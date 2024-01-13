@@ -23,7 +23,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "formatted_output.hpp"
+#include "detail/formatted_output.hpp"
 
 namespace commata {
 

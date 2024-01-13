@@ -12,10 +12,11 @@
 #include <type_traits>
 #include <utility>
 
+#include "../char_input.hpp"
+#include "../wrapper_handlers.hpp"
+
 #include "buffer_control.hpp"
-#include "char_input.hpp"
 #include "typing_aid.hpp"
-#include "wrapper_handlers.hpp"
 
 namespace commata::detail {
 

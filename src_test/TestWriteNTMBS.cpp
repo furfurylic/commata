@@ -11,7 +11,7 @@
 
 #include <gtest/gtest.h>
 
-#include <commata/write_ntmbs.hpp>
+#include <commata/detail/write_ntmbs.hpp>
 
 #include "BaseTest.hpp"
 

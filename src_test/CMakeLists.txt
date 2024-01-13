@@ -57,7 +57,7 @@ target_sources(test_commata PRIVATE
     ${TEST_COMMATA_HEADERS}
 )
 
-source_group("Commata Headers" FILES ${COMMATA_HEADERS})
+source_group(TREE include/commata PREFIX "Commata Headers" FILES ${COMMATA_HEADERS})
 
 target_compile_features(test_commata PRIVATE cxx_std_17)
 

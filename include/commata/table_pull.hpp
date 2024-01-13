@@ -17,10 +17,11 @@
 #include <utility>
 #include <vector>
 
-#include "allocation_only_allocator.hpp"
-#include "buffer_size.hpp"
-#include "member_like_base.hpp"
 #include "wrapper_handlers.hpp"
+
+#include "detail/allocation_only_allocator.hpp"
+#include "detail/buffer_size.hpp"
+#include "detail/member_like_base.hpp"
 
 namespace commata {
 

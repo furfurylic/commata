@@ -14,11 +14,12 @@
 #include <type_traits>
 #include <utility>
 
-#include "base_source.hpp"
 #include "char_input.hpp"
-#include "key_chars.hpp"
 #include "parse_error.hpp"
-#include "typing_aid.hpp"
+
+#include "detail/base_source.hpp"
+#include "detail/key_chars.hpp"
+#include "detail/typing_aid.hpp"
 
 namespace commata {
 
