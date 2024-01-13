@@ -388,8 +388,8 @@ private:
             static_cast<max_t>(std::numeric_limits<std::streamsize>::max());
 
         while (s.size() > max) {
-            sb.sputn(s.data(), max);
-            s.remove_prefix(max);
+            sb.sputn(s.data(), static_cast<std::streamsize>(max));
+            s.remove_prefix(static_cast<std::size_t>(max));
         }
         sb.sputn(s.data(), s.size());
     }
