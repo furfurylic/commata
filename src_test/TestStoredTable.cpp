@@ -1169,7 +1169,7 @@ TEST_F(TestStoredTable, Const)
 
     table2 += table;                // copy
     table2 += std::move(table);     // copy too
-    ASSERT_EQ(3, table.size());
+    ASSERT_EQ(3U, table.size());
 }
 
 template <class ContentLR>
