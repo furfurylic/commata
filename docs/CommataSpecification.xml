@@ -5419,7 +5419,7 @@ namespace commata {
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t buffer_size = 0U);
           </code>
           <effects>Copy constructs the allocator from <c>alloc</c>.
-                   If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>CAT::max_size(CA(a))</c> and the greater of <c>buffer_size</c> and <c>2</c> where <c>a</c> is an lvalue to the allocator.
+                   If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>CAT::max_size(CA(a))</c> and <c>buffer_size</c> where <c>a</c> is an lvalue to the allocator.
                    Otherwise, initializes it to an unspecified value.
                    Initializes the content container to have an element as default inserted into it.</effects>
         </code-item>
