@@ -5654,7 +5654,7 @@ template &lt;class F> auto guard_rewrite(F f) -> decltype(f(*this));
           </code>
           <effects>Optionally finds a buffer in the store whose length is not less than <c>min_size</c> and whose absence does not have any effects on the completeness of the table.
                    If a suitable buffer is found, then makes the store release the ownership of it.
-                   Otherwise, makes a rebound copy of a return value of <c>get_allocator</c> to <c>char_type</c> and allocates a buffer for <c>min_size</c> <c>char_type</c> objects with it.</effects>
+                   Otherwise, makes a rebound copy of a return value of <c>get_allocator()</c> to <c>char_type</c> and allocates a buffer for <c>min_size</c> <c>char_type</c> objects with it.</effects>
           <returns>A pair object of a pointer to the first element of a buffer and its length, which is the value passed to the allocator to obtain the memory.</returns>
           <remark>This function does not change the current buffer mark.</remark>
         </code-item>
