@@ -2744,7 +2744,6 @@ explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
           </code>
           <requires><c>sb</c> shall be <c>nullptr</c> or a pointer to a valid stream buffer object.</requires>
           <effects>Initializes <c>in</c> with <c>std::addressof(sb)</c>.</effects>
-          <throws>Nothing.</throws>
         </code-item>
       </section>
 
