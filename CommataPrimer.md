@@ -108,7 +108,9 @@ std::cout << std::strlen(table[6][1].c_str()) << std::endl;
 
 (Please note that this example is somewhat absurd. `stored_value` has `size`
  member function which does the almost same thing in constant time.
- (The presence of "almost" is because `stored_value` can contain `'\0'` in it.))
+ (The presence of 'almost' is because `stored_value` can contain `'\0'` in it
+ and in that situation `std::strlen` and the `size` member function report
+ different number.))
 
 `stored_value` supports iterators and has comparison operators with
 `const char*`, `std::string`, `std::string_view` and `stored_value`:
