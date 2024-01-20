@@ -295,6 +295,27 @@ struct converter<T, std::void_t<typename numeric_type_traits<T>::raw_type>> :
 
 } // end detail::xlate
 
+template <class T, class Ch, class U>
+concept conversion_error_handler =
+    std::is_move_constructible_v<T>
+ && std::is_destructible_v<T>
+ && (std::is_invocable_r_v<std::optional<U>, T&,
+        invalid_format_t, const Ch*, const Ch*>
+  || std::is_invocable_r_v<std::optional<U>, T&,
+        invalid_format_t, const Ch*, const Ch*, U*>
+  || std::is_invocable_r_v<std::optional<U>, T&, invalid_format_t>
+  || std::is_invocable_r_v<std::optional<U>, T&, invalid_format_t, U*>)
+ && (std::is_invocable_r_v<std::optional<U>, T&,
+        out_of_range_t, const Ch*, const Ch*, int>
+  || std::is_invocable_r_v<std::optional<U>, T&,
+        out_of_range_t, const Ch*, const Ch*, int, U*>
+  || std::is_invocable_r_v<std::optional<U>, T&, out_of_range_t, int>
+  || std::is_invocable_r_v<std::optional<U>, T&, out_of_range_t, int, U*>
+  || std::is_invocable_r_v<std::optional<U>, T&, out_of_range_t>
+  || std::is_invocable_r_v<std::optional<U>, T&, out_of_range_t, U*>)
+ && (std::is_invocable_r_v<std::optional<U>, T&, empty_t>
+  || std::is_invocable_r_v<std::optional<U>, T&, empty_t, U*>);
+
 struct fail_if_conversion_failed
 {
     explicit fail_if_conversion_failed(replacement_fail_t = replacement_fail)
@@ -1162,7 +1183,7 @@ template <class T>
 inline constexpr bool is_default_translatable_arithmetic_type_v =
     is_default_translatable_arithmetic_type<T>::value;
 
-template <class T, class ConversionErrorHandler, class A>
+template <class T, class A, conversion_error_handler<std::remove_const_t<std::remove_pointer_t<decltype(std::declval<const A&>().c_str())>>, T> ConversionErrorHandler>
 T to_arithmetic(const A& a, ConversionErrorHandler&& handler)
 {
     if constexpr (detail::is_std_optional_v<T>) {
