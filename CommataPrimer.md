@@ -185,6 +185,11 @@ void stored_table_sample2()
 Here the type of `table[1][0]` is `commata::wstored_value`, whose objects
 represents null&#x2010;terminated ranges of `wchar_t`.
 
+### Field access by name is not supported
+
+As we saw, `stored_table` has no idea about 'field names' of the loaded CSV.
+So you *cannot* access fields by name with codes like `table[5]["Name"]` or `table["Name"][5]`.
+
 ## One&#x2010;pass scanning
 
 Commata has facilities to perform one&#x2010;pass scanning and on&#x2010;the&#x2010;fly type
