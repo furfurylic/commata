@@ -10,7 +10,7 @@ of C++ language.
 ## Commata is a header-only library
 
 Commata is a header-only library, so your codes that use Commata compile
-if you configure your compiler refer Commata's `include` directory as an include path.
+if you configure your compiler refer Commata&#x2019;s `include` directory as an include path.
 You are not likely to be bothered by link errors around Commata.
 
 Incidentally, Commata has its `CMakeLists.txt` in the top directory to add itself as an `INTERFACE` library.
@@ -34,7 +34,7 @@ target_link_libraries(your_project PRIVATE commata)
 ```
 
 To get back to this primer, C++ codes in this document should compile
-if you configure your compiler refer Commata's `include` directory as an include path.
+if you configure your compiler refer Commata&#x2019;s `include` directory as an include path.
 
 ## Sample CSV file
 
@@ -385,7 +385,7 @@ double quote that voilates the CSV format.
 If you call `parse_csv` with a stream with this content, it will throw an
 exception.
 
-Exception objects thrown by Commata's implementation because of the content of
+Exception objects thrown by Commata&#x2019;s implementation because of the content of
 the text have types that are or are derived from `commata::text_error`.
 So you can try to parse the text by codes like this:
 
@@ -689,10 +689,10 @@ void make_empty_physical_line_aware_sample()
 
 ## Pull parsing
 
-Commata also has facilities to perform 'pull parsing', in which users can access the
+Commata also has facilities to perform &#x2018;pull parsing&#x2019;, in which users can access the
 result of parsing in a step-by-step manner.
 
-In pull parsing, the user have a 'cursor' on the CSV text. He/she can read from
+In pull parsing, the user have a &#x2018;cursor&#x2019; on the CSV text. He/she can read from
 the point where the cursor placed, and move the cursor forward.
 
 See the following sample:
@@ -732,15 +732,15 @@ Also note that `skip_record` and `operator()` of a `table_pull` object return
 a reference to the `table_pull` object itself.
 
 The value of the current field where a `table_pull` object points can be got as
-a string view object with `table_pull`'s dereference operators `*` and `->`.
-Additionally, `table_pull`' offers `c_str` member function that returns a pointer
+a string view object with `table_pull`&#x2019;s dereference operators `*` and `->`.
+Additionally, `table_pull` offers `c_str` member function that returns a pointer
 to a null-terminated sequence suitable for C APIs.
 
 An object of `table_pull` is convertible to `bool`.
 It is converted to `false` if it does not point either an end of a record or
 a field&mdash;for example, it has reached the EOF.
 
-So you can easily make it 'run to the end' like this:
+So you can easily make it &#x2018;run to the end&#x2019; like this:
 
 ```C++
 #include <commata/parse_csv.hpp>
@@ -771,7 +771,7 @@ By default, `table_pull` objects do not regard empty lines as records with no fi
 Instead, they simply ignore these lines.
 
 In addition, with `state` member function, you can make a `table_pull` object tell its
-status, for example, 'points an end of a record', 'points a field', 'reached the EOF',
+status, for example, &#x2018;points an end of a record&#x2019;, &#x2018;points a field&#x2019;, &#x2018;reached the EOF&#x2019;,
 and so on. This functionality is essential to handle texts whose structure is not known
 in advance.
 
@@ -779,9 +779,9 @@ in advance.
 
 Commata also offers support for tab-separated values (TSV) format as with CSV format.
 The supported TSV format is, however, much simpler than the supported CSV format and
-lacks escaping and quoting, similarly to [IANA's TSV format](https://www.iana.org/assignments/media-types/text/tab-separated-values).
+lacks escaping and quoting, similarly to [IANA&#x2019;s TSV format](https://www.iana.org/assignments/media-types/text/tab-separated-values).
 To be specific, field values cannot contain tab characters in this format.
 
-Commata's TSV support facilities are defined in the header `"commata/parse_tsv.hpp"`.
+Commata&#x2019;s TSV support facilities are defined in the header `"commata/parse_tsv.hpp"`.
 These facilities have very similar interfaces to those of CSV; for example,
 you can parse a TSV text with `parse_tsv(std::ifstream("stars.txt"), std::move(handler))` function template and make a `text_pull` object with `make_text_pull(make_tsv_source(std::ifstream("stars.txt")))` where `handler` is a table handler object and `stars.txt` is a TSV text file.
