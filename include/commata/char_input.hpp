@@ -73,7 +73,7 @@ public:
     {}
 
     explicit streambuf_input(std::basic_streambuf<Ch, Tr>& in) noexcept :
-        in_(&in)
+        in_(std::addressof(in))
     {}
 
     streambuf_input(const streambuf_input& other) = default;
