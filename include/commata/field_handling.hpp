@@ -27,64 +27,38 @@ enum class replace_mode
 
 struct generic_args_t {};
 
-struct replaced_type_impossible_t
-{};
+namespace field {
+
+// Proxy for replacement_ignore_t and replacement_fail_t on std::common_type_t
+struct replacing_no_info_t
+{
+    template <class T> operator T() const;
+};
+
+template <class T>
+using replacing_t =
+    std::conditional_t<
+        std::is_base_of_v<replacement_ignore_t, T>
+     || std::is_base_of_v<replacement_fail_t, T>,
+        replacing_no_info_t,
+        T>;
+
+template <class... Ts>
+using replacing_common_type_t = std::common_type_t<replacing_t<Ts>...>;
+
+} // end field
 
 struct replaced_type_not_found_t
 {};
 
 template <class... Ts>
-struct replaced_type_from_impl;
-
-template <class Found>
-struct replaced_type_from_impl<Found>
-{
-    using type = std::conditional_t<
-        std::is_same_v<replaced_type_impossible_t, Found>,
-        replaced_type_not_found_t, Found>;
-};
-
-// In C++20, we can use std::type_identity instead
-template <class T>
-struct identity
-{
-    using type = T;
-};
-
-struct has_common_type_impl
-{
-    template <class... Ts>
-    static std::true_type check(typename std::common_type<Ts...>::type*);
-
-    template <class... Ts>
-    static std::false_type check(...);
-};
-
-template <class... Ts>
-constexpr bool has_common_type_v =
-    decltype(has_common_type_impl::check<Ts...>(nullptr))::value;
-
-template <class Found, class Head, class... Tails>
-struct replaced_type_from_impl<Found, Head, Tails...>
-{
-    using type = typename replaced_type_from_impl<
-        typename std::conditional<
-            std::is_base_of_v<replacement_fail_t, Head>
-         || std::is_base_of_v<replacement_ignore_t, Head>,
-            identity<identity<Found>>,
-            typename std::conditional<
-                std::is_same_v<Found, replaced_type_not_found_t>,
-                identity<Head>,
-                std::conditional_t<
-                    has_common_type_v<Found, Head>,
-                    std::common_type<Found, Head>,
-                    identity<replaced_type_impossible_t>>>>::type::type::type,
-        Tails...>::type;
-};
-
-template <class... Ts>
 using replaced_type_from_t =
-    typename replaced_type_from_impl<replaced_type_not_found_t, Ts...>::type;
+    std::conditional_t<
+        std::is_same_v<
+            field::replacing_no_info_t,
+            field::replacing_common_type_t<Ts...>>,
+        replaced_type_not_found_t,
+        field::replacing_common_type_t<Ts...>>;
 
 } // end detail
 
