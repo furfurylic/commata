@@ -8,9 +8,9 @@
 
 #include <functional>
 #include <iterator>
+#include <optional>
 #include <string>
 #include <type_traits>
-#include <optional>
 
 namespace commata::detail {
 
