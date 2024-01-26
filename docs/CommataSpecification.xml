@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-01-09 (UTC)</signature>
+<signature>2024-01-17 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2744,7 +2744,6 @@ explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
           </code>
           <requires><c>sb</c> shall be <c>nullptr</c> or a pointer to a valid stream buffer object.</requires>
           <effects>Initializes <c>in</c> with <c>std::addressof(sb)</c>.</effects>
-          <throws>Nothing.</throws>
         </code-item>
       </section>
 
@@ -3233,7 +3232,7 @@ template &lt;class Streambuf>
 template &lt;class Ch, class Tr>
   istream_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
         </code>
-        <returns><c>sitream_input&lt;Ch, Tr>(in)</c>.</returns>
+        <returns><c>istream_input&lt;Ch, Tr>(in)</c>.</returns>
       </code-item>
 
       <code-item>
@@ -5420,7 +5419,7 @@ namespace commata {
 basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t buffer_size = 0U);
           </code>
           <effects>Copy constructs the allocator from <c>alloc</c>.
-                   If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>CAT::max_size(CA(a))</c> and the greater of <c>buffer_size</c> and <c>2</c> where <c>a</c> is an lvalue to the allocator.
+                   If <c>buffer_size</c> is greater than <c>0</c>, initializes the buffer size to a value that is the smaller of <c>CAT::max_size(CA(a))</c> and <c>buffer_size</c> where <c>a</c> is an lvalue to the allocator.
                    Otherwise, initializes it to an unspecified value.
                    Initializes the content container to have an element as default inserted into it.</effects>
         </code-item>
@@ -5655,7 +5654,7 @@ template &lt;class F> auto guard_rewrite(F f) -> decltype(f(*this));
           </code>
           <effects>Optionally finds a buffer in the store whose length is not less than <c>min_size</c> and whose absence does not have any effects on the completeness of the table.
                    If a suitable buffer is found, then makes the store release the ownership of it.
-                   Otherwise, makes a rebound copy of a return value of <c>get_allocator</c> to <c>char_type</c> and allocates a buffer for <c>min_size</c> <c>char_type</c> objects with it.</effects>
+                   Otherwise, makes a rebound copy of a return value of <c>get_allocator()</c> to <c>char_type</c> and allocates a buffer for <c>min_size</c> <c>char_type</c> objects with it.</effects>
           <returns>A pair object of a pointer to the first element of a buffer and its length, which is the value passed to the allocator to obtain the memory.</returns>
           <remark>This function does not change the current buffer mark.</remark>
         </code-item>
