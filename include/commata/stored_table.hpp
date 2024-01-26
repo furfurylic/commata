@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "detail/buffer_size.hpp"
-#include "detail/empty_string.hpp"
 #include "detail/member_like_base.hpp"
 #include "detail/propagation_controlled_allocator.hpp"
 #include "detail/string_value.hpp"
@@ -40,6 +39,8 @@ namespace commata {
 template <class Ch, class Tr = std::char_traits<std::remove_const_t<Ch>>>
 class basic_stored_value
 {
+    static inline Ch nul[] = { Ch() };
+
     Ch* begin_;
     Ch* end_;   // must point the terminating zero
 
@@ -68,7 +69,7 @@ public:
     static constexpr size_type npos = static_cast<size_type>(-1);
 
     basic_stored_value() noexcept :
-        basic_stored_value(&detail::nul<Ch>::value, &detail::nul<Ch>::value)
+        basic_stored_value(nul, nul)
     {}
 
     basic_stored_value(Ch* begin, Ch* end) :
