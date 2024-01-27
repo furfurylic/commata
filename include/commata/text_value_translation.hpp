@@ -171,7 +171,7 @@ struct numeric_type_traits<long double>
 };
 
 template <class T, class H>
-class typed_conversion_error_handler
+class error_handler
 {
     using handler_t = std::conditional_t<
         detail::is_std_reference_wrapper_v<std::decay_t<H>>,
@@ -180,26 +180,27 @@ class typed_conversion_error_handler
     handler_t handler_;
 
 public:
-    explicit typed_conversion_error_handler(H& handler) :
+    explicit error_handler(H& handler) :
         handler_(handler)
     {}
 
     template <class Ch>
-    std::optional<T> invalid_format(const Ch* begin, const Ch* end)
+    std::optional<T> operator()(
+        invalid_format_t, const Ch* begin, const Ch* end)
     {
         return invoke_with_range_typing_as<T>(
                     as_forwarded(), invalid_format_t(), begin, end);
     }
 
     template <class Ch>
-    std::optional<T> out_of_range(
-        const Ch* begin, const Ch* end, int sign)
+    std::optional<T> operator()(
+        out_of_range_t, const Ch* begin, const Ch* end, int sign)
     {
         return invoke_with_range_typing_as<T>(
                     as_forwarded(), out_of_range_t(), begin, end, sign);
     }
 
-    std::optional<T> empty()
+    std::optional<T> operator()(empty_t)
     {
         return invoke_typing_as<T>(as_forwarded(), empty_t());
     }
@@ -228,7 +229,7 @@ struct raw_converter
 {
     template <class Ch, class U, class H>
     std::optional<T> operator()(const Ch* begin, const Ch* end,
-        typed_conversion_error_handler<U, H> h) const
+        error_handler<U, H> h) const
     {
         // For examble, when T is long, it is possible that U is int
         static_assert(std::is_convertible_v<U, T>);
@@ -243,12 +244,12 @@ struct raw_converter
             });
         if (has_postfix) {
             // if a not-whitespace-extra-character found, it is NG
-            return h.invalid_format(begin, end);
+            return h(invalid_format_t(), begin, end);
         } else if (begin == middle) {
             // whitespace only
-            return h.empty();
+            return h(empty_t());
         } else if (errno == ERANGE) {
-            return h.out_of_range(begin, end, erange(r));
+            return h(out_of_range_t(), begin, end, erange(r));
         } else {
             return r;
         }
@@ -303,7 +304,7 @@ struct restrained_converter
 {
     template <class Ch, class H>
     std::optional<T> operator()(const Ch* begin, const Ch* end,
-        typed_conversion_error_handler<T, H> h) const
+        error_handler<T, H> h) const
     {
         const std::optional<U> result = raw_converter<U>()(begin, end, h);
         if (!result.has_value()) {
@@ -323,14 +324,14 @@ struct restrained_converter
                             return static_cast<T>(s_wrapped_around);
                         }
                     }
-                    return h.out_of_range(begin, end, 1);
+                    return h(out_of_range_t(), begin, end, 1);
                 }
             }
         } else {
             if (r < std::numeric_limits<T>::lowest()) {
-                return h.out_of_range(begin, end, -1);
+                return h(out_of_range_t(), begin, end, -1);
             } else if (std::numeric_limits<T>::max() < r) {
-                return h.out_of_range(begin, end, 1);
+                return h(out_of_range_t(), begin, end, 1);
             }
         }
         return static_cast<T>(r);
@@ -1140,8 +1141,7 @@ auto do_convert(const A& a, H&& h)
     const auto* const c_str = do_c_str(a);
     const auto size = do_size(a);
     using U = std::remove_cv_t<T>;
-    return converter<U>()(c_str, c_str + size,
-        typed_conversion_error_handler<U, H>(h));
+    return converter<U>()(c_str, c_str + size, error_handler<U, H>(h));
 }
 
 struct is_default_translatable_arithmetic_type_impl
