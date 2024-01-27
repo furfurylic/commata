@@ -180,27 +180,33 @@ class error_handler
     handler_t handler_;
 
 public:
+    template <class Ch>
+    static constexpr bool is_direct =
+        std::is_invocable_r_v<T, error_handler&, invalid_format_t,
+                                                 const Ch*, const Ch*>
+     && std::is_invocable_r_v<T, error_handler&, out_of_range_t,
+                                                 const Ch*, const Ch*, int>
+     && std::is_invocable_r_v<T, error_handler&, empty_t>;
+
     explicit error_handler(H& handler) :
         handler_(handler)
     {}
 
     template <class Ch>
-    std::optional<T> operator()(
-        invalid_format_t, const Ch* begin, const Ch* end)
+    auto operator()(invalid_format_t, const Ch* begin, const Ch* end)
     {
         return invoke_with_range_typing_as<T>(
                     as_forwarded(), invalid_format_t(), begin, end);
     }
 
     template <class Ch>
-    std::optional<T> operator()(
-        out_of_range_t, const Ch* begin, const Ch* end, int sign)
+    auto operator()(out_of_range_t, const Ch* begin, const Ch* end, int sign)
     {
         return invoke_with_range_typing_as<T>(
                     as_forwarded(), out_of_range_t(), begin, end, sign);
     }
 
-    std::optional<T> operator()(empty_t)
+    auto operator()(empty_t)
     {
         return invoke_typing_as<T>(as_forwarded(), empty_t());
     }
@@ -228,8 +234,10 @@ template <class T>
 struct raw_converter
 {
     template <class Ch, class U, class H>
-    std::optional<T> operator()(const Ch* begin, const Ch* end,
-        error_handler<U, H> h) const
+    auto operator()(
+        const Ch* begin, const Ch* end, error_handler<U, H> h) const
+     -> std::conditional_t<
+            error_handler<U, H>::template is_direct<Ch>, T, std::optional<T>>
     {
         // For examble, when T is long, it is possible that U is int
         static_assert(std::is_convertible_v<U, T>);
@@ -303,14 +311,27 @@ template <class T, class U>
 struct restrained_converter
 {
     template <class Ch, class H>
-    std::optional<T> operator()(const Ch* begin, const Ch* end,
-        error_handler<T, H> h) const
+    auto operator()(
+        const Ch* begin, const Ch* end, error_handler<T, H> h) const
+     -> std::conditional_t<
+            error_handler<U, H>::template is_direct<Ch>, T, std::optional<T>>
     {
-        const std::optional<U> result = raw_converter<U>()(begin, end, h);
-        if (!result.has_value()) {
+        const auto r = raw_converter<U>()(begin, end, h);
+        if constexpr (error_handler<U, H>::template is_direct<Ch>) {
+            return restrain(r, begin, end, h);
+        } else if (!r.has_value()) {
             return std::nullopt;
+        } else {
+            return restrain(r.value(), begin, end, h);
         }
-        const U r = *result;
+    }
+
+private:
+    template <class Ch, class H>
+    static auto restrain(U r, const Ch* begin, const Ch* end, H h)
+     -> std::conditional_t<
+            error_handler<U, H>::template is_direct<Ch>, T, std::optional<T>>
+    {
         if constexpr (std::is_unsigned_v<T>) {
             if constexpr (sizeof(T) < sizeof(U)) {
                 constexpr T t_max = std::numeric_limits<T>::max();
@@ -1177,11 +1198,8 @@ T to_arithmetic(const A& a, ConversionErrorHandler&& handler)
         static_assert(is_default_translatable_arithmetic_type_v<T>);
         const auto v = detail::xlate::do_convert<T>(
                         a, std::forward<ConversionErrorHandler>(handler));
-        if constexpr (std::is_same_v<fail_if_conversion_failed,
-                                    std::decay_t<ConversionErrorHandler>>) {
-            // We know that an empty optional would never be returned when
-            // handler is a fail_if_conversion_failed
-            return *v;
+        if constexpr (std::is_convertible_v<decltype((v)), T>) {
+            return v;
         } else {
             return v.value();
         }
@@ -1195,7 +1213,7 @@ T to_arithmetic(const A& a)
         using U = typename T::value_type;
         return detail::xlate::do_convert<U>(a, ignore_if_conversion_failed());
     } else {
-        return *detail::xlate::do_convert<T>(a, fail_if_conversion_failed());
+        return detail::xlate::do_convert<T>(a, fail_if_conversion_failed());
     }
 }
 
