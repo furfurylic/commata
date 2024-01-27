@@ -359,7 +359,7 @@ struct fail_if_conversion_failed
 
     template <class T, class Ch>
     [[noreturn]]
-    std::nullopt_t operator()(invalid_format_t,
+    T operator()(invalid_format_t,
         const Ch* begin, const Ch* end, T* = nullptr) const
     try {
         using namespace std::string_view_literals;
@@ -382,7 +382,7 @@ struct fail_if_conversion_failed
 
     template <class T, class Ch>
     [[noreturn]]
-    std::nullopt_t operator()(out_of_range_t,
+    T operator()(out_of_range_t,
         const Ch* begin, const Ch* end, int, T* = nullptr) const
     try {
         using namespace std::string_view_literals;
@@ -405,7 +405,7 @@ struct fail_if_conversion_failed
 
     template <class T>
     [[noreturn]]
-    std::nullopt_t operator()(empty_t, T* = nullptr) const
+    T operator()(empty_t, T* = nullptr) const
     try {
         using namespace std::string_view_literals;
         std::stringbuf s;

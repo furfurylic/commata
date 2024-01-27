@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-01-17 (UTC)</signature>
+<signature>2024-01-27 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1749,13 +1749,11 @@ namespace commata {
     explicit fail_if_conversion_failed(replacement_fail_t = replacement_fail) {}
 
     template &lt;class T, class Ch>
-      [[noreturn]] std::nullopt_t operator()(invalid_format_t,
-                                             const Ch*, const Ch*, T* = nullptr) const;
+      [[noreturn]] T operator()(invalid_format_t, const Ch*, const Ch*, T* = nullptr) const;
     template &lt;class T, class Ch>
-      [[noreturn]] std::nullopt_t operator()(out_of_range_t,
-                                             const Ch*, const Ch*, int, T* = nullptr) const;
+      [[noreturn]] T operator()(out_of_range_t, const Ch*, const Ch*, int, T* = nullptr) const;
     template &lt;class T>
-      [[noreturn]] std::nullopt_t operator()(empty_t, T* = nullptr) const;
+      [[noreturn]] T operator()(empty_t, T* = nullptr) const;
   };
 }
         </codeblock>
@@ -1766,8 +1764,7 @@ namespace commata {
         <code-item>
           <code>
 template &lt;class T, class Ch>
-  [[noreturn]] std::nullopt_t operator()(invalid_format_t,
-                                         const Ch*, const Ch*, T* = nullptr) const;
+  [[noreturn]] T operator()(invalid_format_t, const Ch*, const Ch*, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>text_value_invalid_format</c> (<xref id="text_value_invalid_format"/>).</effects>
         </code-item>
@@ -1775,8 +1772,7 @@ template &lt;class T, class Ch>
         <code-item>
           <code>
 template &lt;class T, class Ch>
-  [[noreturn]] std::nullopt_t operator()(out_of_range_t,
-                                         const Ch*, const Ch*, int, T* = nullptr) const;
+  [[noreturn]] T operator()(out_of_range_t, const Ch*, const Ch*, int, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>text_value_out_of_range</c> (<xref id="text_value_out_of_range"/>).</effects>
         </code-item>
@@ -1784,7 +1780,7 @@ template &lt;class T, class Ch>
         <code-item>
           <code>
 template &lt;class T>
-  [[noreturn]] std::nullopt_t operator()(empty_t, T* = nullptr) const;
+  [[noreturn]] T operator()(empty_t, T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>text_value_empty</c> (<xref id="text_value_empty"/>).</effects>
         </code-item>
