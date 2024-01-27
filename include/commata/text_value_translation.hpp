@@ -170,17 +170,72 @@ struct numeric_type_traits<long double>
     static constexpr const auto wcsto = std::wcstold;
 };
 
-template <class T>
-class raw_converter
+template <class T, class H>
+class typed_conversion_error_handler
 {
+    using handler_t = std::conditional_t<
+        detail::is_std_reference_wrapper_v<std::decay_t<H>>,
+        std::decay_t<H>,
+        std::reference_wrapper<std::remove_reference_t<H>>>;
+    handler_t handler_;
+
 public:
-    template <class Ch, class H>
-    auto operator()(const Ch* begin, const Ch* end, H h) const
+    explicit typed_conversion_error_handler(H& handler) :
+        handler_(handler)
+    {}
+
+    template <class Ch>
+    std::optional<T> invalid_format(const Ch* begin, const Ch* end)
     {
+        return invoke_with_range_typing_as<T>(
+                    as_forwarded(), invalid_format_t(), begin, end);
+    }
+
+    template <class Ch>
+    std::optional<T> out_of_range(
+        const Ch* begin, const Ch* end, int sign)
+    {
+        return invoke_with_range_typing_as<T>(
+                    as_forwarded(), out_of_range_t(), begin, end, sign);
+    }
+
+    std::optional<T> empty()
+    {
+        return invoke_typing_as<T>(as_forwarded(), empty_t());
+    }
+
+private:
+    H&& as_forwarded()
+    {
+        return std::forward<H>(as_lvalue());
+    }
+
+    H& as_lvalue()
+    {
+        // We wouldn't think there are many points on perfect forwarding
+        // reference wrappers as is, but we would like to go ahead with this
+        // to keep the spec simple
+        if constexpr (detail::is_std_reference_wrapper_v<std::decay_t<H>>) {
+            return handler_;
+        } else {
+            return handler_.get();
+        }
+    }
+};
+
+template <class T>
+struct raw_converter
+{
+    template <class Ch, class U, class H>
+    std::optional<T> operator()(const Ch* begin, const Ch* end,
+        typed_conversion_error_handler<U, H> h) const
+    {
+        // For examble, when T is long, it is possible that U is int
+        static_assert(std::is_convertible_v<U, T>);
+
         Ch* middle;
         errno = 0;
-        const auto r = engine(begin, &middle);
-        using ret_t = std::optional<std::remove_const_t<decltype(r)>>;
+        const T r = engine(begin, &middle);
 
         const auto has_postfix =
             std::any_of<const Ch*>(middle, end, [](Ch c) {
@@ -188,19 +243,19 @@ public:
             });
         if (has_postfix) {
             // if a not-whitespace-extra-character found, it is NG
-            return ret_t(h.invalid_format(begin, end));
+            return h.invalid_format(begin, end);
         } else if (begin == middle) {
             // whitespace only
-            return ret_t(h.empty());
+            return h.empty();
         } else if (errno == ERANGE) {
-            return ret_t(h.out_of_range(begin, end, erange(r)));
+            return h.out_of_range(begin, end, erange(r));
         } else {
-            return ret_t(r);
+            return r;
         }
     }
 
 private:
-    auto engine(const char* s, char** e) const
+    static T engine(const char* s, char** e)
     {
         if constexpr (std::is_floating_point_v<T>) {
             return numeric_type_traits<T>::strto(s, e);
@@ -209,7 +264,7 @@ private:
         }
     }
 
-    auto engine(const wchar_t* s, wchar_t** e) const
+    static T engine(const wchar_t* s, wchar_t** e)
     {
         if constexpr (std::is_floating_point_v<T>) {
             return numeric_type_traits<T>::wcsto(s, e);
@@ -218,7 +273,7 @@ private:
         }
     }
 
-    int erange([[maybe_unused]] T v) const
+    static int erange([[maybe_unused]] T v)
     {
         if constexpr (std::is_floating_point_v<T>) {
             return (v > T()) ? 1 : (v < T()) ? -1 : 0;
@@ -247,16 +302,17 @@ template <class T, class U>
 struct restrained_converter
 {
     template <class Ch, class H>
-    std::optional<T> operator()(const Ch* begin, const Ch* end, H h) const
+    std::optional<T> operator()(const Ch* begin, const Ch* end,
+        typed_conversion_error_handler<T, H> h) const
     {
-        const auto result = raw_converter<U>()(begin, end, h);
+        const std::optional<U> result = raw_converter<U>()(begin, end, h);
         if (!result.has_value()) {
             return std::nullopt;
         }
-        const auto r = *result;
+        const U r = *result;
         if constexpr (std::is_unsigned_v<T>) {
             if constexpr (sizeof(T) < sizeof(U)) {
-                constexpr auto t_max = std::numeric_limits<T>::max();
+                constexpr T t_max = std::numeric_limits<T>::max();
                 if (r > t_max) {
                     const auto s = static_cast<std::make_signed_t<U>>(r);
                     if (s < 0) {
@@ -1078,59 +1134,6 @@ auto do_size(const A& a, ...) -> decltype(a->size())
     return a->size();
 }
 
-template <class T, class H>
-class typed_conversion_error_handler
-{
-    using handler_t = std::conditional_t<
-        detail::is_std_reference_wrapper_v<std::decay_t<H>>,
-        std::decay_t<H>,
-        std::reference_wrapper<std::remove_reference_t<H>>>;
-    handler_t handler_;
-
-public:
-    explicit typed_conversion_error_handler(H& handler) :
-        handler_(handler)
-    {}
-
-    template <class Ch>
-    decltype(auto) invalid_format(const Ch* begin, const Ch* end)
-    {
-        return invoke_with_range_typing_as<T>(
-                    as_forwarded(), invalid_format_t(), begin, end);
-    }
-
-    template <class Ch>
-    decltype(auto) out_of_range(
-        const Ch* begin, const Ch* end, int sign)
-    {
-        return invoke_with_range_typing_as<T>(
-                    as_forwarded(), out_of_range_t(), begin, end, sign);
-    }
-
-    decltype(auto) empty()
-    {
-        return invoke_typing_as<T>(as_forwarded(), empty_t());
-    }
-
-private:
-    H&& as_forwarded()
-    {
-        return std::forward<H>(as_lvalue());
-    }
-
-    H& as_lvalue()
-    {
-        // We wouldn't think there are many points on perfect forwarding
-        // reference wrappers as is, but we would like to go ahead with this
-        // to keep the spec simple
-        if constexpr (detail::is_std_reference_wrapper_v<std::decay_t<H>>) {
-            return handler_;
-        } else {
-            return handler_.get();
-        }
-    }
-};
-
 template <class T, class A, class H>
 auto do_convert(const A& a, H&& h)
 {
@@ -1166,17 +1169,22 @@ template <class T, class ConversionErrorHandler, class A>
 T to_arithmetic(const A& a, ConversionErrorHandler&& handler)
 {
     if constexpr (detail::is_std_optional_v<T>) {
-        return detail::xlate::do_convert<typename T::value_type>(
-                    a, std::forward<ConversionErrorHandler>(handler));
-    } else if constexpr (std::is_same_v<fail_if_conversion_failed,
-                                    std::decay_t<ConversionErrorHandler>>) {
-        // We know that an empty optional would never be returned when handler
-        // is a fail_if_conversion_failed
-        return *detail::xlate::do_convert<T>(
-                    a, std::forward<ConversionErrorHandler>(handler));
+        using U = typename T::value_type;
+        static_assert(is_default_translatable_arithmetic_type_v<U>);
+        return detail::xlate::do_convert<U>(
+                        a, std::forward<ConversionErrorHandler>(handler));
     } else {
-        return detail::xlate::do_convert<T>(
-                    a, std::forward<ConversionErrorHandler>(handler)).value();
+        static_assert(is_default_translatable_arithmetic_type_v<T>);
+        const auto v = detail::xlate::do_convert<T>(
+                        a, std::forward<ConversionErrorHandler>(handler));
+        if constexpr (std::is_same_v<fail_if_conversion_failed,
+                                    std::decay_t<ConversionErrorHandler>>) {
+            // We know that an empty optional would never be returned when
+            // handler is a fail_if_conversion_failed
+            return *v;
+        } else {
+            return v.value();
+        }
     }
 }
 
