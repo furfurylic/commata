@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024&#x2010;01&#x2010;20 (UTC)</signature>
+<signature>2024&#x2010;01&#x2010;28 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2348,7 +2348,9 @@ template &lt;class T, class ConversionErrorHandler, class A>
             </code>
           <requires><c>T</c> shall be a default translatable arithmetic type or <c>std::optional&lt;W></c> where <c>W</c> is a default translatable arithmeric type.
                     <c>A</c> shall meet the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char</c> or <c>wchar_t</c>.
-                    <c>std::remove_reference_t&lt;ConversionErrorHandler></c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the character type of <c>V</c> except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
+                    <c>std::remove_reference_t&lt;ConversionErrorHandler></c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>)
+                       for the character type of <c>V</c> with its target type being <c>T</c>
+                       except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
           <effects><p>Let <c>U</c> be <c>typename T::value_type</c> if <c>T</c> is an instance of <c>std::optional</c>, <c>T</c> otherwise.
                       First evaluates <c>errno = 0</c> and calls a parsing function indicated in <xref id="table.arithmetic_converter.parsing_functions"/>, optionally specifying decimal base, to get an arithmetic value <c>v</c> of the NTBS whose first element is pointed by <c>a.c_str()</c> (if it is well&#x2010;formed when treated as an unevaluated operand) or <c>a->c_str()</c> (otherwise).
                       Then makes an <c>std::optional&lt;U></c> object <c>o</c> with an operation indicated in <xref id="table.arithmetic_converter.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
