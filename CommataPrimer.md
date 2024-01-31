@@ -7,9 +7,9 @@ it is recommended to consult [the specification](https://furfurylic.github.io/co
 For simplicity, codes here omits `#include` directive for the standard library
 of C++ language.
 
-## Commata is a header&#x2010;only library
+## Commata is a header-only library
 
-Commata is a header&#x2010;only library, so your codes that use Commata compile
+Commata is a header-only library, so your codes that use Commata compile
 if you configure your compiler refer Commata&#x2019;s `include` directory as an include path.
 You are not likely to be bothered by link errors around Commata.
 
@@ -98,7 +98,7 @@ represented by a `stored_value` object.
 
 ### The value type
 
-A `stored_value` object is a wrapper of a null&#x2010;terminated range of `char` owned
+A `stored_value` object is a wrapper of a null-terminated range of `char` owned
 by a `stored_table` object. So you can easily pass it to C functions:
 
 ```C++
@@ -128,7 +128,7 @@ std::cout << (table[1][3] < std::to_string(75)) << std::endl;
 
 ### Editting a loaded table
 
-A `stored_value` object is not read&#x2010;only.
+A `stored_value` object is not read-only.
 You can modify and erase some charaters in place:
 
 ```C++
@@ -181,13 +181,13 @@ void stored_table_sample2()
 ```
 
 Here the type of `table[1][0]` is `commata::wstored_value`, whose objects
-represents null&#x2010;terminated ranges of `wchar_t`.
+represents null-terminated ranges of `wchar_t`.
 
-## One&#x2010;pass scanning
+## One-pass scanning
 
-Commata has facilities to perform one&#x2010;pass scanning and on&#x2010;the&#x2010;fly type
+Commata has facilities to perform one-pass scanning and on-the-fly type
 conversion on CSV texts. To process CSV texts in this manner may be less
-flexible but can be far more efficient than to process with fully&#x2010;loaded images
+flexible but can be far more efficient than to process with fully-loaded images
 of CSV texts. Here is an example to parse `stars.csv` and extract only the
 names and the apparent magnitudes of the stars with those facilities:
 
@@ -235,7 +235,7 @@ void one_pass_scanning_sample()
 the translated field value to its argument.
 
 The argument of it can be either of:
- - an lvalue to a non&#x2010;const container object at the right position or the back
+ - an lvalue to a non-const container object at the right position or the back
    of which the translated field value is inserted,
  - an output iterator object which receives the translated field value, or
  - a function object which receives the translated field value as its one and
@@ -352,7 +352,7 @@ void one_pass_scanning_sample3()
 }
 ```
 
-As above, you can construct a `table_scanner` object with a three&#x2010;parameter
+As above, you can construct a `table_scanner` object with a three-parameter
 function object, which is called as a _header field scanner_.
 With this constructor, the constructed `table_scanner` object initially owns
 a copy of the specified header field scanner installed, and invoke it on
@@ -379,7 +379,7 @@ Cygnus,Sadr,2.23,560
 Cygnus,Fawaris,2.89,51
 ```
 
-This is not a well&#x2010;formed CSV text because the second line (one&#x2010;based) has a
+This is not a well-formed CSV text because the second line (one-based) has a
 double quote that voilates the CSV format.
 
 If you call `parse_csv` with a stream with this content, it will throw an
@@ -415,7 +415,7 @@ void stored_table_error_sample()
 and can get a clue about what was wrong:
 
 ```
-A quotation mark found in a non&#x2010;escaped value
+A quotation mark found in a non-escaped value
 ```
 
 Commata also offers class `commata::text_error_info`, whose object wraps a `text_error` object
@@ -449,17 +449,17 @@ void stored_table_error_sample2()
 and might be able to get a clue about what was wrong:
 
 ```
-A quotation mark found in a non&#x2010;escaped value; line 2 column 20
+A quotation mark found in a non-escaped value; line 2 column 20
 ```
 
 Note that line indices and column indices in string representations of
-`text_error_info` objects are one&#x2010;based by default
+`text_error_info` objects are one-based by default
 (you can configure the base with the second argument of the constructor of `text_error_info`).
 
 Class `text_error` and `text_error_info` are defined in the header
 `"commata/text_error.hpp"`.
 
-### Conversion errors in one&#x2010;pass scanning
+### Conversion errors in one-pass scanning
 
 Suppose that you would like to get the average distance of the stars in
 `stars.csv`. Then you might write codes like these:
@@ -542,7 +542,7 @@ void one_pass_scanning_error_sample2()
 The second argument `replacement_ignore` (with `added (1)` comment)
 instructs the body field scanner to ignore every case that a record contains
 too few fields to reach the field (in this case, third field
-(zero&#x2010;based)); but it is irrelevant to the above&#x2010;mentioned exception. (Note
+(zero-based)); but it is irrelevant to the above-mentioned exception. (Note
 that the second field is followed by a comma, which makes the third field
 exist.)
 
@@ -629,7 +629,7 @@ If these requirements meet, `parse_csv` emits parsing events to the text
 handler objects.
 
 Please note that a field value may be notified to the table handler object as
-chunked; not&#x2010;the&#x2010;final chunks are notified by `update` and the final chunk is
+chunked; not-the-final chunks are notified by `update` and the final chunk is
 notified by `finalize`.
 
 (Note that this sample can be suboptimal in terms of performance. To use
@@ -640,8 +640,8 @@ container object of container object of `std::string` objects (not
 this sample codes can be faster and optimal.)
 
 `parse_csv` depletes table handler objects passed to it; in other words,
-it leaves them in their moved&#x2010;from states. If your table handler objects has
-states and you want to access their not&#x2010;moved&#x2010;from states after parsing,
+it leaves them in their moved-from states. If your table handler objects has
+states and you want to access their not-moved-from states after parsing,
 you can pass them wrapping by `std::ref`.
 
 ## Empty lines
@@ -690,7 +690,7 @@ void make_empty_physical_line_aware_sample()
 ## Pull parsing
 
 Commata also has facilities to perform &#x2018;pull parsing&#x2019;, in which users can access the
-result of parsing in a step&#x2010;by&#x2010;step manner.
+result of parsing in a step-by-step manner.
 
 In pull parsing, the user have a &#x2018;cursor&#x2019; on the CSV text. He/she can read from
 the point where the cursor placed, and move the cursor forward.
@@ -734,7 +734,7 @@ a reference to the `table_pull` object itself.
 The value of the current field where a `table_pull` object points can be got as
 a string view object with `table_pull`&#x2019;s dereference operators `*` and `->`.
 Additionally, `table_pull` offers `c_str` member function that returns a pointer
-to a null&#x2010;terminated sequence suitable for C APIs.
+to a null-terminated sequence suitable for C APIs.
 
 An object of `table_pull` is convertible to `bool`.
 It is converted to `false` if it does not point either an end of a record or
@@ -775,9 +775,9 @@ status, for example, &#x2018;points an end of a record&#x2019;, &#x2018;points a
 and so on. This functionality is essential to handle texts whose structure is not known
 in advance.
 
-## Tab&#x2010;separated values (TSV)
+## Tab-separated values (TSV)
 
-Commata also offers support for tab&#x2010;separated values (TSV) format as with CSV format.
+Commata also offers support for tab-separated values (TSV) format as with CSV format.
 The supported TSV format is, however, much simpler than the supported CSV format and
 lacks escaping and quoting, similarly to [IANA&#x2019;s TSV format](https://www.iana.org/assignments/media-types/text/tab-separated-values).
 To be specific, field values cannot contain tab characters in this format.
