@@ -108,7 +108,9 @@ std::cout << std::strlen(table[6][1].c_str()) << std::endl;
 
 (Please note that this example is somewhat absurd. `stored_value` has `size`
  member function which does the almost same thing in constant time.
- (The presence of "almost" is because `stored_value` can contain `'\0'` in it.))
+ (The presence of 'almost' is because `stored_value` can contain `'\0'` in it
+ and in that situation `std::strlen` and the `size` member function report
+ different number.))
 
 `stored_value` supports iterators and has comparison operators with
 `const char*`, `std::string`, `std::string_view` and `stored_value`:
@@ -182,6 +184,11 @@ void stored_table_sample2()
 
 Here the type of `table[1][0]` is `commata::wstored_value`, whose objects
 represents null-terminated ranges of `wchar_t`.
+
+### Field access by name is not supported
+
+As we saw, `stored_table` has no idea about 'field names' of the loaded CSV.
+So you *cannot* access fields by name with codes like `table[5]["Name"]` or `table["Name"][5]`.
 
 ## One-pass scanning
 
