@@ -6867,7 +6867,7 @@ namespace commata {
 
         <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c>.</p>
         <p>The template parameter <c>T</c> shall be a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
-           The template parameters <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>), the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>) requirements for the target type <c>T</c> respectively.</p>
+           The template parameters <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>), the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c>T</c> respectively.</p>
 
         <section id="arithmetic_field_translator.cons">
           <name><c>arithmetic_field_translator</c> construct/copy/destroy</name>
@@ -6930,7 +6930,8 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
             <code>
 template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
             </code>
-            <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
+            <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.
+                      The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
             <effects><p>Given an exposition-only class template:</p>
               <code>
 template &lt;class Ch> struct arithmetic_convertible {
@@ -7048,7 +7049,8 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
             <code>
 template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             </code>
-            <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.</requires>
+            <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.
+                      The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
             <effects><p>Equivalent to:</p>
               <code>
 Ch* const new_end = replace(begin, end);
