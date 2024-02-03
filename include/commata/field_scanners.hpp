@@ -34,7 +34,7 @@ struct fail_if_skipped
 
     template <class T>
     [[noreturn]]
-    std::nullopt_t operator()(T* = nullptr) const
+    T operator()(T* = nullptr) const
     {
         throw field_not_found("This field did not appear in this record");
     }
@@ -340,20 +340,24 @@ public:
         return this->get();
     }
 
-#if _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4702)
-#endif
     void field_skipped()
     {
-        std::optional<T> r = invoke_typing_as<T>(get_skipping_handler());
-        if (r) {
-            put(std::move(*r));
+        auto r = invoke_typing_as<T>(get_skipping_handler());
+        using r_t = decltype(r);
+        static_assert(std::is_convertible_v<r_t&&, std::optional<T>>);
+        if constexpr (std::is_convertible_v<r_t&&, T>) {
+            put(std::move(r));
+        } else if constexpr (is_std_optional_v<r_t>) {
+            if (r) {
+                put(std::move(*r));
+            }
+        } else if constexpr (!std::is_same_v<std::nullopt_t, r_t>) {
+            std::optional<T> q(std::move(r));
+            if (q) {
+                put(std::move(*q));
+            }
         }
     }
-#if _MSC_VER
-#pragma warning(pop)
-#endif
 
 public:
     template <class U>

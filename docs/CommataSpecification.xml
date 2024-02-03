@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-01-28 (UTC)</signature>
+<signature>2024-02-03 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6586,7 +6586,7 @@ namespace commata {
 namespace commata {
   struct fail_if_skipped {
     explicit fail_if_skipped(replacement_fail_t = replacement_fail) {}
-    template &lt;class T> [[noreturn]] std::nullopt_t operator()(T* = nullptr) const;
+    template &lt;class T> [[noreturn]] T operator()(T* = nullptr) const;
   };
 }
         </codeblock>
@@ -6596,7 +6596,7 @@ namespace commata {
 
         <code-item>
           <code>
-template &lt;class T> [[noreturn]] std::nullopt_t operator()(T* = nullptr) const;
+template &lt;class T> [[noreturn]] T operator()(T* = nullptr) const;
           </code>
           <effects>Throws an object of <c>field_not_found</c> (<xref id="field_not_found"/>).</effects>
         </code-item>
