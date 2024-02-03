@@ -78,6 +78,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     )
     target_compile_options(test_commata PRIVATE
         -Wall -Wextra -pedantic-errors -Werror=pedantic
+        -Wno-trigraphs
         $<$<CONFIG:Debug>:-O0 -g3>
         $<$<CONFIG:RelWithDebInfo>:-O2 -g3>
     )
@@ -88,6 +89,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(test_commata PRIVATE
         -Wall -Wextra -pedantic-errors -Werror=pedantic
         -Wno-gnu-zero-variadic-macro-arguments
+        -Wno-trigraphs
         $<$<CONFIG:Debug>:-O0 -g3>
         $<$<CONFIG:RelWithDebInfo>:-O2 -g3>
     )

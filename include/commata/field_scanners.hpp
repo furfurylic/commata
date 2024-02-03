@@ -318,6 +318,26 @@ struct is_output_iterator<T,
 template <class T>
 constexpr bool is_output_iterator_v = is_output_iterator<T>::value;
 
+template <class T, class H, class F>
+void field_skipped_impl(H h, [[maybe_unused]] F f)
+{
+    auto r = invoke_typing_as<T>(h);
+    using r_t = decltype(r);
+    static_assert(std::is_convertible_v<r_t, std::optional<T>>);
+    if constexpr (std::is_convertible_v<r_t, T>) {
+        f(std::move(r));
+    } else if constexpr (is_std_optional_v<r_t>) {
+        if (r) {
+            f(std::move(*r));
+        }
+    } else if constexpr (!std::is_same_v<std::nullopt_t, r_t>) {
+        std::optional<T> r2(std::move(r));
+        if (r2) {
+            f(std::move(*r2));
+        }
+    }
+}
+
 template <class T, class Sink, class SkippingHandler>
 class translator :
     member_like_base<SkippingHandler>
@@ -344,21 +364,10 @@ public:
 
     void field_skipped()
     {
-        auto r = invoke_typing_as<T>(get_skipping_handler());
-        using r_t = decltype(r);
-        static_assert(std::is_convertible_v<r_t&&, std::optional<T>>);
-        if constexpr (std::is_convertible_v<r_t&&, T>) {
-            put(std::move(r));
-        } else if constexpr (is_std_optional_v<r_t>) {
-            if (r) {
-                put(std::move(*r));
-            }
-        } else if constexpr (!std::is_same_v<std::nullopt_t, r_t>) {
-            std::optional<T> q(std::move(r));
-            if (q) {
-                put(std::move(*q));
-            }
-        }
+        field_skipped_impl<T>(std::ref(get_skipping_handler()),
+            [this](auto&& t) {
+                this->put(std::forward<decltype(t)>(t));
+            });
     }
 
 public:
@@ -693,6 +702,148 @@ public:
     }
 };
 
+template <class Container, class SkippingHandler = fail_if_skipped>
+class string_field_inserter :
+    detail::member_like_base<SkippingHandler>,
+    detail::member_like_base<typename Container::value_type::allocator_type>
+{
+    // On copying and moving, the skipping handler is more likely to throw an
+    // exception than the allocator; thus the skipping handler should be copied
+    // or moved first, so it is the first base class
+
+public:
+    using string_type = typename Container::value_type;
+    using char_type = typename string_type::value_type;
+    using traits_type = typename string_type::traits_type;
+    using allocator_type = typename string_type::allocator_type;
+    using value_type = std::basic_string_view<char_type, traits_type>;
+    using skipping_handler_type = SkippingHandler;
+
+private:
+    static_assert(detail::is_std_string_v<string_type>);
+
+    Container* c_;
+
+public:
+    template <class SkippingHandlerR = SkippingHandler>
+    explicit string_field_inserter(
+        Container& container,
+        SkippingHandlerR&& handle_skipping =
+            std::decay_t<SkippingHandlerR>()) :
+        detail::member_like_base<SkippingHandler>(
+            std::forward<SkippingHandlerR>(handle_skipping)),
+        c_(std::addressof(container))
+    {}
+
+    template <class SkippingHandlerR = SkippingHandler>
+    string_field_inserter(
+        std::allocator_arg_t, const allocator_type& alloc,
+        Container& container,
+        SkippingHandlerR&& handle_skipping =
+            std::decay_t<SkippingHandlerR>()) :
+        detail::member_like_base<SkippingHandler>(
+            std::forward<SkippingHandlerR>(handle_skipping)),
+        detail::member_like_base<allocator_type>(alloc),
+        c_(std::addressof(container))
+    {}
+
+    string_field_inserter(const string_field_inserter&) = default;
+    string_field_inserter(string_field_inserter&&)= default;
+    ~string_field_inserter() = default;
+
+    allocator_type get_allocator() const noexcept
+    {
+        return this->detail::member_like_base<allocator_type>::get();
+    }
+
+    const SkippingHandler& get_skipping_handler() const noexcept
+    {
+        return this->detail::member_like_base<SkippingHandler>::get();
+    }
+
+    SkippingHandler& get_skipping_handler() noexcept
+    {
+        return this->detail::member_like_base<SkippingHandler>::get();
+    }
+
+    void operator()()
+    {
+        detail::scanner::field_skipped_impl<value_type>(
+            std::ref(get_skipping_handler()),
+            [this](auto&& v) {
+                emplace(*c_, std::move(v));
+            });
+    }
+
+    void operator()(const char_type* begin, const char_type* end)
+    {
+        emplace(*c_, value_type(begin, end - begin));
+    }
+
+    void operator()(string_type&& value)
+    {
+        if constexpr (
+            !std::allocator_traits<allocator_type>::is_always_equal::value) {
+            if (value.get_allocator() != get_allocator()) {
+                // We don't try to construct string with move(value) and
+                // get_allocator() because some standard libs lack that ctor
+                // and to do so doesn't seem necessarily cheap
+                (*this)(value.data(), value.data() + value.size());
+                return;
+            }
+        }
+        emplace(*c_, std::move(value));
+    }
+
+private:
+    template <class Container2,
+        decltype(std::declval<Container2&>().push_back(
+            std::declval<string_type>()), 1)* = nullptr>
+    void emplace(Container2& c, string_type&& value)
+    {
+        assert(value.get_allocator() == get_allocator());
+        c.push_back(std::move(value));
+    }
+
+    template <class Container2, class Allocator1,
+        decltype(std::declval<Container2&>().insert(
+            std::declval<string_type>()), 1U)* = nullptr>
+    void emplace(Container2& c, string_type&& value)
+    {
+        assert(value.get_allocator() == get_allocator());
+        c.insert(std::move(value));
+    }
+
+    template <class Container2,
+        decltype(std::declval<Container2&>().emplace_back(
+            std::declval<value_type>()), 1)* = nullptr>
+    void emplace(Container2& c, value_type v)
+    {
+        c.emplace_back(v, get_allocator());
+    }
+
+    template <class Container2,
+        decltype(std::declval<Container2&>().emplace(
+            std::declval<value_type>()), 1U)* = nullptr>
+    void emplace(Container2& c, value_type v)
+    {
+        c.emplace(v, get_allocator());
+    }
+
+    template <class Comp, class Allocator2>
+    auto emplace(
+        std::set<string_type, Comp, Allocator2>& c, value_type v)
+     -> std::enable_if_t<
+            std::is_invocable_r_v<bool, Comp, value_type, string_type>
+         && std::is_invocable_r_v<bool, Comp, string_type, value_type>,
+            std::void_t<typename Comp::is_transparent>>
+    {
+        if (const auto i = c.lower_bound(v); (i == c.end()) || (v < *i)) {
+            c.emplace_hint(i, v, get_allocator());
+        }
+    }
+};
+
 namespace detail::scanner {
 
 // Make a cv-unqualified SkippingHandler type for the target type T and the
@@ -881,11 +1032,15 @@ struct is_insertable :
 template <class T>
 constexpr bool is_insertable_v = is_insertable<T>::value;
 
+template <class T>
+constexpr bool is_any_insertable_v =
+    is_back_insertable_v<T> || is_insertable_v<T>;
+
 template <class Container, class = void>
-struct back_insert_iterator;
+struct any_insert_iterator;
 
 template <class Container>
-struct back_insert_iterator<Container,
+struct any_insert_iterator<Container,
     std::enable_if_t<is_insertable_v<Container>
                   && is_back_insertable_v<Container>>>
 {
@@ -898,7 +1053,7 @@ struct back_insert_iterator<Container,
 };
 
 template <class Container>
-struct back_insert_iterator<Container,
+struct any_insert_iterator<Container,
     std::enable_if_t<is_insertable_v<Container>
                   && !is_back_insertable_v<Container>>>
 {
@@ -910,48 +1065,68 @@ struct back_insert_iterator<Container,
     }
 };
 
-template <class Container>
-using back_insert_iterator_t = typename back_insert_iterator<Container>::type;
+template <class Container, class... Appendices>
+struct arithmetic_populator
+{
+    using type = decltype(
+        make_field_translator_na<typename Container::value_type>(
+            std::declval<typename any_insert_iterator<Container>::type>(),
+            std::declval<Appendices>()...));
+};
+
+template <class Container, class... Appendices>
+struct string_populator
+{
+    using type = string_field_inserter<
+        Container,
+        skipping_handler_t<
+            std::basic_string_view<
+                typename Container::value_type::value_type,
+                typename Container::value_type::traits_type>,
+            Appendices>...>;
+};
 
 } // end detail::scanner
 
 template <class Container, class... Appendices>
 auto make_field_translator(Container& values, Appendices&&... appendices)
- -> std::enable_if_t<
+ -> typename std::enable_if_t<
         (is_default_translatable_arithmetic_type_v<
             typename Container::value_type>
       || detail::is_std_string_v<typename Container::value_type>)
-     && (detail::scanner::is_back_insertable_v<Container>
-      || detail::scanner::is_insertable_v<Container>),
-        decltype(
-            detail::scanner::make_field_translator_na<
-                    typename Container::value_type>(
-                std::declval<detail::scanner::
-                    back_insert_iterator_t<Container>>(),
-                std::forward<Appendices>(appendices)...))>
+     && detail::scanner::is_any_insertable_v<Container>,
+        std::conditional_t<
+            detail::is_std_string_v<typename Container::value_type>,
+            detail::scanner::string_populator<Container, Appendices...>,
+            detail::scanner::arithmetic_populator<Container, Appendices...>
+        >>::type
 {
-    return make_field_translator<typename Container::value_type>(
-        detail::scanner::back_insert_iterator<Container>::from(values),
-        std::forward<Appendices>(appendices)...);
+    using value_t = typename Container::value_type;
+    if constexpr (detail::is_std_string_v<value_t>) {
+        using ret_t = typename detail::scanner::
+            string_populator<Container, Appendices...>::type;
+        return ret_t(values, std::forward<Appendices>(appendices)...);
+    } else {
+        return make_field_translator<value_t>(
+            detail::scanner::any_insert_iterator<Container>::from(values),
+            std::forward<Appendices>(appendices)...);
+    }
 }
 
-template <class Allocator, class Container, class... Appendices>
-auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
+template <class Container, class... Appendices>
+auto make_field_translator(std::allocator_arg_t,
+    const typename Container::value_type::allocator_type& alloc,
     Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
         detail::is_std_string_v<typename Container::value_type>
-     && (detail::scanner::is_back_insertable_v<Container>
-      || detail::scanner::is_insertable_v<Container>),
-        string_field_translator<
-            detail::scanner::back_insert_iterator_t<Container>,
-            typename Container::value_type::value_type,
-            typename Container::value_type::traits_type,
-            Allocator, Appendices...>>
+     && detail::scanner::is_any_insertable_v<Container>,
+        typename detail::scanner::
+            string_populator<Container, Appendices...>::type>
 {
-    return make_field_translator<typename Container::value_type>(
-        std::allocator_arg, alloc,
-        detail::scanner::back_insert_iterator<Container>::from(values),
-        std::forward<Appendices>(appendices)...);
+    using ret_t = typename detail::scanner::
+        string_populator<Container, Appendices...>::type;
+    return ret_t(std::allocator_arg, alloc,
+        values, std::forward<Appendices>(appendices)...);
 }
 
 }

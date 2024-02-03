@@ -173,6 +173,77 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, View)
     ASSERT_EQ(str("ABC!!!XYZ"), std::move(stream).str());
 }
 
+TYPED_TEST(TestFieldTranslatorForStringTypes, StringFieldInserterUniqSet)
+{
+    using char_t = TypeParam;
+    using string_t = std::basic_string<TypeParam>;
+    using string_view_t = std::basic_string_view<TypeParam>;
+
+    const auto str = char_helper<char_t>::str;
+
+    std::set<string_t, std::less<>> values1;
+    std::set<string_t, std::less<>> values2;
+
+    basic_table_scanner<char_t> scanner;
+
+    // direct
+    scanner.set_field_scanner(1,
+        string_field_inserter<decltype(values1), replace_if_skipped<string_t>>(
+            values1, replace_if_skipped(str("!!!"))));
+
+    // deduced
+    string_t replacement = str("??!");  // named variable to extend duration
+    scanner.set_field_scanner(2,
+        make_field_translator(
+            values2, static_cast<string_view_t>(replacement)));
+
+    try {
+        parse_csv(
+            str("1,ABC,abc\n2\n3,XYZ,xyz\n4,ABC,??!"), std::move(scanner));
+    } catch (const text_error& e) {
+        FAIL() << text_error_info(e);
+    }
+
+    const decltype(values1) expected1 = { str("ABC"), str("XYZ"), str("!!!") };
+    ASSERT_EQ(expected1, values1);
+
+    const decltype(values2) expected2 = { str("abc"), str("xyz"), str("??!") };
+    ASSERT_EQ(expected2, values2);
+}
+
+TYPED_TEST(TestFieldTranslatorForStringTypes, StringFieldInserterOthers)
+{
+    using char_t = TypeParam;
+    using string_t = std::basic_string<TypeParam>;
+
+    const auto str = char_helper<char_t>::str;
+
+    std::deque<string_t> values1;
+    std::multiset<string_t, std::less<>> values2;
+
+    basic_table_scanner<char_t> scanner;
+
+    scanner.set_field_scanner(1,
+        make_field_translator(values1, replacement_ignore));
+    scanner.set_field_scanner(2,
+        make_field_translator(values2, replace_if_skipped(str("*"))));
+
+    try {
+        parse_csv(
+            str("1,XYZ,ab\n2\n3,ABC,xy\n4,XYZ,*\n5,,ab"), std::move(scanner));
+    } catch (const text_error& e) {
+        FAIL() << text_error_info(e);
+    }
+
+    const decltype(values1) expected1 =
+        { str("XYZ"), str("ABC"), str("XYZ"), str("")};
+    ASSERT_EQ(expected1, values1);
+
+    const decltype(values2) expected2 =
+        { str("ab"), str("*"), str("xy"), str("*"), str("ab")};
+    ASSERT_EQ(expected2, values2);
+}
+
 template <class Ch>
 struct TestLocaleBased : BaseTest
 {};
