@@ -1863,11 +1863,12 @@ namespace commata {
       noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="replace_if_conversion_failed.inv"/>, invocation:</n></c>
-    template &lt;class Ch> std::optional&lt;T> operator()(invalid_format_t,
-                                                    const Ch*, const Ch*) const;
-    template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
-                                                    const Ch*, const Ch*, int sign) const;
-                        std::optional&lt;T> operator()(empty_t) const;
+    template &lt;class Ch, class U = T>
+      std::optional&lt;U> operator()(invalid_format_t, const Ch*, const Ch*, U* = nullptr) const;
+    template &lt;class Ch, class U = T>
+      std::optional&lt;U> operator()(out_of_range_t, const Ch*, const Ch*, int sign, U* = nullptr) const;
+    template &lt;class Ch, class U = T>
+      std::optional&lt;U> operator()(empty_t, U* = nullptr) const;
 
     <c>// <n><xref id="replace_if_conversion_failed.modifiers"/>, modifiers:</n></c>
     void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
@@ -1896,6 +1897,7 @@ namespace commata {
         </ul>
         <p>Similarly, a replacement action of an object of <c>replace_if_conversion_failed</c> is called <n>configurable</n> if it is not unconfigurable.</p>
         <p>Each unconfigurable replacement action of an object of <c>replace_if_conversion_failed</c> is fixed to be <c>fail</c>.</p>
+        <p><span class="note">For types <c>T</c> and <c>U</c> that satisfy <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>, <c>replace_if_conversion_failed&lt;T></c> meets the <c>ConversionErrorHandler</c> requirements for not only <c>T</c> but also <c>U</c> as its target type.</span></p>
 
         <section id="replace_if_conversion_failed.props">
           <name><c>replace_if_conversion_failed</c> properties</name>
@@ -2076,10 +2078,11 @@ replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&am
 
           <code-item>
             <code>
-template &lt;class Ch> std::optional&lt;T> operator()(invalid_format_t,
-                                                const Ch*, const Ch*) const;
+template &lt;class Ch, class U = T>
+  std::optional&lt;U> operator()(invalid_format_t, const Ch*, const Ch*, U* = nullptr) const;
             </code>
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.invalid_format"/> in reference to the <c>action_on_invalid_format</c> of <c>*this</c>.</effects>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>.</remark>
 
             <table id="table.replace_if_conversion_failed.invalid_format">
               <caption>Effects of invocation with <c>invalid_format_t</c></caption>
@@ -2115,10 +2118,11 @@ template &lt;class Ch> std::optional&lt;T> operator()(invalid_format_t,
 
           <code-item>
             <code>
-template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
-                                                const Ch*, const Ch*, int sign) const;
+template &lt;class Ch, class U = T>
+  std::optional&lt;U> operator()(out_of_range_t, const Ch*, const Ch*, int sign, U* = nullptr) const;
             </code>
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.out_of_range"/> in reference to <c>sign</c> and the <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> of <c>*this</c>.</effects>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>.</remark>
 
             <table id="table.replace_if_conversion_failed.out_of_range">
               <caption>Effects of invocation with <c>out_of_range_t</c></caption>
@@ -2196,9 +2200,11 @@ template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
 
           <code-item>
             <code>
-std::optional&lt;T> operator()(empty_t) const;
+template &lt;class Ch, class U = T>
+  std::optional&lt;U> operator()(empty_t, U* = nullptr) const;
             </code>
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.empty"/> in reference to the <c>action_on_empty</c> of <c>*this</c>.</effects>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>.</remark>
 
             <table id="table.replace_if_conversion_failed.empty">
               <caption>Effects of invocation with <c>empty_t</c></caption>

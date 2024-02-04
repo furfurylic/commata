@@ -25,7 +25,7 @@
 
 #include "BaseTest.hpp"
 
-using namespace std::literals::string_literals;
+using namespace std::literals;
 
 using namespace commata;
 using namespace commata::test;
@@ -712,6 +712,57 @@ TYPED_TEST(TestReplaceIfConversionFailed, DeductionGuides)
     ASSERT_THROW(r(out_of_range_t(), s, s, 1), text_value_out_of_range);
     ASSERT_TRUE(!r(out_of_range_t(), s, s, -1));
     ASSERT_EQ(num_2, *r(out_of_range_t(), s, s, 0));
+}
+
+TEST(TestReplaceIfSkippedConvertible, All)
+{
+    replace_if_conversion_failed<std::string> r(
+        replacement_fail, replacement_ignore, "ABC");
+
+    // Empty: fail
+    ASSERT_THROW(r(empty_t(), static_cast<std::string_view*>(nullptr)),
+        text_value_empty);
+
+    // InvalidFormat: ignore
+    {
+        const char range[] = "XXX";
+        ASSERT_FALSE(r(invalid_format_t(),
+            range, range + 3, static_cast<std::string_view*>(nullptr)));
+    }
+
+    // AllOutOfRange: copy: "ABC"
+    {
+        const char range[] = "XXX";
+        const wchar_t wrange[] = L"XXX";
+        const auto a1 = r(out_of_range_t(), range, range + 3, 1,
+            static_cast<std::string_view*>(nullptr));
+        const auto a2 = r(out_of_range_t(), wrange, wrange + 3, 1,
+            static_cast<std::string_view*>(nullptr));
+        const auto l1 = r(out_of_range_t(), range, range + 3, -1,
+            static_cast<std::string_view*>(nullptr));
+        const auto l2 = r(out_of_range_t(), wrange, wrange + 3, -1,
+            static_cast<std::string_view*>(nullptr));
+        const auto u1 = r(out_of_range_t(), range, range + 3, 0,
+            static_cast<std::string_view*>(nullptr));
+        const auto u2 = r(out_of_range_t(), wrange, wrange + 3, 0,
+            static_cast<std::string_view*>(nullptr));
+        ASSERT_EQ("ABC"sv, a1);
+        ASSERT_EQ("ABC"sv, l1);
+        ASSERT_EQ("ABC"sv, u1);
+        ASSERT_EQ(a1->data(), a2->data());  // views to an identical string
+        ASSERT_EQ(l1->data(), l2->data());  // ditto
+        ASSERT_EQ(u1->data(), u2->data());  // ditto
+    }
+
+    // Not convertible
+    static_assert(!std::is_invocable_v<
+        replace_if_conversion_failed<std::string>, empty_t, std::wstring*>);
+    static_assert(!std::is_invocable_v<
+        replace_if_conversion_failed<std::string>, invalid_format_t,
+        const char*, const char*, std::wstring*>);
+    static_assert(!std::is_invocable_v<
+        replace_if_conversion_failed<std::string>, out_of_range_t,
+        const char*, const char*, int, std::wstring*>);
 }
 
 namespace {
