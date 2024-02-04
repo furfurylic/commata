@@ -6652,7 +6652,7 @@ namespace commata {
     replace_if_skipped&amp; operator=(      replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="replace_if_skipped.inv"/>, invocation:</n></c>
-    std::optional&lt;T> operator()() const;
+    template &lt;class U = T> std::optional&lt;U> operator()(U* = nullptr) const;
 
     <c>// <n><xref id="replace_if_skipped.modifiers"/>, modifiers:</n></c>
     void swap(replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
@@ -6672,6 +6672,7 @@ namespace commata {
            <c>T</c> shall not be equal to possibly cv-qualified types <c>replacement_fail_t</c> or <c>replacement_ignore_t</c>.</p>
         <p>An object of an instance of <c>replace_if_skipped</c> has a replacement action (<xref id="replacement_action"/>).</p>
         <p><c>replace_if_skipped&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
+        <p><span class="note">For types <c>T</c> and <c>U</c> that satisfy <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>, <c>replace_if_skipped&lt;T></c> meets the <c>SkippingHandler</c> requirements for not only <c>T</c> but also <c>U</c> as its target type.</span></p>
 
         <section id="replace_if_skipped.cons">
           <name><c>replace_if_skipped</c> construct/copy/destroy</name>
@@ -6754,9 +6755,10 @@ replace_if_skipped&amp; operator=(replace_if_skipped&amp;&amp; other) noexcept(<
 
           <code-item>
             <code>
-std::optional&lt;T> operator()() const;
+template &lt;class U = T> std::optional&lt;U> operator()(U* = nullptr) const;
             </code>
             <effects>Does as illustrated in <xref id="table.replace_if_skipped.skipped"/> in reference to the replacement action of <c>*this</c>.</effects>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>.</remark>
 
             <table id="table.replace_if_skipped.skipped">
               <caption>Effects of calling of <c>operator()</c></caption>
@@ -6771,13 +6773,13 @@ std::optional&lt;T> operator()() const;
               <tr>
                 <td>(1)</td>
                 <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into the action.</td>
+                <td>Returns <c>std::optional&lt;U>(t)</c> where <c>t</c> is an object of <c>T</c> installed into the action.</td>
               </tr>
 
               <tr>
                 <td>(2)</td>
                 <td><c>ignore</c></td>
-                <td>Returns <c>std::optional&lt;T>()</c>.</td>
+                <td>Returns <c>std::nullopt</c>.</td>
               </tr>
 
               <tr>
