@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-02-04 (UTC)</signature>
+<signature>2024-02-06 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -871,7 +871,7 @@ namespace commata {
 
   template &lt;class Handler> void swap(
     empty_physical_line_aware_handler&lt;Handler>&amp; left,
-    empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(<nc>see below</nc>);
+    empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(noexcept(left.swap(right)));
 
   template &lt;class HandlerR>
     <nc>see below</nc>
@@ -1138,14 +1138,15 @@ namespace commata {
     <nc>see below</nc> yield_location() const;
     <nc>see below</nc> handle_exception();
 
-    <c>// <n><xref id="empty_physical_line_aware_handler.modifiers"/>, modifiers:</n></c>
-    void swap(empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
+    void swap(empty_physical_line_aware_handler&amp; other)
+        noexcept(std::is_nothrow_swappable_v&lt;Handler>)
+      { using std::swap; base().swap(other.base()); }
   };
 
   <c>// <n><xref id="empty_physical_line_aware_handler.special"/>, specialized algorithms:</n></c>
   template &lt;class Handler> void swap(
     empty_physical_line_aware_handler&lt;Handler>&amp; left,
-    empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(<nc>see below</nc>);
+    empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="empty_physical_line_aware_handler.creation"/>, creation functions:</n></c>
   template &lt;class HandlerR>
@@ -1343,20 +1344,6 @@ const handler_type&amp; base() const noexcept;
         </code-item>
       </section>
 
-      <section id="empty_physical_line_aware_handler.modifiers">
-        <name><c>empty_physical_line_aware_handler</c> modifiers</name>
-
-        <code-item>
-          <code>
-void swap(empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <requires><c>base()</c> and <c>other.base()</c> shall be swappable with each other.</requires>
-          <effects>Exchanges the contained values of <c>base()</c> and <c>other.base()</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to the value of <c>noexcept(swap(std::declval&lt;Handler&amp;>(), std::declval&lt;Handler&amp;>()))</c> evaluated in a context where <c>std::swap</c> participates in the overload resolution.</remark>
-        </code-item>
-
-      </section>
-
       <section id="empty_physical_line_aware_handler.special">
         <name><c>empty_physical_line_aware_handler</c> specialized algorithms</name>
 
@@ -1364,11 +1351,10 @@ void swap(empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</
           <code>
 template &lt;class Handler> void swap(
   empty_physical_line_aware_handler&lt;Handler>&amp; left,
-  empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(<nc>see below</nc>);
+  empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(noexcept(left.swap(right)));
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;Handler></c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;Handler></c> is <c>true</c>.</remark>
         </code-item>
       </section>
 
@@ -1561,8 +1547,9 @@ namespace commata {
 
   <c>// <n><xref id="replace_if_conversion_failed"/>, replace_if_conversion_failed:</n></c>
   template &lt;class T> class replace_if_conversion_failed;
-  template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
-                               replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
+  template &lt;class T>
+    void swap(replace_if_conversion_failed&lt;T>&amp; left,
+              replace_if_conversion_failed&lt;T>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="is_default_translatable_arithmetic_type"/>, is_default_translatable_arithmetic_type:</n></c>
   template &lt;class T> struct is_default_translatable_arithmetic_type;
@@ -1874,8 +1861,9 @@ namespace commata {
     replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
 
   <c>// <n><xref id="replace_if_conversion_failed.special"/>, specialized algorithms:</n></c>
-  template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
-                               replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
+  template &lt;class T>
+    void swap(replace_if_conversion_failed&lt;T>&amp; left,
+              replace_if_conversion_failed&lt;T>&amp; right) noexcept(noexcept(left.swap(right)));
 }
         </codeblock>
 
@@ -2250,12 +2238,12 @@ void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
 
           <code-item>
             <code>
-template &lt;class T> void swap(replace_if_conversion_failed&lt;T>&amp; left,
-                             replace_if_conversion_failed&lt;T>&amp; right) noexcept(<nc>see below</nc>);
+template &lt;class T>
+  void swap(replace_if_conversion_failed&lt;T>&amp; left,
+            replace_if_conversion_failed&lt;T>&amp; right) noexcept(noexcept(left.swap(right)));
             </code>
             <effects>Equivalent to: <c>left.swap(right);</c></effects>
-            <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;T></c> is <c>true</c>.
-                    The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;T></c> is <c>true</c>.</remark>
           </code-item>
         </section>
       </section>
@@ -2654,7 +2642,7 @@ namespace commata {
   template &lt;class Streambuf> class owned_streambuf_input;
   template &lt;class Streambuf>
     void swap(owned_streambuf_input&lt;Streambuf>&amp; left,
-              owned_streambuf_input&lt;Streambuf>&amp; right) noexcept(<nc>see below</nc>);
+              owned_streambuf_input&lt;Streambuf>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="istream_input"/>, istream_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class istream_input;
@@ -2663,7 +2651,7 @@ namespace commata {
   template &lt;class IStream> class owned_istream_input;
   template &lt;class IStream>
     void swap(owned_istream_input&lt;IStream>&amp; left,
-              owned_istream_input&lt;IStream>&amp; right) noexcept(<nc>see below</nc>);
+              owned_istream_input&lt;IStream>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="string_input"/>, string_input:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>> class string_input;
@@ -2673,7 +2661,7 @@ namespace commata {
     class owned_string_input;
   template &lt;class Ch, class Tr, class Allocator>
     void swap(owned_string_input&lt;Ch, Tr, Allocator>&amp; left,
-              owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(<nc>see below</nc>);
+              owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="char_input.creation"/>, CharInput creation functions:</n></c>
   template &lt;class Ch, class Tr>
@@ -2782,8 +2770,8 @@ namespace commata {
     <c>// <n><xref id="owned_streambuf_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
-    <c>// <n><xref id="owned_streambuf_input.modifiers"/>, modifiers:</n></c>
-    void swap(owned_streambuf_input&amp; other) noexcept(<nc>see below</nc>);
+    void swap(owned_streambuf_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Streambuf>)
+      { using std::swap; swap(in, other.in); }
 
   private:
     Streambuf in;   <c>// <n>exposition only</n></c>
@@ -2792,7 +2780,7 @@ namespace commata {
   <c>// <n><xref id="owned_streambuf_input.special"/>, specialized algorithms:</n></c>
   template &lt;class Streambuf>
     void swap(owned_streambuf_input&lt;Streambuf>&amp; left,
-              owned_streambuf_input&lt;Streambuf>&amp; right) noexcept(<nc>see below</nc>);
+              owned_streambuf_input&lt;Streambuf>&amp; right) noexcept(noexcept(left.swap(right)));
 }
       </codeblock>
 
@@ -2827,19 +2815,6 @@ size_type operator()(Ch* out, size_type n);
         </code-item>
       </section>
 
-      <section id="owned_streambuf_input.modifiers">
-        <name><c>owned_streambuf_input</c> modifiers</name>
-
-        <code-item>
-          <code>
-void swap(owned_streambuf_input&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
-          <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;Streambuf></c>.</remark>
-        </code-item>
-      </section>
-
       <section id="owned_streambuf_input.special">
         <name><c>owned_streambuf_input</c> specialized algorithms</name>
 
@@ -2847,11 +2822,10 @@ void swap(owned_streambuf_input&amp; other) noexcept(<nc>see below</nc>);
           <code>
 template &lt;class Streambuf>
   void swap(owned_streambuf_input&lt;Ch, Tr>&amp; left,
-            owned_streambuf_input&lt;Ch, Tr>&amp; right) noexcept(<nc>see below</nc>);
+            owned_streambuf_input&lt;Ch, Tr>&amp; right) noexcept(noexcept(left.swap(right)));
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;Streambuf></c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;Streambuf></c> is <c>true</c>.</remark>
         </code-item>
       </section>
     </section>
@@ -2936,8 +2910,8 @@ namespace commata {
     <c>// <n><xref id="owned_istream_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
-    <c>// <n><xref id="owned_istream_input.modifiers"/>, modifiers:</n></c>
-    void swap(owned_istream_input&amp; other) noexcept(<nc>see below</nc>);
+    void swap(owned_istream_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;IStream>)
+      { using std::swap; swap(in, other.in); }
 
   private:
     IStream in;     <c>// <n>exposition only</n></c>
@@ -2946,7 +2920,7 @@ namespace commata {
   <c>// <n><xref id="owned_istream_input.special"/>, specialized algorithms:</n></c>
   template &lt;class Ch, class Tr>
     void swap(owned_istream_input&lt;IStream>&amp; left,
-              owned_istream_input&lt;IStream>&amp; right) noexcept(<nc>see below</nc>);
+              owned_istream_input&lt;IStream>&amp; right) noexcept(noexcept(left.swap(right)));
 }
       </codeblock>
 
@@ -2982,19 +2956,6 @@ size_type operator()(Ch* out, size_type n);
         </code-item>
       </section>
 
-      <section id="owned_istream_input.modifiers">
-        <name><c>owned_istream_input</c> modifiers</name>
-
-        <code-item>
-          <code>
-void swap(owned_istream_input&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
-          <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;IStream></c>.</remark>
-        </code-item>
-      </section>
-
       <section id="owned_istream_input.special">
         <name><c>owned_istream_input</c> specialized algorithms</name>
 
@@ -3002,11 +2963,10 @@ void swap(owned_istream_input&amp; other) noexcept(<nc>see below</nc>);
           <code>
 template &lt;class Ch, class Tr>
   void swap(owned_istream_input&lt;Ch, Tr>&amp; left,
-            owned_istream_input&lt;Ch, Tr>&amp; right) noexcept(<nc>see below</nc>);
+            owned_istream_input&lt;Ch, Tr>&amp; right) noexcept(noexcept(left.swap(right)));
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;IStream></c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;IStream></c> is <c>true</c>.</remark>
         </code-item>
       </section>
     </section>
@@ -3120,7 +3080,7 @@ namespace commata {
   <c>// <n><xref id="owned_string_input.special"/>, specialized algorithms:</n></c>
   template &lt;class Ch, class Tr, class Allocator>
     void swap(owned_string_input&lt;Ch, Tr, Allocator>&amp; left,
-              owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(<nc>see below</nc>);
+              owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(noexcept(left.swap(right)));
 }
       </codeblock>
 
@@ -3196,10 +3156,9 @@ void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
           <code>
 template &lt;class Ch, class Tr, class Allocator>
   void swap(owned_string_input&lt;Ch, Tr, Allocator>&amp; left,
-            owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(<nc>see below</nc>);
+            owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(noexcept(left.swap(right)));
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
         </code-item>
       </section>
     </section>
@@ -3318,7 +3277,8 @@ namespace commata {
   <c>// <n><xref id="csv_source"/>, csv_source:</n></c>
   template &lt;class CharInput> class csv_source;
   template &lt;class CharInput>
-    void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(<nc>see below</nc>);
+    void swap(csv_source&lt;CharInput>&amp; left,
+              csv_source&lt;CharInput>&amp; right) noexcept(noexcept(left.swap(right)));
   template &lt;class... Args>   auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
     -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
   template &lt;class CharInputR> auto make_csv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
@@ -3377,8 +3337,8 @@ namespace commata {
       <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                            Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
-    <c>// <n><xref id="csv_source.modifiers"/>, modifiers:</n></c>
-    void swap(csv_source&amp; other) noexcept(<nc>see below</nc>);
+    void swap(csv_source&amp; other) noexcept(std::is_nothrow_swappable_v&lt;CharInput>)
+      { using std::swap; swap(in, other.in); }
 
   private:
     CharInput in;   <c>// <n>exposition only</n></c>
@@ -3386,7 +3346,8 @@ namespace commata {
 
   <c>// <n><xref id="csv_source.special"/>, specialized algorithms:</n></c>
   template &lt;class CharInput>
-    void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(<nc>see below</nc>);
+    void swap(csv_source&lt;CharInput>&amp; left,
+              csv_source&lt;CharInput>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="csv_source.creation"/>, creation functions:</n></c>
   template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
@@ -3510,30 +3471,17 @@ template &lt;class Handler, class... Args>
         </code-item>
       </section>
 
-      <section id="csv_source.modifiers">
-        <name><c>csv_source</c> modifiers</name>
-
-        <code-item>
-          <code>
-void swap(csv_source&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
-          <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;CharInput></c>.</remark>
-        </code-item>
-      </section>
-
       <section id="csv_source.special">
         <name><c>csv_source</c> specialized algorithms</name>
 
         <code-item>
           <code>
 template &lt;class CharInput>
-  void swap(csv_source&lt;CharInput>&amp; left, csv_source&lt;CharInput>&amp; right) noexcept(<nc>see below</nc>);
+  void swap(csv_source&lt;CharInput>&amp; left,
+            csv_source&lt;CharInput>&amp; right) noexcept(noexcept(left.swap(right)));
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;CharInput></c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;CharInput></c> is <c>true</c>.</remark>
         </code-item>
       </section>
 
@@ -3636,7 +3584,8 @@ namespace commata {
   <c>// <n><xref id="tsv_source"/>, tsv_source:</n></c>
   template &lt;class CharInput> class tsv_source;
   template &lt;class CharInput>
-    void swap(tsv_source&lt;CharInput>&amp; left, tsv_source&lt;CharInput>&amp; right) noexcept(<nc>see below</nc>);
+    void swap(tsv_source&lt;CharInput>&amp; left,
+              tsv_source&lt;CharInput>&amp; right) noexcept(noexcept(left.swap(right)));
   template &lt;class... Args>   auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
     -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
   template &lt;class CharInputR> auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
@@ -3695,8 +3644,8 @@ namespace commata {
       <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                            Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
-    <c>// <n><xref id="tsv_source.modifiers"/>, modifiers:</n></c>
-    void swap(tsv_source&amp; other) noexcept(<nc>see below</nc>);
+    void swap(tsv_source&amp; other) noexcept(std::is_nothrow_swappable_v&lt;CharInput>)
+      { using std::swap; swap(in, other.in); }
 
   private:
     CharInput in;   <c>// <n>exposition only</n></c>
@@ -3704,7 +3653,8 @@ namespace commata {
 
   <c>// <n><xref id="tsv_source.special"/>, specialized algorithms:</n></c>
   template &lt;class CharInput>
-    void swap(tsv_source&lt;CharInput>&amp; left, tsv_source&lt;CharInput>&amp; right) noexcept(<nc>see below</nc>);
+    void swap(tsv_source&lt;CharInput>&amp; left,
+              tsv_source&lt;CharInput>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="tsv_source.creation"/>, creation functions:</n></c>
   template &lt;class... Args> auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
@@ -3828,30 +3778,17 @@ template &lt;class Handler, class... Args>
         </code-item>
       </section>
 
-      <section id="tsv_source.modifiers">
-        <name><c>tsv_source</c> modifiers</name>
-
-        <code-item>
-          <code>
-void swap(tsv_source&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <requires><c>in</c> shall be swappable with <c>other.in</c>.</requires>
-          <effects>Exchanges <c>in</c> and <c>other.in</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;CharInput></c>.</remark>
-        </code-item>
-      </section>
-
       <section id="tsv_source.special">
         <name><c>tsv_source</c> specialized algorithms</name>
 
         <code-item>
           <code>
 template &lt;class CharInput>
-  void swap(tsv_source&lt;CharInput>&amp; left, tsv_source&lt;CharInput>&amp; right) noexcept(<nc>see below</nc>);
+  void swap(tsv_source&lt;CharInput>&amp; left,
+            tsv_source&lt;CharInput>&amp; right) noexcept(noexcept(left.swap(right)));
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;CharInput></c> is <c>true</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;CharInput></c> is <c>true</c>.</remark>
         </code-item>
       </section>
 
@@ -6517,8 +6454,9 @@ namespace commata {
 
   <c>// <n><xref id="replace_if_skipped"/>, replace_if_skipped:</n></c>
   template &lt;class T> class replace_if_skipped;
-  template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
-                               replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
+  template &lt;class T>
+    void swap(replace_if_skipped&lt;T>&amp; left,
+              replace_if_skipped&lt;T>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="arithmetic_field_translator"/>, arithmetic_field_translator:</n></c>
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
@@ -6655,8 +6593,9 @@ namespace commata {
   template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
 
   <c>// <n><xref id="replace_if_skipped.special"/>, specialized algorithms:</n></c>
-  template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
-                               replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
+  template &lt;class T>
+    void swap(replace_if_skipped&lt;T>&amp; left,
+              replace_if_skipped&lt;T>&amp; right) noexcept(noexcept(left.swap(right)));
 }
         </codeblock>
 
@@ -6803,11 +6742,10 @@ void swap(replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
           <code-item>
             <code>
 template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
-                             replace_if_skipped&lt;T>&amp; right) noexcept(<nc>see below</nc>);
+                             replace_if_skipped&lt;T>&amp; right) noexcept(noexcept(left.swap(right)));
             </code>
             <effects>Equivalent to: <c>left.swap(right);</c></effects>
-            <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;T></c> is <c>true</c>.
-                    The expression inside <c>noexcept</c> is equivalent to <c>noexcept(left.swap(right))</c>.</remark>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;T></c> is <c>true</c>.</remark>
           </code-item>
         </section>
       </section>
