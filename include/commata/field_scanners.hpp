@@ -253,16 +253,18 @@ public:
     replace_if_skipped& operator=(const replace_if_skipped&) = default;
     replace_if_skipped& operator=(replace_if_skipped&&) = default;
 
-    std::optional<T> operator()() const
+    template <class U = T>
+    auto operator()(U* = nullptr) const
+     -> std::enable_if_t<std::is_convertible_v<const T&, U>, std::optional<U>>
     {
         switch (store_.mode()) {
         case replace_mode::replace:
-            return std::optional<T>(store_.value());
+            return store_.value();
         case replace_mode::fail:
-            fail_if_skipped().operator()<T>();
+            fail_if_skipped().operator()<U>();
             [[fallthrough]];
         default:
-            return std::optional<T>();
+            return std::nullopt;
         }
     }
 

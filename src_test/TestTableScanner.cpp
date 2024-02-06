@@ -33,6 +33,7 @@
 #include "BaseTest.hpp"
 #include "tracking_allocator.hpp"
 
+using namespace std::literals;
 using namespace commata;
 using namespace commata::test;
 
@@ -1280,6 +1281,33 @@ TEST_F(TestReplaceIfSkipped, Swap)
     ASSERT_TRUE(!rs[1]());
     swap(rs[2], rs[2]);
     ASSERT_THROW(rs[2](), field_not_found);
+}
+
+TEST_F(TestReplaceIfSkipped, Convertible)
+{
+    std::vector<replace_if_skipped<std::string>> rs;
+    rs.emplace_back("ABC");
+    rs.emplace_back(replacement_ignore);
+    rs.emplace_back(replacement_fail);
+
+    // 0: copy: "ABC"
+    {
+        const auto o1 = rs[0](static_cast<std::string_view*>(nullptr));
+        const auto o2 = rs[0](static_cast<std::string_view*>(nullptr));
+        ASSERT_EQ("ABC"sv, o1);
+        ASSERT_EQ(o1->data(), o2->data());  // views to an identical string
+    }
+
+    // 1: ignore
+    ASSERT_FALSE(rs[1](static_cast<std::string_view*>(nullptr)));
+
+    // 2: fail
+    ASSERT_THROW(rs[2](static_cast<std::string_view*>(nullptr)),
+        field_not_found);
+
+    // Not convertible
+    static_assert(!std::is_invocable_v<replace_if_skipped<std::string>,
+                                       std::wstring*>);
 }
 
 TEST_F(TestReplaceIfSkipped, DeductionGuides)

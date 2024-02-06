@@ -1039,37 +1039,41 @@ public:
     replace_if_conversion_failed& operator=(
         replace_if_conversion_failed&&) = default;
 
-    template <class Ch>
-    std::optional<T> operator()(invalid_format_t,
-        const Ch* begin, const Ch* end) const
+    template <class Ch, class U = T>
+    auto operator()(invalid_format_t,
+        const Ch* begin, const Ch* end, U* = nullptr) const
+     -> std::enable_if_t<std::is_convertible_v<const T&, U>, std::optional<U>>
     {
-        return unwrap(this->store().get(slot_invalid_format),
+        return unwrap<U>(this->store().get(slot_invalid_format),
             [begin, end]() {
                 fail_if_conversion_failed()(invalid_format_t(),
                     begin, end, static_cast<T*>(nullptr));
             });
     }
 
-    template <class Ch>
-    std::optional<T> operator()(out_of_range_t,
-        const Ch* begin, const Ch* end, int sign) const
+    template <class Ch, class U = T>
+    auto operator()(out_of_range_t,
+        const Ch* begin, const Ch* end, int sign, U* = nullptr) const
+     -> std::enable_if_t<std::is_convertible_v<const T&, U>, std::optional<U>>
     {
         const auto fail = [begin, end, sign]() {
             fail_if_conversion_failed()(out_of_range_t(),
                 begin, end, sign, static_cast<T*>(nullptr));
         };
         if (sign > 0) {
-            return unwrap(this->store().get(slot_above_upper_limit), fail);
+            return unwrap<U>(this->store().get(slot_above_upper_limit), fail);
         } else if (sign < 0) {
-            return unwrap(this->store().get(slot_below_lower_limit), fail);
+            return unwrap<U>(this->store().get(slot_below_lower_limit), fail);
         } else {
-            return unwrap(this->store().get(slot_underflow), fail);
+            return unwrap<U>(this->store().get(slot_underflow), fail);
         }
     }
 
-    std::optional<T> operator()(empty_t) const
+    template <class U = T>
+    auto operator()(empty_t, U* = nullptr) const
+     -> std::enable_if_t<std::is_convertible_v<const T&, U>, std::optional<U>>
     {
-        return unwrap(this->store().get(slot_empty),
+        return unwrap<U>(this->store().get(slot_empty),
             []() {
                 fail_if_conversion_failed()(empty_t(),
                     static_cast<T*>(nullptr));
@@ -1094,21 +1098,22 @@ public:
     }
 
 private:
-    template <class Fail>
-    auto unwrap(const std::pair<replace_mode, const T*>& p, Fail fail) const
+    template <class U, class Fail>
+    std::optional<U> unwrap(
+        const std::pair<replace_mode, const T*>& p, Fail fail) const
     {
         switch (p.first) {
         case replace_mode::replace:
-            return std::optional<T>(*p.second);
+            return *p.second;
         case replace_mode::ignore:
-            return std::optional<T>();
+            return std::nullopt;
         case replace_mode::fail:
         default:
             break;
         }
         fail();
         assert(false);
-        return std::optional<T>();
+        return std::nullopt;
     }
 };
 

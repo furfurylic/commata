@@ -1492,12 +1492,12 @@ template &lt;class T, class... As> decltype(auto) invoke_typing_as(As&amp;&amp;.
           <effects><p>Equivalent to:</p>
             <code>
 constexpr T* n = static_cast&lt;T*>(nullptr);
-if constexpr (std::is_invocable_v&lt;As...>) {
-  return std::invoke(std::forward&lt;As>(as)...);
-} else {
+if constexpr (std::is_invocable_v&lt;As..., T*>) {
   return std::invoke(std::forward&lt;As>(as)..., n);
+} else {
+  return std::invoke(std::forward&lt;As>(as)...);
 }
-            </code>
+      </code>
           </effects>
           <note>This function template may be useful when invoking <c>ConversionErrorHandler</c> objects (<xref id="conversion_error_handler.requirements"/>) or <c>SkippingHandler</c> objects (<xref id="skipping_handler.requirements"/>).</note>
         </code-item>
@@ -1510,20 +1510,20 @@ template &lt;class T, class F, class X, class Ch, class... As>
           <effects><p>Equivalent to:</p>
             <code>
 constexpr T* n = static_cast&lt;T*>(nullptr);
-if constexpr (std::is_invocable_v&lt;F, X, Ch*, Ch*, As...>) {
-  return std::invoke(std::forward&lt;F>(f), x, first, last, std::forward&lt;As>(as)...);
-} else if constexpr (std::is_invocable_v&lt;F, X, Ch*, Ch*, As..., T*>) {
+if constexpr (std::is_invocable_v&lt;F, X, Ch*, Ch*, As..., T*>) {
   return std::invoke(std::forward&lt;F>(f), x, first, last, std::forward&lt;As>(as)..., n);
-} else if constexpr (std::is_invocable_v&lt;F, X, As...>) {
-  return std::invoke(std::forward&lt;F>(f), x, std::forward&lt;As>(as)...);
 } else if constexpr (std::is_invocable_v&lt;F, X, As..., T*>) {
   return std::invoke(std::forward&lt;F>(f), x, std::forward&lt;As>(as)..., n);
-} else if constexpr (std::is_invocable_v&lt;F, X>) {
-  return std::invoke(std::forward&lt;F>(f), x);
-} else {
+} else if constexpr (std::is_invocable_v&lt;F, X, T*>) {
   return std::invoke(std::forward&lt;F>(f), x, n);
+} else if constexpr (std::is_invocable_v&lt;F, X, Ch*, Ch*, As...>) {
+  return std::invoke(std::forward&lt;F>(f), x, first, last, std::forward&lt;As>(as)...);
+} else if constexpr (std::is_invocable_v&lt;F, X, As...>) {
+  return std::invoke(std::forward&lt;F>(f), x, std::forward&lt;As>(as)...);
+} else {
+  return std::invoke(std::forward&lt;F>(f), x);
 }
-            </code>
+</code>
           </effects>
           <note>This function template may be useful when invoking <c>ConversionErrorHandler</c> objects (<xref id="conversion_error_handler.requirements"/>).</note>
         </code-item>
@@ -1593,7 +1593,10 @@ namespace commata {
       </ul>
 
       <p><xref id="table.conversion_error_handler.requirements"/> shows two, four or six expressions per row.
-          It is required that at least one of these two expression qualifies, that is, it is not needed that more than one of them do.</p>
+         It is required that at least one of these two expression qualifies; that is, it is not needed that more than one of them do.
+         When multiple expressions in one row qualify, it shall be the first one that is selected to be evaluated.
+         This selection shall be done at compile time.
+         <span class="note">To evaluate these expressions as specified here, function templates <c>invoke_typing_as</c> and <c>invoke_with_range_typing_as</c> (<xref id="invoke_typing_as"/>) can be used.</span></p>
 
       <p>In <xref id="table.conversion_error_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
           <c>i</c>, <c>o</c> and <c>e</c> are values of <c>invalid_format_t</c>, <c>out_of_range_t</c> and <c>empty_t</c> respectively.
@@ -1616,51 +1619,51 @@ namespace commata {
 
         <tr>
           <td rowspan="4">(1)</td>
-          <td><c>h(i, f, l)</c></td>
+          <td><c>h(i, f, l, n)</c></td>
           <td rowspan="4">Convertible to <c>std::optional&lt;T></c></td>
           <td rowspan="4">Evaluated when the corresponding text value can not be converted a value of <c>T</c> due to a format error.</td>
         </tr>
         <tr>
-          <td><c>h(i, f, l, n)</c></td>
+          <td><c>h(i, n)</c></td>
+        </tr>
+        <tr>
+          <td><c>h(i, f, l)</c></td>
         </tr>
         <tr>
           <td><c>h(i)</c></td>
         </tr>
-        <tr>
-          <td><c>h(i, n)</c></td>
-        </tr>
 
         <tr>
           <td rowspan="6">(2)</td>
-          <td><c>h(o, f, l, s)</c></td>
+          <td><c>h(o, f, l, s, n)</c></td>
           <td rowspan="6">Convertible to <c>std::optional&lt;T></c></td>
           <td rowspan="6">Evaluated when the corresponding text value can not be converted a value of <c>T</c> due to a range error.
                           The value of <c>s</c> shall be positive if the text value shall represent a value above the range of <c>T</c>, negative if it shall do a value below it, or <c>0</c> otherwise.</td>
         </tr>
         <tr>
-          <td><c>h(o, f, l, s, n)</c></td>
+          <td><c>h(o, s, n)</c></td>
+        </tr>
+        <tr>
+          <td><c>h(o, n)</c></td>
+        </tr>
+        <tr>
+          <td><c>h(o, f, l, s)</c></td>
         </tr>
         <tr>
           <td><c>h(o, s)</c></td>
         </tr>
         <tr>
-          <td><c>h(o, s, n)</c></td>
-        </tr>
-        <tr>
           <td><c>h(o)</c></td>
-        </tr>
-        <tr>
-          <td><c>h(o, n)</c></td>
         </tr>
 
         <tr>
           <td rowspan="2">(3)</td>
-          <td><c>h(e)</c></td>
+          <td><c>h(e, n)</c></td>
           <td rowspan="2">Convertible to <c>std::optional&lt;T></c></td>
           <td rowspan="2">Evaluated when the corresponding text value is empty.</td>
         </tr>
         <tr>
-          <td><c>h(e, n)</c></td>
+          <td><c>h(e)</c></td>
         </tr>
       </table>
     </section>
@@ -1860,11 +1863,12 @@ namespace commata {
       noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="replace_if_conversion_failed.inv"/>, invocation:</n></c>
-    template &lt;class Ch> std::optional&lt;T> operator()(invalid_format_t,
-                                                    const Ch*, const Ch*) const;
-    template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
-                                                    const Ch*, const Ch*, int sign) const;
-                        std::optional&lt;T> operator()(empty_t) const;
+    template &lt;class Ch, class U = T>
+      std::optional&lt;U> operator()(invalid_format_t, const Ch*, const Ch*, U* = nullptr) const;
+    template &lt;class Ch, class U = T>
+      std::optional&lt;U> operator()(out_of_range_t, const Ch*, const Ch*, int sign, U* = nullptr) const;
+    template &lt;class Ch, class U = T>
+      std::optional&lt;U> operator()(empty_t, U* = nullptr) const;
 
     <c>// <n><xref id="replace_if_conversion_failed.modifiers"/>, modifiers:</n></c>
     void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
@@ -1893,6 +1897,7 @@ namespace commata {
         </ul>
         <p>Similarly, a replacement action of an object of <c>replace_if_conversion_failed</c> is called <n>configurable</n> if it is not unconfigurable.</p>
         <p>Each unconfigurable replacement action of an object of <c>replace_if_conversion_failed</c> is fixed to be <c>fail</c>.</p>
+        <p><span class="note">For types <c>T</c> and <c>U</c> that satisfy <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>, <c>replace_if_conversion_failed&lt;T></c> meets the <c>ConversionErrorHandler</c> requirements for not only <c>T</c> but also <c>U</c> as its target type.</span></p>
 
         <section id="replace_if_conversion_failed.props">
           <name><c>replace_if_conversion_failed</c> properties</name>
@@ -2073,10 +2078,11 @@ replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&am
 
           <code-item>
             <code>
-template &lt;class Ch> std::optional&lt;T> operator()(invalid_format_t,
-                                                const Ch*, const Ch*) const;
+template &lt;class Ch, class U = T>
+  std::optional&lt;U> operator()(invalid_format_t, const Ch*, const Ch*, U* = nullptr) const;
             </code>
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.invalid_format"/> in reference to the <c>action_on_invalid_format</c> of <c>*this</c>.</effects>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>.</remark>
 
             <table id="table.replace_if_conversion_failed.invalid_format">
               <caption>Effects of invocation with <c>invalid_format_t</c></caption>
@@ -2112,10 +2118,11 @@ template &lt;class Ch> std::optional&lt;T> operator()(invalid_format_t,
 
           <code-item>
             <code>
-template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
-                                                const Ch*, const Ch*, int sign) const;
+template &lt;class Ch, class U = T>
+  std::optional&lt;U> operator()(out_of_range_t, const Ch*, const Ch*, int sign, U* = nullptr) const;
             </code>
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.out_of_range"/> in reference to <c>sign</c> and the <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> of <c>*this</c>.</effects>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>.</remark>
 
             <table id="table.replace_if_conversion_failed.out_of_range">
               <caption>Effects of invocation with <c>out_of_range_t</c></caption>
@@ -2193,9 +2200,11 @@ template &lt;class Ch> std::optional&lt;T> operator()(out_of_range_t,
 
           <code-item>
             <code>
-std::optional&lt;T> operator()(empty_t) const;
+template &lt;class Ch, class U = T>
+  std::optional&lt;U> operator()(empty_t, U* = nullptr) const;
             </code>
             <effects>Does as illustrated in <xref id="table.replace_if_conversion_failed.empty"/> in reference to the <c>action_on_empty</c> of <c>*this</c>.</effects>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>.</remark>
 
             <table id="table.replace_if_conversion_failed.empty">
               <caption>Effects of invocation with <c>empty_t</c></caption>
@@ -6457,7 +6466,10 @@ bool is_in_header() const noexcept;
         </ul>
 
         <p><xref id="table.skipping_handler.requirements"/> shows two expressions per row.
-           It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.</p>
+           It is required that at least one of these two expression qualifies; that is, it is not needed that both of two do.
+           When multiple expressions in one row qualify, it shall be the first one that is selected to be evaluated.
+           This selection shall be done at compile time.
+             <span class="note">To evaluate these expressions as specified here, the function template <c>invoke_typing_as</c> (<xref id="invoke_typing_as"/>) can be used.</span></p>
 
         <p>In <xref id="table.skipping_handler.requirements"/>, <c>h</c> is an lvalue of cv-unqualified <c>H</c>.
            <c>n</c> is a null pointer whose type is <c>T*</c>.</p>
@@ -6475,7 +6487,7 @@ bool is_in_header() const noexcept;
 
           <tr>
             <td rowspan="2">(1)</td>
-            <td><c>h()</c></td>
+            <td><c>h(n)</c></td>
             <td rowspan="2">Convertible to <c>std::optional&lt;T></c></td>
             <td rowspan="2">Called when the corresponding field has been skipped, that is, the record has had too few fields to reach the field.
                 If <c>r.has_value()</c> is not <c>false</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
@@ -6483,7 +6495,7 @@ bool is_in_header() const noexcept;
           </tr>
 
           <tr>
-            <td><c>h(n)</c></td>
+            <td><c>h()</c></td>
           </tr>
         </table>
       </section>
@@ -6646,7 +6658,7 @@ namespace commata {
     replace_if_skipped&amp; operator=(      replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="replace_if_skipped.inv"/>, invocation:</n></c>
-    std::optional&lt;T> operator()() const;
+    template &lt;class U = T> std::optional&lt;U> operator()(U* = nullptr) const;
 
     <c>// <n><xref id="replace_if_skipped.modifiers"/>, modifiers:</n></c>
     void swap(replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
@@ -6666,6 +6678,7 @@ namespace commata {
            <c>T</c> shall not be equal to possibly cv-qualified types <c>replacement_fail_t</c> or <c>replacement_ignore_t</c>.</p>
         <p>An object of an instance of <c>replace_if_skipped</c> has a replacement action (<xref id="replacement_action"/>).</p>
         <p><c>replace_if_skipped&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
+        <p><span class="note">For types <c>T</c> and <c>U</c> that satisfy <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>, <c>replace_if_skipped&lt;T></c> meets the <c>SkippingHandler</c> requirements for not only <c>T</c> but also <c>U</c> as its target type.</span></p>
 
         <section id="replace_if_skipped.cons">
           <name><c>replace_if_skipped</c> construct/copy/destroy</name>
@@ -6748,9 +6761,10 @@ replace_if_skipped&amp; operator=(replace_if_skipped&amp;&amp; other) noexcept(<
 
           <code-item>
             <code>
-std::optional&lt;T> operator()() const;
+template &lt;class U = T> std::optional&lt;U> operator()(U* = nullptr) const;
             </code>
             <effects>Does as illustrated in <xref id="table.replace_if_skipped.skipped"/> in reference to the replacement action of <c>*this</c>.</effects>
+            <remark>This overload shall not participate in overload resolution unless <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>.</remark>
 
             <table id="table.replace_if_skipped.skipped">
               <caption>Effects of calling of <c>operator()</c></caption>
@@ -6765,13 +6779,13 @@ std::optional&lt;T> operator()() const;
               <tr>
                 <td>(1)</td>
                 <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into the action.</td>
+                <td>Returns <c>std::optional&lt;U>(t)</c> where <c>t</c> is an object of <c>T</c> installed into the action.</td>
               </tr>
 
               <tr>
                 <td>(2)</td>
                 <td><c>ignore</c></td>
-                <td>Returns <c>std::optional&lt;T>()</c>.</td>
+                <td>Returns <c>std::nullopt</c>.</td>
               </tr>
 
               <tr>
