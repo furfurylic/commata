@@ -1772,8 +1772,8 @@ private:
 template <class Content, class Allocator>
 void swap(
     basic_stored_table<Content, Allocator>& left,
-    basic_stored_table<Content, Allocator>& right) noexcept(
-        std::allocator_traits<Allocator>::propagate_on_container_swap::value)
+    basic_stored_table<Content, Allocator>& right)
+    noexcept(noexcept(left.swap(right)))
 {
     left.swap(right);
 }

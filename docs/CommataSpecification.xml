@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-02-04 (UTC)</signature>
+<signature>2024-02-06 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4550,7 +4550,7 @@ namespace commata {
   template &lt;class Content, class Allocator>
     void swap(basic_stored_table&lt;Content, Allocator>&amp; left,
               basic_stored_table&lt;Content, Allocator>&amp; right)
-      noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value);
+      noexcept(noexcept(left.swap(right)));
 
   using stored_table   = basic_stored_table&lt;std::deque&lt;std::vector&lt;stored_value>>>;
   using wstored_table  = basic_stored_table&lt;std::deque&lt;std::vector&lt;wstored_value>>>;
@@ -5347,7 +5347,7 @@ namespace commata {
   template &lt;class Content, class Allocator>
     void swap(basic_stored_table&lt;Content, Allocator>&amp; left,
               basic_stored_table&lt;Content, Allocator>&amp; right)
-      noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value);
+      noexcept(noexcept(left.swap(right)));
 }
         </codeblock>
 
@@ -5830,7 +5830,7 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
 template &lt;class Content, class Allocator>
   void swap(basic_stored_table&lt;Content, Allocator>&amp; left,
             basic_stored_table&lt;Content, Allocator>&amp; right)
-    noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value);
+    noexcept(noexcept(left.swap(right)));
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
         </code-item>
