@@ -552,21 +552,23 @@ public:
     }
 };
 
-template <class Sink, class Ch,
-    class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>,
-    class SkippingHandler = fail_if_skipped>
+template <class Sink, class T, class SkippingHandler = fail_if_skipped>
 class string_field_translator
 {
 public:
-    using value_type = std::basic_string<Ch, Tr, Allocator>;
-    using allocator_type = Allocator;
+    static_assert(detail::is_std_string_v<T>);
+
+    using value_type = T;
+    using char_type = typename T::value_type;
+    using traits_type = typename T::traits_type;
+    using allocator_type = typename T::allocator_type;
     using skipping_handler_type = SkippingHandler;
 
 private:
     using translator_t =
         detail::scanner::translator<value_type, Sink, SkippingHandler>;
 
-    detail::base_member_pair<Allocator, translator_t> at_;
+    detail::base_member_pair<allocator_type, translator_t> at_;
 
 public:
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
@@ -577,15 +579,15 @@ public:
         SinkR&& sink,
         SkippingHandlerR&& handle_skipping =
             std::decay_t<SkippingHandlerR>()) :
-        at_(Allocator(),
+        at_(allocator_type(),
             translator_t(std::forward<SinkR>(sink),
                          std::forward<SkippingHandlerR>(handle_skipping)))
     {}
 
     template <class SinkR, class SkippingHandlerR = SkippingHandler>
     string_field_translator(
-        std::allocator_arg_t, const Allocator& alloc, SinkR&& sink,
-        SkippingHandlerR&& handle_skipping = SkippingHandler()) :
+        std::allocator_arg_t, const typename T::allocator_type& alloc,
+        SinkR&& sink, SkippingHandlerR&& handle_skipping = SkippingHandler()) :
         at_(alloc,
             translator_t(std::forward<SinkR>(sink),
                          std::forward<SkippingHandlerR>(handle_skipping)))
@@ -615,16 +617,15 @@ public:
         at_.member().field_skipped();
     }
 
-    void operator()(const Ch* begin, const Ch* end)
+    void operator()(const char_type* begin, const char_type* end)
     {
-        at_.member().put(std::basic_string<Ch, Tr, Allocator>(
-            begin, end, get_allocator()));
+        at_.member().put(value_type(begin, end, get_allocator()));
     }
 
-    void operator()(std::basic_string<Ch, Tr, Allocator>&& value)
+    void operator()(value_type&& value)
     {
-        if constexpr (
-                !std::allocator_traits<Allocator>::is_always_equal::value) {
+        if constexpr (!std::allocator_traits<allocator_type>::
+                            is_always_equal::value) {
             if (value.get_allocator() != get_allocator()) {
                 // We don't try to construct string with move(value) and
                 // get_allocator() because some standard libs lack that ctor
@@ -781,14 +782,11 @@ locale_based_arithmetic_field_translator<T, Sink,
 // string_field_translator
 template <class T, class Sink,
     std::enable_if_t<detail::is_std_string_v<T>, std::nullptr_t> = nullptr>
-string_field_translator<Sink, typename T::value_type, typename T::traits_type,
-        typename T::allocator_type>
-    make_field_translator_na(Sink);
+string_field_translator<Sink, T> make_field_translator_na(Sink);
 
 template <class T, class Sink, class S, class... As,
     std::enable_if_t<detail::is_std_string_v<T>, std::nullptr_t> = nullptr>
-string_field_translator<Sink, typename T::value_type, typename T::traits_type,
-        typename T::allocator_type, skipping_handler_t<T, S>>
+string_field_translator<Sink, T, skipping_handler_t<T, S>>
     make_field_translator_na(Sink, S&&, As&&...);
 
 // string_view_field_translator
@@ -935,8 +933,9 @@ auto make_field_translator(Container& values, Appendices&&... appendices)
         std::forward<Appendices>(appendices)...);
 }
 
-template <class Allocator, class Container, class... Appendices>
-auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
+template <class Container, class... Appendices>
+auto make_field_translator(std::allocator_arg_t,
+    const typename Container::value_type::allocator_type& alloc,
     Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
         detail::is_std_string_v<typename Container::value_type>
@@ -944,9 +943,7 @@ auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
       || detail::scanner::is_insertable_v<Container>),
         string_field_translator<
             detail::scanner::back_insert_iterator_t<Container>,
-            typename Container::value_type::value_type,
-            typename Container::value_type::traits_type,
-            Allocator, Appendices...>>
+            typename Container::value_type, Appendices...>>
 {
     return make_field_translator<typename Container::value_type>(
         std::allocator_arg, alloc,
