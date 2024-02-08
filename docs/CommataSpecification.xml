@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-02-06 (UTC)</signature>
+<signature>2024-02-07 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6647,8 +6647,8 @@ namespace commata {
     using value_type = T;
 
     <c>// <n><xref id="replace_if_skipped.cons"/>, construct/copy/destroy:</n></c>
-    explicit replace_if_skipped(const T&amp;  t)       noexcept(<nc>see below</nc>);
-    explicit replace_if_skipped(      T&amp;&amp; t = T()) noexcept(<nc>see below</nc>);
+    template &lt;class U = T>
+      explicit replace_if_skipped(U&amp;&amp; u = std::decay_t&lt;U>()) noexcept(<nc>see below</nc>);
     explicit replace_if_skipped(replacement_fail_t) noexcept;
     explicit replace_if_skipped(replacement_ignore_t) noexcept;
     replace_if_skipped(const replace_if_skipped&amp;  other) noexcept(<nc>see below</nc>);
@@ -6685,17 +6685,15 @@ namespace commata {
 
           <code-item>
             <code>
-explicit replace_if_skipped(const T&amp; t) noexcept(<nc>see below</nc>);
+template &lt;class U = T>
+  explicit replace_if_skipped(U&amp;&amp; u = std::decay_t&lt;U>()) noexcept(<nc>see below</nc>);
             </code>
-            <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> copy constructed from <c>t</c>.</effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T></c>.</remark>
-          </code-item>
-          <code-item>
-            <code>
-explicit replace_if_skipped(T&amp;&amp; t = T()) noexcept(<nc>see below</nc>);
-            </code>
-            <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> move constructed from <c>std::move(t)</c>.</effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
+            <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;U>(u)</c>.</effects>
+            <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible_v&lt;T, U></c> is <c>true</c>,
+                    <c>std::is_base_of_v&lt;replace_if_skipped&lt;T>, std::decay&lt;U>></c> is <c>false</c>,
+                    <c>std::is_base_of_v&lt;replacement_fail_t, std::decay&lt;U>></c> is <c>false</c>, and
+                    <c>std::is_base_of_v&lt;replacement_ignore_t, std::decay&lt;U>></c> is <c>false</c>.
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;T, U></c>.</remark>
           </code-item>
 
           <code-item>
