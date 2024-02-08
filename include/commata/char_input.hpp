@@ -233,6 +233,8 @@ public:
     using traits_type = Tr;
     using size_type = std::size_t;
 
+    static constexpr size_type npos = static_cast<size_type>(-1);
+
     string_input() noexcept :
         v_()
     {}
@@ -264,6 +266,14 @@ public:
         v_.remove_prefix(len);
         return len;
     }
+
+    std::pair<const Ch*, size_type> operator()(size_type n = npos) noexcept
+    {
+        const auto rlen = std::min(n, v_.size());
+        std::pair<const Ch*, size_type> r(v_.data(), rlen);
+        v_.remove_prefix(rlen);
+        return r;
+    }
 };
 
 template <class Ch, class Tr = std::char_traits<Ch>,
@@ -283,6 +293,8 @@ public:
 
     using char_type = Ch;
     using traits_type = Tr;
+
+    static constexpr size_type npos = static_cast<size_type>(-1);
 
     owned_string_input()
         noexcept(std::is_nothrow_default_constructible_v<
@@ -316,6 +328,14 @@ public:
         const auto len = s_.copy(out, n, head_);
         head_ += len;
         return len;
+    }
+
+    std::pair<const Ch*, size_type> operator()(size_type n = npos) noexcept
+    {
+        const auto rlen = std::min(n, s_.size() - head_);
+        std::pair<const Ch*, size_type> r(s_.data() + head_, rlen);
+        head_ += rlen;
+        return r;
     }
 
     void swap(owned_string_input& other) noexcept(

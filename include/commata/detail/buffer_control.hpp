@@ -35,6 +35,8 @@ class default_buffer_control :
     typename alloc_traits_t::pointer buffer_;
 
 public:
+    constexpr static bool buffer_control_defaulted = true;
+
     default_buffer_control(
         std::size_t buffer_size, const Allocator& alloc)
         noexcept(std::is_nothrow_copy_constructible_v<Allocator>) :
@@ -73,17 +75,20 @@ public:
 
 struct thru_buffer_control
 {
+    constexpr static bool buffer_control_defaulted = false;
+
     template <class Handler>
     std::pair<typename Handler::char_type*, std::size_t> do_get_buffer(
         Handler* f)
     {
+        static_assert(!std::is_const_v<typename Handler::char_type>);
         return f->get_buffer(); // throw
     }
 
     template <class Handler>
-    void do_release_buffer(
-        typename Handler::char_type* buffer, Handler* f)
+    void do_release_buffer(typename Handler::char_type* buffer, Handler* f)
     {
+        static_assert(!std::is_const_v<typename Handler::char_type>);
         return f->release_buffer(buffer);
     }
 };
@@ -114,6 +119,9 @@ class full_fledged_handler :
 public:
     using char_type = typename Handler::char_type;
 
+    constexpr static bool buffer_control_defaulted =
+        BufferControl::buffer_control_defaulted;
+
     // noexcept-ness of the member functions except the ctor and the dtor does
     // not count because they are invoked as parts of a willingly-throwing
     // operation, so we do not specify "noexcept" to the member functions
@@ -133,7 +141,8 @@ public:
         handler_(std::forward<HandlerR>(handler))
     {}
 
-    [[nodiscard]] std::pair<char_type*, std::size_t> get_buffer()
+    [[nodiscard]]
+    std::pair<std::remove_const_t<char_type>*, std::size_t> get_buffer()
     {
         return this->do_get_buffer(std::addressof(handler_));
     }

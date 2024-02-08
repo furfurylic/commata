@@ -361,6 +361,30 @@ TEST_F(TestStringInput, Swap)
     ASSERT_STREQ(L"XYZU", b);
 }
 
+TEST_F(TestStringInput, Direct)
+{
+    const char* const s = "ABCDEFGHIJKL";
+    string_input in(s);
+
+    {
+        auto r = in(3);
+        ASSERT_EQ(s, r.first);
+        ASSERT_EQ(3U, r.second);
+    }
+    {
+        // 'Normal' copying mixed
+        char buf[4];
+        auto len = in(buf, 4);
+        ASSERT_EQ(4U, len);
+        ASSERT_EQ("DEFG"sv, std::string_view(buf, len));
+    }
+    {
+        auto r = in();
+        ASSERT_EQ(s + 7, r.first);
+        ASSERT_EQ(5U, r.second);
+    }
+}
+
 struct TestOwnedStringInput : BaseTest
 {};
 
@@ -440,6 +464,32 @@ TEST_F(TestOwnedStringInput, Swap)
     ASSERT_EQ(L"Z", std::wstring(a2.data(), 1));
     ASSERT_EQ(2U, lenq2);
     ASSERT_EQ(L"BC", std::wstring(b2.data(), 2));
+}
+
+TEST_F(TestOwnedStringInput, Direct)
+{
+    // Lengthy string is needed to evade short string optimization
+    const std::wstring s(L"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    const wchar_t* const p = s.data();
+    string_input in(std::move(s));
+
+    {
+        auto r = in(3);
+        ASSERT_EQ(p, r.first);
+        ASSERT_EQ(3U, r.second);
+    }
+    {
+        // 'Normal' copying mixed
+        wchar_t buf[4];
+        auto len = in(buf, 4);
+        ASSERT_EQ(4U, len);
+        ASSERT_EQ(L"DEFG"sv, std::wstring_view(buf, len));
+    }
+    {
+        auto r = in();
+        ASSERT_EQ(p + 7, r.first);
+        ASSERT_EQ(19U, r.second);
+    }
 }
 
 struct TestCharInput : BaseTest

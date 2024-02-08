@@ -43,7 +43,7 @@ template <>
 struct parse_step<state::after_tab>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::tab_c:
@@ -85,8 +85,8 @@ template <>
 struct parse_step<state::in_value>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type*& p,
-        typename Parser::char_type* pe) const
+    void normal(Parser& parser, typename Parser::buffer_char_t*& p,
+        typename Parser::buffer_char_t* pe) const
     {
         while (p < pe) {
             switch (*p) {
@@ -130,7 +130,7 @@ template <>
 struct parse_step<state::after_cr>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::tab_c:
@@ -168,7 +168,7 @@ template <>
 struct parse_step<state::after_crs>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::tab_c:
@@ -205,7 +205,7 @@ template <>
 struct parse_step<state::after_lf>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         parser.new_physical_line();
         switch (*p) {

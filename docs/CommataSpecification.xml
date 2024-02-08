@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-02-07 (UTC)</signature>
+<signature>2024-03-08 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -99,7 +99,8 @@
       </ul>
 
       <p>In <xref id="table.table_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>.
-         <c>b</c>, <c>bb</c>, <c>be</c>, <c>bm</c>, <c>w</c>, <c>rb</c>, <c>re</c>, <c>f</c> and <c>l</c> are rvalues of <c>Ch*</c>.
+         <c>b</c> is an rvalue of <c>Ch*</c>.
+         <c>bb</c>, <c>be</c>, <c>bm</c>, <c>w</c>, <c>rb</c>, <c>re</c>, <c>f</c> and <c>l</c> are rvalues of <c>T::char_type*</c>, which is specified as (1) in <xref id="table.table_handler.requirements"/>.
          <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
 
       <p>A requirement is optional if the last column of <xref id="table.table_handler.requirements"/> specifies a default.</p>
@@ -123,7 +124,7 @@
           <td>(1)</td>
           <td><c>T::char_type</c></td>
           <td></td>
-          <td>Shall be an identical type to <c>Ch</c>.</td>
+          <td>Shall be an identical type to <c>Ch</c> or <c>const Ch</c>.</td>
           <td></td>
         </tr>
 
@@ -154,10 +155,12 @@
           <td><c>t.start_buffer(bb, be)</c></td>
           <td>(Not used)</td>
           <td><p>Evaluated when the parser starts using its buffer.
-                 Evaluating this shall occur after an caevaluationll of (2) and before its corresponding evaluation of (3).</p>
-              <p><c>bb</c> points <c>*gb.first</c>. <c>be</c> is <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest evaluation of (2).</p>
-              <p>Just after an evaluation of this, the parser shall make an intact copy of a sequence of char-like objects retrieved from its input into the range [<c>bb</c>, <c>bm</c>) where <c>bm</c> is a pointer that resides in [<c>bb</c>, <c>be</c>] and reported with (5) later.
-                 After an evaluation of this and before the corresponding evaluation of (5), the parser shall report (possibly past-the-end) pointers on this copy.</p></td>
+                 If evaluatung this occurs after an evaluation of (2) and before its corresponding evaluation of (3),
+                 it shall occur only once between them.</p>
+              <p>If evaluating this occurs after an evaluation of (2) and before its corresponding evaluation of (3),
+                 <c>bb</c> points <c>*gb.first</c>. <c>be</c> is <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest evaluation of (2).</p>
+              <p>Just after an evaluation of this, the parser shall secure a sequence of char-like objects retrieved from its input as the range [<c>bb</c>, <c>bm</c>) where <c>bm</c> is a pointer that resides in [<c>bb</c>, <c>be</c>] and reported with (5) later.
+                 After an evaluation of this and before the corresponding evaluation of (5), the parser shall report (possibly past-the-end) pointers on this sequence.</p></td>
           <td>Does nothing.</td>
         </tr>
 
@@ -166,8 +169,8 @@
           <td><c>t.end_buffer(bm)</c></td>
           <td>(Not used) </td>
           <td><p>Evaluated when the parser finishes using its buffer.
-                 Evaluating this shall occur after an evaluation of (2) and before its corresponding evaluation of (3).</p>
-              <p><c>bm</c> is an rvalue of <c>const Ch*</c>.</p>
+                 Evaluating this shall occur after an evaluation of (4) only once.
+                 If the latest evaluating of (4) occurred after an evaluation of (2) and before its corresponding evaluation of (3), evaluating this shall also occur before the evaluation of (3).</p>
               <p><c>bm</c> points the one past the last element of the range in the buffer actually used, and resides in [<c>bb</c>, <c>be</c>] where <c>bb</c> and <c>be</c> are the arguments of the latest evaluation of (4) in order.</p></td>
           <td>Does nothing.</td>
         </tr>
@@ -179,13 +182,12 @@
           <td><p>Evaluated when the parser finds an empty line outside any record.
                  Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5)
                  and shall not occur between an evaluation of (7) and its corresponding evaluation of (8).</p>
-              <p><c>w</c> points to the last line break character.</p>
               <p>Here let:</p>
               <ul>
                 <li><c>gb</c> be the return value of the latest evaluation of (2), and</li>
                 <li><c>bb</c> be the first argument of the latest evaluation of (4).</li>
               </ul>
-              <p>Then the pointee of <c>w</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
+              <p>Then <c>w</c> points to the last line break character, which resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td>Does nothing.</td>
         </tr>
@@ -196,14 +198,14 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser begins to process a record.
                  Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5).</p>
-              <p><c>rb</c> points the first character of the record, not of the text value of the first field of the record.
-                 To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the first field of the records is quoted, <c>*rb</c> shall be a double quote.</p>
               <p>Here let:</p>
               <ul>
                 <li><c>gb</c> be the return value of the latest evaluation of (2), and</li>
                 <li><c>bb</c> be the first argument of the latest evaluation of (4).</li>
               </ul>
-              <p>Then the pointee of <c>rb</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
+              <p>Then <c>rb</c> points the first character of the record, not of the text value of the first field of the record.
+                 <span class="note">To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the first field of the records is quoted, <c>*rb</c> shall be a double quote.</span>
+                 The pointee of <c>rb</c> which resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -213,14 +215,16 @@
           <td><c>t.end_record(re)</c></td>
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser finishes processing a record.
-                 Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5).</p>
-              <p><c>re</c> points one past the last element of the characters that forms the record, not of the text value of the final field of the record. To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</p>
+                 Evaluating this shall occur after an evaluation of (7) only once; and
+                 after an evaluation of (4) and before its corresponding evaluation of (5).</p>
               <p>Here let:</p>
               <ul>
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or (10) (second argument), and</li>
                 <li><c>be</c> be the second argument of the latest evaluation of (4).</li>
               </ul>
-              <p>Then the pointee of <c>re</c> resides in [<c>vb</c>, <c>be</c>).</p>
+              <p>Then <c>re</c> points one past the last element of the characters that forms the record, not of the text value of the final field of the record.
+                 <span class="note">To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</span>
+                 The pointee of <c>re</c> resides in [<c>vb</c>, <c>be</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -231,16 +235,16 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser finds a non-final chunk of a field value.
                  Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5), and after an evaluation of (7) and before its corresponding evaluation of (8).</p>
-              <p>The range [<c>f</c>, <c>l</c>) shall not be empty.
-                 The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).</p>
               <p>Here let:</p>
               <ul>
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), this (second argument) or (10) (second argument), and</li>
                 <li><c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</li>
               </ul>
-              <p>Then the pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
+              <p>Then the range [<c>f</c>, <c>l</c>) shall not be empty.
+                 The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).
+                 The pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
               <p>After the evaluation, the parser shall not dereference the range [<c>bb</c>, <c>l</c>) before the next evaluation of (5).
-                 Therefore, the table handler may freely modify the elements in the range.</p>
+                 <span class="note">Therefore the table handler may freely modify the element in the range if <c>T::char_type</c> is not const-qualified.</span></p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -251,16 +255,16 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser finds a final chunk of a field value.
                  Evaluating of this shall occur after an evaluation of (4) and before its corresponding evaluation of (5), and after an evaluation of (7) and before its corresponding evaluation of (8).</p>
-              <p>The range [<c>f</c>, <c>l</c>) may be empty.
-                 The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).</p>
               <p>Here let:</p>
               <ul>
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or this (second argument), and</li>
                 <li><c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</li>
               </ul>
-              <p>Then the pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
+              <p>Then the range [<c>f</c>, <c>l</c>) may be empty.
+                 The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).
+                 The pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
               <p>After evaluating, the parser shall not dereference the range [<c>bb</c>, <c>l</c>] before the next evaluation of (5).
-                 Therefore, the table handler may freely modify the element in the range.</p>
+                 <span class="note">Therefore the table handler may freely modify the element in the range if <c>T::char_type</c> is not const-qualified.</span></p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -2583,16 +2587,18 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
       </ul>
 
        <p>In <xref id="table.char_input.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>d</c> is an rvalue of <c>Ch*</c>. <c>n</c> is an rvalue of <c>T::size_type</c>.</p>
+       <p>A requirement is optional if the last column of <xref id="table.char_input.requirements"/> is &#x2018;Yes&#x2019;.</p>
 
       <table id="table.char_input.requirements">
-        <caption>CharInput requirements</caption>
-        <col width="3"/><col width="10"/><col width="10"/><col width="60"/>
+        <caption><c>CharInput</c> requirements</caption>
+        <col width="3"/><col width="8"/><col width="20"/><col width="48"/><col width="6"/>
 
         <tr>
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
           <th>Remarks</th>
+          <th>Optional</th>
         </tr>
 
         <tr>
@@ -2600,6 +2606,7 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
           <td><c>T::char_type</c></td>
           <td/>
           <td>Shall be identical to <c>Ch</c>.</td>
+          <td>No</td>
         </tr>
 
         <tr>
@@ -2607,6 +2614,7 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
           <td><c>T::traits_type</c></td>
           <td/>
           <td>Shall be a character traits type for <c>Ch</c>.</td>
+          <td>No</td>
         </tr>
 
         <tr>
@@ -2614,6 +2622,7 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
           <td><c>T::size_type</c></td>
           <td/>
           <td>Shall be an unsigned integer type.</td>
+          <td>No</td>
         </tr>
 
         <tr>
@@ -2629,8 +2638,22 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
             </ul>
             <p>And then returns the number of characters stored.</p>
           </td>
+          <td>No</td>
+        </tr>
+
+        <tr>
+          <td>(5)</td>
+          <td><c>t(n)</c></td>
+          <td><c>std::pair&lt;const Ch*, T::size_type></c></td>
+          <td><p>Let <c>rlen</c> be the smaller of <c>n</c> and the maximum number of available characters at the front of the text input represented by <c>*this</c> that are contiguously arranged.</p>
+              <p>Removes the first <c>rlen</c> characters in the text input
+                 and returns a pair representing the removed range whose <c>first</c> is a pointer to the first element of the range and whose <c>second</c> is the number of elements in the range.
+                 The range shall not be invalidated before this ((5)) is evaluated the next time or <c>*this</c> is destroyed.</p></td>
+          <td>Yes</td>
         </tr>
       </table>
+
+      <p>(4) and (5) in <xref id="table.char_input.requirements"/> is referred as respectively an <n>indirect interface</n> and a <n>direct interface</n> of a type that meets the <c>CharInput</c> requirements.</p>
     </section>
 
     <section id="hpp.char_input.syn">
@@ -2991,6 +3014,8 @@ namespace commata {
     using traits_type = Tr;
     using size_type   = std::size_t;
 
+    static constexpr size_type npos = -1;
+
     <c>// <n><xref id="string_input.cons"/>, construct/copy/destroy:</n></c>
     string_input() noexcept {}
     explicit string_input(const Ch* str);
@@ -3003,6 +3028,7 @@ namespace commata {
 
     <c>// <n><xref id="string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
+    std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
 
   private:
     std::basic_string_view&lt;Ch, Tr> v;   <c>// <n>exposition only</n></c>
@@ -3012,7 +3038,9 @@ namespace commata {
 
       <p>The class template <c>string_input</c> describes thin wrappers of on-memory character sequences without any ownership of them.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c> and is a trivially copyable type.</p>
+      <p>An instance of <c>string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>,
+         implements its optional direct interface,
+         and is a trivially copyable type.</p>
 
       <section id="string_input.cons">
         <name><c>string_input</c> construct/copy/destroy</name>
@@ -3052,6 +3080,18 @@ v.remove_prefix(rlen);
 return rlen;</code>
           </effects>
         </code-item>
+
+        <code-item>
+          <code>
+std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
+          </code>
+          <effects><p>Equivalent to:</p>
+                   <code>size_type rlen = std::min(n, v.size());
+std::pair&lt;const Ch*, size_type> r(v.data(), rlen);
+v.remove_prefix(rlen);
+return r;</code>
+          </effects>
+        </code-item>
       </section>
     </section>
 
@@ -3068,6 +3108,8 @@ namespace commata {
     using traits_type = Tr;
     using size_type   = typename string_type::size_type;
 
+    static constexpr size_type npos = -1;
+
     <c>// <n><xref id="owned_string_input.cons"/>, construct/copy/destroy:</n></c>
     owned_string_input() noexcept(<nc>see below</nc>);
     explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; str) noexcept;
@@ -3077,6 +3119,7 @@ namespace commata {
 
     <c>// <n><xref id="owned_string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
+    std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
 
     <c>// <n><xref id="owned_string_input.modifiers"/>, modifiers:</n></c>
     void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
@@ -3095,7 +3138,8 @@ namespace commata {
 
       <p>The class template <c>owned_string_input</c> describes thin wrappers of an object of an instance of <c>std::basic_string</c> with the ownership of it.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>owned_string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
+      <p>An instance of <c>owned_string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>
+         and implements its optional direct interface.</p>
 
       <section id="owned_string_input.cons">
         <name><c>owned_string_input</c> construct/copy/destroy</name>
@@ -3142,6 +3186,18 @@ size_type operator()(Ch* out, size_type n);
                    <code>size_type rlen = s.copy(out, n, head);
 head += rlen;
 return rlen;</code>
+          </effects>
+        </code-item>
+
+        <code-item>
+          <code>
+std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
+          </code>
+          <effects><p>Equivalent to:</p>
+                   <code>size_type rlen = std::min(n, s.size() - head);
+std::pair&lt;const Ch*, size_type> r(s.data() + head, rlen);
+head += rlen;
+return r;</code>
           </effects>
         </code-item>
       </section>
@@ -3385,7 +3441,8 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
                           <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character input and an object of <c>Handler</c> as its tied table handler.
-                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it.
+                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.
+                          If <c>CharInput</c> implements the direct interface, <c>Handler::char_type</c> is const-qualified, and <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> might elide allocation of character buffers.
                           Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character input object, its tied table handler object, and the allocator object held by it if any.</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
@@ -3692,7 +3749,8 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
                           <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character input and an object of <c>Handler</c> as its tied table handler.
-                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it.
+                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.
+                          If <c>CharInput</c> implements the direct interface, <c>Handler::char_type</c> is const-qualified, and <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> might elide allocation of character buffers.
                           Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character input object, its tied table handler object, and the allocator object held by it if any.</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
