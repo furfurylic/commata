@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-02-07 (UTC)</signature>
+<signature>2024-02-10 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -370,51 +370,46 @@
 
     <section id="table_source.requirements">
       <name><c>TableSource</c> requirements</name>
-  
+
       <p>A type <c>T</c> meets the <c>TableSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
       <ul>
         <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
         <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character input</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
       </ul>
-  
+
       <p>In <xref id="table.table_source.requirements"/> and <xref id="table.table_source.optional"/>,</p>
       <ul>
         <li><c>H</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>,</li>
-        <li><c>K</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and that is deemed to no have buffer control,</li>
-        <li><c>A</c> is a type that meets the <c>Allocator</c> requirements for <c>Ch</c>,</li>
         <li><c>ct</c> is an lvalue of <c>const T</c>,</li>
         <li><c>rt</c> is an rvalue of <c>T</c>,</li>
         <li><c>h</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>,</li>
-        <li><c>k</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and that is deemed to have no buffer control,</li>
-        <li><c>s</c> is an rvalue of <c>std::size_t</c>, and</li>
-        <li><c>a</c> is an rvalue whose type meets the <c>Allocator</c> requirement for <c>Ch</c>.</li>
       </ul>
-  
+
       <table id="table.table_source.requirements">
         <caption><c>TableSource</c> requirements</caption>
         <col width="2"/><col width="9"/><col width="18"/><col width="28"/>
-  
+
         <tr>
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
           <th>Remarks</th>
         </tr>
-  
+
         <tr>
           <td>(1)</td>
           <td><c>T::char_type</c></td>
           <td></td>
           <td>Shall be an identical type to <c>Ch</c>.</td>
         </tr>
-  
+
         <tr>
           <td>(2)</td>
           <td><c>T::traits_type</c></td>
           <td></td>
           <td>Shall be a character traits type for <c>Ch</c>.</td>
         </tr>
-  
+
         <tr>
           <td>(3)</td>
           <td><c>T::parser_type&lt;H></c></td>
@@ -432,7 +427,7 @@
                its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with <c>h</c> (otherwise).</p>
           </td>
         </tr>
-  
+
         <tr>
           <td>(5)</td>
           <td><c>rt(h)</c></td>
@@ -441,18 +436,27 @@
 
       <p>Some types of <c>TableSource</c>s additionally offer optional operations for <c>TableHandler</c> types that is deemed to have no buffer control, as described in <xref id="table.table_source.optional"/>.
          Those types for which the listed operations are provided shall implement the semantics described in <xref id="table.table_source.optional"/> unless otherwise stated.</p>
- 
+
+      <p>In <xref id="table.table_source.optional"/>,</p>
+      <ul>
+        <li><c>K</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and that is deemed to have no buffer control,</li>
+        <li><c>A</c> is a type that meets the <c>Allocator</c> requirements for <c>Ch</c>,</li>
+        <li><c>k</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and that is deemed to have no buffer control,</li>
+        <li><c>s</c> is an rvalue of <c>std::size_t</c>, and</li>
+        <li><c>a</c> is an rvalue whose type meets the <c>Allocator</c> requirement for <c>Ch</c>.</li>
+      </ul>
+
       <table id="table.table_source.optional">
         <caption>Optional <c>TableSource</c> operations</caption>
         <col width="2"/><col width="9"/><col width="18"/><col width="28"/>
-  
+
         <tr>
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
           <th>Remarks</th>
         </tr>
-  
+
         <tr>
           <td>(1)</td>
           <td><c>T::parser_type&lt;K, A></c></td>
@@ -476,7 +480,7 @@
             <p>On (4) and (5), <c>p</c> is also configured to hold a copy of <c>a</c> to allocate and deallocate buffers.</p>
           </td>
         </tr>
-  
+
         <tr>
           <td>(3)</td>
           <td><c>rt(k, s)</c></td>
@@ -487,7 +491,7 @@
           <td><c>ct(k, s, a)</c></td>
           <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(k)>, std::decay_t&lt;decltype(a)>></c></td>
         </tr>
-  
+
         <tr>
           <td>(5)</td>
           <td><c>rt(k, s, a)</c></td>
