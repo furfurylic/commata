@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <new>
 #include <vector>
 
 namespace commata::test {
@@ -37,12 +38,15 @@ public:
     T* allocate(std::size_t n)
     {
         if (allocations_) {
-            allocations_->emplace_back();
+            if (allocations_->size() == allocations_->max_size()) {
+                throw std::bad_alloc();
+            }
+            allocations_->reserve(allocations_->size() + 1);
         }
         const std::size_t nn = sizeof(T) * n;
         const auto p = static_cast<T*>(static_cast<void*>(new char[nn]));
         if (allocations_) {
-            allocations_->back() = nn;
+            allocations_->push_back(nn);
         }
         return p;
     }
