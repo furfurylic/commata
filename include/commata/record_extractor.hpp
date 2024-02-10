@@ -252,7 +252,7 @@ class impl
     record_mode record_mode_;
 
 public:
-    using char_type = Ch;
+    using char_type = const Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
 

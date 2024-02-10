@@ -4018,7 +4018,7 @@ namespace commata {
             class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class record_extractor {
   public:
-    using char_type = Ch;
+    using char_type = const Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
 
@@ -4175,7 +4175,7 @@ namespace commata {
             class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class record_extractor_with_indexed_key {
   public:
-    using char_type = Ch;
+    using char_type = const Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
 
