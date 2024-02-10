@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-02-07 (UTC)</signature>
+<signature>2024-02-10 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3318,7 +3318,7 @@ namespace commata {
     template &lt;class Handler, class Allocator = void> using parser_type = <nc>see below</nc>;
   
     <c>// <n><xref id="csv_source.cons"/>, construct/copy/destroy:</n></c>
-    explicit csv_source(const CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
+    explicit csv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
     explicit csv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
     csv_source(const csv_source&amp; other) = default;
     csv_source(csv_source&amp;&amp; other) = default;
@@ -3625,7 +3625,7 @@ namespace commata {
     template &lt;class Handler, class Allocator = void> using parser_type = <nc>see below</nc>;
   
     <c>// <n><xref id="tsv_source.cons"/>, construct/copy/destroy:</n></c>
-    explicit tsv_source(const CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
+    explicit tsv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
     explicit tsv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
     tsv_source(const tsv_source&amp; other) = default;
     tsv_source(tsv_source&amp;&amp; other) = default;
