@@ -87,23 +87,18 @@ public:
     [[nodiscard]] auto allocate(typename base_traits::size_type n)
     {
         if (allocated_) {
-            allocated_->emplace_back();                         // throw
+            allocated_->reserve(allocated_->size() + 1);    // throw
         }
-        try {
-            const auto p = base_traits::allocate(*this, n);     // throw
-            char* const f = static_cast<char*>(true_addressof(p));
-            const auto l = f + n * sizeof(typename base_traits::value_type);
-            if (allocated_) {
-                allocated_->back() = std::make_pair(f, l);
-            }
-            if (total_) {
-                *total_ += l - f;
-            }
-            return p;
-        } catch (...) {
-            allocated_->pop_back();
-            throw;
+        const auto p = base_traits::allocate(*this, n);     // throw
+        char* const f = static_cast<char*>(true_addressof(p));
+        const auto l = f + n * sizeof(typename base_traits::value_type);
+        if (allocated_) {
+            allocated_->emplace_back(f, l);
         }
+        if (total_) {
+            *total_ += l - f;
+        }
+        return p;
     }
 
     void deallocate(
