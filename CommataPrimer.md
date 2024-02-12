@@ -328,8 +328,9 @@ void one_pass_scanning_sample3()
       if (field_value) {
         // The value of field_index-th (zero-based) header field is notified,
         // whose value is [field_value->first, field_value->second), and
-        // field_value->second is dereferenceable and points the terminating
-        // zero
+        // field_value->second is dereferenceable and modifiable
+        // (that is, you can assign zero to it so field_value->first should be
+        // a pointer to a null-terminated sequence)
         if (std::string_view(field_value->first,
                              field_value->second - field_value->first)
             == "Name") {

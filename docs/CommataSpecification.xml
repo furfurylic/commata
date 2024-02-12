@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-02-10 (UTC)</signature>
+<signature>2024-02-12 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6046,7 +6046,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <td>(Not used)</td>
             <td>Called when the table scanner has finalized a text value of the field of a body record.
                 Any pointers in the range [<c>b</c>, <c>e</c>] are dereferenceable and any values stored at them are modifiable.
-                Initially the range [<c>b</c>, <c>e</c>) represents the value of the field and <c>*e</c> is the terminating zero.
+                Initially the range [<c>b</c>, <c>e</c>) represents the value of the field and the value of <c>*e</c> is unspecified.
                 The range [<c>b</c>, <c>e</c>] may be invalidated after the invocation exits.
                 It is unspecified which of (1) and (2) the table scanner calls.</td>
             <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (2) with it.</td>
@@ -6057,7 +6057,8 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <td><c>s(rv)</c></td>
             <td>(Not used)</td>
             <td>Called when the table scanner has finalized a text value of the field of a body record. The value of the field is <c>rv</c>.</td>
-            <td>Calls (1) with <c>rv.data()</c> and <c>rv.data() + rv.size()</c>.</td>
+            <td>Calls (1) with <c>rv.data()</c> and <c>rv.data() + rv.size()</c>.
+                <span class="note">If (1) modifies the object pointed by <c>e</c> to any value other than <c>Ch()</c>, this leads to undefined behaviour.</span></td>
           </tr>
 
           <tr>
@@ -6144,7 +6145,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
                 <ul>
                   <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
                       Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable.
-                      Initially the range [<c>v->first</c>, <c>v->second</c>) represents the value of the header field and <c>*v->second</c> is the terminating zero.
+                      Initially the range [<c>v->first</c>, <c>v->second</c>) represents the value of the header field and the value of <c>*v->second</c> is unspecified.
                       The range [<c>v->first</c>, <c>v->second</c>] may be invalidated after the invocation exits.</li>
                   <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> is a null pointer.</li>
                 </ul>
@@ -6878,7 +6879,7 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
           <name><c>arithmetic_field_translator</c> invocation</name>
           <code-item>
             <code>
-template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
+template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             </code>
             <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.
                       The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
@@ -6891,8 +6892,9 @@ template &lt;class Ch> struct arithmetic_convertible {
   auto size() const { return e - b; }
 };
               </code>
-              <p>first makes an object <c>w</c> of <c>std::optional&lt;T></c> initialized with <c>to_arithmetic&lt;std::optional&lt;T>>(arithmetic_convertible&lt;Ch>{ begin, end }, get_conversion_error_handler())</c>,
-                 and then puts <c>*w</c> into the field translator sink if <c>w.has_value()</c> is <c>true</c>.</p>
+              <p>first assigns <c>Ch()</c> to <c>*end</c>,
+                 then makes an object <c>w</c> of <c>std::optional&lt;T></c> initialized with <c>to_arithmetic&lt;std::optional&lt;T>>(arithmetic_convertible&lt;Ch>{ begin, end }, get_conversion_error_handler())</c>,
+                 and finally puts <c>*w</c> into the field translator sink if <c>w.has_value()</c> is <c>true</c>.</p>
             </effects>
           </code-item>
 
@@ -7001,13 +7003,7 @@ template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             </code>
             <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.
                       The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
-            <effects><p>Equivalent to:</p>
-              <code>
-Ch* const new_end = replace(begin, end);
-*new_end = Ch();
-base(begin, new_end);
-              </code>
-            </effects>
+            <effects>Equivalent to: <c>return base(begin, replace(begin, end));</c></effects>
           </code-item>
 
           <code-item>
