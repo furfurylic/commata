@@ -179,7 +179,7 @@
       <xsl:for-each select="preface">
         <p><xsl:apply-templates/></p>
       </xsl:for-each>
-      <xsl:for-each select="effects|postcondition|requires|returns|remark|note|throws|alias-template">
+      <xsl:for-each select="effects|postcondition|requires|returns|remark|note|throws|alias-template|type">
         <xsl:variable name="heading">
           <xsl:choose>
             <xsl:when test="local-name(.) = 'alias-template'"><span class="code-item-heading-nocap">Alias template: </span></xsl:when>

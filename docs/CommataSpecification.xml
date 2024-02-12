@@ -7752,7 +7752,8 @@ namespace commata {
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class primitive_table_pull {
   public:
-    using char_type      = typename TableSource::char_type;
+    <c>// <n><xref id="primitive_table_pull.types"/>, member types:</n></c>
+    using char_type      = <nc>see below</nc>;
     using allocator_type = Allocator;
     using size_type      = std::size_t;
 
@@ -7814,6 +7815,20 @@ namespace commata {
        If <c>(Handle &amp; primitive_table_pull_handle::start_buffer) == primitive_table_pull_handle(0)</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
        All other enumerators but <c>primitive_table_pull_handle::all</c> shall work similarly.
        <c>primitive_table_pull_handle::all</c> has a representation of all one bits and is intended to be used to express &#x2018;ignore none&#x2019;.</p>
+
+    <section id="primitive_table_pull.types">
+      <name><c>primitive_table_pull</c> member types</name>
+      <code-item>
+        <code>
+using char_type = <nc>see below</nc>;
+        </code>
+        <type><c>const typename TableSource::char_type</c> if <c>TableSource</c> is direct (<xref id="table_source.requirements"/>), <c>typename TableSource::char_type</c> otherwise.</type>
+        <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
+              For example, the program cannot overwrite character objects pointed by the return value of <c>operator[]</c> in such cases.
+              If <c>TableSource</c> is an instance of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
+              the program can ensure that it is not const-qualified specifying an instance of <c>indirect_input</c> (<xref id="indirect_input"/>) as the first template parameter of <c>csv_source</c> or <c>tsv_source</c> with possible performance degradation.</note>
+      </code-item>
+    </section>
 
     <section id="primitive_table_pull.physical_position_available">
       <name><c>primitive_table_pull</c> physical position availability</name>
@@ -8046,6 +8061,7 @@ const char_type* operator[](size_type i) const;
         <requires><c>i</c> shall be smaller than <c>data_size()</c>.</requires>
         <returns>The <c>i</c>-th (zero-based) argument value of the front of the event queue.</returns>
         <throws>Nothing.</throws>
+        <remark>The first form is not declared if <c>char_type</c> is const-qualified.</remark>
       </code-item>
 
       <code-item>
@@ -8055,6 +8071,7 @@ const char_type* at(size_type i) const;
         </code>
         <throws><c>std::out_of_range</c> if <c>i >= data_size()</c>.</throws>
         <returns><c>(*this)[i]</c>.</returns>
+        <remark>The first form is not declared if <c>char_type</c> is const-qualified.</remark>
       </code-item>
 
       <code-item>
@@ -8082,7 +8099,8 @@ namespace commata {
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class table_pull {
   public:
-    using char_type      = typename TableSource::char_type;
+    <c>// <n><xref id="table_pull.types"/>, member types:</n></c>
+    using char_type      = <nc>see below</nc>;
     using traits_type    = typename TableSource::traits_type;
     using allocator_type = Allocator;
     using view_type      = std::basic_string_view&lt;char_type, traits_type>;
@@ -8148,7 +8166,21 @@ namespace commata {
     <p>An object of an instantiation of it holds a table parser object (<xref id="table_parser.requirements"/>) obtained from the table source object (<xref id="table_source.requirements"/>) passed to the constructor
        and performs field-wisely or record-wisely step-by-step parsing of a text table using it.
        Its user can retrieve the text values of the text fields through its <n>current string values</n>, which are null-terminated sequences of <c>TableSource::char_type</c>.</p>
-    <p>An instance of <c>table_pull</c> meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char_type</c>.</p>
+    <p>An instance of <c>table_pull</c> meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char_type</c> only if <c>char_type</c> is not const-qualified (<xref id="table_pull.types"/>).</p>
+
+    <section id="table_pull.types">
+      <name><c>table_pull</c> member types</name>
+      <code-item>
+        <code>
+using char_type = <nc>see below</nc>;
+        </code>
+        <type><c>const typename TableSource::char_type</c> if <c>TableSource</c> is direct (<xref id="table_source.requirements"/>), <c>typename TableSource::char_type</c> otherwise.</type>
+        <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
+              For example, <c>c_str</c> member function is not declared in such cases.
+              If <c>TableSource</c> is an instance of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
+              the program can ensure that it is not const-qualified specifying an instance of <c>indirect_input</c> (<xref id="indirect_input"/>) as the first template parameter of <c>csv_source</c> or <c>tsv_source</c> with possible performance degradation.</note>
+      </code-item>
+    </section>
 
     <section id="table_pull.physical_position_available">
       <name><c>table_pull</c> physical position availability</name>
@@ -8379,6 +8411,7 @@ std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
 const char_type* c_str() const noexcept;
         </code>
         <returns>A pointer that points the first element of a null-terminated sequence of the current string value.</returns>
+        <remark>This member function is not declared if <c>char_type</c> is const-qualified.</remark>
       </code-item>
 
       <code-item>
@@ -8403,7 +8436,8 @@ template &lt;class F> table_pull&amp; rewrite(F f);
                  Then conditionally shorten the current string value, preserving its null-terminated property, so that its size should be <c>new_end - data()</c>.</effects>
         <returns><c>*this</c>.</returns>
         <postcondition><c>state</c> member function shall return the same value as before the invocation.</postcondition>
-        <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
+        <remark>This member function is not declared if <c>char_type</c> is const-qualified.
+                Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
                 When an exception is thrown, the state of <c>*this</c> shall not be changed.</remark>
         <note>This member function template is primarily intended to be invoked with a <c>numpunct_replacer_to_c</c> (<xref id="numpunct_replacer_to_c"/>) object.</note>
       </code-item>
