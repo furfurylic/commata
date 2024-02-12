@@ -126,6 +126,7 @@ public:
         std::size_t buffer_size) :
         alloc_(alloc, detail::sanitize_buffer_size(buffer_size, alloc)),
         buffer_(at_t::allocate(alloc_.base(), alloc_.member())),
+        sq_(state_queue_a_t(alloc)), dq_(data_queue_a_t(alloc)),
         yield_location_(0), collects_data_(true)
     {}
 
