@@ -361,7 +361,7 @@
         </tr>
 
         <tr>
-          <td>(1)</td>
+          <td>(3)</td>
           <td><c>ct.get_physical_position()</c></td>
           <td><c>std::pair&lt;std::size_t, std::size_t></c></td>
           <td>Returns a pair of the physical line number and the physical column number (<xref id="definitions.others"/>).
@@ -458,7 +458,7 @@
         </tr>
   
         <tr>
-          <td>(1)</td>
+          <td>(6)</td>
           <td><c>T::parser_type&lt;K, A></c></td>
           <td></td>
           <td>
@@ -468,7 +468,7 @@
         </tr>
 
         <tr>
-          <td>(2)</td>
+          <td>(7)</td>
           <td><c>ct(k, s)</c></td>
           <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(k)>></c></td>
           <td rowspan="4">
@@ -482,18 +482,18 @@
         </tr>
   
         <tr>
-          <td>(3)</td>
+          <td>(8)</td>
           <td><c>rt(k, s)</c></td>
         </tr>
 
         <tr>
-          <td>(4)</td>
+          <td>(9)</td>
           <td><c>ct(k, s, a)</c></td>
           <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(k)>, std::decay_t&lt;decltype(a)>></c></td>
         </tr>
   
         <tr>
-          <td>(5)</td>
+          <td>(10)</td>
           <td><c>rt(k, s, a)</c></td>
         </tr>
       </table>
