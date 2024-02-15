@@ -82,18 +82,18 @@ TYPED_TEST(TestFieldTranslatorForArithmeticTypes, Copy)
     using char_t = TypeParam;
     using string_t = std::basic_string<TypeParam>;
 
-    const auto str0 = char_helper<char_t>::str0;
+    const auto str0 = char_helper<char_t>::str;
 
     std::vector<unsigned> values;
     auto t = make_field_translator(values, replace_if_skipped<unsigned>(100U));
     auto u = t;
 
-    const string_t s10 = str0("10");
+    string_t s10 = str0("10");
     t(s10.data(), s10.data() + 2);
 
     u();
 
-    const string_t s20 = str0("20");
+    string_t s20 = str0("20");
     t(s20.data(), s20.data() + 2);
 
     const std::vector<unsigned> expected = { 10U, 100U, 20U };
