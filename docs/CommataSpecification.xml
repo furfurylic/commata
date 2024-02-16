@@ -2695,6 +2695,16 @@ namespace commata {
     void swap(owned_string_input&lt;Ch, Tr, Allocator>&amp; left,
               owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(noexcept(left.swap(right)));
 
+  <c>// <n><xref id="indirect_input"/>, indirect_input:</n></c>
+  template &lt;class Input> class indirect_input;
+  template &lt;class Input>
+    void swap(indirect_input&lt;Input>&amp; left,
+              indirect_input&lt;Input>&amp; right) noexcept(noexcept(left.swap(right)));
+
+  <c>// <n>tags:</n></c>
+  struct indirect_t {};
+  constexpr inline indirect_t indirect{};
+
   <c>// <n><xref id="char_input.creation"/>, CharInput creation functions:</n></c>
   template &lt;class Ch, class Tr>
     streambuf_input&lt;Ch, Tr> make_char_input(std::basic_streambuf&lt;Ch, Tr>&amp; in) noexcept;
@@ -2716,6 +2726,11 @@ namespace commata {
   template &lt;class Ch, class Tr, class Allocator>
     owned_string_input&lt;Ch, Tr, Allocator>
       make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
+  template &lt;class... Args>
+    <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+  template &lt;class Input>
+    indirect_input&lt;Input>
+      make_char_input(indirect_t, indirect_input&lt;Input> input) noexcept(<nc>see below</nc>);
 }
       </codeblock>
 
@@ -3228,6 +3243,92 @@ template &lt;class Ch, class Tr, class Allocator>
       </section>
     </section>
 
+    <section id="indirect_input">
+      <name>Class template <c>indirect_input</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class Input> class indirect_input {
+  public:
+    using base_type   = Input;
+    using char_type   = typename Input::char_type;
+    using traits_type = typename Input::traits_type;
+    using size_type   = typename Input::size_type;
+
+    <c>// <n><xref id="indirect_input.cons"/>, construct/copy/destroy:</n></c>
+    indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
+    explicit indirect_input(Input base) noexcept(std::is_nothrow_move_constructible_v&lt;Input>) :
+      input(std::move(base)) {}
+    indirect_input(const indirect_input&amp;)  = default;
+    indirect_input(      indirect_input&amp;&amp;) = default;
+   ~indirect_input() = default;
+    indirect_input&amp; operator=(const indirect_input&amp;)  = default;
+    indirect_input&amp; operator=(      indirect_input&amp;&amp;) = default;
+
+    <c>// <n>access:</n></c>
+    const Input&amp; base() const noexcept { return input; }
+          Input&amp; base()       noexcept { return input; }
+
+    <c>// <n><xref id="indirect_input.inv"/>, invocation:</n></c>
+    size_type operator()(Ch* out, size_type n);
+
+    void swap(indirect_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Input>);
+      { using std::swap; swap(input, other.input); }
+
+  private:
+    Input input;  <c>// <n>exposition only</n></c>
+  };
+
+  <c>// <n><xref id="indirect_input.special"/>, specialized algorithms:</n></c>
+  template &lt;class Input>
+    void swap(indirect_input&lt;Input>&amp; left,
+              indirect_input&lt;Input>&amp; right) noexcept(noexcept(left.swap(right)));
+}
+      </codeblock>
+
+      <p>The class template <c>indirect_input</c> describes thin wrappers of a <c>CharInput</c> object with the ownership of it, and with its direct interface, if any, lost.</p>
+      <p>The template parameter <c>Input</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>).</p>
+      <p><c>indirect_input&lt;Input></c> meets the <c>CharInput</c> requirements for <c>Input::char_type</c> with its indirect interface and without its direct interface,
+         and is a trivially copyable type if <c>CharInput</c> is a trivially copyable type.</p>
+
+      <section id="indirect_input.cons">
+        <name><c>indirect_input</c> construct/copy/destroy</name>
+
+        <code-item>
+          <code>
+indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
+          </code>
+          <requires><c>Input</c> shall be <c>DefaultConstructible</c>.</requires>
+          <effects>Default constructs <c>input</c>.</effects>
+        </code-item>
+      </section>
+
+      <section id="indirect_input.inv">
+        <name><c>indirect_input</c> invocation</name>
+
+        <code-item>
+          <code>
+size_type operator()(Ch* out, size_type n);
+          </code>
+          <effects>Equivalent to: <c>return input(out, n);</c></effects>
+        </code-item>
+      </section>
+
+      <section id="indirect_input.special">
+        <name><c>indirect_input</c> specialized algorithms</name>
+
+        <code-item>
+          <code>
+template &lt;class Input>
+  void swap(indirect_input&lt;Input>&amp; left,
+            indirect_input&lt;Input>&amp; right) noexcept(noexcept(left.swap(right)));
+          </code>
+          <effects>Equivalent to: <c>left.swap(right);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;Input></c> is <c>true</c>.</remark>
+        </code-item>
+      </section>
+    </section>
+
     <section id="char_input.creation">
       <name><c>CharInput</c> creation functions</name>
 
@@ -3292,6 +3393,30 @@ template &lt;class Ch, class Tr, class Allocator>
     make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
         </code>
         <returns><c>owned_string_input&lt;Ch, Tr, Allocator>(std::move(in))</c>.</returns>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class... Args>
+  <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+        </code>
+        <effects><p>If <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand, equivalent to:</p>
+                 <code>auto in = make_char_input(std::forward&lt;Args>(args)...);
+return indirect_input&lt;decltype(in)>(std::move(in));
+</code>
+                 <p>Otherwise, equivalent to: <c>return indirect_input&lt;Args...>(std::forward&lt;Args>(args)...);</c></p></effects>
+        <remark>This overload shall not participate in overload resolution unless the first type in <c>std::decay_t&lt;Args>...</c> (if any) is not identical to or not derived from <c>indirect_t</c>, and either <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand or <c>sizeof...(Args)</c> is equal to <c>1</c>.
+                The expression inside <c>noexcept</c> is <c>true</c> unless the equivalent expressions described above is potentially-throwing.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class Input>
+  indirect_input&lt;Input>
+    make_char_input(indirect_t, indirect_input&lt;Input> input) noexcept(<nc>see below</nc>);
+        </code>
+        <returns><c>indirect_input&lt;Input>(std::move(input.base()))</c>.</returns>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Input></c>.</remark>
       </code-item>
     </section>
   </section>
@@ -3608,7 +3733,8 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
                  <p>Otherwise, equivalent to:</p>
                  <code>return parse_csv(make_csv_source(std::forward&lt;Arg1>(arg1)),
                  std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs>(other_args)...);</code></effects>
-        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not an instance of <c>csv_source</c> and either of <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
+        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not either of an instance of <c>csv_source</c> or <c>indirect_t</c>,
+                and either of <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
     </section>
   </section>
@@ -3916,7 +4042,8 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
                  <p>Otherwise, equivalent to:</p>
                  <code>return parse_tsv(make_tsv_source(std::forward&lt;Arg1>(arg1)),
                  std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs>(other_args)...);</code></effects>
-        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not an instance of <c>tsv_source</c> and either of <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
+        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not either of an instance of <c>tsv_source</c> or <c>indirect_t</c>,
+                and either of <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
     </section>
   </section>

@@ -16,6 +16,7 @@
 
 #include "char_input.hpp"
 #include "parse_error.hpp"
+#include "wrapper_handlers.hpp"
 
 #include "detail/base_parser.hpp"
 #include "detail/base_source.hpp"
@@ -355,10 +356,16 @@ constexpr bool are_make_tsv_source_args_v =
     decltype(are_make_tsv_source_args_impl::check<Args...>(nullptr))();
 
 template <class T>
-constexpr bool is_tsv_source = false;
+constexpr bool is_tsv_source_v = false;
 
 template <class CharInput>
-constexpr bool is_tsv_source<tsv_source<CharInput>> = true;
+constexpr bool is_tsv_source_v<tsv_source<CharInput>> = true;
+
+template <class T>
+constexpr bool is_indirect_t_v = false;
+
+template <>
+constexpr bool is_indirect_t_v<indirect_t> = true;
 
 }
 
@@ -377,7 +384,8 @@ bool parse_tsv(tsv_source<CharInput>&& src, OtherArgs&&... other_args)
 template <class Arg1, class Arg2, class... OtherArgs>
 auto parse_tsv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)
  -> std::enable_if_t<
-        !detail::tsv::is_tsv_source<std::decay_t<Arg1>>
+        !detail::tsv::is_tsv_source_v<std::decay_t<Arg1>>
+     && !detail::tsv::is_indirect_t_v<std::decay_t<Arg1>>
      && (detail::tsv::are_make_tsv_source_args_v<Arg1&&>
       || detail::tsv::are_make_tsv_source_args_v<Arg1&&, Arg2&&>),
         bool>

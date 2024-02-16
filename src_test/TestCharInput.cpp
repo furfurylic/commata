@@ -576,3 +576,44 @@ TEST_F(TestCharInput, MakeFromStringRvalueRef)
     ASSERT_EQ(3, in(out.data(), 5));
     ASSERT_EQ("XYZ  ", out);
 }
+
+namespace {
+
+namespace indirect_input_asserts {
+
+using is_t = indirect_input<string_input<char>>;
+using io_t = indirect_input<owned_string_input<char>>;
+
+static_assert(std::is_nothrow_copy_constructible_v<is_t>);
+static_assert(std::is_nothrow_move_constructible_v<is_t>);
+static_assert(std::is_nothrow_copy_assignable_v<is_t>);
+static_assert(std::is_nothrow_move_assignable_v<is_t>);
+static_assert(std::is_trivially_copyable_v<is_t>);
+
+static_assert(!std::is_copy_constructible_v<io_t>);
+static_assert(std::is_nothrow_move_constructible_v<io_t>);
+static_assert(!std::is_copy_assignable_v<io_t>);
+static_assert(std::is_nothrow_move_assignable_v<io_t>
+          || !std::is_nothrow_move_assignable_v<std::string>);
+    // There are libs whose std::string is not MoveAssignable. Sigh...
+
+static_assert(std::is_same_v<is_t,
+    decltype(make_char_input(indirect, "123"sv))>);
+static_assert(noexcept(make_char_input(indirect, "123"sv)));
+
+static_assert(std::is_same_v<io_t,
+    decltype(make_char_input(indirect, "123"s))>);
+static_assert(
+    noexcept(make_char_input(indirect, std::declval<std::string>())));
+
+static_assert(std::is_same_v<io_t,
+    decltype(make_char_input(indirect, make_char_input("123"s)))>);
+static_assert(
+    noexcept(make_char_input(indirect, std::declval<string_input<char>>())));
+
+static_assert(std::is_same_v<is_t,
+    decltype(make_char_input(indirect, std::declval<is_t>()))>);
+
+}
+
+}
