@@ -20,7 +20,6 @@
 #include "wrapper_handlers.hpp"
 
 #include "detail/allocation_only_allocator.hpp"
-#include "detail/buffer_size.hpp"
 #include "detail/member_like_base.hpp"
 
 namespace commata {
@@ -161,19 +160,13 @@ public:
     using data_queue_type = std::vector<char_type*, data_queue_a_t>;
 
 private:
-    base_member_pair<Allocator, std::size_t> alloc_;
-    const typename at_t::pointer buffer_;
     state_queue_type sq_;
     data_queue_type dq_;
     std::size_t yield_location_;
     bool collects_data_;
 
 public:
-    explicit handler(
-        std::allocator_arg_t, const Allocator& alloc,
-        std::size_t buffer_size) :
-        alloc_(alloc, detail::sanitize_buffer_size(buffer_size, alloc)),
-        buffer_(at_t::allocate(alloc_.base(), alloc_.member())),
+    handler(std::allocator_arg_t, const Allocator& alloc) :
         sq_(state_queue_a_t(alloc)), dq_(data_queue_a_t(alloc)),
         yield_location_(0), collects_data_(true)
     {}
@@ -181,10 +174,7 @@ public:
     handler(const handler& other) = delete;
     handler(handler&& other) = delete;
 
-    ~handler()
-    {
-        at_t::deallocate(alloc_.base(), buffer_, alloc_.member());
-    }
+    ~handler() = default;
 
     const state_queue_type& state_queue() const noexcept
     {
@@ -216,14 +206,6 @@ public:
         collects_data_ = !b;
         return *this;
     }
-
-    [[nodiscard]] std::pair<char_type*, std::size_t> get_buffer()
-    {
-        return { std::addressof(*buffer_), alloc_.member() };
-    }
-
-    void release_buffer(const char_type*) noexcept
-    {}
 
     void start_buffer(
         [[maybe_unused]] char_type* buffer_begin,
@@ -421,10 +403,10 @@ public:
     primitive_table_pull(std::allocator_arg_t, const Allocator& alloc,
         TableSourceR&& in, std::size_t buffer_size = 0) :
         i_sq_(0), i_dq_(0),
-        handler_(create_handler(alloc,
-            std::allocator_arg, alloc, buffer_size)),
+        handler_(create_handler(alloc, std::allocator_arg, alloc)),
         sq_(&handler_->state_queue()), dq_(&handler_->data_queue()),
-        ap_(alloc, std::forward<TableSourceR>(in)(wrap_ref(*handler_)))
+        ap_(alloc, std::forward<TableSourceR>(in)(
+                            wrap_ref(*handler_), buffer_size, alloc))
     {
         sq_->emplace_back(
             primitive_table_pull_state::before_parse,
