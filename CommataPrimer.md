@@ -703,6 +703,48 @@ void make_empty_physical_line_aware_sample()
 }
 ```
 
+## Sources other than streams
+
+Suppose you have a function that read full contents of a file into a string as
+follows:
+
+```C++
+std::string slurp(const char* s)
+{
+  std::filebuf in;
+  in.open(s, std::ios::in | std::ios::binary);
+  return std::string(std::istreambuf_iterator<char>(&in),
+                     std::istreambuf_iterator<char>());
+}
+```
+
+So far, the first parameters of `parse_csv` have been objects of
+`std::ifstream` or `std::wifstream`.
+What if you want to parse a string already loaded with this `slurp`?
+Write direct what you want to do:
+
+```C++
+const std::string contents = slurp("stars.csv");
+stored_table table;
+parse_csv(contents, make_stored_table_builder(table));
+```
+
+Roughly speaking, the first parameter of `parse_csv` can be either of a stream
+buffer, an input stream, or a string (including C-style one and a C++17 string
+view object).
+
+More technically (but still roughly speaking), `parse_csv(foo, bar)` is a
+shorthand for `make_csv_source(foo)(bar)()`.
+Each of these disintegrated steps is like the following:
+ 1. You can call `make_csv_source` with either of a stream buffer, an input
+    stream, or a string (`foo` here), to get a _table source_ object.
+ 1. A table source object is a function object that makes a _table parser_
+    object dedicated to a table handler object (`bar` here) with its inherent
+    knowledge of the grammar of CSV .
+ 1. Finally, with its no-parameter invocation, the table parser object consumes
+    the input, parses it as a CSV, and reports parsing events to the table
+    handler.
+
 ## Pull parsing
 
 Commata also has facilities to perform &#x2018;pull parsing&#x2019;, in which users can access the
