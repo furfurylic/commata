@@ -6496,6 +6496,10 @@ namespace commata {
             class SkippingHandler = fail_if_skipped>
     class string_view_field_translator;
 
+  <c>// <n><xref id="string_field_inserter"/>, string_field_inserter:</n></c>
+  template &lt;class Container, class SkippingHandler = fail_if_skipped>
+    class string_field_inserter;
+
   <c>// <n><xref id="scan.builtin.body_field_scanners.creation"/>, creation of default field scanners:</n></c>
   template &lt;class T, class SinkR, class... Appendices>
     <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
@@ -7247,6 +7251,154 @@ void operator()();
         </section>
       </section>
 
+      <section id="string_field_inserter">
+        <name>Class template <c>string_field_inserter</c></name>
+
+        <codeblock>
+namespace commata {
+  template &lt;class Container, class SkippingHandler = fail_if_skipped>
+    class string_field_inserter {
+  public:
+    using string_type           = typename Container::value_type;
+    using char_type             = typename string_type::value_type;
+    using traits_type           = typename string_type::traits_type;
+    using allocator_type        = typename string_type::allocator_type;
+    using value_type            = std::basic_string_view&lt;char_type, traits_type>;
+    using skipping_handler_type = SkippingHandler;
+
+    <c>// <n><xref id="string_field_inserter.cons"/>, construct/copy/destroy:</n></c>
+    template &lt;class SkippingHandlerR = SkippingHandler>
+      explicit string_field_inserter(Container&amp; container,
+        SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
+    template &lt;class SkippingHandlerR = SkippingHandler>
+      string_field_inserter(
+        std::allocator_arg_t, const allocator_type&amp; alloc, Container&amp; container,
+        SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
+    string_field_inserter(const string_field_inserter&amp;  other) noexcept(see below);
+    string_field_inserter(      string_field_inserter&amp;&amp; other) noexcept(see below);
+    ~string_field_inserter();
+
+    <c>// <n><xref id="string_field_inserter.allocator"/>, allocator access:</n></c>
+    allocator_type get_allocator() const noexcept;
+
+    <c>// <n><xref id="string_field_inserter.handler"/>, handler access:</n></c>
+    const SkippingHandler&amp; get_skipping_handler() const noexcept;
+          SkippingHandler&amp; get_skipping_handler()       noexcept;
+
+    <c>// <n><xref id="string_field_inserter.inv"/>, invocation:</n></c>
+    void operator()(const char_type* begin, const char_type* end);
+    void operator()(string_type&amp;&amp; value);
+    void operator()();
+  };
+}
+        </codeblock>
+
+        <p>The <c>string_field_inserter</c> class template provides a simple implementation of <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) to populate a container of a standard string type.</p>
+        <p>The template parameter <c>Container</c> shall be a sequence container type, an associative container type or an unordered associative container type.
+           <c>Container::value_type</c> shall be a type that is an instance of <c>std::basic_string</c>, which is called <c>S</c> in this paragraph and the next.
+           The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type (<xref id="skipping_handler.requirements"/>) for <c>std::basic_string_view&lt;S::value_type, S::traits_type></c>.</p>
+        <p>An object of <c>string_field_inserter&lt;Container, SkippingHandler></c> holds a reference to a container object of the type <c>Container</c> into which objects of the type <c>S</c> are inserted or emplaced,
+           an allocator object of the type <c>S::allocator_type</c> used when inserted or emplaced objects of the type <c>S</c> objects are created,
+           and a skipping handler object of the type <c>SkippingHandler</c>.</p>
+        <p>Insertion and emplacement to the container object shall be done to the end of it when <c>Container</c> is a sequence container type.</p>
+
+        <section id="string_field_inserter.cons">
+          <name><c>string_field_inserter</c> construct/copy/destroy</name>
+          <code-item>
+            <code>
+template &lt;class SkippingHandlerR = SkippingHandler>
+  explicit string_field_inserter(Container&amp; container,
+    SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
+            </code>
+            <requires><c>allocator_type</c> shall be <c>DefaultConstructible</c>.
+                      <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> shall be <c>true</c>.</requires>
+            <effects>Initializes an object of <c>string_field_inserter</c> that holds a reference to <c>container</c>, a default constructed allocator object, and an object of <c>SkippingHandler</c> initialized with <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> as the skipping handler object.</effects>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class SkippingHandlerR = SkippingHandler>
+  string_field_inserter(
+    std::allocator_arg_t, const allocator_type&amp; alloc, Container&amp; container,
+    SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
+            </code>
+            <requires><c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> shall be <c>true</c>.</requires>
+            <effects>Initializes an object of <c>string_field_inserter</c> that holds a reference to <c>container</c>, an allocator object initialized with <c>alloc</c>, and an object of <c>SkippingHandler</c> initialized with <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> as the skipping handler object.</effects>
+          </code-item>
+
+          <code-item>
+            <code>
+string_field_inserter(const string_field_inserter&amp; other) noexcept(<nc>see below</nc>);
+            </code>
+            <requires><c>SkippingHandler</c> shall be <c>CopyConstructible</c>.</requires>
+            <effects>Initializes an object of <c>string_field_inserter</c> that holds a reference to a container object identical to <c>other</c> holds, and an allocator object and a skipping handler object copy constructed from the ones <c>other</c> holds.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;SkippingHandler></c>.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+string_field_inserter(string_field_inserter&amp;&amp; other) noexcept(<nc>see below</nc>);
+            </code>
+            <effects>Initializes an object of <c>string_field_inserter</c> that holds a reference to a container object identical to <c>other</c> holds, and an allocator object and a skipping handler object move constructed from the ones <c>other</c> holds.</effects>
+            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;SkippingHandler></c>.
+                    If exits via an exception, <c>other</c> will be left in a valid but unspecified state.</remark>
+          </code-item>
+        </section>
+
+        <section id="string_field_inserter.allocator">
+          <name><c>string_field_inserter</c> allocator access</name>
+          <code-item>
+            <code>
+allocator_type get_allocator() const noexcept;
+            </code>
+            <returns>A copy of the allocator object used to construct the string.</returns>
+          </code-item>
+        </section>
+
+        <section id="string_field_inserter.handler">
+          <name><c>string_field_inserter</c> handler access</name>
+          <code-item>
+            <code>
+const SkippingHandler&amp; get_skipping_handler() const noexcept;
+      SkippingHandler&amp; get_skipping_handler()       noexcept;
+            </code>
+            <returns>A reference of the skipping handler held by <c>*this</c>.</returns>
+          </code-item>
+        </section>
+
+        <section id="string_field_inserter.inv">
+          <name><c>string_field_inserter</c> invocation</name>
+          <code-item>
+            <code>
+void operator()(const Ch* begin, const Ch* end);
+            </code>
+            <requires>If <c>Container</c> is an allocator-aware container type, <c>string_type</c> shall be <c>EmplaceConstructible</c> into <c>Container</c> from a <c>value_type</c> object and the allocator object held by <c>*this</c>.</requires>
+            <effects>Emplaces <c>value_type(begin, end - begin)</c> to the container object with <c>get_allocator()</c>.</effects>
+            <remark>The implementation is allowed to elide the emplacement when it is known in advance that the emplacement has no effect on the container object.</remark>
+          </code-item>
+
+          <code-item>
+            <code>
+void operator()(string_type&amp;&amp; value);
+            </code>
+            <requires>If <c>Container</c> is an allocator-aware container type, <c>string_type</c> shall be <c>MoveInsertable</c> into <c>Container</c>
+                      and shall be <c>EmplaceConstructible</c> into <c>Container</c> from a <c>value_type</c> object and the allocator object held by <c>*this</c>.</requires>
+            <effects>If <c>value.get_allocator() == get_allocator()</c>, inserts <c>std::move(value)</c> into the container object.
+                     Otherwise, calls <c>(*this)(value.c_str(), value.c_str() + value.size())</c>.</effects>
+          </code-item>
+
+          <code-item>
+            <code>
+void operator()();
+            </code>
+            <requires>If <c>Container</c> is an allocator-aware container type, <c>string_type</c> shall be <c>EmplaceConstructible</c> into <c>Container</c> from a <c>value_type</c> object and the allocator object held by <c>*this</c>.</requires>
+            <effects>Evaluates <c>invoke_typing_as&lt;value_type>(get_skipping_handler())</c> and initializes an <c>std::optional&lt;value_type></c> object with it.
+                     If it has a value, emplaces the value to the container object with <c>get_allocator()</c>.</effects>
+            <remark>The implementation is allowed to elide the emplacement when it is known in advance that the emplacement has no effect on the container object.</remark>
+          </code-item>
+        </section>
+      </section>
+
       <section id="scan.builtin.body_field_scanners.creation">
         <name>Creation of default body field scanners</name>
 
@@ -7344,9 +7496,14 @@ template &lt;class T, class Allocator, class SinkR, class... Appendices>
 template &lt;class Container, class... Appendices>
   <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
           </code>
-          <effects><p>Equivalent to:</p>
-                   <code>return make_field_translator&lt;typename Container::value_type>(
+          <preface>Let <c>V</c> be <c>typename Container::value_type</c>.</preface>
+          <effects><p>If <c>V</c> is a default translatable arithmetic type, equivalent to:</p>
+                   <code>return make_field_translator&lt;V>(
          <n>INSERTER</n>(values), std::forward&lt;Appendices>(appendices)...);</code>
+                   <p>Otherwise, given <c>W</c> being <c>std::basic_string_view&lt;typename V::value_type, typename V::traits_type></c>, equivalent to:</p>
+                   <code>return string_field_inserter&lt;
+           Container, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;W, Appendices>...>(
+         values, std::forward&lt;Appendices>(appendices)...);</code>
           </effects>
           <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is either of a default translatable arithmetic type or a default translatable string type, and <c><n>INSERTER</n>(values)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
@@ -7357,10 +7514,11 @@ template &lt;class Allocator, class Container, class... Appendices>
   <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
                                   Container&amp; values, Appendices&amp;&amp;... appendices);
           </code>
-          <effects><p>Equivalent to:</p>
-                   <code>return make_field_translator&lt;typename Container::value_type>(
+          <effects><p>Given <c>V</c> being <c>typename Container::value_type</c> and <c>W</c> being <c>std::basic_string_view&lt;typename V::value_type, typename V::traits_type></c>, equivalent to:</p>
+                   <code>return string_field_inserter&lt;
+           Container, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;W, Appendices>...>(
          std::allocator_arg, alloc,
-         <n>INSERTER</n>(values), std::forward&lt;Appendices>(appendices)...);</code>
+         values, std::forward&lt;Appendices>(appendices)...);</code>
           </effects>
           <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is a default translatable string type and <c><n>INSERTER</n>(values)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>

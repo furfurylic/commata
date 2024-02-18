@@ -209,7 +209,7 @@ using commata::parse_csv;
 
 void one_pass_scanning_sample()
 {
-  std::set<std::string> constellation_set;
+  std::set<std::string, std::less<>> constellation_set;
   std::vector<std::string> names;
   std::deque<double> magnitudes;
 
