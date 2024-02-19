@@ -1,10 +1,10 @@
 # Commata Primer
 
-This document shows how you can handle CSV texts with Commata on some simple
+This document shows how you can handle CSV texts with Commata, which is just another header-only C++17 CSV parser, on some simple
 examples. If what you like to know about Commata is not found in this document,
 it is recommended to consult [the specification](https://furfurylic.github.io/commata/CommataSpecification.xml).
 
-For simplicity, codes here omits `#include` directive for the standard library
+For the sake of simplicity, codes here omit `#include` directives for the standard library
 of C++ language.
 
 ## Commata is a header-only library
@@ -54,7 +54,7 @@ Cygnus,Sadr,2.23,560
 Cygnus,Fawaris,2.89,51
 ```
 
-## Loading the CSV file into memory
+## Loading a CSV file into memory
 
 Commata offers the type `commata::stored_table`, which serves as a type of
 loaded images of CSV texts. Here is a sample code to load the contents of
@@ -98,7 +98,7 @@ represented by a `stored_value` object.
 
 ### The value type
 
-A `stored_value` object is a wrapper of a null-terminated range of `char` owned
+A `stored_value` object is a view of a null-terminated sequence of `char` owned
 by a `stored_table` object. So you can easily pass it to C functions:
 
 ```C++
@@ -160,6 +160,14 @@ table.content().emplace_front(1, table.import_value("Constellation"));
   // adds a new record which consists of one value "Constellation"
 ```
 
+Again, a `stored_value` object is a view of a sequence held by a `stored_table`
+object. Surely you can copy it, but generally inserting the copy itself back
+into a `stored_table` object is going to spawn many problematic situations as
+&#x2018;overlapping-views&#x2019; or
+&#x2018;view-to-not-owning-sequence&#x2019;.
+You can avoid such situations by importing the value with `import_value` on the
+destination `stored_table` object before the insertion.
+
 ### Support of wide characters
 
 Wide characters are supported similarly to narrow characters:
@@ -187,7 +195,8 @@ represents null-terminated ranges of `wchar_t`.
 
 ### Field access by name is not supported
 
-As we saw, `stored_table` has no idea about 'field names' of the loaded CSV.
+As we saw, `stored_table` has no idea about &#x2018;field names&#x2019; of the
+loaded CSV.
 So you *cannot* access fields by name with codes like `table[5]["Name"]` or `table["Name"][5]`.
 
 ## One-pass scanning
@@ -557,7 +566,7 @@ exist.)
 On the other hand, the third argument
 `replacement_ignore` (with `added (2)` comment)
 instructs the body field scanner to ignore every case that a value of the field
-is an empty string; it is to solve the problem we have faced.
+cannot be translated into a `double` value; it is to solve the problem we have faced.
 
 The constant variable `replacement_ignore` is defined by including the header
 `"commata/field_scanners.hpp"`.
@@ -569,7 +578,7 @@ defined by including the same header `"commata/field_scanners.hpp"`.
 ## Making your own table handler types
 
 So far, the second arguments to `parse_csv` were the return value of
-`make_stored_table_builder` or rvalues of `table_scanner` objects. But you can
+`make_stored_table_builder` or an rvalues of `table_scanner` objects. But you can
 define your own types whose objects can be passed to `parse_csv`.
 These types are called _table handler_ types.
 
@@ -612,7 +621,7 @@ public:
     // as the final chunk of the value
     current_value_.append(first, last);
     records_->back().push_back(std::move(current_value_));
-    current_value_.clear();
+    current_value_.clear();   // ensures emptiness for reuse
   }
 
   void end_record(char*)
@@ -694,6 +703,48 @@ void make_empty_physical_line_aware_sample()
   std::cout << table[6][1] << std::endl;      // will print "Deneb"
 }
 ```
+
+## Sources other than streams
+
+Suppose you have a function that read full contents of a file into a string as
+follows:
+
+```C++
+std::string slurp(const char* s)
+{
+  std::filebuf in;
+  in.open(s, std::ios::in | std::ios::binary);
+  return std::string(std::istreambuf_iterator<char>(&in),
+                     std::istreambuf_iterator<char>());
+}
+```
+
+So far, the first parameters of `parse_csv` have been objects of
+`std::ifstream` or `std::wifstream`.
+What if you want to parse a string already loaded with this `slurp`?
+Write direct what you want to do:
+
+```C++
+const std::string contents = slurp("stars.csv");
+stored_table table;
+parse_csv(contents, make_stored_table_builder(table));
+```
+
+Roughly speaking, the first parameter of `parse_csv` can be either of a stream
+buffer, an input stream, or a string (including C-style one and a C++17 string
+view object).
+
+More technically (but still roughly speaking), `parse_csv(foo, bar)` is a
+shorthand for `make_csv_source(foo)(bar)()`.
+Each of these disintegrated steps is like the following:
+ 1. You can call `make_csv_source` with either of a stream buffer, an input
+    stream, or a string (`foo` here), to get a _table source_ object.
+ 1. A table source object is a function object that makes a _table parser_
+    object dedicated to a table handler object (`bar` here) with its inherent
+    knowledge of the grammar of CSV .
+ 1. Finally, with its no-parameter invocation, the table parser object consumes
+    the input, parses it as a CSV, and reports parsing events to the table
+    handler.
 
 ## Pull parsing
 
