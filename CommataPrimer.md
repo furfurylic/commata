@@ -791,7 +791,7 @@ a reference to the `table_pull` object itself.
 
 The value of the current field where a `table_pull` object points can be got as
 a string view object with `table_pull`&#x2019;s dereference operators `*` and `->`.
-Additionally, `table_pull` offers `c_str` member function that returns a pointer
+Additionally, `table_pull` (conditionally, as we shall see later) offers `c_str` member function that returns a pointer
 to a null-terminated sequence suitable for C APIs.
 
 An object of `table_pull` is convertible to `bool`.
@@ -832,6 +832,82 @@ In addition, with `state` member function, you can make a `table_pull` object te
 status, for example, &#x2018;points an end of a record&#x2019;, &#x2018;points a field&#x2019;, &#x2018;reached the EOF&#x2019;,
 and so on. This functionality is essential to handle texts whose structure is not known
 in advance.
+
+### &#x2018;Direct&#x2019; sources and the reduced functionality of `table_pull` by it
+
+With `slurp`, which is a function that read all contents from a file into a
+string introduced above, you might want to write codes like:
+
+```C++
+const std::string contents = slurp("stars.csv");
+auto p = make_table_pull(make_csv_source(contents));
+while (p.skip_record()(1)) {
+  std::puts(p.c_str());
+}
+```
+
+But this won't compile. Your compiler is likely to complain &#x2018;`c_str` is
+not a member of `table_pull<...>`. Why?
+
+This is because the table source made by `make_csv_source` from a string
+prevents `table_pull` from declaring `c_str` member. Its mechanism is as follows:
+ - The definition of `c_str` member must be accompanied by a code like
+   `*b = '\0'` or something, which puts a null character into a character
+   buffer to make a null-terminated sequence.
+ - For the sake of performance, a `table_pull` object evades making a copy of
+   the input string as far as possible.
+ - When this copy evasion cuts in, a `table_pull` object has no
+   write-accessible character buffers, which inhibits `c_str` member from
+   being defined.
+ - A table source made by `make_csv_source` from a string is qualified to let
+   a `table_pull` object perform this copy evasion, which is called a _direct_
+   source.
+
+To inhibit this copy evasion (with possible performance decay) and get `c_str`
+back, you can make the table source _indirect_ by specifying an additional
+argument `indirect` as the first parameter of `make_csv_source` like this:
+
+```C++
+auto p = make_table_pull(make_csv_source(indirect, contents));
+```
+
+`indirect` is a constant variable in `commata` namespace and declared in the
+header `"commata/char_input.hpp"`. So, finally, your codes should look like:
+
+```C++
+#include <commata/char_input.hpp>
+#include <commata/parse_csv.hpp>
+#include <commata/table_pull.hpp>
+
+using commata::indirect;
+using commata::make_csv_source;
+using commata::make_table_pull;
+
+std::string slurp(const char* s)
+{
+  std::filebuf in;
+  in.open(s, std::ios::in | std::ios::binary);
+  return std::string(std::istreambuf_iterator<char>(&in),
+                     std::istreambuf_iterator<char>());
+}
+
+void pull_parsing_sample3()
+{
+  const std::string contents = slurp("stars.csv");
+  auto p = make_table_pull(make_csv_source(indirect, contents));
+  while (p.skip_record()(1)) {
+    std::puts(p.c_str());   // will print stars' names
+  }
+}
+```
+
+Note that `indirect` is still specifiable for an argument that is inherently
+associated with a indirect source. Thus, the following codes are valid:
+
+```C++
+auto p = make_table_pull(
+           make_csv_source(indirect, std::ifstream("stars.csv")));
+```
 
 ## Tab-separated values (TSV)
 
