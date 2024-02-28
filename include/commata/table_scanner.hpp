@@ -81,8 +81,11 @@ class basic_table_scanner
     struct field_scanner
     {
         virtual ~field_scanner() {}
+        virtual bool accepts_const() const noexcept = 0;
         virtual void field_value(
             Ch* begin, Ch* end, basic_table_scanner& me) = 0;
+        virtual void field_value(
+            const Ch* begin, const Ch* end, basic_table_scanner& me) = 0;
         virtual void field_value(
             string_t&& value, basic_table_scanner& me) = 0;
     };
@@ -96,7 +99,9 @@ class basic_table_scanner
     class typed_header_field_scanner :
         public header_field_scanner, detail::member_like_base<HeaderScanner>
     {
-        using range_t = std::pair<Ch*, Ch*>;
+        static constexpr bool const_ready = std::is_invocable_v<HeaderScanner&,
+            std::size_t, std::optional<std::pair<const Ch*, const Ch*>>,
+                basic_table_scanner&>;
 
     public:
         template <class T>
@@ -106,11 +111,25 @@ class basic_table_scanner
 
         typed_header_field_scanner(typed_header_field_scanner&&) = delete;
 
+        bool accepts_const() const noexcept override
+        {
+            return const_ready;
+        }
+
         void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
         {
-            const range_t range(begin, end);
-            if (!scanner()(me.j_, std::optional(range), me)) {
-                me.remove_header_field_scanner(false);
+            field_value_impl(begin, end, me);
+        }
+
+        void field_value([[maybe_unused]] const Ch* begin,
+                         [[maybe_unused]] const Ch* end,
+                         basic_table_scanner& me) override
+        {
+            // Even when FieldScanner does not accepts const params, this will
+            // be instantiated, which will never be called at run-time...
+            assert(accepts_const());
+            if constexpr (const_ready) {
+                field_value_impl(begin, end, me);
             }
         }
 
@@ -121,12 +140,30 @@ class basic_table_scanner
 
         void so_much_for_header(basic_table_scanner& me) override
         {
-            if (!scanner()(me.j_, std::optional<range_t>(), me)) {
-                me.remove_header_field_scanner(true);
+            if constexpr (const_ready) {
+                call(std::optional<std::pair<const Ch*, const Ch*>>(), me,
+                    true);
+            } else {
+                call(std::optional<std::pair<Ch*, Ch*>>(), me, true);
             }
         }
 
     private:
+        template <class C>
+        void field_value_impl(C* begin, C* end, basic_table_scanner& me)
+        {
+            call(std::optional(std::pair(begin, end)), me, false);
+        }
+
+        template <class C>
+        void call(std::optional<std::pair<C*, C*>> opt_range,
+            basic_table_scanner& me, bool at_record_end)
+        {
+            if (!scanner()(me.j_, std::move(opt_range), me)) {
+                me.remove_header_field_scanner(at_record_end);
+            }
+        }
+
         HeaderScanner& scanner()
         {
             return this->get();
@@ -149,17 +186,25 @@ class basic_table_scanner
 
         typed_body_field_scanner(typed_body_field_scanner&&) = delete;
 
-        void field_value(Ch* begin, Ch* end,
-            [[maybe_unused]] basic_table_scanner& me) override
+        bool accepts_const() const noexcept override
         {
-            if constexpr (std::is_invocable_v<FieldScanner&, Ch*, Ch*>) {
-                scanner()(begin, end);
-            } else {
-                scanner()(string_t(begin, end, me.get_allocator()));
-            }
+            return std::is_invocable_v<FieldScanner&, const Ch*, const Ch*>;
         }
 
-        void field_value(string_t&& value, basic_table_scanner&) override
+        void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
+        {
+            field_value_impl(scanner(), begin, end, me);
+        }
+
+        void field_value(const Ch* begin, const Ch* end,
+                basic_table_scanner& me) override
+        {
+            assert(accepts_const());
+            field_value_impl(scanner(), begin, end, me);
+        }
+
+        void field_value(string_t&& value,
+                [[maybe_unused]] basic_table_scanner& me) override
         {
             if constexpr (std::is_invocable_v<FieldScanner&, string_t&&>) {
                 scanner()(std::move(value));
@@ -180,6 +225,24 @@ class basic_table_scanner
         }
 
     private:
+        template <class C>
+        static void field_value_impl(FieldScanner& scanner,
+            [[maybe_unused]] C* begin, [[maybe_unused]] C* end,
+            [[maybe_unused]] basic_table_scanner& me)
+        {
+            // Even when FieldScanner accepts const params only, this will be
+            // instantiated with C being non-const, which will never be called
+            // at run-time...
+            if constexpr (std::is_invocable_v<FieldScanner&, C*, C*>) {
+                scanner(begin, end);
+            } else if constexpr(std::is_invocable_v<FieldScanner&, string_t>) {
+                scanner(string_t(begin, end, me.get_allocator()));
+            } else {
+                // ...so this branching is needed
+                assert(false);
+            }
+        }
+
         const void* get_target_v() const noexcept override
         {
             return std::addressof(this->get());
@@ -251,9 +314,9 @@ class basic_table_scanner
     using res_at_t = typename at_t::template rebind_traits<record_end_scanner>;
 
     std::size_t j_ = 0;
-    Ch* buffer_;
-    Ch* begin_;
-    Ch* end_;
+    const Ch* buffer_;
+    const Ch* begin_;
+    const Ch* end_;
     string_t value_;
     typename hfs_at_t::pointer header_field_scanner_;
     std::vector<bfs_ptr_p_t, scanners_a_t> scanners_;
@@ -263,7 +326,7 @@ class basic_table_scanner
     typename res_at_t::pointer end_scanner_;
 
 public:
-    using char_type = Ch;
+    using char_type = const Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits<Allocator>::size_type;
@@ -505,12 +568,12 @@ private:
     }
 
 public:
-    void start_buffer(Ch* begin, Ch*)
+    void start_buffer(const Ch* begin, const Ch*)
     {
         buffer_ = begin;
     }
 
-    void end_buffer(Ch*)
+    void end_buffer(const Ch*)
     {
         if (begin_) {
             value_.assign(begin_, end_);                // throw
@@ -518,7 +581,7 @@ public:
         }
     }
 
-    void start_record(Ch* /*record_begin*/)
+    void start_record(const Ch* /*record_begin*/)
     {
         sj_ = 0;
         j_ = 0;
@@ -526,15 +589,42 @@ public:
 
     void update(Ch* first, Ch* last)
     {
-        if (get_scanner().first) {
-            if (begin_) {
-                assert(value_.empty());
+        update_impl(first, last);
+    }
+
+    void update(const Ch* first, const Ch* last)
+    {
+        update_impl(first, last);
+    }
+
+    void finalize(Ch* first, Ch* last)
+    {
+        finalize_impl(first, last);
+    }
+
+    void finalize(const Ch* first, const Ch* last)
+    {
+        finalize_impl(first, last);
+    }
+
+private:
+    template <class C>
+    void update_impl(C* first, C* last)
+    {
+        if (const auto scanner = get_scanner(); scanner.first) {
+            if constexpr (std::is_const_v<C>) {
+                if (!scanner.first->accepts_const()) {
+                    value_.append(first, last);                     // throw
+                    return;
+                }
+            }
+            if (!value_.empty()) {
+                value_.append(first, last);                         // throw
+            } else if (begin_) {
                 value_.reserve((end_ - begin_) + (last - first));   // throw
                 value_.assign(begin_, end_);
                 value_.append(first, last);
                 begin_ = nullptr;
-            } else if (!value_.empty()) {
-                value_.append(first, last);                         // throw
             } else {
                 begin_ = first;
                 end_ = last;
@@ -542,28 +632,12 @@ public:
         }
     }
 
-    void finalize(Ch* first, Ch* last)
+    template <class C>
+    void finalize_impl(C* first, C* last)
     {
         if (const auto scanner = get_scanner(); scanner.first) {
-            if (begin_) {
-                if (first != last) {
-                    value_.
-                        reserve((end_ - begin_) + (last - first));  // throw
-                    value_.assign(begin_, end_);
-                    value_.append(first, last);
-                    scanner.first->field_value(std::move(value_), *this);
-                    value_.clear();
-                } else {
-                    scanner.first->field_value(begin_, end_, *this);
-                }
-                begin_ = nullptr;
-            } else if (!value_.empty()) {
-                value_.append(first, last);                         // throw
-                scanner.first->field_value(std::move(value_), *this);
-                value_.clear();
-            } else {
-                scanner.first->field_value(first, last, *this);
-            }
+            // Another function is introduced to avoid employing goto
+            finalize_core(first, last, *scanner.first);
             if (scanner.second) {
                 ++sj_;
             }
@@ -571,7 +645,48 @@ public:
         ++j_;
     }
 
-    bool end_record(Ch* /*record_end*/)
+    template <class C>
+    void finalize_core(C* first, C* last, field_scanner& scanner)
+    {
+        if constexpr (std::is_const_v<C>) {
+            if (!scanner.accepts_const()) {
+                finalize_core_with_value(first, last, scanner);     // throw
+                return;
+            }
+        }
+        if (!value_.empty()) {
+            finalize_core_with_value(first, last, scanner);         // throw
+        } else if (begin_) {
+            if (first != last) {
+                value_.reserve((end_ - begin_) + (last - first));   // throw
+                value_.assign(begin_, end_);
+                finalize_core_with_value(first, last, scanner);     // throw
+            } else if constexpr (std::is_const_v<C>) {
+                scanner.field_value(begin_, end_, *this);
+            } else {
+                // Here we know it is the non-const version that is being
+                // called, so const_casts below are safe
+                using D = std::remove_const_t<C>;
+                D* const begin = const_cast<D*>(begin_);
+                D* const end = const_cast<D*>(end_);
+                scanner.field_value(begin, end, *this);
+            }
+            begin_ = nullptr;
+        } else {
+            scanner.field_value(first, last, *this);
+        }
+    }
+
+    template <class C>
+    void finalize_core_with_value(C* first, C* last, field_scanner& scanner)
+    {
+        value_.append(first, last);                                 // throw
+        scanner.field_value(std::move(value_), *this);
+        value_.clear();
+    }
+
+public:
+    bool end_record(const Ch* /*record_end*/)
     {
         if (header_field_scanner_) {
             header_field_scanner_->so_much_for_header(*this);

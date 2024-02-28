@@ -64,10 +64,11 @@ TYPED_TEST(TestFieldTranslatorForArithmeticTypes, Correct)
     h.set_field_scanner(1, make_field_translator(ys,
         replacement_ignore, replace_if_conversion_failed<double>(1.0, -1.0)));
 
-    std::basic_string<TypeParam> s = str("X,Y\n 1,-2.5\n,x\n3");
+    std::basic_stringstream<TypeParam> s;
+    s << str("X,Y\n 1,-2.5\n,x\n3");
 
     try {
-        parse_csv(s, std::move(h));
+        parse_csv(s, std::move(h)); // indirect
     } catch (const text_error& e) {
         FAIL() << text_error_info(e);
     }
@@ -911,6 +912,195 @@ TYPED_TEST(TestTableScanner, Ignored)
     }
 
     ASSERT_EQ(150, a.yield());
+}
+
+namespace {
+
+template <class Ch>
+class transcriptor_scanner_error : public std::exception
+{
+    std::basic_string<Ch> message_;
+
+public:
+    explicit transcriptor_scanner_error(std::basic_string<Ch>&& message) :
+        message_(std::move(message))
+    {}
+
+    const Ch* message() const noexcept
+    {
+        return message_.c_str();
+    }
+};
+
+template <class Ch, class Tr>
+class transcriptor_scanner
+{
+    std::basic_ostream<Ch, Tr>* out_;
+    std::optional<std::pair<const Ch*, const Ch*>> expected_range_;
+
+public:
+    transcriptor_scanner(
+        std::basic_ostream<Ch, Tr>& out,
+        std::optional<std::pair<const Ch*, const Ch*>> expected_range
+            = std::nullopt) :
+        out_(std::addressof(out)), expected_range_(expected_range)
+    {}
+
+    void operator()(Ch* first, Ch* last)
+    {
+        *out_ << '[' << std::basic_string_view(first, last - first) << ']';
+    }
+
+    void operator()(const Ch* first, const Ch* last)
+    {
+        if (expected_range_) {
+            if ((first < expected_range_->first)
+             || (last > expected_range_->second)) {
+                throw transcriptor_scanner_error(
+                    std::basic_string<Ch>(first, last));
+            }
+        }
+        *out_ << '<' << std::basic_string_view(first, last - first) << '>';
+    }
+
+    void operator()()
+    {}
+};
+
+template <class Ch, class Tr>
+class const_nonconst_selector
+{
+    std::basic_ostream<Ch, Tr>* out_;
+    std::optional<std::pair<const Ch*, const Ch*>> expected_range_;
+
+    const Ch* delim_const_;
+    const Ch* delim_nonconst_;
+
+    using view_t = std::basic_string_view<Ch>;
+    using it_t = std::ostream_iterator<view_t, Ch>;
+
+public:
+    const_nonconst_selector(
+        std::basic_ostream<Ch, Tr>& out,
+        const Ch* delim_const, const Ch* delim_nonconst,
+        std::optional<std::pair<const Ch*, const Ch*>> expected_range
+            = std::nullopt) :
+        out_(std::addressof(out)), expected_range_(expected_range),
+        delim_const_(delim_const), delim_nonconst_(delim_nonconst)
+    {}
+
+    template <class Scanner>
+    bool operator()(std::size_t j,
+                    std::optional<std::pair<Ch*, Ch*>>,
+                    Scanner& scanner)
+    {
+        scanner.set_field_scanner(j,
+            make_field_translator<view_t>(it_t(*out_, delim_nonconst_)));
+        return false;
+    }
+
+    template <class Scanner>
+    bool operator()(std::size_t j,
+                    std::optional<std::pair<const Ch*, const Ch*>>,
+                    Scanner& scanner)
+    {
+        scanner.set_field_scanner(j,
+            make_field_translator<view_t>(it_t(*out_, delim_const_)));
+        return false;
+    }
+};
+
+} // end unnamed
+
+TYPED_TEST(TestTableScanner, BodyFieldScannerConstInterfaceSelectedForDirect)
+{
+    const auto str = char_helper<TypeParam>::str;
+    const auto s = str("ABC\nDEF");
+
+    using pair_t = std::pair<const TypeParam*, const TypeParam*>;
+    std::basic_ostringstream<TypeParam> out;
+    basic_table_scanner<TypeParam> scanner;
+    scanner.set_field_scanner(0, transcriptor_scanner(
+        out, std::optional(pair_t(s.data(), s.data() + s.size()))));
+
+    try {
+        parse_csv(s /*direct*/, std::move(scanner), 256);
+    } catch (const text_error& e) {
+        FAIL() << text_error_info(e);
+    } catch (const transcriptor_scanner_error<TypeParam>& e) {
+        FAIL() << e.message();
+    }
+
+    ASSERT_EQ(str("<ABC><DEF>"), std::move(out).str());
+}
+
+TYPED_TEST(TestTableScanner,
+    BodyFieldScannerNonconstInterfaceSelectedForIndirect)
+{
+    const auto str = char_helper<TypeParam>::str;
+    const auto s = str("ABC\nDEF");
+
+    std::basic_ostringstream<TypeParam> out;
+    basic_table_scanner<TypeParam> scanner;
+    scanner.set_field_scanner(0, transcriptor_scanner(out));
+
+    try {
+        parse_csv(std::basic_istringstream(s) /*indirect*/,
+            std::move(scanner), 256);
+    } catch (const text_error& e) {
+        FAIL() << text_error_info(e);
+    }
+
+    ASSERT_EQ(str("[ABC][DEF]"), std::move(out).str());
+}
+
+TYPED_TEST(TestTableScanner, HeaderFieldScannerConstInterfaceSelectedForDirect)
+{
+    const auto str = char_helper<TypeParam>::str;
+    const auto s = str("Header\nABC\nDEF");
+
+    using pair_t = std::pair<const TypeParam*, const TypeParam*>;
+    const auto delim_const = str(":");
+    const auto delim_nonconst = str("*");
+    std::basic_ostringstream<TypeParam> out;
+    basic_table_scanner<TypeParam> scanner(
+        const_nonconst_selector(
+            out, delim_const.c_str(), delim_nonconst.c_str(),
+            std::optional(pair_t(s.data(), s.data() + s.size()))));
+
+    try {
+        parse_csv(s /*direct*/, std::move(scanner), 256);
+    } catch (const text_error& e) {
+        FAIL() << text_error_info(e);
+    } catch (const transcriptor_scanner_error<TypeParam>& e) {
+        FAIL() << e.message();
+    }
+
+    ASSERT_EQ(str("ABC:DEF:"), std::move(out).str());
+}
+
+TYPED_TEST(TestTableScanner,
+    HeaderFieldScannerNonconstInterfaceSelectedForIndirect)
+{
+    const auto str = char_helper<TypeParam>::str;
+    const auto s = str("Header\nABC\nDEF");
+
+    const auto delim_const = str(":");
+    const auto delim_nonconst = str("*");
+    std::basic_ostringstream<TypeParam> out;
+    basic_table_scanner<TypeParam> scanner(const_nonconst_selector(
+        out, delim_const.c_str(), delim_nonconst.c_str()));
+
+    try {
+        parse_csv(std::basic_stringstream(s) /*indirect*/,
+            std::move(scanner), 256);
+    } catch (const text_error& e) {
+        FAIL() << text_error_info(e);
+    } catch (const transcriptor_scanner_error<TypeParam>& e) {
+        FAIL() << e.message();
+    }
+
+    ASSERT_EQ(str("ABC*DEF*"), std::move(out).str());
 }
 
 namespace {

@@ -452,7 +452,9 @@ public:
     }
 
     template <class Ch>
-    void operator()(Ch* begin, Ch* end)
+    auto operator()(Ch* begin, Ch* end)
+     -> std::enable_if_t<std::is_same_v<Ch, char>
+                      || std::is_same_v<Ch, wchar_t>>
     {
         *end = Ch();
         auto converted = to_arithmetic<std::optional<T>>(
@@ -545,7 +547,9 @@ public:
     }
 
     template <class Ch>
-    void operator()(Ch* begin, Ch* end)
+    auto operator()(Ch* begin, Ch* end)
+     -> std::enable_if_t<std::is_same_v<Ch, char>
+                      || std::is_same_v<Ch, wchar_t>>
     {
         return out_(begin, remove_(begin, end));
     }

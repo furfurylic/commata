@@ -324,7 +324,7 @@ void one_pass_scanning_sample3()
   table_scanner scanner(
     [&names, names_attached = false]
     (std::size_t field_index,
-     std::optional<std::pair<char*, char*>> field_value,
+     std::optional<std::pair<const char*, const char*>> field_value,
      table_scanner& scanner) mutable {
       if (field_value) {
         // The value of field_index-th (zero-based) header field is notified,
