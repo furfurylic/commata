@@ -62,8 +62,10 @@ public:
     static fancy_ptr pointer_to(T& t) noexcept
     { return fancy_ptr(std::addressof(t)); }
 
-    fancy_ptr& operator+=(difference_type n) noexcept { p_ += n; return *this; }
-    fancy_ptr& operator-=(difference_type n) noexcept { p_ -= n; return *this; }
+    fancy_ptr& operator+=(difference_type n) noexcept
+        { p_ += n; return *this; }
+    fancy_ptr& operator-=(difference_type n) noexcept
+        { p_ -= n; return *this; }
 };
 
 template <class T>
