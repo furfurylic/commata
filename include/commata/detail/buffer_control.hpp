@@ -105,6 +105,8 @@ constexpr bool is_full_fledged_v =
 template <class Handler, class BufferControl>
 class full_fledged_handler :
     BufferControl,
+    public handler_core_t<Handler,
+                          full_fledged_handler<Handler, BufferControl>>,
     public yield_t<Handler, full_fledged_handler<Handler, BufferControl>>,
     public yield_location_t<Handler,
         full_fledged_handler<Handler, BufferControl>>,
@@ -152,43 +154,44 @@ public:
         this->do_release_buffer(buffer, std::addressof(handler_));
     }
 
-    void start_buffer(
-        [[maybe_unused]] char_type* buffer_begin,
-        [[maybe_unused]] char_type* buffer_end)
+    template <class Ch,
+        std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+             && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            std::nullptr_t> = nullptr>
+    auto start_buffer(
+        [[maybe_unused]] Ch* buffer_begin,
+        [[maybe_unused]] Ch* buffer_end)
     {
         if constexpr (has_start_buffer_v<Handler>) {
             handler_.start_buffer(buffer_begin, buffer_end);
         }
     }
 
-    void end_buffer([[maybe_unused]] char_type* buffer_end)
+    template <class Ch,
+        std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+             && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            std::nullptr_t> = nullptr>
+    auto end_buffer([[maybe_unused]] Ch* buffer_end)
     {
         if constexpr (has_end_buffer_v<Handler>) {
             handler_.end_buffer(buffer_end);
         }
     }
 
-    auto start_record(char_type* record_begin)
-    {
-        return handler_.start_record(record_begin);
-    }
-
-    auto update(char_type* first, char_type* last)
-    {
-        return handler_.update(first, last);
-    }
-
-    auto finalize(char_type* first, char_type* last)
-    {
-        return handler_.finalize(first, last);
-    }
-
-    auto end_record(char_type* end)
-    {
-        return handler_.end_record(end);
-    }
-
-    auto empty_physical_line([[maybe_unused]] char_type* where)
+    template <class Ch,
+        std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+             && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            std::nullptr_t> = nullptr>
+    auto empty_physical_line([[maybe_unused]] Ch* where)
     {
         if constexpr (has_empty_physical_line_v<Handler>) {
             return handler_.empty_physical_line(where);

@@ -100,7 +100,7 @@
 
       <p>In <xref id="table.table_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>.
          <c>b</c> is an rvalue of <c>Ch*</c>.
-         <c>bb</c>, <c>be</c>, <c>bm</c>, <c>w</c>, <c>rb</c>, <c>re</c>, <c>f</c> and <c>l</c> are rvalues of <c>T::char_type*</c>, which is specified as (1) in <xref id="table.table_handler.requirements"/>.
+         <c>bb</c>, <c>be</c>, <c>bm</c>, <c>w</c>, <c>rb</c>, <c>re</c>, <c>f</c> and <c>l</c> are rvalues of <c>Ch*</c> or <c>const Ch*</c>.
          <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
 
       <p>A requirement is optional if the last column of <xref id="table.table_handler.requirements"/> specifies a default.</p>
@@ -157,6 +157,9 @@
           <td><p>Evaluated when the parser starts using its buffer.
                  If evaluatung this occurs after an evaluation of (2) and before its corresponding evaluation of (3),
                  it shall occur only once between them.</p>
+              <p><c>bb</c> and <c>be</c> shall have the same type.
+                 If <c>T::char_type</c> is not const-qualified, the type shall be <c>Ch*</c>.
+                 Otherwise, the type shall be <c>const Ch*</c> or <c>Ch*</c>.</p>
               <p>If evaluating this occurs after an evaluation of (2) and before its corresponding evaluation of (3),
                  <c>bb</c> points <c>*gb.first</c>. <c>be</c> is <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest evaluation of (2).</p>
               <p>Just after an evaluation of this, the parser shall secure a sequence of char-like objects retrieved from its input as the range [<c>bb</c>, <c>bm</c>) where <c>bm</c> is a pointer that resides in [<c>bb</c>, <c>be</c>] and reported with (5) later.
@@ -171,7 +174,9 @@
           <td><p>Evaluated when the parser finishes using its buffer.
                  Evaluating this shall occur after an evaluation of (4) only once.
                  If the latest evaluating of (4) occurred after an evaluation of (2) and before its corresponding evaluation of (3), evaluating this shall also occur before the evaluation of (3).</p>
-              <p><c>bm</c> points the one past the last element of the range in the buffer actually used, and resides in [<c>bb</c>, <c>be</c>] where <c>bb</c> and <c>be</c> are the arguments of the latest evaluation of (4) in order.</p></td>
+              <p>Here let <c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</p>
+              <p>Then the type of <c>bm</c> shall be the same as the type of <c>bb</c> and <c>be</c>.
+                 <c>bm</c> points the one past the last element of the range in the buffer actually used, and resides in [<c>bb</c>, <c>be</c>].</p></td>
           <td>Does nothing.</td>
         </tr>
 
@@ -187,7 +192,8 @@
                 <li><c>gb</c> be the return value of the latest evaluation of (2), and</li>
                 <li><c>bb</c> be the first argument of the latest evaluation of (4).</li>
               </ul>
-              <p>Then <c>w</c> points to the last line break character, which resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
+              <p>Then the type of <c>bm</c> shall be the same as the type of <c>bb</c>.
+                 <c>w</c> points to the last line break character, which resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td>Does nothing.</td>
         </tr>
@@ -203,7 +209,8 @@
                 <li><c>gb</c> be the return value of the latest evaluation of (2), and</li>
                 <li><c>bb</c> be the first argument of the latest evaluation of (4).</li>
               </ul>
-              <p>Then <c>rb</c> points the first character of the record, not of the text value of the first field of the record.
+              <p>Then the type of <c>rb</c> shall be the same as the type of <c>bb</c>.
+                 <c>rb</c> points the first character of the record, not of the text value of the first field of the record.
                  <span class="note">To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the first field of the records is quoted, <c>*rb</c> shall be a double quote.</span>
                  The pointee of <c>rb</c> which resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
@@ -222,7 +229,8 @@
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or (10) (second argument), and</li>
                 <li><c>be</c> be the second argument of the latest evaluation of (4).</li>
               </ul>
-              <p>Then <c>re</c> points one past the last element of the characters that forms the record, not of the text value of the final field of the record.
+              <p>The type of <c>rb</c> shall be the same as the type of <c>be</c>.
+                 <c>re</c> points one past the last element of the characters that forms the record, not of the text value of the final field of the record.
                  <span class="note">To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</span>
                  The pointee of <c>re</c> resides in [<c>vb</c>, <c>be</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
@@ -240,11 +248,12 @@
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), this (second argument) or (10) (second argument), and</li>
                 <li><c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</li>
               </ul>
-              <p>Then the range [<c>f</c>, <c>l</c>) shall not be empty.
+              <p>Then the type of <c>f</c> and <c>l</c> shall be the same as the type of <c>bb</c>.
+                 The range [<c>f</c>, <c>l</c>) shall not be empty.
                  The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).
                  The pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
               <p>After the evaluation, the parser shall not dereference the range [<c>bb</c>, <c>l</c>) before the next evaluation of (5).
-                 <span class="note">Therefore the table handler may freely modify the element in the range if <c>T::char_type</c> is not const-qualified.</span></p>
+                 <span class="note">Therefore the table handler may freely modify the element in the range if the reference-removed type of <c>*f</c> and <c>*l</c> are not const-qualified.</span></p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -260,11 +269,12 @@
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or this (second argument), and</li>
                 <li><c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</li>
               </ul>
-              <p>Then the range [<c>f</c>, <c>l</c>) may be empty.
+              <p>Then the type of <c>f</c> and <c>l</c> shall be the same as the type of <c>bb</c>.
+                 The range [<c>f</c>, <c>l</c>) may be empty.
                  The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).
                  The pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
               <p>After evaluating, the parser shall not dereference the range [<c>bb</c>, <c>l</c>] before the next evaluation of (5).
-                 <span class="note">Therefore the table handler may freely modify the element in the range if <c>T::char_type</c> is not const-qualified.</span></p>
+                 <span class="note">Therefore the table handler may freely modify the element in the range if the reference-removed type of <c>*f</c> and <c>*l</c> are not const-qualified.</span></p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -925,13 +935,13 @@ namespace commata {
     <c>// <n><xref id="reference_handler.inv"/>, invocation:</n></c>
     <nc>see below</nc> get_buffer();
     <nc>see below</nc> release_buffer(char_type* buffer);
-    <nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
-    <nc>see below</nc> end_buffer(char_type* buffer_end);
-    <nc>see below</nc> empty_physical_line(char_type* where);
-    <nc>see below</nc> start_record(char_type* record_begin);
-    <nc>see below</nc> end_record(char_type* record_end);
-    <nc>see below</nc> update(char_type* first, char_type* last);
-    <nc>see below</nc> finalize(char_type* first, char_type* last);
+    template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
+    template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
+    template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
+    template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
+    template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
+    template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
+    template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
     <nc>see below</nc> yield(std::size_t p);
     <nc>see below</nc> yield_location() const;
     <nc>see below</nc> handle_exception();
@@ -1012,54 +1022,71 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
+template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>This overload shall not participate in overload resolution unless
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
+                  and <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_buffer(char_type* buffer_end);
+template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>This overload shall not participate in overload resolution unless
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
+                  and <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> empty_physical_line(char_type* where);
+template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
           </code>
           <effects>Equivalent to: <c>return empty_physical_line(where);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().empty_physical_line(where)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>This overload shall not participate in overload resolution unless
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
+                  and <c>std::declval&lt;Handler&amp;>().empty_physical_line(where)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> start_record(char_type* record_begin);
+template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
           </code>
           <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_record(char_type* record_end);
+template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
           </code>
           <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> update(char_type* first, char_type* last);
+template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> finalize(char_type* first, char_type* last);
+template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
@@ -1147,13 +1174,13 @@ namespace commata {
     <c>// <n><xref id="empty_physical_line_aware_handler.inv"/>, invocation:</n></c>
     <nc>see below</nc> get_buffer();
     <nc>see below</nc> release_buffer(char_type* buffer);
-    <nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
-    <nc>see below</nc> end_buffer(char_type* buffer_end);
-    <nc>see below</nc> empty_physical_line(char_type* where);
-    <nc>see below</nc> start_record(char_type* record_begin);
-    <nc>see below</nc> end_record(char_type* record_end);
-    <nc>see below</nc> update(char_type* first, char_type* last);
-    <nc>see below</nc> finalize(char_type* first, char_type* last);
+    template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
+    template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
+    template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
+    template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
+    template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
+    template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
+    template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
     <nc>see below</nc> yield(std::size_t p);
     <nc>see below</nc> yield_location() const;
     <nc>see below</nc> handle_exception();
@@ -1288,55 +1315,71 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
+template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>This overload shall not participate in overload resolution unless
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
+                  and <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_buffer(char_type* buffer_end);
+template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>This overload shall not participate in overload resolution unless
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
+                  and <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> empty_physical_line(char_type* where);
+template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
           </code>
           <effects>First calls <c>base().start_record(where)</c>, and unless the return type is contextually convertible to <c>bool</c> and the contextually converted value of the return value to <c>bool</c> is <c>false</c>, next calls <c>base().end_record(where)</c>.</effects>
           <returns>If both of the return types of <c>base().start_record(where)</c> and <c>base().end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>.
                    Otherwise, the return type shall be <c>bool</c>, and the return value shall be <c>true</c> unless either call of <c>base().start_record(where)</c> or <c>base().end_record(where)</c> returned a value whose type is contextually convertible to <c>bool</c> and whose contexually converted value to <c>bool</c> is <c>false</c>.</returns>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> start_record(char_type* record_begin);
+template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
           </code>
           <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_record(char_type* record_end);
+template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
           </code>
           <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> update(char_type* first, char_type* last);
+template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> finalize(char_type* first, char_type* last);
+template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>

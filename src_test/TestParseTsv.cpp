@@ -294,10 +294,30 @@ TEST_F(TestParseTsv, SourceSwap)
 TEST_F(TestParseTsv, EvadeCopying)
 {
     std::vector<std::size_t> allocations;
+    logging_allocator<wchar_t> a(allocations);
+    std::wostringstream str;
+    simple_transcriptor<const wchar_t> handler(str);
+    parse_tsv(L"12\t3" L"45\t6\n\n" L"789", handler, 4, a);
+    ASSERT_STREQ(L"<{(12)(345)(6)}*{(789)}>", std::move(str).str().c_str());
+    ASSERT_TRUE(allocations.empty());
+}
+
+TEST_F(TestParseTsv, EvadeCopyingWhenNonconstVersionsExist)
+{
+    std::vector<std::size_t> allocations;
     logging_allocator<char> a(allocations);
     std::ostringstream str;
-    simple_transcriptor<const char> handler(str);
-    parse_tsv("12\t3" "45\t6" "789", handler, 4, a);
-    ASSERT_STREQ("<{(12)(345)(6789)}>", std::move(str).str().c_str());
+    simple_transcriptor_with_nonconst_interface<const char> handler(str);
+    parse_tsv("12\t3" "45\t6\n\n" "789", handler, 4, a);
+    ASSERT_STREQ("<{(12)(345)(6)}*{(789)}>", std::move(str).str().c_str());
     ASSERT_TRUE(allocations.empty());
+}
+
+TEST_F(TestParseTsv, PrefersNonconstWhenIndirect)
+{
+    std::ostringstream str;
+    simple_transcriptor_with_nonconst_interface<const char> handler(str, true);
+    parse_tsv(std::istringstream("12\t3" "45\t6\n\n" "789"), handler, 4);
+    ASSERT_STREQ("{{((12))((345))((6))}}?{{((789))}}",
+        std::move(str).str().c_str());
 }

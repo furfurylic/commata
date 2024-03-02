@@ -164,11 +164,15 @@ template <class Handler, class D>
 struct start_buffer_t<Handler, D,
     std::enable_if_t<has_start_buffer_v<Handler>>>
 {
-    auto start_buffer(
-        typename Handler::char_type* buffer_begin,
-        typename Handler::char_type* buffer_end)
-     -> decltype(std::declval<Handler&>()
-                    .start_buffer(buffer_begin, buffer_end))
+    template <class Ch>
+    auto start_buffer(Ch* buffer_begin, Ch* buffer_end)
+     -> std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            decltype(std::declval<Handler&>()
+                        .start_buffer(buffer_begin, buffer_end))>
     {
         return static_cast<D*>(this)->base().start_buffer(
             buffer_begin, buffer_end);
@@ -187,8 +191,14 @@ template <class Handler, class D>
 struct end_buffer_t<Handler, D,
     std::enable_if_t<has_end_buffer_v<Handler>>>
 {
-    auto end_buffer(typename Handler::char_type* buffer_end)
-     -> decltype(std::declval<Handler&>().end_buffer(buffer_end))
+    template <class Ch>
+    auto end_buffer(Ch* buffer_end)
+     -> std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            decltype(std::declval<Handler&>().end_buffer(buffer_end))>
     {
         return static_cast<D*>(this)->base().end_buffer(buffer_end);
     }
@@ -207,8 +217,14 @@ template <class Handler, class D>
 struct empty_physical_line_t<Handler, D,
     std::enable_if_t<has_empty_physical_line_v<Handler>>>
 {
-    auto empty_physical_line(typename Handler::char_type* where)
-     -> decltype(std::declval<Handler&>().empty_physical_line(where))
+    template <class Ch>
+    auto empty_physical_line(Ch* where)
+     -> std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            decltype(std::declval<Handler&>().empty_physical_line(where))>
     {
         return static_cast<D*>(this)->base().empty_physical_line(where);
     }
@@ -270,6 +286,58 @@ struct handle_exception_t<Handler, D,
     }
 };
 
+template <class Handler, class D>
+struct handler_core_t
+{
+    template <class Ch>
+    auto start_record(Ch* record_begin)
+     -> std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            decltype(std::declval<Handler&>().start_record(record_begin))>
+    {
+        return static_cast<D*>(this)->base().start_record(record_begin);
+    }
+
+    template <class Ch>
+    auto end_record(Ch* record_end)
+     -> std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            decltype(std::declval<Handler&>().end_record(record_end))>
+    {
+        return static_cast<D*>(this)->base().end_record(record_end);
+    }
+
+    template <class Ch>
+    auto update(Ch* first, Ch* last)
+     -> std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            decltype(std::declval<Handler&>().update(first, last))>
+    {
+        return static_cast<D*>(this)->base().update(first, last);
+    }
+
+    template <class Ch>
+    auto finalize(Ch* first, Ch* last)
+     -> std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            decltype(std::declval<Handler&>().finalize(first, last))>
+    {
+        return static_cast<D*>(this)->base().finalize(first, last);
+    }
+};
+
 // handler_decorator forwards all invocations on TextHandler requirements
 // to base()'s member functions with corresponding names; it does not expose
 // any excess member functions that Handler does not expose
@@ -277,35 +345,11 @@ template <class Handler, class D>
 struct handler_decorator :
     get_buffer_t<Handler, D>, release_buffer_t<Handler, D>,
     start_buffer_t<Handler, D>, end_buffer_t<Handler, D>,
-    empty_physical_line_t<Handler, D>,
+    empty_physical_line_t<Handler, D>, handler_core_t<Handler, D>,
     yield_t<Handler, D>, yield_location_t<Handler, D>,
     handle_exception_t<Handler, D>
 {
     using char_type = typename Handler::char_type;
-
-    auto start_record(char_type* record_begin)
-     -> decltype(std::declval<Handler&>().start_record(record_begin))
-    {
-        return static_cast<D*>(this)->base().start_record(record_begin);
-    }
-
-    auto update(char_type* first, char_type* last)
-     -> decltype(std::declval<Handler&>().update(first, last))
-    {
-        return static_cast<D*>(this)->base().update(first, last);
-    }
-
-    auto finalize(char_type* first, char_type* last)
-     -> decltype(std::declval<Handler&>().finalize(first, last))
-    {
-        return static_cast<D*>(this)->base().finalize(first, last);
-    }
-
-    auto end_record(char_type* end)
-     -> decltype(std::declval<Handler&>().end_record(end))
-    {
-        return static_cast<D*>(this)->base().end_record(end);
-    }
 };
 
 }

@@ -84,6 +84,21 @@ public:
     }
 
 protected:
+    bool suppresses_buffer_events() const noexcept
+    {
+        return suppresses_buffer_events_;
+    }
+
+    bool is_in_value() const noexcept
+    {
+        return in_value_;
+    }
+
+    void set_in_value(bool in_value) noexcept
+    {
+        in_value_ = in_value;
+    }
+
     std::basic_ostream<std::remove_const_t<Ch>, Tr>& out() noexcept
     {
         return *out_;
@@ -93,6 +108,76 @@ protected:
 template <class Ch, class Tr>
 simple_transcriptor(std::basic_ostream<Ch, Tr>&, bool = false)
  -> simple_transcriptor<Ch, Tr>;
+
+template <class Ch, class Tr = std::char_traits<std::remove_const_t<Ch>>>
+struct simple_transcriptor_with_nonconst_interface :
+    simple_transcriptor<Ch, Tr>
+{
+    using simple_transcriptor<Ch, Tr>::simple_transcriptor;
+
+    using simple_transcriptor<Ch, Tr>::start_buffer;
+    void start_buffer(std::remove_const_t<Ch>* /*buffer_begin*/,
+                      std::remove_const_t<Ch>* /*buffer_end*/)
+    {
+        if (!this->suppresses_buffer_events()) {
+            this->out() << "<<";
+        }
+    }
+
+    using simple_transcriptor<Ch, Tr>::end_buffer;
+    void end_buffer(std::remove_const_t<Ch>* /*buffer_last*/)
+    {
+        if (!this->suppresses_buffer_events()) {
+            this->out() << ">>";
+        }
+    }
+
+    using simple_transcriptor<Ch, Tr>::start_record;
+    void start_record(std::remove_const_t<Ch>* /*record_begin*/)
+    {
+        this->out() << "{{";
+    }
+
+    using simple_transcriptor<Ch, Tr>::update;
+    void update(std::remove_const_t<Ch>* first, std::remove_const_t<Ch>* last)
+    {
+        if (!this->is_in_value()) {
+            this->out() << "((";
+            this->set_in_value(true);
+        }
+        this->out() << std::basic_string_view<std::remove_const_t<Ch>, Tr>(
+                    first, last - first);
+    }
+
+    using simple_transcriptor<Ch, Tr>::finalize;
+    void finalize(std::remove_const_t<Ch>* first,
+                  std::remove_const_t<Ch>* last)
+    {
+        this->update(first, last);
+        this->out() << "))";
+        this->set_in_value(false);
+        if constexpr (!std::is_const_v<Ch>) {
+            *last = Ch();
+        }
+    }
+
+    using simple_transcriptor<Ch, Tr>::end_record;
+    void end_record(std::remove_const_t<Ch>* /*record_end*/)
+    {
+        this->out() << "}}";
+    }
+
+    using simple_transcriptor<Ch, Tr>::empty_physical_line;
+    void empty_physical_line(std::remove_const_t<Ch>* /*where*/)
+    {
+        this->out() << '?';
+    }
+};
+
+template <class Ch, class Tr>
+simple_transcriptor_with_nonconst_interface(
+        std::basic_ostream<Ch, Tr>&, bool = false)
+ -> simple_transcriptor_with_nonconst_interface<Ch, Tr>;
 
 }
 
