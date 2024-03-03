@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-02-12 (UTC)</signature>
+<signature>2024-02-20 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -308,7 +308,7 @@
       <p>A type <c>T</c> meets the <c>TableParser</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
       <ul>
         <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-        <li>each object of <c>T</c> has (possibly a reference to) a <n>tied character input</n> object, and (similarly, possibly a reference to) a <n>tied table handler</n> object whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>);
+        <li>each object of <c>T</c> has (possibly a reference to) a <n>tied character source</n> object, and (similarly, possibly a reference to) a <n>tied table handler</n> object whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>);
             and the expressions shown in <xref id="table.table_parser.requirements"/> are valid and have the indicated semantics.</li>
       </ul>
 
@@ -329,7 +329,7 @@
           <td>(1)</td>
           <td><c>t()</c></td>
           <td>A type contextually convertible to <c>bool</c></td>
-          <td>Retrieves the text content from its tied character input, parses the text content, and calls the member functions of its tied table handler object compliantly with the <c>TableHandler</c> requirements.
+          <td>Retrieves the text content from its tied character source object, parses the text content, and calls the member functions of its tied table handler object compliantly with the <c>TableHandler</c> requirements.
               Returns <c>false</c> if the return value of a call on <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c>, or <c>finalize</c> is <c>false</c>; <c>true</c> otherwise.
               If this returns <c>false</c> or exits via an exception, then this becomes unable to be called again.</td>
         </tr>
@@ -374,7 +374,7 @@
       <p>A type <c>T</c> meets the <c>TableSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
       <ul>
         <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
-        <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character input</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
+        <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character source</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
       </ul>
 
       <p>In <xref id="table.table_source.requirements"/> and <xref id="table.table_source.optional"/>,</p>
@@ -423,7 +423,7 @@
           <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(h)>></c></td>
           <td rowspan="2">
             <p>Creates a table parser object <c>p</c> and returns it.</p>
-            <p><c>p</c> has its tied character input object which is copy constructed (on (4)) or move constructed (on (5)) from the wrapped character input object of <c>*this</c> and
+            <p><c>p</c> has its tied character source object which is copy constructed (on (4)) or move constructed (on (5)) from the wrapped character source object of <c>*this</c> and
                its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with <c>h</c> (otherwise).</p>
           </td>
         </tr>
@@ -473,7 +473,7 @@
           <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(k)>></c></td>
           <td rowspan="4">
             <p>Creates a table parser object <c>p</c> and returns it.</p>
-            <p><c>p</c> has its tied character input object which is copy constructed (on (2) and (4)) or move constructed (on (3) and (5)) from the wrapped character input object of <c>*this</c> and
+            <p><c>p</c> has its tied character source object which is copy constructed (on (2) and (4)) or move constructed (on (3) and (5)) from the wrapped character source object of <c>*this</c> and
                its tied table handler object which is constructed with <c>std::move(k)</c> (if <c>k</c> is an rvalue) or with <c>k</c> (otherwise).</p>
             <p><c>p</c> refers <c>s</c> as a hint of the size (that is, the number of <c>Ch</c> objects) to allocate buffers.
               <c>s</c> can be equal to zero, which means ‘no hint’.</p>
@@ -3388,9 +3388,9 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
           <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c>.
                           <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
-                          An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character input and an object of <c>Handler</c> as its tied table handler.
+                          An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character source object and an object of <c>Handler</c> as its tied table handler object.
                           If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it.
-                          Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character input object, its tied table handler object, and the allocator object held by it if any.</alias-template>
+                          Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character source object, its tied table handler object, and the allocator object held by it if any.</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
       </section>
@@ -3429,8 +3429,8 @@ template &lt;class HandlerR>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.</requires>
           <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>).
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character input
-                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler.</returns>
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object
+                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object.</returns>
           <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is deemed to have buffer control.
                   The expression inside <c>noexcept</c> is equivalent to
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible&lt;CharInput></c> (first form) or
@@ -3452,8 +3452,8 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
                     <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
           <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>).
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character input,
-                   an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object,
+                   an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
           <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
                   The expression inside <c>noexcept</c> is equivalent to
@@ -3695,9 +3695,9 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
           <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c>.
                           <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
-                          An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character input and an object of <c>Handler</c> as its tied table handler.
+                          An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character source object and an object of <c>Handler</c> as its tied table handler object.
                           If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it.
-                          Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character input object, its tied table handler object, and the allocator object held by it if any.</alias-template>
+                          Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character source object, its tied table handler object, and the allocator object held by it if any.</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
       </section>
@@ -3736,8 +3736,8 @@ template &lt;class HandlerR>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.</requires>
           <returns>A table parser object <c>p</c> for the TSV text format (<xref id="definitions.tsv_text"/>).
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character input
-                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler.</returns>
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object
+                   and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object.</returns>
           <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is deemed to have buffer control.
                   The expression inside <c>noexcept</c> is equivalent to
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible&lt;CharInput></c> (first form) or
@@ -3759,8 +3759,8 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
                     <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
           <returns>A table parser object <c>p</c> for the TSV text format (<xref id="definitions.tsv_text"/>).
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character input,
-                   an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object,
+                   an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
           <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
                   The expression inside <c>noexcept</c> is equivalent to
