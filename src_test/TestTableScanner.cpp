@@ -15,6 +15,7 @@
 #include <locale>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -501,7 +502,7 @@ TYPED_TEST(TestTableScanner, HeaderScan)
 
     basic_table_scanner<TypeParam> h(
         [&ids, &values1, str]
-        (std::size_t j, const auto* range, auto& f) {
+        (std::size_t j, auto range, auto& f) {
             const std::basic_string<TypeParam>
                 field_name(range->first, range->second);
             if (field_name == str("ID")) {
@@ -535,7 +536,7 @@ TYPED_TEST(TestTableScanner, HeaderScanToTheEnd)
     const auto str = char_helper<TypeParam>::str;
 
     basic_table_scanner<TypeParam> h(
-        [](std::size_t j, const auto* range, auto&) {
+        [](std::size_t j, auto range, auto&) {
             if (j == 1) {
                 if (range) {
                     throw std::runtime_error("Header's end with a range");
@@ -568,7 +569,8 @@ public:
     {}
 
     bool operator()(std::size_t j,
-        const std::pair<Ch*, Ch*>* range, basic_table_scanner<Ch>& s)
+        std::optional<std::pair<const Ch*, const Ch*>> range,
+        basic_table_scanner<Ch>& s)
     {
         if (i_ == 0) {
             if (range) {
@@ -919,7 +921,8 @@ struct stateful_header_scanner
     std::vector<int>* values = nullptr;
 
     template <class Ch, class T>
-    bool operator()(std::size_t j, const std::pair<Ch*, Ch*>*, T& t) const
+    bool operator()(std::size_t j,
+        std::optional<std::pair<Ch*, Ch*>>, T& t) const
     {
         if (j == index) {
             t.set_field_scanner(j, make_field_translator(*values));

@@ -323,14 +323,12 @@ void one_pass_scanning_sample3()
 
   table_scanner scanner(
     [&names, names_attached = false]
-    (std::size_t field_index, const std::pair<char*, char*>* field_value,
+    (std::size_t field_index,
+     std::optional<std::pair<char*, char*>> field_value,
      table_scanner& scanner) mutable {
       if (field_value) {
         // The value of field_index-th (zero-based) header field is notified,
-        // whose value is [field_value->first, field_value->second), and
-        // field_value->second is dereferenceable and modifiable
-        // (that is, you can assign zero to it so field_value->first should be
-        // a pointer to a null-terminated sequence)
+        // whose value is [field_value->first, field_value->second)
         if (std::string_view(field_value->first,
                              field_value->second - field_value->first)
             == "Name") {

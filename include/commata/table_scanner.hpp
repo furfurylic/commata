@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <memory>
 #include <new>
+#include <optional>
 #include <string>
 #include <typeinfo>
 #include <type_traits>
@@ -62,7 +63,8 @@ public:
     }
 
     template <class Ch, class TableScanner>
-    bool operator()(std::size_t, const std::pair<Ch*, Ch*>* v, TableScanner&)
+    bool operator()(std::size_t,
+        std::optional<std::pair<Ch*, Ch*>> v, TableScanner&)
     {
         return v || (--remaining_header_records_ > 0);
     }
@@ -107,7 +109,7 @@ class basic_table_scanner
         void field_value(Ch* begin, Ch* end, basic_table_scanner& me) override
         {
             const range_t range(begin, end);
-            if (!scanner()(me.j_, std::addressof(range), me)) {
+            if (!scanner()(me.j_, std::optional(range), me)) {
                 me.remove_header_field_scanner(false);
             }
         }
@@ -119,7 +121,7 @@ class basic_table_scanner
 
         void so_much_for_header(basic_table_scanner& me) override
         {
-            if (!scanner()(me.j_, static_cast<const range_t*>(nullptr), me)) {
+            if (!scanner()(me.j_, std::optional<range_t>(), me)) {
                 me.remove_header_field_scanner(true);
             }
         }

@@ -6240,7 +6240,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
 
         <p>In <xref id="table.header_field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
            The type of <c>j</c> is <c>std::size_t</c>.
-           The type of <c>v</c> is <c>const std::pair&lt;T::char_type*, T::char_type*>*</c>.
+           The type of <c>v</c> is <c>std::optional&lt;std::pair&lt;T::char_type*, T::char_type*>></c>.
            <c>t</c> denotes the table scanner object that holds the header field scanner denoted by <c>s</c> and is an lvalue of cv-unqualified <c>T</c> .</p>
 
         <table id="table.header_field_scanner.requirements">
@@ -6261,10 +6261,10 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <td>Called by the table scanner in two situations following.
                 <ul>
                   <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
-                      Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable.
+                      <c>v</c> contains a value. Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable.
                       Initially the range [<c>v->first</c>, <c>v->second</c>) represents the value of the header field and the value of <c>*v->second</c> is unspecified.
                       The range [<c>v->first</c>, <c>v->second</c>] may be invalidated after the invocation exits.</li>
-                  <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> is a null pointer.</li>
+                  <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> does not contain a value.</li>
                 </ul>
                 In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will be the first body record.</td>
           </tr>
