@@ -721,7 +721,8 @@ std::string slurp(const char* s)
 So far, the first parameters of `parse_csv` have been objects of
 `std::ifstream` or `std::wifstream`.
 What if you want to parse a string already loaded with this `slurp`?
-Write direct what you want to do:
+
+You still write direct what you want to do:
 
 ```C++
 const std::string contents = slurp("stars.csv");
@@ -740,7 +741,7 @@ Each of these disintegrated steps is like the following:
     stream, or a string (`foo` here), to get a _table source_ object.
  1. A table source object is a function object that makes a _table parser_
     object dedicated to a table handler object (`bar` here) with its inherent
-    knowledge of the grammar of CSV .
+    knowledge of the grammar of CSV.
  1. Finally, with its no-parameter invocation, the table parser object consumes
     the input, parses it as a CSV, and reports parsing events to the table
     handler.
