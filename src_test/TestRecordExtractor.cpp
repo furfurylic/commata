@@ -605,8 +605,15 @@ TEST_F(TestRecordExtractorMiscellaneous, EvadeCopying)
     std::size_t total = 0;
     tracking_allocator<std::allocator<wchar_t>> a(total);
     std::wstringbuf out;
-    parse_csv(s, make_record_extractor(
+
+    // Freakingly, invoking Visual Studio 2019/2022's allocator-taking vector's
+    // ctor and the move ctor from it seem to allocate some amount of memory.
+    // So we must reset total to 0 before the parsing takes place.
+    auto parser = make_csv_source(s)(make_record_extractor(
         std::allocator_arg, a, out, L"type", L"idiophone"sv), 1);
+    total = 0;
+    parser();
+
     ASSERT_STREQ(L"instrument,type\n"
                  L"castanets,idiophone\n"
                  L"triangle,idiophone\n", std::move(out).str().c_str());
@@ -623,8 +630,13 @@ TEST_F(TestRecordExtractorMiscellaneous, EvadeCopyingIndexed)
     std::size_t total = 0;
     tracking_allocator<std::allocator<char>> a(total);
     std::stringbuf out;
-    parse_csv(s, make_record_extractor(
+
+    // ditto
+    auto parser = make_csv_source(s)(make_record_extractor(
         std::allocator_arg, a, out, 1, "woodwind"sv), 1);
+    total = 0;
+    parser();
+
     ASSERT_STREQ("instrument,type\n"
                  "clarinet,woodwind\n", std::move(out).str().c_str());
     ASSERT_EQ(0U, total);
