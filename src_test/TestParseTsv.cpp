@@ -23,6 +23,7 @@
 
 #include "BaseTest.hpp"
 #include "logging_allocator.hpp"
+#include "simple_transcriptor.hpp"
 
 using namespace commata;
 using namespace commata::test;
@@ -30,81 +31,6 @@ using namespace commata::test;
 namespace {
 
 static_assert(std::is_trivially_copyable_v<tsv_source<streambuf_input<char>>>);
-
-// <                <- buffer start (suppressible)
-// {(field)(field)} <- record
-// *                <- empty physical line
-// {(field)(field)} <- record
-// >                <- buffer end   (suppressible)
-template <class Ch, class Tr = std::char_traits<Ch>>
-class simple_transcriptor
-{
-    std::basic_ostream<Ch, Tr>* out_;
-    bool in_value_;
-    bool suppresses_buffer_events_;
-
-public:
-    using char_type = Ch;
-
-    explicit simple_transcriptor(
-        std::basic_ostream<Ch, Tr>& out,
-        bool suppresses_buffer_events = false) :
-        out_(std::addressof(out)), in_value_(false),
-        suppresses_buffer_events_(suppresses_buffer_events)
-    {}
-
-    void start_buffer(Ch* /*buffer_begin*/, Ch* /*buffer_end*/)
-    {
-        if (!suppresses_buffer_events_) {
-            out() << '<';
-        }
-    }
-
-    void end_buffer(Ch* /*buffer_last*/)
-    {
-        if (!suppresses_buffer_events_) {
-            out() << '>';
-        }
-    }
-
-    void start_record(Ch* /*record_begin*/)
-    {
-        out() << '{';
-    }
-
-    void update(Ch* first, Ch* last)
-    {
-        if (!in_value_) {
-            out() << '(';
-            in_value_ = true;
-        }
-        out() << std::basic_string_view<Ch, Tr>(first, last - first);
-    }
-
-    void finalize(Ch* first, Ch* last)
-    {
-        update(first, last);
-        out() << ')';
-        in_value_ = false;
-        *last = Ch();
-    }
-
-    void end_record(Ch* /*record_end*/)
-    {
-        out() << '}';
-    }
-
-    void empty_physical_line(Ch* /*where*/)
-    {
-        out() << '*';
-    }
-
-protected:
-    std::basic_ostream<Ch, Tr>& out() noexcept
-    {
-        return *out_;
-    }
-};
 
 template <class Ch, class Tr>
 class empty_physical_line_intolerant_simple_transcriptor :
@@ -363,4 +289,15 @@ TEST_F(TestParseTsv, SourceSwap)
     simple_transcriptor handler(str, true);
     parse_tsv(std::move(source), handler);
     ASSERT_STREQ("{(ABCDE)(FGHI)(JKL)}", std::move(str).str().c_str());
+}
+
+TEST_F(TestParseTsv, EvadeCopying)
+{
+    std::vector<std::size_t> allocations;
+    logging_allocator<char> a(allocations);
+    std::ostringstream str;
+    simple_transcriptor<const char> handler(str);
+    parse_tsv("12\t3" "45\t6" "789", handler, 4, a);
+    ASSERT_STREQ("<{(12)(345)(6789)}>", std::move(str).str().c_str());
+    ASSERT_TRUE(allocations.empty());
 }

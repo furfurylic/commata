@@ -19,7 +19,8 @@ struct has_get_buffer_impl
 {
     template <class T>
     static auto check(T*) -> decltype(
-        std::declval<std::pair<typename T::char_type*, std::size_t>&>() =
+        std::declval<std::pair<std::remove_const_t<typename T::char_type>*,
+                               std::size_t>&>() =
             std::declval<T&>().get_buffer(),
         std::true_type());
 
@@ -32,7 +33,7 @@ struct has_release_buffer_impl
     template <class T>
     static auto check(T*) -> decltype(
         std::declval<T&>().release_buffer(
-            std::declval<typename T::char_type*>()),
+            std::declval<std::remove_const_t<typename T::char_type>*>()),
         std::true_type());
 
     template <class T>

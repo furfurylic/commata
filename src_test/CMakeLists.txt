@@ -49,6 +49,7 @@ set(TEST_COMMATA_HEADERS
     identified_allocator.hpp
     logging_allocator.hpp
     tracking_allocator.hpp
+    simple_transcriptor.hpp
     BaseTest.hpp
 )
 
