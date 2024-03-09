@@ -452,9 +452,9 @@ public:
     }
 
     template <class Ch>
-    void operator()(const Ch* begin, const Ch* end)
+    void operator()(Ch* begin, Ch* end)
     {
-        assert(*end == Ch());
+        *end = Ch();
         auto converted = to_arithmetic<std::optional<T>>(
             arithmetic_convertible<Ch>{ begin, end }, ct_.base());
         if (converted) {
@@ -547,10 +547,7 @@ public:
     template <class Ch>
     void operator()(Ch* begin, Ch* end)
     {
-        assert(*end == Ch());   // shall be null-terminated
-        const auto new_end = remove_(begin, end);
-        *new_end = Ch();
-        return out_(begin, new_end);
+        return out_(begin, remove_(begin, end));
     }
 };
 

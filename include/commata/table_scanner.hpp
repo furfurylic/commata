@@ -552,7 +552,6 @@ public:
                     scanner.first->field_value(std::move(value_), *this);
                     value_.clear();
                 } else {
-                    *end_ = Ch();
                     scanner.first->field_value(begin_, end_, *this);
                 }
                 begin_ = nullptr;
@@ -561,7 +560,6 @@ public:
                 scanner.first->field_value(std::move(value_), *this);
                 value_.clear();
             } else {
-                *last = Ch();
                 scanner.first->field_value(first, last, *this);
             }
             if (scanner.second) {
