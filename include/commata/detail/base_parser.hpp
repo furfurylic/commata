@@ -23,17 +23,17 @@ class base_parser
             "they shall be the same type expect that the latter may be "
             "const-qualified");
 
-    static constexpr bool evades_copying =
+public:
+    using reads_direct = std::bool_constant<
         Handler::buffer_control_defaulted
      && std::is_const_v<typename Handler::char_type>
      && std::is_invocable_r_v<
             std::pair<typename Handler::char_type*,
                       typename Input::size_type>, Input&&,
-            typename Input::size_type>;
+            typename Input::size_type>>;
 
-public:
     using char_type = std::remove_const_t<typename Handler::char_type>;
-    using buffer_char_t = std::conditional_t<evades_copying,
+    using buffer_char_t = std::conditional_t<reads_direct::value,
         typename Handler::char_type, char_type>;
 
 private:
@@ -99,8 +99,8 @@ public:
     ~base_parser()
     {
         if (buffer_) {
-            // Even if evades_copying is true and therefore *this does not
-            // have the ownership of buffer_, it is alright, because then
+            // Even if reads_direct::value is true and therefore *this does
+            // not have the ownership of buffer_, it is alright, because then
             // default_buffer_control::release_buffer is called and it does
             // nothing
             f_.release_buffer(buffer_);
@@ -188,8 +188,8 @@ yield_1:
             }
 yield_2:
             f_.release_buffer(buffer_);
-                // Calling release_buffer is alright even if evades_copying is
-                // true (see comments in the dtor)
+                // Calling release_buffer is alright even if
+                // reads_direct::value is true (see comments in the dtor)
             buffer_ = nullptr;
             physical_line_chars_passed_away_ +=
                 p_ - physical_line_or_buffer_begin_;
@@ -228,7 +228,7 @@ private:
 
     std::pair<std::size_t, std::size_t> arrange_buffer()
     {
-        if constexpr (evades_copying) {
+        if constexpr (reads_direct::value) {
             const std::size_t loaded_size = arrange_buffer_direct();
             return { loaded_size, loaded_size };
         } else {

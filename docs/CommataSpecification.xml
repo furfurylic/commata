@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-03-08 (UTC)</signature>
+<signature>2024-03-09 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -362,6 +362,13 @@
 
         <tr>
           <td>(3)</td>
+          <td><c>T::reads_direct</c></td>
+          <td>Identical to or derived from <c>std::true_type</c> or <c>std::false_type</c></td>
+          <td><c>std::true_type</c> only if any objects of <c>T</c> do not require any buffers to store char-like objects informed to its tied table handler object.</td>
+        </tr>
+
+        <tr>
+          <td>(4)</td>
           <td><c>ct.get_physical_position()</c></td>
           <td><c>std::pair&lt;std::size_t, std::size_t></c></td>
           <td>Returns a pair of the physical line number and the physical column number (<xref id="definitions.others"/>).
@@ -501,6 +508,15 @@
           <td><c>rt(k, s, a)</c></td>
         </tr>
       </table>
+
+      <p>A type <c>U</c> that meets the <c>TableSource</c> requirements is called <n>direct</n> if all of the following conditions meet
+         where <c>X</c> is a type that meets the <c>TableHandler</c> requirements, that is deemed to have no buffer control, and whose <c>char_type</c> is const-qualified:</p>
+      <ul>
+        <li><c>U::parser_type&lt;X>::reads_direct</c> is a type idential to or derived from <c>std::true_type</c> for any <c>X</c>, and</li>
+        <li>If <c>U</c> offers (6) in <xref id="table.table_source.optional"/>, then <c>U::parser_type&lt;X, B>::reads_direct</c> is a type idential or derived from <c>std::true_type</c> for any <c>X</c>
+        and <c>B</c> given the type <c>B</c> meets the <c>Allocator</c> requirements for <c>std::remove_const_t&lt;X::char_type></c>.</li>
+      </ul>
+      <p>A type <c>U</c> that meets the <c>TableSource</c> requirements is called <n>indirect</n> if it is not direct.</p>
     </section>
   </section>
 
@@ -3553,7 +3569,8 @@ namespace commata {
 
       <p>The class template <c>csv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TableParser</c> objects (<xref id="table_parser.requirements"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for a certain char-like type.</p>
-      <p><c>csv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.</p>
+      <p><c>csv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.
+         It shall be direct if and only if <c>CharInput</c> has the direct interface.</p>
       <p><c>csv_source&lt;CharInput></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;CharInput></c> is <c>true</c>.</p>
 
       <section id="csv_source.types">
@@ -3571,7 +3588,6 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character input and an object of <c>Handler</c> as its tied table handler.
                           If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.
-                          If <c>CharInput</c> implements the direct interface, <c>Handler::char_type</c> is const-qualified, and <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> might elide allocation of character buffers.
                           Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character input object, its tied table handler object, and the allocator object held by it if any.</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
@@ -3862,7 +3878,8 @@ namespace commata {
 
       <p>The class template <c>tsv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TableParser</c> objects (<xref id="table_parser.requirements"/>) of the TSV text format (<xref id="definitions.tsv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for a certain char-like type.</p>
-      <p><c>tsv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.</p>
+      <p><c>tsv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.
+         It shall be direct if and only if <c>CharInput</c> has the direct interface.</p>
       <p><c>tsv_source&lt;CharInput></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;CharInput></c> is <c>true</c>.</p>
 
       <section id="tsv_source.types">
@@ -3880,7 +3897,6 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character input and an object of <c>Handler</c> as its tied table handler.
                           If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.
-                          If <c>CharInput</c> implements the direct interface, <c>Handler::char_type</c> is const-qualified, and <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> might elide allocation of character buffers.
                           Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character input object, its tied table handler object, and the allocator object held by it if any.</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
