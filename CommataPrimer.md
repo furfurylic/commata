@@ -846,7 +846,7 @@ while (p.skip_record()(1)) {
 }
 ```
 
-But this won't compile. Your compiler is likely to complain &#x2018;`c_str` is
+But this won't compile. Your compiler is likely to complain `c_str` is
 not a member of `table_pull<...>`. Why?
 
 This is because the table source made by `make_csv_source` from a string
