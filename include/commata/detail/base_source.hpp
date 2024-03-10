@@ -12,9 +12,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "../char_input.hpp"
-#include "../wrapper_handlers.hpp"
-
 #include "buffer_control.hpp"
 #include "typing_aid.hpp"
 
@@ -227,21 +224,6 @@ public:
         }
     }
 };
-
-struct are_make_char_input_args_impl
-{
-    template <class... Args>
-    static auto check(std::void_t<Args...>*) -> decltype(
-        make_char_input(std::declval<Args>()...),
-        std::true_type());
-
-    template <class...>
-    static auto check(...) -> std::false_type;
-};
-
-template <class... Args>
-constexpr bool are_make_char_input_args_v =
-    decltype(are_make_char_input_args_impl::check<Args...>(nullptr))();
 
 }
 

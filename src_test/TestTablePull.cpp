@@ -16,15 +16,19 @@
 
 #include "BaseTest.hpp"
 
+using namespace std::literals;
+
 using namespace commata;
 using namespace commata::test;
 
 namespace {
 
 template <class PrimitiveTablePull>
-auto transcript_primitive(PrimitiveTablePull&& pull)
+auto transcript_primitive(PrimitiveTablePull&& pull,
+    bool at_start_buffer = false, bool at_end_buffer = false)
 {
-    using char_t = typename std::decay_t<PrimitiveTablePull>::char_type;
+    using char_t = std::remove_const_t<
+        typename std::decay_t<PrimitiveTablePull>::char_type>;
 
     const auto str = char_helper<char_t>::str;
     const auto ch  = char_helper<char_t>::ch;
@@ -72,6 +76,20 @@ auto transcript_primitive(PrimitiveTablePull&& pull)
             EXPECT_EQ(1U, pull.data_size());
             EXPECT_THROW(pull.at(1), std::out_of_range);
             s.append(str("--"));
+            break;
+        case primitive_table_pull_state::start_buffer:
+            EXPECT_EQ(2U, pull.data_size());
+            EXPECT_THROW(pull.at(2), std::out_of_range);
+            if (at_start_buffer) {
+                s.push_back(ch('{'));
+            }
+            break;
+        case primitive_table_pull_state::end_buffer:
+            EXPECT_EQ(1U, pull.data_size());
+            EXPECT_THROW(pull.at(1), std::out_of_range);
+            if (at_end_buffer) {
+                s.push_back(ch('}'));
+            }
             break;
         default:
             break;
@@ -171,6 +189,27 @@ TYPED_TEST_P(TestTablePull, PrimitiveMove)
     ASSERT_EQ(str("C+D"), s);
 }
 
+TYPED_TEST_P(TestTablePull, PrimitiveEvadeCopying)
+{
+    using char_t = typename TypeParam::first_type;
+
+    const auto str = char_helper<char_t>::str;
+   
+    const auto csv = str("col1,col2,col3\n"
+                         "val1,val2,val3\n");
+    auto source = make_csv_source(csv);
+    primitive_table_pull pull(
+        std::move(source), TypeParam::second_type::value);
+    ASSERT_EQ(2U, pull.max_data_size());
+    std::basic_string<char_t> s = transcript_primitive(pull, true, true);
+
+    // start_buffer and end_buffer are reported only on the beginning and the
+    // end no matter how small the buffer size is
+    ASSERT_EQ(str("{<<[col1][col2][col3]>>@0,14"
+                   "<<[val1][val2][val3]>>@1,14}"),
+              s);
+}
+
 TYPED_TEST_P(TestTablePull, Basics)
 {
     using char_t = typename TypeParam::first_type;
@@ -184,8 +223,8 @@ TYPED_TEST_P(TestTablePull, Basics)
                          R"(12","cell""13 ""","")" "\n");
 
     for (auto e : { false, true }) {
-        auto pull = make_table_pull(
-            make_csv_source(csv), TypeParam::second_type::value);
+        auto pull = make_table_pull(make_csv_source(indirect, std::move(csv)),
+                                    TypeParam::second_type::value);
         pull.set_empty_physical_line_aware(e);
 
         ASSERT_TRUE(pull) << e;
@@ -399,6 +438,27 @@ TYPED_TEST_P(TestTablePull, Error)
     ASSERT_EQ(table_pull_state::eof, pull.state());
 }
 
+TYPED_TEST_P(TestTablePull, EvadeCopying)
+{
+    using char_t = typename TypeParam::first_type;
+
+    const auto str = char_helper<char_t>::str;
+
+    const auto s = str("col1,col2,col3\n"
+                       "val1,val2,val3\n");
+    auto source = make_csv_source(s);
+    table_pull<decltype(source), std::allocator<char_t>>
+        pull(std::move(source));
+    std::size_t offset = 0;
+    while (pull()) {
+        if (pull.state() == table_pull_state::field) {
+            ASSERT_EQ(s.data() + offset, pull->data())
+                << "offset = " << offset;
+            offset += 5;
+        }
+    }
+}
+
 TYPED_TEST_P(TestTablePull, Move)
 {
     using char_t = typename TypeParam::first_type;
@@ -435,7 +495,8 @@ TYPED_TEST_P(TestTablePull, ToArithmetic)
 
     const auto str = char_helper<char_t>::str;
 
-    auto pull = make_table_pull(make_csv_source(str("X,Y\n"
+    auto pull = make_table_pull(make_csv_source(indirect,
+                                                str("X,Y\n"
                                                     "1,-51.3\n"
                                                     "1.9,\"1 234,5\"")),
                                 TypeParam::second_type::value);
@@ -465,8 +526,9 @@ TYPED_TEST_P(TestTablePull, ToArithmetic)
 }
 
 REGISTER_TYPED_TEST_SUITE_P(TestTablePull,
-    PrimitiveBasicsOnCsv, PrimitiveBasicsOnTsv, PrimitiveMove,
-    Basics, SkipRecord, SkipField, Error, Move, ToArithmetic);
+    PrimitiveBasicsOnCsv, PrimitiveBasicsOnTsv,
+    PrimitiveMove, PrimitiveEvadeCopying,
+    Basics, SkipRecord, SkipField, Error, EvadeCopying, Move, ToArithmetic);
 
 namespace {
 

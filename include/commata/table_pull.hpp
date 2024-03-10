@@ -20,7 +20,6 @@
 #include "wrapper_handlers.hpp"
 
 #include "detail/allocation_only_allocator.hpp"
-#include "detail/buffer_size.hpp"
 #include "detail/member_like_base.hpp"
 
 namespace commata {
@@ -153,7 +152,7 @@ private:
     using state_queue_a_t = allocation_only_allocator<
         typename at_t::template rebind_alloc<state_queue_element_type>>;
     using data_queue_a_t = allocation_only_allocator<
-        typename at_t::template rebind_alloc<char_type*>>;
+        typename at_t::template rebind_alloc<Ch*>>;
 
 public:
     using state_queue_type =
@@ -161,29 +160,21 @@ public:
     using data_queue_type = std::vector<char_type*, data_queue_a_t>;
 
 private:
-    base_member_pair<Allocator, std::size_t> alloc_;
-    const typename at_t::pointer buffer_;
     state_queue_type sq_;
     data_queue_type dq_;
     std::size_t yield_location_;
     bool collects_data_;
 
 public:
-    explicit handler(
-        std::allocator_arg_t, const Allocator& alloc,
-        std::size_t buffer_size) :
-        alloc_(alloc, detail::sanitize_buffer_size(buffer_size, alloc)),
-        buffer_(at_t::allocate(alloc_.base(), alloc_.member())),
+    handler(std::allocator_arg_t, const Allocator& alloc) :
+        sq_(state_queue_a_t(alloc)), dq_(data_queue_a_t(alloc)),
         yield_location_(0), collects_data_(true)
     {}
 
     handler(const handler& other) = delete;
     handler(handler&& other) = delete;
 
-    ~handler()
-    {
-        at_t::deallocate(alloc_.base(), buffer_, alloc_.member());
-    }
+    ~handler() = default;
 
     const state_queue_type& state_queue() const noexcept
     {
@@ -215,14 +206,6 @@ public:
         collects_data_ = !b;
         return *this;
     }
-
-    [[nodiscard]] std::pair<char_type*, std::size_t> get_buffer()
-    {
-        return { std::addressof(*buffer_), alloc_.member() };
-    }
-
-    void release_buffer(const char_type*) noexcept
-    {}
 
     void start_buffer(
         [[maybe_unused]] char_type* buffer_begin,
@@ -356,19 +339,92 @@ private:
     }
 };
 
+template <class D, class Ch, class S>
+struct primitive_table_pull_base_direct
+{
+    const Ch* operator[](S i) const
+    {
+        return static_cast<const D*>(this)->access_impl(i);
+    }
+
+    const Ch* at(S i) const
+    {
+        return static_cast<const D*>(this)->at_impl(i);
+    }
+};
+
+template <class D, class Ch, class S>
+struct primitive_table_pull_base_indirect :
+    primitive_table_pull_base_direct<D, Ch, S>
+{
+    using primitive_table_pull_base_direct<D, Ch, S>::operator[];
+    using primitive_table_pull_base_direct<D, Ch, S>::at;
+
+    Ch* operator[](S i)
+    {
+        return const_cast<Ch*>(std::as_const(*this)[i]);
+    }
+
+    Ch* at(S i)
+    {
+        return const_cast<Ch*>(std::as_const(*this).at(i));
+    }
+};
+
+struct reads_direct_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<bool&>() = T::reads_direct::value,
+        typename T::reads_direct());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+constexpr bool reads_direct_v =
+    decltype(reads_direct_impl::check<T>(nullptr))::value;
+
+template <class TableSource, primitive_table_pull_handle Handle,
+          class Allocator>
+constexpr bool reads_direct_with_handler = reads_direct_v<
+    typename TableSource::template parser_type<reference_handler<handler<
+        const typename TableSource::char_type, Allocator, Handle>>>>;
+
 } // end detail::pull
 
 template <class TableSource,
     primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
     class Allocator = std::allocator<typename TableSource::char_type>>
-class primitive_table_pull
+class primitive_table_pull :
+    public std::conditional_t<
+        detail::pull::reads_direct_with_handler<
+            TableSource, Handle, Allocator>,
+        detail::pull::primitive_table_pull_base_direct<
+            primitive_table_pull<TableSource, Handle, Allocator>,
+            typename TableSource::char_type, std::size_t>,
+        detail::pull::primitive_table_pull_base_indirect<
+            primitive_table_pull<TableSource, Handle, Allocator>,
+            typename TableSource::char_type, std::size_t>>
 {
 public:
-    using char_type = typename TableSource::char_type;
+    using char_type = std::conditional_t<
+        detail::pull::reads_direct_with_handler<
+            TableSource, Handle, Allocator>,
+        const typename TableSource::char_type,
+        typename TableSource::char_type>;
     using allocator_type = Allocator;
     using size_type = std::size_t;
 
 private:
+    // To get get() called; only one of them should suffice but we just can't
+    // get over the esotericism of friend decls
+    friend struct detail::pull::primitive_table_pull_base_direct<
+        primitive_table_pull, typename TableSource::char_type, std::size_t>;
+    friend struct detail::pull::primitive_table_pull_base_indirect<
+        primitive_table_pull, typename TableSource::char_type, std::size_t>;
+
     using at_t = std::allocator_traits<Allocator>;
 
     using handler_t = detail::pull::handler<char_type, Allocator, Handle>;
@@ -420,10 +476,10 @@ public:
     primitive_table_pull(std::allocator_arg_t, const Allocator& alloc,
         TableSourceR&& in, std::size_t buffer_size = 0) :
         i_sq_(0), i_dq_(0),
-        handler_(create_handler(alloc,
-            std::allocator_arg, alloc, buffer_size)),
+        handler_(create_handler(alloc, std::allocator_arg, alloc)),
         sq_(&handler_->state_queue()), dq_(&handler_->data_queue()),
-        ap_(alloc, std::forward<TableSourceR>(in)(wrap_ref(*handler_)))
+        ap_(alloc, std::forward<TableSourceR>(in)(
+                            wrap_ref(*handler_), buffer_size, alloc))
     {
         sq_->emplace_back(
             primitive_table_pull_state::before_parse,
@@ -512,35 +568,18 @@ public:
         return *this;
     }
 
-    char_type* operator[](size_type i)
-    {
-        assert(i < data_size());
-        return (*dq_)[i_dq_ + i];
-    }
-
-    const char_type* operator[](size_type i) const
-    {
-        assert(i < data_size());
-        return (*dq_)[i_dq_ + i];
-    }
-
-    char_type* at(size_type i)
-    {
-        return at_impl(this, i);
-    }
-
-    const char_type* at(size_type i) const
-    {
-        return at_impl(this, i);
-    }
-
 private:
-    template <class ThisType>
-    static auto at_impl(ThisType* me, size_type i)
+    const char_type* access_impl(size_type i) const
     {
-        const auto ds = me->data_size();
+        assert(i < data_size());
+        return (*dq_)[i_dq_ + i];
+    }
+
+    const char_type* at_impl(size_type i) const
+    {
+        const auto ds = data_size();
         if (i < ds) {
-            return (*me)[i];
+            return access_impl(i);
         } else {
             std::ostringstream what;
             what << "Too large suffix " << i
@@ -610,19 +649,20 @@ primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
 
 template <class TableSource, primitive_table_pull_handle Handle,
             class Allocator>
-typename primitive_table_pull<TableSource, Handle, Allocator>::handler_t::
-            state_queue_type
-    primitive_table_pull<TableSource, Handle, Allocator>::sq_moved_from
- = { std::make_pair(
+typename primitive_table_pull<TableSource, Handle, Allocator>::
+        handler_t::state_queue_type
+primitive_table_pull<TableSource, Handle, Allocator>::
+    sq_moved_from = { std::make_pair(
         primitive_table_pull_state::eof,
         typename primitive_table_pull<TableSource, Handle, Allocator>::
             handler_t::state_queue_element_type::second_type(0)) };
 
 template <class TableSource, primitive_table_pull_handle Handle,
             class Allocator>
-typename primitive_table_pull<TableSource, Handle, Allocator>::handler_t::
-            data_queue_type
-    primitive_table_pull<TableSource, Handle, Allocator>::dq_moved_from = {};
+typename primitive_table_pull<TableSource, Handle, Allocator>::
+        handler_t::data_queue_type
+primitive_table_pull<TableSource, Handle, Allocator>::
+    dq_moved_from = {};
 
 enum class table_pull_state : std::uint_fast8_t
 {
@@ -632,9 +672,62 @@ enum class table_pull_state : std::uint_fast8_t
     record_end
 };
 
+namespace detail::pull {
+
+template <class D, class Ch, class Tr>
+struct table_pull_base_evading_copy
+{};
+
+template <class D, class Ch, class Tr>
+struct table_pull_base_not_evading_copy
+{
+    const Ch* c_str() const noexcept
+    {
+        return static_cast<const D&>(*this)->data();
+    }
+
+    template <class F>
+    D& rewrite(F f)
+    {
+        auto& view = const_cast<std::basic_string_view<Ch, Tr>&>(
+                                                *static_cast<D&>(*this));
+        auto* const begin = const_cast<Ch*>(view.data());
+        auto* const end = begin + view.size();
+        auto* const new_end = f(begin, end);
+        if (new_end < end) {
+            *new_end = Ch();
+            view.remove_suffix(end - new_end);
+        }
+        return static_cast<D&>(*this);
+    }
+};
+
+template <class TableSource, class Allocator>
+using primitive_for_t = primitive_table_pull<
+        TableSource,
+        (primitive_table_pull_handle::end_buffer
+       | primitive_table_pull_handle::end_record
+       | primitive_table_pull_handle::empty_physical_line
+       | primitive_table_pull_handle::update
+       | primitive_table_pull_handle::finalize),
+        Allocator>;
+
+} // end detail::pull
+
 template <class TableSource,
     class Allocator = std::allocator<typename TableSource::char_type>>
-class table_pull
+class table_pull :
+    public std::conditional_t<
+        std::is_const_v<typename detail::pull::primitive_for_t<
+                                        TableSource, Allocator>::char_type>,
+        detail::pull::table_pull_base_evading_copy<
+            table_pull<TableSource, Allocator>,
+            typename TableSource::char_type,
+            typename TableSource::traits_type>,
+        detail::pull::table_pull_base_not_evading_copy<
+            table_pull<TableSource, Allocator>,
+            typename TableSource::char_type,
+            typename TableSource::traits_type>>
 {
 public:
     using char_type = typename TableSource::char_type;
@@ -643,14 +736,8 @@ public:
     using view_type = std::basic_string_view<char_type, traits_type>;
 
 private:
-    using primitive_t = primitive_table_pull<
-        TableSource,
-        (primitive_table_pull_handle::end_buffer
-       | primitive_table_pull_handle::end_record
-       | primitive_table_pull_handle::empty_physical_line
-       | primitive_table_pull_handle::update
-       | primitive_table_pull_handle::finalize),
-        allocator_type>;
+    using primitive_t = detail::pull::primitive_for_t<TableSource, Allocator>;
+    using buffer_char_t = typename primitive_t::char_type;
 
     struct reset_discarding_data
     {
@@ -839,11 +926,17 @@ private:
             case primitive_table_pull_state::finalize:
                 do_update(p_[0], p_[1]);                        // throw
                 if (value_.empty()) {
-                    const_cast<char_type*>(view_.data())[view_.size()]
-                        = char_type();
+                    if constexpr (!std::is_const_v<char_type>) {
+                        const_cast<char_type*>(view_.data())[view_.size()]
+                            = char_type();
+                    }
                 } else {
-                    value_.push_back(char_type());              // throw
-                    view_ = view_type(value_.data(), value_.size() - 1);
+                    if constexpr (std::is_const_v<char_type>) {
+                        view_ = view_type(value_.data(), value_.size());
+                    } else {
+                        value_.push_back(char_type());          // throw
+                        view_ = view_type(value_.data(), value_.size() - 1);
+                    }
                 }
                 state_ = table_pull_state::field;
                 return;
@@ -873,15 +966,16 @@ private:
         }
     }
 
-    void do_update(char_type* first, char_type* last)
+    void do_update(buffer_char_t* first, buffer_char_t* last)
     {
         if (!value_.empty()) {
             value_.insert(value_.cend(), first, last);              // throw
         } else if (!view_.empty()) {
+            const auto len = last - first;
             traits_type::move(
                 const_cast<char_type*>(view_.data() + view_.size()),
-                first, last - first);
-            view_ = view_type(view_.data(), view_.size() + last - first);
+                first, len);
+            view_ = view_type(view_.data(), view_.size() + len);
         } else {
             view_ = view_type(first, last - first);
         }
@@ -940,24 +1034,6 @@ public:
             state_ = table_pull_state::eof;
             throw;
         }
-    }
-
-    template <class F>
-    table_pull& rewrite(F f)
-    {
-        auto* const begin = const_cast<char_type*>(view_.data());
-        auto* const end = begin + view_.size();
-        auto* const new_end = f(begin, end);
-        if (new_end < end) {
-            *new_end = char_type();
-            view_.remove_suffix(end - new_end);
-        }
-        return *this;
-    }
-
-    const char_type* c_str() const noexcept
-    {
-        return view_.data();
     }
 
     const view_type& operator*() const noexcept

@@ -2758,6 +2758,16 @@ namespace commata {
     void swap(owned_string_input&lt;Ch, Tr, Allocator>&amp; left,
               owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(noexcept(left.swap(right)));
 
+  <c>// <n><xref id="indirect_input"/>, indirect_input:</n></c>
+  template &lt;class Input> class indirect_input;
+  template &lt;class Input>
+    void swap(indirect_input&lt;Input>&amp; left,
+              indirect_input&lt;Input>&amp; right) noexcept(noexcept(left.swap(right)));
+
+  <c>// <n>tags:</n></c>
+  struct indirect_t {};
+  constexpr inline indirect_t indirect{};
+
   <c>// <n><xref id="char_input.creation"/>, CharInput creation functions:</n></c>
   template &lt;class Ch, class Tr>
     streambuf_input&lt;Ch, Tr> make_char_input(std::basic_streambuf&lt;Ch, Tr>&amp; in) noexcept;
@@ -2779,6 +2789,11 @@ namespace commata {
   template &lt;class Ch, class Tr, class Allocator>
     owned_string_input&lt;Ch, Tr, Allocator>
       make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
+  template &lt;class... Args>
+    <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+  template &lt;class Input>
+    indirect_input&lt;Input>
+      make_char_input(indirect_t, indirect_input&lt;Input> input) noexcept(<nc>see below</nc>);
 }
       </codeblock>
 
@@ -3291,6 +3306,92 @@ template &lt;class Ch, class Tr, class Allocator>
       </section>
     </section>
 
+    <section id="indirect_input">
+      <name>Class template <c>indirect_input</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class Input> class indirect_input {
+  public:
+    using base_type   = Input;
+    using char_type   = typename Input::char_type;
+    using traits_type = typename Input::traits_type;
+    using size_type   = typename Input::size_type;
+
+    <c>// <n><xref id="indirect_input.cons"/>, construct/copy/destroy:</n></c>
+    indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
+    explicit indirect_input(Input base) noexcept(std::is_nothrow_move_constructible_v&lt;Input>) :
+      input(std::move(base)) {}
+    indirect_input(const indirect_input&amp;)  = default;
+    indirect_input(      indirect_input&amp;&amp;) = default;
+   ~indirect_input() = default;
+    indirect_input&amp; operator=(const indirect_input&amp;)  = default;
+    indirect_input&amp; operator=(      indirect_input&amp;&amp;) = default;
+
+    <c>// <n>access:</n></c>
+    const Input&amp; base() const noexcept { return input; }
+          Input&amp; base()       noexcept { return input; }
+
+    <c>// <n><xref id="indirect_input.inv"/>, invocation:</n></c>
+    size_type operator()(Ch* out, size_type n);
+
+    void swap(indirect_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Input>);
+      { using std::swap; swap(input, other.input); }
+
+  private:
+    Input input;  <c>// <n>exposition only</n></c>
+  };
+
+  <c>// <n><xref id="indirect_input.special"/>, specialized algorithms:</n></c>
+  template &lt;class Input>
+    void swap(indirect_input&lt;Input>&amp; left,
+              indirect_input&lt;Input>&amp; right) noexcept(noexcept(left.swap(right)));
+}
+      </codeblock>
+
+      <p>The class template <c>indirect_input</c> describes thin wrappers of a <c>CharInput</c> object with the ownership of it, and with its direct interface, if any, lost.</p>
+      <p>The template parameter <c>Input</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>).</p>
+      <p><c>indirect_input&lt;Input></c> meets the <c>CharInput</c> requirements for <c>Input::char_type</c> with its indirect interface and without its direct interface,
+         and is a trivially copyable type if <c>CharInput</c> is a trivially copyable type.</p>
+
+      <section id="indirect_input.cons">
+        <name><c>indirect_input</c> construct/copy/destroy</name>
+
+        <code-item>
+          <code>
+indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
+          </code>
+          <requires><c>Input</c> shall be <c>DefaultConstructible</c>.</requires>
+          <effects>Default constructs <c>input</c>.</effects>
+        </code-item>
+      </section>
+
+      <section id="indirect_input.inv">
+        <name><c>indirect_input</c> invocation</name>
+
+        <code-item>
+          <code>
+size_type operator()(Ch* out, size_type n);
+          </code>
+          <effects>Equivalent to: <c>return input(out, n);</c></effects>
+        </code-item>
+      </section>
+
+      <section id="indirect_input.special">
+        <name><c>indirect_input</c> specialized algorithms</name>
+
+        <code-item>
+          <code>
+template &lt;class Input>
+  void swap(indirect_input&lt;Input>&amp; left,
+            indirect_input&lt;Input>&amp; right) noexcept(noexcept(left.swap(right)));
+          </code>
+          <effects>Equivalent to: <c>left.swap(right);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;Input></c> is <c>true</c>.</remark>
+        </code-item>
+      </section>
+    </section>
+
     <section id="char_input.creation">
       <name><c>CharInput</c> creation functions</name>
 
@@ -3355,6 +3456,30 @@ template &lt;class Ch, class Tr, class Allocator>
     make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
         </code>
         <returns><c>owned_string_input&lt;Ch, Tr, Allocator>(std::move(in))</c>.</returns>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class... Args>
+  <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+        </code>
+        <effects><p>If <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand, equivalent to:</p>
+                 <code>auto in = make_char_input(std::forward&lt;Args>(args)...);
+return indirect_input&lt;decltype(in)>(std::move(in));
+</code>
+                 <p>Otherwise, equivalent to: <c>return indirect_input&lt;Args...>(std::forward&lt;Args>(args)...);</c></p></effects>
+        <remark>This overload shall not participate in overload resolution unless the first type in <c>std::decay_t&lt;Args>...</c> (if any) is not identical to or not derived from <c>indirect_t</c>, and either <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand or <c>sizeof...(Args)</c> is equal to <c>1</c>.
+                The expression inside <c>noexcept</c> is <c>true</c> unless the equivalent expressions described above is potentially-throwing.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class Input>
+  indirect_input&lt;Input>
+    make_char_input(indirect_t, indirect_input&lt;Input> input) noexcept(<nc>see below</nc>);
+        </code>
+        <returns><c>indirect_input&lt;Input>(std::move(input.base()))</c>.</returns>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Input></c>.</remark>
       </code-item>
     </section>
   </section>
@@ -3671,7 +3796,8 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
                  <p>Otherwise, equivalent to:</p>
                  <code>return parse_csv(make_csv_source(std::forward&lt;Arg1>(arg1)),
                  std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs>(other_args)...);</code></effects>
-        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not an instance of <c>csv_source</c> and either of <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
+        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not either of an instance of <c>csv_source</c> or <c>indirect_t</c>,
+                and either of <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
     </section>
   </section>
@@ -3979,7 +4105,8 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
                  <p>Otherwise, equivalent to:</p>
                  <code>return parse_tsv(make_tsv_source(std::forward&lt;Arg1>(arg1)),
                  std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs>(other_args)...);</code></effects>
-        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not an instance of <c>tsv_source</c> and either of <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
+        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not either of an instance of <c>tsv_source</c> or <c>indirect_t</c>,
+                and either of <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
     </section>
   </section>
@@ -7695,7 +7822,8 @@ namespace commata {
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class primitive_table_pull {
   public:
-    using char_type      = typename TableSource::char_type;
+    <c>// <n><xref id="primitive_table_pull.types"/>, member types:</n></c>
+    using char_type      = <nc>see below</nc>;
     using allocator_type = Allocator;
     using size_type      = std::size_t;
 
@@ -7757,6 +7885,20 @@ namespace commata {
        If <c>(Handle &amp; primitive_table_pull_handle::start_buffer) == primitive_table_pull_handle(0)</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
        All other enumerators but <c>primitive_table_pull_handle::all</c> shall work similarly.
        <c>primitive_table_pull_handle::all</c> has a representation of all one bits and is intended to be used to express &#x2018;ignore none&#x2019;.</p>
+
+    <section id="primitive_table_pull.types">
+      <name><c>primitive_table_pull</c> member types</name>
+      <code-item>
+        <code>
+using char_type = <nc>see below</nc>;
+        </code>
+        <type><c>const typename TableSource::char_type</c> if <c>TableSource</c> is direct (<xref id="table_source.requirements"/>), <c>typename TableSource::char_type</c> otherwise.</type>
+        <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
+              For example, the program cannot overwrite character objects pointed by the return value of <c>operator[]</c> in such cases.
+              If <c>TableSource</c> is an instance of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
+              the program can ensure that it is not const-qualified specifying an instance of <c>indirect_input</c> (<xref id="indirect_input"/>) as the first template parameter of <c>csv_source</c> or <c>tsv_source</c> with possible performance degradation.</note>
+      </code-item>
+    </section>
 
     <section id="primitive_table_pull.physical_position_available">
       <name><c>primitive_table_pull</c> physical position availability</name>
@@ -7989,6 +8131,7 @@ const char_type* operator[](size_type i) const;
         <requires><c>i</c> shall be smaller than <c>data_size()</c>.</requires>
         <returns>The <c>i</c>-th (zero-based) argument value of the front of the event queue.</returns>
         <throws>Nothing.</throws>
+        <remark>The first form is not declared if <c>char_type</c> is const-qualified.</remark>
       </code-item>
 
       <code-item>
@@ -7998,6 +8141,7 @@ const char_type* at(size_type i) const;
         </code>
         <throws><c>std::out_of_range</c> if <c>i >= data_size()</c>.</throws>
         <returns><c>(*this)[i]</c>.</returns>
+        <remark>The first form is not declared if <c>char_type</c> is const-qualified.</remark>
       </code-item>
 
       <code-item>
@@ -8025,7 +8169,8 @@ namespace commata {
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class table_pull {
   public:
-    using char_type      = typename TableSource::char_type;
+    <c>// <n><xref id="table_pull.types"/>, member types:</n></c>
+    using char_type      = <nc>see below</nc>;
     using traits_type    = typename TableSource::traits_type;
     using allocator_type = Allocator;
     using view_type      = std::basic_string_view&lt;char_type, traits_type>;
@@ -8091,7 +8236,21 @@ namespace commata {
     <p>An object of an instantiation of it holds a table parser object (<xref id="table_parser.requirements"/>) obtained from the table source object (<xref id="table_source.requirements"/>) passed to the constructor
        and performs field-wisely or record-wisely step-by-step parsing of a text table using it.
        Its user can retrieve the text values of the text fields through its <n>current string values</n>, which are null-terminated sequences of <c>TableSource::char_type</c>.</p>
-    <p>An instance of <c>table_pull</c> meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char_type</c>.</p>
+    <p>An instance of <c>table_pull</c> meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char_type</c> only if <c>char_type</c> is not const-qualified (<xref id="table_pull.types"/>).</p>
+
+    <section id="table_pull.types">
+      <name><c>table_pull</c> member types</name>
+      <code-item>
+        <code>
+using char_type = <nc>see below</nc>;
+        </code>
+        <type><c>const typename TableSource::char_type</c> if <c>TableSource</c> is direct (<xref id="table_source.requirements"/>), <c>typename TableSource::char_type</c> otherwise.</type>
+        <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
+              For example, <c>c_str</c> member function is not declared in such cases.
+              If <c>TableSource</c> is an instance of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
+              the program can ensure that it is not const-qualified specifying an instance of <c>indirect_input</c> (<xref id="indirect_input"/>) as the first template parameter of <c>csv_source</c> or <c>tsv_source</c> with possible performance degradation.</note>
+      </code-item>
+    </section>
 
     <section id="table_pull.physical_position_available">
       <name><c>table_pull</c> physical position availability</name>
@@ -8322,6 +8481,7 @@ std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
 const char_type* c_str() const noexcept;
         </code>
         <returns>A pointer that points the first element of a null-terminated sequence of the current string value.</returns>
+        <remark>This member function is not declared if <c>char_type</c> is const-qualified.</remark>
       </code-item>
 
       <code-item>
@@ -8346,7 +8506,8 @@ template &lt;class F> table_pull&amp; rewrite(F f);
                  Then conditionally shorten the current string value, preserving its null-terminated property, so that its size should be <c>new_end - data()</c>.</effects>
         <returns><c>*this</c>.</returns>
         <postcondition><c>state</c> member function shall return the same value as before the invocation.</postcondition>
-        <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
+        <remark>This member function is not declared if <c>char_type</c> is const-qualified.
+                Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
                 When an exception is thrown, the state of <c>*this</c> shall not be changed.</remark>
         <note>This member function template is primarily intended to be invoked with a <c>numpunct_replacer_to_c</c> (<xref id="numpunct_replacer_to_c"/>) object.</note>
       </code-item>

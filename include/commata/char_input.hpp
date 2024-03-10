@@ -17,6 +17,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "detail/typing_aid.hpp"
+
 namespace commata {
 
 namespace detail { namespace input {
@@ -355,6 +357,65 @@ auto swap(owned_string_input<Ch, Tr, Allocator>& left,
     left.swap(right);
 }
 
+template <class Input>
+class indirect_input
+{
+    Input input_;
+
+public:
+    using base_type = Input;
+    using char_type = typename Input::char_type;
+    using traits_type = typename Input::traits_type;
+    using size_type = typename Input::size_type;
+
+    explicit indirect_input(Input input)
+        noexcept(std::is_nothrow_move_constructible_v<Input>) :
+        input_(std::move(input))
+    {}
+
+    indirect_input() = default;
+    indirect_input(const indirect_input&) = default;
+    indirect_input(indirect_input&&) = default;
+    ~indirect_input() = default;
+    indirect_input& operator=(const indirect_input& other) = default;
+    indirect_input& operator=(indirect_input&& other) = default;
+
+    const Input& base() const noexcept
+    {
+        return input_;
+    }
+
+    Input& base() noexcept
+    {
+        return input_;
+    }
+
+    size_type operator()(char_type* out, size_type n)
+    {
+        return input_(out, n);
+    }
+
+    void swap(indirect_input& other) noexcept(
+        std::is_nothrow_swappable_v<Input>)
+    {
+        using std::swap;
+        swap(input_, other.input_);
+    }
+};
+
+template <class Input>
+auto swap(indirect_input<Input>& left, indirect_input<Input>& right)
+    noexcept(noexcept(left.swap(right)))
+ -> std::enable_if_t<std::is_swappable_v<Input>>
+{
+    left.swap(right);
+}
+
+struct indirect_t
+{};
+
+constexpr inline indirect_t indirect{};
+
 template <class Ch, class Tr>
 streambuf_input<Ch, Tr> make_char_input(
     std::basic_streambuf<Ch, Tr>& in) noexcept
@@ -436,6 +497,71 @@ owned_string_input<Ch, Tr, Allocator> make_char_input(
     std::basic_string<Ch, Tr, Allocator>&& in) noexcept
 {
     return owned_string_input(std::move(in));
+}
+
+namespace detail {
+
+struct are_make_char_input_args_impl
+{
+    template <class... Args>
+    static auto check(std::void_t<Args...>*) -> decltype(
+        make_char_input(std::declval<Args>()...),
+        std::true_type());
+
+    template <class...>
+    static auto check(...) -> std::false_type;
+};
+
+template <class... Args>
+constexpr bool are_make_char_input_args_v =
+    decltype(are_make_char_input_args_impl::check<Args...>(nullptr))();
+
+namespace input {
+
+template <class... Args>
+struct char_input_for
+{
+    using type = decltype(make_char_input(std::declval<Args>()...));
+};
+
+template <class... Args>
+constexpr auto make_char_input_noexcept_na()
+ -> std::bool_constant<
+        noexcept(make_char_input(std::declval<Args>()...))
+     && std::is_move_constructible_v<
+            decltype(make_char_input(std::declval<Args>()...))>>;
+
+template <class Input>
+constexpr auto make_char_input_noexcept_na()
+ -> std::enable_if_t<!are_make_char_input_args_v<Input>,
+        std::is_move_constructible<std::decay_t<Input>>>;
+
+} // end input
+
+} // end detail
+
+template <class... Args>
+auto make_char_input(indirect_t, Args&&... args) noexcept(
+    decltype(detail::input::make_char_input_noexcept_na<Args...>())())
+ -> std::enable_if_t<
+        (detail::are_make_char_input_args_v<Args...> || (sizeof...(Args) == 1))
+     && !std::is_base_of_v<indirect_t, std::decay_t<detail::first_t<Args...>>>,
+        indirect_input<typename std::conditional_t<
+            detail::are_make_char_input_args_v<Args...>,
+            detail::input::char_input_for<Args...>,
+            std::decay<detail::first_t<Args...>>>::type>>
+{
+    if constexpr (detail::are_make_char_input_args_v<Args...>) {
+        return indirect_input(make_char_input(std::forward<Args>(args)...));
+    } else {
+        return indirect_input(std::forward<Args>(args)...);
+    }
+}
+
+template <class Input>
+indirect_input<Input> make_char_input(indirect_t, indirect_input<Input> input)
+{
+    return indirect_input(input.base());
 }
 
 }
