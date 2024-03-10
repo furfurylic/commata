@@ -391,51 +391,46 @@
 
     <section id="table_source.requirements">
       <name><c>TableSource</c> requirements</name>
-  
+
       <p>A type <c>T</c> meets the <c>TableSource</c> requirements for a cv-unqualified char-like type <c>Ch</c> if:</p>
       <ul>
         <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
         <li>each object of <c>T</c> has (possibly a reference to) a <n>wrapped character input</n> object, and the expressions shown in <xref id="table.table_source.requirements"/> are valid and have the indicated semantics.</li>
       </ul>
-  
+
       <p>In <xref id="table.table_source.requirements"/> and <xref id="table.table_source.optional"/>,</p>
       <ul>
         <li><c>H</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>,</li>
-        <li><c>K</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and that is deemed to no have buffer control,</li>
-        <li><c>A</c> is a type that meets the <c>Allocator</c> requirements for <c>Ch</c>,</li>
         <li><c>ct</c> is an lvalue of <c>const T</c>,</li>
         <li><c>rt</c> is an rvalue of <c>T</c>,</li>
         <li><c>h</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c>,</li>
-        <li><c>k</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and that is deemed to have no buffer control,</li>
-        <li><c>s</c> is an rvalue of <c>std::size_t</c>, and</li>
-        <li><c>a</c> is an rvalue whose type meets the <c>Allocator</c> requirement for <c>Ch</c>.</li>
       </ul>
-  
+
       <table id="table.table_source.requirements">
         <caption><c>TableSource</c> requirements</caption>
         <col width="2"/><col width="9"/><col width="18"/><col width="28"/>
-  
+
         <tr>
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
           <th>Remarks</th>
         </tr>
-  
+
         <tr>
           <td>(1)</td>
           <td><c>T::char_type</c></td>
           <td></td>
           <td>Shall be an identical type to <c>Ch</c>.</td>
         </tr>
-  
+
         <tr>
           <td>(2)</td>
           <td><c>T::traits_type</c></td>
           <td></td>
           <td>Shall be a character traits type for <c>Ch</c>.</td>
         </tr>
-  
+
         <tr>
           <td>(3)</td>
           <td><c>T::parser_type&lt;H></c></td>
@@ -453,7 +448,7 @@
                its tied table handler object which is constructed with <c>std::move(h)</c> (if <c>h</c> is an rvalue) or with <c>h</c> (otherwise).</p>
           </td>
         </tr>
-  
+
         <tr>
           <td>(5)</td>
           <td><c>rt(h)</c></td>
@@ -462,18 +457,27 @@
 
       <p>Some types of <c>TableSource</c>s additionally offer optional operations for <c>TableHandler</c> types that is deemed to have no buffer control, as described in <xref id="table.table_source.optional"/>.
          Those types for which the listed operations are provided shall implement the semantics described in <xref id="table.table_source.optional"/> unless otherwise stated.</p>
- 
+
+      <p>In <xref id="table.table_source.optional"/>,</p>
+      <ul>
+        <li><c>K</c> is a type that meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and that is deemed to have no buffer control,</li>
+        <li><c>A</c> is a type that meets the <c>Allocator</c> requirements for <c>Ch</c>,</li>
+        <li><c>k</c> is an expression whose type meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Ch</c> and that is deemed to have no buffer control,</li>
+        <li><c>s</c> is an rvalue of <c>std::size_t</c>, and</li>
+        <li><c>a</c> is an rvalue whose type meets the <c>Allocator</c> requirement for <c>Ch</c>.</li>
+      </ul>
+
       <table id="table.table_source.optional">
         <caption>Optional <c>TableSource</c> operations</caption>
         <col width="2"/><col width="9"/><col width="18"/><col width="28"/>
-  
+
         <tr>
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
           <th>Remarks</th>
         </tr>
-  
+
         <tr>
           <td>(6)</td>
           <td><c>T::parser_type&lt;K, A></c></td>
@@ -497,7 +501,7 @@
             <p>On (4) and (5), <c>p</c> is also configured to hold a copy of <c>a</c> to allocate and deallocate buffers.</p>
           </td>
         </tr>
-  
+
         <tr>
           <td>(8)</td>
           <td><c>rt(k, s)</c></td>
@@ -508,7 +512,7 @@
           <td><c>ct(k, s, a)</c></td>
           <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(k)>, std::decay_t&lt;decltype(a)>></c></td>
         </tr>
-  
+
         <tr>
           <td>(10)</td>
           <td><c>rt(k, s, a)</c></td>
@@ -6137,9 +6141,11 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
 
         <p>In <xref id="table.field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
            <c>b</c> and <c>e</c> are rvalues of <c>Ch*</c>.
+           <c>c</c> and <c>f</c> are rvalues of <c>const Ch*</c>.
            <c>rv</c> is an rvalue of <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
 
-        <p>Requirements shown as (1) and (2) in <xref id="table.field_scanner.requirements"/> are optional, but at least one of (1) and (2) shall be satisfied without falling back to the default behaviours, because they are defined in a cross-referencing manner.</p>
+        <p>Requirements shown as (1), (2) and (3) in <xref id="table.field_scanner.requirements"/> are optional, but at least one of them shall be satisfied without falling back to the default behaviours, because they are defined in a cross-referencing manner.
+           If more than one of (1), (2) and (3) are valid expressions, it is unspecified which one is evaluated by the table scanner.</p>
 
         <table id="table.field_scanner.requirements">
           <caption><c>BodyFieldScanner</c> requirements</caption>
@@ -6159,22 +6165,33 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <td>(Not used)</td>
             <td>Called when the table scanner has finalized a text value of the field of a body record.
                 Any pointers in the range [<c>b</c>, <c>e</c>] are dereferenceable and any values stored at them are modifiable.
-                Initially the range [<c>b</c>, <c>e</c>) represents the value of the field and <c>*e</c> is the terminating zero.
-                The range [<c>b</c>, <c>e</c>] may be invalidated after the invocation exits.
-                It is unspecified which of (1) and (2) the table scanner calls.</td>
-            <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (2) with it.</td>
+                Initially the range [<c>b</c>, <c>e</c>) represents the text value of the field and the value of <c>*e</c> is unspecified.
+                The range [<c>b</c>, <c>e</c>] may be invalidated after the invocation exits.</td>
+            <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
           </tr>
 
           <tr>
             <td>(2)</td>
-            <td><c>s(rv)</c></td>
+            <td><c>s(c, f)</c></td>
             <td>(Not used)</td>
-            <td>Called when the table scanner has finalized a text value of the field of a body record. The value of the field is <c>rv</c>.</td>
-            <td>Calls (1) with <c>rv.data()</c> and <c>rv.data() + rv.size()</c>.</td>
+            <td>Called when the table scanner has finalized a text value of the field of a body record.
+                Any pointers in the range [<c>c</c>, <c>f</c>) are dereferenceable.
+                The range [<c>c</c>, <c>f</c>) represents the text value of the field.
+                The range [<c>c</c>, <c>f</c>) may be invalidated after the invocation exits.</td>
+            <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>c</c>, <c>f</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
           </tr>
 
           <tr>
             <td>(3)</td>
+            <td><c>s(rv)</c></td>
+            <td>(Not used)</td>
+            <td>Called when the table scanner has finalized a text value of the field of a body record. The value of the field is <c>rv</c>.</td>
+            <td>Evaluates (1) with <c>rv.data()</c> and <c>rv.data() + rv.size()</c>.
+                <span class="note">If evaluating (1) modifies the object pointed by <c>e</c> to any value other than <c>Ch()</c>, this leads to undefined behaviour.</span></td>
+          </tr>
+
+          <tr>
+            <td>(4)</td>
             <td><c>s()</c></td>
             <td>(Not used)</td>
             <td>Called when the table scanner has found that the field does not appear in the body record, that is, the record has too few fields to reach the field.</td>
@@ -6235,8 +6252,11 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
 
         <p>In <xref id="table.header_field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
            The type of <c>j</c> is <c>std::size_t</c>.
-           The type of <c>v</c> is <c>const std::pair&lt;T::char_type*, T::char_type*>*</c>.
-           <c>t</c> denotes the table scanner object that holds the header field scanner denoted by <c>s</c> and is an lvalue of cv-unqualified <c>T</c> .</p>
+           The type of <c>v</c> is <c>std::optional&lt;std::pair&lt;T::char_type*, T::char_type*>></c>.
+           The type of <c>w</c> is <c>std::optional&lt;std::pair&lt;std::remove_const_t&lt;T::char_type>*, std::remove_const_t&lt;T::char_type>*>></c>.
+           <c>t</c> denotes an lvalue of the table scanner object that holds the header field scanner denoted by <c>s</c> and is an lvalue of cv-unqualified <c>T</c> .</p>
+        <p>Requirements shown as (1) and (2) in <xref id="table.header_field_scanner.requirements"/> are optional, but at least one of them shall be satisfied.
+           If both of (1) and (2) are valid expressions, it is unspecified which one is evaluated by the table scanner.</p>
 
         <table id="table.header_field_scanner.requirements">
           <caption><c>HeaderFieldScanner</c> requirements</caption>
@@ -6252,14 +6272,28 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
           <tr>
             <td>(1)</td>
             <td><c>s(j, v, t)</c></td>
-            <td>A type contextually convertible to <c>bool</c></td>
+            <td rowspan="2">A type contextually convertible to <c>bool</c></td>
             <td>Called by the table scanner in two situations following.
                 <ul>
                   <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
-                      Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable.
-                      Initially the range [<c>v->first</c>, <c>v->second</c>) represents the value of the header field and <c>*v->second</c> is the terminating zero.
+                      <c>v</c> contains a value. Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable.
+                      Initially the range [<c>v->first</c>, <c>v->second</c>) represents the value of the header field and the value of <c>*v->second</c> is unspecified.
                       The range [<c>v->first</c>, <c>v->second</c>] may be invalidated after the invocation exits.</li>
-                  <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> is a null pointer.</li>
+                  <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> does not contain a value.</li>
+                </ul>
+                In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will be the first body record.</td>
+        </tr>
+
+          <tr>
+            <td>(2)</td>
+            <td><c>s(j, w, t)</c></td>
+            <td>Called by the table scanner in two situations following.
+                <ul>
+                  <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
+                      <c>w</c> contains a value. Any pointers in the range [<c>w->first</c>, <c>w->second</c>) are dereferenceable.
+                      The range [<c>w->first</c>, <c>w->second</c>) represents the text value of the header field.
+                      The range [<c>w->first</c>, <c>w->second</c>) may be invalidated after the invocation exits.</li>
+                  <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>w</c> does not contain a value.</li>
                 </ul>
                 In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will be the first body record.</td>
           </tr>
@@ -6299,7 +6333,7 @@ namespace commata {
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class basic_table_scanner {
   public:
-    using char_type = Ch;
+    using char_type = const Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits&lt;Allocator>::size_type;
@@ -6334,14 +6368,16 @@ namespace commata {
     template &lt;class T> const T* get_record_end_scanner() const noexcept;
     template &lt;class T>       T* get_record_end_scanner()       noexcept;
 
-    <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
+    <c>// <n>eight member functions below are declared and defined to meet the TableHandler</n>
     // <n>requirements (<xref id="table_handler.requirements"/>):</n></c>
-    void start_buffer(Ch* buffer_begin, Ch* buffer_end);
-    void end_buffer(Ch* buffer_end);
-    void start_record(Ch* record_begin);
-    bool end_record(Ch* record_end);
-    void update(Ch* first, Ch* last);
-    void finalize(Ch* first, Ch* last);
+    void start_buffer(const Ch* buffer_begin, const Ch* buffer_end);
+    void end_buffer(const Ch* buffer_end);
+    void start_record(const Ch* record_begin);
+    bool end_record(const Ch* record_end);
+    void update(const Ch* first, const Ch* last);
+    void update(      Ch* first,       Ch* last);
+    void finalize(const Ch* first, const Ch* last);
+    void finalize(      Ch* first,       Ch* last);
 
     <c>// <n><xref id="basic_table_scanner.processing_state"/>, processing state:</n></c>
     bool is_in_header() const noexcept;
@@ -6991,10 +7027,9 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
           <name><c>arithmetic_field_translator</c> invocation</name>
           <code-item>
             <code>
-template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
+template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             </code>
-            <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.
-                      The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
+            <requires>The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
             <effects><p>Given an exposition-only class template:</p>
               <code>
 template &lt;class Ch> struct arithmetic_convertible {
@@ -7004,9 +7039,11 @@ template &lt;class Ch> struct arithmetic_convertible {
   auto size() const { return e - b; }
 };
               </code>
-              <p>first makes an object <c>w</c> of <c>std::optional&lt;T></c> initialized with <c>to_arithmetic&lt;std::optional&lt;T>>(arithmetic_convertible&lt;Ch>{ begin, end }, get_conversion_error_handler())</c>,
-                 and then puts <c>*w</c> into the field translator sink if <c>w.has_value()</c> is <c>true</c>.</p>
+              <p>first assigns <c>Ch()</c> to <c>*end</c>,
+                 then makes an object <c>w</c> of <c>std::optional&lt;T></c> initialized with <c>to_arithmetic&lt;std::optional&lt;T>>(arithmetic_convertible&lt;Ch>{ begin, end }, get_conversion_error_handler())</c>,
+                 and finally puts <c>*w</c> into the field translator sink if <c>w.has_value()</c> is <c>true</c>.</p>
             </effects>
+            <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is <c>char</c> or <c>wchar_t</c>.</remark>
           </code-item>
 
           <code-item>
@@ -7112,15 +7149,9 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
             <code>
 template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             </code>
-            <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.
-                      The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
-            <effects><p>Equivalent to:</p>
-              <code>
-Ch* const new_end = replace(begin, end);
-*new_end = Ch();
-base(begin, new_end);
-              </code>
-            </effects>
+            <requires>The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
+            <effects>Equivalent to: <c>return base(begin, replace(begin, end));</c></effects>
+            <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is <c>char</c> or <c>wchar_t</c>.</remark>
           </code-item>
 
           <code-item>

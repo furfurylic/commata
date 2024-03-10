@@ -452,9 +452,11 @@ public:
     }
 
     template <class Ch>
-    void operator()(const Ch* begin, const Ch* end)
+    auto operator()(Ch* begin, Ch* end)
+     -> std::enable_if_t<std::is_same_v<Ch, char>
+                      || std::is_same_v<Ch, wchar_t>>
     {
-        assert(*end == Ch());
+        *end = Ch();
         auto converted = to_arithmetic<std::optional<T>>(
             arithmetic_convertible<Ch>{ begin, end }, ct_.base());
         if (converted) {
@@ -545,12 +547,11 @@ public:
     }
 
     template <class Ch>
-    void operator()(Ch* begin, Ch* end)
+    auto operator()(Ch* begin, Ch* end)
+     -> std::enable_if_t<std::is_same_v<Ch, char>
+                      || std::is_same_v<Ch, wchar_t>>
     {
-        assert(*end == Ch());   // shall be null-terminated
-        const auto new_end = remove_(begin, end);
-        *new_end = Ch();
-        return out_(begin, new_end);
+        return out_(begin, remove_(begin, end));
     }
 };
 
