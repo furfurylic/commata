@@ -16,6 +16,7 @@
 
 #include "char_input.hpp"
 #include "parse_error.hpp"
+#include "wrapper_handlers.hpp"
 
 #include "detail/base_parser.hpp"
 #include "detail/base_source.hpp"
@@ -49,7 +50,7 @@ template <>
 struct parse_step<state::after_comma>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::comma_c:
@@ -94,8 +95,8 @@ template <>
 struct parse_step<state::in_value>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type*& p,
-        typename Parser::char_type* pe) const
+    void normal(Parser& parser, typename Parser::buffer_char_t*& p,
+        typename Parser::buffer_char_t* pe) const
     {
         while (p < pe) {
             switch (*p) {
@@ -142,7 +143,7 @@ template <>
 struct parse_step<state::right_of_open_quote>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         parser.set_first_last();
         if (*p == key_chars<typename Parser::char_type>::dquote_c) {
@@ -168,8 +169,8 @@ template <>
 struct parse_step<state::in_quoted_value>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type*& p,
-        typename Parser::char_type* pe) const
+    void normal(Parser& parser, typename Parser::buffer_char_t*& p,
+        typename Parser::buffer_char_t* pe) const
     {
         while (p < pe) {
             switch (*p) {
@@ -212,7 +213,7 @@ template <>
 struct parse_step<state::in_quoted_value_after_quote>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::comma_c:
@@ -255,7 +256,7 @@ template <>
 struct parse_step<state::in_quoted_value_after_cr>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::dquote_c:
@@ -297,7 +298,7 @@ template <>
 struct parse_step<state::in_quoted_value_after_crs>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::dquote_c:
@@ -338,7 +339,7 @@ template <>
 struct parse_step<state::in_quoted_value_after_lf>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::dquote_c:
@@ -380,7 +381,7 @@ template <>
 struct parse_step<state::after_cr>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::comma_c:
@@ -423,7 +424,7 @@ template <>
 struct parse_step<state::after_crs>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         switch (*p) {
         case key_chars<typename Parser::char_type>::comma_c:
@@ -465,7 +466,7 @@ template <>
 struct parse_step<state::after_lf>
 {
     template <class Parser>
-    void normal(Parser& parser, typename Parser::char_type* p, ...) const
+    void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
         parser.new_physical_line();
         switch (*p) {
@@ -637,10 +638,16 @@ constexpr bool are_make_csv_source_args_v =
     decltype(are_make_csv_source_args_impl::check<Args...>(nullptr))();
 
 template <class T>
-constexpr bool is_csv_source = false;
+constexpr bool is_csv_source_v = false;
 
 template <class CharInput>
-constexpr bool is_csv_source<csv_source<CharInput>> = true;
+constexpr bool is_csv_source_v<csv_source<CharInput>> = true;
+
+template <class T>
+constexpr bool is_indirect_t_v = false;
+
+template <>
+constexpr bool is_indirect_t_v<indirect_t> = true;
 
 }
 
@@ -659,7 +666,8 @@ bool parse_csv(csv_source<CharInput>&& src, OtherArgs&&... other_args)
 template <class Arg1, class Arg2, class... OtherArgs>
 auto parse_csv(Arg1&& arg1, Arg2&& arg2, OtherArgs&&... other_args)
  -> std::enable_if_t<
-        !detail::csv::is_csv_source<std::decay_t<Arg1>>
+        !detail::csv::is_csv_source_v<std::decay_t<Arg1>>
+     && !detail::csv::is_indirect_t_v<std::decay_t<Arg1>>
      && (detail::csv::are_make_csv_source_args_v<Arg1&&>
       || detail::csv::are_make_csv_source_args_v<Arg1&&, Arg2&&>),
         bool>

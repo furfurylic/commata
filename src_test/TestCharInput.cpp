@@ -361,6 +361,30 @@ TEST_F(TestStringInput, Swap)
     ASSERT_STREQ(L"XYZU", b);
 }
 
+TEST_F(TestStringInput, Direct)
+{
+    const char* const s = "ABCDEFGHIJKL";
+    string_input in(s);
+
+    {
+        auto r = in(3);
+        ASSERT_EQ(s, r.first);
+        ASSERT_EQ(3U, r.second);
+    }
+    {
+        // 'Normal' copying mixed
+        char buf[4];
+        auto len = in(buf, 4);
+        ASSERT_EQ(4U, len);
+        ASSERT_EQ("DEFG"sv, std::string_view(buf, len));
+    }
+    {
+        auto r = in();
+        ASSERT_EQ(s + 7, r.first);
+        ASSERT_EQ(5U, r.second);
+    }
+}
+
 struct TestOwnedStringInput : BaseTest
 {};
 
@@ -440,6 +464,32 @@ TEST_F(TestOwnedStringInput, Swap)
     ASSERT_EQ(L"Z", std::wstring(a2.data(), 1));
     ASSERT_EQ(2U, lenq2);
     ASSERT_EQ(L"BC", std::wstring(b2.data(), 2));
+}
+
+TEST_F(TestOwnedStringInput, Direct)
+{
+    // Lengthy string is needed to evade short string optimization
+    const std::wstring s(L"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    const wchar_t* const p = s.data();
+    string_input in(std::move(s));
+
+    {
+        auto r = in(3);
+        ASSERT_EQ(p, r.first);
+        ASSERT_EQ(3U, r.second);
+    }
+    {
+        // 'Normal' copying mixed
+        wchar_t buf[4];
+        auto len = in(buf, 4);
+        ASSERT_EQ(4U, len);
+        ASSERT_EQ(L"DEFG"sv, std::wstring_view(buf, len));
+    }
+    {
+        auto r = in();
+        ASSERT_EQ(p + 7, r.first);
+        ASSERT_EQ(19U, r.second);
+    }
 }
 
 struct TestCharInput : BaseTest
@@ -525,4 +575,45 @@ TEST_F(TestCharInput, MakeFromStringRvalueRef)
     std::string out(5, ' ');
     ASSERT_EQ(3, in(out.data(), 5));
     ASSERT_EQ("XYZ  ", out);
+}
+
+namespace {
+
+namespace indirect_input_asserts {
+
+using is_t = indirect_input<string_input<char>>;
+using io_t = indirect_input<owned_string_input<char>>;
+
+static_assert(std::is_nothrow_copy_constructible_v<is_t>);
+static_assert(std::is_nothrow_move_constructible_v<is_t>);
+static_assert(std::is_nothrow_copy_assignable_v<is_t>);
+static_assert(std::is_nothrow_move_assignable_v<is_t>);
+static_assert(std::is_trivially_copyable_v<is_t>);
+
+static_assert(!std::is_copy_constructible_v<io_t>);
+static_assert(std::is_nothrow_move_constructible_v<io_t>);
+static_assert(!std::is_copy_assignable_v<io_t>);
+static_assert(std::is_nothrow_move_assignable_v<io_t>
+          || !std::is_nothrow_move_assignable_v<std::string>);
+    // There are libs whose std::string is not MoveAssignable. Sigh...
+
+static_assert(std::is_same_v<is_t,
+    decltype(make_char_input(indirect, "123"sv))>);
+static_assert(noexcept(make_char_input(indirect, "123"sv)));
+
+static_assert(std::is_same_v<io_t,
+    decltype(make_char_input(indirect, "123"s))>);
+static_assert(
+    noexcept(make_char_input(indirect, std::declval<std::string>())));
+
+static_assert(std::is_same_v<io_t,
+    decltype(make_char_input(indirect, make_char_input("123"s)))>);
+static_assert(
+    noexcept(make_char_input(indirect, std::declval<string_input<char>>())));
+
+static_assert(std::is_same_v<is_t,
+    decltype(make_char_input(indirect, std::declval<is_t>()))>);
+
+}
+
 }

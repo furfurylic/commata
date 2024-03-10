@@ -17,30 +17,42 @@ class base_parser
 {
     static_assert(
         std::is_same_v<
-            typename Input::char_type, typename Handler::char_type>,
+            typename Input::char_type,
+            std::remove_const_t<typename Handler::char_type>>,
             "Input::char_type and Handler::char_type are inconsistent; "
-            "they shall be the same type");
+            "they shall be the same type expect that the latter may be "
+            "const-qualified");
 
 public:
-    using char_type = typename Handler::char_type;
+    using reads_direct = std::bool_constant<
+        Handler::buffer_control_defaulted
+     && std::is_const_v<typename Handler::char_type>
+     && std::is_invocable_r_v<
+            std::pair<typename Handler::char_type*,
+                      typename Input::size_type>, Input&&,
+            typename Input::size_type>>;
+
+    using char_type = std::remove_const_t<typename Handler::char_type>;
+    using buffer_char_t = std::conditional_t<reads_direct::value,
+        typename Handler::char_type, char_type>;
 
 private:
     // Reading position
-    char_type* p_;
+    buffer_char_t* p_;
     Handler f_;
 
     // [first, last) is the current field value
-    char_type* first_;
-    char_type* last_;
+    buffer_char_t* first_;
+    buffer_char_t* last_;
 
     std::size_t physical_line_index_;
-    char_type* physical_line_or_buffer_begin_;
+    buffer_char_t* physical_line_or_buffer_begin_;
     // Number of chars of this line before physical_line_or_buffer_begin_
     std::size_t physical_line_chars_passed_away_;
 
     Input in_;
-    char_type* buffer_;
-    char_type* buffer_last_;
+    buffer_char_t* buffer_;
+    buffer_char_t* buffer_last_;
 
     State s_;
     bool record_started_;
@@ -87,6 +99,10 @@ public:
     ~base_parser()
     {
         if (buffer_) {
+            // Even if reads_direct::value is true and therefore *this does
+            // not have the ownership of buffer_, it is alright, because then
+            // default_buffer_control::release_buffer is called and it does
+            // nothing
             f_.release_buffer(buffer_);
         }
     }
@@ -172,6 +188,8 @@ yield_1:
             }
 yield_2:
             f_.release_buffer(buffer_);
+                // Calling release_buffer is alright even if
+                // reads_direct::value is true (see comments in the dtor)
             buffer_ = nullptr;
             physical_line_chars_passed_away_ +=
                 p_ - physical_line_or_buffer_begin_;
@@ -210,6 +228,29 @@ private:
 
     std::pair<std::size_t, std::size_t> arrange_buffer()
     {
+        if constexpr (reads_direct::value) {
+            const std::size_t loaded_size = arrange_buffer_direct();
+            return { loaded_size, loaded_size };
+        } else {
+            return arrange_buffer_copy();
+        }
+    }
+
+    std::size_t arrange_buffer_direct()
+    {
+        using input_size_t = typename Input::size_type;
+        using min_t = std::common_type_t<std::size_t, input_size_t>;
+        constexpr auto x = std::min<min_t>(
+            std::numeric_limits<input_size_t>::max(),
+            std::numeric_limits<std::size_t>::max());
+        min_t loaded_size;
+        std::tie(buffer_, loaded_size) = in_(static_cast<input_size_t>(x));
+        eof_reached_ = (loaded_size < x);
+        return static_cast<std::size_t>(loaded_size);
+    }
+
+    std::pair<std::size_t, std::size_t> arrange_buffer_copy()
+    {
         std::size_t buffer_size;
         std::tie(buffer_, buffer_size) = f_.get_buffer();   // throw
         if (buffer_size < 1) {
@@ -224,8 +265,8 @@ private:
             constexpr auto x = std::numeric_limits<input_size_t>::max();
             const auto n = static_cast<std::size_t>(
                             std::min<min_t>(buffer_size - loaded_size, x));
-            const auto length =
-                static_cast<std::size_t>(in_(buffer_ + loaded_size, n));
+            const auto length = static_cast<std::size_t>(
+                in_(buffer_ + loaded_size, static_cast<input_size_t>(n)));
             loaded_size += length;
             if (length < n) {
                 eof_reached_ = true;

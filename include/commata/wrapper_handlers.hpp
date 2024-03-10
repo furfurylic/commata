@@ -105,25 +105,29 @@ public:
         return handler_;
     }
 
-    auto empty_physical_line(char_type* where)
-     -> std::conditional_t<
-            std::is_void_v<decltype(
-                std::declval<empty_physical_line_aware_handler&>().
-                    start_record(where))>
-         && std::is_void_v<decltype(
-                std::declval<empty_physical_line_aware_handler&>().
-                    end_record(where))>,
-            void, bool>
+    template <class Ch>
+    auto empty_physical_line(Ch* where)
+     -> std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            std::conditional_t<
+                std::is_void_v<
+                    decltype(std::declval<Handler&>().start_record(where))>
+             && std::is_void_v<
+                decltype(std::declval<Handler&>().end_record(where))>,
+                void, bool>>
     {
-        if constexpr (std::is_void_v<decltype(this->start_record(where))>
-                   && std::is_void_v<decltype(this->end_record(where))>) {
-            this->start_record(where);
-            this->end_record(where);
+        if constexpr (std::is_void_v<decltype(handler_.start_record(where))>
+                   && std::is_void_v<decltype(handler_.end_record(where))>) {
+            handler_.start_record(where);
+            handler_.end_record(where);
         } else {
             return detail::invoke_returning_bool(
-                        [this, where] { return this->start_record(where); })
+                        [this, where] { return handler_.start_record(where); })
                 && detail::invoke_returning_bool(
-                        [this, where] { return this->end_record(where); });
+                        [this, where] { return handler_.end_record(where); });
         }
     }
 

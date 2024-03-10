@@ -23,7 +23,7 @@
 #include "fancy_allocator.hpp"
 #include "tracking_allocator.hpp"
 
-using namespace std::literals::string_literals;
+using namespace std::literals;
 
 using namespace commata;
 using namespace commata::test;
@@ -357,9 +357,10 @@ TEST_F(TestRecordExtractorMiscellaneous, Allocator)
     std::size_t total = 0;
     tracking_allocator<std::allocator<char>> alloc(total);
 
-    const char* s = "instrument,type\n"
-                    "castanets,idiophone\n"
-                    "clarinet,woodwind\n";
+    std::stringstream s;
+    s << "instrument,type\n"
+         "castanets,idiophone\n"
+         "clarinet,woodwind\n";
     std::stringbuf out;
 
     auto ex = make_record_extractor(std::allocator_arg, alloc, out,
@@ -375,9 +376,10 @@ TEST_F(TestRecordExtractorMiscellaneous, Fancy)
 
     // Long names are required to make sure that std::string uses its
     // allocator
-    const wchar_t* s = L"instrument,type\n"
-                       L"castanets,idiophone\n"
-                       L"clarinet,woodwind\n";
+    std::wstringstream s;
+    s << L"instrument,type\n"
+      << L"castanets,idiophone\n"
+      << L"clarinet,woodwind\n";
     std::wstringbuf out;
 
      auto ex = make_record_extractor(std::allocator_arg, alloc, out,
@@ -524,7 +526,7 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuide)
         std::size_t total = 0;
         tracking_allocator<std::allocator<char>> a(total);
         std::stringbuf out;
-        parse_csv(s, record_extractor(std::allocator_arg, a,
+        parse_csv(std::stringbuf(s), record_extractor(std::allocator_arg, a,
             out, is_type, is_woodwind), 5);
         ASSERT_STREQ("instrument,type\n"
                      "clarinet,woodwind\n", std::move(out).str().c_str());
@@ -535,8 +537,9 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuide)
         std::size_t total = 0;
         tracking_allocator<std::allocator<char>> a(total);
         std::stringbuf out;
-        parse_csv(s, record_extractor(std::allocator_arg, a, out,
-            is_type, std::not_fn(is_woodwind), header_forwarding::no, 1), 5);
+        parse_csv(std::stringbuf(s), record_extractor(std::allocator_arg, a,
+            out, is_type, std::not_fn(is_woodwind), header_forwarding::no, 1),
+            5);
         ASSERT_STREQ("castanets,idiophone\n", std::move(out).str().c_str());
         ASSERT_GT(total, 0U);
     }
@@ -573,8 +576,8 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuideIndexed)
         std::size_t total = 0;
         tracking_allocator<std::allocator<char>> a(total);
         std::stringbuf out;
-        parse_csv(s, record_extractor_with_indexed_key(std::allocator_arg, a,
-            out, 1, is_woodwind), 5);
+        parse_csv(std::stringbuf(s), record_extractor_with_indexed_key(
+            std::allocator_arg, a, out, 1, is_woodwind), 5);
         ASSERT_STREQ("instrument,type\n"
                      "clarinet,woodwind\n", std::move(out).str().c_str());
         ASSERT_GT(total, 0U);
@@ -584,9 +587,57 @@ TEST_F(TestRecordExtractorMiscellaneous, DeductionGuideIndexed)
         std::size_t total = 0;
         tracking_allocator<std::allocator<char>> a(total);
         std::stringbuf out;
-        parse_csv(s, record_extractor_with_indexed_key(std::allocator_arg, a,
+        parse_csv(std::stringbuf(s), record_extractor_with_indexed_key(
+            std::allocator_arg, a,
             out, 1, std::not_fn(is_woodwind), header_forwarding::no, 1), 5);
         ASSERT_STREQ("castanets,idiophone\n", std::move(out).str().c_str());
         ASSERT_GT(total, 0U);
     }
+}
+
+TEST_F(TestRecordExtractorMiscellaneous, EvadeCopying)
+{
+    const wchar_t* s = L"instrument,type\n"
+                       L"castanets,idiophone\n"
+                       L"clarinet,woodwind\n"
+                       L"triangle,idiophone\n";
+
+    std::size_t total = 0;
+    tracking_allocator<std::allocator<wchar_t>> a(total);
+    std::wstringbuf out;
+
+    // Freakingly, invoking Visual Studio 2019/2022's allocator-taking vector's
+    // ctor and the move ctor from it seem to allocate some amount of memory.
+    // So we must reset total to 0 before the parsing takes place.
+    auto parser = make_csv_source(s)(make_record_extractor(
+        std::allocator_arg, a, out, L"type", L"idiophone"sv), 1);
+    total = 0;
+    parser();
+
+    ASSERT_STREQ(L"instrument,type\n"
+                 L"castanets,idiophone\n"
+                 L"triangle,idiophone\n", std::move(out).str().c_str());
+    ASSERT_EQ(0U, total);
+}
+
+TEST_F(TestRecordExtractorMiscellaneous, EvadeCopyingIndexed)
+{
+    const char* s = "instrument,type\n"
+                    "castanets,idiophone\n"
+                    "clarinet,woodwind\n"
+                    "triangle,idiophone\n";
+
+    std::size_t total = 0;
+    tracking_allocator<std::allocator<char>> a(total);
+    std::stringbuf out;
+
+    // ditto
+    auto parser = make_csv_source(s)(make_record_extractor(
+        std::allocator_arg, a, out, 1, "woodwind"sv), 1);
+    total = 0;
+    parser();
+
+    ASSERT_STREQ("instrument,type\n"
+                 "clarinet,woodwind\n", std::move(out).str().c_str());
+    ASSERT_EQ(0U, total);
 }

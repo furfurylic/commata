@@ -21,7 +21,9 @@
 
 #include "BaseTest.hpp"
 #include "fancy_allocator.hpp"
+#include "logging_allocator.hpp"
 #include "tracking_allocator.hpp"
+#include "simple_transcriptor.hpp"
 
 using namespace std::literals;
 
@@ -174,7 +176,7 @@ check_handler<Ch, F> make_check_handler(F f)
 }
 
 static_assert(std::is_nothrow_move_constructible_v<
-    detail::csv::parser<streambuf_input<char>, test_collector<char>>>);
+    csv_source<streambuf_input<char>>::parser_type<test_collector<char>>>);
 
 } // end unnamed
 
@@ -325,6 +327,60 @@ TEST_P(TestParseCsvBasics, CrCrLf)
     ASSERT_STREQ("CD", field_values[1][0].c_str());
     ASSERT_EQ(1U, field_values[2].size());
     ASSERT_STREQ("EF", field_values[2][0].c_str());
+}
+
+TEST_P(TestParseCsvBasics, EvadeCopying)
+{
+    std::vector<std::size_t> allocations;
+    logging_allocator<char> a(allocations);
+    std::ostringstream transcript;
+    ASSERT_TRUE(parse_csv("Name,Mass\nEarth,1\n\nMoon,0.0123",
+        simple_transcriptor<const char>(transcript), GetParam(), a));
+    const std::string s = std::move(transcript).str();
+
+    // start_buffer and end_buffer are never reported except the begin and the
+    // end no matter what is the buffer size
+    ASSERT_EQ(std::string_view(s),
+        "<{(Name)(Mass)}{(Earth)(1)}*{(Moon)(0.0123)}>"sv);
+
+    // No allocation for buffers do not occur
+    ASSERT_TRUE(allocations.empty());
+}
+
+TEST_P(TestParseCsvBasics, EvadeCopyingWhenNonconstVersionsExist)
+{
+    std::vector<std::size_t> allocations;
+    logging_allocator<wchar_t> a(allocations);
+    std::wostringstream transcript;
+    ASSERT_TRUE(parse_csv(L"Name,Mass\nEarth,1\n\nMoon,0.0123",
+        simple_transcriptor_with_nonconst_interface<const wchar_t>(transcript),
+        GetParam(), a));
+    const std::wstring s = std::move(transcript).str();
+
+    // Now the handler have nonconst versions, but its char_type is
+    // unchangedly const char, so const versions shall be called without any
+    // buffer allocation
+    ASSERT_EQ(std::wstring_view(s),
+        L"<{(Name)(Mass)}{(Earth)(1)}*{(Moon)(0.0123)}>"sv);
+
+    // No allocation for buffers do not occur
+    ASSERT_TRUE(allocations.empty());
+}
+
+TEST_P(TestParseCsvBasics, PrefersNonconstWhenIndirect)
+{
+    std::vector<std::size_t> allocations;
+    logging_allocator<char> a(allocations);
+    std::ostringstream transcript;
+    ASSERT_TRUE(parse_csv(
+        std::istringstream("Name,Mass\nEarth,1\n\nMoon,0.0123"),    // indirect
+        simple_transcriptor_with_nonconst_interface<const char>(
+            transcript, true),
+        GetParam(), a));
+    const std::string s = std::move(transcript).str();
+
+    ASSERT_EQ(std::string_view(s),
+        "{{((Name))((Mass))}}{{((Earth))((1))}}?{{((Moon))((0.0123))}}"sv);
 }
 
 INSTANTIATE_TEST_SUITE_P(,

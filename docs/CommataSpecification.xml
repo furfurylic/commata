@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-02-20 (UTC)</signature>
+<signature>2024-03-09 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -99,7 +99,8 @@
       </ul>
 
       <p>In <xref id="table.table_handler.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>ct</c> is an lvalue of <c>const T</c>.
-         <c>b</c>, <c>bb</c>, <c>be</c>, <c>bm</c>, <c>w</c>, <c>rb</c>, <c>re</c>, <c>f</c> and <c>l</c> are rvalues of <c>Ch*</c>.
+         <c>b</c> is an rvalue of <c>Ch*</c>.
+         <c>bb</c>, <c>be</c>, <c>bm</c>, <c>w</c>, <c>rb</c>, <c>re</c>, <c>f</c> and <c>l</c> are rvalues of <c>Ch*</c> or <c>const Ch*</c>.
          <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
 
       <p>A requirement is optional if the last column of <xref id="table.table_handler.requirements"/> specifies a default.</p>
@@ -123,7 +124,7 @@
           <td>(1)</td>
           <td><c>T::char_type</c></td>
           <td></td>
-          <td>Shall be an identical type to <c>Ch</c>.</td>
+          <td>Shall be an identical type to <c>Ch</c> or <c>const Ch</c>.</td>
           <td></td>
         </tr>
 
@@ -154,10 +155,15 @@
           <td><c>t.start_buffer(bb, be)</c></td>
           <td>(Not used)</td>
           <td><p>Evaluated when the parser starts using its buffer.
-                 Evaluating this shall occur after an caevaluationll of (2) and before its corresponding evaluation of (3).</p>
-              <p><c>bb</c> points <c>*gb.first</c>. <c>be</c> is <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest evaluation of (2).</p>
-              <p>Just after an evaluation of this, the parser shall make an intact copy of a sequence of char-like objects retrieved from its input into the range [<c>bb</c>, <c>bm</c>) where <c>bm</c> is a pointer that resides in [<c>bb</c>, <c>be</c>] and reported with (5) later.
-                 After an evaluation of this and before the corresponding evaluation of (5), the parser shall report (possibly past-the-end) pointers on this copy.</p></td>
+                 If evaluatung this occurs after an evaluation of (2) and before its corresponding evaluation of (3),
+                 it shall occur only once between them.</p>
+              <p><c>bb</c> and <c>be</c> shall have the same type.
+                 If <c>T::char_type</c> is not const-qualified, the type shall be <c>Ch*</c>.
+                 Otherwise, the type shall be <c>const Ch*</c> or <c>Ch*</c>.</p>
+              <p>If evaluating this occurs after an evaluation of (2) and before its corresponding evaluation of (3),
+                 <c>bb</c> points <c>*gb.first</c>. <c>be</c> is <c>gb.first + gb.second</c> where <c>gb</c> is the return value of the latest evaluation of (2).</p>
+              <p>Just after an evaluation of this, the parser shall secure a sequence of char-like objects retrieved from its input as the range [<c>bb</c>, <c>bm</c>) where <c>bm</c> is a pointer that resides in [<c>bb</c>, <c>be</c>] and reported with (5) later.
+                 After an evaluation of this and before the corresponding evaluation of (5), the parser shall report (possibly past-the-end) pointers on this sequence.</p></td>
           <td>Does nothing.</td>
         </tr>
 
@@ -166,9 +172,11 @@
           <td><c>t.end_buffer(bm)</c></td>
           <td>(Not used) </td>
           <td><p>Evaluated when the parser finishes using its buffer.
-                 Evaluating this shall occur after an evaluation of (2) and before its corresponding evaluation of (3).</p>
-              <p><c>bm</c> is an rvalue of <c>const Ch*</c>.</p>
-              <p><c>bm</c> points the one past the last element of the range in the buffer actually used, and resides in [<c>bb</c>, <c>be</c>] where <c>bb</c> and <c>be</c> are the arguments of the latest evaluation of (4) in order.</p></td>
+                 Evaluating this shall occur after an evaluation of (4) only once.
+                 If the latest evaluating of (4) occurred after an evaluation of (2) and before its corresponding evaluation of (3), evaluating this shall also occur before the evaluation of (3).</p>
+              <p>Here let <c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</p>
+              <p>Then the type of <c>bm</c> shall be the same as the type of <c>bb</c> and <c>be</c>.
+                 <c>bm</c> points the one past the last element of the range in the buffer actually used, and resides in [<c>bb</c>, <c>be</c>].</p></td>
           <td>Does nothing.</td>
         </tr>
 
@@ -179,13 +187,13 @@
           <td><p>Evaluated when the parser finds an empty line outside any record.
                  Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5)
                  and shall not occur between an evaluation of (7) and its corresponding evaluation of (8).</p>
-              <p><c>w</c> points to the last line break character.</p>
               <p>Here let:</p>
               <ul>
                 <li><c>gb</c> be the return value of the latest evaluation of (2), and</li>
                 <li><c>bb</c> be the first argument of the latest evaluation of (4).</li>
               </ul>
-              <p>Then the pointee of <c>w</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
+              <p>Then the type of <c>bm</c> shall be the same as the type of <c>bb</c>.
+                 <c>w</c> points to the last line break character, which resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td>Does nothing.</td>
         </tr>
@@ -196,14 +204,15 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser begins to process a record.
                  Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5).</p>
-              <p><c>rb</c> points the first character of the record, not of the text value of the first field of the record.
-                 To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the first field of the records is quoted, <c>*rb</c> shall be a double quote.</p>
               <p>Here let:</p>
               <ul>
                 <li><c>gb</c> be the return value of the latest evaluation of (2), and</li>
                 <li><c>bb</c> be the first argument of the latest evaluation of (4).</li>
               </ul>
-              <p>Then the pointee of <c>rb</c> resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
+              <p>Then the type of <c>rb</c> shall be the same as the type of <c>bb</c>.
+                 <c>rb</c> points the first character of the record, not of the text value of the first field of the record.
+                 <span class="note">To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the first field of the records is quoted, <c>*rb</c> shall be a double quote.</span>
+                 The pointee of <c>rb</c> which resides in [<c>bb</c>, <c>gb.first + gb.second</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -213,14 +222,17 @@
           <td><c>t.end_record(re)</c></td>
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser finishes processing a record.
-                 Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5).</p>
-              <p><c>re</c> points one past the last element of the characters that forms the record, not of the text value of the final field of the record. To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</p>
+                 Evaluating this shall occur after an evaluation of (7) only once; and
+                 after an evaluation of (4) and before its corresponding evaluation of (5).</p>
               <p>Here let:</p>
               <ul>
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or (10) (second argument), and</li>
                 <li><c>be</c> be the second argument of the latest evaluation of (4).</li>
               </ul>
-              <p>Then the pointee of <c>re</c> resides in [<c>vb</c>, <c>be</c>).</p>
+              <p>The type of <c>rb</c> shall be the same as the type of <c>be</c>.
+                 <c>re</c> points one past the last element of the characters that forms the record, not of the text value of the final field of the record.
+                 <span class="note">To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</span>
+                 The pointee of <c>re</c> resides in [<c>vb</c>, <c>be</c>).</p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -231,16 +243,17 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser finds a non-final chunk of a field value.
                  Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5), and after an evaluation of (7) and before its corresponding evaluation of (8).</p>
-              <p>The range [<c>f</c>, <c>l</c>) shall not be empty.
-                 The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).</p>
               <p>Here let:</p>
               <ul>
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), this (second argument) or (10) (second argument), and</li>
                 <li><c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</li>
               </ul>
-              <p>Then the pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
+              <p>Then the type of <c>f</c> and <c>l</c> shall be the same as the type of <c>bb</c>.
+                 The range [<c>f</c>, <c>l</c>) shall not be empty.
+                 The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).
+                 The pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
               <p>After the evaluation, the parser shall not dereference the range [<c>bb</c>, <c>l</c>) before the next evaluation of (5).
-                 Therefore, the table handler may freely modify the elements in the range.</p>
+                 <span class="note">Therefore the table handler may freely modify the element in the range if the reference-removed type of <c>*f</c> and <c>*l</c> are not const-qualified.</span></p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -251,16 +264,17 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser finds a final chunk of a field value.
                  Evaluating of this shall occur after an evaluation of (4) and before its corresponding evaluation of (5), and after an evaluation of (7) and before its corresponding evaluation of (8).</p>
-              <p>The range [<c>f</c>, <c>l</c>) may be empty.
-                 The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).</p>
               <p>Here let:</p>
               <ul>
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or this (second argument), and</li>
                 <li><c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</li>
               </ul>
-              <p>Then the pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
+              <p>Then the type of <c>f</c> and <c>l</c> shall be the same as the type of <c>bb</c>.
+                 The range [<c>f</c>, <c>l</c>) may be empty.
+                 The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).
+                 The pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
               <p>After evaluating, the parser shall not dereference the range [<c>bb</c>, <c>l</c>] before the next evaluation of (5).
-                 Therefore, the table handler may freely modify the element in the range.</p>
+                 <span class="note">Therefore the table handler may freely modify the element in the range if the reference-removed type of <c>*f</c> and <c>*l</c> are not const-qualified.</span></p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
           <td/>
         </tr>
@@ -357,7 +371,14 @@
         </tr>
 
         <tr>
-          <td>(1)</td>
+          <td>(3)</td>
+          <td><c>T::reads_direct</c></td>
+          <td>Identical to or derived from <c>std::true_type</c> or <c>std::false_type</c></td>
+          <td><c>std::true_type</c> only if any objects of <c>T</c> do not require any buffers to store char-like objects informed to its tied table handler object.</td>
+        </tr>
+
+        <tr>
+          <td>(4)</td>
           <td><c>ct.get_physical_position()</c></td>
           <td><c>std::pair&lt;std::size_t, std::size_t></c></td>
           <td>Returns a pair of the physical line number and the physical column number (<xref id="definitions.others"/>).
@@ -458,7 +479,7 @@
         </tr>
 
         <tr>
-          <td>(1)</td>
+          <td>(6)</td>
           <td><c>T::parser_type&lt;K, A></c></td>
           <td></td>
           <td>
@@ -468,7 +489,7 @@
         </tr>
 
         <tr>
-          <td>(2)</td>
+          <td>(7)</td>
           <td><c>ct(k, s)</c></td>
           <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(k)>></c></td>
           <td rowspan="4">
@@ -482,21 +503,30 @@
         </tr>
 
         <tr>
-          <td>(3)</td>
+          <td>(8)</td>
           <td><c>rt(k, s)</c></td>
         </tr>
 
         <tr>
-          <td>(4)</td>
+          <td>(9)</td>
           <td><c>ct(k, s, a)</c></td>
           <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(k)>, std::decay_t&lt;decltype(a)>></c></td>
         </tr>
 
         <tr>
-          <td>(5)</td>
+          <td>(10)</td>
           <td><c>rt(k, s, a)</c></td>
         </tr>
       </table>
+
+      <p>A type <c>U</c> that meets the <c>TableSource</c> requirements is called <n>direct</n> if all of the following conditions meet
+         where <c>X</c> is a type that meets the <c>TableHandler</c> requirements, that is deemed to have no buffer control, and whose <c>char_type</c> is const-qualified:</p>
+      <ul>
+        <li><c>U::parser_type&lt;X>::reads_direct</c> is a type idential to or derived from <c>std::true_type</c> for any <c>X</c>, and</li>
+        <li>If <c>U</c> offers (6) in <xref id="table.table_source.optional"/>, then <c>U::parser_type&lt;X, B>::reads_direct</c> is a type idential or derived from <c>std::true_type</c> for any <c>X</c>
+        and <c>B</c> given the type <c>B</c> meets the <c>Allocator</c> requirements for <c>std::remove_const_t&lt;X::char_type></c>.</li>
+      </ul>
+      <p>A type <c>U</c> that meets the <c>TableSource</c> requirements is called <n>indirect</n> if it is not direct.</p>
     </section>
   </section>
 
@@ -909,13 +939,13 @@ namespace commata {
     <c>// <n><xref id="reference_handler.inv"/>, invocation:</n></c>
     <nc>see below</nc> get_buffer();
     <nc>see below</nc> release_buffer(char_type* buffer);
-    <nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
-    <nc>see below</nc> end_buffer(char_type* buffer_end);
-    <nc>see below</nc> empty_physical_line(char_type* where);
-    <nc>see below</nc> start_record(char_type* record_begin);
-    <nc>see below</nc> end_record(char_type* record_end);
-    <nc>see below</nc> update(char_type* first, char_type* last);
-    <nc>see below</nc> finalize(char_type* first, char_type* last);
+    template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
+    template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
+    template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
+    template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
+    template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
+    template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
+    template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
     <nc>see below</nc> yield(std::size_t p);
     <nc>see below</nc> yield_location() const;
     <nc>see below</nc> handle_exception();
@@ -996,54 +1026,71 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
+template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>This overload shall not participate in overload resolution unless
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
+                  and <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_buffer(char_type* buffer_end);
+template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>This overload shall not participate in overload resolution unless
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
+                  and <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> empty_physical_line(char_type* where);
+template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
           </code>
           <effects>Equivalent to: <c>return empty_physical_line(where);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().empty_physical_line(where)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>This overload shall not participate in overload resolution unless
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
+                  and <c>std::declval&lt;Handler&amp;>().empty_physical_line(where)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> start_record(char_type* record_begin);
+template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
           </code>
           <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_record(char_type* record_end);
+template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
           </code>
           <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> update(char_type* first, char_type* last);
+template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> finalize(char_type* first, char_type* last);
+template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
@@ -1131,13 +1178,13 @@ namespace commata {
     <c>// <n><xref id="empty_physical_line_aware_handler.inv"/>, invocation:</n></c>
     <nc>see below</nc> get_buffer();
     <nc>see below</nc> release_buffer(char_type* buffer);
-    <nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
-    <nc>see below</nc> end_buffer(char_type* buffer_end);
-    <nc>see below</nc> empty_physical_line(char_type* where);
-    <nc>see below</nc> start_record(char_type* record_begin);
-    <nc>see below</nc> end_record(char_type* record_end);
-    <nc>see below</nc> update(char_type* first, char_type* last);
-    <nc>see below</nc> finalize(char_type* first, char_type* last);
+    template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
+    template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
+    template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
+    template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
+    template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
+    template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
+    template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
     <nc>see below</nc> yield(std::size_t p);
     <nc>see below</nc> yield_location() const;
     <nc>see below</nc> handle_exception();
@@ -1272,55 +1319,71 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> start_buffer(char_type* buffer_begin, char_type* buffer_end);
+template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>This overload shall not participate in overload resolution unless
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
+                  and <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_buffer(char_type* buffer_end);
+template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>This overload shall not participate in overload resolution unless
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
+                  and <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> empty_physical_line(char_type* where);
+template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
           </code>
           <effects>First calls <c>base().start_record(where)</c>, and unless the return type is contextually convertible to <c>bool</c> and the contextually converted value of the return value to <c>bool</c> is <c>false</c>, next calls <c>base().end_record(where)</c>.</effects>
           <returns>If both of the return types of <c>base().start_record(where)</c> and <c>base().end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>.
                    Otherwise, the return type shall be <c>bool</c>, and the return value shall be <c>true</c> unless either call of <c>base().start_record(where)</c> or <c>base().end_record(where)</c> returned a value whose type is contextually convertible to <c>bool</c> and whose contexually converted value to <c>bool</c> is <c>false</c>.</returns>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> start_record(char_type* record_begin);
+template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
           </code>
           <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> end_record(char_type* record_end);
+template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
           </code>
           <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> update(char_type* first, char_type* last);
+template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
           <code>
-<nc>see below</nc> finalize(char_type* first, char_type* last);
+template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
@@ -2587,16 +2650,18 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
       </ul>
 
        <p>In <xref id="table.char_input.requirements"/>, <c>T</c> is cv-unqualified. <c>t</c> is an lvalue of <c>T</c>. <c>d</c> is an rvalue of <c>Ch*</c>. <c>n</c> is an rvalue of <c>T::size_type</c>.</p>
+       <p>A requirement is optional if the last column of <xref id="table.char_input.requirements"/> is &#x2018;Yes&#x2019;.</p>
 
       <table id="table.char_input.requirements">
-        <caption>CharInput requirements</caption>
-        <col width="3"/><col width="10"/><col width="10"/><col width="60"/>
+        <caption><c>CharInput</c> requirements</caption>
+        <col width="3"/><col width="8"/><col width="20"/><col width="48"/><col width="6"/>
 
         <tr>
           <th>#</th>
           <th>Expression</th>
           <th>Return type</th>
           <th>Remarks</th>
+          <th>Optional</th>
         </tr>
 
         <tr>
@@ -2604,6 +2669,7 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
           <td><c>T::char_type</c></td>
           <td/>
           <td>Shall be identical to <c>Ch</c>.</td>
+          <td>No</td>
         </tr>
 
         <tr>
@@ -2611,6 +2677,7 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
           <td><c>T::traits_type</c></td>
           <td/>
           <td>Shall be a character traits type for <c>Ch</c>.</td>
+          <td>No</td>
         </tr>
 
         <tr>
@@ -2618,6 +2685,7 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
           <td><c>T::size_type</c></td>
           <td/>
           <td>Shall be an unsigned integer type.</td>
+          <td>No</td>
         </tr>
 
         <tr>
@@ -2633,8 +2701,22 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
             </ul>
             <p>And then returns the number of characters stored.</p>
           </td>
+          <td>No</td>
+        </tr>
+
+        <tr>
+          <td>(5)</td>
+          <td><c>t(n)</c></td>
+          <td><c>std::pair&lt;const Ch*, T::size_type></c></td>
+          <td><p>Let <c>rlen</c> be the smaller of <c>n</c> and the maximum number of available characters at the front of the text input represented by <c>*this</c> that are contiguously arranged.</p>
+              <p>Removes the first <c>rlen</c> characters in the text input
+                 and returns a pair representing the removed range whose <c>first</c> is a pointer to the first element of the range and whose <c>second</c> is the number of elements in the range.
+                 The range shall not be invalidated before this ((5)) is evaluated the next time or <c>*this</c> is destroyed.</p></td>
+          <td>Yes</td>
         </tr>
       </table>
+
+      <p>(4) and (5) in <xref id="table.char_input.requirements"/> is referred as respectively an <n>indirect interface</n> and a <n>direct interface</n> of a type that meets the <c>CharInput</c> requirements.</p>
     </section>
 
     <section id="hpp.char_input.syn">
@@ -2676,6 +2758,16 @@ namespace commata {
     void swap(owned_string_input&lt;Ch, Tr, Allocator>&amp; left,
               owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(noexcept(left.swap(right)));
 
+  <c>// <n><xref id="indirect_input"/>, indirect_input:</n></c>
+  template &lt;class Input> class indirect_input;
+  template &lt;class Input>
+    void swap(indirect_input&lt;Input>&amp; left,
+              indirect_input&lt;Input>&amp; right) noexcept(noexcept(left.swap(right)));
+
+  <c>// <n>tags:</n></c>
+  struct indirect_t {};
+  constexpr inline indirect_t indirect{};
+
   <c>// <n><xref id="char_input.creation"/>, CharInput creation functions:</n></c>
   template &lt;class Ch, class Tr>
     streambuf_input&lt;Ch, Tr> make_char_input(std::basic_streambuf&lt;Ch, Tr>&amp; in) noexcept;
@@ -2697,6 +2789,11 @@ namespace commata {
   template &lt;class Ch, class Tr, class Allocator>
     owned_string_input&lt;Ch, Tr, Allocator>
       make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
+  template &lt;class... Args>
+    <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+  template &lt;class Input>
+    indirect_input&lt;Input>
+      make_char_input(indirect_t, indirect_input&lt;Input> input) noexcept(<nc>see below</nc>);
 }
       </codeblock>
 
@@ -2995,6 +3092,8 @@ namespace commata {
     using traits_type = Tr;
     using size_type   = std::size_t;
 
+    static constexpr size_type npos = -1;
+
     <c>// <n><xref id="string_input.cons"/>, construct/copy/destroy:</n></c>
     string_input() noexcept {}
     explicit string_input(const Ch* str);
@@ -3007,6 +3106,7 @@ namespace commata {
 
     <c>// <n><xref id="string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
+    std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
 
   private:
     std::basic_string_view&lt;Ch, Tr> v;   <c>// <n>exposition only</n></c>
@@ -3016,7 +3116,9 @@ namespace commata {
 
       <p>The class template <c>string_input</c> describes thin wrappers of on-memory character sequences without any ownership of them.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c> and is a trivially copyable type.</p>
+      <p>An instance of <c>string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>,
+         implements its optional direct interface,
+         and is a trivially copyable type.</p>
 
       <section id="string_input.cons">
         <name><c>string_input</c> construct/copy/destroy</name>
@@ -3056,6 +3158,18 @@ v.remove_prefix(rlen);
 return rlen;</code>
           </effects>
         </code-item>
+
+        <code-item>
+          <code>
+std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
+          </code>
+          <effects><p>Equivalent to:</p>
+                   <code>size_type rlen = std::min(n, v.size());
+std::pair&lt;const Ch*, size_type> r(v.data(), rlen);
+v.remove_prefix(rlen);
+return r;</code>
+          </effects>
+        </code-item>
       </section>
     </section>
 
@@ -3072,6 +3186,8 @@ namespace commata {
     using traits_type = Tr;
     using size_type   = typename string_type::size_type;
 
+    static constexpr size_type npos = -1;
+
     <c>// <n><xref id="owned_string_input.cons"/>, construct/copy/destroy:</n></c>
     owned_string_input() noexcept(<nc>see below</nc>);
     explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; str) noexcept;
@@ -3081,6 +3197,7 @@ namespace commata {
 
     <c>// <n><xref id="owned_string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
+    std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
 
     <c>// <n><xref id="owned_string_input.modifiers"/>, modifiers:</n></c>
     void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
@@ -3099,7 +3216,8 @@ namespace commata {
 
       <p>The class template <c>owned_string_input</c> describes thin wrappers of an object of an instance of <c>std::basic_string</c> with the ownership of it.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>owned_string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>.</p>
+      <p>An instance of <c>owned_string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>
+         and implements its optional direct interface.</p>
 
       <section id="owned_string_input.cons">
         <name><c>owned_string_input</c> construct/copy/destroy</name>
@@ -3148,6 +3266,18 @@ head += rlen;
 return rlen;</code>
           </effects>
         </code-item>
+
+        <code-item>
+          <code>
+std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
+          </code>
+          <effects><p>Equivalent to:</p>
+                   <code>size_type rlen = std::min(n, s.size() - head);
+std::pair&lt;const Ch*, size_type> r(s.data() + head, rlen);
+head += rlen;
+return r;</code>
+          </effects>
+        </code-item>
       </section>
 
       <section id="owned_string_input.modifiers">
@@ -3172,6 +3302,92 @@ template &lt;class Ch, class Tr, class Allocator>
             owned_string_input&lt;Ch, Tr, Allocator>&amp; right) noexcept(noexcept(left.swap(right)));
           </code>
           <effects>Equivalent to: <c>left.swap(right);</c></effects>
+        </code-item>
+      </section>
+    </section>
+
+    <section id="indirect_input">
+      <name>Class template <c>indirect_input</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class Input> class indirect_input {
+  public:
+    using base_type   = Input;
+    using char_type   = typename Input::char_type;
+    using traits_type = typename Input::traits_type;
+    using size_type   = typename Input::size_type;
+
+    <c>// <n><xref id="indirect_input.cons"/>, construct/copy/destroy:</n></c>
+    indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
+    explicit indirect_input(Input base) noexcept(std::is_nothrow_move_constructible_v&lt;Input>) :
+      input(std::move(base)) {}
+    indirect_input(const indirect_input&amp;)  = default;
+    indirect_input(      indirect_input&amp;&amp;) = default;
+   ~indirect_input() = default;
+    indirect_input&amp; operator=(const indirect_input&amp;)  = default;
+    indirect_input&amp; operator=(      indirect_input&amp;&amp;) = default;
+
+    <c>// <n>access:</n></c>
+    const Input&amp; base() const noexcept { return input; }
+          Input&amp; base()       noexcept { return input; }
+
+    <c>// <n><xref id="indirect_input.inv"/>, invocation:</n></c>
+    size_type operator()(Ch* out, size_type n);
+
+    void swap(indirect_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Input>);
+      { using std::swap; swap(input, other.input); }
+
+  private:
+    Input input;  <c>// <n>exposition only</n></c>
+  };
+
+  <c>// <n><xref id="indirect_input.special"/>, specialized algorithms:</n></c>
+  template &lt;class Input>
+    void swap(indirect_input&lt;Input>&amp; left,
+              indirect_input&lt;Input>&amp; right) noexcept(noexcept(left.swap(right)));
+}
+      </codeblock>
+
+      <p>The class template <c>indirect_input</c> describes thin wrappers of a <c>CharInput</c> object with the ownership of it, and with its direct interface, if any, lost.</p>
+      <p>The template parameter <c>Input</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>).</p>
+      <p><c>indirect_input&lt;Input></c> meets the <c>CharInput</c> requirements for <c>Input::char_type</c> with its indirect interface and without its direct interface,
+         and is a trivially copyable type if <c>CharInput</c> is a trivially copyable type.</p>
+
+      <section id="indirect_input.cons">
+        <name><c>indirect_input</c> construct/copy/destroy</name>
+
+        <code-item>
+          <code>
+indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
+          </code>
+          <requires><c>Input</c> shall be <c>DefaultConstructible</c>.</requires>
+          <effects>Default constructs <c>input</c>.</effects>
+        </code-item>
+      </section>
+
+      <section id="indirect_input.inv">
+        <name><c>indirect_input</c> invocation</name>
+
+        <code-item>
+          <code>
+size_type operator()(Ch* out, size_type n);
+          </code>
+          <effects>Equivalent to: <c>return input(out, n);</c></effects>
+        </code-item>
+      </section>
+
+      <section id="indirect_input.special">
+        <name><c>indirect_input</c> specialized algorithms</name>
+
+        <code-item>
+          <code>
+template &lt;class Input>
+  void swap(indirect_input&lt;Input>&amp; left,
+            indirect_input&lt;Input>&amp; right) noexcept(noexcept(left.swap(right)));
+          </code>
+          <effects>Equivalent to: <c>left.swap(right);</c></effects>
+          <remark>This overload shall not participate in overload resolution unless <c>std::is_swappable_v&lt;Input></c> is <c>true</c>.</remark>
         </code-item>
       </section>
     </section>
@@ -3240,6 +3456,30 @@ template &lt;class Ch, class Tr, class Allocator>
     make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
         </code>
         <returns><c>owned_string_input&lt;Ch, Tr, Allocator>(std::move(in))</c>.</returns>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class... Args>
+  <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+        </code>
+        <effects><p>If <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand, equivalent to:</p>
+                 <code>auto in = make_char_input(std::forward&lt;Args>(args)...);
+return indirect_input&lt;decltype(in)>(std::move(in));
+</code>
+                 <p>Otherwise, equivalent to: <c>return indirect_input&lt;Args...>(std::forward&lt;Args>(args)...);</c></p></effects>
+        <remark>This overload shall not participate in overload resolution unless the first type in <c>std::decay_t&lt;Args>...</c> (if any) is not identical to or not derived from <c>indirect_t</c>, and either <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand or <c>sizeof...(Args)</c> is equal to <c>1</c>.
+                The expression inside <c>noexcept</c> is <c>true</c> unless the equivalent expressions described above is potentially-throwing.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class Input>
+  indirect_input&lt;Input>
+    make_char_input(indirect_t, indirect_input&lt;Input> input) noexcept(<nc>see below</nc>);
+        </code>
+        <returns><c>indirect_input&lt;Input>(std::move(input.base()))</c>.</returns>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Input></c>.</remark>
       </code-item>
     </section>
   </section>
@@ -3372,7 +3612,8 @@ namespace commata {
 
       <p>The class template <c>csv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TableParser</c> objects (<xref id="table_parser.requirements"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for a certain char-like type.</p>
-      <p><c>csv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.</p>
+      <p><c>csv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.
+         It shall be direct if and only if <c>CharInput</c> has the direct interface.</p>
       <p><c>csv_source&lt;CharInput></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;CharInput></c> is <c>true</c>.</p>
 
       <section id="csv_source.types">
@@ -3389,7 +3630,7 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
                           <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character source object and an object of <c>Handler</c> as its tied table handler object.
-                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it.
+                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.
                           Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character source object, its tied table handler object, and the allocator object held by it if any.</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
@@ -3555,7 +3796,8 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
                  <p>Otherwise, equivalent to:</p>
                  <code>return parse_csv(make_csv_source(std::forward&lt;Arg1>(arg1)),
                  std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs>(other_args)...);</code></effects>
-        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not an instance of <c>csv_source</c> and either of <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
+        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not either of an instance of <c>csv_source</c> or <c>indirect_t</c>,
+                and either of <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
     </section>
   </section>
@@ -3679,7 +3921,8 @@ namespace commata {
 
       <p>The class template <c>tsv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TableParser</c> objects (<xref id="table_parser.requirements"/>) of the TSV text format (<xref id="definitions.tsv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for a certain char-like type.</p>
-      <p><c>tsv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.</p>
+      <p><c>tsv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.
+         It shall be direct if and only if <c>CharInput</c> has the direct interface.</p>
       <p><c>tsv_source&lt;CharInput></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;CharInput></c> is <c>true</c>.</p>
 
       <section id="tsv_source.types">
@@ -3696,7 +3939,7 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
                           <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character source object and an object of <c>Handler</c> as its tied table handler object.
-                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it.
+                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.
                           Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character source object, its tied table handler object, and the allocator object held by it if any.</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
@@ -3862,7 +4105,8 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
                  <p>Otherwise, equivalent to:</p>
                  <code>return parse_tsv(make_tsv_source(std::forward&lt;Arg1>(arg1)),
                  std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs>(other_args)...);</code></effects>
-        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not an instance of <c>tsv_source</c> and either of <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
+        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not either of an instance of <c>tsv_source</c> or <c>indirect_t</c>,
+                and either of <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
     </section>
   </section>
@@ -3964,7 +4208,7 @@ namespace commata {
             class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class record_extractor {
   public:
-    using char_type = Ch;
+    using char_type = const Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
 
@@ -4121,7 +4365,7 @@ namespace commata {
             class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class record_extractor_with_indexed_key {
   public:
-    using char_type = Ch;
+    using char_type = const Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
 
@@ -6024,9 +6268,11 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
 
         <p>In <xref id="table.field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
            <c>b</c> and <c>e</c> are rvalues of <c>Ch*</c>.
+           <c>c</c> and <c>f</c> are rvalues of <c>const Ch*</c>.
            <c>rv</c> is an rvalue of <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
 
-        <p>Requirements shown as (1) and (2) in <xref id="table.field_scanner.requirements"/> are optional, but at least one of (1) and (2) shall be satisfied without falling back to the default behaviours, because they are defined in a cross-referencing manner.</p>
+        <p>Requirements shown as (1), (2) and (3) in <xref id="table.field_scanner.requirements"/> are optional, but at least one of them shall be satisfied without falling back to the default behaviours, because they are defined in a cross-referencing manner.
+           If more than one of (1), (2) and (3) are valid expressions, it is unspecified which one is evaluated by the table scanner.</p>
 
         <table id="table.field_scanner.requirements">
           <caption><c>BodyFieldScanner</c> requirements</caption>
@@ -6046,23 +6292,33 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <td>(Not used)</td>
             <td>Called when the table scanner has finalized a text value of the field of a body record.
                 Any pointers in the range [<c>b</c>, <c>e</c>] are dereferenceable and any values stored at them are modifiable.
-                Initially the range [<c>b</c>, <c>e</c>) represents the value of the field and the value of <c>*e</c> is unspecified.
-                The range [<c>b</c>, <c>e</c>] may be invalidated after the invocation exits.
-                It is unspecified which of (1) and (2) the table scanner calls.</td>
-            <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (2) with it.</td>
+                Initially the range [<c>b</c>, <c>e</c>) represents the text value of the field and the value of <c>*e</c> is unspecified.
+                The range [<c>b</c>, <c>e</c>] may be invalidated after the invocation exits.</td>
+            <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
           </tr>
 
           <tr>
             <td>(2)</td>
-            <td><c>s(rv)</c></td>
+            <td><c>s(c, f)</c></td>
             <td>(Not used)</td>
-            <td>Called when the table scanner has finalized a text value of the field of a body record. The value of the field is <c>rv</c>.</td>
-            <td>Calls (1) with <c>rv.data()</c> and <c>rv.data() + rv.size()</c>.
-                <span class="note">If (1) modifies the object pointed by <c>e</c> to any value other than <c>Ch()</c>, this leads to undefined behaviour.</span></td>
+            <td>Called when the table scanner has finalized a text value of the field of a body record.
+                Any pointers in the range [<c>c</c>, <c>f</c>) are dereferenceable.
+                The range [<c>c</c>, <c>f</c>) represents the text value of the field.
+                The range [<c>c</c>, <c>f</c>) may be invalidated after the invocation exits.</td>
+            <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>c</c>, <c>f</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
           </tr>
 
           <tr>
             <td>(3)</td>
+            <td><c>s(rv)</c></td>
+            <td>(Not used)</td>
+            <td>Called when the table scanner has finalized a text value of the field of a body record. The value of the field is <c>rv</c>.</td>
+            <td>Evaluates (1) with <c>rv.data()</c> and <c>rv.data() + rv.size()</c>.
+                <span class="note">If evaluating (1) modifies the object pointed by <c>e</c> to any value other than <c>Ch()</c>, this leads to undefined behaviour.</span></td>
+          </tr>
+
+          <tr>
+            <td>(4)</td>
             <td><c>s()</c></td>
             <td>(Not used)</td>
             <td>Called when the table scanner has found that the field does not appear in the body record, that is, the record has too few fields to reach the field.</td>
@@ -6123,8 +6379,11 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
 
         <p>In <xref id="table.header_field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
            The type of <c>j</c> is <c>std::size_t</c>.
-           The type of <c>v</c> is <c>const std::pair&lt;T::char_type*, T::char_type*>*</c>.
-           <c>t</c> denotes the table scanner object that holds the header field scanner denoted by <c>s</c> and is an lvalue of cv-unqualified <c>T</c> .</p>
+           The type of <c>v</c> is <c>std::optional&lt;std::pair&lt;T::char_type*, T::char_type*>></c>.
+           The type of <c>w</c> is <c>std::optional&lt;std::pair&lt;std::remove_const_t&lt;T::char_type>*, std::remove_const_t&lt;T::char_type>*>></c>.
+           <c>t</c> denotes an lvalue of the table scanner object that holds the header field scanner denoted by <c>s</c> and is an lvalue of cv-unqualified <c>T</c> .</p>
+        <p>Requirements shown as (1) and (2) in <xref id="table.header_field_scanner.requirements"/> are optional, but at least one of them shall be satisfied.
+           If both of (1) and (2) are valid expressions, it is unspecified which one is evaluated by the table scanner.</p>
 
         <table id="table.header_field_scanner.requirements">
           <caption><c>HeaderFieldScanner</c> requirements</caption>
@@ -6140,14 +6399,28 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
           <tr>
             <td>(1)</td>
             <td><c>s(j, v, t)</c></td>
-            <td>A type contextually convertible to <c>bool</c></td>
+            <td rowspan="2">A type contextually convertible to <c>bool</c></td>
             <td>Called by the table scanner in two situations following.
                 <ul>
                   <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
-                      Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable.
+                      <c>v</c> contains a value. Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable.
                       Initially the range [<c>v->first</c>, <c>v->second</c>) represents the value of the header field and the value of <c>*v->second</c> is unspecified.
                       The range [<c>v->first</c>, <c>v->second</c>] may be invalidated after the invocation exits.</li>
-                  <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> is a null pointer.</li>
+                  <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> does not contain a value.</li>
+                </ul>
+                In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will be the first body record.</td>
+        </tr>
+
+          <tr>
+            <td>(2)</td>
+            <td><c>s(j, w, t)</c></td>
+            <td>Called by the table scanner in two situations following.
+                <ul>
+                  <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
+                      <c>w</c> contains a value. Any pointers in the range [<c>w->first</c>, <c>w->second</c>) are dereferenceable.
+                      The range [<c>w->first</c>, <c>w->second</c>) represents the text value of the header field.
+                      The range [<c>w->first</c>, <c>w->second</c>) may be invalidated after the invocation exits.</li>
+                  <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>w</c> does not contain a value.</li>
                 </ul>
                 In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will be the first body record.</td>
           </tr>
@@ -6187,7 +6460,7 @@ namespace commata {
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class basic_table_scanner {
   public:
-    using char_type = Ch;
+    using char_type = const Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits&lt;Allocator>::size_type;
@@ -6222,14 +6495,16 @@ namespace commata {
     template &lt;class T> const T* get_record_end_scanner() const noexcept;
     template &lt;class T>       T* get_record_end_scanner()       noexcept;
 
-    <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
+    <c>// <n>eight member functions below are declared and defined to meet the TableHandler</n>
     // <n>requirements (<xref id="table_handler.requirements"/>):</n></c>
-    void start_buffer(Ch* buffer_begin, Ch* buffer_end);
-    void end_buffer(Ch* buffer_end);
-    void start_record(Ch* record_begin);
-    bool end_record(Ch* record_end);
-    void update(Ch* first, Ch* last);
-    void finalize(Ch* first, Ch* last);
+    void start_buffer(const Ch* buffer_begin, const Ch* buffer_end);
+    void end_buffer(const Ch* buffer_end);
+    void start_record(const Ch* record_begin);
+    bool end_record(const Ch* record_end);
+    void update(const Ch* first, const Ch* last);
+    void update(      Ch* first,       Ch* last);
+    void finalize(const Ch* first, const Ch* last);
+    void finalize(      Ch* first,       Ch* last);
 
     <c>// <n><xref id="basic_table_scanner.processing_state"/>, processing state:</n></c>
     bool is_in_header() const noexcept;
@@ -6885,8 +7160,7 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
             <code>
 template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             </code>
-            <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.
-                      The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
+            <requires>The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
             <effects><p>Given an exposition-only class template:</p>
               <code>
 template &lt;class Ch> struct arithmetic_convertible {
@@ -6900,6 +7174,7 @@ template &lt;class Ch> struct arithmetic_convertible {
                  then makes an object <c>w</c> of <c>std::optional&lt;T></c> initialized with <c>to_arithmetic&lt;std::optional&lt;T>>(arithmetic_convertible&lt;Ch>{ begin, end }, get_conversion_error_handler())</c>,
                  and finally puts <c>*w</c> into the field translator sink if <c>w.has_value()</c> is <c>true</c>.</p>
             </effects>
+            <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is <c>char</c> or <c>wchar_t</c>.</remark>
           </code-item>
 
           <code-item>
@@ -7005,9 +7280,9 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
             <code>
 template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             </code>
-            <requires><c>Ch</c> shall be <c>char</c> or <c>wchar_t</c>.
-                      The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
+            <requires>The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
             <effects>Equivalent to: <c>return base(begin, replace(begin, end));</c></effects>
+            <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is <c>char</c> or <c>wchar_t</c>.</remark>
           </code-item>
 
           <code-item>
@@ -7705,7 +7980,8 @@ namespace commata {
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class primitive_table_pull {
   public:
-    using char_type      = typename TableSource::char_type;
+    <c>// <n><xref id="primitive_table_pull.types"/>, member types:</n></c>
+    using char_type      = <nc>see below</nc>;
     using allocator_type = Allocator;
     using size_type      = std::size_t;
 
@@ -7767,6 +8043,20 @@ namespace commata {
        If <c>(Handle &amp; primitive_table_pull_handle::start_buffer) == primitive_table_pull_handle(0)</c> is <c>true</c>, it shall not recognize any invocation of <c>start_buffer</c> as a parsing event and shall not enqueue anything with the invocation.
        All other enumerators but <c>primitive_table_pull_handle::all</c> shall work similarly.
        <c>primitive_table_pull_handle::all</c> has a representation of all one bits and is intended to be used to express &#x2018;ignore none&#x2019;.</p>
+
+    <section id="primitive_table_pull.types">
+      <name><c>primitive_table_pull</c> member types</name>
+      <code-item>
+        <code>
+using char_type = <nc>see below</nc>;
+        </code>
+        <type><c>const typename TableSource::char_type</c> if <c>TableSource</c> is direct (<xref id="table_source.requirements"/>), <c>typename TableSource::char_type</c> otherwise.</type>
+        <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
+              For example, the program cannot overwrite character objects pointed by the return value of <c>operator[]</c> in such cases.
+              If <c>TableSource</c> is an instance of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
+              the program can ensure that it is not const-qualified specifying an instance of <c>indirect_input</c> (<xref id="indirect_input"/>) as the first template parameter of <c>csv_source</c> or <c>tsv_source</c> with possible performance degradation.</note>
+      </code-item>
+    </section>
 
     <section id="primitive_table_pull.physical_position_available">
       <name><c>primitive_table_pull</c> physical position availability</name>
@@ -7999,6 +8289,7 @@ const char_type* operator[](size_type i) const;
         <requires><c>i</c> shall be smaller than <c>data_size()</c>.</requires>
         <returns>The <c>i</c>-th (zero-based) argument value of the front of the event queue.</returns>
         <throws>Nothing.</throws>
+        <remark>The first form is not declared if <c>char_type</c> is const-qualified.</remark>
       </code-item>
 
       <code-item>
@@ -8008,6 +8299,7 @@ const char_type* at(size_type i) const;
         </code>
         <throws><c>std::out_of_range</c> if <c>i >= data_size()</c>.</throws>
         <returns><c>(*this)[i]</c>.</returns>
+        <remark>The first form is not declared if <c>char_type</c> is const-qualified.</remark>
       </code-item>
 
       <code-item>
@@ -8035,7 +8327,8 @@ namespace commata {
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class table_pull {
   public:
-    using char_type      = typename TableSource::char_type;
+    <c>// <n><xref id="table_pull.types"/>, member types:</n></c>
+    using char_type      = <nc>see below</nc>;
     using traits_type    = typename TableSource::traits_type;
     using allocator_type = Allocator;
     using view_type      = std::basic_string_view&lt;char_type, traits_type>;
@@ -8101,7 +8394,21 @@ namespace commata {
     <p>An object of an instantiation of it holds a table parser object (<xref id="table_parser.requirements"/>) obtained from the table source object (<xref id="table_source.requirements"/>) passed to the constructor
        and performs field-wisely or record-wisely step-by-step parsing of a text table using it.
        Its user can retrieve the text values of the text fields through its <n>current string values</n>, which are null-terminated sequences of <c>TableSource::char_type</c>.</p>
-    <p>An instance of <c>table_pull</c> meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char_type</c>.</p>
+    <p>An instance of <c>table_pull</c> meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char_type</c> only if <c>char_type</c> is not const-qualified (<xref id="table_pull.types"/>).</p>
+
+    <section id="table_pull.types">
+      <name><c>table_pull</c> member types</name>
+      <code-item>
+        <code>
+using char_type = <nc>see below</nc>;
+        </code>
+        <type><c>const typename TableSource::char_type</c> if <c>TableSource</c> is direct (<xref id="table_source.requirements"/>), <c>typename TableSource::char_type</c> otherwise.</type>
+        <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
+              For example, <c>c_str</c> member function is not declared in such cases.
+              If <c>TableSource</c> is an instance of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
+              the program can ensure that it is not const-qualified specifying an instance of <c>indirect_input</c> (<xref id="indirect_input"/>) as the first template parameter of <c>csv_source</c> or <c>tsv_source</c> with possible performance degradation.</note>
+      </code-item>
+    </section>
 
     <section id="table_pull.physical_position_available">
       <name><c>table_pull</c> physical position availability</name>
@@ -8332,6 +8639,7 @@ std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
 const char_type* c_str() const noexcept;
         </code>
         <returns>A pointer that points the first element of a null-terminated sequence of the current string value.</returns>
+        <remark>This member function is not declared if <c>char_type</c> is const-qualified.</remark>
       </code-item>
 
       <code-item>
@@ -8356,7 +8664,8 @@ template &lt;class F> table_pull&amp; rewrite(F f);
                  Then conditionally shorten the current string value, preserving its null-terminated property, so that its size should be <c>new_end - data()</c>.</effects>
         <returns><c>*this</c>.</returns>
         <postcondition><c>state</c> member function shall return the same value as before the invocation.</postcondition>
-        <remark>Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
+        <remark>This member function is not declared if <c>char_type</c> is const-qualified.
+                Invalidates all pointers that have been returned by <c>c_str</c> and all ranges represented by string view objects referenced or pointed by the return values of <c>operator*</c> and <c>operator-></c>.
                 When an exception is thrown, the state of <c>*this</c> shall not be changed.</remark>
         <note>This member function template is primarily intended to be invoked with a <c>numpunct_replacer_to_c</c> (<xref id="numpunct_replacer_to_c"/>) object.</note>
       </code-item>

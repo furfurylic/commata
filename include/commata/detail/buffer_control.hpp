@@ -35,6 +35,8 @@ class default_buffer_control :
     typename alloc_traits_t::pointer buffer_;
 
 public:
+    constexpr static bool buffer_control_defaulted = true;
+
     default_buffer_control(
         std::size_t buffer_size, const Allocator& alloc)
         noexcept(std::is_nothrow_copy_constructible_v<Allocator>) :
@@ -73,17 +75,20 @@ public:
 
 struct thru_buffer_control
 {
+    constexpr static bool buffer_control_defaulted = false;
+
     template <class Handler>
     std::pair<typename Handler::char_type*, std::size_t> do_get_buffer(
         Handler* f)
     {
+        static_assert(!std::is_const_v<typename Handler::char_type>);
         return f->get_buffer(); // throw
     }
 
     template <class Handler>
-    void do_release_buffer(
-        typename Handler::char_type* buffer, Handler* f)
+    void do_release_buffer(typename Handler::char_type* buffer, Handler* f)
     {
+        static_assert(!std::is_const_v<typename Handler::char_type>);
         return f->release_buffer(buffer);
     }
 };
@@ -100,6 +105,8 @@ constexpr bool is_full_fledged_v =
 template <class Handler, class BufferControl>
 class full_fledged_handler :
     BufferControl,
+    public handler_core_t<Handler,
+                          full_fledged_handler<Handler, BufferControl>>,
     public yield_t<Handler, full_fledged_handler<Handler, BufferControl>>,
     public yield_location_t<Handler,
         full_fledged_handler<Handler, BufferControl>>,
@@ -113,6 +120,9 @@ class full_fledged_handler :
 
 public:
     using char_type = typename Handler::char_type;
+
+    constexpr static bool buffer_control_defaulted =
+        BufferControl::buffer_control_defaulted;
 
     // noexcept-ness of the member functions except the ctor and the dtor does
     // not count because they are invoked as parts of a willingly-throwing
@@ -133,7 +143,8 @@ public:
         handler_(std::forward<HandlerR>(handler))
     {}
 
-    [[nodiscard]] std::pair<char_type*, std::size_t> get_buffer()
+    [[nodiscard]]
+    std::pair<std::remove_const_t<char_type>*, std::size_t> get_buffer()
     {
         return this->do_get_buffer(std::addressof(handler_));
     }
@@ -143,43 +154,44 @@ public:
         this->do_release_buffer(buffer, std::addressof(handler_));
     }
 
-    void start_buffer(
-        [[maybe_unused]] char_type* buffer_begin,
-        [[maybe_unused]] char_type* buffer_end)
+    template <class Ch,
+        std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+             && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            std::nullptr_t> = nullptr>
+    auto start_buffer(
+        [[maybe_unused]] Ch* buffer_begin,
+        [[maybe_unused]] Ch* buffer_end)
     {
         if constexpr (has_start_buffer_v<Handler>) {
             handler_.start_buffer(buffer_begin, buffer_end);
         }
     }
 
-    void end_buffer([[maybe_unused]] char_type* buffer_end)
+    template <class Ch,
+        std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+             && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            std::nullptr_t> = nullptr>
+    auto end_buffer([[maybe_unused]] Ch* buffer_end)
     {
         if constexpr (has_end_buffer_v<Handler>) {
             handler_.end_buffer(buffer_end);
         }
     }
 
-    auto start_record(char_type* record_begin)
-    {
-        return handler_.start_record(record_begin);
-    }
-
-    auto update(char_type* first, char_type* last)
-    {
-        return handler_.update(first, last);
-    }
-
-    auto finalize(char_type* first, char_type* last)
-    {
-        return handler_.finalize(first, last);
-    }
-
-    auto end_record(char_type* end)
-    {
-        return handler_.end_record(end);
-    }
-
-    auto empty_physical_line([[maybe_unused]] char_type* where)
+    template <class Ch,
+        std::enable_if_t<
+            std::is_same_v<
+                std::remove_const_t<typename Handler::char_type>,
+                std::remove_const_t<Ch>>
+             && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+            std::nullptr_t> = nullptr>
+    auto empty_physical_line([[maybe_unused]] Ch* where)
     {
         if constexpr (has_empty_physical_line_v<Handler>) {
             return handler_.empty_physical_line(where);
