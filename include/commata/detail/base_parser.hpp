@@ -15,26 +15,30 @@ namespace commata::detail {
 template <class Input, class Handler, class State, class D>
 class base_parser
 {
-    static_assert(
-        std::is_same_v<
-            typename Input::char_type,
-            std::remove_const_t<typename Handler::char_type>>,
-            "Input::char_type and Handler::char_type are inconsistent; "
-            "they shall be the same type expect that the latter may be "
-            "const-qualified");
+    using hc_t = typename Handler::char_type;
+    using huc_t = std::remove_const_t<hc_t>;
+    using is_t = typename Input::size_type;
+
+    static_assert(std::is_same_v<typename Input::char_type, huc_t>,
+        "Input::char_type and Handler::char_type are inconsistent; "
+        "they shall be the same type expect that the latter may be "
+        "const-qualified");
+
+    static constexpr bool nonconst_direct = std::is_invocable_r_v<
+        std::pair<huc_t*, typename Input::size_type>, Input&, is_t>;
 
 public:
     using reads_direct = std::bool_constant<
         Handler::buffer_control_defaulted
-     && std::is_const_v<typename Handler::char_type>
-     && std::is_invocable_r_v<
-            std::pair<typename Handler::char_type*,
-                      typename Input::size_type>, Input&,
-            typename Input::size_type>>;
+     && ((std::is_const_v<typename Handler::char_type>
+       && std::is_invocable_r_v<
+            std::pair<hc_t*, typename Input::size_type>, Input&, is_t>)
+      || nonconst_direct)>;
 
     using char_type = std::remove_const_t<typename Handler::char_type>;
-    using buffer_char_t = std::conditional_t<reads_direct::value,
-        typename Handler::char_type, char_type>;
+    using buffer_char_t = std::conditional_t<
+        nonconst_direct || !reads_direct::value,
+        char_type, typename Handler::char_type>;
 
 private:
     // Reading position

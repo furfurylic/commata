@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-03-09 (UTC)</signature>
+<signature>2024-03-18 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -229,7 +229,7 @@
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or (10) (second argument), and</li>
                 <li><c>be</c> be the second argument of the latest evaluation of (4).</li>
               </ul>
-              <p>The type of <c>rb</c> shall be the same as the type of <c>be</c>.
+              <p>The type of <c>rb</c> shall be the same as the type of <c>vb</c>.
                  <c>re</c> points one past the last element of the characters that forms the record, not of the text value of the final field of the record.
                  <span class="note">To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</span>
                  The pointee of <c>re</c> resides in [<c>vb</c>, <c>be</c>).</p>
@@ -248,7 +248,7 @@
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), this (second argument) or (10) (second argument), and</li>
                 <li><c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</li>
               </ul>
-              <p>Then the type of <c>f</c> and <c>l</c> shall be the same as the type of <c>bb</c>.
+              <p>Then the type of <c>f</c> and <c>l</c> shall be the same as the type of <c>vb</c>.
                  The range [<c>f</c>, <c>l</c>) shall not be empty.
                  The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).
                  The pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
@@ -269,7 +269,7 @@
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or this (second argument), and</li>
                 <li><c>bb</c> and <c>be</c> be the arguments of the latest evaluation of (4) in order.</li>
               </ul>
-              <p>Then the type of <c>f</c> and <c>l</c> shall be the same as the type of <c>bb</c>.
+              <p>Then the type of <c>f</c> and <c>l</c> shall be the same as the type of <c>vb</c>.
                  The range [<c>f</c>, <c>l</c>) may be empty.
                  The chunk is a sequence of char-like objects in [<c>f</c>, <c>l</c>).
                  The pointee of <c>f</c> resides in [<c>vb</c>, <c>be</c>), and the pointee of <c>l</c> resides in [<c>f</c>, <c>be</c>).</p>
@@ -519,14 +519,16 @@
         </tr>
       </table>
 
-      <p>A type <c>U</c> that meets the <c>TableSource</c> requirements is called <n>direct</n> if all of the following conditions meet
-         where <c>X</c> is a type that meets the <c>TableHandler</c> requirements, that is deemed to have no buffer control, and whose <c>char_type</c> is const-qualified:</p>
+      <p>In the rest of this subclause, Let <c>U</c> be a type that meets the <c>TableSource</c> requirements,
+         <c>X</c> represents an arbitrary type that meets the <c>TableHandler</c> requirements that is deemed to have no buffer control,
+         <c>B</c> represents an arbitrary type that meets the <c>Allocator</c> requirements for <c>std::remove_const_t&lt;X::char_type></c>, and
+         <c>P</c> represents <c>U::parser_type&lt;X></c> or <c>U::parser_type&lt;X, B></c> (the latter is applied only if <c>U</c> offers (6) in <xref id="table.table_source.optional"/>).
+         Then:</p>
       <ul>
-        <li><c>U::parser_type&lt;X>::reads_direct</c> is a type idential to or derived from <c>std::true_type</c> for any <c>X</c>, and</li>
-        <li>If <c>U</c> offers (6) in <xref id="table.table_source.optional"/>, then <c>U::parser_type&lt;X, B>::reads_direct</c> is a type idential or derived from <c>std::true_type</c> for any <c>X</c>
-        and <c>B</c> given the type <c>B</c> meets the <c>Allocator</c> requirements for <c>std::remove_const_t&lt;X::char_type></c>.</li>
+        <li><c>U</c> is called <n>direct</n> if <c>P::reads_direct</c> is a type idential to or derived from <c>std::true_type</c> for any comination of <c>X</c> and <c>P</c>,</li>
+        <li><c>U</c> is called <n>nonconst-direct</n> if it is direct and it evaluates <c>start_buffer</c>, <c>end_buffer</c>, <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c> and <c>finalize</c> on its tied table handler, whose type is <c>X</c>, with arguments whose types are constantly and uniformly <c>X::char_type*</c> for any comination of <c>X</c> and <c>P</c>, and</li>
+        <li><c>U</c> is called <n>indirect</n> if it is direct and <c>P::reads_direct</c> is not a type or is a type idential to or derived from <c>std::false_type</c> for any comination of <c>X</c> and <c>P</c>.</li>
       </ul>
-      <p>A type <c>U</c> that meets the <c>TableSource</c> requirements is called <n>indirect</n> if it is not direct.</p>
     </section>
   </section>
 
@@ -2707,16 +2709,21 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
         <tr>
           <td>(5)</td>
           <td><c>t(n)</c></td>
-          <td><c>std::pair&lt;const Ch*, T::size_type></c></td>
+          <td><c>std::pair&lt;Ch*, T::size_type></c> or <c>std::pair&lt;const Ch*, T::size_type></c></td>
           <td><p>Let <c>rlen</c> be the smaller of <c>n</c> and the maximum number of available characters at the front of the text input represented by <c>*this</c> that are contiguously arranged.</p>
               <p>Removes the first <c>rlen</c> characters in the text input
-                 and returns a pair representing the removed range whose <c>first</c> is a pointer to the first element of the range and whose <c>second</c> is the number of elements in the range.
-                 The range shall not be invalidated before this ((5)) is evaluated the next time or <c>*this</c> is destroyed.</p></td>
+                 and returns a pair representing the removed range whose <c>first</c> is a pointer to the first element of the range and whose <c>second</c> is the number of elements in the range.</p>
+              <p>Let <c>r</c> be the return value and <c>R</c> be its type.
+                 If <c>R::first_type</c> is not const-qualified, the range [<c>r.first</c>, <c>r.first + r.second</c>] shall not be invalidated and can be modified before this ((5)) is evaluated the next time or <c>*this</c> is destroyed,
+                 except that <c>r.first + r.second</c> shall not be modified to any value other than <c>Ch()</c>.
+                 Otherwise, the range [<c>r.first</c>, <c>r.first + r.second</c>) shall not be invalidated before this ((5)) is evaluated the next time or <c>*this</c> is destroyed.</p></td>
           <td>Yes</td>
         </tr>
       </table>
 
-      <p>(4) and (5) in <xref id="table.char_input.requirements"/> is referred as respectively an <n>indirect interface</n> and a <n>direct interface</n> of a type that meets the <c>CharInput</c> requirements.</p>
+      <p>(4) and (5) in <xref id="table.char_input.requirements"/> is referred as respectively an <n>indirect interface</n> and a <n>direct interface</n> of a type that meets the <c>CharInput</c> requirements.
+         In addition, (5) is referred as a <n>nonconst-direct interface</n> of it when the first type of the return type is <c>Ch*</c>,
+        and as a <n>const-direct interface</n> of it when the first type of the return type is <c>const Ch*</c>.</p>
     </section>
 
     <section id="hpp.char_input.syn">
@@ -3117,7 +3124,7 @@ namespace commata {
       <p>The class template <c>string_input</c> describes thin wrappers of on-memory character sequences without any ownership of them.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
       <p>An instance of <c>string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>,
-         implements its optional direct interface,
+         implements its optional const-direct interface,
          and is a trivially copyable type.</p>
 
       <section id="string_input.cons">
@@ -3197,7 +3204,7 @@ namespace commata {
 
     <c>// <n><xref id="owned_string_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
-    std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
+    std::pair&lt;Ch*, size_type> operator()(size_type n = npos) noexcept;
 
     <c>// <n><xref id="owned_string_input.modifiers"/>, modifiers:</n></c>
     void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
@@ -3217,7 +3224,7 @@ namespace commata {
       <p>The class template <c>owned_string_input</c> describes thin wrappers of an object of an instance of <c>std::basic_string</c> with the ownership of it.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
       <p>An instance of <c>owned_string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>
-         and implements its optional direct interface.</p>
+         and implements its optional nonconst-direct interface.</p>
 
       <section id="owned_string_input.cons">
         <name><c>owned_string_input</c> construct/copy/destroy</name>
@@ -3269,11 +3276,11 @@ return rlen;</code>
 
         <code-item>
           <code>
-std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
+std::pair&lt;Ch*, size_type> operator()(size_type n = npos) noexcept;
           </code>
           <effects><p>Equivalent to:</p>
                    <code>size_type rlen = std::min(n, s.size() - head);
-std::pair&lt;const Ch*, size_type> r(s.data() + head, rlen);
+std::pair&lt;Ch*, size_type> r(s.data() + head, rlen);
 head += rlen;
 return r;</code>
           </effects>
@@ -3612,8 +3619,10 @@ namespace commata {
 
       <p>The class template <c>csv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TableParser</c> objects (<xref id="table_parser.requirements"/>) of the CSV text format (<xref id="definitions.csv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for a certain char-like type.</p>
-      <p><c>csv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.
-         It shall be direct if and only if <c>CharInput</c> has the direct interface.</p>
+      <p><c>csv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.</p>
+      <p><c>csv_source&lt;CharInput></c> shall be nonconst-direct if and only if <c>CharInput</c> has the nonconst-direct interface,
+         direct but not nonconst-direct if and only if <c>CharInput</c> has the const-direct interface,
+         indirect otherwise.</p>
       <p><c>csv_source&lt;CharInput></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;CharInput></c> is <c>true</c>.</p>
 
       <section id="csv_source.types">
@@ -3921,8 +3930,10 @@ namespace commata {
 
       <p>The class template <c>tsv_source</c> describes thin wrappers of sequences of characters that work as factories of <c>TableParser</c> objects (<xref id="table_parser.requirements"/>) of the TSV text format (<xref id="definitions.tsv_text"/>).</p>
       <p>The template parameter <c>CharInput</c> shall meet the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for a certain char-like type.</p>
-      <p><c>tsv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.
-         It shall be direct if and only if <c>CharInput</c> has the direct interface.</p>
+      <p><c>tsv_source&lt;CharInput></c> shall meet the <c>TableSource</c> requirements (<xref id="table_source.requirements"/>) for the type <c>CharInput::char_type</c> with their optional operations for <c>TableHandler</c> types that are deemed to have no buffer control.</p>
+      <p><c>tsv_source&lt;CharInput></c> shall be nonconst-direct if and only if <c>CharInput</c> has the nonconst-direct interface,
+         direct but not nonconst-direct if and only if <c>CharInput</c> has the const-direct interface,
+         indirect otherwise.</p>
       <p><c>tsv_source&lt;CharInput></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;CharInput></c> is <c>true</c>.</p>
 
       <section id="tsv_source.types">
@@ -6291,7 +6302,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <td><c>s(b, e)</c></td>
             <td>(Not used)</td>
             <td>Called when the table scanner has finalized a text value of the field of a body record.
-                Any pointers in the range [<c>b</c>, <c>e</c>] are dereferenceable and any values stored at them are modifiable.
+                Any pointers in the range [<c>b</c>, <c>e</c>] are dereferenceable and any values stored at them are modifiable except that <c>*e</c> can only be modified to <c>Ch()</c>.
                 Initially the range [<c>b</c>, <c>e</c>) represents the text value of the field and the value of <c>*e</c> is unspecified.
                 The range [<c>b</c>, <c>e</c>] may be invalidated after the invocation exits.</td>
             <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
@@ -6313,8 +6324,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <td><c>s(rv)</c></td>
             <td>(Not used)</td>
             <td>Called when the table scanner has finalized a text value of the field of a body record. The value of the field is <c>rv</c>.</td>
-            <td>Evaluates (1) with <c>rv.data()</c> and <c>rv.data() + rv.size()</c>.
-                <span class="note">If evaluating (1) modifies the object pointed by <c>e</c> to any value other than <c>Ch()</c>, this leads to undefined behaviour.</span></td>
+            <td>Evaluates (1) with <c>rv.data()</c> and <c>rv.data() + rv.size()</c>.</td>
           </tr>
 
           <tr>
@@ -6403,7 +6413,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <td>Called by the table scanner in two situations following.
                 <ul>
                   <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
-                      <c>v</c> contains a value. Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable.
+                      <c>v</c> contains a value. Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable except that <c>*v->second</c> can only be modified to <c>Ch()</c>.
                       Initially the range [<c>v->first</c>, <c>v->second</c>) represents the value of the header field and the value of <c>*v->second</c> is unspecified.
                       The range [<c>v->first</c>, <c>v->second</c>] may be invalidated after the invocation exits.</li>
                   <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> does not contain a value.</li>
@@ -8050,7 +8060,9 @@ namespace commata {
         <code>
 using char_type = <nc>see below</nc>;
         </code>
-        <type><c>const typename TableSource::char_type</c> if <c>TableSource</c> is direct (<xref id="table_source.requirements"/>), <c>typename TableSource::char_type</c> otherwise.</type>
+        <type>If <c>TableSource</c> is nonconst-direct (<xref id="table_source.requirements"/>) or indirect, <c>typename TableSource::char_type</c>;
+              otherwise, if <c>TableSource</c> is direct, <c>const typename TableSource::char_type</c>;
+              otherwise, an unspecified type that is equal to either of <c>typename TableSource::char_type</c> or <c>const typename TableSource::char_type</c>.</type>
         <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
               For example, the program cannot overwrite character objects pointed by the return value of <c>operator[]</c> in such cases.
               If <c>TableSource</c> is an instance of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
@@ -8402,7 +8414,9 @@ namespace commata {
         <code>
 using char_type = <nc>see below</nc>;
         </code>
-        <type><c>const typename TableSource::char_type</c> if <c>TableSource</c> is direct (<xref id="table_source.requirements"/>), <c>typename TableSource::char_type</c> otherwise.</type>
+        <type>If <c>TableSource</c> is nonconst-direct (<xref id="table_source.requirements"/>) or indirect, <c>typename TableSource::char_type</c>;
+              otherwise, if <c>TableSource</c> is direct, <c>const typename TableSource::char_type</c>;
+              otherwise, an unspecified type that is equal to either of <c>typename TableSource::char_type</c> or <c>const typename TableSource::char_type</c>.</type>
         <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
               For example, <c>c_str</c> member function is not declared in such cases.
               If <c>TableSource</c> is an instance of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
@@ -8659,7 +8673,7 @@ const view_type* operator->() const noexcept;
 template &lt;class F> table_pull&amp; rewrite(F f);
         </code>
         <requires><c>std::is_invocable_r_v&lt;char_type*, F, char_type*, char_type*></c> shall be true.
-                  When evaluated as <c>f(first, last)</c>, <c>f</c> shall read and write at most the range [<c>first</c>, <c>last</c>).</requires>
+                  When evaluated as <c>f(first, last)</c>, <c>f</c> shall read at most the range [<c>first</c>, <c>last</c>) and write at most the range [<c>first</c>, <c>last</c>], and shall not modify <c>*last</c> to any value other than <c>char_type()</c>.</requires>
         <effects>First evaluates <c>f(const_cast&lt;char_type*>(c_str()), const_cast&lt;char_type*>(c_str()) + (*this)->size())</c> and initialize an <c>char_type*</c> object <c>new_end</c> with its result.
                  Then conditionally shorten the current string value, preserving its null-terminated property, so that its size should be <c>new_end - data()</c>.</effects>
         <returns><c>*this</c>.</returns>

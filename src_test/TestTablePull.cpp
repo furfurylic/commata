@@ -197,6 +197,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveEvadeCopying)
    
     const auto csv = str("col1,col2,col3\n"
                          "val1,val2,val3\n");
+
     auto source = make_csv_source(csv);
     primitive_table_pull pull(
         std::move(source), TypeParam::second_type::value);
@@ -205,6 +206,27 @@ TYPED_TEST_P(TestTablePull, PrimitiveEvadeCopying)
 
     // start_buffer and end_buffer are reported only on the beginning and the
     // end no matter how small the buffer size is
+    ASSERT_EQ(str("{<<[col1][col2][col3]>>@0,14"
+                   "<<[val1][val2][val3]>>@1,14}"),
+              s);
+}
+
+TYPED_TEST_P(TestTablePull, PrimitiveEvadeCopyingNonconst)
+{
+    using char_t = typename TypeParam::first_type;
+
+    const auto str = char_helper<char_t>::str;
+   
+    auto csv = str("col1,col2,col3\n"
+                   "val1,val2,val3\n");
+    auto source = make_csv_source(std::move(csv));
+    primitive_table_pull pull(
+        std::move(source), TypeParam::second_type::value);
+    ASSERT_EQ(2U, pull.max_data_size());
+
+    static_assert(std::is_same_v<char_t*, decltype(pull[0])>);
+
+    std::basic_string<char_t> s = transcript_primitive(pull, true, true);
     ASSERT_EQ(str("{<<[col1][col2][col3]>>@0,14"
                    "<<[val1][val2][val3]>>@1,14}"),
               s);
@@ -459,6 +481,38 @@ TYPED_TEST_P(TestTablePull, EvadeCopying)
     }
 }
 
+TYPED_TEST_P(TestTablePull, EvadeCopyingNonconst)
+{
+    using char_t = typename TypeParam::first_type;
+
+    const auto ch = char_helper<char_t>::ch;
+    const auto str = char_helper<char_t>::str;
+
+    auto s = str("col1,col2,col3\n"
+                 "val1,val2,val3\n");
+    const auto sdata = s.data();
+    auto source = make_csv_source(std::move(s));
+    table_pull<decltype(source), std::allocator<char_t>>
+        pull(std::move(source));
+    std::size_t offset = 0;
+    while (pull()) {
+        if (pull.state() == table_pull_state::field) {
+            ASSERT_EQ(4U, std::basic_string_view<char_t>(pull.c_str()).size());
+            pull.rewrite([&ch](char_t* f, char_t* l) {
+                if (*f == ch('v')) {
+                    *f = ch('V');
+                }
+                return l;
+            });
+            if (pull->front() != 'c') {
+                ASSERT_EQ('V', *pull.c_str());
+            }
+            ASSERT_EQ(sdata + offset, pull.c_str()) << "offset = " << offset;
+            offset += 5;
+        }
+    }
+}
+
 TYPED_TEST_P(TestTablePull, Move)
 {
     using char_t = typename TypeParam::first_type;
@@ -527,8 +581,9 @@ TYPED_TEST_P(TestTablePull, ToArithmetic)
 
 REGISTER_TYPED_TEST_SUITE_P(TestTablePull,
     PrimitiveBasicsOnCsv, PrimitiveBasicsOnTsv,
-    PrimitiveMove, PrimitiveEvadeCopying,
-    Basics, SkipRecord, SkipField, Error, EvadeCopying, Move, ToArithmetic);
+    PrimitiveMove, PrimitiveEvadeCopying, PrimitiveEvadeCopyingNonconst,
+    Basics, SkipRecord, SkipField, Error, EvadeCopying, EvadeCopyingNonconst,
+    Move, ToArithmetic);
 
 namespace {
 

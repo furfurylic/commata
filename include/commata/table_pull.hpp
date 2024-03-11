@@ -340,7 +340,7 @@ private:
 };
 
 template <class D, class Ch, class S>
-struct primitive_table_pull_base_direct
+struct primitive_table_pull_base_const
 {
     const Ch* operator[](S i) const
     {
@@ -354,11 +354,11 @@ struct primitive_table_pull_base_direct
 };
 
 template <class D, class Ch, class S>
-struct primitive_table_pull_base_indirect :
-    primitive_table_pull_base_direct<D, Ch, S>
+struct primitive_table_pull_base_nonconst :
+    primitive_table_pull_base_const<D, Ch, S>
 {
-    using primitive_table_pull_base_direct<D, Ch, S>::operator[];
-    using primitive_table_pull_base_direct<D, Ch, S>::at;
+    using primitive_table_pull_base_const<D, Ch, S>::operator[];
+    using primitive_table_pull_base_const<D, Ch, S>::at;
 
     Ch* operator[](S i)
     {
@@ -387,10 +387,13 @@ constexpr bool reads_direct_v =
     decltype(reads_direct_impl::check<T>(nullptr))::value;
 
 template <class TableSource, primitive_table_pull_handle Handle,
-          class Allocator>
+          class Allocator, bool const_qualified>
 constexpr bool reads_direct_with_handler = reads_direct_v<
     typename TableSource::template parser_type<reference_handler<handler<
-        const typename TableSource::char_type, Allocator, Handle>>>>;
+        std::conditional_t<const_qualified,
+            const typename TableSource::char_type,
+            typename TableSource::char_type>,
+        Allocator, Handle>>>>;
 
 } // end detail::pull
 
@@ -400,29 +403,39 @@ template <class TableSource,
 class primitive_table_pull :
     public std::conditional_t<
         detail::pull::reads_direct_with_handler<
-            TableSource, Handle, Allocator>,
-        detail::pull::primitive_table_pull_base_direct<
+            TableSource, Handle, Allocator, false>,
+        detail::pull::primitive_table_pull_base_nonconst<
             primitive_table_pull<TableSource, Handle, Allocator>,
             typename TableSource::char_type, std::size_t>,
-        detail::pull::primitive_table_pull_base_indirect<
-            primitive_table_pull<TableSource, Handle, Allocator>,
-            typename TableSource::char_type, std::size_t>>
+        std::conditional_t<
+            detail::pull::reads_direct_with_handler<
+                TableSource, Handle, Allocator, true>,
+                detail::pull::primitive_table_pull_base_const<
+                    primitive_table_pull<TableSource, Handle, Allocator>,
+                    typename TableSource::char_type, std::size_t>,
+                detail::pull::primitive_table_pull_base_nonconst<
+                    primitive_table_pull<TableSource, Handle, Allocator>,
+                    typename TableSource::char_type, std::size_t>>>
 {
 public:
     using char_type = std::conditional_t<
         detail::pull::reads_direct_with_handler<
-            TableSource, Handle, Allocator>,
-        const typename TableSource::char_type,
-        typename TableSource::char_type>;
+            TableSource, Handle, Allocator, false>,
+        typename TableSource::char_type,
+        std::conditional_t<
+            detail::pull::reads_direct_with_handler<
+                TableSource, Handle, Allocator, true>,
+            const typename TableSource::char_type,
+            typename TableSource::char_type>>;
     using allocator_type = Allocator;
     using size_type = std::size_t;
 
 private:
     // To get get() called; only one of them should suffice but we just can't
     // get over the esotericism of friend decls
-    friend struct detail::pull::primitive_table_pull_base_direct<
+    friend struct detail::pull::primitive_table_pull_base_const<
         primitive_table_pull, typename TableSource::char_type, std::size_t>;
-    friend struct detail::pull::primitive_table_pull_base_indirect<
+    friend struct detail::pull::primitive_table_pull_base_nonconst<
         primitive_table_pull, typename TableSource::char_type, std::size_t>;
 
     using at_t = std::allocator_traits<Allocator>;

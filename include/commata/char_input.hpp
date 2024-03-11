@@ -332,10 +332,10 @@ public:
         return len;
     }
 
-    std::pair<const Ch*, size_type> operator()(size_type n = npos) noexcept
+    std::pair<Ch*, size_type> operator()(size_type n = npos) noexcept
     {
         const auto rlen = std::min(n, s_.size() - head_);
-        std::pair<const Ch*, size_type> r(s_.data() + head_, rlen);
+        std::pair<Ch*, size_type> r(s_.data() + head_, rlen);
         head_ += rlen;
         return r;
     }
