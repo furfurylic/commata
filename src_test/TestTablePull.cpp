@@ -223,7 +223,7 @@ TYPED_TEST_P(TestTablePull, Basics)
                          R"(12","cell""13 ""","")" "\n");
 
     for (auto e : { false, true }) {
-        auto pull = make_table_pull(make_csv_source(indirect, std::move(csv)),
+        auto pull = make_table_pull(make_csv_source(indirect, csv),
                                     TypeParam::second_type::value);
         pull.set_empty_physical_line_aware(e);
 
