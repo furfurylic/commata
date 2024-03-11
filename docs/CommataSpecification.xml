@@ -285,7 +285,7 @@
           <td>A type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser reaches an execution point where the parser can suspend the execution and return the control to its invoker.
                  The parser shall evaluate this also just after evaluating (5).</p>
-              <p><c>p</c> is an rvalue whose type is <c>std::size_t</c> and whose value is a number that can identificate the execution point where the evaluation of this occurred.
+              <p><c>p</c> is an rvalue whose type is <c>std::size_t</c> and whose value is a number that can identify the execution point where the evaluation of this occurred.
                  Its value shall not be equal to <c>0</c>.
                  Its value of <c>-1</c> shall mean that the parser is about to complete the execution.</p>
               <p>If the contextually converted value to <c>bool</c> of this expression is <c>false</c>, the parser shall aborts the parsing process.</p></td>
