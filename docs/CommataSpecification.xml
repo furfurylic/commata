@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-03-09 (UTC)</signature>
+<signature>2024-03-13 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -494,11 +494,11 @@
           <td rowspan="2"><c>T::parser_type&lt;std::decay_t&lt;decltype(k)>></c></td>
           <td rowspan="4">
             <p>Creates a table parser object <c>p</c> and returns it.</p>
-            <p><c>p</c> has its tied character source object which is copy constructed (on (2) and (4)) or move constructed (on (3) and (5)) from the wrapped character source object of <c>*this</c> and
+            <p><c>p</c> has its tied character source object which is copy constructed (on (7) and (9)) or move constructed (on (8) and (10)) from the wrapped character source object of <c>*this</c> and
                its tied table handler object which is constructed with <c>std::move(k)</c> (if <c>k</c> is an rvalue) or with <c>k</c> (otherwise).</p>
             <p><c>p</c> refers <c>s</c> as a hint of the size (that is, the number of <c>Ch</c> objects) to allocate buffers.
               <c>s</c> can be equal to zero, which means ‘no hint’.</p>
-            <p>On (4) and (5), <c>p</c> is also configured to hold a copy of <c>a</c> to allocate and deallocate buffers.</p>
+            <p>On (9) and (10), <c>p</c> is also configured to hold a copy of <c>a</c> to allocate and deallocate buffers.</p>
           </td>
         </tr>
 
