@@ -29,7 +29,7 @@ public:
      && std::is_const_v<typename Handler::char_type>
      && std::is_invocable_r_v<
             std::pair<typename Handler::char_type*,
-                      typename Input::size_type>, Input&&,
+                      typename Input::size_type>, Input&,
             typename Input::size_type>>;
 
     using char_type = std::remove_const_t<typename Handler::char_type>;
