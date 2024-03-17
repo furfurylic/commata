@@ -106,7 +106,7 @@ struct parse_step<state::in_value>
                 return;
             case key_chars<typename Parser::char_type>::dquote_c:
                 throw parse_error(
-                    "A quotation mark found in a non-escaped value");
+                    "A quotation mark found in an unquoted value");
             case key_chars<typename Parser::char_type>::cr_c:
                 parser.finalize();
                 parser.end_record();
@@ -161,7 +161,7 @@ struct parse_step<state::right_of_open_quote>
     template <class Parser>
     void eof(Parser& /*parser*/) const
     {
-        throw parse_error("EOF reached with an open escaped value");
+        throw parse_error("EOF reached with an open quoted value");
     }
 };
 
@@ -205,7 +205,7 @@ struct parse_step<state::in_quoted_value>
     template <class Parser>
     void eof(Parser& /*parser*/) const
     {
-        throw parse_error("EOF reached with an open escaped value");
+        throw parse_error("EOF reached with an open quoted value");
     }
 };
 
@@ -237,7 +237,7 @@ struct parse_step<state::in_quoted_value_after_quote>
             break;
         default:
             throw parse_error(
-                "An invalid character found after a closed escaped value");
+                "An invalid character found after a closed quoted value");
         }
     }
 
@@ -290,7 +290,7 @@ struct parse_step<state::in_quoted_value_after_cr>
     template <class Parser>
     void eof(Parser& /*parser*/) const
     {
-        throw parse_error("EOF reached with an open escaped value");
+        throw parse_error("EOF reached with an open quoted value");
     }
 };
 
@@ -331,7 +331,7 @@ struct parse_step<state::in_quoted_value_after_crs>
     template <class Parser>
     void eof(Parser& /*parser*/) const
     {
-        throw parse_error("EOF reached with an open escaped value");
+        throw parse_error("EOF reached with an open quoted value");
     }
 };
 
@@ -373,7 +373,7 @@ struct parse_step<state::in_quoted_value_after_lf>
     template <class Parser>
     void eof(Parser& /*parser*/) const
     {
-        throw parse_error("EOF reached with an open escaped value");
+        throw parse_error("EOF reached with an open quoted value");
     }
 };
 
