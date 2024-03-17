@@ -55,14 +55,14 @@ TEST_F(TestTextError, Ctors)
     auto e2(e1);
     ASSERT_STREQ(message, e2.what());
     ASSERT_TRUE(e2.get_physical_position());
-    ASSERT_EQ(123, e2.get_physical_position()->first);
-    ASSERT_EQ(456, e2.get_physical_position()->second);
+    ASSERT_EQ(123U, e2.get_physical_position()->first);
+    ASSERT_EQ(456U, e2.get_physical_position()->second);
 
     auto e3(std::move(e1));
     ASSERT_STREQ(message, e3.what());
     ASSERT_TRUE(e3.get_physical_position());
-    ASSERT_EQ(123, e3.get_physical_position()->first);
-    ASSERT_EQ(456, e3.get_physical_position()->second);
+    ASSERT_EQ(123U, e3.get_physical_position()->first);
+    ASSERT_EQ(456U, e3.get_physical_position()->second);
 
     text_error e4{std::string_view(message)};   // most vexing parse
     ASSERT_STREQ(message, e4.what());
