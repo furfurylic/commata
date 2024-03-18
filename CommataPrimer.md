@@ -712,6 +712,9 @@ std::string slurp(const char* s)
 {
   std::filebuf in;
   in.open(s, std::ios::in | std::ios::binary);
+  if (!in.is_open()) {
+    throw std::runtime_error("Cannot open "s + s);
+  }
   return std::string(std::istreambuf_iterator<char>(&in),
                      std::istreambuf_iterator<char>());
 }
@@ -849,35 +852,55 @@ while (p.skip_record()(1)) {
 But this won't compile. Your compiler is likely to complain `c_str` is
 not a member of `table_pull<...>`. Why?
 
-This is because the table source made by `make_csv_source` from a string
+This is because the table source made by `make_csv_source` from a read-only string
 prevents `table_pull` from declaring `c_str` member. Its mechanism is as follows:
  - The definition of `c_str` member must be accompanied by a code like
    `*b = '\0'` or something, which puts a null character into a character
    buffer to make a null-terminated sequence.
  - For the sake of performance, a `table_pull` object evades making a copy of
    the input string as far as possible.
- - When this copy evasion cuts in, a `table_pull` object has no
-   write-accessible character buffers, which inhibits `c_str` member from
-   being defined.
  - A table source made by `make_csv_source` from a string is qualified to let
    a `table_pull` object perform this copy evasion, which is called a _direct_
-   source.
+   table source.
+ - Now this copy evasion cuts in and the `table_pull` object has no
+   write-accessible character buffers (`make_csv_source` does not regard
+   a string as a write-accessible character buffer when it is passed as a
+   const-qualified one or as an lvalue), which inhibits `c_str` member from
+   being declared.
 
-To inhibit this copy evasion (with possible performance decay) and get `c_str`
+You can know whether `c_str` member is declared or not easily with `char_type`
+of the `table_pull` type. If is not const-qualified, `c_str` member is
+declared.
+
+If you can afford to have the loaded contents of the file lost, you can hand
+over its ownership to the table source object as a write-accessible character
+buffer so that the table source become _nonconst-direct_ and the `table_pull`
+object can have `c_str` declared:
+
+```C++
+std::string contents = slurp("stars.csv");                      // not const
+auto p = make_table_pull(make_csv_source(std::move(contents))); // move
+static_assert(!std::is_const_v<decltype(p)::char_type>);
+```
+
+Or, to inhibit this copy evasion (with possible performance decay) and get `c_str`
 back, you can make the table source _indirect_ by specifying an additional
 argument `indirect` as the first parameter of `make_csv_source` like this:
 
 ```C++
 auto p = make_table_pull(make_csv_source(indirect, contents));
+static_assert(!std::is_const_v<decltype(p)::char_type>);
 ```
 
 `indirect` is a constant variable in `commata` namespace and declared in the
-header `"commata/char_input.hpp"`. So, finally, your codes should look like:
+header `"commata/char_input.hpp"`. So, your codes using it should look like:
 
 ```C++
 #include <commata/char_input.hpp>
 #include <commata/parse_csv.hpp>
 #include <commata/table_pull.hpp>
+
+using namespace std::literals;
 
 using commata::indirect;
 using commata::make_csv_source;
@@ -887,6 +910,9 @@ std::string slurp(const char* s)
 {
   std::filebuf in;
   in.open(s, std::ios::in | std::ios::binary);
+  if (!in.is_open()) {
+    throw std::runtime_error("Cannot open "s + s);
+  }
   return std::string(std::istreambuf_iterator<char>(&in),
                      std::istreambuf_iterator<char>());
 }
@@ -895,18 +921,20 @@ void pull_parsing_sample3()
 {
   const std::string contents = slurp("stars.csv");
   auto p = make_table_pull(make_csv_source(indirect, contents));
+  static_assert(!std::is_const_v<decltype(p)::char_type>);
   while (p.skip_record()(1)) {
     std::puts(p.c_str());   // will print stars' names
   }
 }
 ```
 
-Note that `indirect` is still specifiable for an argument that is inherently
-associated with a indirect source. Thus, the following codes are valid:
+Note that `indirect` is still specifiable with arguments that are inherently
+associated with a indirect table source. Thus, the following codes are valid:
 
 ```C++
 auto p = make_table_pull(
            make_csv_source(indirect, std::ifstream("stars.csv")));
+  // Even without 'indirect,', the result of make_csv_source should be indirect
 ```
 
 ## Tab-separated values (TSV)
