@@ -430,7 +430,7 @@ void stored_table_error_sample()
 and can get a clue about what was wrong:
 
 ```
-A quotation mark found in a non-escaped value
+A quotation mark found in an unquoted value
 ```
 
 Commata also offers class `commata::text_error_info`, whose object wraps a `text_error` object
@@ -464,7 +464,7 @@ void stored_table_error_sample2()
 and might be able to get a clue about what was wrong:
 
 ```
-A quotation mark found in a non-escaped value; line 2 column 20
+A quotation mark found in an unquoted value; line 2 column 20
 ```
 
 Note that line indices and column indices in string representations of
