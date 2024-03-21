@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-03-18 (UTC)</signature>
+<signature>2024-03-24 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -896,11 +896,14 @@ namespace commata {
   template &lt;class Handler> class reference_handler;
 
   template &lt;class Handler>
-    reference_handler&lt;Handler> wrap_ref(Handler&amp; handler)                        noexcept;
+    [[nodiscard]] reference_handler&lt;Handler>
+      wrap_ref(Handler&amp; handler)                        noexcept;
   template &lt;class Handler>
-    reference_handler&lt;Handler> wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
+    [[nodiscard]] reference_handler&lt;Handler>
+      wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
   template &lt;class Handler>
-    reference_handler&lt;Handler> wrap_ref(reference_handler&lt;Handler> handler)      noexcept;
+    [[nodiscard]] reference_handler&lt;Handler>
+      wrap_ref(reference_handler&lt;Handler> handler)      noexcept;
 
   <c>// <n><xref id="empty_physical_line_aware_handler"/>, empty_physical_line_aware_handler:</n></c>
   template &lt;class Handler> class empty_physical_line_aware_handler;
@@ -910,10 +913,10 @@ namespace commata {
     empty_physical_line_aware_handler&lt;Handler>&amp; right) noexcept(noexcept(left.swap(right)));
 
   template &lt;class HandlerR>
-    <nc>see below</nc>
+    [[nodiscard]] <nc>see below</nc>
       make_empty_physical_line_aware(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
   template &lt;class Handler>
-    <nc>see below</nc>
+    [[nodiscard]] <nc>see below</nc>
       make_empty_physical_line_aware(std::reference_wrapper&lt;Handler> handler) noexcept;
 }
       </codeblock>
@@ -958,11 +961,14 @@ namespace commata {
 
   <c>// <n><xref id="reference_handler.creation"/>, creation functions:</n></c>
   template &lt;class Handler>
-    reference_handler&lt;Handler> wrap_ref(Handler&amp; handler)                        noexcept;
+    [[nodiscard]] reference_handler&lt;Handler>
+      wrap_ref(Handler&amp; handler)                        noexcept;
   template &lt;class Handler>
-    reference_handler&lt;Handler> wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
+    [[nodiscard]] reference_handler&lt;Handler>
+      wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
   template &lt;class Handler>
-    reference_handler&lt;Handler> wrap_ref(reference_handler&lt;Handler> handler)      noexcept;
+    [[nodiscard]] reference_handler&lt;Handler>
+      wrap_ref(reference_handler&lt;Handler> handler)      noexcept;
 }
       </codeblock>
 
@@ -1126,7 +1132,8 @@ template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
         <code-item>
           <code>
 template &lt;class Handler>
-  reference_handler&lt;Handler> wrap_ref(Handler&amp; handler) noexcept;
+  [[nodiscard]] reference_handler&lt;Handler>
+    wrap_ref(Handler&amp; handler) noexcept;
           </code>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
           <returns><c>reference_handler&lt;Handler>(handler)</c>.</returns>
@@ -1135,7 +1142,8 @@ template &lt;class Handler>
         <code-item>
           <code>
 template &lt;class Handler>
-  reference_handler&lt;Handler> wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
+  [[nodiscard]] reference_handler&lt;Handler>
+    wrap_ref(std::reference_wrapper&lt;Handler> handler) noexcept;
           </code>
           <effects>Equivalent to: <c>return reference_handler&lt;Handler>(handler.get());</c></effects>
         </code-item>
@@ -1143,7 +1151,8 @@ template &lt;class Handler>
         <code-item>
           <code>
 template &lt;class Handler>
-  reference_handler&lt;Handler> wrap_ref(reference_handler&lt;Handler> handler) noexcept;
+  [[nodiscard]] reference_handler&lt;Handler>
+    wrap_ref(reference_handler&lt;Handler> handler) noexcept;
           </code>
           <effects>Equivalent to: <c>return reference_handler&lt;Handler>(handler.base());</c></effects>
         </code-item>
@@ -1203,10 +1212,10 @@ namespace commata {
 
   <c>// <n><xref id="empty_physical_line_aware_handler.creation"/>, creation functions:</n></c>
   template &lt;class HandlerR>
-    <nc>see below</nc>
+    [[nodiscard]] <nc>see below</nc>
       make_empty_physical_line_aware(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
   template &lt;class Handler>
-    <nc>see below</nc>
+    [[nodiscard]] <nc>see below</nc>
       make_empty_physical_line_aware(std::reference_wrapper&lt;Handler> handler) noexcept;
 }
       </codeblock>
@@ -1433,7 +1442,7 @@ template &lt;class Handler> void swap(
         <code-item>
           <code>
 template &lt;class HandlerR>
-  <nc>see below</nc>
+  [[nodiscard]] <nc>see below</nc>
     make_empty_physical_line_aware(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
           </code>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.
@@ -1448,7 +1457,7 @@ template &lt;class HandlerR>
         <code-item>
           <code>
 template &lt;class Handler>
-  <nc>see below</nc>
+  [[nodiscard]] <nc>see below</nc>
     make_empty_physical_line_aware(std::reference_wrapper&lt;Handler> handler) noexcept;
           </code>
           <effects>Equivalent to: <c>return make_empty_physical_line_aware(wrap_ref(handler));</c></effects>
@@ -2777,29 +2786,31 @@ namespace commata {
 
   <c>// <n><xref id="char_input.creation"/>, CharInput creation functions:</n></c>
   template &lt;class Ch, class Tr>
-    streambuf_input&lt;Ch, Tr> make_char_input(std::basic_streambuf&lt;Ch, Tr>&amp; in) noexcept;
+    [[nodiscard]] streambuf_input&lt;Ch, Tr>
+      make_char_input(std::basic_streambuf&lt;Ch, Tr>&amp; in) noexcept;
   template &lt;class Streambuf>
-    owned_streambuf_input&lt;Streambuf> make_char_input(Streambuf&amp;&amp; in) noexcept(<nc>see below</nc>);
+    [[nodiscard]] owned_streambuf_input&lt;Streambuf>
+      make_char_input(Streambuf&amp;&amp; in) noexcept(<nc>see below</nc>);
   template &lt;class Ch, class Tr>
-    istream_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+    [[nodiscard]] istream_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
   template &lt;class IStream>
-    owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept(<nc>see below</nc>);
+    [[nodiscard]] owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept(<nc>see below</nc>);
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-    string_input&lt;Ch, Tr> make_char_input(const Ch* in);
+    [[nodiscard]] string_input&lt;Ch, Tr> make_char_input(const Ch* in);
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-    string_input&lt;Ch, Tr> make_char_input(const Ch* in, std::size_t length);
+    [[nodiscard]] string_input&lt;Ch, Tr> make_char_input(const Ch* in, std::size_t length);
   template &lt;class Ch, class Tr, class Allocator>
-    string_input&lt;Ch, Tr>
+    [[nodiscard]] string_input&lt;Ch, Tr>
       make_char_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
   template &lt;class Ch, class Tr>
-    string_input&lt;Ch, Tr> make_char_input(std::basic_string_view&lt;Ch, Tr> in) noexcept;
+    [[nodiscard]] string_input&lt;Ch, Tr> make_char_input(std::basic_string_view&lt;Ch, Tr> in) noexcept;
   template &lt;class Ch, class Tr, class Allocator>
-    owned_string_input&lt;Ch, Tr, Allocator>
+    [[nodiscard]] owned_string_input&lt;Ch, Tr, Allocator>
       make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
   template &lt;class... Args>
-    <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+    [[nodiscard]] <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
   template &lt;class Input>
-    indirect_input&lt;Input>
+    [[nodiscard]] indirect_input&lt;Input>
       make_char_input(indirect_t, indirect_input&lt;Input> input) noexcept(<nc>see below</nc>);
 }
       </codeblock>
@@ -3405,7 +3416,8 @@ template &lt;class Input>
       <code-item>
         <code>
 template &lt;class Ch, class Tr>
-  streambuf_input&lt;Ch, Tr> make_char_input(std::basic_streambuf&lt;Ch, Tr>&amp; in) noexcept;
+  [[nodiscard]] streambuf_input&lt;Ch, Tr>
+    make_char_input(std::basic_streambuf&lt;Ch, Tr>&amp; in) noexcept;
         </code>
         <returns><c>streambuf_input&lt;Ch, Tr>(in)</c>.</returns>
       </code-item>
@@ -3413,7 +3425,8 @@ template &lt;class Ch, class Tr>
       <code-item>
         <code>
 template &lt;class Streambuf>
-  owned_streambuf_input&lt;Streambuf> make_char_input(Streambuf&amp;&amp; in) noexcept(<nc>see below</nc>);
+  [[nodiscard]] owned_streambuf_input&lt;Streambuf>
+    make_char_input(Streambuf&amp;&amp; in) noexcept(<nc>see below</nc>);
         </code>
         <returns><c>owned_streambuf_input&lt;Streambuf>(std::move(in))</c>.</returns>
         <remark>This overload shall not participate in overload resolution unless the template parameter <c>Streambuf</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.
@@ -3423,7 +3436,7 @@ template &lt;class Streambuf>
       <code-item>
         <code>
 template &lt;class Ch, class Tr>
-  istream_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
+  [[nodiscard]] istream_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
         </code>
         <returns><c>istream_input&lt;Ch, Tr>(in)</c>.</returns>
       </code-item>
@@ -3431,7 +3444,7 @@ template &lt;class Ch, class Tr>
       <code-item>
         <code>
 template &lt;class IStream>
-  owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept(<nc>see below</nc>);
+  [[nodiscard]] owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept(<nc>see below</nc>);
         </code>
         <returns><c>owned_istream_input&lt;IStream>(std::move(in))</c>.</returns>
         <remark>This overload shall not participate in overload resolution unless the template parameter <c>IStream</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.
@@ -3441,14 +3454,14 @@ template &lt;class IStream>
       <code-item>
         <code>
 template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-  string_input&lt;Ch, Tr> make_char_input(const Ch* in);
+  [[nodiscard]] string_input&lt;Ch, Tr> make_char_input(const Ch* in);
 template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
-  string_input&lt;Ch, Tr> make_char_input(const Ch* in, std::size_t length);
+  [[nodiscard]] string_input&lt;Ch, Tr> make_char_input(const Ch* in, std::size_t length);
 template &lt;class Ch, class Tr, class Allocator>
-  string_input&lt;Ch, Tr>
+  [[nodiscard]] string_input&lt;Ch, Tr>
     make_char_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; in) noexcept;
 template &lt;class Ch, class Tr>
-  string_input&lt;Ch, Tr> make_char_input(std::basic_string_view&lt;Ch, Tr> in) noexcept;
+  [[nodiscard]] string_input&lt;Ch, Tr> make_char_input(std::basic_string_view&lt;Ch, Tr> in) noexcept;
         </code>
         <requires>In the first form, <c>in</c> shall be a valid pointer to an element in a null terminated sequence.
                   In the second form, [<c>in</c>, <c>in + length</c>) shall be a valid range.</requires>
@@ -3459,7 +3472,7 @@ template &lt;class Ch, class Tr>
       <code-item>
         <code>
 template &lt;class Ch, class Tr, class Allocator>
-  owned_string_input&lt;Ch, Tr, Allocator>
+  [[nodiscard]] owned_string_input&lt;Ch, Tr, Allocator>
     make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
         </code>
         <returns><c>owned_string_input&lt;Ch, Tr, Allocator>(std::move(in))</c>.</returns>
@@ -3468,7 +3481,7 @@ template &lt;class Ch, class Tr, class Allocator>
       <code-item>
         <code>
 template &lt;class... Args>
-  <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+  [[nodiscard]] <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
         </code>
         <effects><p>If <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand, equivalent to:</p>
                  <code>auto in = make_char_input(std::forward&lt;Args>(args)...);
@@ -3482,7 +3495,7 @@ return indirect_input&lt;decltype(in)>(std::move(in));
       <code-item>
         <code>
 template &lt;class Input>
-  indirect_input&lt;Input>
+  [[nodiscard]] indirect_input&lt;Input>
     make_char_input(indirect_t, indirect_input&lt;Input> input) noexcept(<nc>see below</nc>);
         </code>
         <returns><c>indirect_input&lt;Input>(std::move(input.base()))</c>.</returns>
@@ -3539,10 +3552,12 @@ namespace commata {
   template &lt;class CharInput>
     void swap(csv_source&lt;CharInput>&amp; left,
               csv_source&lt;CharInput>&amp; right) noexcept(noexcept(left.swap(right)));
-  template &lt;class... Args>   auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
-    -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
-  template &lt;class CharInputR> auto make_csv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
-    -> csv_source&lt;std::decay_t&lt;CharInputR>>;
+  template &lt;class... Args>
+    [[nodiscard]] auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
+      -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
+  template &lt;class CharInputR>
+    [[nodiscard]] auto make_csv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+      -> csv_source&lt;std::decay_t&lt;CharInputR>>;
 
   <c>// <n><xref id="parse_csv"/>, functions that utilize the CSV parser:</n></c>
   template &lt;class CharInput, class... OtherArgs>
@@ -3579,22 +3594,24 @@ namespace commata {
 
     <c>// <n><xref id="csv_source.inv"/>, invocation:</n></c>
     template &lt;class HandlerR>
-      parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
+      [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>>
+        operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
     template &lt;class HandlerR>
-      parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler)     &amp;&amp; noexcept(<nc>see below</nc>);
+      [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>>
+        operator()(HandlerR&amp;&amp; handler)     &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
-      parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
+      [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
         operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
                    const Allocator&amp; alloc = Allocator()) const&amp; noexcept(<nc>see below</nc>);
     template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
-      parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
+      [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
         operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
                    const Allocator&amp; alloc = Allocator())     &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
-      <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
+      [[nodiscard]] <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                            Args&amp;&amp;... args) const&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
-      <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
+      [[nodiscard]] <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                            Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
     void swap(csv_source&amp; other) noexcept(std::is_nothrow_swappable_v&lt;CharInput>)
@@ -3610,10 +3627,12 @@ namespace commata {
               csv_source&lt;CharInput>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="csv_source.creation"/>, creation functions:</n></c>
-  template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
-    -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
-  template &lt;class CharInputR> auto make_csv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
-    -> csv_source&lt;std::decay_t&lt;CharInputR>>;
+  template &lt;class... Args>
+    [[nodiscard]] auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
+      -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
+  template &lt;class CharInputR>
+    [[nodiscard]] auto make_csv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+      -> csv_source&lt;std::decay_t&lt;CharInputR>>;
 }
       </codeblock>
 
@@ -3672,9 +3691,11 @@ explicit csv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
         <code-item>
           <code>
 template &lt;class HandlerR>
-  parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
+  [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>>
+    operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
 template &lt;class HandlerR>
-  parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler)     &amp;&amp; noexcept(<nc>see below</nc>);
+  [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>>
+    operator()(HandlerR&amp;&amp; handler)     &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.</requires>
@@ -3690,11 +3711,11 @@ template &lt;class HandlerR>
         <code-item>
           <code>
 template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
-  parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
+  [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
     operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
                const Allocator&amp; alloc = Allocator()) const&amp; noexcept(<nc>see below</nc>);
 template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
-  parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
+  [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
     operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
                const Allocator&amp; alloc = Allocator())     &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
@@ -3714,7 +3735,7 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
         <code-item>
           <code>
 template &lt;class Handler, class... Args>
-  <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
+  [[nodiscard]] <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                        Args&amp;&amp;... args) const&amp; noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return (*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
@@ -3725,7 +3746,7 @@ template &lt;class Handler, class... Args>
         <code-item>
           <code>
 template &lt;class Handler, class... Args>
-  <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
+  [[nodiscard]] <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                        Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return std::move(*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
@@ -3753,8 +3774,9 @@ template &lt;class CharInput>
 
         <code-item>
           <code>
-template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
-  -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
+template &lt;class... Args>
+  [[nodiscard]] auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
+    -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
           </code>
           <preface>Let <c>CharInput</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
           <effects>Equivalent to: <c>return csv_source&lt;CharInput>(make_char_input(std::forward&lt;Args>(args)...));</c></effects>
@@ -3763,8 +3785,9 @@ template &lt;class... Args> auto make_csv_source(Args&amp;&amp;... args) noexcep
 
         <code-item>
           <code>
-template &lt;class CharInputR> auto make_csv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
-  -> csv_source&lt;std::decay_t&lt;CharInputR>>;
+template &lt;class CharInputR>
+  [[nodiscard]] auto make_csv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+    -> csv_source&lt;std::decay_t&lt;CharInputR>>;
           </code>
           <preface>Let <c>CharInput</c> be <c>std::decay_t&lt;CharInputR></c>.</preface>
           <effects>Equivalent to: <c>return csv_source&lt;CharInput>(std::forward&lt;CharInputR>(in));</c></effects>
@@ -3850,10 +3873,12 @@ namespace commata {
   template &lt;class CharInput>
     void swap(tsv_source&lt;CharInput>&amp; left,
               tsv_source&lt;CharInput>&amp; right) noexcept(noexcept(left.swap(right)));
-  template &lt;class... Args>   auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
-    -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
-  template &lt;class CharInputR> auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
-    -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
+  template &lt;class... Args> 
+    [[nodiscard]] auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
+      -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
+  template &lt;class CharInputR>
+    [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+      -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
 
   <c>// <n><xref id="parse_tsv"/>, functions that utilize the TSV parser:</n></c>
   template &lt;class CharInput, class... OtherArgs>
@@ -3890,22 +3915,24 @@ namespace commata {
 
     <c>// <n><xref id="tsv_source.inv"/>, invocation:</n></c>
     template &lt;class HandlerR>
-      parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
+      [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>>
+        operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
     template &lt;class HandlerR>
-      parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler)     &amp;&amp; noexcept(<nc>see below</nc>);
+      [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>>
+        operator()(HandlerR&amp;&amp; handler)     &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
-      parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
+      [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
         operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
                    const Allocator&amp; alloc = Allocator()) const&amp; noexcept(<nc>see below</nc>);
     template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
-      parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
+      [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
         operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
                    const Allocator&amp; alloc = Allocator())     &amp;&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
-      <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
+      [[nodiscard]] <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                            Args&amp;&amp;... args) const&amp; noexcept(<nc>see below</nc>);
     template &lt;class Handler, class... Args>
-      <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
+      [[nodiscard]] <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                            Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
     void swap(tsv_source&amp; other) noexcept(std::is_nothrow_swappable_v&lt;CharInput>)
@@ -3921,10 +3948,12 @@ namespace commata {
               tsv_source&lt;CharInput>&amp; right) noexcept(noexcept(left.swap(right)));
 
   <c>// <n><xref id="tsv_source.creation"/>, creation functions:</n></c>
-  template &lt;class... Args> auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
-    -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
-  template &lt;class CharInputR> auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
-    -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
+  template &lt;class... Args>
+    [[nodiscard]] auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
+      -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
+  template &lt;class CharInputR>
+    [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+      -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
 }
       </codeblock>
 
@@ -3983,9 +4012,11 @@ explicit tsv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
         <code-item>
           <code>
 template &lt;class HandlerR>
-  parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
+  [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>>
+    operator()(HandlerR&amp;&amp; handler) const&amp; noexcept(<nc>see below</nc>);
 template &lt;class HandlerR>
-  parser_type&lt;std:decay_t&lt;HandlerR>> operator()(HandlerR&amp;&amp; handler)     &amp;&amp; noexcept(<nc>see below</nc>);
+  [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>>
+    operator()(HandlerR&amp;&amp; handler)     &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.</requires>
@@ -4001,11 +4032,11 @@ template &lt;class HandlerR>
         <code-item>
           <code>
 template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
-  parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
+  [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
     operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
                const Allocator&amp; alloc = Allocator()) const&amp; noexcept(<nc>see below</nc>);
 template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
-  parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
+  [[nodiscard]] parser_type&lt;std:decay_t&lt;HandlerR>, Allocator>
     operator()(HandlerR&amp;&amp; handler, std::size_t buffer_size = 0,
                const Allocator&amp; alloc = Allocator())     &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
@@ -4025,7 +4056,7 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
         <code-item>
           <code>
 template &lt;class Handler, class... Args>
-  <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
+  [[nodiscard]] <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                        Args&amp;&amp;... args) const&amp; noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return (*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
@@ -4036,7 +4067,7 @@ template &lt;class Handler, class... Args>
         <code-item>
           <code>
 template &lt;class Handler, class... Args>
-  <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
+  [[nodiscard]] <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                        Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
           </code>
           <effects>Equivalent to: <c>return std::move(*this)(wrap_ref(handler), std::forward&lt;Args>(args)...);</c></effects>
@@ -4064,8 +4095,9 @@ template &lt;class CharInput>
 
         <code-item>
           <code>
-template &lt;class... Args> auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
-  -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
+template &lt;class... Args>
+  [[nodiscard]] auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
+    -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
           </code>
           <preface>Let <c>CharInput</c> be <c>decltype(make_char_input(std::forward&lt;Args>(args)...))</c>.</preface>
           <effects>Equivalent to: <c>return tsv_source&lt;CharInput>(std::forward&lt;Args>(args)...);</c></effects>
@@ -4074,8 +4106,9 @@ template &lt;class... Args> auto make_tsv_source(Args&amp;&amp;... args) noexcep
 
         <code-item>
           <code>
-template &lt;class CharInputR> auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
-  -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
+template &lt;class CharInputR>
+  [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+    -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
           </code>
           <preface>Let <c>CharInput</c> be <c>std::decay_t&lt;CharInputR></c>.</preface>
           <effects>Equivalent to: <c>return tsv_source&lt;CharInput>(make_char_input(std::forward&lt;CharInputR>(in)));</c></effects>
@@ -4174,23 +4207,23 @@ namespace commata {
   <c>// <n><xref id="record_extractor.creation"/>, creation functions:</n></c>
   template &lt;class FieldNamePred, class FieldValuePred,
             class Ch, class Tr, class Allocator, class... Appendices>
-    <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    std::basic_streambuf&lt;Ch, Tr>&amp; out,
-                                    FieldNamePred&amp;&amp; field_name_pred,
-                                    FieldValuePred&amp;&amp; field_value_pred,
-                                    Appendices&amp;&amp;... appendices);
+    [[nodiscard]] <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                                  std::basic_streambuf&lt;Ch, Tr>&amp; out,
+                                                  FieldNamePred&amp;&amp; field_name_pred,
+                                                  FieldValuePred&amp;&amp; field_value_pred,
+                                                  Appendices&amp;&amp;... appendices);
   template &lt;class FieldValuePred,
             class Ch, class Tr, class Allocator, class... Appendices>
-    <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    std::basic_streambuf&lt;Ch, Tr>&amp; out,
-                                    std::size_t target_field_index,
-                                    FieldValuePred&amp;&amp; field_value_pred,
-                                    Appendices&amp;&amp;... appendices);
+    [[nodiscard]] <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                                  std::basic_streambuf&lt;Ch, Tr>&amp; out,
+                                                  std::size_t target_field_index,
+                                                  FieldValuePred&amp;&amp; field_value_pred,
+                                                  Appendices&amp;&amp;... appendices);
   template &lt;class FieldIdentifier, class FieldValuePred, class Ch, class Tr, class... Appendices>
-    <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
-                                    FieldIdentifier&amp;&amp; field_id,
-                                    FieldValuePred&amp;&amp; field_value_pred,
-                                    Appendices&amp;&amp;... appendices);
+    [[nodiscard]] <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
+                                                  FieldIdentifier&amp;&amp; field_id,
+                                                  FieldValuePred&amp;&amp; field_value_pred,
+                                                  Appendices&amp;&amp;... appendices);
 }
       </codeblock>
     </section>
@@ -4567,11 +4600,11 @@ bool is_in_header() const noexcept;
         <code>
 template &lt;class FieldNamePred, class FieldValuePred,
           class Ch, class Tr, class Allocator, class... Appendices>
-  <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                  std::basic_streambuf&lt;Ch, Tr>&amp; out,
-                                  FieldNamePred&amp;&amp; field_name_pred,
-                                  FieldValuePred&amp;&amp; field_value_pred,
-                                  Appendices&amp;&amp;... appendices);
+  [[nodiscard]] <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                                std::basic_streambuf&lt;Ch, Tr>&amp; out,
+                                                FieldNamePred&amp;&amp; field_name_pred,
+                                                FieldValuePred&amp;&amp; field_value_pred,
+                                                Appendices&amp;&amp;... appendices);
         </code>
         <effects><p>Equivalent to:</p>
                  <code>auto fnp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred));
@@ -4589,11 +4622,11 @@ return record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
         <code>
 template &lt;class FieldValuePred,
           class Ch, class Tr, class Allocator, class... Appendices>
-  <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
-                                  std::basic_streambuf&lt;Ch, Tr>&amp; out,
-                                  std::size_t target_field_index,
-                                  FieldValuePred&amp;&amp; field_value_pred,
-                                  Appendices&amp;&amp;... appendices);
+  [[nodiscard]] <nc>see below</nc> make_record_extractor(std::allocator_arg_t, const Allocator&amp; alloc,
+                                                std::basic_streambuf&lt;Ch, Tr>&amp; out,
+                                                std::size_t target_field_index,
+                                                FieldValuePred&amp;&amp; field_value_pred,
+                                                Appendices&amp;&amp;... appendices);
         </code>
         <effects><p>Equivalent to:</p>
                  <code>auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred));
@@ -4607,9 +4640,11 @@ return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(
 
       <code-item>
         <code>
-template &lt;class Ch, class Tr, class... Appendices>
-  <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
-                                  Appendices&amp;&amp;... appendices);
+template &lt;class FieldIdentifier, class FieldValuePred, class Ch, class Tr, class... Appendices>
+  [[nodiscard]] <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
+                                                FieldIdentifier&amp;&amp; field_id,
+                                                FieldValuePred&amp;&amp; field_value_pred,
+                                                Appendices&amp;&amp;... appendices);
         </code>
         <effects><p>Equivalent to:</p>
                  <code>return make_record_extractor(std::allocator_arg, std::allocator&lt;Ch>(),
@@ -4727,19 +4762,19 @@ namespace commata {
   template &lt;class Content, class Allocator = std::allocator&lt;Content>> class basic_stored_table;
 
   template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-    basic_stored_table&lt;ContentL, AllocatorL>
+    [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
       operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
                 const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
   template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-    basic_stored_table&lt;ContentL, AllocatorL>
+    [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
       operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
                       basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
   template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-    basic_stored_table&lt;ContentL, AllocatorL>
+    [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
       operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
                 const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
   template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-    basic_stored_table&lt;ContentL, AllocatorL>
+    [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
       operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
                       basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
 
@@ -5484,7 +5519,7 @@ namespace commata {
 
     <c>// <n><xref id="basic_stored_table.rewrite"/>, store operations:</n></c>
     value_type&amp; resize_value(value_type&amp; value, typename value_type::size_type n);
-    value_type make_value(typename value_type::size_type n);
+    [[nodiscard]] value_type make_value(typename value_type::size_type n);
     template &lt;class ForwardIterator, class ForwardIteratorEnd>
       value_type&amp; rewrite_value(value_type&amp; value,
                                 InputIterator new_value_begin, InputIteratorEnd new_value_end);
@@ -5492,7 +5527,7 @@ namespace commata {
       value_type&amp; rewrite_value(value_type&amp; value, InputIterator new_value);
     template &lt;class OtherValue>
       value_type&amp; rewrite_value(value_type&amp; value, const OtherValue&amp; new_value);
-    template &lt;class... Args> value_type import_value(Args&amp;&amp;... args);
+    template &lt;class... Args> [[nodiscard]] value_type import_value(Args&amp;&amp;... args);
     template &lt;class F> auto guard_rewrite(F f) -> decltype(f(*this));
 
     <c>// <n><xref id="basic_stored_table.primitives"/>, primitive store operations:</n></c>
@@ -5523,19 +5558,19 @@ namespace commata {
 
   <c>// <n><xref id="basic_stored_table.nonmember"/>, non-member functions:</n></c>
   template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-    basic_stored_table&lt;ContentL, AllocatorL>
+    [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
       operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
                 const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
   template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-    basic_stored_table&lt;ContentL, AllocatorL>
+    [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
       operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
                       basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
   template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-    basic_stored_table&lt;ContentL, AllocatorL>
+    [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
       operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
                 const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
   template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-    basic_stored_table&lt;ContentL, AllocatorL>
+    [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
       operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
                       basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
 
@@ -5781,7 +5816,7 @@ value_type&amp; resize_value(value_type&amp; value, typename value_type::size_ty
 
         <code-item>
           <code>
-value_type make_value(typename value_type::size_type n);
+[[nodiscard]] value_type make_value(typename value_type::size_type n);
           </code>
           <effects><p>Equivalent to:</p>
                    <code>value_type value;
@@ -5824,7 +5859,7 @@ template &lt;class OtherValue>
 
         <code-item>
           <code>
-template &lt;class... Args> value_type import_value(Args&amp;&amp;... args);
+template &lt;class... Args> [[nodiscard]] value_type import_value(Args&amp;&amp;... args);
           </code>
           <effects><p>Equivalent to:</p>
                    <code>value_type value;
@@ -5968,7 +6003,7 @@ void swap(basic_stored_table&amp; other)
         <code-item>
           <code>
 template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-  basic_stored_table&lt;ContentL, AllocatorL>
+  [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
     operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp; left,
               const basic_stored_table&lt;ContentR, AllocatorR>&amp; right);
           </code>
@@ -5982,7 +6017,7 @@ return t;</code>
         <code-item>
           <code>
 template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-  basic_stored_table&lt;ContentL, AllocatorL>
+  [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
     operator+(const basic_stored_table&lt;ContentL, AllocatorL>&amp;  left,
                     basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
           </code>
@@ -5996,7 +6031,7 @@ return t;</code>
         <code-item>
           <code>
 template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-  basic_stored_table&lt;ContentL, AllocatorL>
+  [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
     operator+(      basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
               const basic_stored_table&lt;ContentR, AllocatorR>&amp;  right);
           </code>
@@ -6008,7 +6043,7 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
         <code-item>
           <code>
 template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-  basic_stored_table&lt;ContentL, AllocatorL>
+  [[nodiscard]] basic_stored_table&lt;ContentL, AllocatorL>
     operator+(basic_stored_table&lt;ContentL, AllocatorL>&amp;&amp; left,
               basic_stored_table&lt;ContentR, AllocatorR>&amp;&amp; right);
           </code>
@@ -6787,15 +6822,15 @@ namespace commata {
 
   <c>// <n><xref id="scan.builtin.body_field_scanners.creation"/>, creation of default field scanners:</n></c>
   template &lt;class T, class SinkR, class... Appendices>
-    <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
+    [[nodiscard]] <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
   template &lt;class T, class Allocator, class SinkR, class... Appendices>
-    <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
+    [[nodiscard]] <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
+                                                  SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
   template &lt;class Container, class... Appendices>
-    <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
+    [[nodiscard]] <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
   template &lt;class Allocator, class Container, class... Appendices>
-    <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                                    Container&amp; values, Appendices&amp;&amp;... appendices);
+    [[nodiscard]] <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
+                                                  Container&amp; values, Appendices&amp;&amp;... appendices);
 }
       </codeblock>
       <p>The header <c>"commama/field_scanners.hpp"</c> defines default body field scanners (<xref id="body_field_scanner.requirements"/>) and some accompanying facilities of them.</p>
@@ -7720,7 +7755,7 @@ void operator()();
         <code-item>
           <code>
 template &lt;class T, class SinkR, class... Appendices>
-  <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
+  [[nodiscard]] <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
           </code>
           <preface>Let <c>Sink</c> be <c>std::decay_t&lt;SinkR></c>.</preface>
           <effects><p>Equivalent to:</p>
@@ -7761,8 +7796,8 @@ template &lt;class T, class SinkR, class... Appendices>
         <code-item>
           <code>
 template &lt;class T, class Allocator, class SinkR, class... Appendices>
-  <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                                  SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
+  [[nodiscard]] <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
+                                                SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
           </code>
           <preface>Let <c>Sink</c> be <c>std::decay_t&lt;SinkR></c>.</preface>
           <effects><p>Equivalent to:</p>
@@ -7779,7 +7814,7 @@ template &lt;class T, class Allocator, class SinkR, class... Appendices>
         <code-item>
           <code>
 template &lt;class Container, class... Appendices>
-  <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
+  [[nodiscard]] <nc>see below</nc> make_field_translator(Container&amp; values, Appendices&amp;&amp;... appendices);
           </code>
           <preface>Let <c>V</c> be <c>typename Container::value_type</c>.</preface>
           <effects><p>If <c>V</c> is a default translatable arithmetic type, equivalent to:</p>
@@ -7796,8 +7831,8 @@ template &lt;class Container, class... Appendices>
         <code-item>
           <code>
 template &lt;class Allocator, class Container, class... Appendices>
-  <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                                  Container&amp; values, Appendices&amp;&amp;... appendices);
+  [[nodiscard]] <nc>see below</nc> make_field_translator(std::allocator_arg_t, const Allocator&amp; alloc,
+                                                Container&amp; values, Appendices&amp;&amp;... appendices);
           </code>
           <effects><p>Given <c>V</c> being <c>typename Container::value_type</c> and <c>W</c> being <c>std::basic_string_view&lt;typename V::value_type, typename V::traits_type></c>, equivalent to:</p>
                    <code>return string_field_inserter&lt;
@@ -7880,10 +7915,10 @@ namespace commata {
     class table_pull;
 
   template &lt;class TableSource, class... Appendices>
-    table_pull&lt;std::decay_t&lt;TableSource>>
+    [[nodiscard]] table_pull&lt;std::decay_t&lt;TableSource>>
       make_table_pull(TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
   template &lt;class TableSource, class Allocator, class... Appendices>
-    table_pull&lt;std::decay_t&lt;TableSource>, Allocator>
+    [[nodiscard]] table_pull&lt;std::decay_t&lt;TableSource>, Allocator>
       make_table_pull(std::allocator_arg_t, const Allocator&amp; alloc,
                       TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
 }
@@ -8390,10 +8425,10 @@ namespace commata {
 
   <c>// <n><xref id="table_pull.creation"/>, table_pull creation functions:</n></c>
   template &lt;class TableSource, class... Appendices>
-    table_pull&lt;std::decay_t&lt;TableSource>>
+    [[nodiscard]] table_pull&lt;std::decay_t&lt;TableSource>>
       make_table_pull(TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
   template &lt;class TableSource, class Allocator, class... Appendices>
-    table_pull&lt;std::decay_t&lt;TableSource>, Allocator>
+    [[nodiscard]] table_pull&lt;std::decay_t&lt;TableSource>, Allocator>
       make_table_pull(std::allocator_arg_t, const Allocator&amp; alloc,
                       TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
 }
@@ -8690,7 +8725,7 @@ template &lt;class F> table_pull&amp; rewrite(F f);
       <code-item>
         <code>
 template &lt;class TableSource, class... Appendices>
-  table_pull&lt;std::decay_t&lt;TableSource>>
+  [[nodiscard]] table_pull&lt;std::decay_t&lt;TableSource>>
     make_table_pull(TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
         </code>
         <effects><p>Equivalent to:</p>
@@ -8702,7 +8737,7 @@ template &lt;class TableSource, class... Appendices>
       <code-item>
         <code>
 template &lt;class TableSource, class Allocator, class... Appendices>
-  table_pull&lt;std::decay_t&lt;TableSource>, Allocator>
+  [[nodiscard]] table_pull&lt;std::decay_t&lt;TableSource>, Allocator>
     make_table_pull(std::allocator_arg_t, const Allocator&amp; alloc,
                     TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
         </code>

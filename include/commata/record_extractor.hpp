@@ -86,7 +86,7 @@ public:
 };
 
 template <class Ch, class Tr, class C>
-auto make_eq(C&& c)
+[[nodiscard]] auto make_eq(C&& c)
 {
     if constexpr (std::is_reference_v<C>) {
         return eq<Ch, Tr, std::remove_reference_t<C>*>(std::addressof(c));
@@ -711,7 +711,7 @@ decltype(auto) make_string_pred(T&& s)
 
 template <class FieldNamePred, class FieldValuePred,
     class Ch, class Tr, class Allocator, class... Appendices>
-auto make_record_extractor(
+[[nodiscard]] auto make_record_extractor(
     std::allocator_arg_t, const Allocator& alloc,
     std::basic_streambuf<Ch, Tr>& out,
     FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
@@ -744,7 +744,7 @@ auto make_record_extractor(
 
 template <class FieldValuePred,
     class Ch, class Tr, class Allocator, class... Appendices>
-auto make_record_extractor(
+[[nodiscard]] auto make_record_extractor(
     std::allocator_arg_t, const Allocator& alloc,
     std::basic_streambuf<Ch, Tr>& out,
     std::size_t target_field_index, FieldValuePred&& field_value_pred,
@@ -767,7 +767,7 @@ auto make_record_extractor(
 }
 
 template <class Ch, class Tr, class... Appendices>
-auto make_record_extractor(
+[[nodiscard]] auto make_record_extractor(
     std::basic_streambuf<Ch, Tr>& out, Appendices&&... appendices)
  -> decltype(make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
         out, std::forward<Appendices>(appendices)...))

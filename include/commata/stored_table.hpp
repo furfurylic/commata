@@ -1324,7 +1324,7 @@ public:
         return value;
     }
 
-    value_type make_value(typename value_type::size_type n)
+    [[nodiscard]] value_type make_value(typename value_type::size_type n)
     {
         value_type value;
         resize_value(value, n); // throw
@@ -1500,7 +1500,7 @@ public:
     }
 
     template <class... Args>
-    value_type import_value(Args&&... args)
+    [[nodiscard]] value_type import_value(Args&&... args)
     {
         value_type value;
         rewrite_value(value, std::forward<Args>(args)...);  // throw
@@ -1894,7 +1894,7 @@ void basic_stored_table<Content, Allocator>::append_no_singular_merge(
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-basic_stored_table<ContentL, AllocatorL> operator+(
+[[nodiscard]] basic_stored_table<ContentL, AllocatorL> operator+(
     const basic_stored_table<ContentL, AllocatorL>& left,
     const basic_stored_table<ContentR, AllocatorR>& right)
 {
@@ -1902,7 +1902,7 @@ basic_stored_table<ContentL, AllocatorL> operator+(
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-basic_stored_table<ContentL, AllocatorL> operator+(
+[[nodiscard]] basic_stored_table<ContentL, AllocatorL> operator+(
     const basic_stored_table<ContentL, AllocatorL>& left,
     basic_stored_table<ContentR, AllocatorR>&& right)
 {
@@ -1910,7 +1910,7 @@ basic_stored_table<ContentL, AllocatorL> operator+(
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-basic_stored_table<ContentL, AllocatorL> operator+(
+[[nodiscard]] basic_stored_table<ContentL, AllocatorL> operator+(
     basic_stored_table<ContentL, AllocatorL>&& left,
     const basic_stored_table<ContentR, AllocatorR>& right)
 {
@@ -1918,7 +1918,7 @@ basic_stored_table<ContentL, AllocatorL> operator+(
 }
 
 template <class ContentL, class AllocatorL, class ContentR, class AllocatorR>
-basic_stored_table<ContentL, AllocatorL> operator+(
+[[nodiscard]] basic_stored_table<ContentL, AllocatorL> operator+(
     basic_stored_table<ContentL, AllocatorL>&& left,
     basic_stored_table<ContentR, AllocatorR>&& right)
 {
@@ -2331,6 +2331,7 @@ public:
 template <
     stored_table_builder_option Options = stored_table_builder_option::none,
     class Content, class Allocator, class... Args>
+[[nodiscard]]
 stored_table_builder<Content, Allocator, Options> make_stored_table_builder(
     basic_stored_table<Content, Allocator>& table, Args&&... args)
 {

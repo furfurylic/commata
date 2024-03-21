@@ -138,7 +138,7 @@ public:
                     Allocator>>::ret_t>;
 
     template <class Handler>
-    auto operator()(Handler&& handler) const&
+    [[nodiscard]] auto operator()(Handler&& handler) const&
         noexcept(
             std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
          && std::is_nothrow_copy_constructible_v<CharInput>)
@@ -150,7 +150,7 @@ public:
     }
 
     template <class Handler>
-    auto operator()(Handler&& handler) &&
+    [[nodiscard]] auto operator()(Handler&& handler) &&
         noexcept(
             std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
          && std::is_nothrow_move_constructible_v<CharInput>)
@@ -162,7 +162,8 @@ public:
     }
 
     template <class Handler, class Allocator = std::allocator<char_type>>
-    auto operator()(Handler&& handler, std::size_t buffer_size = 0,
+    [[nodiscard]] auto operator()(
+            Handler&& handler, std::size_t buffer_size = 0,
             const Allocator& alloc = Allocator()) const&
         noexcept(
             std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
@@ -177,7 +178,7 @@ public:
     }
 
     template <class Handler, class Allocator = std::allocator<char_type>>
-    auto operator()(Handler&& handler,
+    [[nodiscard]] auto operator()(Handler&& handler,
         std::size_t buffer_size = 0, const Allocator& alloc = Allocator()) &&
         noexcept(
             std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>
@@ -193,7 +194,7 @@ public:
     }
 
     template <class Handler, class... Args>
-    auto operator()(std::reference_wrapper<Handler> handler,
+    [[nodiscard]] auto operator()(std::reference_wrapper<Handler> handler,
             Args&&... args) const&
         noexcept(std::is_nothrow_invocable_v<const base_source&,
             reference_handler<Handler>, Args...>)

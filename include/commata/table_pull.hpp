@@ -1068,6 +1068,7 @@ table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
     -> table_pull<TableSource, Allocator>;
 
 template <class TableSource, class... Appendices>
+[[nodiscard]]
 auto make_table_pull(TableSource&& in, Appendices&&... appendices)
  -> std::enable_if_t<
         std::is_constructible_v<table_pull<std::decay_t<TableSource>>,
@@ -1080,8 +1081,8 @@ auto make_table_pull(TableSource&& in, Appendices&&... appendices)
 }
 
 template <class TableSource, class Allocator, class... Appendices>
-auto make_table_pull(std::allocator_arg_t, const Allocator& alloc,
-    TableSource&& in, Appendices&&... appendices)
+[[nodiscard]] auto make_table_pull(std::allocator_arg_t,
+    const Allocator& alloc, TableSource&& in, Appendices&&... appendices)
  -> std::enable_if_t<
         std::is_constructible_v<
             table_pull<std::decay_t<TableSource>, Allocator>,
