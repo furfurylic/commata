@@ -45,12 +45,13 @@ template <class Handler>
 reference_handler(reference_handler<Handler>) -> reference_handler<Handler>;
 
 template <class Handler>
-reference_handler<Handler> wrap_ref(Handler& handler) noexcept
+[[nodiscard]] reference_handler<Handler> wrap_ref(Handler& handler) noexcept
 {
     return reference_handler(handler);
 }
 
 template <class Handler>
+[[nodiscard]]
 reference_handler<Handler> wrap_ref(std::reference_wrapper<Handler> handler)
     noexcept
 {
@@ -58,7 +59,7 @@ reference_handler<Handler> wrap_ref(std::reference_wrapper<Handler> handler)
 }
 
 template <class Handler>
-reference_handler<Handler> wrap_ref(reference_handler<Handler> handler)
+[[nodiscard]] reference_handler<Handler> wrap_ref(reference_handler<Handler> handler)
     noexcept
 {
     return reference_handler(handler);
@@ -153,7 +154,7 @@ auto swap(
 }
 
 template <class Handler>
-auto make_empty_physical_line_aware(Handler&& handler)
+[[nodiscard]] auto make_empty_physical_line_aware(Handler&& handler)
     noexcept(
         std::is_nothrow_constructible_v<std::decay_t<Handler>, Handler&&>)
  -> std::enable_if_t<
@@ -172,7 +173,7 @@ auto make_empty_physical_line_aware(Handler&& handler)
 }
 
 template <class Handler>
-auto make_empty_physical_line_aware(
+[[nodiscard]] auto make_empty_physical_line_aware(
     std::reference_wrapper<Handler> handler) noexcept
  -> std::conditional_t<
         detail::has_empty_physical_line_v<Handler>,

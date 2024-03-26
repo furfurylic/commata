@@ -417,21 +417,21 @@ struct indirect_t
 constexpr inline indirect_t indirect{};
 
 template <class Ch, class Tr>
-streambuf_input<Ch, Tr> make_char_input(
+[[nodiscard]] streambuf_input<Ch, Tr> make_char_input(
     std::basic_streambuf<Ch, Tr>& in) noexcept
 {
     return streambuf_input(in);
 }
 
 template <class Ch, class Tr>
-istream_input<Ch, Tr> make_char_input(
+[[nodiscard]] istream_input<Ch, Tr> make_char_input(
     std::basic_istream<Ch, Tr>& in) noexcept
 {
     return istream_input(in);
 }
 
 template <class Streambuf>
-auto make_char_input(Streambuf&& in)
+[[nodiscard]] auto make_char_input(Streambuf&& in)
     noexcept(std::is_nothrow_move_constructible_v<Streambuf>)
  -> std::enable_if_t<
         !std::is_lvalue_reference_v<Streambuf>
@@ -446,7 +446,7 @@ auto make_char_input(Streambuf&& in)
 }
 
 template <class IStream>
-auto make_char_input(IStream&& in)
+[[nodiscard]] auto make_char_input(IStream&& in)
     noexcept(std::is_nothrow_move_constructible_v<IStream>)
  -> std::enable_if_t<
         !std::is_lvalue_reference_v<IStream>
@@ -461,7 +461,7 @@ auto make_char_input(IStream&& in)
 }
 
 template <class Ch, class Tr = std::char_traits<Ch>>
-auto make_char_input(const Ch* in)
+[[nodiscard]] auto make_char_input(const Ch* in)
  -> std::enable_if_t<
         std::is_same_v<Ch, char> || std::is_same_v<Ch, wchar_t>,
         string_input<Ch, Tr>>
@@ -470,7 +470,7 @@ auto make_char_input(const Ch* in)
 }
 
 template <class Ch, class Tr = std::char_traits<Ch>>
-auto make_char_input(const Ch* in, std::size_t length)
+[[nodiscard]] auto make_char_input(const Ch* in, std::size_t length)
  -> std::enable_if_t<
         std::is_same_v<Ch, char> || std::is_same_v<Ch, wchar_t>,
         string_input<Ch, Tr>>
@@ -479,21 +479,21 @@ auto make_char_input(const Ch* in, std::size_t length)
 }
 
 template <class Ch, class Tr, class Allocator>
-string_input<Ch, Tr> make_char_input(
+[[nodiscard]] string_input<Ch, Tr> make_char_input(
     const std::basic_string<Ch, Tr, Allocator>& in) noexcept
 {
     return string_input(in);
 }
 
 template <class Ch, class Tr>
-string_input<Ch, Tr> make_char_input(
+[[nodiscard]] string_input<Ch, Tr> make_char_input(
     std::basic_string_view<Ch, Tr> in) noexcept
 {
     return string_input(in);
 }
 
 template <class Ch, class Tr, class Allocator>
-owned_string_input<Ch, Tr, Allocator> make_char_input(
+[[nodiscard]] owned_string_input<Ch, Tr, Allocator> make_char_input(
     std::basic_string<Ch, Tr, Allocator>&& in) noexcept
 {
     return owned_string_input(std::move(in));
@@ -503,10 +503,17 @@ namespace detail {
 
 struct are_make_char_input_args_impl
 {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+#endif
     template <class... Args>
     static auto check(std::void_t<Args...>*) -> decltype(
         make_char_input(std::declval<Args>()...),
         std::true_type());
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
     template <class...>
     static auto check(...) -> std::false_type;
@@ -541,7 +548,7 @@ constexpr auto make_char_input_noexcept_na()
 } // end detail
 
 template <class... Args>
-auto make_char_input(indirect_t, Args&&... args) noexcept(
+[[nodiscard]] auto make_char_input(indirect_t, Args&&... args) noexcept(
     decltype(detail::input::make_char_input_noexcept_na<Args...>())())
  -> std::enable_if_t<
         (detail::are_make_char_input_args_v<Args...> || (sizeof...(Args) == 1))
@@ -559,6 +566,7 @@ auto make_char_input(indirect_t, Args&&... args) noexcept(
 }
 
 template <class Input>
+[[nodiscard]]
 indirect_input<Input> make_char_input(indirect_t, indirect_input<Input> input)
 {
     return indirect_input(input.base());

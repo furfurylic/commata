@@ -963,6 +963,7 @@ string_view_field_translator<Sink, typename T::value_type,
 } // end detail::scanner
 
 template <class T, class Sink, class... Appendices>
+[[nodiscard]]
 auto make_field_translator(Sink&& sink, Appendices&&... appendices)
  -> std::enable_if_t<
         (is_default_translatable_arithmetic_type_v<T>
@@ -981,8 +982,8 @@ auto make_field_translator(Sink&& sink, Appendices&&... appendices)
 }
 
 template <class T, class Allocator, class Sink, class... Appendices>
-auto make_field_translator(std::allocator_arg_t, const Allocator& alloc,
-    Sink&& sink, Appendices&&... appendices)
+[[nodiscard]] auto make_field_translator(std::allocator_arg_t,
+    const Allocator& alloc, Sink&& sink, Appendices&&... appendices)
  -> std::enable_if_t<
         detail::is_std_string_v<T>
      && std::is_same_v<Allocator, typename T::allocator_type>
@@ -1092,6 +1093,7 @@ struct string_populator
 } // end detail::scanner
 
 template <class Container, class... Appendices>
+[[nodiscard]]
 auto make_field_translator(Container& values, Appendices&&... appendices)
  -> typename std::enable_if_t<
         (is_default_translatable_arithmetic_type_v<
@@ -1117,7 +1119,7 @@ auto make_field_translator(Container& values, Appendices&&... appendices)
 }
 
 template <class Container, class... Appendices>
-auto make_field_translator(std::allocator_arg_t,
+[[nodiscard]] auto make_field_translator(std::allocator_arg_t,
     const typename Container::value_type::allocator_type& alloc,
     Container& values, Appendices&&... appendices)
  -> std::enable_if_t<

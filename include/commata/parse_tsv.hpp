@@ -314,7 +314,7 @@ auto swap(tsv_source<CharInput>& left, tsv_source<CharInput>& right)
 }
 
 template <class... Args>
-auto make_tsv_source(Args&&... args)
+[[nodiscard]] auto make_tsv_source(Args&&... args)
     noexcept(std::is_nothrow_constructible_v<
         decltype(make_char_input(std::forward<Args>(args)...)), Args&&...>)
  -> tsv_source<decltype(make_char_input(std::forward<Args>(args)...))>
@@ -324,7 +324,7 @@ auto make_tsv_source(Args&&... args)
 }
 
 template <class CharInput>
-auto make_tsv_source(CharInput&& input)
+[[nodiscard]] auto make_tsv_source(CharInput&& input)
     noexcept(std::is_nothrow_constructible_v<
         std::decay_t<CharInput>, CharInput&&>)
  -> std::enable_if_t<
@@ -342,10 +342,17 @@ namespace detail::tsv {
 
 struct are_make_tsv_source_args_impl
 {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+#endif
     template <class... Args>
     static auto check(std::void_t<Args...>*) -> decltype(
         make_tsv_source(std::declval<Args>()...),
         std::true_type());
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
     template <class...>
     static auto check(...) -> std::false_type;
