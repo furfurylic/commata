@@ -951,7 +951,8 @@ auto p = make_table_pull(
 Commata also offers support for tab-separated values (TSV) format as with CSV format.
 The supported TSV format is, however, much simpler than the supported CSV format and
 lacks escaping and quoting, similarly to [IANA&#x2019;s TSV format](https://www.iana.org/assignments/media-types/text/tab-separated-values).
-To be specific, field values cannot contain tab characters in this format.
+To be specific, field values cannot contain tab, carriage-return or line-feed
+characters in this format.
 
 Commata&#x2019;s TSV support facilities are defined in the header `"commata/parse_tsv.hpp"`.
 These facilities have very similar interfaces to those of CSV; for example,
