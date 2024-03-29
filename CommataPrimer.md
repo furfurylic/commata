@@ -595,25 +595,25 @@ class vov_table_handler    // vov means 'vector of vector'
   std::string current_value_;
 
 public:
-  using char_type = char;
+  using char_type = const char;
 
   explicit vov_table_handler(
     std::vector<std::vector<std::string>>& records) :
     records_(&records)
   {}
 
-  void start_record(char*)
+  void start_record(const char*)
   {
     records_->emplace_back();
   }
 
-  void update(char* first, char* last)
+  void update(const char* first, const char* last)
   {
     // Append [first, last) to the current field value
     current_value_.append(first, last);
   }
 
-  void finalize(char* first, char* last)
+  void finalize(const char* first, const char* last)
   {
     // Append [first, last) to the current field value
     // as the final chunk of the value
@@ -622,7 +622,7 @@ public:
     current_value_.clear();   // ensures emptiness for reuse
   }
 
-  void end_record(char*)
+  void end_record(const char*)
   {}
 };
 
@@ -637,11 +637,20 @@ void vov_table_handler_sample()
 }
 ```
 
-A table handler type must have four member functions: `start_record`,
-`end_record`, `update`, `finalize`. In addition, it must have a nested type
-`char_type`.
+First, a table handler type must have a nested type `char_type`, which can be
+const-qualified. And it must have four member functions: `start_record`,
+`end_record`, `update`, `finalize` taking one or two pointers to `char_type`.
 If these requirements meet, `parse_csv` emits parsing events to the text
 handler objects.
+
+If `char_type` is not const-qualified, the four member functions are generally
+free to modify the passed character sequence in place.
+Also the second parameters of `update` and `finalize` are dereferenceable to
+modify the pointee.
+(Note that it is not unspecified what the pointee initially contains.)
+
+On the other hand, const-qualifying `char_type` like our `vov_table_handler`
+can improve performance.
 
 Please note that a field value may be notified to the table handler object as
 chunked; not-the-final chunks are notified by `update` and the final chunk is
