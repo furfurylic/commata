@@ -21,7 +21,7 @@
 
 namespace commata {
 
-namespace detail { namespace input {
+namespace detail::input {
 
 template <class Ch, class Tr>
 auto getn(std::basic_streambuf<Ch, Tr>& in, Ch* out, std::streamsize n)
@@ -55,7 +55,7 @@ auto read(In& in,
     return m;
 }
 
-}} // end detail::input
+} // end detail::input
 
 template <class Ch, class Tr = std::char_traits<Ch>>
 class streambuf_input
