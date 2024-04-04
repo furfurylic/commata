@@ -11,11 +11,11 @@
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <set>
 
 #include "text_error.hpp"
 #include "text_value_translation.hpp"
