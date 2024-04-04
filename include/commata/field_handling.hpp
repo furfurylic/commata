@@ -7,7 +7,6 @@
 #define COMMATA_GUARD_CD40E918_ACCD_4879_BB48_7D9B8B823369
 
 #include <type_traits>
-#include <functional>
 
 namespace commata {
 
