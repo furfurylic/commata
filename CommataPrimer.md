@@ -107,10 +107,10 @@ std::cout << std::strlen(table[6][1].c_str()) << std::endl;
 ```
 
 (Please note that this example is somewhat absurd. `stored_value` has `size`
- member function which does the almost same thing in constant time.
- (The presence of &#x2018;almost&#x2019; is because `stored_value` can contain `'\0'` in it
- and in that situation `std::strlen` and the `size` member function report
- different numbers.))
+member function which does the almost same thing in constant time.
+(The presence of &#x2018;almost&#x2019; is because `stored_value` can contain `'\0'` in it
+and in that situation `std::strlen` and the `size` member function report
+different numbers.))
 
 `stored_value` supports iterators and has comparison operators with
 `const char*`, `std::string`, `std::string_view` and `stored_value`:
@@ -199,6 +199,10 @@ As we saw, `stored_table` has no idea about &#x2018;field names&#x2019; of the
 loaded CSV.
 So you *cannot* access fields by name with codes like `table[5]["Name"]` or `table["Name"][5]`.
 
+Of course, you can write a class whose object wraps a `stored_table` object and
+which provides by-name field access facilities, but Commata itself does not
+have it.
+
 ## One-pass scanning
 
 Commata has facilities to perform one-pass scanning and on-the-fly type
@@ -258,7 +262,7 @@ The argument of it can be either of:
    only parameter.
 
 In the last two cases, the type to which the field values are translated
-must be specified explicitly as the first template parameter of
+must be specified explicitly as the first template argument of
 `make_field_translator`. See the following sample:
 
 ```C++
@@ -356,7 +360,7 @@ void one_pass_scanning_sample3()
         }
       }
       return false; // false to tell the scanner to uninstall this header field
-                    // scanner, and tell it that here the header records end
+                    // scanner, and to tell it that here the header records end
                     // and the next record will be the first body record
     });
 
@@ -455,7 +459,7 @@ void stored_table_error_sample2()
   try {
     parse_csv(std::ifstream("stars2.csv"), make_stored_table_builder(table));
   } catch (const text_error& e) {
-    std::cout << text_error_info(e) << std::endl;
+    std::cout << text_error_info(e) << std::endl;   // modified
     throw;
   }
 }
@@ -467,9 +471,10 @@ and might be able to get a clue about what was wrong:
 A quotation mark found in an unquoted value; line 2 column 20
 ```
 
-Note that line indices and column indices in string representations of
-`text_error_info` objects are one-based by default
-(you can configure the base with the second argument of the constructor of `text_error_info`).
+By default, line indexes and column indexes in string representations of
+`text_error_info` objects are one-based.
+You can configure the base with the second argument of the constructor of `text_error_info`,
+which is defaulted to `1`.
 
 Class `text_error` and `text_error_info` are defined in the header
 `"commata/text_error.hpp"`.
@@ -580,7 +585,7 @@ So far, the second arguments to `parse_csv` were the return value of
 define your own types whose objects can be passed to `parse_csv`.
 These types are called _table handler_ types.
 
-For example, if you want to make a vector of vectors of field values,
+For example, if you want to make a vector of vectors of field values as strings,
 the following codes will do:
 
 ```C++
@@ -647,14 +652,16 @@ If `char_type` is not const-qualified, the four member functions are generally
 free to modify the passed character sequence in place.
 Also the second parameters of `update` and `finalize` are dereferenceable to
 modify the pointee.
-(Note that it is not unspecified what the pointee initially contains.)
+It is not unspecified what the pointee initially contains.
 
 On the other hand, const-qualifying `char_type` like our `vov_table_handler`
-can improve performance.
+may improve performance with possible evasion of copying character buffers, which could be discussed later.
 
-Please note that a field value may be notified to the table handler object as
-chunked; not-the-final chunks are notified by `update` and the final chunk is
+A field value may be notified to the table handler object as
+chunked; non-final chunks are notified by `update` and the final chunk is
 notified by `finalize`.
+Non-final chunks notified by `update` shall not be empty.
+On the other hand, the final chunk notified by `finalize` may be empty.
 
 (Note that this sample can be suboptimal in terms of performance. To use
 `stored_table` and `make_stored_table_builder` seems to be the best to load the
@@ -836,7 +843,7 @@ void pull_parsing_sample2()
 }
 ```
 
-In the sample above, please note there is no `p.set_empty_physical_line_aware()`.
+In the sample above, there is no `p.set_empty_physical_line_aware()`.
 By default, `table_pull` objects do not regard empty lines as records with no fields.
 Instead, they simply ignore these lines.
 
@@ -866,7 +873,7 @@ prevents `table_pull` from declaring `c_str` member. Its mechanism is as follows
  - The definition of `c_str` member must be accompanied by a code like
    `*b = '\0'` or something, which puts a null character into a character
    buffer to make a null-terminated sequence.
- - For the sake of performance, a `table_pull` object evades making a copy of
+ - On the other hand, for the sake of performance, a `table_pull` object evades making a copy of
    the input string as far as possible.
  - A table source made by `make_csv_source` from a string is qualified to let
    a `table_pull` object perform this copy evasion, which is called a _direct_
