@@ -7,6 +7,13 @@ Just another header-only C++17 CSV parser
  - [Primer](CommataPrimer.md)
  - [Specification](https://furfurylic.github.io/commata/CommataSpecification.xml)
 
+Commata's version numbers strictly comply to
+[Semantic Versioning](https://semver.org/) only since the major version one.
+With the major version zero, each pre-release version has been misapplied to
+indicate a bugfix release.
+So, for example, 0.2.4-bug1 came after 0.2.4, which is not an order that
+Semantic Versioning mandates.
+
 ## For developers
 
 Commata is written in C++17 and consists only of headers.
