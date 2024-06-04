@@ -873,8 +873,9 @@ prevents `table_pull` from declaring `c_str` member. Its mechanism is as follows
  - The definition of `c_str` member must be accompanied by a code like
    `*b = '\0'` or something, which puts a null character into a character
    buffer to make a null-terminated sequence.
- - On the other hand, for the sake of performance, a `table_pull` object evades making a copy of
-   the input string as far as possible.
+ - On the other hand, for the sake of performance, a `table_pull` object evades
+   making a copy of the input string as far as possible, that is, as far as
+   the input provides a readable character buffer.
  - A table source made by `make_csv_source` from a string is qualified to let
    a `table_pull` object perform this copy evasion, which is called a _direct_
    table source.
