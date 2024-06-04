@@ -720,7 +720,7 @@ void make_empty_physical_line_aware_sample()
 
 ## Sources other than streams
 
-Suppose you have a function that read full contents of a file into a string as
+Suppose you have a function that reads full contents of a file into a string as
 follows:
 
 ```C++
@@ -769,7 +769,7 @@ Each of these disintegrated steps is like the following:
 Commata also has facilities to perform &#x2018;pull parsing&#x2019;, in which users can access the
 result of parsing in a step-by-step manner.
 
-In pull parsing, the user have a &#x2018;cursor&#x2019; on the CSV text. He/she can read from
+In pull parsing, the user has a &#x2018;cursor&#x2019; on the CSV text. He/she can read from
 the point where the cursor placed, and move the cursor forward.
 
 See the following sample:
