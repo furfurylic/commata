@@ -3582,7 +3582,7 @@ namespace commata {
     using char_type = typename CharInput::char_type;
     using traits_type = typename CharInput::traits_type;
     template &lt;class Handler, class Allocator = void> using parser_type = <nc>see below</nc>;
-  
+
     <c>// <n><xref id="csv_source.cons"/>, construct/copy/destroy:</n></c>
     explicit csv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
     explicit csv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
@@ -3873,7 +3873,7 @@ namespace commata {
   template &lt;class CharInput>
     void swap(tsv_source&lt;CharInput>&amp; left,
               tsv_source&lt;CharInput>&amp; right) noexcept(noexcept(left.swap(right)));
-  template &lt;class... Args> 
+  template &lt;class... Args>
     [[nodiscard]] auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
       -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
   template &lt;class CharInputR>
@@ -3903,7 +3903,7 @@ namespace commata {
     using char_type = typename CharInput::char_type;
     using traits_type = typename CharInput::traits_type;
     template &lt;class Handler, class Allocator = void> using parser_type = <nc>see below</nc>;
-  
+
     <c>// <n><xref id="tsv_source.cons"/>, construct/copy/destroy:</n></c>
     explicit tsv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
     explicit tsv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
@@ -5546,7 +5546,7 @@ namespace commata {
     void swap(basic_stored_table&amp; other)
       noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value
             || std::allocator_traits&lt;Allocator>::is_always_equal::value);
-  
+
   private:
     <c>// <nc>exposition only</nc></c>
     struct null_termination {
