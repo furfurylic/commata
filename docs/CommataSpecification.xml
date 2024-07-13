@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-03-26 (UTC)</signature>
+<signature>2024-07-12 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -519,15 +519,15 @@
         </tr>
       </table>
 
-      <p>In the rest of this subclause, Let <c>U</c> be a type that meets the <c>TableSource</c> requirements,
-         <c>X</c> represents an arbitrary type that meets the <c>TableHandler</c> requirements that is deemed to have no buffer control,
-         <c>B</c> represents an arbitrary type that meets the <c>Allocator</c> requirements for <c>std::remove_const_t&lt;X::char_type></c>, and
-         <c>P</c> represents <c>U::parser_type&lt;X></c> or <c>U::parser_type&lt;X, B></c> (the latter is applied only if <c>U</c> offers (6) in <xref id="table.table_source.optional"/>).
+      <p>In the rest of this subclause, let <c>U</c> be a type that meets the <c>TableSource</c> requirements, and
+         <c>P</c> represent <c>U::parser_type&lt;X></c> or <c>U::parser_type&lt;X, B></c> (the latter is applied only if <c>U</c> offers (6) in <xref id="table.table_source.optional"/>)
+         where <c>X</c> is an arbitrary type that meets the <c>TableHandler</c> requirements that is deemed to have no buffer control, and
+         <c>B</c> is an arbitrary type that meets the <c>Allocator</c> requirements for <c>std::remove_const_t&lt;X::char_type></c>.
          Then:</p>
       <ul>
-        <li><c>U</c> is called <n>direct</n> if <c>P::reads_direct</c> is a type idential to or derived from <c>std::true_type</c> for any comination of <c>X</c> and <c>P</c>,</li>
-        <li><c>U</c> is called <n>nonconst-direct</n> if it is direct and it evaluates <c>start_buffer</c>, <c>end_buffer</c>, <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c> and <c>finalize</c> on its tied table handler, whose type is <c>X</c>, with arguments whose types are constantly and uniformly <c>X::char_type*</c> for any comination of <c>X</c> and <c>P</c>, and</li>
-        <li><c>U</c> is called <n>indirect</n> if it is direct and <c>P::reads_direct</c> is not a type or is a type idential to or derived from <c>std::false_type</c> for any comination of <c>X</c> and <c>P</c>.</li>
+        <li><c>U</c> is called <n>direct</n> if, for any <c>P</c>, <c>P::reads_direct</c> is a type idential to or derived from <c>std::true_type</c>,</li>
+        <li><c>U</c> is called <n>nonconst-direct</n> if it is direct and, for any <c>P</c>, any object of <c>P</c> evaluates <c>start_buffer</c>, <c>end_buffer</c>, <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c> and <c>finalize</c> on its tied table handler, whose type is <c>X</c>, with arguments whose types are constantly and uniformly <c>std::remove_const_t&lt;X::char_type>*</c>, and</li>
+        <li><c>U</c> is called <n>indirect</n> if, for any <c>P</c>, <c>P::reads_direct</c> is not a type or is a type idential to or derived from <c>std::false_type</c>.</li>
       </ul>
     </section>
   </section>
