@@ -67,7 +67,7 @@ using replaced_type_from_t =
 template <class T, class... As>
 decltype(auto) invoke_typing_as(As&&... as)
 {
-    [[maybe_unused]] constexpr T* n = static_cast<T*>(nullptr);
+    [[maybe_unused]] constexpr T* n = nullptr;
     if constexpr (std::is_invocable_v<As..., T*>) {
         return std::invoke(std::forward<As>(as)..., n);
     } else {
@@ -80,7 +80,7 @@ decltype(auto) invoke_with_range_typing_as(
     F&& f, X x, [[maybe_unused]] Ch* first, [[maybe_unused]] Ch* last,
     [[maybe_unused]] As&&... as)
 {
-    [[maybe_unused]] constexpr T* n = static_cast<T*>(nullptr);
+    [[maybe_unused]] constexpr T* n = nullptr;
     if constexpr (std::is_invocable_v<F, X, Ch*, Ch*, As..., T*>) {
         return std::invoke(std::forward<F>(f), x, first, last,
                            std::forward<As>(as)..., n);
