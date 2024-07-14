@@ -1658,7 +1658,7 @@ namespace commata {
       </ul>
 
       <p><xref id="table.conversion_error_handler.requirements"/> shows two, four or six expressions per row.
-         It is required that at least one of these two expression qualifies; that is, it is not needed that more than one of them do.
+         It is required that at least one of these expressions should qualify; that is, it is not needed that more than one of them do.
          When multiple expressions in one row qualify, it shall be the first one that is selected to be evaluated.
          This selection shall be done at compile time.
          <span class="note">To evaluate these expressions as specified here, function templates <c>invoke_typing_as</c> and <c>invoke_with_range_typing_as</c> (<xref id="invoke_typing_as"/>) can be used.</span></p>
