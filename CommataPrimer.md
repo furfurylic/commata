@@ -594,7 +594,7 @@ the following codes will do:
 using commata::parse_csv;
 
 // A table handler type whose objects make a vector of vectors of field values
-class vov_table_handler    // vov means 'vector of vector'
+class vov_table_handler    // vov means 'vector of vectors'
 {
   std::vector<std::vector<std::string>>* records_;
   std::string current_value_;
