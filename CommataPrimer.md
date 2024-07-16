@@ -655,7 +655,7 @@ modify the pointee.
 It is not unspecified what the pointee initially contains.
 
 On the other hand, const-qualifying `char_type` like our `vov_table_handler`
-may improve performance with possible evasion of copying character buffers, which could be discussed later.
+may improve performance with possible evasion of copying character buffers, which would be discussed later.
 
 A field value may be notified to the table handler object as
 chunked; non-final chunks are notified by `update` and the final chunk is
