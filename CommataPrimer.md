@@ -84,7 +84,7 @@ void stored_table_sample()
 }
 ```
 
-`table[0]` is short for `table.content()[0]`, where `table.content()` is a
+`table[0]` is a shorthand for `table.content()[0]`, where `table.content()` is a
 reference to a `std::deque<std::vector<commata::stored_value>>` object owned by
 `table`. So `table[0][3]` is a reference to a `commata::stored_value` object.
 
@@ -594,7 +594,7 @@ the following codes will do:
 using commata::parse_csv;
 
 // A table handler type whose objects make a vector of vectors of field values
-class vov_table_handler    // vov means 'vector of vector'
+class vov_table_handler    // vov means 'vector of vectors'
 {
   std::vector<std::vector<std::string>>* records_;
   std::string current_value_;
@@ -655,7 +655,7 @@ modify the pointee.
 It is not unspecified what the pointee initially contains.
 
 On the other hand, const-qualifying `char_type` like our `vov_table_handler`
-may improve performance with possible evasion of copying character buffers, which could be discussed later.
+may improve performance with possible evasion of copying character buffers, which would be discussed later.
 
 A field value may be notified to the table handler object as
 chunked; non-final chunks are notified by `update` and the final chunk is
