@@ -120,7 +120,8 @@ struct simple_transcriptor_with_nonconst_interface :
                       std::remove_const_t<Ch>* /*buffer_end*/)
     {
         if (!this->suppresses_buffer_events()) {
-            this->out() << "<<";
+            using namespace std::string_view_literals;
+            this->out() << "<<"sv;
         }
     }
 
@@ -128,21 +129,24 @@ struct simple_transcriptor_with_nonconst_interface :
     void end_buffer(std::remove_const_t<Ch>* /*buffer_last*/)
     {
         if (!this->suppresses_buffer_events()) {
-            this->out() << ">>";
+            using namespace std::string_view_literals;
+            this->out() << ">>"sv;
         }
     }
 
     using simple_transcriptor<Ch, Tr>::start_record;
     void start_record(std::remove_const_t<Ch>* /*record_begin*/)
     {
-        this->out() << "{{";
+        using namespace std::string_view_literals;
+        this->out() << "{{"sv;
     }
 
     using simple_transcriptor<Ch, Tr>::update;
     void update(std::remove_const_t<Ch>* first, std::remove_const_t<Ch>* last)
     {
         if (!this->is_in_value()) {
-            this->out() << "((";
+            using namespace std::string_view_literals;
+            this->out() << "(("sv;
             this->set_in_value(true);
         }
         this->out() << std::basic_string_view<std::remove_const_t<Ch>, Tr>(
@@ -153,8 +157,9 @@ struct simple_transcriptor_with_nonconst_interface :
     void finalize(std::remove_const_t<Ch>* first,
                   std::remove_const_t<Ch>* last)
     {
+        using namespace std::string_view_literals;
         this->update(first, last);
-        this->out() << "))";
+        this->out() << "))"sv;
         this->set_in_value(false);
         if constexpr (!std::is_const_v<Ch>) {
             *last = Ch();
@@ -164,7 +169,8 @@ struct simple_transcriptor_with_nonconst_interface :
     using simple_transcriptor<Ch, Tr>::end_record;
     void end_record(std::remove_const_t<Ch>* /*record_end*/)
     {
-        this->out() << "}}";
+        using namespace std::string_view_literals;
+        this->out() << "}}"sv;
     }
 
     using simple_transcriptor<Ch, Tr>::empty_physical_line;

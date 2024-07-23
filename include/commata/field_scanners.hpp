@@ -37,7 +37,8 @@ struct fail_if_skipped
     [[noreturn]]
     T operator()(T* = nullptr) const
     {
-        throw field_not_found("This field did not appear in this record");
+        using namespace std::string_view_literals;
+        throw field_not_found("This field did not appear in this record"sv);
     }
 };
 
