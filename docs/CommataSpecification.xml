@@ -7135,7 +7135,7 @@ namespace commata {
           ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
 
     <c>// <n><xref id="arithmetic_field_translator.inv"/>, invocation:</n></c>
-    template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
+    template &lt;class Ch> void operator()(Ch* begin, Ch* end);
                         void operator()();
   };
 }
