@@ -6,6 +6,7 @@
 #ifndef COMMATA_GUARD_9AF7CB02_5702_4A95_AA5E_781F44203C7F
 #define COMMATA_GUARD_9AF7CB02_5702_4A95_AA5E_781F44203C7F
 
+#include <string_view>
 #include <type_traits>
 
 #include "handler_decorator.hpp"
@@ -255,11 +256,12 @@ private:
 
     std::pair<std::size_t, std::size_t> arrange_buffer_copy()
     {
+        using namespace std::string_literals;
         std::size_t buffer_size;
         std::tie(buffer_, buffer_size) = f_.get_buffer();   // throw
         if (buffer_size < 1) {
             throw std::out_of_range(
-                "Specified buffer length is shorter than one");
+                "Specified buffer length is shorter than one"s);
         }
 
         std::size_t loaded_size = 0;

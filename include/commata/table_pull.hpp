@@ -594,9 +594,10 @@ private:
         if (i < ds) {
             return access_impl(i);
         } else {
+            using namespace std::string_view_literals;
             std::ostringstream what;
-            what << "Too large suffix " << i
-                 << ": its maximum value is " << (ds - 1);
+            what << "Too large suffix "sv << i
+                 << ": its maximum value is "sv << (ds - 1);
             throw std::out_of_range(std::move(what).str());
         }
     }

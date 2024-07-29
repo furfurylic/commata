@@ -25,7 +25,7 @@
 #include "tracking_allocator.hpp"
 #include "simple_transcriptor.hpp"
 
-using namespace std::literals;
+using namespace std::string_view_literals;
 
 using namespace commata;
 using namespace commata::test;

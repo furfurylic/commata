@@ -669,11 +669,12 @@ public:
 private:
     static std::size_t sanitize_target_field_index(std::size_t i)
     {
+        using namespace std::string_view_literals;
         if (i < record_extractor_npos) {
             return i;
         } else {
             std::ostringstream str;
-            str << "Target field index too large: " << i;
+            str << "Target field index too large: "sv << i;
             throw std::out_of_range(std::move(str).str());
         }
     }

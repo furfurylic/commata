@@ -334,8 +334,9 @@ private:
     [[noreturn]]
     void throw_pos(size_type pos) const
     {
+        using namespace std::string_view_literals;
         std::ostringstream s;
-        s << pos << " is too large for this value, whose size is " << size();
+        s << pos << " is too large for this value, whose size is "sv << size();
         throw std::out_of_range(std::move(s).str());
     }
 };

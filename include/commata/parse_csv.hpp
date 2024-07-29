@@ -98,6 +98,7 @@ struct parse_step<state::in_value>
     void normal(Parser& parser, typename Parser::buffer_char_t*& p,
         typename Parser::buffer_char_t* pe) const
     {
+        using namespace std::string_view_literals;
         while (p < pe) {
             switch (*p) {
             case key_chars<typename Parser::char_type>::comma_c:
@@ -106,7 +107,7 @@ struct parse_step<state::in_value>
                 return;
             case key_chars<typename Parser::char_type>::dquote_c:
                 throw parse_error(
-                    "A quotation mark found in an unquoted value");
+                    "A quotation mark found in an unquoted value"sv);
             case key_chars<typename Parser::char_type>::cr_c:
                 parser.finalize();
                 parser.end_record();
@@ -161,7 +162,8 @@ struct parse_step<state::right_of_open_quote>
     template <class Parser>
     void eof(Parser& /*parser*/) const
     {
-        throw parse_error("EOF reached with an open quoted value");
+        using namespace std::string_view_literals;
+        throw parse_error("EOF reached with an open quoted value"sv);
     }
 };
 
@@ -205,7 +207,8 @@ struct parse_step<state::in_quoted_value>
     template <class Parser>
     void eof(Parser& /*parser*/) const
     {
-        throw parse_error("EOF reached with an open quoted value");
+        using namespace std::string_view_literals;
+        throw parse_error("EOF reached with an open quoted value"sv);
     }
 };
 
@@ -215,6 +218,7 @@ struct parse_step<state::in_quoted_value_after_quote>
     template <class Parser>
     void normal(Parser& parser, typename Parser::buffer_char_t* p, ...) const
     {
+        using namespace std::string_view_literals;
         switch (*p) {
         case key_chars<typename Parser::char_type>::comma_c:
             parser.finalize();
@@ -237,7 +241,7 @@ struct parse_step<state::in_quoted_value_after_quote>
             break;
         default:
             throw parse_error(
-                "An invalid character found after a closed quoted value");
+                "An invalid character found after a closed quoted value"sv);
         }
     }
 
@@ -290,7 +294,8 @@ struct parse_step<state::in_quoted_value_after_cr>
     template <class Parser>
     void eof(Parser& /*parser*/) const
     {
-        throw parse_error("EOF reached with an open quoted value");
+        using namespace std::string_view_literals;
+        throw parse_error("EOF reached with an open quoted value"sv);
     }
 };
 
@@ -331,7 +336,8 @@ struct parse_step<state::in_quoted_value_after_crs>
     template <class Parser>
     void eof(Parser& /*parser*/) const
     {
-        throw parse_error("EOF reached with an open quoted value");
+        using namespace std::string_view_literals;
+        throw parse_error("EOF reached with an open quoted value"sv);
     }
 };
 
@@ -373,7 +379,8 @@ struct parse_step<state::in_quoted_value_after_lf>
     template <class Parser>
     void eof(Parser& /*parser*/) const
     {
-        throw parse_error("EOF reached with an open quoted value");
+        using namespace std::string_view_literals;
+        throw parse_error("EOF reached with an open quoted value"sv);
     }
 };
 
