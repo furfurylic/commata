@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-07-14 (UTC)</signature>
+<signature>2024-07-29 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6426,7 +6426,8 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
            The type of <c>j</c> is <c>std::size_t</c>.
            The type of <c>v</c> is <c>std::optional&lt;std::pair&lt;T::char_type*, T::char_type*>></c>.
            The type of <c>w</c> is <c>std::optional&lt;std::pair&lt;std::remove_const_t&lt;T::char_type>*, std::remove_const_t&lt;T::char_type>*>></c>.
-           <c>t</c> denotes an lvalue of the table scanner object that holds the header field scanner denoted by <c>s</c> and is an lvalue of cv-unqualified <c>T</c> .</p>
+           <c>t</c> denotes an lvalue of the table scanner object that holds the header field scanner denoted by <c>s</c> and is an lvalue of cv-unqualified <c>T</c>.
+           <span class="note"><c>T::char_type</c> is always a const-qualified char-like type (<xref id="basic_table_scanner"/>).</span></p>
         <p>Requirements shown as (1) and (2) in <xref id="table.header_field_scanner.requirements"/> are optional, but at least one of them shall be satisfied.
            If both of (1) and (2) are valid expressions, it is unspecified which one is evaluated by the table scanner.</p>
 
@@ -6448,9 +6449,9 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <td>Called by the table scanner in two situations following.
                 <ul>
                   <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
-                      <c>v</c> contains a value. Any pointers in the range [<c>v->first</c>, <c>v->second</c>] are dereferenceable and any values stored at them are modifiable except that <c>*v->second</c> can only be modified to <c>Ch()</c>.
-                      Initially the range [<c>v->first</c>, <c>v->second</c>) represents the value of the header field and the value of <c>*v->second</c> is unspecified.
-                      The range [<c>v->first</c>, <c>v->second</c>] may be invalidated after the invocation exits.</li>
+                      <c>v</c> contains a value. Any pointers in the range [<c>v->first</c>, <c>v->second</c>) are dereferenceable.
+                      The range [<c>v->first</c>, <c>v->second</c>) represents the text value of the header field.
+                      The range [<c>v->first</c>, <c>v->second</c>) may be invalidated after the invocation exits.</li>
                   <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> does not contain a value.</li>
                 </ul>
                 In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will be the first body record.</td>
@@ -6462,9 +6463,9 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <td>Called by the table scanner in two situations following.
                 <ul>
                   <li>When the table scanner has finalized a value of the header field. <c>j</c> is the zero-based field index.
-                      <c>w</c> contains a value. Any pointers in the range [<c>w->first</c>, <c>w->second</c>) are dereferenceable.
-                      The range [<c>w->first</c>, <c>w->second</c>) represents the text value of the header field.
-                      The range [<c>w->first</c>, <c>w->second</c>) may be invalidated after the invocation exits.</li>
+                      <c>w</c> contains a value. Any pointers in the range [<c>w->first</c>, <c>w->second</c>] are dereferenceable and any values stored at them are modifiable except that <c>*w->second</c> can only be modified to <c>Ch()</c>.
+                      Initially the range [<c>w->first</c>, <c>w->second</c>) represents the value of the header field and the value of <c>*w->second</c> is unspecified.
+                      The range [<c>w->first</c>, <c>w->second</c>] may be invalidated after the invocation exits.</li>
                   <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>w</c> does not contain a value.</li>
                 </ul>
                 In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will be the first body record.</td>
@@ -7134,7 +7135,7 @@ namespace commata {
           ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
 
     <c>// <n><xref id="arithmetic_field_translator.inv"/>, invocation:</n></c>
-    template &lt;class Ch> void operator()(const Ch* begin, const Ch* end);
+    template &lt;class Ch> void operator()(Ch* begin, Ch* end);
                         void operator()();
   };
 }
