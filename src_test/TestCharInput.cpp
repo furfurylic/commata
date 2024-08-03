@@ -469,14 +469,15 @@ TEST_F(TestOwnedStringInput, Swap)
 TEST_F(TestOwnedStringInput, Direct)
 {
     // Lengthy string is needed to evade short string optimization
-    const std::wstring s(L"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    std::wstring s(L"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
     const wchar_t* const p = s.data();
-    string_input in(std::move(s));
+    owned_string_input in(std::move(s));
 
     {
         auto r = in(3);
         ASSERT_EQ(p, r.first);
         ASSERT_EQ(3U, r.second);
+        std::fill_n(r.first, r.second + 1, '\0');
     }
     {
         // 'Normal' copying mixed

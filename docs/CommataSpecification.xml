@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-07-29 (UTC)</signature>
+<signature>2024-08-03 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3223,6 +3223,7 @@ namespace commata {
   private:
     std::basic_string&lt;Ch, Tr, Allocator> s;     <c>// <n>exposition only</n></c>
     size_type head;                             <c>// <n>exposition only</n></c>
+    Ch front;                                   <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="owned_string_input.special"/>, specialized algorithms:</n></c>
@@ -3233,7 +3234,7 @@ namespace commata {
       </codeblock>
 
       <p>The class template <c>owned_string_input</c> describes thin wrappers of an object of an instance of <c>std::basic_string</c> with the ownership of it.</p>
-      <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
+      <p>The template parameter <c>Ch</c> shall be a cv-unqualified char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
       <p>An instance of <c>owned_string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>
          and implements its optional nonconst-direct interface.</p>
 
@@ -3244,7 +3245,7 @@ namespace commata {
           <code>
 owned_string_input() noexcept(<nc>see below</nc>);
           </code>
-          <effects>Value-initializes <c>s</c> and initializes <c>head</c> with <c>0</c>.</effects>
+          <effects>Value-initializes <c>s</c>, initializes <c>head</c> with <c>0</c> and initializes <c>front</c> with <c>s[head]</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible_v&lt;std::basic_string&lt;Ch, Tr, Allocator>></c>.</remark>
         </code-item>
 
@@ -3252,21 +3253,23 @@ owned_string_input() noexcept(<nc>see below</nc>);
           <code>
 explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; str) noexcept;
           </code>
-          <effects>Initializes <c>s</c> with <c>std::move(str)</c> and <c>head</c> with <c>0</c>.</effects>
+          <effects>Initializes <c>s</c> with <c>std::move(str)</c>, <c>head</c> with <c>0</c> and <c>front</c> with <c>s[head]</c>.</effects>
         </code-item>
 
         <code-item>
           <code>
 owned_string_input(owned_string_input&amp;&amp; other) noexcept;
           </code>
-          <effects>Initializes <c>s</c> with <c>std::move(other.s)</c> and <c>head</c> with <c>other.head</c>, and then assigns <c>other.size()</c> to <c>other.head</c>.</effects>
+          <effects>Initializes <c>s</c> with <c>std::move(other.s)</c>, <c>head</c> with <c>other.head</c> and <c>front</c> with <c>s[head]</c>.
+                   Then assigns <c>other.size()</c> to <c>other.head</c> and <c>other.s[other.head]</c> to <c>other.front</c>.</effects>
         </code-item>
 
         <code-item>
           <code>
 owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Assigns <c>std::move(other.s)</c> to <c>s</c> and <c>other.head</c> to <c>head</c>, and then assigns <c>other.size()</c> to <c>other.head</c>.</effects>
+          <effects>Assigns <c>std::move(other.s)</c> to <c>s</c>, <c>other.head</c> to <c>head</c> and <c>s[head]</c> to <c>front</c>.
+                   Then assigns <c>other.size()</c> to <c>other.head</c> and <c>other.s[other.head]</c> to <c>other.front</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable_v&lt;std::basic_string&lt;Ch, Tr, Allocator>></c>.</remark>
         </code-item>
       </section>
@@ -3279,8 +3282,10 @@ owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) noexcept(<
 size_type operator()(Ch* out, size_type n);
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>size_type rlen = s.copy(out, n, head);
+                   <code>s[head] = front;
+size_type rlen = s.copy(out, n, head);
 head += rlen;
+front = s[head];
 return rlen;</code>
           </effects>
         </code-item>
@@ -3291,8 +3296,10 @@ std::pair&lt;Ch*, size_type> operator()(size_type n = npos) noexcept;
           </code>
           <effects><p>Equivalent to:</p>
                    <code>size_type rlen = std::min(n, s.size() - head);
+s[head] = front;
 std::pair&lt;Ch*, size_type> r(s.data() + head, rlen);
 head += rlen;
+front = s[head];
 return r;</code>
           </effects>
         </code-item>
@@ -3305,7 +3312,7 @@ return r;</code>
           <code>
 void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Exchanges <c>s</c> and <c>other.s</c>, and, <c>head</c> and <c>other.head</c>, respectively.</effects>
+          <effects>Exchanges <c>s</c> and <c>other.s</c>, <c>head</c> and <c>other.head</c>, and <c>front</c> and <c>other.front</c> respectively.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;std::basic_string&lt;Ch, Tr, Allocator>></c>.</remark>
         </code-item>
       </section>

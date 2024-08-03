@@ -289,6 +289,7 @@ public:
 private:
     std::basic_string<Ch, Tr, Allocator> s_;
     size_type head_;
+    Ch front_;
 
 public:
     static_assert(std::is_same_v<Ch, typename Tr::char_type>);
@@ -301,17 +302,18 @@ public:
     owned_string_input()
         noexcept(std::is_nothrow_default_constructible_v<
             std::basic_string<Ch, Tr, Allocator>>) :
-        s_(), head_(0)
+        s_(), head_(0), front_(s_[head_])
     {}
 
     explicit owned_string_input(std::basic_string<Ch, Tr, Allocator>&& str)
         noexcept :
-        s_(std::move(str)), head_(0)
+        s_(std::move(str)), head_(0), front_(s_[head_])
     {}
 
     owned_string_input(owned_string_input&& other) noexcept :
         s_(std::move(other.s_)),
-        head_(std::exchange(other.head_, other.s_.size()))
+        head_(std::exchange(other.head_, other.s_.size())),
+        front_(s_[head_])
     {}
 
     ~owned_string_input() = default;
@@ -322,21 +324,26 @@ public:
     {
         s_ = std::move(other.s_);
         head_ = std::exchange(other.head_, other.s_.size());
+        front_ = std::exchange(other.front_, other.s_[other.head_]);
         return *this;
     }
 
     size_type operator()(Ch* out, size_type n)
     {
+        s_[head_] = front_;
         const auto len = s_.copy(out, n, head_);
         head_ += len;
+        front_ = s_[head_];
         return len;
     }
 
     std::pair<Ch*, size_type> operator()(size_type n = npos) noexcept
     {
+        s_[head_] = front_;
         const auto rlen = std::min(n, s_.size() - head_);
         std::pair<Ch*, size_type> r(s_.data() + head_, rlen);
         head_ += rlen;
+        front_ = s_[head_];
         return r;
     }
 
@@ -346,6 +353,7 @@ public:
         using std::swap;
         swap(s_, other.s_);
         swap(head_, other.head_);
+        swap(front_, other.front_);
     }
 };
 
