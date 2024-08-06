@@ -109,6 +109,11 @@ template <class Ch, class Tr>
 simple_transcriptor(std::basic_ostream<Ch, Tr>&, bool = false)
  -> simple_transcriptor<Ch, Tr>;
 
+// In addition to simple_transcriptor's interface:
+// {{               <- record start through nonconst interface
+// ((field))        <- field through nonconst interface
+// }}               <- record end through nonconst interface
+// ?                <- empty physical line through nonconst interface
 template <class Ch, class Tr = std::char_traits<std::remove_const_t<Ch>>>
 struct simple_transcriptor_with_nonconst_interface :
     simple_transcriptor<Ch, Tr>
@@ -161,9 +166,7 @@ struct simple_transcriptor_with_nonconst_interface :
         this->update(first, last);
         this->out() << "))"sv;
         this->set_in_value(false);
-        if constexpr (!std::is_const_v<Ch>) {
-            *last = Ch();
-        }
+        *last = Ch();
     }
 
     using simple_transcriptor<Ch, Tr>::end_record;
