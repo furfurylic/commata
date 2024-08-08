@@ -523,6 +523,10 @@ struct are_make_char_input_args_impl
 #pragma GCC diagnostic pop
 #endif
 
+    template <class... Args>
+    static auto check(indirect_t, std::void_t<Args...>* p) -> decltype(
+        check<Args...>(p));
+
     template <class...>
     static auto check(...) -> std::false_type;
 };
@@ -534,50 +538,71 @@ constexpr bool are_make_char_input_args_v =
 namespace input {
 
 template <class... Args>
-struct char_input_for
+struct char_input_for_primitive
 {
     using type = decltype(make_char_input(std::declval<Args>()...));
 };
 
+template <class...>
+struct char_input_for
+{};
+
+template <class Head, class... Tails>
+struct char_input_for<Head, Tails...>
+{
+    using type = typename std::conditional_t<
+        std::is_base_of_v<indirect_t, std::decay_t<Head>>,
+        char_input_for<Tails...>,
+        char_input_for_primitive<Head, Tails...>>::type;
+};
+
 template <class... Args>
-constexpr auto make_char_input_noexcept_na()
+constexpr auto make_char_input_noexcept_na(Args&&...)
  -> std::bool_constant<
         noexcept(make_char_input(std::declval<Args>()...))
      && std::is_move_constructible_v<
             decltype(make_char_input(std::declval<Args>()...))>>;
 
 template <class Input>
-constexpr auto make_char_input_noexcept_na()
+constexpr auto make_char_input_noexcept_na(Input&&)
  -> std::enable_if_t<!are_make_char_input_args_v<Input>,
         std::is_move_constructible<std::decay_t<Input>>>;
+
+template <class... Args>
+constexpr auto make_char_input_noexcept_na(indirect_t, Args&&...)
+ -> decltype(make_char_input_noexcept_na(std::declval<Args>()...));
 
 } // end input
 
 } // end detail
-
-template <class... Args>
-[[nodiscard]] auto make_char_input(indirect_t, Args&&... args) noexcept(
-    decltype(detail::input::make_char_input_noexcept_na<Args...>())())
- -> std::enable_if_t<
-        (detail::are_make_char_input_args_v<Args...> || (sizeof...(Args) == 1))
-     && !std::is_base_of_v<indirect_t, std::decay_t<detail::first_t<Args...>>>,
-        indirect_input<typename std::conditional_t<
-            detail::are_make_char_input_args_v<Args...>,
-            detail::input::char_input_for<Args...>,
-            std::decay<detail::first_t<Args...>>>::type>>
-{
-    if constexpr (detail::are_make_char_input_args_v<Args...>) {
-        return indirect_input(make_char_input(std::forward<Args>(args)...));
-    } else {
-        return indirect_input(std::forward<Args>(args)...);
-    }
-}
 
 template <class Input>
 [[nodiscard]]
 indirect_input<Input> make_char_input(indirect_t, indirect_input<Input> input)
 {
     return indirect_input(input.base());
+}
+
+template <class... Args>
+[[nodiscard]] auto make_char_input(indirect_t, Args&&... args) noexcept(
+    decltype(detail::input::make_char_input_noexcept_na(
+        std::declval<Args>()...))())
+ -> std::enable_if_t<
+        detail::are_make_char_input_args_v<Args...> || (sizeof...(Args) == 1),
+        indirect_input<typename std::conditional_t<
+            detail::are_make_char_input_args_v<Args...>,
+            detail::input::char_input_for<Args...>,
+            std::decay<detail::first_t<Args...>>
+        >::type>>
+{
+    if constexpr (std::is_base_of_v<indirect_t,
+                                    std::decay_t<detail::first_t<Args...>>>) {
+        return make_char_input(std::forward<Args>(args)...);    // recursive
+    } else if constexpr (detail::are_make_char_input_args_v<Args...>) {
+        return indirect_input(make_char_input(std::forward<Args>(args)...));
+    } else {
+        return indirect_input(std::forward<Args>(args)...);
+    }
 }
 
 }

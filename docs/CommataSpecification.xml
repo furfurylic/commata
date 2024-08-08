@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-08-03 (UTC)</signature>
+<signature>2024-08-07 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2807,11 +2807,11 @@ namespace commata {
   template &lt;class Ch, class Tr, class Allocator>
     [[nodiscard]] owned_string_input&lt;Ch, Tr, Allocator>
       make_char_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; in) noexcept;
-  template &lt;class... Args>
-    [[nodiscard]] <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
   template &lt;class Input>
     [[nodiscard]] indirect_input&lt;Input>
       make_char_input(indirect_t, indirect_input&lt;Input> input) noexcept(<nc>see below</nc>);
+  template &lt;class... Args>
+    [[nodiscard]] <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
 }
       </codeblock>
 
@@ -3487,26 +3487,28 @@ template &lt;class Ch, class Tr, class Allocator>
 
       <code-item>
         <code>
-template &lt;class... Args>
-  [[nodiscard]] <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
-        </code>
-        <effects><p>If <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand, equivalent to:</p>
-                 <code>auto in = make_char_input(std::forward&lt;Args>(args)...);
-return indirect_input&lt;decltype(in)>(std::move(in));
-</code>
-                 <p>Otherwise, equivalent to: <c>return indirect_input&lt;Args...>(std::forward&lt;Args>(args)...);</c></p></effects>
-        <remark>This overload shall not participate in overload resolution unless the first type in <c>std::decay_t&lt;Args>...</c> (if any) is not identical to or not derived from <c>indirect_t</c>, and either <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand or <c>sizeof...(Args)</c> is equal to <c>1</c>.
-                The expression inside <c>noexcept</c> is <c>true</c> unless the equivalent expressions described above is potentially-throwing.</remark>
-      </code-item>
-
-      <code-item>
-        <code>
 template &lt;class Input>
   [[nodiscard]] indirect_input&lt;Input>
     make_char_input(indirect_t, indirect_input&lt;Input> input) noexcept(<nc>see below</nc>);
         </code>
         <returns><c>indirect_input&lt;Input>(std::move(input.base()))</c>.</returns>
         <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Input></c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class... Args>
+  [[nodiscard]] <nc>see below</nc> make_char_input(indirect_t, Args&amp;&amp;... args) noexcept(<nc>see below</nc>);
+        </code>
+        <effects><p>Let <c>Ts</c> be a pack obtained by dropping the first consecutive members from <c>Args...</c> each of which is a possibly cv-qualified and possibly reference-added type of <c>indirect_t</c>,
+                    and let <c>ts</c> be a pack obtained by dropping the first members from <c>args...</c> corresponding to the members in <c>Args...</c> dropped to obtain <c>Ts</c>.
+                    Then if <c>make_char_input(std::declval&lt;Ts>()...)</c> is well-formed when treated as unevaluated operand, equivalent to:</p>
+                 <code>auto in = make_char_input(std::forward&lt;Ts>(ts)...);
+return indirect_input&lt;decltype(in)>(std::move(in));
+</code>
+                 <p>Otherwise, equivalent to: <c>return indirect_input&lt;Args...>(std::forward&lt;Args>(args)...);</c></p></effects>
+        <remark>This overload shall not participate in overload resolution unless the first type in <c>std::decay_t&lt;Args>...</c> (if any) is not identical to or not derived from <c>indirect_t</c>, and either <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand or <c>sizeof...(Args)</c> is equal to <c>1</c>.
+                The expression inside <c>noexcept</c> is <c>true</c> unless the equivalent expressions described above is potentially-throwing.</remark>
       </code-item>
     </section>
   </section>
