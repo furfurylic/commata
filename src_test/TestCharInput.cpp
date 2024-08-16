@@ -615,6 +615,15 @@ static_assert(
 static_assert(std::is_same_v<is_t,
     decltype(make_char_input(indirect, std::declval<is_t>()))>);
 
+static_assert(std::is_same_v<io_t,
+    decltype(make_char_input(indirect, indirect, "ABC"s))>);
+
+static_assert(std::is_same_v<is_t,
+    decltype(make_char_input(indirect, indirect, indirect, "ABC"sv))>);
+
+static_assert(std::is_same_v<is_t,
+    decltype(make_char_input(indirect, std::declval<is_t>()))>);
+
 }
 
 }
