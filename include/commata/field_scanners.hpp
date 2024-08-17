@@ -19,6 +19,7 @@
 
 #include "text_error.hpp"
 #include "text_value_translation.hpp"
+#include "detail/full_ebo.hpp"
 
 namespace commata {
 
@@ -708,7 +709,7 @@ public:
 };
 
 template <class Container, class SkippingHandler = fail_if_skipped>
-class string_field_inserter :
+class COMMATA_FULL_EBO string_field_inserter :
     detail::member_like_base<SkippingHandler>,
     detail::member_like_base<typename Container::value_type::allocator_type>
 {
