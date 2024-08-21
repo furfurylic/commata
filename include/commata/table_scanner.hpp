@@ -20,6 +20,7 @@
 
 #include "detail/allocation_only_allocator.hpp"
 #include "detail/buffer_size.hpp"
+#include "detail/full_ebo.hpp"
 #include "detail/member_like_base.hpp"
 #include "detail/typing_aid.hpp"
 
@@ -96,7 +97,7 @@ class basic_table_scanner
     };
 
     template <class HeaderScanner>
-    class typed_header_field_scanner :
+    class COMMATA_FULL_EBO typed_header_field_scanner :
         public header_field_scanner, detail::member_like_base<HeaderScanner>
     {
         static constexpr bool const_ready = std::is_invocable_v<HeaderScanner&,
@@ -170,13 +171,14 @@ class basic_table_scanner
         }
     };
 
-    struct body_field_scanner : field_scanner, detail::scanner::typable
+    struct COMMATA_FULL_EBO body_field_scanner :
+        field_scanner, detail::scanner::typable
     {
         virtual void field_skipped() = 0;
     };
 
     template <class FieldScanner>
-    struct typed_body_field_scanner :
+    struct COMMATA_FULL_EBO typed_body_field_scanner :
         body_field_scanner, private detail::member_like_base<FieldScanner>
     {
         template <class T>
@@ -265,7 +267,7 @@ class basic_table_scanner
     };
 
     template <class T>
-    struct typed_record_end_scanner :
+    struct COMMATA_FULL_EBO typed_record_end_scanner :
         record_end_scanner, private detail::member_like_base<T>
     {
         template <class U>

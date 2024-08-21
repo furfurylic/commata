@@ -11,6 +11,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "full_ebo.hpp"
+
 namespace commata::detail {
 
 namespace handler_decoration {
@@ -342,7 +344,7 @@ struct handler_core_t
 // to base()'s member functions with corresponding names; it does not expose
 // any excess member functions that Handler does not expose
 template <class Handler, class D>
-struct handler_decorator :
+struct COMMATA_FULL_EBO handler_decorator :
     get_buffer_t<Handler, D>, release_buffer_t<Handler, D>,
     start_buffer_t<Handler, D>, end_buffer_t<Handler, D>,
     empty_physical_line_t<Handler, D>, handler_core_t<Handler, D>,

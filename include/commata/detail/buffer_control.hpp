@@ -12,6 +12,7 @@
 #include <utility>
 
 #include "buffer_size.hpp"
+#include "full_ebo.hpp"
 #include "handler_decorator.hpp"
 #include "member_like_base.hpp"
 
@@ -103,7 +104,7 @@ constexpr bool is_full_fledged_v =
 // exception in its interface because it may be good for implementation of
 // optimized parsers to take advantage of their absence
 template <class Handler, class BufferControl>
-class full_fledged_handler :
+class COMMATA_FULL_EBO full_fledged_handler :
     BufferControl,
     public handler_core_t<Handler,
                           full_fledged_handler<Handler, BufferControl>>,

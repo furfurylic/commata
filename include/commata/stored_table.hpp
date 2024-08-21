@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "detail/buffer_size.hpp"
+#include "detail/full_ebo.hpp"
 #include "detail/member_like_base.hpp"
 #include "detail/propagation_controlled_allocator.hpp"
 #include "detail/string_value.hpp"
@@ -2075,7 +2076,7 @@ struct end_record_handler
 };
 
 template <class StoredTable, class T>
-struct typed_end_record_handler :
+struct COMMATA_FULL_EBO typed_end_record_handler :
     end_record_handler<StoredTable>, private detail::member_like_base<T>
 {
     template <class U>
