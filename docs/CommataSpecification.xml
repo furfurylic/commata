@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-08-19 (UTC)</signature>
+<signature>2024-08-22 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1921,7 +1921,7 @@ namespace commata {
 
     <c>// <n><xref id="replace_if_conversion_failed.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class All = T>
-      explicit replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
+      <nc>EXPLICIT</nc> replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
     template &lt;class Empty, class AllButEmpty>
       replace_if_conversion_failed(Empty&amp;&amp;            on_empty,
                                    const AllButEmpty&amp; for_all_but_empty) noexcept(<nc>see below</nc>);
@@ -2036,11 +2036,12 @@ static constexpr std::size_t size = <nc>see below</nc>;
           <code-item>
             <code>
 template &lt;class All = T>
-  explicit replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
+  <nc>EXPLICIT</nc> replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
             </code>
             <effects>Arranges all configurable replacement actions from <c>for_all</c>.</effects>
             <remark>This overload shall not participate in overload resolution unless <c><nc>IS_ACCEPTABLE</nc>&lt;const All&amp;></c> is <c>true</c>.
-                    The expression inside <c>noexcept</c> is equvalent to <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, const All&amp;></c>.</remark>
+                    The expression inside <c>noexcept</c> is equvalent to <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, const All&amp;></c>.
+                    This constructor is explicit if and only if <c>std::is_convertible_v&lt;const All&amp;, T></c> is <c>false</c>.</remark>
           </code-item>
 
           <code-item>
