@@ -164,6 +164,21 @@ namespace {
 
 using ReplacedTypes = testing::Types<double, std::string>;
 
+struct B
+{};
+
+struct D : B
+{};
+
+struct E
+{
+    explicit E(const B&)
+    {}
+};
+
+static_assert(std::is_convertible_v<D, replace_if_conversion_failed<B>>);
+static_assert(!std::is_convertible_v<B, replace_if_conversion_failed<E>>);
+
 } // end unnamed
 
 TYPED_TEST_SUITE(TestReplaceIfConversionFailed, ReplacedTypes);

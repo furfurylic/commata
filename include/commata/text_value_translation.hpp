@@ -830,8 +830,16 @@ template <class T>
 struct base<T, 3> : base_base<T, 3>
 {
     template <class All = T,
-        std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<!std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
     explicit base(const All& for_all = All()) :
+        base(for_all, for_all, for_all)
+    {}
+
+    template <class All = T,
+        std::enable_if_t<std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+    base(const All& for_all = All()) :
         base(for_all, for_all, for_all)
     {}
 
@@ -869,8 +877,16 @@ template <class T>
 struct base<T, 4> : base_base<T, 4>
 {
     template <class All = T,
-        std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<!std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
     explicit base(const All& for_all = All()) :
+        base(for_all, for_all, for_all, for_all)
+    {}
+
+    template <class All = T,
+        std::enable_if_t<std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+    base(const All& for_all = All()) :
         base(for_all, for_all, for_all, for_all)
     {}
 
@@ -925,8 +941,16 @@ template <class T>
 struct base<T, 5> : base_base<T, 5>
 {
     template <class All = T,
-        std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<!std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
     explicit base(const All& for_all = All()) :
+        base(for_all, for_all, for_all, for_all, for_all)
+    {}
+
+    template <class All = T,
+        std::enable_if_t<std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+    base(const All& for_all = All()) :
         base(for_all, for_all, for_all, for_all, for_all)
     {}
 
