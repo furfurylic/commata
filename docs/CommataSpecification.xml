@@ -7072,7 +7072,7 @@ template &lt;class U = T> std::optional&lt;U> operator()(U* = nullptr) const;
 
             <table id="table.replace_if_skipped.skipped">
               <caption>Effects of calling of <c>operator()</c></caption>
-              <col width="13"/><col width="5"/><col width="18"/>
+              <col width="2"/><col width="5"/><col width="29"/>
 
               <tr>
                 <th>#</th>
