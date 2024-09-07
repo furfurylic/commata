@@ -255,11 +255,12 @@ void one_pass_scanning_sample()
 the translated field value to its argument.
 
 The argument of it can be either of:
- - an lvalue to a non-const container object at the right position or the back
-   of which the translated field value is inserted,
- - an output iterator object which receives the translated field value, or
- - a function object which receives the translated field value as its one and
-   only parameter.
+
+- an lvalue to a non-const container object at the right position or the back
+  of which the translated field value is inserted,
+- an output iterator object which receives the translated field value, or
+- a function object which receives the translated field value as its one and
+  only parameter.
 
 In the last two cases, the type to which the field values are translated
 must be specified explicitly as the first template argument of
@@ -304,13 +305,14 @@ void one_pass_scanning_sample2()
 
 `make_field_translator` makes a body field scanner that translates the field
 values into the following types:
- - arithmetic types: `char`, `signed char`, `unsigned char`, `short`,
-   `unsigned short`, `int`, `unsigned int`, `long`, `unsigned long`,
-   `long long`, `unsigned long long`, `float`, `double`, `long double`,
- - standard string types: `std::basic_string<Ch, Tr, Allocator>` where `Ch` is
-   the identical type to the character type of the input text, and
- - standard string view types: `std::basic_string_view<Ch, Tr>` where `Ch` is
-   the identical type to the character type of the input text.
+
+- arithmetic types: `char`, `signed char`, `unsigned char`, `short`,
+  `unsigned short`, `int`, `unsigned int`, `long`, `unsigned long`,
+  `long long`, `unsigned long long`, `float`, `double`, `long double`,
+- standard string types: `std::basic_string<Ch, Tr, Allocator>` where `Ch` is
+  the identical type to the character type of the input text, and
+- standard string view types: `std::basic_string_view<Ch, Tr>` where `Ch` is
+  the identical type to the character type of the input text.
 
 To translate strings into arithmetic values, Commata employs C function
 `std::strtol` and its comrades declared in `<cstdlib>`.
@@ -755,14 +757,15 @@ view object).
 More technically (but still roughly speaking), `parse_csv(foo, bar)` is a
 shorthand for `make_csv_source(foo)(bar)()`.
 Each of these disintegrated steps is like the following:
- 1. You can call `make_csv_source` with either of a stream buffer, an input
-    stream, or a string (`foo` here), to get a _table source_ object.
- 1. A table source object is a function object that makes a _table parser_
-    object dedicated to a table handler object (`bar` here) with its inherent
-    knowledge of the grammar of CSV.
- 1. Finally, with its no-parameter invocation, the table parser object consumes
-    the input, parses it as a CSV, and reports parsing events to the table
-    handler.
+
+1. You can call `make_csv_source` with either of a stream buffer, an input
+   stream, or a string (`foo` here), to get a _table source_ object.
+1. A table source object is a function object that makes a _table parser_
+   object dedicated to a table handler object (`bar` here) with its inherent
+   knowledge of the grammar of CSV.
+1. Finally, with its no-parameter invocation, the table parser object consumes
+   the input, parses it as a CSV, and reports parsing events to the table
+   handler.
 
 ## Pull parsing
 
@@ -870,20 +873,21 @@ not a member of `table_pull<...>`. Why?
 
 This is because the table source made by `make_csv_source` from a read-only string
 prevents `table_pull` from declaring `c_str` member. Its mechanism is as follows:
- - The definition of `c_str` member must be accompanied by a code like
-   `*b = '\0'` or something, which puts a null character into a character
-   buffer to make a null-terminated sequence.
- - On the other hand, for the sake of performance, a `table_pull` object evades
-   making a copy of the input string as far as possible, that is, as far as
-   the input provides a readable character buffer.
- - A table source made by `make_csv_source` from a string is qualified to let
-   a `table_pull` object perform this copy evasion, which is called a _direct_
-   table source.
- - Now this copy evasion cuts in and the `table_pull` object has no
-   write-accessible character buffers (`make_csv_source` does not regard
-   a string as a write-accessible character buffer when it is passed as a
-   const-qualified one or as an lvalue), which inhibits `c_str` member from
-   being declared.
+
+- The definition of `c_str` member must be accompanied by a code like
+  `*b = '\0'` or something, which puts a null character into a character
+  buffer to make a null-terminated sequence.
+- On the other hand, for the sake of performance, a `table_pull` object evades
+  making a copy of the input string as far as possible, that is, as far as
+  the input provides a readable character buffer.
+- A table source made by `make_csv_source` from a string is qualified to let
+  a `table_pull` object perform this copy evasion, which is called a _direct_
+  table source.
+- Now this copy evasion cuts in and the `table_pull` object has no
+  write-accessible character buffers (`make_csv_source` does not regard
+  a string as a write-accessible character buffer when it is passed as a
+  const-qualified one or as an lvalue), which inhibits `c_str` member from
+  being declared.
 
 You can know whether `c_str` member is declared or not easily with `char_type`
 of the `table_pull` type. If is not const-qualified, `c_str` member is
