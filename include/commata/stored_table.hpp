@@ -1812,7 +1812,7 @@ void emigrate(ContainerFrom&& from, ContainerTo& to)
     }
 }
 
-// append_content: moves all elements (records) of l to r at its past-end
+// append_content: moves all elements (records) of r to l at its past-end
 // position with care of exceptions (that is, when exits via an exception,
 // removes inserted elements from l) with an assumption that all values will
 // become backed by one merged store
