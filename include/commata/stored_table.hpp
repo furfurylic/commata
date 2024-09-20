@@ -1545,7 +1545,8 @@ public:
 
     void shrink_to_fit()
     {
-        basic_stored_table(*this).swap(*this);     // throw
+        basic_stored_table(std::allocator_arg, get_allocator(), *this)
+            .swap(*this);   // throw
     }
 
     void swap(basic_stored_table& other)
