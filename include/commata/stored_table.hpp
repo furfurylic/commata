@@ -687,12 +687,12 @@ public:
         hwl_ = buffer_;
     }
 
-    bool is_cleared() noexcept
+    bool is_cleared() const noexcept
     {
         return buffer_ == hwl_;
     }
 
-    std::size_t size() noexcept
+    std::size_t size() const noexcept
     {
         return end_ - buffer_;
     }
@@ -832,7 +832,7 @@ public:
         return nullptr;
     }
 
-    std::pair<Ch*, Ch*> get_current() noexcept
+    std::pair<Ch*, Ch*> get_current() const noexcept
     {
         return buffers_ ?
             buffers_->unsecured_range() :
