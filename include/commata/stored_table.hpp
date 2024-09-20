@@ -704,7 +704,7 @@ struct store_node : store_buffer<Ch>
 {
     store_node* next;
 
-    explicit store_node(store_node* n) :
+    explicit store_node(store_node* n) noexcept :
         next(n)
     {}
 };
@@ -879,20 +879,17 @@ private:
     // Creates a node which holds [buffer, buffer + size) in front of next;
     // this function consumes [buffer, buffer + size) at once
     node_type* hello(Ch* buffer, std::size_t size, node_type* next)
-    {
-        node_type* n;
-        try {
-            typename nat_t::allocator_type na(this->get());
-            n = std::addressof(*nat_t::allocate(na, 1));    // throw
-            ::new(n) node_type(next);                       // throw
-        } catch (...) {
-            // We'd better not call "consume_buffer" because it calls "hello,"
-            // which is this function itself
-            at_t::deallocate(this->get(), pt_t::pointer_to(*buffer), size);
-            throw;
-        }
+    try {
+        typename nat_t::allocator_type na(this->get());
+        auto* const n  = std::addressof(*nat_t::allocate(na, 1));   // throw
+        ::new(n) node_type(next);
         n->attach(buffer, size);
         return n;
+    } catch (...) {
+        // We'd better not call "consume_buffer" because it calls "hello,"
+        // which is this function itself
+        at_t::deallocate(this->get(), pt_t::pointer_to(*buffer), size);
+        throw;
     }
 
     // Detachs buffer from a node and then destroys the node; throws nothing
