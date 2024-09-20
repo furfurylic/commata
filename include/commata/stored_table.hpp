@@ -939,6 +939,8 @@ public:
         swap_data(other);
     }
 
+    // Swaps not only data but also allocators forcefully; used by codes
+    // implemented in the "copy (or move) by swap" idiom
     void swap_force(table_store& other) noexcept
     {
         swap_alloc(other, std::true_type());
@@ -1219,7 +1221,7 @@ public:
         }
         store_type s(std::allocator_arg,
             store_.get_allocator(), std::move(other.store_));
-        store_.swap_force(s);
+        store_.swap_force(s);   // leave the allocator based by alloc
         using std::swap;
         swap(records_/*nullptr*/, other.records_);
     }
