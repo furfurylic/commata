@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-08-23 (UTC)</signature>
+<signature>2024-09-24 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2192,7 +2192,7 @@ template &lt;class Ch, class U = T>
                 <td>(1)</td>
                 <td rowspan="3"><c>action_on_invalid_format</c></td>
                 <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+                <td>Returns <c>std::optional&lt;U>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
               </tr>
 
               <tr>
@@ -2234,7 +2234,7 @@ template &lt;class Ch, class U = T>
                 <td rowspan="3">positive</td>
                 <td rowspan="3"><c>action_on_above_upper_limit</c></td>
                 <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+                <td>Returns <c>std::optional&lt;U>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
               </tr>
 
               <tr>
@@ -2254,7 +2254,7 @@ template &lt;class Ch, class U = T>
                 <td rowspan="3">negative</td>
                 <td rowspan="3"><c>action_on_below_lower_limit</c></td>
                 <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+                <td>Returns <c>std::optional&lt;U>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
               </tr>
 
               <tr>
@@ -2274,7 +2274,7 @@ template &lt;class Ch, class U = T>
                 <td rowspan="3"><c>0</c></td>
                 <td rowspan="3"><c>action_on_underflow</c></td>
                 <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+                <td>Returns <c>std::optional&lt;U>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
               </tr>
 
               <tr>
@@ -2314,7 +2314,7 @@ template &lt;class Ch, class U = T>
                 <td>(1)</td>
                 <td rowspan="3"><c>action_on_empty</c></td>
                 <td><c>copy</c></td>
-                <td>Returns <c>std::optional&lt;T>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
+                <td>Returns <c>std::optional&lt;U>(t)</c> where <c>t</c> is an object of <c>T</c> installed into this action.</td>
               </tr>
 
               <tr>
