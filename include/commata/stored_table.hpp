@@ -687,12 +687,12 @@ public:
         hwl_ = buffer_;
     }
 
-    bool is_cleared() noexcept
+    bool is_cleared() const noexcept
     {
         return buffer_ == hwl_;
     }
 
-    std::size_t size() noexcept
+    std::size_t size() const noexcept
     {
         return end_ - buffer_;
     }
@@ -704,7 +704,7 @@ struct store_node : store_buffer<Ch>
 {
     store_node* next;
 
-    explicit store_node(store_node* n) :
+    explicit store_node(store_node* n) noexcept :
         next(n)
     {}
 };
@@ -832,7 +832,7 @@ public:
         return nullptr;
     }
 
-    std::pair<Ch*, Ch*> get_current() noexcept
+    std::pair<Ch*, Ch*> get_current() const noexcept
     {
         return buffers_ ?
             buffers_->unsecured_range() :
@@ -879,20 +879,17 @@ private:
     // Creates a node which holds [buffer, buffer + size) in front of next;
     // this function consumes [buffer, buffer + size) at once
     node_type* hello(Ch* buffer, std::size_t size, node_type* next)
-    {
-        node_type* n;
-        try {
-            typename nat_t::allocator_type na(this->get());
-            n = std::addressof(*nat_t::allocate(na, 1));    // throw
-            ::new(n) node_type(next);                       // throw
-        } catch (...) {
-            // We'd better not call "consume_buffer" because it calls "hello,"
-            // which is this function itself
-            at_t::deallocate(this->get(), pt_t::pointer_to(*buffer), size);
-            throw;
-        }
+    try {
+        typename nat_t::allocator_type na(this->get());
+        auto* const n  = std::addressof(*nat_t::allocate(na, 1));   // throw
+        ::new(n) node_type(next);
         n->attach(buffer, size);
         return n;
+    } catch (...) {
+        // We'd better not call "consume_buffer" because it calls "hello,"
+        // which is this function itself
+        at_t::deallocate(this->get(), pt_t::pointer_to(*buffer), size);
+        throw;
     }
 
     // Detachs buffer from a node and then destroys the node; throws nothing
@@ -939,6 +936,8 @@ public:
         swap_data(other);
     }
 
+    // Swaps not only data but also allocators forcefully; used by codes
+    // implemented in the "copy (or move) by swap" idiom
     void swap_force(table_store& other) noexcept
     {
         swap_alloc(other, std::true_type());
@@ -1173,7 +1172,7 @@ public:
     {}
 
     basic_stored_table(const basic_stored_table& other) :
-        basic_stored_table(std::allocator_arg, 
+        basic_stored_table(std::allocator_arg,
             at_t::select_on_container_copy_construction(other.get_allocator()),
             other)
     {}
@@ -1219,7 +1218,7 @@ public:
         }
         store_type s(std::allocator_arg,
             store_.get_allocator(), std::move(other.store_));
-        store_.swap_force(s);
+        store_.swap_force(s);   // leave the allocator based by alloc
         using std::swap;
         swap(records_/*nullptr*/, other.records_);
     }
@@ -1721,38 +1720,44 @@ private:
     template <class OtherContent>
     void import_leaky(const OtherContent& other, content_type& records)
     {
-        detail::stored::reserve(
-            records, records.size() + other.size());                // throw
-
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-lambda-capture"
+#endif
         if constexpr (shares_buffers) {
             using va_t = typename at_t::template rebind_alloc<value_type>;
             using canon_t = std::unordered_set<value_type,
                 std::hash<value_type>, std::equal_to<value_type>, va_t>;
-
-            canon_t canonicals(va_t{get_allocator()});              // throw
-
-            for (const auto& r : other) {
-                const auto e = records.emplace(records.cend());     // throw
-                detail::stored::reserve(*e, r.size());              // throw
-                for (const auto& v : r) {
-                    const auto i = canonicals.find(v);
-                    if (i == canonicals.cend()) {
-                        const auto j =
-                            canonicals.insert(import_value(v));     // throw
-                        e->insert(e->cend(), *j.first);             // throw
-                    } else {
-                        e->insert(e->cend(), *i);                   // throw
-                    }
+            canon_t canon(va_t{get_allocator()});                   // throw
+            import_leaky_impl(other, records, [this, &canon](auto v) {
+                const auto i = canon.find(v);
+                if (i == canon.cend()) {
+                    return *canon.insert(import_value(v)).first;    // throw
+                } else {
+                    return *i;
                 }
-            }
-
+            });
         } else {
-            for (const auto& r : other) {
-                const auto e = records.emplace(records.cend());     // throw
-                detail::stored::reserve(*e, r.size());              // throw
-                for (const auto& v : r) {
-                    e->insert(e->cend(), import_value(v));          // throw
-                }
+            import_leaky_impl(other, records, [this](auto v) {
+                return import_value(v);                             // throw
+            });
+        }
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+    }
+
+    template <class OtherContent, class GetImported>
+    void import_leaky_impl(const OtherContent& other, content_type& records,
+        GetImported get_imported)
+    {
+        detail::stored::reserve(
+            records, records.size() + other.size());                // throw
+        for (const auto& r : other) {
+            const auto e = records.emplace(records.cend());         // throw
+            detail::stored::reserve(*e, r.size());                  // throw
+            for (const auto& v : r) {
+                e->insert(e->cend(), get_imported(v));              // throw
             }
         }
     }
@@ -1813,7 +1818,7 @@ void emigrate(ContainerFrom&& from, ContainerTo& to)
     }
 }
 
-// append_content: moves all elements (records) of l to r at its past-end
+// append_content: moves all elements (records) of r to l at its past-end
 // position with care of exceptions (that is, when exits via an exception,
 // removes inserted elements from l) with an assumption that all values will
 // become backed by one merged store
