@@ -25,43 +25,17 @@
   <section id="introduction.using">
     <name>Using Commata</name>
 
-    <section id="introduction.using.general">
-      <name>General</name>
-      <p>A translation unit may include headers described in this document in any order.
-        Each may be included more than once, with no effect different from being included exactly once.</p>
-      <p>A translation unit shall include a header described in this document only outside of any external declaration or definition, and shall include the header lexically before the first reference in that translation unit to any of the entities declared in that header.</p>
-      <p>A translation unit shall not define a macro whose name meets one of the following before a point of an <c>#include</c> preprocessor directive that includes a header described in this document:</p>
-      <ul>
-        <li>it consists only of one uppercase alphabetic letter,</li>
-        <li>it begins with a lowercase alphabetic letter,</li>
-        <li>it consists only of alphabetic letters and possibly zero decimal digit characters, and contains both of an uppercase alphabetic letter and a lowercase one, or</li>
-        <li>it begins with <c>COMMATA_</c> and is not identical to any of macros described in <xref id="macros"/>.</li>
-      </ul>
-      <p>Headers described in this document may define macros whose name begin with <c>COMMATA_</c> and may not define any macros with other names.</p>
-    </section>
-
-    <section id="macros">
-      <name>Macros controlling Commata</name>
-      <p>Commata offers macros that control the functionality of Commata as described in <xref id="table.macros"/>.
-         When these macros are defined, they shall be defined throughout all of Commata headers in any translation units forming the program.</p>
-      <table id="table.macros">
-        <caption>Macros controlling Commata</caption>
-        <col width="1"/><col width="6"/><col width="21"/>
-
-        <tr>
-          <th>#</th>
-          <th>Macro</th>
-          <th>Remarks</th>
-        </tr>
-
-        <tr>
-          <td>(1)</td>
-          <td><c>COMMATA_ENABLE_FULL_EBO</c></td>
-          <td>When specified, Commata strives to achieve the maximum level of so-called empty base optimization,
-              which is a technique to minimize sizes of class types with deriving from empty classes instead of having members of those types.</td>
-        </tr>
-      </table>
-    </section>
+    <p>A translation unit may include headers described in this document in any order.
+       Each may be included more than once, with no effect different from being included exactly once.</p>
+    <p>A translation unit shall include a header described in this document only outside of any external declaration or definition, and shall include the header lexically before the first reference in that translation unit to any of the entities declared in that header.</p>
+    <p>A translation unit shall not define a macro whose name meets one of the following before a point of an <c>#include</c> preprocessor directive that includes a header described in this document:</p>
+    <ul>
+      <li>it consists only of one uppercase alphabetic letter,</li>
+      <li>it begins with a lowercase alphabetic letter,</li>
+      <li>it consists only of alphabetic letters and possibly zero decimal digit characters, and contains both of an uppercase alphabetic letter and a lowercase one, or</li>
+      <li>it begins with <c>COMMATA_</c>.</li>
+    </ul>
+    <p>Headers described in this document may define macros whose name begin with <c>COMMATA_</c> and may not define any macros with other names.</p>
   </section>
 
   <section id="concepts">
