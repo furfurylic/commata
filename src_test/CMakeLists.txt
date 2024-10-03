@@ -66,7 +66,6 @@ source_group(TREE ${COMMATA_HEADERS_ROOT}
              FILES ${COMMATA_HEADERS})
 
 target_compile_features(test_commata PRIVATE cxx_std_17)
-add_compile_definitions(COMMATA_ENABLE_FULL_EBO)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(test_commata PRIVATE
