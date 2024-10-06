@@ -307,17 +307,21 @@ private:
     }
 };
 
-template <class T, class U>
+template <class T, class U> // for example, T is int and U is long
 struct restrained_converter
 {
+    template <class H>
+    using h_t = error_handler<T, H>;
+
     template <class Ch, class H>
-    auto operator()(
-        const Ch* begin, const Ch* end, error_handler<T, H> h) const
-     -> std::conditional_t<
-            error_handler<U, H>::template is_direct<Ch>, T, std::optional<T>>
+    using r_t = std::conditional_t<
+        h_t<H>::template is_direct<Ch>, T, std::optional<T>>;
+
+    template <class Ch, class H>
+    r_t<Ch, H> operator()(const Ch* begin, const Ch* end, h_t<H> h) const
     {
         const auto r = raw_converter<U>()(begin, end, h);
-        if constexpr (error_handler<U, H>::template is_direct<Ch>) {
+        if constexpr (h_t<H>::template is_direct<Ch>) {
             return restrain(r, begin, end, h);
         } else if (!r.has_value()) {
             return std::nullopt;
@@ -328,9 +332,7 @@ struct restrained_converter
 
 private:
     template <class Ch, class H>
-    static auto restrain(U r, const Ch* begin, const Ch* end, H h)
-     -> std::conditional_t<
-            error_handler<U, H>::template is_direct<Ch>, T, std::optional<T>>
+    static r_t<Ch, H> restrain(U r, const Ch* begin, const Ch* end, h_t<H> h)
     {
         if constexpr (std::is_unsigned_v<T>) {
             if constexpr (sizeof(T) < sizeof(U)) {
