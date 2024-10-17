@@ -289,15 +289,19 @@ struct handle_exception_t<Handler, D,
 };
 
 template <class Handler, class D>
-struct handler_core_t
+class handler_core_t
 {
     template <class Ch>
+    static constexpr bool enables_on =
+        std::is_same_v<
+            std::remove_const_t<typename Handler::char_type>,
+            std::remove_const_t<Ch>>
+     && std::is_convertible_v<Ch*, typename Handler::char_type*>;
+
+public:
+    template <class Ch>
     auto start_record(Ch* record_begin)
-     -> std::enable_if_t<
-            std::is_same_v<
-                std::remove_const_t<typename Handler::char_type>,
-                std::remove_const_t<Ch>>
-         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+     -> std::enable_if_t<enables_on<Ch>,
             decltype(std::declval<Handler&>().start_record(record_begin))>
     {
         return static_cast<D*>(this)->base().start_record(record_begin);
@@ -305,11 +309,7 @@ struct handler_core_t
 
     template <class Ch>
     auto end_record(Ch* record_end)
-     -> std::enable_if_t<
-            std::is_same_v<
-                std::remove_const_t<typename Handler::char_type>,
-                std::remove_const_t<Ch>>
-         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+     -> std::enable_if_t<enables_on<Ch>,
             decltype(std::declval<Handler&>().end_record(record_end))>
     {
         return static_cast<D*>(this)->base().end_record(record_end);
@@ -317,11 +317,7 @@ struct handler_core_t
 
     template <class Ch>
     auto update(Ch* first, Ch* last)
-     -> std::enable_if_t<
-            std::is_same_v<
-                std::remove_const_t<typename Handler::char_type>,
-                std::remove_const_t<Ch>>
-         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+     -> std::enable_if_t<enables_on<Ch>,
             decltype(std::declval<Handler&>().update(first, last))>
     {
         return static_cast<D*>(this)->base().update(first, last);
@@ -329,20 +325,16 @@ struct handler_core_t
 
     template <class Ch>
     auto finalize(Ch* first, Ch* last)
-     -> std::enable_if_t<
-            std::is_same_v<
-                std::remove_const_t<typename Handler::char_type>,
-                std::remove_const_t<Ch>>
-         && std::is_convertible_v<Ch*, typename Handler::char_type*>,
+     -> std::enable_if_t<enables_on<Ch>,
             decltype(std::declval<Handler&>().finalize(first, last))>
     {
         return static_cast<D*>(this)->base().finalize(first, last);
     }
 };
 
-// handler_decorator forwards all invocations on TextHandler requirements
-// to base()'s member functions with corresponding names; it does not expose
-// any excess member functions that Handler does not expose
+// handler_decorator forwards all invocations on TableHandler requirements
+// to Handler's member functions with corresponding names; it does not expose
+// any excess member functions
 template <class Handler, class D>
 struct COMMATA_FULL_EBO handler_decorator :
     get_buffer_t<Handler, D>, release_buffer_t<Handler, D>,

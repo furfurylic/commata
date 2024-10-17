@@ -59,8 +59,8 @@ reference_handler<Handler> wrap_ref(std::reference_wrapper<Handler> handler)
 }
 
 template <class Handler>
-[[nodiscard]] reference_handler<Handler> wrap_ref(reference_handler<Handler> handler)
-    noexcept
+[[nodiscard]] reference_handler<Handler> wrap_ref(
+    reference_handler<Handler> handler) noexcept
 {
     return reference_handler(handler);
 }
