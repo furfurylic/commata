@@ -99,12 +99,10 @@ public:
 template <class Ch>
 class char_helper
 {
-    static const std::ctype<Ch>& facet_;
-
 public:
     static Ch ch(char c)
     {
-        return facet_.widen(c);
+        return ctype().widen(c);
     }
 
     static std::basic_string<Ch> str(const char* s)
@@ -137,14 +135,18 @@ public:
     {
         const std::string s(std::forward<Args>(args)...);
         std::basic_string<Ch> ws(s.size(), 'x');
-        facet_.widen(s.data(), s.data() + s.size(), ws.data());
+        ctype().widen(s.data(), s.data() + s.size(), ws.data());
         return ws;
     }
-};
 
-template <class Ch>
-const std::ctype<Ch>& char_helper<Ch>::facet_ =
-    std::use_facet<std::ctype<Ch>>(std::locale::classic());
+private:
+    static const std::ctype<Ch>& ctype()
+    {
+        static const std::ctype<Ch>& static_ctype =
+            std::use_facet<std::ctype<Ch>>(std::locale::classic());
+        return static_ctype;
+    }
+};
 
 template <class Ch>
 struct french_style_numpunct : std::numpunct<Ch>
