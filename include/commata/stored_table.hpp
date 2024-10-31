@@ -1786,7 +1786,7 @@ void swap(
     left.swap(right);
 }
 
-namespace detail { namespace stored {
+namespace detail::stored {
 
 struct invoke_clear
 {
@@ -1889,7 +1889,7 @@ basic_stored_table<ContentL, AllocatorL> plus_impl(
     return std::move(left); // move is right for no copy elision would occur
 }
 
-}} // end namespace detail::stored
+} // end namespace detail::stored
 
 template <class Content, class Allocator>
 template <class OtherContent, class OtherAllocator>

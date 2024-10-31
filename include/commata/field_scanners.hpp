@@ -54,9 +54,7 @@ struct ignore_if_skipped
     }
 };
 
-namespace detail::scanner {
-
-namespace replace_if_skipped_impl {
+namespace detail::scanner::replace_if_skipped_impl {
 
 template <class T>
 class trivial_store
@@ -212,7 +210,7 @@ template <class T>
 using store_t = std::conditional_t<std::is_trivially_copyable_v<T>,
     trivial_store<T>, nontrivial_store<T>>;
 
-}}
+}
 
 template <class T>
 class replace_if_skipped
