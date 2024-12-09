@@ -856,7 +856,8 @@ private:
          && std::is_invocable_r_v<bool, Comp, string_type, value_type>,
             std::void_t<typename Comp::is_transparent>>
     {
-        if (const auto i = c.lower_bound(v); (i == c.end()) || (v < *i)) {
+        if (const auto i = c.lower_bound(v);
+                (i == c.end()) || c.key_comp()(v, *i)) {
             c.emplace_hint(i, v, get_allocator());
         }
     }
