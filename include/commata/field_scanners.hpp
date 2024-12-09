@@ -789,7 +789,7 @@ public:
         detail::scanner::field_skipped_impl<value_type>(
             std::ref(get_skipping_handler()),
             [this](auto&& v) {
-                emplace(*c_, std::move(v));
+                emplace(*c_, std::forward<decltype(v)>(v));
             });
     }
 
