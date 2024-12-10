@@ -184,7 +184,7 @@ TYPED_TEST(TestFieldTranslatorForStringTypes, StringFieldInserterUniqSet)
     const auto str = char_helper<char_t>::str;
 
     std::set<string_t, std::less<>> values1;
-    std::set<string_t, std::less<>> values2;
+    std::set<string_t, std::greater<>> values2;
 
     basic_table_scanner<char_t> scanner;
 
