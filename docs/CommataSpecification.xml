@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-09-24 (UTC)</signature>
+<signature>2024-12-12 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -975,7 +975,7 @@ namespace commata {
       <p>An object of <c>reference_handler&lt;Handler></c> is a wrapper around a reference to an object of <c>Handler</c> that is a (possibly half-fledged) table handler type.</p>
       <p>The template parameter <c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</p>
       <p><c>reference_handler&lt;Handler></c> meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Handler::char_type</c>.</p>
-      <p>An instance of <c>reference_handler</c> shall be a trivially copyable type.</p>
+      <p>Each specialization of <c>reference_handler</c> shall be a trivially copyable type.</p>
 
       <section id="reference_handler.cons">
         <name><c>reference_handler</c> construct/copy/destroy</name>
@@ -1954,7 +1954,7 @@ namespace commata {
         <p><c>T</c> shall meet the <c>CopyConstructible</c> requirements and the <c>Destructible</c> requirements.
            <c>T</c> shall not be equal to possibly cv-qualified types <c>replacement_fail_t</c> or <c>replacement_ignore_t</c>.</p>
         <p><c>replace_if_conversion_failed&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
-        <p>An object of an instance of <c>replace_if_conversion_failed</c> is configured with five replacement actions (<xref id="replacement_action"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
+        <p>Each object of a specialization of <c>replace_if_conversion_failed</c> is configured with five replacement actions (<xref id="replacement_action"/>): <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c>, and <c>action_on_underflow</c>.
            Each of these replacement actions is configured to be either of the three types illustrated in <xref id="table.replacement_action"/> independently for one object of <c>replace_if_conversion_failed</c>.</p>
         <p>In this subclause, a replacement action <c>r</c> of an object of <c>replace_if_conversion_failed</c> is called <n>unconfigurable</n> if:</p>
         <ul>
@@ -2423,10 +2423,10 @@ template &lt;class T, class ConversionErrorHandler, class A>
                     <c>std::remove_reference_t&lt;ConversionErrorHandler></c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>)
                        for the character type of <c>V</c> with its target type being <c>T</c>
                        except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
-          <effects><p>Let <c>U</c> be <c>typename T::value_type</c> if <c>T</c> is an instance of <c>std::optional</c>, <c>T</c> otherwise.
+          <effects><p>Let <c>U</c> be <c>typename T::value_type</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>T</c> otherwise.
                       First evaluates <c>errno = 0</c> and calls a parsing function indicated in <xref id="table.arithmetic_converter.parsing_functions"/>, optionally specifying decimal base, to get an arithmetic value <c>v</c> of the NTBS whose first element is pointed by <c>a.c_str()</c> (if it is well-formed when treated as an unevaluated operand) or <c>a->c_str()</c> (otherwise).
                       Then makes an <c>std::optional&lt;U></c> object <c>o</c> with an operation indicated in <xref id="table.arithmetic_converter.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
-                      Finally returns <c>o</c> if <c>T</c> is an instance of <c>std::optional</c>, <c>o.value()</c> otherwise.
+                      Finally returns <c>o</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>o.value()</c> otherwise.
                         In <xref id="table.arithmetic_converter.parsing_functions"/> and <xref id="table.arithmetic_converter.branching"/>,</p>
                       <ul>
                       <li><c>Ch</c> is the character type of <c>A</c>,</li>
@@ -2559,7 +2559,7 @@ template &lt;class T, class ConversionErrorHandler, class A>
           <code>
 template &lt;class T, class A> T to_arithmetic(const A&amp; a);
           </code>
-          <preface>Let <c>H</c> be <c>ignore_if_conversion_failed</c> if <c>T</c> is an instance of <c>std::optional</c>, <c>fail_if_conversion_failed</c> otherwise.</preface>
+          <preface>Let <c>H</c> be <c>ignore_if_conversion_failed</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_conversion_failed</c> otherwise.</preface>
           <effects>Equivalent to: <c>return to_arithmetic&lt;T>(a, H());</c></effects>
         </code-item>
       </section>
@@ -2848,7 +2848,7 @@ namespace commata {
 
       <p>The class template <c>streambuf_input</c> describes thin wrappers of stream buffers without any ownership of them.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c> and is a trivially copyable type.</p>
+      <p>Each specialization of <c>streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c> and is a trivially copyable type.</p>
 
       <section id="streambuf_input.cons">
         <name><c>streambuf_input</c> construct/copy/destroy</name>
@@ -2913,9 +2913,9 @@ namespace commata {
 }
       </codeblock>
 
-      <p>The class template <c>owned_streambuf_input</c> describes thin wrappers of an object of an derived type of an instance of <c>std::basic_streambuf</c> with the ownership of it.</p>
+      <p>The class template <c>owned_streambuf_input</c> describes thin wrappers of an object of an derived type of a specialization of <c>std::basic_streambuf</c> with the ownership of it.</p>
       <p>The template parameter <c>Streambuf</c> shall be the same type as, or be a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</p>
-      <p>An instance of <c>owned_streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
+      <p>Each specialization of <c>owned_streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
 
       <section id="owned_streambuf_input.cons">
         <name><c>owned_streambuf_input</c> construct/copy/destroy</name>
@@ -2988,7 +2988,7 @@ namespace commata {
 
       <p>The class template <c>istream_input</c> describes thin wrappers of input stream objects without any ownership of them.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c> and is a trivially copyable type.</p>
+      <p>Each specialization of <c>istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c> and is a trivially copyable type.</p>
 
       <section id="istream_input.cons">
         <name><c>istream_input</c> construct/copy/destroy</name>
@@ -3053,9 +3053,9 @@ namespace commata {
 }
       </codeblock>
 
-      <p>The class template <c>owned_istream_input</c> describes thin wrappers of an object of an derived type of an instance of <c>std::basic_istream</c> with the ownership of it.</p>
+      <p>The class template <c>owned_istream_input</c> describes thin wrappers of an object of an derived type of a specialization of <c>std::basic_istream</c> with the ownership of it.</p>
       <p>The template parameter <c>IStream</c> shall be the same type as, or be a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</p>
-      <p>An instance of <c>owned_istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>IStream::char_type</c>.</p>
+      <p>Each specialization of <c>owned_istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>IStream::char_type</c>.</p>
 
       <section id="owned_istream_input.cons">
         <name><c>owned_istream_input</c> construct/copy/destroy</name>
@@ -3135,7 +3135,7 @@ namespace commata {
 
       <p>The class template <c>string_input</c> describes thin wrappers of on-memory character sequences without any ownership of them.</p>
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>,
+      <p>Each specialization of <c>string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>,
          implements its optional const-direct interface,
          and is a trivially copyable type.</p>
 
@@ -3234,9 +3234,9 @@ namespace commata {
 }
       </codeblock>
 
-      <p>The class template <c>owned_string_input</c> describes thin wrappers of an object of an instance of <c>std::basic_string</c> with the ownership of it.</p>
+      <p>The class template <c>owned_string_input</c> describes thin wrappers of an object of a specialization of <c>std::basic_string</c> with the ownership of it.</p>
       <p>The template parameter <c>Ch</c> shall be a cv-unqualified char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
-      <p>An instance of <c>owned_string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>
+      <p>Each specialization of <c>owned_string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>
          and implements its optional nonconst-direct interface.</p>
 
       <section id="owned_string_input.cons">
@@ -3736,7 +3736,7 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
                    <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object,
                    an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
-          <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
+          <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not a specialization of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
                   The expression inside <c>noexcept</c> is equivalent to
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (first form) or
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (second form).</remark>
@@ -3838,7 +3838,7 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
                  <p>Otherwise, equivalent to:</p>
                  <code>return parse_csv(make_csv_source(std::forward&lt;Arg1>(arg1)),
                  std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs>(other_args)...);</code></effects>
-        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not either of an instance of <c>csv_source</c> or <c>indirect_t</c>,
+        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not either of a specialization of <c>csv_source</c> or <c>indirect_t</c>,
                 and either of <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_csv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
     </section>
@@ -4057,7 +4057,7 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
                    <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object,
                    an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
-          <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not an instance of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
+          <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not a specialization of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
                   The expression inside <c>noexcept</c> is equivalent to
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (first form) or
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (second form).</remark>
@@ -4159,7 +4159,7 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
                  <p>Otherwise, equivalent to:</p>
                  <code>return parse_tsv(make_tsv_source(std::forward&lt;Arg1>(arg1)),
                  std::forward&lt;Arg2>(arg2), std::forward&lt;OtherArgs>(other_args)...);</code></effects>
-        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not either of an instance of <c>tsv_source</c> or <c>indirect_t</c>,
+        <remark>This function template shall not participate in overload resolution unless <c>std::decay_t&lt;Arg1></c> is not either of a specialization of <c>tsv_source</c> or <c>indirect_t</c>,
                 and either of <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>())</c> or <c>make_tsv_source(std::declval&lt;Arg1&amp;&amp;>(), std::declval&lt;Arg2&amp;&amp;>())</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>
     </section>
@@ -4176,11 +4176,11 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
       <name>General</name>
 
       <p>Commata offers two class templates <c>record_extractor</c> (<xref id="record_extractor"/>) and <c>record_extractor_with_indexed_key</c> (<xref id="record_extractor_with_indexed_key"/>), whose instances meet <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>), as simple facilities to reduce text records.</p>
-      <p>An object of an instance of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> receives parsing events from a parser and forwards some qualified records into another stream.
+      <p>An object of a specialization of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> receives parsing events from a parser and forwards some qualified records into another stream.
          Whether a record is qualified to be forwarded or not is decided by the value of its field at the <n>target field index</n>.
          The target field index can be given explicitly by the program (with <c>record_extractor_with_indexed_key</c>), or can be decided in reference to the first one record (with <c>record_extractor</c>).</p>
       <p>A record that can not be decided whether it is qualified to be forwarded or not due to non-existence of the field at the target field index shall cause an exception.</p>
-      <p>An object of an instance of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
+      <p>Each object of a specialization of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
     </section>
 
     <section id="hpp.record_extractor.syn">
@@ -4308,7 +4308,7 @@ namespace commata {
 }
       </codeblock>
 
-      <p>An instance of <c>record_extractor</c> is a type that meets <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
+      <p>Each specialization of <c>record_extractor</c> is a type that meets <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
       <p>An object of it first scans the first record (hereinafter called the <n>header record</n>) to decide the target field index,
          and then scan the all non-header records to decide whether the record is forwarded to the stream in terms of their values of the field at the target field index.</p>
       <p>When the target field index is left undecided after the scanning of <c>record_extractor_npos - 1</c> text fields in the header record finished, an exception shall be thrown.</p>
@@ -4471,7 +4471,7 @@ namespace commata {
 }
       </codeblock>
 
-      <p>An instance of <c>record_extractor_with_indexed_key</c> is a type that meets <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
+      <p>Each specialization of <c>record_extractor_with_indexed_key</c> is a type that meets <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.</p>
       <p>It regards the first at most one record as the <n>header record</n>.
          It scans the all non-header records to decide whether the record is forwarded to the stream in terms of their values of the field at the target field index instructed with a parameter of its constructor explicitly.</p>
       <p><c>FieldValuePred</c> shall be a unary predicate type for a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returns a <c>bool</c> value.
@@ -4672,9 +4672,9 @@ template &lt;class FieldIdentifier, class FieldValuePred, class Ch, class Tr, cl
       <name>General</name>
 
       <p>Commata offers class template <c>basic_stored_table</c> (<xref id="basic_stored_table"/>), which is an implementation of a in-memory text table (<xref id="definitions.text_table"/>).
-         The text values of text fields contained by an object of an instance of it are represented by class template <c>basic_stored_value</c> (<xref id="basic_stored_value"/>),
+         The text values of text fields contained by an object of a specialization of it are represented by class template <c>basic_stored_value</c> (<xref id="basic_stored_value"/>),
          whose instance is a type whose object is actually a contiguous and null-terminated range of char type objects of the text table.</p>
-      <p>A text table is built by an object of an instance of <c>stored_table_builder</c> (<xref id="stored_table_builder"/>), whose instances meet <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</p>
+      <p>A text table is built by an object of a specialization of <c>stored_table_builder</c> (<xref id="stored_table_builder"/>), whose instances meet <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</p>
     </section>
 
     <section id="hpp.stored_table.syn">
@@ -5003,21 +5003,21 @@ namespace commata {
 }
       </codeblock>
 
-      <p>The class template <c>basic_stored_value</c> describes an object that references the text value of a text field in a text table (<xref id="definitions.text_table"/>) represented by an object of an instance of <c>basic_stored_table</c> (<xref id="basic_stored_table"/>).</p>
+      <p>The class template <c>basic_stored_value</c> describes an object that references the text value of a text field in a text table (<xref id="definitions.text_table"/>) represented by an object of a specialization of <c>basic_stored_table</c> (<xref id="basic_stored_table"/>).</p>
       <p><c>Ch</c> shall be a possibly const-qualified char-like type. <c>Tr</c> shall be a character traits type for <c>std::remove_const_t&lt;Ch></c>.</p>
       <p>The text value is represented by the range [<c>b</c>, <c>e</c>). <c>*e</c> is always equal to <c>0</c>.
          Programs can read from the range [<c>b</c>, <c>e</c>], and write to the range [<c>b</c>, <c>e</c>) if <c>Ch</c> is not const-qualified.
          To modify the size (that is, <c>e - b</c>), programs can use the store-accessing facilities (<xref id="basic_stored_table.rewrite"/>) of the <c>basic_stored_table</c> object concerned.</p>
-      <p>An instance of <c>basic_stored_value</c> is a trivially copyable type and meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>value_type</c>.</p>
+      <p>Each specialization of <c>basic_stored_value</c> is a trivially copyable type and meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>value_type</c>.</p>
       <p>On the types <c>basic_stored_value&lt;Ch, Tr>::iterator</c> and <c>basic_stored_value&lt;Ch, Tr>::const_iterator</c>, it shall be satisfied that:</p>
       <ul>
         <li>they shall meet the requirements of a random access iterator and a contiguous iterator,</li>
         <li><c>basic_stored_value&lt;Ch, Tr>::iterator</c> shall be convertible to <c>basic_stored_value&lt;Ch, Tr>::const_iterator</c>, and</li>
-        <li>each instance of <c>std::iterator_traits</c> on them shall have a set of member typedefs indicated in <xref id="table.basic_stored_value.iterator.typedefs"/>.</li>
+        <li>each specialization of <c>std::iterator_traits</c> on them shall have a set of member typedefs indicated in <xref id="table.basic_stored_value.iterator.typedefs"/>.</li>
       </ul>
 
       <table id="table.basic_stored_value.iterator.typedefs">
-        <caption>Member typedefs of each instance of <c>std::iterator_traits&lt;T></c> where <c>T</c> is either of <c>iterator</c> or <c>const_iterator</c> of <c>basic_stored_value&lt;Ch, Tr></c></caption>
+        <caption>Member typedefs of a specialization of <c>std::iterator_traits&lt;T></c> where <c>T</c> is either of <c>iterator</c> or <c>const_iterator</c> of <c>basic_stored_value&lt;Ch, Tr></c></caption>
         <col width="3"/><col width="5"/><col width="5"/>
 
         <tr>
@@ -5616,18 +5616,18 @@ namespace commata {
         <section id="basic_stored_table.defs">
           <name>Definitions</name>
 
-          <p>The <n>value type</n> of an object of an instance of <c>basic_stored_table&lt;Content, Allocator></c> denotes <c>typename Content::value_type::value_type</c>, which is an instance of <c>basic_stored_value</c>.</p>
+          <p>The <n>value type</n> of an object of <c>basic_stored_table&lt;Content, Allocator></c> denotes <c>typename Content::value_type::value_type</c>, which is a specialization of <c>basic_stored_value</c>.</p>
 
-          <p>The <n>char type</n> of an object of an instance of <c>basic_stored_table&lt;Content, Allocator></c> denotes <c>std::remove_const_t&lt;typename V::value_type></c> where <c>V</c> is the value type, which is a char-like type.</p>
+          <p>The <n>char type</n> of an object of <c>basic_stored_table&lt;Content, Allocator></c> denotes <c>std::remove_const_t&lt;typename V::value_type></c> where <c>V</c> is the value type, which is a char-like type.</p>
 
-          <p><n>Contained values</n> of an object <c>t</c> of an instance <c>T</c> of <c>basic_stored_table</c> denotes the objects of the value type in the content of <c>t</c>.</p>
+          <p><n>Contained values</n> of an object <c>t</c> of <c>basic_stored_table</c> denotes the objects of the value type in the content of <c>t</c>.</p>
 
-          <p>An object <c>v</c> of a value type is called <n>backed by</n> an object <c>t</c> of an instance of <c>basic_stored_table</c> if:</p>
+          <p>An object <c>v</c> of a value type is called <n>backed by</n> an object <c>t</c> of a specialization of <c>basic_stored_table</c> if:</p>
           <ul>
             <li><c>v.empty()</c> is not <c>false</c>, or</li>
             <li>the range [<c>v.cbegin()</c>, <c>v.cend()</c>] resides in a buffer in the store of <c>t</c>, and <c>*v.cend()</c> is equal to a value-initialized char type value.</li>
           </ul>
-          <p>An object of an instance of <c>basic_stored_table</c> is called <n>complete</n> if none of its contained values is not backed by it.</p>
+          <p>An object of a specialization of <c>basic_stored_table</c> is called <n>complete</n> if none of its contained values is not backed by it.</p>
 
           <p>Two objects <c>v</c> and <c>w</c> of value types, which are hereinafter referred to as <c>V</c> and <c>W</c> respectively, are called <n>overlapping</n> if:</p>
           <ul>
@@ -5640,7 +5640,7 @@ namespace commata {
         <section id="basic_stored_table.conds">
           <name>General requirements and postconditions</name>
 
-          <p>All member functions of <c>basic_stored_table</c> and all instances of non-member function templates declared in this header (<xref id="hpp.stored_table.syn"/>) that take at least one parameter whose reference-removed and cv-unqualified type is an instance of <c>basic_stored_table</c> require that the following conditions meet:</p>
+          <p>All member functions of <c>basic_stored_table</c> and all specializations of non-member function templates declared in this header (<xref id="hpp.stored_table.syn"/>) that take at least one parameter whose reference-removed and cv-unqualified type is a specialization of <c>basic_stored_table</c> require that the following conditions meet:</p>
           <ul>
              <li>all participating <c>basic_stored_table</c> objects are complete, and</li>
              <li>no two of the contained values of the participating <c>basic_stored_table</c> objects overlap.</li>
@@ -5946,7 +5946,7 @@ void secure_current_upto(char_type* secured_last);
       <section id="basic_stored_table.modifiers">
         <name><c>basic_stored_table</c> modifiers</name>
 
-        <p>To achieve clarity, in this subclause <c>operator[]</c> are used on an object <c>t</c> of an instance of <c>basic_stored_table</c> that does not necessarily have them well-defined. In these cases, the semaintics of <c>t[n]</c> is the same as that of <c>*std::next(t.content().cbegin(), n)</c>.</p>
+        <p>To achieve clarity, in this subclause <c>operator[]</c> are used on an object <c>t</c> of a specialization of <c>basic_stored_table</c> that does not necessarily have them well-defined. In these cases, the semaintics of <c>t[n]</c> is the same as that of <c>*std::next(t.content().cbegin(), n)</c>.</p>
 
         <code-item>
           <code>
@@ -6385,7 +6385,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
       <section id="record_end_scanner.requirements">
         <name><c>RecordEndScanner</c> requirements</name>
 
-        <p>A type <c>S</c> meets the <c>RecordEndScanner</c> requirements for an instance of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) <c>T</c> if:</p>
+        <p>A type <c>S</c> meets the <c>RecordEndScanner</c> requirements for a specialization of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) <c>T</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
           <li>the expression shown in <xref id="table.record_end_scanner.requirements"/> is valid and have the indicated semantics.</li>
@@ -6426,7 +6426,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
       <section id="header_field_scanner.requirements">
         <name><c>HeaderFieldScanner</c> requirements</name>
 
-        <p>A type <c>S</c> meets the <c>HeaderFieldScanner</c> requirements for an instance of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) <c>T</c> if:</p>
+        <p>A type <c>S</c> meets the <c>HeaderFieldScanner</c> requirements for a specialization of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) <c>T</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
           <li>the expression shown in <xref id="table.header_field_scanner.requirements"/> is valid and have the indicated semantics.</li>
@@ -6955,7 +6955,7 @@ namespace commata {
            An object of them supplements the corresponding field that is not found in a record with a fixed value.</p>
         <p><c>T</c> shall meet the <c>CopyConstructible</c> requirements and the <c>Destructible</c> requirements.
            <c>T</c> shall not be equal to possibly cv-qualified types <c>replacement_fail_t</c> or <c>replacement_ignore_t</c>.</p>
-        <p>An object of an instance of <c>replace_if_skipped</c> has a replacement action (<xref id="replacement_action"/>).</p>
+        <p>An object of a specialization of <c>replace_if_skipped</c> has a replacement action (<xref id="replacement_action"/>).</p>
         <p><c>replace_if_skipped&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
         <p><span class="note">For types <c>T</c> and <c>U</c> that satisfy <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>, <c>replace_if_skipped&lt;T></c> meets the <c>SkippingHandler</c> requirements for not only <c>T</c> but also <c>U</c> as its target type.</span></p>
 
@@ -7627,7 +7627,7 @@ namespace commata {
 
         <p>The <c>string_field_inserter</c> class template provides a simple implementation of <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) to populate a container of a standard string type.</p>
         <p>The template parameter <c>Container</c> shall be a sequence container type, an associative container type or an unordered associative container type.
-           <c>Container::value_type</c> shall be a type that is an instance of <c>std::basic_string</c>, which is called <c>S</c> in this paragraph and the next.
+           <c>Container::value_type</c> shall be a specialization of <c>std::basic_string</c>, which is called <c>S</c> in this paragraph and the next.
            The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type (<xref id="skipping_handler.requirements"/>) for <c>std::basic_string_view&lt;S::value_type, S::traits_type></c>.</p>
         <p>An object of <c>string_field_inserter&lt;Container, SkippingHandler></c> holds a reference to a container object of the type <c>Container</c> into which objects of the type <c>S</c> are inserted or emplaced,
            an allocator object of the type <c>S::allocator_type</c> used when inserted or emplaced objects of the type <c>S</c> objects are created,
@@ -8112,8 +8112,8 @@ using char_type = <nc>see below</nc>;
               otherwise, an unspecified type that is equal to either of <c>typename TableSource::char_type</c> or <c>const typename TableSource::char_type</c>.</type>
         <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
               For example, the program cannot overwrite character objects pointed by the return value of <c>operator[]</c> in such cases.
-              If <c>TableSource</c> is an instance of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
-              the program can ensure that it is not const-qualified specifying an instance of <c>indirect_input</c> (<xref id="indirect_input"/>) as the first template parameter of <c>csv_source</c> or <c>tsv_source</c> with possible performance degradation.</note>
+              If <c>TableSource</c> is a specialization of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
+              the program can ensure that it is not const-qualified specifying a specialization of <c>indirect_input</c> (<xref id="indirect_input"/>) as the first template parameter of <c>csv_source</c> or <c>tsv_source</c> with possible performance degradation.</note>
       </code-item>
     </section>
 
@@ -8453,7 +8453,7 @@ namespace commata {
     <p>An object of an instantiation of it holds a table parser object (<xref id="table_parser.requirements"/>) obtained from the table source object (<xref id="table_source.requirements"/>) passed to the constructor
        and performs field-wisely or record-wisely step-by-step parsing of a text table using it.
        Its user can retrieve the text values of the text fields through its <n>current string values</n>, which are null-terminated sequences of <c>TableSource::char_type</c>.</p>
-    <p>An instance of <c>table_pull</c> meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char_type</c> only if <c>char_type</c> is not const-qualified (<xref id="table_pull.types"/>).</p>
+    <p>Each specialization of <c>table_pull</c> meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char_type</c> only if <c>char_type</c> is not const-qualified (<xref id="table_pull.types"/>).</p>
 
     <section id="table_pull.types">
       <name><c>table_pull</c> member types</name>
@@ -8466,8 +8466,8 @@ using char_type = <nc>see below</nc>;
               otherwise, an unspecified type that is equal to either of <c>typename TableSource::char_type</c> or <c>const typename TableSource::char_type</c>.</type>
         <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
               For example, <c>c_str</c> member function is not declared in such cases.
-              If <c>TableSource</c> is an instance of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
-              the program can ensure that it is not const-qualified specifying an instance of <c>indirect_input</c> (<xref id="indirect_input"/>) as the first template parameter of <c>csv_source</c> or <c>tsv_source</c> with possible performance degradation.</note>
+              If <c>TableSource</c> is a specialization of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
+              the program can ensure that it is not const-qualified specifying a specialization of <c>indirect_input</c> (<xref id="indirect_input"/>) as the first template parameter of <c>csv_source</c> or <c>tsv_source</c> with possible performance degradation.</note>
       </code-item>
     </section>
 
