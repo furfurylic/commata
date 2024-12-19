@@ -339,7 +339,7 @@ public:
     {}
 
     template <class HeaderFieldScanner,
-        std::enable_if_t<!std::is_integral_v<HeaderFieldScanner>>* = nullptr>
+        std::enable_if_t<!std::is_arithmetic_v<HeaderFieldScanner>>* = nullptr>
     explicit basic_table_scanner(HeaderFieldScanner&& s) :
         basic_table_scanner(
             std::allocator_arg, Allocator(),
@@ -363,8 +363,8 @@ public:
     {}
 
     template <class HeaderFieldScanner,
-        std::enable_if_t<
-            !std::is_integral_v<std::decay_t<HeaderFieldScanner>>>* = nullptr>
+        std::enable_if_t<!std::is_arithmetic_v<
+            std::decay_t<HeaderFieldScanner>>>* = nullptr>
     basic_table_scanner(
         std::allocator_arg_t, const Allocator& alloc, HeaderFieldScanner&& s) :
         buffer_(), begin_(nullptr), value_(alloc),
