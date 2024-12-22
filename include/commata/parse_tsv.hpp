@@ -299,7 +299,7 @@ public:
     tsv_source& operator=(const tsv_source&) = default;
     tsv_source& operator=(tsv_source&&) = default;
 
-    void swap(tsv_source& other) noexcept(std::is_nothrow_swappable_v<base_t>)
+    void swap(tsv_source& other) noexcept(base_t::swap_noexcept)
     {
         base_t::swap(other);
     }

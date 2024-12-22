@@ -28,6 +28,7 @@ public:
     using char_type = typename CharInput::char_type;
     using traits_type = typename CharInput::traits_type;
 
+protected:
     explicit base_source(const CharInput& input) noexcept(
             std::is_nothrow_copy_constructible_v<CharInput>) :
         in_(input)
@@ -216,8 +217,11 @@ public:
                                 std::forward<Args>(args)...);
     }
 
-    void swap(base_source& other)
-        noexcept(std::is_nothrow_swappable_v<CharInput>)
+protected:
+    static constexpr bool swap_noexcept =
+        std::is_nothrow_swappable_v<CharInput>;
+
+    void swap(base_source& other) noexcept(swap_noexcept)
     {
         if (this != std::addressof(other)) {
             using std::swap;
