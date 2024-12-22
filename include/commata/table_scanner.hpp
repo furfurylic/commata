@@ -126,7 +126,7 @@ class basic_table_scanner
                          [[maybe_unused]] const Ch* end,
                          basic_table_scanner& me) override
         {
-            // Even when FieldScanner does not accepts const params, this will
+            // Even when FieldScanner does not accept const params, this will
             // be instantiated, which will never be called at run-time...
             assert(accepts_const());
             if constexpr (const_ready) {

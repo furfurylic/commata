@@ -22,7 +22,7 @@ class base_parser
 
     static_assert(std::is_same_v<typename Input::char_type, huc_t>,
         "Input::char_type and Handler::char_type are inconsistent; "
-        "they shall be the same type expect that the latter may be "
+        "they shall be the same type except that the latter may be "
         "const-qualified");
 
     static constexpr bool nonconst_direct = std::is_invocable_r_v<
