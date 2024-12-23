@@ -588,7 +588,7 @@ public:
     csv_source& operator=(const csv_source&) = default;
     csv_source& operator=(csv_source&&) = default;
 
-    void swap(csv_source& other) noexcept(std::is_nothrow_swappable_v<base_t>)
+    void swap(csv_source& other) noexcept(base_t::swap_noexcept)
     {
         base_t::swap(other);
     }
