@@ -372,7 +372,7 @@ public:
             }
             ++field_index_;
             if (field_index_ >= record_extractor_npos) {
-                throw no_matching_field();
+                throw_no_matching_field();
             }
         } else {
             if ((record_mode_ == record_mode::unknown)
@@ -395,7 +395,7 @@ public:
     {
         if (is_in_header()) {
             if (target_field_index_ == record_extractor_npos) {
-                throw no_matching_field();
+                throw_no_matching_field();
             }
             flush_record(record_end);
             header_mode_ = record_mode::unknown;
@@ -441,19 +441,25 @@ private:
         }
     }
 
-    record_extraction_error no_matching_field() const
+    [[noreturn]] void throw_no_matching_field() const
     {
         using namespace std::string_view_literals;
         constexpr auto what_core = "No matching field"sv;
+        record_extraction_error e;              // noexcept
         try {
             std::ostringstream what;
             what << what_core;
             write_formatted_field_name_of<Tr>(what, " for "sv, nf_.base(),
                 static_cast<const Ch*>(nullptr));
-            return record_extraction_error(std::move(what).str());
+            e = record_extraction_error(std::move(what).str());
         } catch (...) {
-            return record_extraction_error(what_core);
+            try {
+                e = record_extraction_error(what_core);
+            } catch (...) {
+                e = record_extraction_error();  // noexcept
+            }
         }
+        throw std::move(e);
     }
 
     void include()
