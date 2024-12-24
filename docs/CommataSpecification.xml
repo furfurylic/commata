@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-12-21 (UTC)</signature>
+<signature>2024-12-24 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -7760,7 +7760,7 @@ void operator()();
               <ul>
                 <li>if <c>s.push_back(std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::back_inserter(s)</c>,</li>
                 <li>otherwise, if <c>s.insert(s.end(), std::declval&lt;S::value_type>())</c> is well-formed when treated as an unevaluated operand, <c>std::inserter(s, s.end())</c>,</li>
-                <li>otherwise, the program is ill-formed.</li>
+                <li>otherwise, not defined as well-formed.</li>
               </ul></li>
         </ul>
 
