@@ -194,9 +194,9 @@ constexpr std::optional<std::common_type_t<T1, T2, Ts...>> add(
 
 struct literals
 {
-    constexpr static char and_line           [] = "; line ";
-    constexpr static char text_error_at_line [] = "Text error at line ";
-    constexpr static char column             [] = " column ";
+    constexpr static char and_line          [] = "; line ";
+    constexpr static char text_error_at_line[] = "Text error at line ";
+    constexpr static char column            [] = " column ";
 };
 
 template <class Ch, class Tr>

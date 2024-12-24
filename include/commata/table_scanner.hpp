@@ -349,8 +349,7 @@ public:
     basic_table_scanner(
         std::allocator_arg_t, const Allocator& alloc,
         std::size_t header_record_count = 0U) :
-        buffer_(),
-        begin_(nullptr), value_(alloc),
+        buffer_(nullptr), begin_(nullptr), value_(alloc),
         header_field_scanner_(
             (header_record_count > 0) ?
             allocate_construct<
@@ -358,8 +357,7 @@ public:
                     detail::scanner::counting_header_field_scanner>>(
                         header_record_count) :
             nullptr),
-        scanners_(scanners_a_t(bfs_ptr_p_a_t(alloc))),
-        end_scanner_(nullptr)
+        scanners_(scanners_a_t(bfs_ptr_p_a_t(alloc))), end_scanner_(nullptr)
     {}
 
     template <class HeaderFieldScanner,
@@ -367,7 +365,7 @@ public:
             std::decay_t<HeaderFieldScanner>>>* = nullptr>
     basic_table_scanner(
         std::allocator_arg_t, const Allocator& alloc, HeaderFieldScanner&& s) :
-        buffer_(), begin_(nullptr), value_(alloc),
+        buffer_(nullptr), begin_(nullptr), value_(alloc),
         header_field_scanner_(allocate_construct<
             typed_header_field_scanner<std::decay_t<HeaderFieldScanner>>>(
                 std::forward<HeaderFieldScanner>(s))),
