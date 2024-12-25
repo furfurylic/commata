@@ -74,7 +74,7 @@ private:
                     std::remove_const_t<typename Handler::char_type>,
                     typename traits_type::char_type>,
                 "std::decay_t<Handler>::char_type and traits_type::char_type "
-                "are inconsistent; they shall be the same type expect that "
+                "are inconsistent; they shall be the same type except that "
                 "the former may be const-qualified");
             return ret_t(
                     std::forward<CharInputR>(in),
@@ -108,7 +108,7 @@ private:
                     std::remove_const_t<typename Handler::char_type>,
                     typename traits_type::char_type>,
                 "std::decay_t<Handler>::char_type and traits_type::char_type "
-                "are inconsistent; they shall be the same type expect that "
+                "are inconsistent; they shall be the same type except that "
                 "the former may be const-qualified");
             static_assert(
                 std::is_same_v<
@@ -116,7 +116,7 @@ private:
                     typename std::allocator_traits<Allocator>::value_type>,
                 "std::decay_t<Handler>::char_type and "
                 "std::allocator_traits<Allocator>::value_type are "
-                "inconsistent; they shall be the same type expect that "
+                "inconsistent; they shall be the same type except that "
                 "the former may be const-qualified");
             return ret_t(
                     std::forward<CharInputR>(in),
