@@ -684,7 +684,7 @@ looks like ignored completely by `parse_csv`.
 
 In fact, it is table handlers (the second arguments to `parse_csv`) that ignored
 the empty line. To be precise, `parse_csv` reports empty lines to the text
-handlers with `empty_physical_line` function if they have it, but all text
+handlers with `empty_physical_line` member function if they have it, but all text
 handlers that we have mentioned so far do not have it, so `parse_csv` can not
 report the empty line to the table handlers.
 
@@ -950,7 +950,7 @@ void pull_parsing_sample3()
 ```
 
 Note that `indirect` is still specifiable with arguments that are inherently
-associated with a indirect table source. Thus, the following codes are valid:
+associated with an indirect table source. Thus, the following codes are valid:
 
 ```C++
 auto p = make_table_pull(
