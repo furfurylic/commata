@@ -151,19 +151,35 @@ using length_t = std::common_type_t<std::make_unsigned_t<std::streamsize>,
 constexpr std::streamsize nmax = std::numeric_limits<std::streamsize>::max();
 constexpr length_t unmax = static_cast<length_t>(nmax);
 
+namespace literals {
+
+constexpr char na                [] = "n/a";
+constexpr char and_line          [] = "; line ";
+constexpr char text_error_at_line[] = "Text error at line ";
+constexpr char column            [] = " column ";
+
+};
+
+constexpr std::size_t print_pos_min_n = std::max<std::size_t>(
+    std::numeric_limits<std::size_t>::digits10 + 2, sizeof literals::na);
+
 // Prints a non-negative integer value in the decimal system
 // into a sufficient-length buffer
 template <std::size_t N>
 std::size_t print_pos(char (&s)[N], std::size_t pos, std::size_t base)
 {
+    using literals::na;
+    static_assert(N >= print_pos_min_n);
+    static_assert(na[(sizeof na) - 1] == '\0');
     const auto len = (pos != text_error::npos)
                   && (text_error::npos - base >= pos) ?
         std::snprintf(s, N, "%zu", pos + base) :
-        std::snprintf(s, N, "n/a");
+        (std::memcpy(s, na, sizeof na), (sizeof na) - 1);
     assert((len > 0) && (static_cast<std::size_t>(len) < N));
         // According to the spec of snprintf, len shall not be greater than
         // the maximum value of the type of N, which is std::size_t,
         // so casting it to std::size_t shall be safe
+    assert(s[len] == '\0');
     return static_cast<std::size_t>(len);
 }
 
@@ -191,13 +207,6 @@ constexpr std::optional<std::common_type_t<T1, T2, Ts...>> add(
         return std::nullopt;
     }
 }
-
-struct literals
-{
-    constexpr static char and_line          [] = "; line ";
-    constexpr static char text_error_at_line[] = "Text error at line ";
-    constexpr static char column            [] = " column ";
-};
 
 template <class Ch, class Tr>
 class sputn_engine
@@ -289,12 +298,11 @@ std::basic_ostream<Ch, Tr>& operator<<(
     }
 
     // line
-    char l[std::max(std::numeric_limits<std::size_t>::digits10 + 2, 4)];
-        // 4 is the size of "n/a"
+    char l[detail::ex::print_pos_min_n];
     const auto l_len = print_pos(l, p->first, i.get_base());
 
     // column
-    char c[std::size(l)];
+    char c[detail::ex::print_pos_min_n];
     const auto c_len = print_pos(c, p->second, i.get_base());
 
     // what
