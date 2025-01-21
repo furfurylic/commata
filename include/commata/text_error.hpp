@@ -158,7 +158,7 @@ constexpr char and_line          [] = "; line ";
 constexpr char text_error_at_line[] = "Text error at line ";
 constexpr char column            [] = " column ";
 
-};
+}
 
 constexpr std::size_t print_pos_min_n = std::max<std::size_t>(
     std::numeric_limits<std::size_t>::digits10 + 2, sizeof literals::na);
