@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2024-12-24 (UTC)</signature>
+<signature>2025-01-25 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2502,8 +2502,8 @@ template &lt;class T, class ConversionErrorHandler, class A>
               <col width="1"/><col width="1"/><col width="1"/><col width="1"/><col width="4"/>
 
               <tr>
-                <th>The call consumed all characters in the text value</th>
-                <th>The text value contains at least one character</th>
+                <th>The call consumed all non-space characters in the text value</th>
+                <th>The text value contains at least one non-space character</th>
                 <th><c>errno != ERANGE</c></th>
               <th><c>v</c> is in the domain of <c>U</c></th>
                 <th>Operation</th>
