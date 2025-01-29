@@ -230,21 +230,22 @@ private:
     }
 };
 
-template <class T>
+template <class U>
 struct raw_converter
 {
-    template <class Ch, class U, class H>
+    template <class Ch, class T, class H>
     auto operator()(
-        const Ch* begin, const Ch* end, error_handler<U, H> h) const
+        const Ch* begin, const Ch* end, error_handler<T, H> h) const
      -> std::conditional_t<
-            error_handler<U, H>::template is_direct<Ch>, T, std::optional<T>>
+            error_handler<T, H>::template is_direct<Ch>, U, std::optional<U>>
     {
-        // For examble, when T is long, it is possible that U is int
-        static_assert(std::is_convertible_v<U, T>);
+        // For examble, when U is long, it is possible that T is int
+        static_assert(std::is_convertible_v<T, U>);
 
         Ch* middle;
         errno = 0;
-        const T r = engine(begin, &middle);
+        const U r = engine(begin, &middle);
+        const auto e = errno;
 
         const auto has_postfix =
             std::any_of<const Ch*>(middle, end, [](Ch c) {
@@ -256,7 +257,7 @@ struct raw_converter
         } else if (begin == middle) {
             // whitespace only
             return h(empty_t());
-        } else if (errno == ERANGE) {
+        } else if (e == ERANGE) {
             return h(out_of_range_t(), begin, end, erange(r));
         } else {
             return r;
@@ -264,30 +265,30 @@ struct raw_converter
     }
 
 private:
-    static T engine(const char* s, char** e)
+    static U engine(const char* s, char** e)
     {
-        if constexpr (std::is_floating_point_v<T>) {
-            return numeric_type_traits<T>::strto(s, e);
+        if constexpr (std::is_floating_point_v<U>) {
+            return numeric_type_traits<U>::strto(s, e);
         } else {
-            return numeric_type_traits<T>::strto(s, e, 10);
+            return numeric_type_traits<U>::strto(s, e, 10);
         }
     }
 
-    static T engine(const wchar_t* s, wchar_t** e)
+    static U engine(const wchar_t* s, wchar_t** e)
     {
-        if constexpr (std::is_floating_point_v<T>) {
-            return numeric_type_traits<T>::wcsto(s, e);
+        if constexpr (std::is_floating_point_v<U>) {
+            return numeric_type_traits<U>::wcsto(s, e);
         } else {
-            return numeric_type_traits<T>::wcsto(s, e, 10);
+            return numeric_type_traits<U>::wcsto(s, e, 10);
         }
     }
 
-    static int erange([[maybe_unused]] T v)
+    static int erange([[maybe_unused]] U v)
     {
-        if constexpr (std::is_floating_point_v<T>) {
-            return (v > T()) ? 1 : (v < T()) ? -1 : 0;
-        } else if constexpr (std::is_signed_v<T>) {
-            return (v > T()) ? 1 : -1;
+        if constexpr (std::is_floating_point_v<U>) {
+            return (v > U()) ? 1 : (v < U()) ? -1 : 0;
+        } else if constexpr (std::is_signed_v<U>) {
+            return (v > U()) ? 1 : -1;
         } else {
             return 1;
         }
