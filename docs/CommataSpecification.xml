@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-01-25 (UTC)</signature>
+<signature>2025-02-01 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -729,7 +729,7 @@ text_error&amp; operator=(const text_error&amp; other) noexcept;
           <code>
 text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
           </code>
-          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position() == nullptr)</c> shall be <c>true</c> where <c>c</c> is an object that should be copy constructed from <c>other</c> before the call.</postcondition>
+          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be <c>true</c> where <c>c</c> is an object that should be copy constructed from <c>other</c> before the call.</postcondition>
           <returns><c>*this</c>.</returns>
         </code-item>
       </section>
