@@ -8338,7 +8338,7 @@ std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<n
                  Otherwise, <c>std::make_pair(npos, npos)</c>.</returns>
         <throws>Nothing.</throws>
         <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>physical_position_available</c> is <c>false</c>.
-                Otherwise, it is equivalent to <c>noexcept(p.get_physical_position()))</c> where <c>p</c> is the internal table parser object.</remark>
+                Otherwise, it is equivalent to <c>noexcept(p.get_physical_position())</c> where <c>p</c> is the internal table parser object.</remark>
       </code-item>
 
       <code-item>
