@@ -741,7 +741,7 @@ text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
           <code>
 text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col = npos) noexcept;
           </code>
-          <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>*this</c> holds no physical position information and <c>get_physical_position() == std::nullopt</c> shall be <c>true</c>. Otherwise, <c>*this</c> holds a physical position information and <c>*get_physical_position() == std::make_pair(line, col)</c> shall be <c>true</c>.</postcondition>
+          <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>*this</c> holds no physical position information and <c>!get_physical_position()</c> shall be <c>true</c>. Otherwise, <c>*this</c> holds a physical position information and <c>*get_physical_position() == std::make_pair(line, col)</c> shall be <c>true</c>.</postcondition>
           <returns><c>*this</c>.</returns>
           <remark><c>line</c> and <c>col</c> shall be <c>npos</c> or zero-based numbers of the row and the column.
                   <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
@@ -752,8 +752,9 @@ text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col =
 std::optional&lt;std::pair&lt;std::size_t, std::size_t>> get_physical_position() const noexcept;
           </code>
           <returns>If <c>*this</c> holds a physical position information possibly set by the last invocation of <c>set_physical_position</c>, an pair of its line number and column number. Otherwise, <c>std::nullopt</c>.</returns>
-          <remark><c>p->first</c> and <c>p->second</c> shall be <c>npos</c> or zero-based numbers of the row and the column where <c>p</c> is the return value that is not equal to <c>std::nullopt</c>.
+          <remark><c>p->first</c> and <c>p->second</c> shall be <c>npos</c> or zero-based numbers of the row and the column where <c>p</c> is the return value that contains a value.
                   <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
+          <note>If the return value <c>p</c> contains a value, at least one of <c>p->first</c> or <c>p->second</c> shall not be equal to <c>npos</c>.</note>
         </code-item>
       </section>
     </section>
