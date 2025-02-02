@@ -25,21 +25,20 @@ class base_parser
         "they shall be the same type except that the latter may be "
         "const-qualified");
 
-    static constexpr bool nonconst_direct = std::is_invocable_r_v<
-        std::pair<huc_t*, typename Input::size_type>, Input&, is_t>;
+    static constexpr bool const_direct = std::is_const_v<hc_t>
+     && std::is_invocable_r_v<std::pair<hc_t*, is_t>, Input&, is_t>;
+    static constexpr bool nonconst_direct =
+        std::is_invocable_r_v<std::pair<huc_t*, is_t>, Input&, is_t>;
 
 public:
     using reads_direct = std::bool_constant<
         Handler::buffer_control_defaulted
-     && ((std::is_const_v<typename Handler::char_type>
-       && std::is_invocable_r_v<
-            std::pair<hc_t*, typename Input::size_type>, Input&, is_t>)
-      || nonconst_direct)>;
+     && (const_direct || nonconst_direct)>;
 
-    using char_type = std::remove_const_t<typename Handler::char_type>;
+    using char_type = huc_t;
     using buffer_char_t = std::conditional_t<
         nonconst_direct || !reads_direct::value,
-        char_type, typename Handler::char_type>;
+        huc_t, hc_t>;
 
 private:
     // Reading position
