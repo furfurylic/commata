@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-02-01 (UTC)</signature>
+<signature>2025-02-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -229,7 +229,7 @@
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or (10) (second argument), and</li>
                 <li><c>be</c> be the second argument of the latest evaluation of (4).</li>
               </ul>
-              <p>The type of <c>rb</c> shall be the same as the type of <c>vb</c>.
+              <p>The type of <c>re</c> shall be the same as the type of <c>vb</c>.
                  <c>re</c> points one past the last element of the characters that forms the record, not of the text value of the final field of the record.
                  <span class="note">To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</span>
                  The pointee of <c>re</c> resides in [<c>vb</c>, <c>be</c>).</p>
