@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-01-25 (UTC)</signature>
+<signature>2025-02-05 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -346,7 +346,8 @@
           <td>Retrieves the text content from its tied character source object, parses the text content, and calls the member functions of its tied table handler object compliantly with the <c>TableHandler</c> requirements.
               Returns <c>false</c> if the return value of a call on <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c>, or <c>finalize</c> is <c>false</c>; <c>true</c> otherwise.
               Throws an object of <c>parse_error</c> (<xref id="parse_error"/>) or its derived type if the text content cannot be parsed into a text table (<xref id="definitions.text_table"/>).
-              <span class="note">Implementations are free to exit via an exception on erroneous situations other than this.</span>
+              <span class="note">Implementations are free to exit via an exception on erroneous situations other than this.
+                                 To be specific, implementations need not have so-called exception-neutral nature.</span>
               If this returns <c>false</c> or exits via an exception, then this becomes unable to be called again.</td>
         </tr>
 
