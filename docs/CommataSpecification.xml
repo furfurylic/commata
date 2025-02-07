@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-01-25 (UTC)</signature>
+<signature>2025-02-06 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3816,7 +3816,7 @@ template &lt;class CharInputR>
 template &lt;class CharInput, class... OtherArgs>
   bool parse_csv(const csv_source&lt;CharInput>&amp;  src, OtherArgs&amp;&amp;... other_args);
         </code>
-        <effects>Equivalent to: <c>return src(std::forward&lt;OtherArgs>(other_args)...)();</c>.</effects>
+        <effects>Equivalent to: <c>return static_cast&lt;bool>(src(std::forward&lt;OtherArgs>(other_args)...)());</c>.</effects>
       </code-item>
 
       <code-item>
@@ -3824,7 +3824,7 @@ template &lt;class CharInput, class... OtherArgs>
 template &lt;class CharInput, class... OtherArgs>
   bool parse_csv(      csv_source&lt;CharInput>&amp;&amp; src, OtherArgs&amp;&amp;... other_args);
         </code>
-        <effects>Equivalent to: <c>return std::move(src)(std::forward&lt;OtherArgs>(other_args)...)();</c>.</effects>
+        <effects>Equivalent to: <c>return static_cast&lt;bool>(std::move(src)(std::forward&lt;OtherArgs>(other_args)...)());</c>.</effects>
       </code-item>
 
       <code-item>
@@ -4137,7 +4137,7 @@ template &lt;class CharInputR>
 template &lt;class CharInput, class... OtherArgs>
   bool parse_tsv(const tsv_source&lt;CharInput>&amp;  src, OtherArgs&amp;&amp;... other_args);
         </code>
-        <effects>Equivalent to: <c>return src(std::forward&lt;OtherArgs>(other_args)...)();</c>.</effects>
+        <effects>Equivalent to: <c>return static_cast&lt;bool>(src(std::forward&lt;OtherArgs>(other_args)...)());</c>.</effects>
       </code-item>
 
       <code-item>
@@ -4145,7 +4145,7 @@ template &lt;class CharInput, class... OtherArgs>
 template &lt;class CharInput, class... OtherArgs>
   bool parse_tsv(      tsv_source&lt;CharInput>&amp;&amp; src, OtherArgs&amp;&amp;... other_args);
         </code>
-        <effects>Equivalent to: <c>return std::move(src)(std::forward&lt;OtherArgs>(other_args)...)();</c>.</effects>
+        <effects>Equivalent to: <c>return static_cast&lt;bool>(std::move(src)(std::forward&lt;OtherArgs>(other_args)...)());</c>.</effects>
       </code-item>
 
       <code-item>
