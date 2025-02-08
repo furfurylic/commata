@@ -668,13 +668,14 @@ constexpr bool is_indirect_t_v<indirect_t> = true;
 template <class CharInput, class... OtherArgs>
 bool parse_csv(const csv_source<CharInput>& src, OtherArgs&&... other_args)
 {
-    return src(std::forward<OtherArgs>(other_args)...)();
+    return static_cast<bool>(src(std::forward<OtherArgs>(other_args)...)());
 }
 
 template <class CharInput, class... OtherArgs>
 bool parse_csv(csv_source<CharInput>&& src, OtherArgs&&... other_args)
 {
-    return std::move(src)(std::forward<OtherArgs>(other_args)...)();
+    return static_cast<bool>(
+        std::move(src)(std::forward<OtherArgs>(other_args)...)());
 }
 
 template <class Arg1, class Arg2, class... OtherArgs>
