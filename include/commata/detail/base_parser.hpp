@@ -204,12 +204,17 @@ yield_2:
         }
 yield_end:
         return true;
+    } catch (const parse_aborted&) {
+        return false;
     } catch (text_error& e) {
         e.set_physical_position(
             physical_line_index_, get_physical_column_index());
         throw;
-    } catch (const parse_aborted&) {
-        return false;
+    } catch (...) {
+        text_error e;
+        e.set_physical_position(
+            physical_line_index_, get_physical_column_index());
+        std::throw_with_nested(std::move(e));
     }
 #ifdef _MSC_VER
 #pragma warning(pop)

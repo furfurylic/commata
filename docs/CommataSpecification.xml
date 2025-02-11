@@ -345,6 +345,9 @@
           <td>A type contextually convertible to <c>bool</c></td>
           <td>Retrieves the text content from its tied character source object, parses the text content, and calls the member functions of its tied table handler object compliantly with the <c>TableHandler</c> requirements.
               Returns <c>false</c> if the return value of a call on <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c>, or <c>finalize</c> is <c>false</c>; <c>true</c> otherwise.
+              Throws an object of <c>parse_error</c> (<xref id="parse_error"/>) or its derived type if the text content cannot be parsed into a text table (<xref id="definitions.text_table"/>).
+              <span class="note">Implementations are free to exit via an exception on erroneous situations other than this.
+                                 To be specific, implementations need not have so-called exception-neutral nature.</span>
               If this returns <c>false</c> or exits via an exception, then this becomes unable to be called again.</td>
         </tr>
 
@@ -879,7 +882,7 @@ namespace commata {
 }
       </codeblock>
 
-      <p>An exception of type <c>parse_error</c> is thrown by the parser, for example by <c>parse_csv</c> (<xref id="parse_csv"/>), when the text does not have an appropriate format.</p>
+      <p>An exception of type <c>parse_error</c> is thrown by a text parser (<xref id="table_parser.requirements"/>) to indicate that the text is not in an appropriate format.</p>
     </section>
   </section>
 
