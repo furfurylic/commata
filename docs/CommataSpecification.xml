@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-02-06 (UTC)</signature>
+<signature>2025-02-17 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -64,6 +64,15 @@
         <li>A text record is a sequence of <n>text fields</n>.</li>
         <li>Each text field has its <n>text value</n>, which is a sequence of the char type objects.</li>
       </ul>
+    </section>
+
+    <section id="definitions.parse_point">
+      <name>Parse points</name>
+
+      <p>Every table parser (<xref id="concepts"/>) has its <n>parse point</n> when it is processing a sequence of char-like objects.
+         A parse point refers a char-like object in, or one-past-the-end point, of the sequence currently being processed.
+         It refers the first char-like object when the table parser has just begun processing a non-empty sequence.
+         It never steps back in the sequence while the table parser is consuming the sequence.</p>
     </section>
 
     <section id="definitions.others">
@@ -187,6 +196,7 @@
           <td><p>Evaluated when the parser finds an empty line outside any record.
                  Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5)
                  and shall not occur between an evaluation of (7) and its corresponding evaluation of (8).</p>
+              <p>When starting evaluating this, the parser shall have its parse point on one past <c>w</c>.</p>
               <p>Here let:</p>
               <ul>
                 <li><c>gb</c> be the return value of the latest evaluation of (2), and</li>
@@ -204,6 +214,7 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser begins to process a record.
                  Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5).</p>
+              <p>When starting evaluating this, the parser shall have its parse point on <c>rb</c>.</p>
               <p>Here let:</p>
               <ul>
                 <li><c>gb</c> be the return value of the latest evaluation of (2), and</li>
@@ -224,6 +235,7 @@
           <td><p>Evaluated when the parser finishes processing a record.
                  Evaluating this shall occur after an evaluation of (7) only once; and
                  after an evaluation of (4) and before its corresponding evaluation of (5).</p>
+              <p>When evaluating this, the parser shall have its parse point on one past <c>re</c>.</p>
               <p>Here let:</p>
               <ul>
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or (10) (second argument), and</li>
@@ -243,6 +255,8 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser finds a non-final chunk of a field value.
                  Evaluating this shall occur after an evaluation of (4) and before its corresponding evaluation of (5), and after an evaluation of (7) and before its corresponding evaluation of (8).</p>
+              <p>When evaluating this, the parser shall have its parse point on or after <c>l</c>.
+                 The first argument of the first evaluation of (8), (9) or (10) next to the evaluation of this shall point a character on or after this parse point.</p>
               <p>Here let:</p>
               <ul>
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), this (second argument) or (10) (second argument), and</li>
@@ -264,6 +278,8 @@
           <td><c>void</c> or a type contextually convertible to <c>bool</c></td>
           <td><p>Evaluated when the parser finds a final chunk of a field value.
                  Evaluating of this shall occur after an evaluation of (4) and before its corresponding evaluation of (5), and after an evaluation of (7) and before its corresponding evaluation of (8).</p>
+              <p>When evaluating this, the parser shall have its parse point on or after <c>l</c>.
+                 The first argument of the first evaluation of (8), (9) or (10) next to the evaluation of this shall point a character on or after this parse point.</p>
               <p>Here let:</p>
               <ul>
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or this (second argument), and</li>
@@ -384,7 +400,7 @@
           <td>(4)</td>
           <td><c>ct.get_physical_position()</c></td>
           <td><c>std::pair&lt;std::size_t, std::size_t></c></td>
-          <td>Returns a pair of the physical line number and the physical column number (<xref id="definitions.others"/>).
+          <td>Returns a pair of the physical line number and the physical column number (<xref id="definitions.others"/>) of the current parse point (<xref id="definitions.parse_point"/>).
               The numbers are zero-based.
               <c>-1</c> means shall mean &#x2018;no information&#x2019;.
               Shall not exit via an exception.</td>
@@ -3672,7 +3688,8 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character source object and an object of <c>Handler</c> as its tied table handler object.
                           If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.
-                          Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character source object, its tied table handler object, and the allocator object held by it if any.</alias-template>
+                          Invocation of <c>operator()</c> on an object of <c>P</c> might exit via a <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character source object, its tied table handler object, and the allocator object held by it if any.
+                          When this invocation exits via a <c>text_error</c> (<xref id="text_error"/>) with a physical position information, the physical position information might represent the current parse point (<xref id="definitions.parse_point"/>).</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
       </section>
@@ -3993,7 +4010,8 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character source object and an object of <c>Handler</c> as its tied table handler object.
                           If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.
-                          Invocation of <c>operator()</c> on an object of <c>P</c> might throw <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character source object, its tied table handler object, and the allocator object held by it if any.</alias-template>
+                          Invocation of <c>operator()</c> on an object of <c>P</c> might exit via a <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character source object, its tied table handler object, and the allocator object held by it if any.
+                          When this invocation exits via a <c>text_error</c> (<xref id="text_error"/>) with a physical position information, the physical position information might represent the current parse point (<xref id="definitions.parse_point"/>).</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
       </section>
