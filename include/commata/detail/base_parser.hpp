@@ -57,6 +57,7 @@ private:
     Input in_;
     buffer_char_t* buffer_;
     buffer_char_t* buffer_last_;
+    std::size_t buffer_offset_;
 
     State s_;
     bool record_started_;
@@ -81,6 +82,7 @@ public:
         physical_line_or_buffer_begin_(nullptr),
         physical_line_chars_passed_away_(0),
         in_(std::forward<InputR>(in)), buffer_(nullptr), buffer_last_(nullptr),
+        buffer_offset_(0),
         s_(D::first_state), record_started_(false), eof_reached_(false)
     {}
 
@@ -96,6 +98,7 @@ public:
         in_(std::move(other.in_)),
         buffer_(std::exchange(other.buffer_, nullptr)),
         buffer_last_(other.buffer_last_),
+        buffer_offset_(other.buffer_offset_),
         s_(other.s_), record_started_(other.record_started_),
         eof_reached_(other.eof_reached_)
     {}
@@ -153,6 +156,9 @@ private:
 
         do {
             {
+                if (buffer_) {
+                    buffer_offset_ += buffer_last_ - buffer_;
+                }
                 const auto [buffer_size, loaded_size] = arrange_buffer();
                 p_ = buffer_;
                 physical_line_or_buffer_begin_ = buffer_;
@@ -194,9 +200,11 @@ yield_2:
             f_.release_buffer(buffer_);
                 // Calling release_buffer is alright even if
                 // reads_direct::value is true (see comments in the dtor)
-            buffer_ = nullptr;
             physical_line_chars_passed_away_ +=
                 p_ - physical_line_or_buffer_begin_;
+            buffer_offset_ += p_ - buffer_;
+            buffer_ = nullptr;
+            p_ = nullptr;
         } while (!eof_reached_);
 
         if constexpr (has_yield_v<Handler>) {
@@ -223,6 +231,11 @@ yield_end:
 #endif
 
 public:
+    std::size_t get_parse_point() const noexcept
+    {
+        return buffer_offset_ + (p_ - buffer_);
+    }
+
     std::pair<std::size_t, std::size_t> get_physical_position() const noexcept
     {
         return { physical_line_index_, get_physical_column_index() };

@@ -579,11 +579,41 @@ TYPED_TEST_P(TestTablePull, ToArithmetic)
     ASSERT_EQ(std::stod("1234.5"), y2);
 }
 
+TYPED_TEST_P(TestTablePull, ParsePoint)
+{
+    using char_t = typename TypeParam::first_type;
+
+    const auto ch = char_helper<char_t>::ch;
+    const auto strv = char_helper<char_t>::strv;
+
+    const auto row1 = "Col1,\"Col2\""sv;
+    const auto row2_val1 = "Val11"sv;
+    const auto row2_val2 = "Val21"sv;
+
+    const auto str = strv(row1) + ch('\n') +
+                     ch('\"') + strv(row2_val1) + ch('\"') + ch(',') +
+                     strv(row2_val2) + strv("\n\n");
+    auto pull = make_table_pull(make_csv_source(str),
+                                TypeParam::second_type::value);
+
+    pull.skip_record();
+    ASSERT_EQ(table_pull_state::record_end, pull.state());   // precondition
+    ASSERT_EQ(row1.size(), pull.get_parse_point());
+    pull(); // "Val11"
+    ASSERT_GE(pull.get_parse_point(),
+        row1.size() + 2/*LF+DQUOTE*/ + row2_val1.size());
+    ASSERT_LT(pull.get_parse_point(),
+        row1.size() + 2/*LF+DQUOTE*/ + row2_val1.size() + 2/*DQUOTE+COMMA*/);
+    pull(); // Val21
+    pull(); // EOF
+    ASSERT_EQ(str.size(), pull.get_parse_point() + 2/*LF+LF*/);
+}
+
 REGISTER_TYPED_TEST_SUITE_P(TestTablePull,
     PrimitiveBasicsOnCsv, PrimitiveBasicsOnTsv,
     PrimitiveMove, PrimitiveEvadeCopying, PrimitiveEvadeCopyingNonconst,
     Basics, SkipRecord, SkipField, Error, EvadeCopying, EvadeCopyingNonconst,
-    Move, ToArithmetic);
+    Move, ToArithmetic, ParsePoint);
 
 namespace {
 

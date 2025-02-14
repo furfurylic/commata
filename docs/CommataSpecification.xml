@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-02-17 (UTC)</signature>
+<signature>2025-02-18 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -364,7 +364,7 @@
               Throws an object of <c>parse_error</c> (<xref id="parse_error"/>) or its derived type if the text content cannot be parsed into a text table (<xref id="definitions.text_table"/>).
               <span class="note">Implementations are free to exit via an exception on erroneous situations other than this.
                                  To be specific, implementations need not have so-called exception-neutral nature.</span>
-              If this returns <c>false</c> or exits via an exception, then this becomes unable to be called again.</td>
+              If this returns <c>false</c> or exits via an exception, then this ((1)) becomes unable to be called again.</td>
         </tr>
 
         <tr>
@@ -372,6 +372,14 @@
           <td><c>ct.~T()</c></td>
           <td>(Not used)</td>
           <td>Calls <c>release_buffer</c> of its tied table handler object if and only if the latest call of (1) left a buffer obtained with <c>get_buffer</c> of the table handler object unreleased.</td>
+        </tr>
+
+        <tr>
+          <td>(3)</td>
+          <td><c>ct.get_parse_point()</c></td>
+          <td><c>std::size_t</c></td>
+          <td>Returns the number of characters from the first character consumed by the first evaluation of (1) to its current parse point (<xref id="definitions.parse_point"/>).
+              Shall not exit via an exception.</td>
         </tr>
       </table>
 
@@ -390,14 +398,14 @@
         </tr>
 
         <tr>
-          <td>(3)</td>
+          <td>(4)</td>
           <td><c>T::reads_direct</c></td>
           <td>Identical to or derived from <c>std::true_type</c> or <c>std::false_type</c></td>
           <td><c>std::true_type</c> only if any objects of <c>T</c> do not require any buffers to store char-like objects informed to its tied table handler object.</td>
         </tr>
 
         <tr>
-          <td>(4)</td>
+          <td>(5)</td>
           <td><c>ct.get_physical_position()</c></td>
           <td><c>std::pair&lt;std::size_t, std::size_t></c></td>
           <td>Returns a pair of the physical line number and the physical column number (<xref id="definitions.others"/>) of the current parse point (<xref id="definitions.parse_point"/>).
@@ -8090,6 +8098,7 @@ namespace commata {
     <c>// <n><xref id="primitive_table_pull.state"/>, state:</n></c>
     primitive_table_pull_state state() const noexcept;
     explicit operator bool() const noexcept;
+    std::size_t get_parse_point() const noexcept(<nc>see below</nc>);
     std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<nc>see below</nc>);
     char_type*       operator[](size_type i);
     const char_type* operator[](size_type i) const;
@@ -8352,13 +8361,24 @@ explicit operator bool() const noexcept;
 
       <code-item>
         <code>
+std::size_t get_parse_point() const noexcept(<nc>see below</nc>);
+        </code>
+        <preface>Let <c>p</c> denote the internal table parser object.</preface>
+        <returns><c>p.get_parse_point()</c>.</returns>
+        <throws>Nothing.</throws>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(p.get_parse_point()))</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
 std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<nc>see below</nc>);
         </code>
-        <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c> where <c>p</c> is the internal table parser object.
+        <preface>Let <c>p</c> denote the internal table parser object.</preface>
+        <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c>.
                  Otherwise, <c>std::make_pair(npos, npos)</c>.</returns>
         <throws>Nothing.</throws>
         <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>physical_position_available</c> is <c>false</c>.
-                Otherwise, it is equivalent to <c>noexcept(p.get_physical_position()))</c> where <c>p</c> is the internal table parser object.</remark>
+                Otherwise, it is equivalent to <c>noexcept(p.get_physical_position())</c>.</remark>
       </code-item>
 
       <code-item>
@@ -8440,6 +8460,7 @@ namespace commata {
     <c>// <n><xref id="table_pull.state"/>, state:</n></c>
     table_pull_state state() const noexcept;
     explicit operator bool() const noexcept;
+    std::size_t get_parse_point() const noexcept(<nc>see below</nc>);
     std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<nc>see below</nc>);
     std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
     const char_type* c_str() const noexcept;
@@ -8607,17 +8628,20 @@ table_pull&amp; skip_record(std::size_t n = 0);
         <code>
 table_pull_state state() const noexcept;
         </code>
-        <returns>A value of <c>table_pull_state</c> that tells the current status of <c>*this</c> as shown in <xref id="table.table_pull.state"/>.</returns>
+        <returns>A value of <c>table_pull_state</c> that tells the current status of <c>*this</c> as shown in <xref id="table.table_pull.state"/>.
+                 In <xref id="table.table_pull.state"/>, a <n>parse events</n> is that the internal table parser invokes one of <c>start_record</c>, <c>end_record</c>, <c>empty_physical_line</c>, <c>update</c> or <c>finalize</c> member functions on its tied table handler specified in the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</returns>
+        <note>The reason why the latest parse events are specified here is to give practical use to <c>get_parse_point</c> and <c>get_physical_position</c> member functions of this class template.</note>
 
         <table id="table.table_pull.state">
           <caption>The meanings of the values <c>state()</c> returns</caption>
-          <col width="5"/><col width="18"/><col width="81"/><col width="27"/>
+          <col width="4"/><col width="14"/><col width="66"/><col width="27"/><col width="20"/>
 
           <tr>
             <th>#</th>
             <th>Value</th>
             <th>The current status of <c>*this</c></th>
             <th>The current string value</th>
+            <th>The lastest parse event</th>
           </tr>
 
           <tr>
@@ -8625,6 +8649,7 @@ table_pull_state state() const noexcept;
             <td><c>before_parse</c></td>
             <td>Neither <c>operator()</c> nor <c>skip_record</c> has never been called yet.</td>
             <td>An empty string</td>
+            <td>None</td>
           </tr>
 
           <tr>
@@ -8632,6 +8657,7 @@ table_pull_state state() const noexcept;
             <td><c>eof</c></td>
             <td><c>*this</c> has already consumed all content of the table source.</td>
             <td>An empty string</td>
+            <td>Unspecified</td>
           </tr>
 
           <tr>
@@ -8639,6 +8665,7 @@ table_pull_state state() const noexcept;
             <td><c>field</c></td>
             <td><c>*this</c> has reached a text field with the latest call of <c>operator()</c>.</td>
             <td>The text value of the text field</td>
+            <td><c>finalize</c></td>
           </tr>
 
           <tr>
@@ -8646,6 +8673,7 @@ table_pull_state state() const noexcept;
             <td><c>record_end</c></td>
             <td><c>*this</c> has reached an end of the a text record with the latest call of <c>operator()</c> or <c>skip_record</c>.</td>
             <td>An empty string</td>
+            <td><c>end_record</c> or <c>empty_physical_line</c></td>
           </tr>
         </table>
       </code-item>
@@ -8659,13 +8687,24 @@ explicit operator bool() const noexcept;
 
       <code-item>
         <code>
+std::size_t get_parse_point() const noexcept(<nc>see below</nc>);
+        </code>
+        <preface>Let <c>p</c> denote the internal table parser object.</preface>
+        <returns><c>p.get_parse_point()</c>.</returns>
+        <throws>Nothing.</throws>
+        <remark>The expression inside <c>noexcept</c> is equivalent to <c>noexcept(p.get_parse_point()))</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
 std::pair&lt;std::size_t, std::size_t> get_physical_position() const noexcept(<nc>see below</nc>);
         </code>
-        <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c> where <c>p</c> is the internal table parser object.
+        <preface>Let <c>p</c> denote the internal table parser object.</preface>
+        <returns>If <c>physical_position_available</c> is <c>true</c>, <c>p.get_physical_position()</c>.
                  Otherwise, <c>std::make_pair(npos, npos)</c>.</returns>
         <throws>Nothing.</throws>
         <remark>The expression inside <c>noexcept</c> is <c>true</c> if <c>physical_position_available</c> is <c>false</c>.
-                Otherwise, it is equivalent to <c>noexcept(p.get_physical_position()))</c> where <c>p</c> is the internal table parser object.</remark>
+                Otherwise, it is equivalent to <c>noexcept(p.get_physical_position())</c>.</remark>
       </code-item>
 
       <code-item>
