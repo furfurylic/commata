@@ -548,6 +548,12 @@ public:
         return s != primitive_table_pull_state::eof;
     }
 
+    std::size_t get_parse_point() const
+        noexcept(noexcept(std::declval<const parser_t&>().get_parse_point()))
+    {
+        return ap_.member().get_parse_point();
+    }
+
     primitive_table_pull& operator()()
     {
         assert(!sq_->empty());
@@ -852,6 +858,12 @@ public:
     std::pair<std::size_t, std::size_t> get_position() const noexcept
     {
         return std::make_pair(i_, j_);
+    }
+
+    std::size_t get_parse_point() const
+        noexcept(noexcept(p_.get_parse_point()))
+    {
+        return p_.get_parse_point();
     }
 
     std::pair<std::size_t, std::size_t> get_physical_position() const
