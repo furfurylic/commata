@@ -379,7 +379,7 @@ public:
     {
         assert(!record_started_);
         do_or_abort([this] {
-            f_.empty_physical_line(p_);
+            return f_.empty_physical_line(p_);
         });
     }
 
