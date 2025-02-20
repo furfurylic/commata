@@ -16,6 +16,7 @@ target_sources(commata INTERFACE
     include/commata/field_scanners.hpp
     include/commata/parse_csv.hpp
     include/commata/parse_error.hpp
+    include/commata/parse_result.hpp
     include/commata/parse_tsv.hpp
     include/commata/record_extractor.hpp
     include/commata/stored_table.hpp
