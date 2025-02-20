@@ -11,7 +11,29 @@
 
 #include "handler_decorator.hpp"
 
-namespace commata::detail {
+namespace commata {
+namespace detail{
+
+class parse_result
+{
+    bool good_;
+    std::size_t parse_point_;
+
+public:
+    parse_result(bool good, std::size_t offset) noexcept :
+        good_(good), parse_point_(offset)
+    {}
+
+    explicit operator bool() const noexcept
+    {
+        return good_;
+    }
+
+    std::size_t get_parse_point() const noexcept
+    {
+        return parse_point_;
+    }
+};
 
 template <class Input, class Handler, class State, class D>
 class base_parser
@@ -66,7 +88,9 @@ private:
 private:
     // To make control flows clearer, we adopt exceptions. Sigh...
     struct parse_aborted
-    {};
+    {
+        buffer_char_t* pos;
+    };
 
 public:
     template <class InputR, class HandlerR,
@@ -114,7 +138,7 @@ public:
         }
     }
 
-    bool operator()()
+    parse_result operator()()
     {
         if constexpr (has_handle_exception_v<Handler>) {
             try {
@@ -136,7 +160,7 @@ private:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-label"
 #endif
-    bool invoke_impl()
+    parse_result invoke_impl()
     try {
         if constexpr (has_yield_location_v<Handler>) {
             switch (f_.yield_location()) {
@@ -175,7 +199,7 @@ private:
 
                 if constexpr (has_yield_v<Handler>) {
                     if (f_.yield(1)) {
-                        return true;
+                        return parse_result(true, get_parse_point());
                     }
                 }
 yield_1:
@@ -193,7 +217,7 @@ yield_1:
             f_.end_buffer(buffer_last_);
             if constexpr (has_yield_v<Handler>) {
                 if (f_.yield(2)) {
-                    return true;
+                    return parse_result(true, get_parse_point());
                 }
             }
 yield_2:
@@ -211,9 +235,9 @@ yield_2:
             f_.yield(static_cast<std::size_t>(-1));
         }
 yield_end:
-        return true;
-    } catch (const parse_aborted&) {
-        return false;
+        return parse_result(true, get_parse_point());
+    } catch (const parse_aborted& e) {
+        return parse_result(false, buffer_offset_ + (e.pos - buffer_));
     } catch (text_error& e) {
         e.set_physical_position(
             physical_line_index_, get_physical_column_index());
@@ -240,7 +264,6 @@ public:
     {
         return { physical_line_index_, get_physical_column_index() };
     }
-
 private:
     std::size_t get_physical_column_index() const noexcept
     {
@@ -384,16 +407,23 @@ public:
     }
 
     template <class F>
-    static void do_or_abort(F f)
+    inline void do_or_abort(F f)
     {
         if constexpr (std::is_void_v<decltype(f())>) {
             f();
         } else if (!f()) {
-            throw parse_aborted();
+            throw parse_aborted{p_};
         }
     }
 };
 
-} // end commata::detail
+}
+
+inline std::size_t get_parse_point(const detail::parse_result& r) noexcept
+{
+    return r.get_parse_point();
+}
+
+}
 
 #endif
