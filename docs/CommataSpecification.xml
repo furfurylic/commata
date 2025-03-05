@@ -3590,10 +3590,8 @@ namespace commata {
     std::size_t get_parse_point() const noexcept;
   };
 
-  <c>// <n>Helper functions:</n></c>
-  std::size_t get_parse_point(const parse_result&amp; r) noexcept {
-    return r.get_parse_point();
-  }
+  <c>// <n><xref id="parse_result.helper"/>, Helper functions:</n></c>
+  std::size_t get_parse_point(const parse_result&amp; r) noexcept;
 }
       </codeblock>
 
@@ -3624,6 +3622,18 @@ parse_result&amp; operator=(const parse_result&amp; other) noexcept;
           <returns><c>*this</c>.</returns>
         </code-item>
       </section>
+
+      <section id="parse_result.helper">
+        <name><c>parse_result</c> helper functions</name>
+
+        <code-item>
+          <code>
+std::size_t get_parse_point(const parse_result&amp; r) noexcept;
+          </code>
+          <remark>Equivalent to: <c>return r.get_parse_point();</c></remark>
+        </code-item>
+      </section>
+
     </section>
   </section>
 
