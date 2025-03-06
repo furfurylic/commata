@@ -383,6 +383,89 @@ TEST_P(TestParseCsvBasics, PrefersNonconstWhenIndirect)
         "{{((Name))((Mass))}}{{((Earth))((1))}}?{{((Moon))((0.0123))}}"sv);
 }
 
+namespace {
+
+class aborting_handler
+{
+    std::string last_value_;
+    std::string value_;
+
+public:
+    using char_type = char;
+
+    bool start_record(const char* /*record_begin*/)
+    {
+        const bool ret = (last_value_ != "ABORT start_record");
+        last_value_.clear();
+        return ret;
+    }
+
+    bool end_record(const char* /*record_end*/)
+    {
+        return last_value_ != "ABORT end_record";
+    }
+
+    bool empty_physical_line(const char* /*where*/)
+    {
+        return last_value_ != "ABORT empty_physical_line";
+    }
+
+    void update(const char* first, const char* last)
+    {
+        value_.append(first, last);
+    }
+
+    bool finalize(const char* first, const char* last)
+    {
+        update(first, last);
+        const bool ret = (value_ != "ABORT \"finalize\"");
+        last_value_ = std::move(value_);
+        value_.clear();
+        return ret;
+    }
+};
+
+}
+
+TEST_P(TestParseCsvBasics, ParsePointGood)
+{
+    const auto l = "ABCD,EFGH,\"IJKL\"\r\n"sv;
+    const auto r =make_csv_source(l)(aborting_handler())();
+    ASSERT_EQ(l.size(), get_parse_point(r));
+}
+
+TEST_P(TestParseCsvBasics, ParsePointAbortStartRecord)
+{
+    const auto l = "ABCD,EFGH,\"ABORT start_record\"\r\n"sv;
+    const auto r =make_csv_source(std::string(l) + "\"IJKL\"")
+        (aborting_handler())();
+    ASSERT_EQ(l.size(), get_parse_point(r));
+}
+
+TEST_P(TestParseCsvBasics, ParsePointAbortEndRecord)
+{
+    const auto l = "ABCD,EFGH,\"ABORT end_record\""sv;
+    const auto r =make_csv_source(std::string(l) + "\r\r\n")
+        (aborting_handler())();
+    ASSERT_EQ(l.size(), get_parse_point(r));
+}
+
+TEST_P(TestParseCsvBasics, ParsePointAbortEmptyPhysicalLine)
+{
+    const auto l = "ABCD,EFGH,\"ABORT empty_physical_line\"\n"sv;
+    const auto r =make_csv_source(std::string(l) + "\nXYZ\n")
+        (aborting_handler())();
+    ASSERT_EQ(l.size(), get_parse_point(r));
+}
+
+TEST_P(TestParseCsvBasics, ParsePointAbortFinalize)
+{
+    const auto l = "ABCD,EFGH,\"ABORT \"\"finalize\"\"\""sv;
+    const auto r =make_csv_source(std::string(l) + "\r\n")
+        (aborting_handler())();
+    ASSERT_EQ(l.size(), get_parse_point(r));
+}
+
 INSTANTIATE_TEST_SUITE_P(,
     TestParseCsvBasics, testing::Values(1, 10, 1024));
 

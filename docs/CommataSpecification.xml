@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-02-18 (UTC)</signature>
+<signature>2025-03-05 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -358,13 +358,15 @@
         <tr>
           <td>(1)</td>
           <td><c>t()</c></td>
-          <td>A type contextually convertible to <c>bool</c></td>
+          <td>A type that meets the <c>MoveConstructible</c> requirements, is contextually convertible to <c>bool</c>, and makes <c>get_parse_point(cr)</c> a valid expression whose type is <c>std::size_t</c> where <c>cr</c> is an lvalue of the const-qualified type of this return type</td>
           <td>Retrieves the text content from its tied character source object, parses the text content, and calls the member functions of its tied table handler object compliantly with the <c>TableHandler</c> requirements.
-              Returns <c>false</c> if the return value of a call on <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c>, or <c>finalize</c> is <c>false</c>; <c>true</c> otherwise.
               Throws an object of <c>parse_error</c> (<xref id="parse_error"/>) or its derived type if the text content cannot be parsed into a text table (<xref id="definitions.text_table"/>).
               <span class="note">Implementations are free to exit via an exception on erroneous situations other than this.
                                  To be specific, implementations need not have so-called exception-neutral nature.</span>
-              If this returns <c>false</c> or exits via an exception, then this ((1)) becomes unable to be called again.</td>
+              Let <c>cr</c> is a variable declared as <c>const auto rc = ...;</c> where <c>...</c> is an expression that coincides with this ((1)).
+              <c>cr</c> is evaluated as <c>false</c> when contextually converted to <c>bool</c> if the return value of a call on <c>empty_physical_line</c>, <c>start_record</c>, <c>end_record</c>, <c>update</c>, or <c>finalize</c> are evaluated as <c>false</c>; <c>true</c> otherwise.
+              If <c>cr</c> is evaluated to <c>false</c> when contextually converted to <c>bool</c> or this ((1)) exits via an exception, then this ((1)) may become unable to be called again.
+              <c>get_parse_point(cr)</c> shall be evaluated to an identical value to (3).</td>
         </tr>
 
         <tr>
@@ -3541,6 +3543,99 @@ return indirect_input&lt;decltype(in)>(std::move(in));
     </section>
   </section>
 
+  <section id="req.default.parsers">
+    <name>Requirements for default table parsers</name>
+
+    <section id="req.default.parsers.general">
+      <name>General</name>
+      <p>Commata offers implementations of some table parsers (<xref id="concepts"/>) as described in this clause (<xref id="parser.csv"/> and <xref id="parser.tsv"/>).
+          Each <c>P</c> in the types of these table parsers shall not only meet the <c>TableParser</c> requirements, but also have the following properties:</p>
+      <ul>
+        <li><c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification,</li>
+        <li>any function call whose <n>postfix-expression</n> has a type <c>P</c> is a prvalue of <c>parse_result</c> (<xref id="parse_result"/>),</li>
+        <li>such function call might exit via a <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character source object, its tied table handler object, and the allocator object held by it if any, and</li>
+        <li>when such function call exits via a <c>text_error</c> (<xref id="text_error"/>) with a physical position information, the physical position information might represent the current parse point (<xref id="definitions.parse_point"/>).</li>
+      </ul>
+    </section>
+
+    <section id="hpp.parse_result.syn">
+      <name>Header <c>"commama/parse_result.hpp"</c> synopsis</name>
+
+      <codeblock>
+#include &lt;cstddef>
+
+namespace commata {
+  <c>// <n><xref id="parse_result"/>, parse_result:</n></c>
+  class parse_result;
+  std::size_t get_parse_point(const parse_result&amp; r) noexcept;
+}
+      </codeblock>
+    </section>
+
+    <section id="parse_result">
+      <name>Class <c>parse_result</c></name>
+
+      <codeblock>
+namespace commata {
+  class parse_result {
+  public:
+    <c>// <n><xref id="parse_result.cons"/>, constructors and assignment operators:</n></c>
+    parse_result(bool good, std::size_t point) noexcept;
+    parse_result(const parse_result&amp; other) noexcept;
+    parse_result&amp; operator=(const parse_result&amp; other) noexcept;
+
+    <c>// <n>Observers:</n></c>
+    explicit operator bool() const noexcept;
+    std::size_t get_parse_point() const noexcept;
+  };
+
+  <c>// <n><xref id="parse_result.helper"/>, Helper functions:</n></c>
+  std::size_t get_parse_point(const parse_result&amp; r) noexcept;
+}
+      </codeblock>
+
+      <p>The class <c>parse_result</c> defines a type of the objects returned by the Commata's implementations of table parsers (<xref id="req.default.parsers.general"/>).</p>
+
+      <section id="parse_result.cons">
+        <name><c>parse_result</c> constructors and assignment operators</name>
+
+        <code-item>
+          <code>
+parse_result(bool good, std::size_t point) noexcept;
+          </code>
+          <postcondition><c>(static_cast&lt;bool>(*this) == good) &amp;&amp; (get_parse_point() == point)</c> shall be <c>true</c>.</postcondition>
+        </code-item>
+
+        <code-item>
+          <code>
+parse_result(const parse_result&amp; other) noexcept;
+          </code>
+          <postcondition><c>(static_cast&lt;bool>(*this) == other) &amp;&amp; (get_parse_point() == other.get_parse_point())</c> shall be <c>true</c>.</postcondition>
+        </code-item>
+
+        <code-item>
+          <code>
+parse_result&amp; operator=(const parse_result&amp; other) noexcept;
+          </code>
+          <postcondition><c>(static_cast&lt;bool>(*this) == other) &amp;&amp; (get_parse_point() == other.get_parse_point())</c> shall be <c>true</c>.</postcondition>
+          <returns><c>*this</c>.</returns>
+        </code-item>
+      </section>
+
+      <section id="parse_result.helper">
+        <name><c>parse_result</c> helper functions</name>
+
+        <code-item>
+          <code>
+std::size_t get_parse_point(const parse_result&amp; r) noexcept;
+          </code>
+          <remark>Equivalent to: <c>return r.get_parse_point();</c></remark>
+        </code-item>
+      </section>
+
+    </section>
+  </section>
+
   <section id="parser.csv">
     <name>Parsing CSV format texts</name>
 
@@ -3580,6 +3675,7 @@ return indirect_input&lt;decltype(in)>(std::move(in));
 #include &lt;memory>
 
 #include "parse_error.hpp"
+#include "parse_result.hpp"
 #include "char_input.hpp"
 #include "wrapper_handler.hpp"
 
@@ -3691,13 +3787,10 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
                     If <c>Handler</c> is deemed to have buffer control, <c>Allocator</c> shall be <c>void</c>.
                     Otherwise, <c>Allocator</c> shall be <c>void</c> or meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
-          <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c>.
-                          <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.
+          <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c> and have additional properties of table parser implementation of Commata (<xref id="req.default.parsers"/>).
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character source object and an object of <c>Handler</c> as its tied table handler object.
-                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.
-                          Invocation of <c>operator()</c> on an object of <c>P</c> might exit via a <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character source object, its tied table handler object, and the allocator object held by it if any.
-                          When this invocation exits via a <c>text_error</c> (<xref id="text_error"/>) with a physical position information, the physical position information might represent the current parse point (<xref id="definitions.parse_point"/>).</alias-template>
+                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
       </section>
@@ -3902,6 +3995,7 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
 #include &lt;memory>
 
 #include "parse_error.hpp"
+#include "parse_result.hpp"
 #include "char_input.hpp"
 #include "wrapper_handler.hpp"
 
@@ -4013,13 +4107,10 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
                     If <c>Handler</c> is deemed to have buffer control, <c>Allocator</c> shall be <c>void</c>.
                     Otherwise, <c>Allocator</c> shall be <c>void</c> or meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
-          <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c>.
-                          <c>P</c> implements the optional <c>TableParser</c> operation <c>get_physical_position</c> (<xref id="table_parser.requirements"/>) with <c>noexcept(true)</c> exception specification.
+          <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c> and have additional properties of table parser implementation of Commata (<xref id="req.default.parsers"/>).
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character source object and an object of <c>Handler</c> as its tied table handler object.
-                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.
-                          Invocation of <c>operator()</c> on an object of <c>P</c> might exit via a <c>parse_error</c> (<xref id="parse_error"/>), <c>std::bad_alloc</c> or any exception thrown by its tied character source object, its tied table handler object, and the allocator object held by it if any.
-                          When this invocation exits via a <c>text_error</c> (<xref id="text_error"/>) with a physical position information, the physical position information might represent the current parse point (<xref id="definitions.parse_point"/>).</alias-template>
+                          If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.</alias-template>
           <remark>If <c>Handler</c> is deemed to have no buffer control, <c>std::is_same_v&lt;parser_type&lt;Handler>, parser_type&lt;Handler, std::allocator&lt;char_type>>></c> shall be <c>true</c>.</remark>
         </code-item>
       </section>
