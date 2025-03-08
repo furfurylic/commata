@@ -2002,9 +2002,9 @@ static constexpr std::size_t size = <nc>see below</nc>;
           </ul>
           <p>To <n>arrage</n> a replacement action from an expression <c>a</c> means:</p>
           <ul>
-            <li>if <c>decltype(a)</c> implies a fail action, the replace action is configured to be <c>fail</c>,</li>
-            <li>if <c>decltype(a)</c> implies a ignore action, the replace action is configured to be <c>ignore</c>,</li>
-            <li>otherwise, the replace action is configured to be <c>copy</c> with an object of <c>T</c> constructed from <c>a</c>.</li>
+            <li>if <c>decltype(a)</c> implies a fail action, the replacement action is configured to be <c>fail</c>,</li>
+            <li>if <c>decltype(a)</c> implies a ignore action, the replacement action is configured to be <c>ignore</c>,</li>
+            <li>otherwise, the replacement action is configured to be <c>copy</c> with an object of <c>T</c> constructed from <c>a</c>.</li>
           </ul>
           <p>To <n>move-arrage</n> a replacement action from an lvalue <c>a</c> means to arrange a replacement action from <c>std::move(a)</c>.</p>
 
