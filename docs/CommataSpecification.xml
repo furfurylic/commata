@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-03-01 (UTC)</signature>
+<signature>2025-03-08 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -975,8 +975,8 @@ namespace commata {
 
       <p>An object of <c>reference_handler&lt;Handler></c> is a wrapper around a reference to an object of <c>Handler</c> that is a (possibly half-fledged) table handler type.</p>
       <p>The template parameter <c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</p>
-      <p><c>reference_handler&lt;Handler></c> meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Handler::char_type</c>.</p>
-      <p>Each specialization of <c>reference_handler</c> shall be a trivially copyable type.</p>
+      <p><c>reference_handler&lt;Handler></c> meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Handler::char_type</c>.
+         Each specialization of <c>reference_handler</c> shall be a trivially copyable type.</p>
 
       <section id="reference_handler.cons">
         <name><c>reference_handler</c> construct/copy/destroy</name>
