@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-03-08 (UTC)</signature>
+<signature>2025-03-09 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2426,7 +2426,7 @@ template &lt;class T, class ConversionErrorHandler, class A>
                        except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
           <effects><p>Let <c>U</c> be <c>typename T::value_type</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>T</c> otherwise.
                       First evaluates <c>errno = 0</c> and calls a parsing function indicated in <xref id="table.arithmetic_converter.parsing_functions"/>, optionally specifying decimal base, to get an arithmetic value <c>v</c> of the NTBS whose first element is pointed by <c>a.c_str()</c> (if it is well-formed when treated as an unevaluated operand) or <c>a->c_str()</c> (otherwise).
-                      Then makes an <c>std::optional&lt;U></c> object <c>o</c> with an operation indicated in <xref id="table.arithmetic_converter.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
+                      Then makes a <c>std::optional&lt;U></c> object <c>o</c> with an operation indicated in <xref id="table.arithmetic_converter.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
                       Finally returns <c>o</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>o.value()</c> otherwise.
                         In <xref id="table.arithmetic_converter.parsing_functions"/> and <xref id="table.arithmetic_converter.branching"/>,</p>
                       <ul>
@@ -2520,7 +2520,7 @@ template &lt;class T, class ConversionErrorHandler, class A>
                     <li>if <c>U</c> is an unsigned integer type, <c>V</c> has a greater size than <c>U</c>, and <c>SV(v)</c> is a negative value, <c>U(SV(v) + x + 1)</c>,</li>
                     <li>otherwise, <c>U(v)</c>.</li>
                     </ul>
-                  <p>Then makes an <c>std::optional&lt;U></c> object with <c>w</c>.</p></td>
+                  <p>Then makes a <c>std::optional&lt;U></c> object with <c>w</c>.</p></td>
               </tr>
 
               <tr>
@@ -2599,7 +2599,7 @@ namespace commata {
             <code>
 explicit numpunct_replacer_to_c(const std::locale&amp; loc) noexcept;
             </code>
-            <effects>Copy constructs an <c>std::locale</c> object from <c>loc</c> and stores it in <c>*this</c>.</effects>
+            <effects>Copy constructs a <c>std::locale</c> object from <c>loc</c> and stores it in <c>*this</c>.</effects>
           </code-item>
         </section>
 
@@ -4581,15 +4581,15 @@ bool is_in_header() const noexcept;
       <p>In this subclause, for a certain expression <c>t</c> whose type is <c>T</c>, an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c> is defined as following:</p>
       <ul>
         <li>if <c>std::is_convertible_v&lt;T&amp;, const Ch*></c> (if <c>t</c> is an lvalue) or <c>std::is_convertible_v&lt;T, const Ch*></c> (otherwise) is <c>true</c>,
-            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
-              <li>that holds an <c>std::basic_string_view&lt;Ch, Tr></c> object (hereinafter called <c>v</c>) initialized with a value of <c>const Ch*</c> converted from an lvaue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>,</li>
+              <li>that holds a <c>std::basic_string_view&lt;Ch, Tr></c> object (hereinafter called <c>v</c>) initialized with a value of <c>const Ch*</c> converted from an lvaue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>,</li>
               <li>that tells if a string view object is equal to <c>v</c>, and</li>
               <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
             </ul>
         </li>
         <li>otherwise, if <c>t</c> is an lvalue and <c>T</c> meets the <c>ForwardAccessibleRange</c> requirements for <c>Ch</c> (<xref id="accessible_range.requirements"/>),
-            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds the return value of <c>std::addressof(t)</c> (hereinafter called <c>p</c>),</li>
               <li>that tells if a string view object is equal to the range formed by <c>*p</c> (<xref id="form_accessible_range"/>) in terms of <c>Tr::eq</c>, and</li>
@@ -4597,7 +4597,7 @@ bool is_in_header() const noexcept;
             </ul>
         </li>
         <li>otherwise, if <c>T</c> meets the <c>ForwardAccessibleRange</c> requirements for <c>Ch</c> (<xref id="accessible_range.requirements"/>),
-            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds a copy of <c>t</c> (hereinafter called <c>u</c>) constructed with an xvalue of <c>t</c>,</li>
               <li>that tells if a string view object is equal to the range formed by <c>u</c> (<xref id="form_accessible_range"/>) in terms of <c>Tr::eq</c>, and</li>
@@ -6351,7 +6351,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
                 Any pointers in the range [<c>b</c>, <c>e</c>] are dereferenceable and any values stored at them are modifiable except that <c>*e</c> can only be modified to <c>Ch()</c>.
                 Initially the range [<c>b</c>, <c>e</c>) represents the text value of the field and the value of <c>*e</c> is unspecified.
                 The range [<c>b</c>, <c>e</c>] may be invalidated after the invocation exits.</td>
-            <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
+            <td>Creates a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
           </tr>
 
           <tr>
@@ -6362,7 +6362,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
                 Any pointers in the range [<c>c</c>, <c>f</c>) are dereferenceable.
                 The range [<c>c</c>, <c>f</c>) represents the text value of the field.
                 The range [<c>c</c>, <c>f</c>) may be invalidated after the invocation exits.</td>
-            <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>c</c>, <c>f</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
+            <td>Creates a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>c</c>, <c>f</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
           </tr>
 
           <tr>
@@ -7725,7 +7725,7 @@ void operator()(string_type&amp;&amp; value);
 void operator()();
             </code>
             <requires>If <c>Container</c> is an allocator-aware container type, <c>string_type</c> shall be <c>EmplaceConstructible</c> into <c>Container</c> from a <c>value_type</c> object and the allocator object held by <c>*this</c>.</requires>
-            <effects>Evaluates <c>invoke_typing_as&lt;value_type>(get_skipping_handler())</c> and initializes an <c>std::optional&lt;value_type></c> object with it.
+            <effects>Evaluates <c>invoke_typing_as&lt;value_type>(get_skipping_handler())</c> and initializes a <c>std::optional&lt;value_type></c> object with it.
                      If it has a value, emplaces the value to the container object with <c>get_allocator()</c>.</effects>
             <remark>The implementation is allowed to elide the emplacement when it is known in advance that the emplacement has no effect on the container object.</remark>
           </code-item>
