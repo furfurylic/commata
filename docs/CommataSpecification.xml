@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-03-09 (UTC)</signature>
+<signature>2025-03-11 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2615,8 +2615,7 @@ template &lt;class ForwardIterator, class ForwardIteratorEnd>
   ForwardIterator operator()(ForwardIterator first, ForwardIteratorEnd last);
             </code>
             <requires><c>ForwardIterator</c> shall be an forward iterator type for <c>char</c> or <c>wchar_t</c>.
-                      <c>ForwardIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
-                      <c>std::declval&lt;const ForwardIterator&amp;>() == std::declval&lt;const ForwardIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.</requires>
+                      <c>ForwardIteratorEnd</c> shall meet the <c>IteratorEnd</c> requirements for <c>ForwardIterator</c> (<xref id="iterator_end.requirements"/>).</requires>
             <effects>For each iterator <c>i</c>, whose first value is <c>first</c> and incremented until <c>i == last</c> becomes <c>true</c>,
                      eliminates <c>*i</c> in place if <c>(!npf.grouping().empty()) &amp;&amp; (*i == npf.thousands_sep())</c> is <c>true</c>,
                      and replaces <c>*i</c> in place with <c>*std::localeconv()->decimal_point</c> conditionally widen with <c>std::btowc</c> to get a value of the type <c>Ch</c> if <c>*i</c> is equal to <c>npf.decimal_point()</c>.</effects>
@@ -2629,8 +2628,7 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
   OutputIterator operator()(InputIterator first, InputIteratorEnd last, OutputIterator result);
             </code>
             <requires><c>InputIterator</c> shall be an input iterator type for <c>char</c> or <c>wchar_t</c>.
-                      <c>InputIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
-                      <c>std::declval&lt;const InputIterator&amp;>() == std::declval&lt;const InputIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.
+                      <c>InputIteratorEnd</c> shall meet the <c>IteratorEnd</c> requirements for <c>InputIterator</c> (<xref id="iterator_end.requirements"/>).
                       <c>OutputIterator</c> shall be an output iterator type for <c>char</c> or <c>wchar_t</c>.</requires>
             <effects>For each iterator <c>i</c>, whose first value is <c>first</c> and incremented until <c>i == last</c> becomes <c>true</c>,
                      copies <c>*i</c> if <c>npf.grouping().empty() || (*i != npf.thousands_sep())</c> is <c>true</c>,
