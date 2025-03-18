@@ -106,7 +106,7 @@ struct test_collector_handle_exception : test_collector<char>
 };
 
 template <class Ch>
-class test_collector2
+class test_collector_uncopyable
 {
     std::vector<std::vector<std::basic_string<Ch>>> field_values_;
     test_collector<Ch> base_;
@@ -114,12 +114,12 @@ class test_collector2
 public:
     using char_type = Ch;
 
-    explicit test_collector2() :
+    explicit test_collector_uncopyable() :
         base_(field_values_)
     {}
 
-    test_collector2(const test_collector2&) = delete;
-    test_collector2(test_collector2&&) = delete;
+    test_collector_uncopyable(const test_collector_uncopyable&) = delete;
+    test_collector_uncopyable(test_collector_uncopyable&&) = delete;
 
     void start_record(const Ch* record_begin)
     {
@@ -148,14 +148,14 @@ public:
 };
 
 template <class Ch, class F>
-class check_handler
+class buffer_check_handler
 {
     F f_;
 
 public:
     using char_type = Ch;
 
-    explicit check_handler(F f) : f_(f) {}
+    explicit buffer_check_handler(F f) : f_(f) {}
 
     void start_buffer(const Ch* buffer_begin, const Ch* buffer_end)
     {
@@ -170,9 +170,9 @@ public:
 };
 
 template <class Ch, class F>
-check_handler<Ch, F> make_check_handler(F f)
+buffer_check_handler<Ch, F> make_buffer_check_handler(F f)
 {
-    return check_handler<Ch, F>(f);
+    return buffer_check_handler<Ch, F>(f);
 }
 
 static_assert(std::is_nothrow_move_constructible_v<
@@ -224,9 +224,9 @@ static_assert(
 static_assert(
     std::is_same_v<
         std::invoke_result_t<const csv_source<string_input<wchar_t>>&,
-            std::reference_wrapper<test_collector2<wchar_t>>>,
+            std::reference_wrapper<test_collector_uncopyable<wchar_t>>>,
         typename csv_source<string_input<wchar_t>>::template parser_type<
-            reference_handler<test_collector2<wchar_t>>,
+            reference_handler<test_collector_uncopyable<wchar_t>>,
             std::allocator<wchar_t>>>);
 
 // On reference_handler
@@ -370,13 +370,12 @@ TEST_P(TestParseCsvBasics, EvadeCopyingWhenNonconstVersionsExist)
 TEST_P(TestParseCsvBasics, PrefersNonconstWhenIndirect)
 {
     std::vector<std::size_t> allocations;
-    logging_allocator<char> a(allocations);
     std::ostringstream transcript;
     ASSERT_TRUE(parse_csv(
         std::istringstream("Name,Mass\nEarth,1\n\nMoon,0.0123"),    // indirect
         simple_transcriptor_with_nonconst_interface<const char>(
             transcript, true),
-        GetParam(), a));
+        GetParam()));
     const std::string s = std::move(transcript).str();
 
     ASSERT_EQ(std::string_view(s),
@@ -475,7 +474,7 @@ struct TestParseCsvReference : commata::test::BaseTest
 TEST_F(TestParseCsvReference, Reference)
 {
     const char s[] = "A,B\n\nZ";
-    test_collector2<char> collector;
+    test_collector_uncopyable<char> collector;
     ASSERT_TRUE(parse_csv(s, (sizeof s) - 2, std::ref(collector)));
     ASSERT_EQ(1U, collector.field_values().size());
     ASSERT_EQ(2U, collector.field_values()[0].size());
@@ -486,7 +485,7 @@ TEST_F(TestParseCsvReference, Reference)
 TEST_F(TestParseCsvReference, EmptyLineAware)
 {
     std::string s = "A,B\r\rC,D";
-    test_collector2<char> collector;
+    test_collector_uncopyable<char> collector;
     auto sink = make_empty_physical_line_aware(std::ref(collector));
     ASSERT_TRUE(parse_csv(std::istringstream(s), std::move(sink)));
     ASSERT_EQ(3U, collector.field_values().size());
@@ -536,7 +535,7 @@ TYPED_TEST(TestParseCsvFancy, Basics)
             throw text_error("Not tracked");
         }
     };
-    ASSERT_NO_THROW(parse_csv(in, make_check_handler<char_t>(f), 0, a));
+    ASSERT_NO_THROW(parse_csv(in, make_buffer_check_handler<char_t>(f), 0, a));
 }
 
 struct TestParseCsvEndsWithoutLF :

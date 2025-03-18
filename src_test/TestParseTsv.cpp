@@ -59,7 +59,7 @@ public:
 // {(field)(field)} <- record
 // *                <- empty physical line
 // {(field)(field)} <- record
-// >                <- buffer end   (suppressible)
+// >                <- buffer end
 // -                <- release buffer
 template <class Ch, class Tr>
 class transcriptor : public simple_transcriptor<Ch, Tr>
@@ -186,7 +186,7 @@ TEST_F(TestParseTsv, FullEvents1024)
         std::move(str).str().c_str());
 }
 
-// Tests if full events emitted by the parser but "yield" reaches the handler
+// Tests if full events emitted by the parser but "yield" reach the handler
 // through a reference wrapper
 TEST_F(TestParseTsv, ReferenceWrapper)
 {
