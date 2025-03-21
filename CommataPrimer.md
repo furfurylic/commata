@@ -85,7 +85,7 @@ void stored_table_sample()
 ```
 
 `table[0]` is a shorthand for `table.content()[0]`, where `table.content()` is a
-reference to a `std::deque<std::vector<commata::stored_value>>` object owned by
+reference to an `std::deque<std::vector<commata::stored_value>>` object owned by
 `table`. So `table[0][3]` is a reference to a `commata::stored_value` object.
 
 `table.content()` contains all records in `stars.csv` in order.
@@ -374,7 +374,7 @@ void one_pass_scanning_sample3()
 ```
 
 As above, you can construct a `table_scanner` object with a three-parameter
-function object, which is called as a _header field scanner_.
+function object, which is called a _header field scanner_.
 With this constructor, the constructed `table_scanner` object initially owns
 a copy of the specified header field scanner installed, and invoke it on
 every header field and every end of every header record.
