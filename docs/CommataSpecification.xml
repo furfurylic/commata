@@ -3543,10 +3543,10 @@ return indirect_input&lt;decltype(in)>(std::move(in));
     </section>
   </section>
 
-  <section id="req.default.parsers">
+  <section id="default_parsers.properties">
     <name>Requirements for default table parsers</name>
 
-    <section id="req.default.parsers.general">
+    <section id="default_parsers.properties.general">
       <name>General</name>
       <p>Commata offers implementations of some table parsers (<xref id="concepts"/>) as described in this clause (<xref id="parser.csv"/> and <xref id="parser.tsv"/>).
           Each <c>P</c> in the types of these table parsers shall not only meet the <c>TableParser</c> requirements, but also have the following properties:</p>
@@ -3594,7 +3594,7 @@ namespace commata {
 }
       </codeblock>
 
-      <p>The class <c>parse_result</c> defines a type of the objects returned by the Commata's implementations of table parsers (<xref id="req.default.parsers.general"/>).</p>
+      <p>The class <c>parse_result</c> defines a type of the objects returned by the Commata's implementations of table parsers (<xref id="default_parsers.properties.general"/>).</p>
 
       <section id="parse_result.cons">
         <name><c>parse_result</c> constructors and assignment operators</name>
@@ -3787,7 +3787,7 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
                     If <c>Handler</c> is deemed to have buffer control, <c>Allocator</c> shall be <c>void</c>.
                     Otherwise, <c>Allocator</c> shall be <c>void</c> or meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
-          <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c> and have additional properties of table parser implementation of Commata (<xref id="req.default.parsers"/>).
+          <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c> and have additional properties of table parser implementation of Commata (<xref id="default_parsers.properties"/>).
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character source object and an object of <c>Handler</c> as its tied table handler object.
                           If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.</alias-template>
@@ -4107,7 +4107,7 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
                     If <c>Handler</c> is deemed to have buffer control, <c>Allocator</c> shall be <c>void</c>.
                     Otherwise, <c>Allocator</c> shall be <c>void</c> or meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
-          <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c> and have additional properties of table parser implementation of Commata (<xref id="req.default.parsers"/>).
+          <alias-template>An unspecified type (hereinafter called <c>P</c>) which meets the <c>TableParser</c> requirements (<xref id="table_parser.requirements"/>) for <c>char_type</c> and have additional properties of table parser implementation of Commata (<xref id="default_parsers.properties"/>).
                           <c>std::nothrow_move_constructible_v&lt;P></c> shall be <c>true</c> if <c>std::nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::nothrow_move_constructible_v&lt;Handler> &amp;&amp; (std::is_void_v&lt;Allocator> || std::nothrow_move_constructible_v&lt;Allocator>)</c> is <c>true</c>.
                           An object of <c>P</c> holds an object of <c>CharInput</c> as its tied character source object and an object of <c>Handler</c> as its tied table handler object.
                           If <c>Handler</c> is deemed to have no buffer control, an object of <c>P</c> also holds an allocator object of <c>Allocator</c> (if not <c>void</c>) or <c>std::allocator&lt;char_type></c> (otherwise), and allocates and deallocates character buffers with it when it requires them.</alias-template>
