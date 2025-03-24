@@ -230,6 +230,22 @@ private:
     }
 };
 
+struct is_space
+{
+    // To mimic space skipping by std::strtol and its comrades,
+    // we have to refer current C locale
+    bool operator()(char c) const
+    {
+        return std::isspace(static_cast<unsigned char>(c)) != 0;
+    }
+
+    // ditto
+    bool operator()(wchar_t c) const
+    {
+        return std::iswspace(c) != 0;
+    }
+};
+
 template <class U>
 struct raw_converter
 {
@@ -248,9 +264,7 @@ struct raw_converter
         const auto e = errno;
 
         const auto has_postfix =
-            std::any_of<const Ch*>(middle, end, [](Ch c) {
-                return !is_space(c);
-            });
+            !std::all_of<const Ch*>(middle, end, is_space());
         if (has_postfix) {
             // if a not-whitespace-extra-character found, it is NG
             return h(invalid_format_t(), begin, end);
@@ -292,19 +306,6 @@ private:
         } else {
             return 1;
         }
-    }
-
-    // To mimic space skipping by std::strtol and its comrades,
-    // we have to refer current C locale
-    static bool is_space(char c)
-    {
-        return std::isspace(static_cast<unsigned char>(c)) != 0;
-    }
-
-    // ditto
-    static bool is_space(wchar_t c)
-    {
-        return std::iswspace(c) != 0;
     }
 };
 

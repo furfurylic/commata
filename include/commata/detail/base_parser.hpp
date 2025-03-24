@@ -6,10 +6,12 @@
 #ifndef COMMATA_GUARD_9AF7CB02_5702_4A95_AA5E_781F44203C7F
 #define COMMATA_GUARD_9AF7CB02_5702_4A95_AA5E_781F44203C7F
 
+#include <cstddef>
 #include <string_view>
 #include <type_traits>
 
 #include "handler_decorator.hpp"
+#include "../parse_result.hpp"
 
 namespace commata::detail {
 
@@ -25,21 +27,20 @@ class base_parser
         "they shall be the same type except that the latter may be "
         "const-qualified");
 
-    static constexpr bool nonconst_direct = std::is_invocable_r_v<
-        std::pair<huc_t*, typename Input::size_type>, Input&, is_t>;
+    static constexpr bool const_direct = std::is_const_v<hc_t>
+     && std::is_invocable_r_v<std::pair<hc_t*, is_t>, Input&, is_t>;
+    static constexpr bool nonconst_direct =
+        std::is_invocable_r_v<std::pair<huc_t*, is_t>, Input&, is_t>;
 
 public:
     using reads_direct = std::bool_constant<
         Handler::buffer_control_defaulted
-     && ((std::is_const_v<typename Handler::char_type>
-       && std::is_invocable_r_v<
-            std::pair<hc_t*, typename Input::size_type>, Input&, is_t>)
-      || nonconst_direct)>;
+     && (const_direct || nonconst_direct)>;
 
-    using char_type = std::remove_const_t<typename Handler::char_type>;
+    using char_type = huc_t;
     using buffer_char_t = std::conditional_t<
         nonconst_direct || !reads_direct::value,
-        char_type, typename Handler::char_type>;
+        huc_t, hc_t>;
 
 private:
     // Reading position
@@ -58,6 +59,7 @@ private:
     Input in_;
     buffer_char_t* buffer_;
     buffer_char_t* buffer_last_;
+    std::size_t buffer_offset_;
 
     State s_;
     bool record_started_;
@@ -66,7 +68,9 @@ private:
 private:
     // To make control flows clearer, we adopt exceptions. Sigh...
     struct parse_aborted
-    {};
+    {
+        buffer_char_t* pos;
+    };
 
 public:
     template <class InputR, class HandlerR,
@@ -82,6 +86,7 @@ public:
         physical_line_or_buffer_begin_(nullptr),
         physical_line_chars_passed_away_(0),
         in_(std::forward<InputR>(in)), buffer_(nullptr), buffer_last_(nullptr),
+        buffer_offset_(0),
         s_(D::first_state), record_started_(false), eof_reached_(false)
     {}
 
@@ -97,6 +102,7 @@ public:
         in_(std::move(other.in_)),
         buffer_(std::exchange(other.buffer_, nullptr)),
         buffer_last_(other.buffer_last_),
+        buffer_offset_(other.buffer_offset_),
         s_(other.s_), record_started_(other.record_started_),
         eof_reached_(other.eof_reached_)
     {}
@@ -112,7 +118,7 @@ public:
         }
     }
 
-    bool operator()()
+    parse_result operator()()
     {
         if constexpr (has_handle_exception_v<Handler>) {
             try {
@@ -134,7 +140,7 @@ private:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-label"
 #endif
-    bool invoke_impl()
+    parse_result invoke_impl()
     try {
         if constexpr (has_yield_location_v<Handler>) {
             switch (f_.yield_location()) {
@@ -154,6 +160,9 @@ private:
 
         do {
             {
+                if (buffer_) {
+                    buffer_offset_ += buffer_last_ - buffer_;
+                }
                 const auto [buffer_size, loaded_size] = arrange_buffer();
                 p_ = buffer_;
                 physical_line_or_buffer_begin_ = buffer_;
@@ -170,7 +179,7 @@ private:
 
                 if constexpr (has_yield_v<Handler>) {
                     if (f_.yield(1)) {
-                        return true;
+                        return parse_result(true, get_parse_point());
                     }
                 }
 yield_1:
@@ -188,29 +197,36 @@ yield_1:
             f_.end_buffer(buffer_last_);
             if constexpr (has_yield_v<Handler>) {
                 if (f_.yield(2)) {
-                    return true;
+                    return parse_result(true, get_parse_point());
                 }
             }
 yield_2:
             f_.release_buffer(buffer_);
                 // Calling release_buffer is alright even if
                 // reads_direct::value is true (see comments in the dtor)
-            buffer_ = nullptr;
             physical_line_chars_passed_away_ +=
                 p_ - physical_line_or_buffer_begin_;
+            buffer_offset_ += p_ - buffer_;
+            buffer_ = nullptr;
+            p_ = nullptr;
         } while (!eof_reached_);
 
         if constexpr (has_yield_v<Handler>) {
             f_.yield(static_cast<std::size_t>(-1));
         }
 yield_end:
-        return true;
+        return parse_result(true, get_parse_point());
+    } catch (const parse_aborted& e) {
+        return parse_result(false, buffer_offset_ + (e.pos - buffer_));
     } catch (text_error& e) {
         e.set_physical_position(
             physical_line_index_, get_physical_column_index());
         throw;
-    } catch (const parse_aborted&) {
-        return false;
+    } catch (...) {
+        text_error e;
+        e.set_physical_position(
+            physical_line_index_, get_physical_column_index());
+        std::throw_with_nested(std::move(e));
     }
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -219,11 +235,15 @@ yield_end:
 #endif
 
 public:
+    std::size_t get_parse_point() const noexcept
+    {
+        return buffer_offset_ + (p_ - buffer_);
+    }
+
     std::pair<std::size_t, std::size_t> get_physical_position() const noexcept
     {
         return { physical_line_index_, get_physical_column_index() };
     }
-
 private:
     std::size_t get_physical_column_index() const noexcept
     {
@@ -362,21 +382,21 @@ public:
     {
         assert(!record_started_);
         do_or_abort([this] {
-            f_.empty_physical_line(p_);
+            return f_.empty_physical_line(p_);
         });
     }
 
     template <class F>
-    static void do_or_abort(F f)
+    inline void do_or_abort(F f)
     {
         if constexpr (std::is_void_v<decltype(f())>) {
             f();
         } else if (!f()) {
-            throw parse_aborted();
+            throw parse_aborted{p_};
         }
     }
 };
 
-} // end commata::detail
+}
 
 #endif

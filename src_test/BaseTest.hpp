@@ -122,6 +122,13 @@ public:
         return r;
     }
 
+    static std::basic_string<Ch> strv(std::string_view s)
+    {
+        std::basic_string<Ch> r;
+        std::transform(s.cbegin(), s.cend(), std::back_inserter(r), ch);
+        return r;
+    }
+
     template <class T>
     static std::basic_string<Ch> to_string(T value)
     {
