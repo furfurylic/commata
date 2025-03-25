@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-03-05 (UTC)</signature>
+<signature>2025-03-11 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -241,7 +241,7 @@
                 <li><c>vb</c> be the argument of the latest evaluation of (4) (first argument), (7), (9) (second argument) or (10) (second argument), and</li>
                 <li><c>be</c> be the second argument of the latest evaluation of (4).</li>
               </ul>
-              <p>The type of <c>rb</c> shall be the same as the type of <c>vb</c>.
+              <p>The type of <c>re</c> shall be the same as the type of <c>vb</c>.
                  <c>re</c> points one past the last element of the characters that forms the record, not of the text value of the final field of the record.
                  <span class="note">To be specific, for example, if the parser conforms to the CSV text model (<xref id="definitions.csv_text"/>) and the final field of the record is quoted, <c>*(re - 1)</c> shall be a double quote.</span>
                  The pointee of <c>re</c> resides in [<c>vb</c>, <c>be</c>).</p>
@@ -618,7 +618,7 @@
         <li><c>n</c> above is called the <n>size</n> of the range [<c>f</c>, <c>l</c>).</li>
       </ul>
 
-      <p>Additionally, let <c>t</c> is an expression whose type <c>T</c> meets the <c>RangeAccessible</c> requirements.
+      <p>Additionally, let <c>t</c> is an expression whose type <c>T</c> meets the <c>AccessibleRange</c> requirements.
          Then if <c>std::cbegin(t)</c> and <c>std::cend(t)</c> form an accessible range, the range [<c>std::cbegin(t)</c>, <c>std::cend(t)</c>) is called the range <n>formed by</n> <c>t</c>.</p>
     </section>
   </section>
@@ -758,7 +758,7 @@ text_error&amp; operator=(const text_error&amp; other) noexcept;
           <code>
 text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
           </code>
-          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position() == nullptr)</c> shall be <c>true</c> where <c>c</c> is an object that should be copy constructed from <c>other</c> before the call.</postcondition>
+          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be <c>true</c> where <c>c</c> is an object that should be copy constructed from <c>other</c> before the call.</postcondition>
           <returns><c>*this</c>.</returns>
         </code-item>
       </section>
@@ -770,7 +770,7 @@ text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
           <code>
 text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col = npos) noexcept;
           </code>
-          <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>*this</c> holds no physical position information and <c>get_physical_position() == std::nullopt</c> shall be <c>true</c>. Otherwise, <c>*this</c> holds a physical position information and <c>*get_physical_position() == std::make_pair(line, col)</c> shall be <c>true</c>.</postcondition>
+          <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>*this</c> holds no physical position information and <c>!get_physical_position()</c> shall be <c>true</c>. Otherwise, <c>*this</c> holds a physical position information and <c>*get_physical_position() == std::make_pair(line, col)</c> shall be <c>true</c>.</postcondition>
           <returns><c>*this</c>.</returns>
           <remark><c>line</c> and <c>col</c> shall be <c>npos</c> or zero-based numbers of the row and the column.
                   <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
@@ -781,8 +781,9 @@ text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col =
 std::optional&lt;std::pair&lt;std::size_t, std::size_t>> get_physical_position() const noexcept;
           </code>
           <returns>If <c>*this</c> holds a physical position information possibly set by the last invocation of <c>set_physical_position</c>, an pair of its line number and column number. Otherwise, <c>std::nullopt</c>.</returns>
-          <remark><c>p->first</c> and <c>p->second</c> shall be <c>npos</c> or zero-based numbers of the row and the column where <c>p</c> is the return value that is not equal to <c>std::nullopt</c>.
+          <remark><c>p->first</c> and <c>p->second</c> shall be <c>npos</c> or zero-based numbers of the row and the column where <c>p</c> is the return value that contains a value.
                   <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
+          <note>If the return value <c>p</c> contains a value, at least one of <c>p->first</c> or <c>p->second</c> shall not be equal to <c>npos</c>.</note>
         </code-item>
       </section>
     </section>
@@ -1003,8 +1004,8 @@ namespace commata {
 
       <p>An object of <c>reference_handler&lt;Handler></c> is a wrapper around a reference to an object of <c>Handler</c> that is a (possibly half-fledged) table handler type.</p>
       <p>The template parameter <c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</p>
-      <p><c>reference_handler&lt;Handler></c> meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Handler::char_type</c>.</p>
-      <p>Each specialization of <c>reference_handler</c> shall be a trivially copyable type.</p>
+      <p><c>reference_handler&lt;Handler></c> meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Handler::char_type</c>.
+         Each specialization of <c>reference_handler</c> shall be a trivially copyable type.</p>
 
       <section id="reference_handler.cons">
         <name><c>reference_handler</c> construct/copy/destroy</name>
@@ -2030,9 +2031,9 @@ static constexpr std::size_t size = <nc>see below</nc>;
           </ul>
           <p>To <n>arrage</n> a replacement action from an expression <c>a</c> means:</p>
           <ul>
-            <li>if <c>decltype(a)</c> implies a fail action, the replace action is configured to be <c>fail</c>,</li>
-            <li>if <c>decltype(a)</c> implies a ignore action, the replace action is configured to be <c>ignore</c>,</li>
-            <li>otherwise, the replace action is configured to be <c>copy</c> with an object of <c>T</c> constructed from <c>a</c>.</li>
+            <li>if <c>decltype(a)</c> implies a fail action, the replacement action is configured to be <c>fail</c>,</li>
+            <li>if <c>decltype(a)</c> implies a ignore action, the replacement action is configured to be <c>ignore</c>,</li>
+            <li>otherwise, the replacement action is configured to be <c>copy</c> with an object of <c>T</c> constructed from <c>a</c>.</li>
           </ul>
           <p>To <n>move-arrage</n> a replacement action from an lvalue <c>a</c> means to arrange a replacement action from <c>std::move(a)</c>.</p>
 
@@ -2454,7 +2455,7 @@ template &lt;class T, class ConversionErrorHandler, class A>
                        except that it need not meet either the <c>MoveConstructible</c> requirements or the <c>Destructible</c> requirements.</requires>
           <effects><p>Let <c>U</c> be <c>typename T::value_type</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>T</c> otherwise.
                       First evaluates <c>errno = 0</c> and calls a parsing function indicated in <xref id="table.arithmetic_converter.parsing_functions"/>, optionally specifying decimal base, to get an arithmetic value <c>v</c> of the NTBS whose first element is pointed by <c>a.c_str()</c> (if it is well-formed when treated as an unevaluated operand) or <c>a->c_str()</c> (otherwise).
-                      Then makes an <c>std::optional&lt;U></c> object <c>o</c> with an operation indicated in <xref id="table.arithmetic_converter.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
+                      Then makes a <c>std::optional&lt;U></c> object <c>o</c> with an operation indicated in <xref id="table.arithmetic_converter.branching"/> depending on the consequence of the call of the parsing function and <c>errno</c>.
                       Finally returns <c>o</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>o.value()</c> otherwise.
                         In <xref id="table.arithmetic_converter.parsing_functions"/> and <xref id="table.arithmetic_converter.branching"/>,</p>
                       <ul>
@@ -2548,7 +2549,7 @@ template &lt;class T, class ConversionErrorHandler, class A>
                     <li>if <c>U</c> is an unsigned integer type, <c>V</c> has a greater size than <c>U</c>, and <c>SV(v)</c> is a negative value, <c>U(SV(v) + x + 1)</c>,</li>
                     <li>otherwise, <c>U(v)</c>.</li>
                     </ul>
-                  <p>Then makes an <c>std::optional&lt;U></c> object with <c>w</c>.</p></td>
+                  <p>Then makes a <c>std::optional&lt;U></c> object with <c>w</c>.</p></td>
               </tr>
 
               <tr>
@@ -2627,7 +2628,7 @@ namespace commata {
             <code>
 explicit numpunct_replacer_to_c(const std::locale&amp; loc) noexcept;
             </code>
-            <effects>Copy constructs an <c>std::locale</c> object from <c>loc</c> and stores it in <c>*this</c>.</effects>
+            <effects>Copy constructs a <c>std::locale</c> object from <c>loc</c> and stores it in <c>*this</c>.</effects>
           </code-item>
         </section>
 
@@ -2643,8 +2644,7 @@ template &lt;class ForwardIterator, class ForwardIteratorEnd>
   ForwardIterator operator()(ForwardIterator first, ForwardIteratorEnd last);
             </code>
             <requires><c>ForwardIterator</c> shall be an forward iterator type for <c>char</c> or <c>wchar_t</c>.
-                      <c>ForwardIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
-                      <c>std::declval&lt;const ForwardIterator&amp;>() == std::declval&lt;const ForwardIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.</requires>
+                      <c>ForwardIteratorEnd</c> shall meet the <c>IteratorEnd</c> requirements for <c>ForwardIterator</c> (<xref id="iterator_end.requirements"/>).</requires>
             <effects>For each iterator <c>i</c>, whose first value is <c>first</c> and incremented until <c>i == last</c> becomes <c>true</c>,
                      eliminates <c>*i</c> in place if <c>(!npf.grouping().empty()) &amp;&amp; (*i == npf.thousands_sep())</c> is <c>true</c>,
                      and replaces <c>*i</c> in place with <c>*std::localeconv()->decimal_point</c> conditionally widen with <c>std::btowc</c> to get a value of the type <c>Ch</c> if <c>*i</c> is equal to <c>npf.decimal_point()</c>.</effects>
@@ -2657,8 +2657,7 @@ template &lt;class InputIterator, class InputIteratorEnd, class OutputIterator>
   OutputIterator operator()(InputIterator first, InputIteratorEnd last, OutputIterator result);
             </code>
             <requires><c>InputIterator</c> shall be an input iterator type for <c>char</c> or <c>wchar_t</c>.
-                      <c>InputIteratorEnd</c> shall meet the <c>CopyConstructible</c> requirements and <c>Destructible</c> requirements.
-                      <c>std::declval&lt;const InputIterator&amp;>() == std::declval&lt;const InputIteratorEnd&amp;>()</c> shall be well-formed when treated as an unevaluated operand and shall be able to be contextually converted to <c>bool</c>.
+                      <c>InputIteratorEnd</c> shall meet the <c>IteratorEnd</c> requirements for <c>InputIterator</c> (<xref id="iterator_end.requirements"/>).
                       <c>OutputIterator</c> shall be an output iterator type for <c>char</c> or <c>wchar_t</c>.</requires>
             <effects>For each iterator <c>i</c>, whose first value is <c>first</c> and incremented until <c>i == last</c> becomes <c>true</c>,
                      copies <c>*i</c> if <c>npf.grouping().empty() || (*i != npf.thousands_sep())</c> is <c>true</c>,
@@ -3390,7 +3389,7 @@ namespace commata {
     <c>// <n><xref id="indirect_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
-    void swap(indirect_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Input>);
+    void swap(indirect_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Input>)
       { using std::swap; swap(input, other.input); }
 
   private:
@@ -4700,15 +4699,15 @@ bool is_in_header() const noexcept;
       <p>In this subclause, for a certain expression <c>t</c> whose type is <c>T</c>, an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c> is defined as following:</p>
       <ul>
         <li>if <c>std::is_convertible_v&lt;T&amp;, const Ch*></c> (if <c>t</c> is an lvalue) or <c>std::is_convertible_v&lt;T, const Ch*></c> (otherwise) is <c>true</c>,
-            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
-              <li>that holds an <c>std::basic_string_view&lt;Ch, Tr></c> object (hereinafter called <c>v</c>) initialized with a value of <c>const Ch*</c> converted from an lvaue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>,</li>
+              <li>that holds a <c>std::basic_string_view&lt;Ch, Tr></c> object (hereinafter called <c>v</c>) initialized with a value of <c>const Ch*</c> converted from an lvaue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>,</li>
               <li>that tells if a string view object is equal to <c>v</c>, and</li>
               <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
             </ul>
         </li>
         <li>otherwise, if <c>t</c> is an lvalue and <c>T</c> meets the <c>ForwardAccessibleRange</c> requirements for <c>Ch</c> (<xref id="accessible_range.requirements"/>),
-            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds the return value of <c>std::addressof(t)</c> (hereinafter called <c>p</c>),</li>
               <li>that tells if a string view object is equal to the range formed by <c>*p</c> (<xref id="form_accessible_range"/>) in terms of <c>Tr::eq</c>, and</li>
@@ -4716,7 +4715,7 @@ bool is_in_header() const noexcept;
             </ul>
         </li>
         <li>otherwise, if <c>T</c> meets the <c>ForwardAccessibleRange</c> requirements for <c>Ch</c> (<xref id="accessible_range.requirements"/>),
-            a prvalue of a unary predicate object taking an <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
               <li>that holds a copy of <c>t</c> (hereinafter called <c>u</c>) constructed with an xvalue of <c>t</c>,</li>
               <li>that tells if a string view object is equal to the range formed by <c>u</c> (<xref id="form_accessible_range"/>) in terms of <c>Tr::eq</c>, and</li>
@@ -6470,7 +6469,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
                 Any pointers in the range [<c>b</c>, <c>e</c>] are dereferenceable and any values stored at them are modifiable except that <c>*e</c> can only be modified to <c>Ch()</c>.
                 Initially the range [<c>b</c>, <c>e</c>) represents the text value of the field and the value of <c>*e</c> is unspecified.
                 The range [<c>b</c>, <c>e</c>] may be invalidated after the invocation exits.</td>
-            <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
+            <td>Creates a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
           </tr>
 
           <tr>
@@ -6481,7 +6480,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
                 Any pointers in the range [<c>c</c>, <c>f</c>) are dereferenceable.
                 The range [<c>c</c>, <c>f</c>) represents the text value of the field.
                 The range [<c>c</c>, <c>f</c>) may be invalidated after the invocation exits.</td>
-            <td>Creates an <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>c</c>, <c>f</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
+            <td>Creates a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>c</c>, <c>f</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
           </tr>
 
           <tr>
@@ -7844,7 +7843,7 @@ void operator()(string_type&amp;&amp; value);
 void operator()();
             </code>
             <requires>If <c>Container</c> is an allocator-aware container type, <c>string_type</c> shall be <c>EmplaceConstructible</c> into <c>Container</c> from a <c>value_type</c> object and the allocator object held by <c>*this</c>.</requires>
-            <effects>Evaluates <c>invoke_typing_as&lt;value_type>(get_skipping_handler())</c> and initializes an <c>std::optional&lt;value_type></c> object with it.
+            <effects>Evaluates <c>invoke_typing_as&lt;value_type>(get_skipping_handler())</c> and initializes a <c>std::optional&lt;value_type></c> object with it.
                      If it has a value, emplaces the value to the container object with <c>get_allocator()</c>.</effects>
             <remark>The implementation is allowed to elide the emplacement when it is known in advance that the emplacement has no effect on the container object.</remark>
           </code-item>
