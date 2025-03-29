@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-03-11 (UTC)</signature>
+<signature>2025-03-29 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3650,19 +3650,20 @@ std::size_t get_parse_point(const parse_result&amp; r) noexcept;
         <li>Each text field of a text table represented as a CSV text is either of a <n>quoted field</n> or a <n>unquoted field</n>.</li>
         <li>A quoted field is represented as a sequence of the char type objects that starts with a double quote and ends with a double quote.
             Its representation cannot contain odd number of contiguous double quotes after the the starting double quote and before the ending double quote.</li>
-        <li>An unquoted field is represented as a sequence of the char type objects that does not contain any double quotes, commas and <n>line breaks</n>.</li>
+        <li>An unquoted field is represented as a sequence of the char type objects that does not contain any double quotes, commas or <n>line breaks</n>.</li>
         <li>The text value of a quoted field is defined as follows:
             <ul>
               <li>first make a copy of the sequence of characters of the range [the next character of the starting double quote, the previous character of the ending double quote],</li>
-              <li>then replace every occurrence of two contiguous double quotes in it into one double quote.</li>
+              <li>then scan it forward and replace every occurrence of two contiguous double quotes in it into one double quote.</li>
             </ul>
         </li>
         <li>The text value of an unquoted field is the representation as a sequence of the char type objects itself.</li>
         <li>In a CSV text, each text record is represented as a comma-delimited sequence of representations of its text fields.
             The representation of the final text field in a text record is not followed by a comma.</li>
         <li>In a CSV text, the representations of its text records are delimited by a line break.
+            <span class="note">On the other hand, a line break does not necessarily represent an end of a text record.</span>
             The representation of the final record is or is not followed by a line break.</li>
-        <li>Each line break is either of CR, LF, or CRsLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRsLF is a character sequence of one or more CR(s) and an LF in order.</li>
+        <li>A line break is either of CR, LF, or CRsLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRsLF is a character sequence of one or more CR(s) and an LF in order.</li>
       </ul>
     </section>
 
@@ -3981,7 +3982,7 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
             The representation of the final text field in a text record is not followed by a tab.</li>
         <li>In a TSV text, the representations of its text records are delimited by a line break.
             The representation of the final record is or is not followed by a line break.</li>
-        <li>Each line break is either of CR, LF, or CRsLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRsLF is a character sequence of one or more CR(s) and an LF in order.</li>
+        <li>A line break is either of CR, LF, or CRsLF where CR is a carrage return character, LF is a line feed (or new-line) character, and CRsLF is a character sequence of one or more CR(s) and an LF in order.</li>
       </ul>
       <p><span class="note">This TSV text model forbids each text field to have tabs in its text value and does not do any special treatment to double quotes, as IANA&#x2019;s "Definition of tab-separated-values (tsv)".</span></p>
     </section>
