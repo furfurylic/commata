@@ -11,8 +11,7 @@
     <head>
       <title><xsl:apply-templates select="title/node()" mode="title"/></title>
       <style type="text/css"><xsl:text disable-output-escaping="yes">
-        body { margin: 1em 5% 90em 5%; font-family: sans-serif }
-        body * { line-height: 1.3em }
+        body { margin: 1em 5% 90em 5%; font-family: sans-serif; line-height: 1.3em }
         h1 { font-size: 250%; margin-bottom: 0.4em; font-weight: normal }
         h2 { font-size: 220%; margin: 1.6em 0 0.8em 0; font-weight: normal }
         h3 { font-size: 180%; margin: 2em 0 1em 0; font-weight: normal }
