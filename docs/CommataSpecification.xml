@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-03-29 (UTC)</signature>
+<signature>2025-04-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -113,8 +113,9 @@
          <c>p</c> is an rvalue of <c>std::size_t</c>.</p>
 
       <p>A requirement is optional if the last column of <xref id="table.table_handler.requirements"/> specifies a default.</p>
-      <p>If (2) in <xref id="table.table_handler.requirements"/> is satisfied without falling back on the default, then also (3) shall be so. Likewise, if (3) is satisfied without falling back on the default, then also (2) shall be so.
-         That is, <c>T</c> shall either have both of <c>get_buffer</c> and <c>release_buffer</c> member functions or have none of them.</p>
+      <p>If (2) in <xref id="table.table_handler.requirements"/> is satisfied without falling back on the default, then also (3) shall be so.
+         Likewise, if (3) is satisfied without falling back on the default, then also (2) shall be so
+         (that is, <c>T</c> shall either have both of <c>get_buffer</c> and <c>release_buffer</c> member functions or have none of them).</p>
       <p>Exiting via an exception from an evaluation on a table handler described in <xref id="table.table_handler.requirements"/> shall make the corresponding invocation on the parser (<xref id="table_parser.requirements"/>) exit via an exception without making further evaluation on the table handler other than (13).</p>
 
       <table id="table.table_handler.requirements">
@@ -1688,7 +1689,7 @@ namespace commata {
       </ul>
 
       <p><xref id="table.conversion_error_handler.requirements"/> shows two, four or six expressions per row.
-         It is required that at least one of these expressions should qualify; that is, it is not needed that more than one of them do.
+         It is required that at least one of these expressions should qualify (that is, it is not needed that more than one of them do).
          When multiple expressions in one row qualify, it shall be the first one that is selected to be evaluated.
          This selection shall be done at compile time.
          <span class="note">To evaluate these expressions as specified here, function templates <c>invoke_typing_as</c> and <c>invoke_with_range_typing_as</c> (<xref id="invoke_typing_as"/>) can be used.</span></p>
@@ -1835,7 +1836,7 @@ namespace commata {
 
         <p>This subclause describes struct <c>fail_if_conversion_failed</c> (<xref id="fail_if_conversion_failed"/>), struct <c>ignore_if_conversion_failed</c> (<xref id="ignore_if_conversion_failed"/>), and class template <c>replace_if_conversion_failed</c> (<xref id="replace_if_conversion_failed"/>),
            which gives the default conversion error handler (<xref id="conversion_error_handler.requirements"/>) types of Commata.</p>
-        <p>When the implementations of these throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c>, that is, with the C library locale.</p>
+        <p>When the implementations of these throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c> (that is, with the C library locale).</p>
       </section>
 
       <section id="fail_if_conversion_failed">
@@ -2384,7 +2385,7 @@ template &lt;class T>
         </ul>
 
         <p><xref id="table.arithmetic_convertible.requirements"/> shows two expressions per row.
-           It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.</p>
+           It is required that at least one of these two expression qualifies (that is, it is not needed that both of two do).</p>
 
         <p>In <xref id="table.arithmetic_convertible.requirements"/>, <c>ct</c> is an lvalue of <c>const T</c>.</p>
 
@@ -4300,7 +4301,7 @@ template &lt;class Arg1, class Arg2, class... OtherArgs>
          Whether a record is qualified to be forwarded or not is decided by the value of its field at the <n>target field index</n>.
          The target field index can be given explicitly by the program (with <c>record_extractor_with_indexed_key</c>), or can be decided in reference to the first one record (with <c>record_extractor</c>).</p>
       <p>A record that can not be decided whether it is qualified to be forwarded or not due to non-existence of the field at the target field index shall cause an exception.</p>
-      <p>Each object of a specialization of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
+      <p>Each object of a specialization of <c>record_extractor</c> or <c>record_extractor_with_indexed_key</c> can not be reused (that is, it can receive the parsing events that the parser emits only once).</p>
     </section>
 
     <section id="hpp.record_extractor.syn">
@@ -4436,7 +4437,7 @@ namespace commata {
          <c>Ch</c> shall be a char-like type.
          <c>Tr</c> shall be a character traits type of <c>std::remove_const_t&lt;Ch></c>.
          <c>Allocator</c> shall meet the <c>Allocator</c> requirements.</p>
-      <p>When the implementations of this class template throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c>, that is, with the C library locale.</p>
+      <p>When the implementations of this class template throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c> (that is, with the C library locale).</p>
 
       <section id="record_extractor.cons">
         <name><c>record_extractor</c> constructors and assignment operators</name>
@@ -4649,7 +4650,7 @@ template &lt;class FieldValuePredR>
             </tr>
             <tr>
               <td><c>header</c></td>
-              <td>If does not have value, the first record of the text table will not be regarded as a header record, that is, it will be treated similarly to other records.
+              <td>If does not have value, the first record of the text table will not be regarded as a header record (that is, it will be treated similarly to other records).
                   Otherwise, if the value is <c>header_forwarding::yes</c>, it will be regarded as a header record and will always be forwarded to <c>out</c>.
                   Otherwise, if the value is <c>header_forwarding::no</c>, it will be regarded as a header record and will never be forwarded to <c>out</c>.
                   Otherwise, the behaviour is undefined.</td>
@@ -5730,7 +5731,7 @@ namespace commata {
             <li>an allocator, whose type is <c>Allocator</c>, which is used to allocate and construct the content, and whose rebound coplies for <c>Ch</c> are used to allocate memories required by the store, and</li>
             <li>a <n>buffer size</n>, whose type is <c>std::size_t</c> and that is used as the least amount of <c>Ch</c> in one memory allocation.</li>
           </ul>
-          <p>The store of an object of <c>basic_stored_table</c> marks one buffer in it as its <n>current buffer</n> when it is not empty; that is, when it has at least one buffer.</p>
+          <p>The store of an object of <c>basic_stored_table</c> marks one buffer in it as its <n>current buffer</n> when it is not empty (that is, when it has at least one buffer).</p>
         </section>
 
         <section id="basic_stored_table.defs">
@@ -6320,7 +6321,7 @@ namespace commata {
 
       <p>The class template <c>stored_table_builder</c> is a tool to create an image of a text table (<xref id="definitions.text_table"/>) into a <c>basic_stored_table</c> (<xref id="basic_stored_table"/>) object, which is called the <n>targeted object</n>.
          An instantiation of it satisfies the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for its <c>char_type</c>.
-         An object of an instantiation of it can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
+         An object of an instantiation of it can not be reused (that is, it can receive the parsing events that the parser emits only once).</p>
 
       <p>The template parameters <c>Content</c> and <c>Allocator</c> shall be types that make <c>basic_stored_table&lt;Content, Allocator></c> a valid type.</p>
 
@@ -6496,7 +6497,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
             <td>(4)</td>
             <td><c>s()</c></td>
             <td>(Not used)</td>
-            <td>Called when the table scanner has found that the field does not appear in the body record, that is, the record has too few fields to reach the field.</td>
+            <td>Called when the table scanner has found that the field does not appear in the body record (that is, the record has too few fields to reach the field).</td>
             <td></td>
           </tr>
         </table>
@@ -6512,7 +6513,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
         </ul>
 
         <p><xref id="table.record_end_scanner.requirements"/> shows two expressions per row.
-           It is required that at least one of these two expression qualifies, that is, it is not needed that both of two do.
+           It is required that at least one of these two expression qualifies (that is, it is not needed that both of two do).
            If both expressions qualify, the first one shall be evaluated by the table scanner.</p>
 
         <p>In <xref id="table.record_end_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
@@ -6584,7 +6585,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
                       The range [<c>v->first</c>, <c>v->second</c>) may be invalidated after the invocation exits.</li>
                   <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>v</c> does not contain a value.</li>
                 </ul>
-                In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will be the first body record.</td>
+                In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record (that is, the next record will be the first body record).</td>
         </tr>
 
           <tr>
@@ -6598,7 +6599,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
                       The range [<c>w->first</c>, <c>w->second</c>] may be invalidated after the invocation exits.</li>
                   <li>When a record in the header has ended. <c>j</c> is the number of the fields in the records. <c>w</c> does not contain a value.</li>
                 </ul>
-                In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record, that is, the next record will be the first body record.</td>
+                In any of cases, when <c>!r</c> is not <c>false</c> where <c>r</c> is the return value of this, the table scanner shall uninstall this header field scanner and recognizes that the current record is the final header record (that is, the next record will be the first body record).</td>
           </tr>
         </table>
       </section>
@@ -6690,7 +6691,7 @@ namespace commata {
 
         <p>The class template <c>basic_table_scanner</c> describes the table scanner objects (<xref id="scan.scanner.general"/>).
            An instantiation of it satisfies the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.
-           An object of an instantiation of it can not be reused; that is, it can receive the parsing events that the parser emits only once.</p>
+           An object of an instantiation of it can not be reused (that is, it can receive the parsing events that the parser emits only once).</p>
         <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements and <c>Allocator::value_type</c> shall be a type identical to <c>Ch</c>.</p>
       </section>
 
@@ -6859,7 +6860,7 @@ bool is_in_header() const noexcept;
         </ul>
 
         <p><xref id="table.skipping_handler.requirements"/> shows two expressions per row.
-           It is required that at least one of these two expression qualifies; that is, it is not needed that both of two do.
+           It is required that at least one of these two expression qualifies (that is, it is not needed that both of two do).
            When multiple expressions in one row qualify, it shall be the first one that is selected to be evaluated.
            This selection shall be done at compile time.
              <span class="note">To evaluate these expressions as specified here, the function template <c>invoke_typing_as</c> (<xref id="invoke_typing_as"/>) can be used.</span></p>
@@ -6882,7 +6883,7 @@ bool is_in_header() const noexcept;
             <td rowspan="2">(1)</td>
             <td><c>h(n)</c></td>
             <td rowspan="2">Convertible to <c>std::optional&lt;T></c></td>
-            <td rowspan="2">Called when the corresponding field has been skipped, that is, the record has had too few fields to reach the field.
+            <td rowspan="2">Called when the corresponding field has been skipped (that is, the record has had too few fields to reach the field.
                 If <c>r.has_value()</c> is not <c>false</c> where <c>r</c> is the return value, the translated value of the field shall be constructed from <c>std::move(*r)</c>;
                 otherwise, no values shall be put to the <c>FieldTranslatorSink</c> object (<xref id="field_translator_sink.requirements"/>).</td>
           </tr>
