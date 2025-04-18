@@ -87,7 +87,7 @@ public:
     }
 
 protected:
-    replace_mode& mode() noexcept
+    replace_mode& mode_ref() noexcept
     {
         return mode_;
     }
@@ -107,7 +107,7 @@ protected:
 };
 
 template <class T>
-class nontrivial_store : public trivial_store<T>
+class nontrivial_store : trivial_store<T>
 {
 public:
     using trivial_store<T>::trivial_store;
@@ -153,6 +153,9 @@ public:
         return *this;
     }
 
+    using trivial_store<T>::mode;
+    using trivial_store<T>::value;
+
 private:
     template <class Other>
     void assign(Other&& other)
@@ -174,7 +177,7 @@ private:
         } else if (other.mode() == replace_mode::replace) {
             this->emplace(std::forward<f_t>(other.value()));    // throw
         }
-        this->mode() = other.mode();
+        this->mode_ref() = other.mode();
     }
 
 public:
@@ -195,7 +198,7 @@ public:
             this->emplace(std::move(other.value()));            // throw
             other.value().~T();
         }
-        swap(this->mode(), other.mode());
+        swap(this->mode_ref(), other.mode_ref());
     }
 };
 
