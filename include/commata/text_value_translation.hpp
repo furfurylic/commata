@@ -669,7 +669,7 @@ protected:
 };
 
 template <class T, unsigned N>
-struct nontrivial_store : trivial_store<T, N>
+struct nontrivial_store : private trivial_store<T, N>
 {
     using trivial_store<T, N>::trivial_store;
 
@@ -719,6 +719,9 @@ struct nontrivial_store : trivial_store<T, N>
         assign(std::move(other));
         return *this;
     }
+
+    using trivial_store<T, N>::size;
+    using trivial_store<T, N>::get;
 
 private:
     template <class Other>
