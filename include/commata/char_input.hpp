@@ -287,8 +287,15 @@ public:
     using size_type = typename string_type::size_type;
 
 private:
+    // Owned string
     std::basic_string<Ch, Tr, Allocator> s_;
+
+    // [0, head_) is the consumed range in s_
     size_type head_;
+
+    // A character that must be written back on s_[head_] prior to the next
+    // read
+    // (s_[head_] may have been overwritten by the reader on the previous read)
     Ch front_;
 
 public:
@@ -312,8 +319,8 @@ public:
 
     owned_string_input(owned_string_input&& other) noexcept :
         s_(std::move(other.s_)),
-        head_(std::exchange(other.head_, other.s_.size())),
-        front_(s_[head_])
+        head_(std::exchange(other.head_, other.s_.size())), // depletes other
+        front_(other.front_)
     {}
 
     ~owned_string_input() = default;
@@ -323,8 +330,8 @@ public:
             std::basic_string<Ch, Tr, Allocator>>)
     {
         s_ = std::move(other.s_);
-        head_ = std::exchange(other.head_, other.s_.size());
-        front_ = std::exchange(other.front_, other.s_[other.head_]);
+        head_ = std::exchange(other.head_, other.s_.size());// depletes other
+        front_ = other.front_;
         return *this;
     }
 

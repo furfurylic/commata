@@ -412,16 +412,17 @@ TEST_F(TestOwnedStringInput, ConstructFromStringRValue)
 TEST_F(TestOwnedStringInput, MoveConstruct)
 {
     auto p = std::make_unique<owned_string_input<char>>("ABC"s);
+    {
+        const auto r = (*p)(2);     // reads AB as nonconst-direct
+        r.first[2] = '\0';          // overwrites the next character of B with
+                                    // a null character, which is allowed
+    }
 
-    std::vector<char> a(2);
-    std::vector<char> b(3);
-    const auto lenp = (*p)(a.data(), 2);    // reads AB
     auto q = std::move(*p);
     p.reset();
-    const auto lenq = q(b.data(), 3);       // reads C
 
-    ASSERT_EQ(2U, lenp);
-    ASSERT_EQ("AB", std::string(a.data(), 2));
+    std::vector<char> b(3);
+    const auto lenq = q(b.data(), 3);       // reads C
     ASSERT_EQ(1U, lenq);
     ASSERT_EQ("C", std::string(b.data(), 1));
 }
@@ -429,17 +430,23 @@ TEST_F(TestOwnedStringInput, MoveConstruct)
 TEST_F(TestOwnedStringInput, MoveAssign)
 {
     auto p = std::make_unique<owned_string_input<char>>("ABC"s);
-    owned_string_input q("XYZ"s);
+    {
+        const auto r = (*p)(1);     // reads A as nonconst-direct
+        r.first[1] = '\0';          // overwrites the next character of A with
+                                    // a null character, which is allowed
+    }
 
-    std::vector<char> a1(1);
-    std::vector<char> b1(2);
-    std::vector<char> b2(2);
-    (*p)(a1.data(), 1);
-    q(b1.data(), 2);
+    owned_string_input q("XYZ"s);
+    {
+        std::vector<char> b1(2);
+        q(b1.data(), 2);            // reads XY
+    }
+
     q = std::move(*p);
     p.reset();
-    const auto lenq2 = q(b2.data(), 2);
 
+    std::vector<char> b2(2);
+    const auto lenq2 = q(b2.data(), 2);
     ASSERT_EQ(2U, lenq2);
     ASSERT_EQ("BC", std::string(b2.data(), 2));
 }
