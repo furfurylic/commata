@@ -477,7 +477,7 @@ TEST_F(TestOwnedStringInput, Direct)
         auto r = in(3);
         ASSERT_EQ(p, r.first);
         ASSERT_EQ(3U, r.second);
-        std::fill_n(r.first, r.second + 1, '\0');
+        std::fill_n(r.first, r.second + 1, L'\0');
     }
     {
         // 'Normal' copying mixed
@@ -499,7 +499,8 @@ struct TestCharInput : BaseTest
 TEST_F(TestCharInput, MakeFromStreambufPtr)
 {
     std::wstringbuf buf(L"XYZ");
-    streambuf_input<wchar_t> in = make_char_input(buf);
+    auto in = make_char_input(buf);
+    static_assert(std::is_same_v<decltype(in), streambuf_input<wchar_t>>);
     std::wstring out(5, L' ');
     ASSERT_EQ(3U, in(out.data(), 5));
     ASSERT_EQ(L"XYZ  ", out);
@@ -508,7 +509,8 @@ TEST_F(TestCharInput, MakeFromStreambufPtr)
 TEST_F(TestCharInput, MakeFromIStreamLvalueRef)
 {
     std::istringstream buf("XYZ");
-    istream_input<char> in = make_char_input(buf);
+    auto in = make_char_input(buf);
+    static_assert(std::is_same_v<decltype(in), istream_input<char>>);
     std::string out(5, ' ');
     ASSERT_EQ(3U, in(out.data(), 5));
     ASSERT_EQ("XYZ  ", out);
@@ -517,7 +519,9 @@ TEST_F(TestCharInput, MakeFromIStreamLvalueRef)
 TEST_F(TestCharInput, MakeFromStreambufRvalueRef)
 {
     std::stringbuf buf("XYZ");
-    owned_streambuf_input<std::stringbuf> in = make_char_input(std::move(buf));
+    auto in = make_char_input(std::move(buf));
+    static_assert(std::is_same_v<decltype(in),
+                                 owned_streambuf_input<std::stringbuf>>);
     std::string out(5, ' ');
     ASSERT_EQ(3U, in(out.data(), 5));
     ASSERT_EQ("XYZ  ", out);
@@ -526,8 +530,9 @@ TEST_F(TestCharInput, MakeFromStreambufRvalueRef)
 TEST_F(TestCharInput, MakeFromIStreamRvalueRef)
 {
     std::istringstream buf("XYZ");
-    owned_istream_input<std::istringstream> in =
-        make_char_input(std::move(buf));
+    auto in = make_char_input(std::move(buf));
+    static_assert(std::is_same_v<decltype(in),
+                                 owned_istream_input<std::istringstream>>);
     std::string out(5, ' ');
     ASSERT_EQ(3U, in(out.data(), 5));
     ASSERT_EQ("XYZ  ", out);
@@ -536,7 +541,8 @@ TEST_F(TestCharInput, MakeFromIStreamRvalueRef)
 TEST_F(TestCharInput, MakeFromCharPtr)
 {
     const wchar_t* const str= L"XYZ";
-    string_input<wchar_t> in = make_char_input(str);
+    auto in = make_char_input(str);
+    static_assert(std::is_same_v<decltype(in), string_input<wchar_t>>);
     std::wstring out(5, L' ');
     ASSERT_EQ(3U, in(out.data(), 5));
     ASSERT_EQ(L"XYZ  ", out);
@@ -544,17 +550,19 @@ TEST_F(TestCharInput, MakeFromCharPtr)
 
 TEST_F(TestCharInput, MakeFromCharPtrAndSize)
 {
-    const wchar_t* const str= L"XYZABC";
-    string_input<wchar_t> in = make_char_input(str, 4);
-    std::wstring out(5, L' ');
+    const char* const str= "XYZABC";
+    auto in = make_char_input(str, 4);
+    static_assert(std::is_same_v<decltype(in), string_input<char>>);
+    std::string out(5, ' ');
     ASSERT_EQ(4U, in(out.data(), 4));
-    ASSERT_EQ(L"XYZA ", out);
+    ASSERT_EQ("XYZA ", out);
 }
 
 TEST_F(TestCharInput, MakeFromStringView)
 {
     const auto str= L"XYZABC"sv;
-    string_input<wchar_t> in = make_char_input(str.substr(2));
+    auto in = make_char_input(str.substr(2));
+    static_assert(std::is_same_v<decltype(in), string_input<wchar_t>>);
     std::wstring out(5, L' ');
     ASSERT_EQ(4U, in(out.data(), 4));
     ASSERT_EQ(L"ZABC ", out);
@@ -563,7 +571,8 @@ TEST_F(TestCharInput, MakeFromStringView)
 TEST_F(TestCharInput, MakeFromStringLvalueRef)
 {
     std::wstring str(L"XYZ");
-    string_input<wchar_t> in = make_char_input(str);
+    auto in = make_char_input(str);
+    static_assert(std::is_same_v<decltype(in), string_input<wchar_t>>);
     std::wstring out(5, L' ');
     ASSERT_EQ(3U, in(out.data(), 5));
     ASSERT_EQ(L"XYZ  ", out);
@@ -572,7 +581,8 @@ TEST_F(TestCharInput, MakeFromStringLvalueRef)
 TEST_F(TestCharInput, MakeFromStringRvalueRef)
 {
     std::string str("XYZ");
-    owned_string_input<char> in = make_char_input(std::move(str));
+    auto in = make_char_input(std::move(str));
+    static_assert(std::is_same_v<decltype(in), owned_string_input<char>>);
     std::string out(5, ' ');
     ASSERT_EQ(3U, in(out.data(), 5));
     ASSERT_EQ("XYZ  ", out);
@@ -596,7 +606,8 @@ static_assert(std::is_nothrow_move_constructible_v<io_t>);
 static_assert(!std::is_copy_assignable_v<io_t>);
 static_assert(std::is_nothrow_move_assignable_v<io_t>
           || !std::is_nothrow_move_assignable_v<std::string>);
-    // There are libs whose std::string is not MoveAssignable. Sigh...
+    // There are libs whose std::string does not satisfy
+    // nothrow_move_assignable. Sigh...
 
 static_assert(std::is_same_v<is_t,
     decltype(make_char_input(indirect, "123"sv))>);
