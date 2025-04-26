@@ -355,7 +355,7 @@ struct primitive_table_pull_base_const
 
 template <class D, class Ch, class S>
 struct primitive_table_pull_base_nonconst :
-    primitive_table_pull_base_const<D, Ch, S>
+    protected primitive_table_pull_base_const<D, Ch, S>
 {
     using primitive_table_pull_base_const<D, Ch, S>::operator[];
     using primitive_table_pull_base_const<D, Ch, S>::at;
@@ -388,12 +388,22 @@ constexpr bool reads_direct_v =
 
 template <class TableSource, primitive_table_pull_handle Handle,
           class Allocator, bool const_qualified>
-constexpr bool reads_direct_with_handler = reads_direct_v<
+constexpr bool reads_direct_h_v = reads_direct_v<
     typename TableSource::template parser_type<reference_handler<handler<
         std::conditional_t<const_qualified,
             const typename TableSource::char_type,
             typename TableSource::char_type>,
         Allocator, Handle>>>>;
+
+template <class TableSource, primitive_table_pull_handle Handle,
+          class Allocator>
+constexpr bool is_const_h_v =
+    // If reads direct when the handler's parameters are nonconst, then should
+    // be nonconst-direct; otherwise, if reads direct when the handler's
+    // parameters are const, then should be const-direct; otherwise, should be
+    // indirect, which means that this should have nonconst intefaces
+    (!detail::pull::reads_direct_h_v<TableSource, Handle, Allocator, false>)
+ && detail::pull::reads_direct_h_v<TableSource, Handle, Allocator, true>;
 
 } // end detail::pull
 
@@ -402,31 +412,19 @@ template <class TableSource,
     class Allocator = std::allocator<typename TableSource::char_type>>
 class primitive_table_pull :
     public std::conditional_t<
-        detail::pull::reads_direct_with_handler<
-            TableSource, Handle, Allocator, false>,
-        detail::pull::primitive_table_pull_base_nonconst<
+        detail::pull::is_const_h_v<TableSource, Handle, Allocator>,
+        detail::pull::primitive_table_pull_base_const<
             primitive_table_pull<TableSource, Handle, Allocator>,
             typename TableSource::char_type, std::size_t>,
-        std::conditional_t<
-            detail::pull::reads_direct_with_handler<
-                TableSource, Handle, Allocator, true>,
-                detail::pull::primitive_table_pull_base_const<
-                    primitive_table_pull<TableSource, Handle, Allocator>,
-                    typename TableSource::char_type, std::size_t>,
-                detail::pull::primitive_table_pull_base_nonconst<
-                    primitive_table_pull<TableSource, Handle, Allocator>,
-                    typename TableSource::char_type, std::size_t>>>
+        detail::pull::primitive_table_pull_base_nonconst<
+            primitive_table_pull<TableSource, Handle, Allocator>,
+            typename TableSource::char_type, std::size_t>>
 {
 public:
     using char_type = std::conditional_t<
-        detail::pull::reads_direct_with_handler<
-            TableSource, Handle, Allocator, false>,
-        typename TableSource::char_type,
-        std::conditional_t<
-            detail::pull::reads_direct_with_handler<
-                TableSource, Handle, Allocator, true>,
-            const typename TableSource::char_type,
-            typename TableSource::char_type>>;
+        detail::pull::is_const_h_v<TableSource, Handle, Allocator>,
+        const typename TableSource::char_type,
+        typename TableSource::char_type>;
     using allocator_type = Allocator;
     using size_type = std::size_t;
 
