@@ -21,7 +21,7 @@ All C++ codes in this repository shall compile and link with
 Microsoft Visual Studio 2019, 2022, GCC 7.3 and Clang 7.0.
 
 This repository also contains a test of it in `src_test` directory.
-Tests are written on [GoogleTest](https://github.com/google/googletest) v1.16.0.
+Tests are written on [GoogleTest](https://github.com/google/googletest) v1.17.0.
 Commata employs CMake 3.13 or later to make the test.
 You can build it as follows:
 
