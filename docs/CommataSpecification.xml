@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-04-25 (UTC)</signature>
+<signature>2025-05-02 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -7652,7 +7652,7 @@ template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
     SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
             </code>
             <requires>Both of <c>std::is_constructible_v&lt;Sink, SinkR&amp;&amp;></c> and <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> shall be <c>true</c>.</requires>
-            <effects>Initializes an object of <c>string_field_translator</c> that holds objects of <c>Sink</c> and <c>SkippingHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c> and <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> as the field translator sink object and the skipping handler object respectively.</effects>
+            <effects>Initializes an object of <c>string_view_field_translator</c> that holds objects of <c>Sink</c> and <c>SkippingHandler</c> initialized with <c>std::forward&lt;SinkR>(sink)</c> and <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> as the field translator sink object and the skipping handler object respectively.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;string_view_field_translator&lt;Sink, Ch, Tr, SkippingHandler>, std::decay_t&lt;SinkR>></c> is <c>false</c>.</remark>
           </code-item>
 
