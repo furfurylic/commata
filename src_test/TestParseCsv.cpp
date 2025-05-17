@@ -32,6 +32,8 @@ using namespace commata::test;
 
 namespace {
 
+static_assert(std::is_nothrow_copy_assignable_v<parse_error>);
+
 static_assert(std::is_trivially_copyable_v<csv_source<streambuf_input<char>>>);
 
 template <class Ch>
