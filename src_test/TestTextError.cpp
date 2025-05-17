@@ -27,6 +27,7 @@ static_assert(std::is_nothrow_copy_assignable_v<text_error_info>);
 static_assert(std::is_trivially_copyable_v<text_error_info>);
 static_assert(std::is_trivially_destructible_v<text_error_info>);
 
+static_assert(std::is_nothrow_default_constructible_v<text_error>);
 static_assert(std::is_nothrow_move_constructible_v<text_error>);
 static_assert(std::is_nothrow_copy_constructible_v<text_error>);
 static_assert(std::is_nothrow_move_assignable_v<text_error>);
