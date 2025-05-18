@@ -7594,7 +7594,8 @@ void operator()(const Ch* begin, const Ch* end);
             <code>
 void operator()(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; value);
             </code>
-            <effects>If <c>value.get_allocator() == get_allocator()</c>, puts <c>std::move(value)</c> into the field translator sink. Otherwise, calls <c>(*this)(value.c_str(), value.c_str() + value.size())</c>.</effects>
+            <effects>If either <c>std::allocator_traits&lt;Allocator>::is_always_equal::value</c> or <c>value.get_allocator() == get_allocator()</c> is <c>true</c>, puts <c>std::move(value)</c> into the field translator sink.
+                     Otherwise, calls <c>(*this)(value.data(), value.data() + value.size())</c>.</effects>
           </code-item>
 
           <code-item>
