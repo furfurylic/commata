@@ -10,7 +10,6 @@
 #include <string_view>
 #include <type_traits>
 
-#include "handler_decorator.hpp"
 #include "../parse_result.hpp"
 
 namespace commata::detail {
