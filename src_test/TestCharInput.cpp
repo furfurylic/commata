@@ -385,6 +385,40 @@ TEST_F(TestStringInput, Direct)
     }
 }
 
+struct TestExpiringStringInput : BaseTest
+{};
+
+TEST_F(TestExpiringStringInput, Basics)
+{
+    wchar_t str[] = L"Cetus 808";
+    expiring_string_input in(expiring(str));
+
+    const auto f5 = in(5);      // reads "Cetus"
+    ASSERT_EQ(str, f5.first);
+    ASSERT_EQ(5U, f5.second);
+    f5.first[5] = L'\0';        // puts 0 just after the range, which is legal
+
+    wchar_t b[5];
+    ASSERT_EQ(4U, in(b, 4U));   // reads " 808"
+    b[4] = L'\0';
+    ASSERT_STREQ(L" 808", b);
+}
+
+TEST_F(TestExpiringStringInput, MoveConstruct)
+{
+    char str[] = "Aquila 303";
+    expiring_string_input in(expiring(str));
+
+    const auto f6 = in(6);      // reads "Aquila"
+    f6.first[6] = '\0';         // puts 0 just after the range, which is legal
+
+    expiring_string_input in2 = std::move(in);
+
+    const auto f4 = in(4);      // reads " 303"
+    ASSERT_EQ(' ', *f4.first);  // not 0
+    ASSERT_EQ(str + 6, f4.first);
+}
+
 struct TestOwnedStringInput : BaseTest
 {};
 
