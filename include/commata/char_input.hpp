@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstring>
 #include <istream>
 #include <limits>
 #include <memory>
@@ -278,6 +279,98 @@ public:
     }
 };
 
+template <class Ch>
+struct expiring_string
+{
+    Ch* data;
+    std::size_t length;
+
+    expiring_string() : expiring_string(nullptr, nullptr)
+    {}
+
+    explicit expiring_string(Ch* str) :
+        expiring_string(str, std::basic_string_view<Ch>(str).size())
+    {}
+
+    expiring_string(Ch* str, std::size_t len) : data(str), length(len)
+    {}
+
+    expiring_string(expiring_string<Ch>&& other) noexcept :
+        data(std::exchange(other.data, nullptr)),
+        length(std::exchange(other.end, 0U))
+    {}
+
+    expiring_string& operator=(expiring_string&& other) noexcept
+    {
+        data = std::exchange(other.data, nullptr);
+        length = std::exchange(other.length, 0U);
+    }
+};
+
+template <class Ch>
+expiring_string<Ch> expiring(Ch* str)
+{
+    return expiring_string<Ch>(str);
+}
+
+template <class Ch>
+expiring_string<Ch> expiring(Ch* data, std::size_t length)
+{
+    return expiring_string<Ch>(str, length);
+}
+
+template <class Ch, class Tr = std::char_traits<Ch>>
+class expiring_string_input
+{
+    Ch* begin_;
+    Ch* end_;
+    Ch front_;
+
+public:
+    static_assert(std::is_same_v<Ch, typename Tr::char_type>);
+
+    using char_type = Ch;
+    using traits_type = Tr;
+    using size_type = std::size_t;
+
+    static constexpr size_type npos = static_cast<size_type>(-1);
+
+    expiring_string_input() noexcept :
+        expiring_string_input(expiring_string<Ch>())
+    {}
+
+    explicit expiring_string_input(expiring_string<Ch> str) :
+        begin_(str.data), end_(str.data + str.length), front_()
+    {
+        if (begin_ < end_) {
+            front_ = *begin_;
+        }
+    }
+
+    expiring_string_input(expiring_string_input&& other) = default;
+    expiring_string_input& operator=(expiring_string_input&& other) = default;
+
+    size_type operator()(Ch* out, size_type n)
+    {
+        *begin_ = front_;
+        const auto rlen = std::min<size_type>(n, end_ - begin_);
+        std::copy_n(begin_, rlen, out);
+        begin_ += rlen;
+        front_ = *begin_;
+        return rlen;
+    }
+
+    std::pair<Ch*, size_type> operator()(size_type n = npos) noexcept
+    {
+        *begin_ = front_;
+        const auto rlen = std::min<size_type>(n, end_ - begin_);
+        std::pair<Ch*, size_type> r(begin_, rlen);
+        begin_ += rlen;
+        front_ = *begin_;
+        return r;
+    }
+};
+
 template <class Ch, class Tr = std::char_traits<Ch>,
     class Allocator = std::allocator<Ch>>
 class owned_string_input
@@ -505,6 +598,13 @@ template <class Ch, class Tr>
     std::basic_string_view<Ch, Tr> in) noexcept
 {
     return string_input(in);
+}
+
+template <class Ch, class Tr = std::char_traits<Ch>>
+[[nodiscard]] expiring_string_input<Ch, Tr> make_char_input(
+    expiring_string<Ch> in) noexcept
+{
+    return expiring_string_input<Ch, Tr>(in);
 }
 
 template <class Ch, class Tr, class Allocator>
