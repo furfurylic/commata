@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-05-02 (UTC)</signature>
+<signature>2025-07-05 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3324,14 +3324,14 @@ return rlen;</code>
           <code>
 std::pair&lt;Ch*, size_type> operator()(size_type n = npos) noexcept;
           </code>
+          <preface>Let <c>rlen</c> be the smaller of <c>n</c> and <c>s.size() - head</c>.</preface>
           <effects><p>Equivalent to:</p>
-                   <code>size_type rlen = std::min(n, s.size() - head);
-s[head] = front;
+                   <code>s[head] = front;
 std::pair&lt;Ch*, size_type> r(s.data() + head, rlen);
 head += rlen;
-front = s[head];
-return r;</code>
+front = s[head];</code>
           </effects>
+          <returns><c>rlen</c>.</returns>
         </code-item>
       </section>
 
