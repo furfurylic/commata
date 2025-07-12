@@ -447,32 +447,34 @@ template <class Ch, class Tr>
 
 template <class Streambuf>
 [[nodiscard]] auto make_char_input(Streambuf&& in)
-    noexcept(std::is_nothrow_move_constructible_v<Streambuf>)
+    noexcept(std::is_nothrow_move_constructible_v<
+                    std::remove_reference_t<Streambuf>>)
  -> std::enable_if_t<
         !std::is_lvalue_reference_v<Streambuf>
      && std::is_base_of_v<
             std::basic_streambuf<
-                typename Streambuf::char_type,
-                typename Streambuf::traits_type>,
-            Streambuf>,
+                typename std::remove_reference_t<Streambuf>::char_type,
+                typename std::remove_reference_t<Streambuf>::traits_type>,
+            std::remove_reference_t<Streambuf>>,
         owned_streambuf_input<Streambuf>>
 {
-    return owned_streambuf_input(std::move(in));
+    return owned_streambuf_input(std::forward<Streambuf>(in));
 }
 
 template <class IStream>
 [[nodiscard]] auto make_char_input(IStream&& in)
-    noexcept(std::is_nothrow_move_constructible_v<IStream>)
+    noexcept(std::is_nothrow_move_constructible_v<
+                    std::remove_reference_t<IStream>>)
  -> std::enable_if_t<
         !std::is_lvalue_reference_v<IStream>
      && std::is_base_of_v<
             std::basic_istream<
-                typename IStream::char_type,
-                typename IStream::traits_type>,
-            IStream>,
+                typename std::remove_reference_t<IStream>::char_type,
+                typename std::remove_reference_t<IStream>::traits_type>,
+            std::remove_reference_t<IStream>>,
         owned_istream_input<IStream>>
 {
-    return owned_istream_input(std::move(in));
+    return owned_istream_input(std::forward<IStream>(in));
 }
 
 template <class Ch, class Tr = std::char_traits<Ch>>
