@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-07-05 (UTC)</signature>
+<signature>2025-07-12 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2818,13 +2818,14 @@ namespace commata {
   template &lt;class Ch, class Tr>
     [[nodiscard]] streambuf_input&lt;Ch, Tr>
       make_char_input(std::basic_streambuf&lt;Ch, Tr>&amp; in) noexcept;
-  template &lt;class Streambuf>
-    [[nodiscard]] owned_streambuf_input&lt;Streambuf>
-      make_char_input(Streambuf&amp;&amp; in) noexcept(<nc>see below</nc>);
+  template &lt;class StreambufR>
+    [[nodiscard]] owned_streambuf_input&lt;std::remove_reference_t&lt;StreambufR>>
+      make_char_input(StreambufR&amp;&amp; in) noexcept(<nc>see below</nc>);
   template &lt;class Ch, class Tr>
     [[nodiscard]] istream_input&lt;Ch, Tr> make_char_input(std::basic_istream&lt;Ch, Tr>&amp; in) noexcept;
-  template &lt;class IStream>
-    [[nodiscard]] owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept(<nc>see below</nc>);
+  template &lt;class IStreamR>
+    [[nodiscard]] owned_istream_input&lt;std::remove_reference_t&lt;IStreamR>>
+      make_char_input(IStreamR&amp;&amp; in) noexcept(<nc>see below</nc>);
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
     [[nodiscard]] string_input&lt;Ch, Tr> make_char_input(const Ch* in);
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>>
@@ -3461,12 +3462,15 @@ template &lt;class Ch, class Tr>
 
       <code-item>
         <code>
-template &lt;class Streambuf>
-  [[nodiscard]] owned_streambuf_input&lt;Streambuf>
-    make_char_input(Streambuf&amp;&amp; in) noexcept(<nc>see below</nc>);
+template &lt;class StreambufR>
+  [[nodiscard]] owned_streambuf_input&lt;std::remove_reference_t&lt;StreambufR>>
+    make_char_input(StreambufR&amp;&amp; in) noexcept(<nc>see below</nc>);
         </code>
-        <returns><c>owned_streambuf_input&lt;Streambuf>(std::move(in))</c>.</returns>
-        <remark>This overload shall not participate in overload resolution unless the template parameter <c>Streambuf</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.
+        <preface>Let <c>StreamBuf</c> be <c>std::remove_reference_t&lt;StreamBufR></c>.</preface>
+        <returns><c>owned_streambuf_input&lt;StreamBuf>(std::forward&lt;StreambufR>(in))</c>.</returns>
+        <remark>This overload shall not participate in overload resolution unless the template parameter <c>StreambufR</c> is not an lvalue reference,
+                both of <c>StreamBuf::char_type</c> and <c>StreamBuf::traits_type</c> names types, and
+                <c>StreamBuf</c> is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;StreamBuf::char_type, StreamBuf::Tr></c> without regard to cv-qualifiers.
                 The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Streambuf></c>.</remark>
       </code-item>
 
@@ -3480,11 +3484,15 @@ template &lt;class Ch, class Tr>
 
       <code-item>
         <code>
-template &lt;class IStream>
-  [[nodiscard]] owned_istream_input&lt;IStream> make_char_input(IStream&amp;&amp; in) noexcept(<nc>see below</nc>);
+template &lt;class IStreamR>
+  [[nodiscard]] owned_istream_input&lt;std::remove_reference_t&lt;IStreamR>>
+    make_char_input(IStreamR&amp;&amp; in) noexcept(<nc>see below</nc>);
         </code>
-        <returns><c>owned_istream_input&lt;IStream>(std::move(in))</c>.</returns>
-        <remark>This overload shall not participate in overload resolution unless the template parameter <c>IStream</c> is not an lvalue reference and is the same type as, or is a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.
+        <preface>Let <c>IStream</c> be <c>std::remove_reference_t&lt;IStreamR></c>.</preface>
+        <returns><c>owned_istream_input&lt;IStream>(std::forward&lt;IStreamR>(in))</c>.</returns>
+        <remark>This overload shall not participate in overload resolution unless the template parameter <c>IStreamR</c> is not an lvalue reference,
+                both of <c>IStream::char_type</c> and <c>IStream::traits_type</c> names types, and
+                <c>IStream</c> is the same type as, or is a derived type of, <c>std::basic_istream&lt;IStream::char_type, IStream::traits_type></c> without regard to cv-qualifiers.
                 The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;IStream></c>.</remark>
       </code-item>
 
