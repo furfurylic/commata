@@ -19,6 +19,7 @@ target_sources(commata INTERFACE
     include/commata/parse_result.hpp
     include/commata/parse_tsv.hpp
     include/commata/record_extractor.hpp
+    include/commata/record_translator.hpp
     include/commata/stored_table.hpp
     include/commata/table_pull.hpp
     include/commata/table_scanner.hpp
@@ -38,6 +39,7 @@ target_sources(commata INTERFACE
     include/commata/detail/member_like_base.hpp
     include/commata/detail/propagation_controlled_allocator.hpp
     include/commata/detail/string_value.hpp
+    include/commata/detail/tuple_transform.hpp
     include/commata/detail/typing_aid.hpp
     include/commata/detail/write_ntmbs.hpp
 )
