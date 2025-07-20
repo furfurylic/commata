@@ -96,6 +96,17 @@ bool invoke_returning_bool(F&& f, As&&... as)
     }
 }
 
+template <class U, class T>
+constexpr auto forward_if(T& t) noexcept
+ -> std::conditional_t<std::is_lvalue_reference_v<U>, T&, T&&>
+{
+    if constexpr (std::is_lvalue_reference_v<U>) {
+        return t;
+    } else {
+        return std::move(t);
+    }
+}
+
 }
 
 #endif
