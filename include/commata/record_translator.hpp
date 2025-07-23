@@ -19,6 +19,7 @@
 #include "field_scanners.hpp"
 #include "table_scanner.hpp"
 
+#include "detail/typing_aid.hpp"
 #include "detail/member_like_base.hpp"
 
 namespace commata {
@@ -173,10 +174,13 @@ private:
             std::integral_constant<std::size_t, I + 1>(),
             std::forward<FieldSpecRs>(specs)...)
     {
-        // TODO: forward spec
+        // I really want to employ a fold expression, but the counter (here I)
+        // is required here
         m_.emplace(
-            spec.field_name(),
-            field_scanner_setter(spec.factory(), std::get<I>(field_values)));
+            detail::forward_if<FieldSpecR>(spec.field_name),
+            field_scanner_setter(
+                detail::forward_if<FieldSpecR>(spec.factory),
+                std::get<I>(field_values)));
     }
 
     template <std::size_t I>
