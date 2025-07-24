@@ -138,8 +138,10 @@ public:
     void operator()(std::size_t field_index, table_scanner& scanner)
     {
         scanner.set_field_scanner(field_index, this->get()(
-            [field_value = field_value_](const target_type& v)/*TODO: move?*/ {
-                field_value->emplace(v);
+            [field_value = field_value_](auto&& v) {
+                using v_t = decltype(v);
+                static_assert(std::is_same_v<target_type, std::decay_t<v_t>>);
+                field_value->emplace(std::forward<v_t>(v));
             }));
     }
 };
