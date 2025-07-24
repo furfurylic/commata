@@ -218,7 +218,12 @@ class record_translator_record_end_scanner
 
     F f_;
     std::unique_ptr<to_t> field_values_;
+
+#ifdef NDEBUG
     h_t header_field_scanner_;
+#else
+    std::optional<h_t> header_field_scanner_;
+#endif
 
 public:
     using record_type = std::tuple<typename FieldSpecs::target_type...>;
@@ -227,14 +232,23 @@ public:
     record_translator_record_end_scanner(FR&& f, FieldSpecRs&&... specs) :
         f_(std::forward<FR>(f)),
         field_values_(new to_t),
+#ifdef NDEBUG
         header_field_scanner_(*field_values_,
             std::forward<FieldSpecRs>(specs)...)
+#else
+        header_field_scanner_(std::in_place, *field_values_,
+            std::forward<FieldSpecRs>(specs)...)
+#endif
     {}
 
-    auto header_field_scanner()
+    decltype(auto) header_field_scanner()
     {
-        // TODO: move??
-        return header_field_scanner_;
+#ifdef NDEBUG
+        return std::move(header_field_scanner_);
+#else
+        assert(header_field_scanner_.has_value());
+        return std::move(*header_field_scanner_);
+#endif
     }
 
     void operator()()
