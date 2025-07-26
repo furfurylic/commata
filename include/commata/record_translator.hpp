@@ -76,6 +76,20 @@ struct string_field_translator_factory
     }
 };
 
+template <class Ch, class Tr>
+struct string_view_field_translator_factory
+{
+    using target_type = std::basic_string_view<Ch, Tr>;
+
+    template <class Sink>
+    string_view_field_translator<std::decay_t<Sink>, Ch, Tr>
+        operator()(Sink&& sink) const /* TODO: noexcept? */
+    {
+        return string_view_field_translator<std::decay_t<Sink>, Ch, Tr>(
+            std::forward<Sink>(sink));
+    }
+};
+
 template <class T, class = void>
 struct default_field_translator_factory;
 
@@ -86,10 +100,17 @@ struct default_field_translator_factory<T,
     using type = arithmetic_field_translator_factory<T>;
 };
 
-template <class Ch, class Tr>
-struct default_field_translator_factory<std::basic_string<Ch, Tr>, void>
+template <class Ch, class Tr, class Allocator>
+struct default_field_translator_factory<
+    std::basic_string<Ch, Tr, Allocator>, void>
 {
     using type = string_field_translator_factory<Ch, Tr>;
+};
+
+template <class Ch, class Tr>
+struct default_field_translator_factory<std::basic_string_view<Ch, Tr>, void>
+{
+    using type = string_view_field_translator_factory<Ch, Tr>;
 };
 
 template <class T>
