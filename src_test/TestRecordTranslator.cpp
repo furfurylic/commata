@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -14,6 +15,8 @@
 #include <commata/record_translator.hpp>
 
 #include "BaseTest.hpp"
+
+using namespace std::literals;
 
 using namespace commata;
 using namespace commata::test;
@@ -30,8 +33,8 @@ TEST_F(TestRecordTranslator, All)
             planets.emplace_back(index, std::move(name), mass);
         },
         field_spec<std::string>("Name"),
-        field_spec<std::size_t>("#"),
-        field_spec<double>("Mass"));
+        field_spec<std::size_t>("#"sv),
+        field_spec<double>("Mass"s));
     parse_tsv(make_char_input(
         "#\tName\tMass\n"
         "3\tEarth\t1\n"

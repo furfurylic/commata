@@ -39,8 +39,10 @@ constexpr auto transform_impl(std::index_sequence<Is...>,
 
 template <class F, class... Tuples>
 constexpr auto transform(F f, Tuples&&... ts) {
-    constexpr auto Min = std::min({std::tuple_size_v<std::decay_t<Tuples>>...});
-    constexpr auto Max = std::max({std::tuple_size_v<std::decay_t<Tuples>>...});
+    constexpr auto Min =
+        std::min({std::tuple_size_v<std::decay_t<Tuples>>...});
+    constexpr auto Max =
+        std::max({std::tuple_size_v<std::decay_t<Tuples>>...});
     static_assert(Min == Max, "Inconsistent tuple sizes");
     return transform_impl(std::make_index_sequence<Min>(),
                           std::move(f), std::forward<Tuples>(ts)...);
@@ -55,23 +57,9 @@ struct arithmetic_field_translator_factory
 
     template <class Sink>
     arithmetic_field_translator<T, std::decay_t<Sink>> operator()(Sink&& sink)
-        const /* TODO: noexcept? */
+        const
     {
         return arithmetic_field_translator<T, std::decay_t<Sink>>(
-            std::forward<Sink>(sink));
-    }
-};
-
-template <class Ch, class Tr, class Allocator>
-struct string_field_translator_factory
-{
-    using target_type = std::basic_string<Ch, Tr, Allocator>;
-
-    template <class Sink>
-    string_field_translator<std::decay_t<Sink>, Ch, Tr, Allocator>
-        operator()(Sink&& sink) const /* TODO: noexcept? */
-    {
-        return string_field_translator<std::decay_t<Sink>, Ch, Tr, Allocator>(
             std::forward<Sink>(sink));
     }
 };
@@ -83,9 +71,23 @@ struct string_view_field_translator_factory
 
     template <class Sink>
     string_view_field_translator<std::decay_t<Sink>, Ch, Tr>
-        operator()(Sink&& sink) const /* TODO: noexcept? */
+        operator()(Sink&& sink) const
     {
         return string_view_field_translator<std::decay_t<Sink>, Ch, Tr>(
+            std::forward<Sink>(sink));
+    }
+};
+
+template <class Ch, class Tr, class Allocator>
+struct string_field_translator_factory
+{
+    using target_type = std::basic_string<Ch, Tr, Allocator>;
+
+    template <class Sink>
+    string_field_translator<std::decay_t<Sink>, Ch, Tr, Allocator>
+        operator()(Sink&& sink) const
+    {
+        return string_field_translator<std::decay_t<Sink>, Ch, Tr, Allocator>(
             std::forward<Sink>(sink));
     }
 };
@@ -117,27 +119,65 @@ template <class T>
 using default_field_translator_factory_t =
     typename default_field_translator_factory<T>::type;
 
-template <class T,
+template <class Ch, class Tr, class Allocator, class T,
     class FieldTranslatorFactory = default_field_translator_factory_t<T>>
-struct field_spec
+struct basic_field_spec
 {
-    std::string field_name;
+    std::basic_string<Ch, Tr, Allocator> field_name;
     FieldTranslatorFactory factory;
 
     using target_type = T;
 
-    template <class String,
-        class FieldTranslatorFactoryR = FieldTranslatorFactory,
-        std::enable_if_t<std::is_convertible_v<String, std::string>>*
-            = nullptr>
-    explicit field_spec(String&& text_field_name,
-        FieldTranslatorFactoryR&& field_translator_factory
+    basic_field_spec(std::basic_string<Ch, Tr, Allocator> text_field_name,
+        FieldTranslatorFactory&& field_translator_factory
             = FieldTranslatorFactory()) :
-        field_name(std::forward<String>(text_field_name)),
-        factory(
-            std::forward<FieldTranslatorFactoryR>(field_translator_factory))
+        field_name(std::move(text_field_name)),
+        factory(std::move(field_translator_factory))
     {}
 };
+
+template <class T,
+    class FieldTranslatorFactory = default_field_translator_factory_t<T>,
+    class Ch = char, class Tr = std::char_traits<Ch>,
+    class Allocator = std::allocator<Ch>>
+basic_field_spec<Ch, Tr, Allocator, T, std::decay_t<FieldTranslatorFactory>>
+    field_spec(std::basic_string<Ch, Tr, Allocator>&& text_field_name,
+        FieldTranslatorFactory&& field_translator_factory
+            = std::decay_t<FieldTranslatorFactory>())
+{
+    return basic_field_spec<Ch, Tr, Allocator, T,
+        std::decay_t<FieldTranslatorFactory>>(
+            std::basic_string<Ch, Tr, Allocator>(text_field_name),
+            std::forward<FieldTranslatorFactory>(field_translator_factory));
+}
+
+template <class T,
+    class FieldTranslatorFactory = default_field_translator_factory_t<T>,
+    class Ch = char, class Tr = std::char_traits<Ch>>
+basic_field_spec<Ch, Tr, std::allocator<Ch>, T,
+        std::decay_t<FieldTranslatorFactory>>
+    field_spec(std::basic_string_view<Ch, Tr> text_field_name,
+        FieldTranslatorFactory&& field_translator_factory
+            = std::decay_t<FieldTranslatorFactory>())
+{
+    return field_spec<T>(
+        std::basic_string<Ch, Tr, std::allocator<Ch>>(text_field_name),
+        std::forward<FieldTranslatorFactory>(field_translator_factory));
+}
+
+template <class T,
+    class FieldTranslatorFactory = default_field_translator_factory_t<T>,
+    class Ch = char>
+basic_field_spec<Ch, std::char_traits<Ch>, std::allocator<Ch>, T,
+        std::decay_t<FieldTranslatorFactory>>
+    field_spec(const Ch* text_field_name,
+        FieldTranslatorFactory&& field_translator_factory
+            = std::decay_t<FieldTranslatorFactory>())
+{
+    return field_spec<T>(
+        std::basic_string_view<Ch, std::char_traits<Ch>>(text_field_name),
+        std::forward<FieldTranslatorFactory>(field_translator_factory));
+}
 
 namespace detail::record_xlate {
 
@@ -187,7 +227,7 @@ public:
 
 private:
     template <std::size_t I, class FieldSpecR, class... FieldSpecRs>
-    explicit record_translator_header_field_scanner(
+    record_translator_header_field_scanner(
         std::tuple<std::optional<Ts>...>& field_values,
         std::integral_constant<std::size_t, I>,
         FieldSpecR&& spec,
