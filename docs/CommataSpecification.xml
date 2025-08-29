@@ -7238,11 +7238,17 @@ template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
       <name>Default body field scanner classes</name>
 
       <p>This subclause describes the body field scanner classes (<xref id="body_field_scanner.requirements"/>) built-in to Commata.</p>
-      <p>In this subclause, terms on the possible target types of these built-in body field scanner classes are used as follows:</p>
+      <p>In this subclause, following terms and notations are used.</p>
       <ul>
         <li>A type <c>T</c> is a <n>default translatable string type</n> if <c>T</c> is the same type as <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain combination of <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>.</li>
         <li>A type <c>T</c> is a <n>default translatable string view type</n> if <c>T</c> is the same type as <c>std::basic_string_view&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</li>
         <li>A type <c>T</c> is a <n>default translatable type</n> if <c>T</c> is a default translatable arithmeric type, a default translatable string type or a default translatable string view type.</li>
+        <li>A type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> for a type <c>T</c> is defined as follows:
+          <ul>
+            <li><c>T::value_type</c> if <c>T</c> is a specialization of <c>std::optional</c>,</li>
+            <li><c>T</c> otherwise.</li>
+          </ul>
+        </li>
       </ul>
 
       <section id="arithmetic_field_translator">
@@ -7250,11 +7256,13 @@ template &lt;class T> void swap(replace_if_skipped&lt;T>&amp; left,
 
         <codeblock>
 namespace commata {
-  template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped,
-            class ConversionErrorHandler = fail_if_conversion_failed>
+  template &lt;class T, class Sink, class SkippingHandler = <nc>see below</nc>,
+            class ConversionErrorHandler = <nc>see below</nc>>
     class arithmetic_field_translator {
   public:
+    <c>// <n><xref id="arithmetic_field_translator.types"/>, member types:</n></c>
     using value_type = T;
+    using target_type = <nc>see below</nc>;
     using skipping_handler_type = SkippingHandler;
     using conversion_error_handler_type = ConversionErrorHandler;
 
@@ -7283,8 +7291,21 @@ namespace commata {
         </codeblock>
 
         <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c>.</p>
-        <p>The template parameter <c>T</c> shall be a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
-           The template parameters <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>), the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c>T</c> respectively.</p>
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
+           The template parameter <c>Sink</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.
+           The template parameters <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
+        <p>The default template-argument for the template parameter <c>SkippingHandler</c> is <c>ignore_if_skipped</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_skipped</c> otherwise.
+           The default template-argument for the template parameter <c>ConversionHandler</c> is <c>ignore_if_conversion_failed</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_conversion_failed</c> otherwise.</p>
+
+        <section id="arithmetic_field_translator.types">
+          <name><c>arithmetic_field_translator</c> member types</name>
+          <code-item>
+            <code>
+using target_type = <nc>see below</nc>;
+            </code>
+            <type><c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.</type>
+          </code-item>
+        </section>
 
         <section id="arithmetic_field_translator.cons">
           <name><c>arithmetic_field_translator</c> construct/copy/destroy</name>
@@ -7358,8 +7379,13 @@ template &lt;class Ch> struct arithmetic_convertible {
 };
               </code>
               <p>first assigns <c>Ch()</c> to <c>*end</c>,
-                 then makes an object <c>w</c> of <c>std::optional&lt;T></c> initialized with <c>to_arithmetic&lt;std::optional&lt;T>>(arithmetic_convertible&lt;Ch>{ begin, end }, get_conversion_error_handler())</c>,
-                 and finally puts <c>*w</c> into the field translator sink if <c>w.has_value()</c> is <c>true</c>.</p>
+                 then makes an object <c>w</c> of <c>std::optional&lt;T></c> initialized with <c>to_arithmetic&lt;std::optional&lt;target_type>>(arithmetic_convertible&lt;Ch>{ begin, end }, get_conversion_error_handler())</c>,
+                 and finally puts into the field translator:</p>
+              <ul>
+                <li>if <c>T</c> is a specialization of <c>std::optional</c>, <c>std::move(w)</c>;</li>
+                <li>otherwise, if <c>w</c> has a value, <c>std::move(*w)</c>;</li>
+                <li>otherwise, nothing.</li>
+              </ul>
             </effects>
             <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is <c>char</c> or <c>wchar_t</c>.</remark>
           </code-item>
@@ -7368,7 +7394,14 @@ template &lt;class Ch> struct arithmetic_convertible {
             <code>
 void operator()();
             </code>
-            <effects>Evaluates <c>invoke_typing_as&lt;T>(get_skipping_handler())</c> and puts the result into the field translator sink.</effects>
+            <effects><p>Evaluates <c>invoke_typing_as&lt;T>(get_skipping_handler())</c> and make an object <c>o</c> whose type is <c>std::optional&lt;target_type></c> from an rvalue of the result.
+                        Then puts into the field translator sink:</p>
+                      <ul>
+                        <li>if <c>T</c> is a specialization of <c>std::optional</c>, <c>std::move(o)</c>;</li>
+                        <li>otherwise, if <c>o</c> has a value, <c>std::move(*o)</c>;</li>
+                        <li>otherwise, nothing.</li>
+                      </ul>
+            </effects>
           </code-item>
         </section>
       </section>
@@ -7382,7 +7415,9 @@ namespace commata {
             class ConversionErrorHandler = fail_if_conversion_failed>
     class locale_based_arithmetic_field_translator {
   public:
+    <c>// <n><xref id="locale_based_arithmetic_field_translator.types"/>, member types:</n></c>
     using value_type = T;
+    using target_type = <nc>see below</nc>;
     using skipping_handler_type = SkippingHandler;
     using conversion_error_handler_type = ConversionErrorHandler;
 
@@ -7420,8 +7455,21 @@ private:
 
         <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
           The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C library locale.</p>
-        <p>The template parameter <c>T</c> shall be a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
-           The template parameters <c>Sink</c>, <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>), the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c>T</c> respectively.</p>
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
+           The template parameter <c>Sink</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.
+           The template parameters <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
+        <p>The default template-argument for the template parameter <c>SkippingHandler</c> is <c>ignore_if_skipped</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_skipped</c> otherwise.
+           The default template-argument for the template parameter <c>ConversionHandler</c> is <c>ignore_if_conversion_failed</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_conversion_failed</c> otherwise.</p>
+
+        <section id="locale_based_arithmetic_field_translator.types">
+          <name><c>locale_based_arithmetic_field_translator</c> member types</name>
+          <code-item>
+            <code>
+using target_type = <nc>see below</nc>;
+            </code>
+            <type><c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.</type>
+          </code-item>
+        </section>
 
         <section id="locale_based_arithmetic_field_translator.cons">
           <name><c>locale_based_arithmetic_field_translator</c> construct/copy/destroy</name>
@@ -7489,7 +7537,9 @@ namespace commata {
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped>
     class string_field_translator {
   public:
+    <c>// <n><xref id="string_field_translator.types"/>, member types:</n></c>
     using value_type = T;
+    using target_type = <nc>see below</nc>;
     using allocator_type = typename T::allocator_type;
     using skipping_handler_type = SkippingHandler;
 
@@ -7513,7 +7563,8 @@ namespace commata {
           SkippingHandler&amp; get_skipping_handler()       noexcept;
 
     <c>// <n><xref id="string_field_translator.inv"/>, invocation:</n></c>
-    void operator()(const typename T::value_type* begin, const typename T::value_type* end);
+    void operator()(const typename target_type::value_type* begin,
+                    const typename target_type::value_type* end);
     void operator()(T&amp;&amp; value);
     void operator()();
   };
@@ -7521,8 +7572,18 @@ namespace commata {
         </codeblock>
 
         <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is <c>T</c>.</p>
-        <p>The template parameter <c>T</c> shall be a default translatable string type.
-           The template parameters <c>Sink</c> and <c>SkippingHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) and the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c>T</c> respectively.</p>
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable string type.
+           The template parameters <c>Sink</c> and <c>SkippingHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c> and the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
+
+        <section id="string_field_translator.types">
+          <name><c>string_field_translator</c> member types</name>
+          <code-item>
+            <code>
+using target_type = <nc>see below</nc>;
+            </code>
+            <type><c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.</type>
+          </code-item>
+        </section>
 
         <section id="string_field_translator.cons">
           <name><c>string_field_translator</c> construct/copy/destroy</name>
@@ -7593,24 +7654,37 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
           <name><c>string_field_translator</c> invocation</name>
           <code-item>
             <code>
-void operator()(const typename T::value_type* begin, const typename T::value_type* end);
+void operator()(const typename target_type::value_type* begin,
+                const typename target_type::value_type* end);
             </code>
-            <effects>Puts <c>T(begin, end, get_allocator())</c> into the field translator sink.</effects>
+            <effects><p>Puts into the field translator sink:</p>
+                     <ul>
+                       <li>if <c>T</c> is a specialization of <c>std::optional</c>, <c>T(std::in_place, begin, end, get_allocator())</c>;</li>
+                       <li>otherwise, <c>T(begin, end, get_allocator())</c>.</li>
+                     </ul>
+            </effects>
           </code-item>
 
           <code-item>
             <code>
 void operator()(T&amp;&amp; value);
             </code>
-            <effects>If either <c>std::allocator_traits&lt;typename T::allocator_type>::is_always_equal::value</c> or <c>value.get_allocator() == get_allocator()</c> is <c>true</c>, puts <c>std::move(value)</c> into the field translator sink.
-                     Otherwise, calls <c>(*this)(value.data(), value.data() + value.size())</c>.</effects>
+            <effects>If either <c>std::allocator_traits&lt;typename T::allocator_type>::is_always_equal::value</c> or <c>value.get_allocator() == get_allocator()</c> is <c>true</c>, puts <c>T(std::in_place, std::move(value))</c> (if <c>T</c> is a specialization of <c>std::optional</c>) or <c>std::move(value)</c> (otherwise) into the field translator sink.
+                     Otherwise, evaluates <c>(*this)(value.data(), value.data() + value.size())</c>.</effects>
           </code-item>
 
           <code-item>
             <code>
 void operator()();
             </code>
-            <effects>Evaluates <c>invoke_typing_as&lt;value_type>(get_skipping_handler())</c> and puts the result into the field translator sink.</effects>
+            <effects><p>Evaluates <c>invoke_typing_as&lt;target_type>(get_skipping_handler())</c> and make an object <c>o</c> whose type is <c>std::optional&lt;target_type></c> from an rvalue of the result.
+                        Then puts into the field translator sink:</p>
+                      <ul>
+                        <li>if <c>T</c> is a specialization of <c>std::optional</c>, <c>std::move(o)</c>;</li>
+                        <li>otherwise, if <c>o</c> has a value, <c>std::move(*o)</c>;</li>
+                        <li>otherwise, nothing.</li>
+                      </ul>
+            </effects>
           </code-item>
         </section>
       </section>
@@ -7623,7 +7697,9 @@ namespace commata {
   template &lt;class T, class Sink, class SkippingHandler = fail_if_skipped>
     class string_view_field_translator {
   public:
+    <c>// <n><xref id="string_view_field_translator.types"/>, member types:</n></c>
     using value_type = T;
+    using target_type = <nc>see below</nc>;
     using skipping_handler_type = SkippingHandler;
 
     <c>// <n><xref id="string_view_field_translator.cons"/>, construct/copy/destroy:</n></c>
@@ -7639,17 +7715,28 @@ namespace commata {
           SkippingHandler&amp; get_skipping_handler()       noexcept;
 
     <c>// <n><xref id="string_view_field_translator.inv"/>, invocation:</n></c>
-    void operator()(const T::value_type* begin, const T::value_type* end);
+    void operator()(const typename target_type::value_type* begin,
+                    const typename target_type::value_type* end);
     void operator()();
   };
 }
         </codeblock>
 
         <p>The <c>string_view_field_translator</c> class template provides a simple implementation for the standard string view type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is <c>T</c>.</p>
-        <p>The template parameter <c>T</c> shall be a default translatable string view type.
-           The template parameters <c>Sink</c> and <c>SkippingHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) and the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c>T</c> respectively.</p>
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable string view type.
+           The template parameters <c>Sink</c> and <c>SkippingHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c> and the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
         <p><span class="note">A range referenced by a <c>basic_string_view</c> objects put to a <c>Sink</c> object by an object of <c>string_view_field_translator</c> will be invalidated soon after being put.
            Therefore, <c>Sink</c> objects should not store received ranges to a store that remains alive after the putting operation.</span></p>
+
+        <section id="string_view_field_translator.types">
+          <name><c>string_view_field_translator</c> member types</name>
+          <code-item>
+            <code>
+using target_type = <nc>see below</nc>;
+            </code>
+            <type><c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.</type>
+          </code-item>
+        </section>
 
         <section id="string_view_field_translator.cons">
           <name><c>string_view_field_translator</c> construct/copy/destroy</name>
@@ -7698,16 +7785,29 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
           <name><c>string_view_field_translator</c> invocation</name>
           <code-item>
             <code>
-void operator()(const T::value_type* begin, const T::value_type* end);
+void operator()(const typename target_type::value_type* begin,
+                const typename target_type::value_type* end);
             </code>
-            <effects>Puts <c>T(begin, end - begin)</c> into the field translator sink.</effects>
+            <effects><p>Puts into the field translator sink:</p>
+                     <ul>
+                       <li>if <c>T</c> is a specialization of <c>std::optional</c>, <c>T(std::in_place, begin, end - begin)</c>;</li>
+                       <li>otherwise, <c>T(begin, end - begin)</c>.</li>
+                     </ul>
+            </effects>
           </code-item>
 
           <code-item>
             <code>
 void operator()();
             </code>
-            <effects>Evaluates <c>invoke_typing_as&lt;value_type>(get_skipping_handler())</c> and puts the result into the field translator sink.</effects>
+            <effects><p>Evaluates <c>invoke_typing_as&lt;target_type>(get_skipping_handler())</c> and make an object <c>o</c> whose type is <c>std::optional&lt;target_type></c> from an rvalue of the result.
+                        Then puts into the field translator sink:</p>
+                      <ul>
+                        <li>if <c>T</c> is a specialization of <c>std::optional</c>, <c>std::move(o)</c>;</li>
+                        <li>otherwise, if <c>o</c> has a value, <c>std::move(*o)</c>;</li>
+                        <li>otherwise, nothing.</li>
+                      </ul>
+            </effects>
           </code-item>
         </section>
       </section>
@@ -7898,40 +7998,40 @@ void operator()();
 template &lt;class T, class SinkR, class... Appendices>
   [[nodiscard]] <nc>see below</nc> make_field_translator(SinkR&amp;&amp; sink, Appendices&amp;&amp;... appendices);
           </code>
-          <preface>Let <c>Sink</c> be <c>std::decay_t&lt;SinkR></c>.</preface>
+          <preface>Let <c>Sink</c> be <c>std::decay_t&lt;SinkR></c> and <c>U</c> be <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.</preface>
           <effects><p>Equivalent to:</p>
                    <code>return <n>R</n>(std::forward&lt;SinkR>(sink), std::forward&lt;Appendices>(appendices)...);</code>
                    <p>where <c><n>R</n></c> is a type decided as follows:</p>
                    <ul>
-                     <li>if <c>T</c> is a default translatable string type:
+                     <li>if <c>U</c> is a default translatable string type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_field_translator&lt;T, Sink></c>,</li>
-                         <li>otherwise, <c>string_field_translator&lt;T, Sink, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>.</li>
+                         <li>otherwise, <c>string_field_translator&lt;T, Sink, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;U, Appendices...[0]>></c>.</li>
                        </ul>
                      </li>
-                     <li>otherwise, if <c>T</c> is a default translatable string view type:
+                     <li>otherwise, if <c>U</c> is a default translatable string view type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>string_view_field_translator&lt;T, Sink></c>,</li>
-                         <li>otherwise, <c>string_view_field_translator&lt;T, Sink, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>.</li>
+                         <li>otherwise, <c>string_view_field_translator&lt;T, Sink, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;U, Appendices...[0]>></c>.</li>
                        </ul>
                      </li>
                      <li>otherwise, if <c>sizeof...(Appendices)</c> is greater than <c>0</c> and <c>std::remove_reference_t&lt;Appendices...[0]></c> is possibly cv-qualified <c>std::locale</c> or its derived type:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T></c>,</li>
-                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>2</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>></c>,</li>
-                         <li>otherwise, <c>locale_based_arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, Appendices...[2]>></c>.</li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>2</c>, <c>locale_based_arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;U, Appendices...[1]>></c>,</li>
+                         <li>otherwise, <c>locale_based_arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;U, Appendices...[1]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;U, Appendices...[2]>></c>.</li>
                        </ul>
                      </li>
                      <li>otherwise:
                        <ul>
                          <li>if <c>sizeof...(Appendices)</c> is <c>0</c>, <c>arithmetic_field_translator&lt;Sink, T></c>,</li>
-                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>></c>,</li>
-                         <li>otherwise, <c>arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;T, Appendices...[0]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, Appendices...[1]>></c>.</li>
+                         <li>otherwise, if <c>sizeof...(Appendices)</c> is <c>1</c>, <c>arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;U, Appendices...[0]>></c>,</li>
+                         <li>otherwise, <c>arithmetic_field_translator&lt;Sink, T, <nc>DEDUCED_SKIPPING_HANDLER_TYPE</nc>&lt;U, Appendices...[0]>, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;U, Appendices...[1]>></c>.</li>
                        </ul>
                      </li>
                    </ul>
           </effects>
-          <remark>This overload shall not participate in overload resolution unless <c>T</c> is a default translatable type and <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
+          <remark>This overload shall not participate in overload resolution unless <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> is a default translatable type and <c>Sink</c> is deemed to be an acceptable sink of <c>T</c>.</remark>
         </code-item>
 
         <code-item>

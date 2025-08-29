@@ -11,6 +11,7 @@
 #include <deque>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <list>
 #include <locale>
 #include <map>
@@ -34,6 +35,7 @@
 #include "BaseTest.hpp"
 #include "tracking_allocator.hpp"
 
+using namespace std::string_literals;
 using namespace std::string_view_literals;
 using namespace commata;
 using namespace commata::test;
@@ -305,6 +307,189 @@ TYPED_TEST(TestLocaleBased, Copy)
 
     const std::deque<double> expected = { 12345678.5, 33.33, 777.77, -9999.0 };
     ASSERT_EQ(expected, values);
+}
+
+struct TestBuiltInFieldScannersOptional : BaseTest
+{};
+
+TEST_F(TestBuiltInFieldScannersOptional, Arithmetic)
+{
+    std::vector<std::optional<int>> v;
+
+    wtable_scanner scanner;
+    scanner.set_field_scanner(0, make_field_translator(v));
+
+    parse_csv(
+        L"100\n"
+        L"\n" +
+        std::to_wstring(std::numeric_limits<int>::max()) + L"0\n" +
+        L'x',
+        make_empty_physical_line_aware(std::move(scanner)));
+
+    ASSERT_EQ(4U, v.size());
+    ASSERT_TRUE(v[0].has_value());
+    ASSERT_EQ(100, v[0]);
+    ASSERT_FALSE(v[1].has_value());
+    ASSERT_FALSE(v[2].has_value());
+    ASSERT_FALSE(v[3].has_value());
+}
+
+TEST_F(TestBuiltInFieldScannersOptional, ArithmeticWithHandlers)
+{
+    std::vector<std::optional<double>> ds;
+    std::vector<std::optional<int>> ns;
+
+    constexpr double empty = 1.23;
+    constexpr double invalid_format = -23.4;
+    constexpr double above_upper_limit = 10.0;
+    constexpr double below_lower_limit = -10.0;
+    constexpr double underflow = 0.1;
+
+    table_scanner scanner;
+    scanner.set_field_scanner(1, make_field_translator(ds,
+        replacement_fail,
+        replace_if_conversion_failed(empty, invalid_format,
+            above_upper_limit, below_lower_limit, underflow)));
+    scanner.set_field_scanner(2, make_field_translator(ns,
+        replace_if_skipped(777)));
+
+    std::stringstream s;
+    s << std::scientific
+      << "A,\n"
+      << "B,x\n"
+      << "C," << std::numeric_limits<double>::max() << "0\n"
+      << "D," << std::numeric_limits<double>::lowest() << "0\n"
+      << "E," << std::numeric_limits<double>::min() << "0\n";
+
+    parse_csv(s, std::move(scanner));
+
+    ASSERT_EQ(5U, ds.size());
+    ASSERT_EQ(empty, ds[0]);
+    ASSERT_EQ(invalid_format, ds[1]);
+    ASSERT_EQ(above_upper_limit, ds[2]);
+    ASSERT_EQ(below_lower_limit, ds[3]);
+    ASSERT_EQ(underflow, ds[4]);
+
+    ASSERT_EQ(
+        std::vector<std::optional<int>>(
+            5U, std::optional<int>(std::in_place, 777)),
+        ns);
+}
+
+TEST_F(TestBuiltInFieldScannersOptional, LocaleBasedArithmetic)
+{
+    std::vector<std::optional<double>> v;
+
+    table_scanner scanner;
+    std::locale loc(std::locale::classic(), new french_style_numpunct<char>);
+    scanner.set_field_scanner(0, make_field_translator(v, loc));
+
+    std::stringstream s;
+    s << std::quoted("123,45", '\"', '\"') << '\n'
+      << '\n'
+      << std::scientific << std::numeric_limits<double>::max() << "0\n"
+      << 'x';
+
+    parse_csv(s, make_empty_physical_line_aware(std::move(scanner)));
+
+    ASSERT_EQ(4U, v.size());
+    ASSERT_TRUE(v[0].has_value());
+    ASSERT_EQ(std::stod("123.45"s), v[0]);
+    ASSERT_FALSE(v[1].has_value());
+    ASSERT_FALSE(v[2].has_value());
+    ASSERT_FALSE(v[3].has_value());
+}
+
+TEST_F(TestBuiltInFieldScannersOptional, LocaleBasedArithmeticWithHandlers)
+{
+    std::vector<std::optional<double>> ds;
+
+    wtable_scanner scanner;
+    std::locale loc(
+        std::locale::classic(), new french_style_numpunct<wchar_t>);
+    scanner.set_field_scanner(1, make_field_translator(
+        ds, loc, 123.45, -234.56));
+
+    std::wstringstream s;
+    s << std::scientific
+      << L"A," << std::quoted(L"-7,77", L'\"', L'\"') << L'\n'
+      << L"B,X\n"
+      << L"C\n";
+
+    parse_csv(s, std::move(scanner));
+
+    ASSERT_EQ(3U, ds.size());
+    ASSERT_EQ(std::stod(L"-7.77"), ds[0]);
+    ASSERT_EQ(-234.56, ds[1]);
+    ASSERT_EQ(123.45, ds[2]);
+}
+
+TEST_F(TestBuiltInFieldScannersOptional, String)
+{
+    std::vector<std::optional<std::wstring>> v;
+
+    wtable_scanner scanner;
+    scanner.set_field_scanner(0, make_field_translator(v));
+
+    parse_csv(L"ABC\n\n", make_empty_physical_line_aware(std::move(scanner)));
+
+    ASSERT_EQ(2U, v.size());
+    ASSERT_TRUE(v[0].has_value());
+    ASSERT_EQ(L"ABC"s, v[0]);
+    ASSERT_FALSE(v[1].has_value());
+}
+
+TEST_F(TestBuiltInFieldScannersOptional, StringWithHandlers)
+{
+    std::vector<std::optional<std::string>> v;
+
+    table_scanner scanner;
+    scanner.set_field_scanner(0, make_field_translator(v, "#SKIPPED"));
+
+    parse_csv("ABC\n\n", make_empty_physical_line_aware(std::move(scanner)));
+
+    ASSERT_EQ(2U, v.size());
+    ASSERT_EQ("ABC"s, v[0]);
+    ASSERT_EQ("#SKIPPED"s, v[1]);
+}
+
+TEST_F(TestBuiltInFieldScannersOptional, StringView)
+{
+    std::ostringstream s;
+
+    table_scanner scanner;
+    scanner.set_field_scanner(0,
+        make_field_translator<std::optional<std::string_view>>(
+            [&s](std::optional<std::string_view> o) {
+                if (o) {
+                    s << "[\"" << *o << "\"]";
+                } else {
+                    s << "[*]";
+                }
+            }));
+
+    parse_csv("ABC\n\n", make_empty_physical_line_aware(std::move(scanner)));
+    ASSERT_EQ("[\"ABC\"][*]"s, std::move(s).str());
+}
+
+TEST_F(TestBuiltInFieldScannersOptional, StringViewWithHandlers)
+{
+    std::wostringstream s;
+
+    wtable_scanner scanner;
+    scanner.set_field_scanner(0,
+        make_field_translator<std::optional<std::wstring_view>>(
+            [&s](std::optional<std::wstring_view> o) {
+                if (o) {
+                    s << L"[\"" << *o << L"\"]";
+                } else {
+                    s << L"[*]";
+                }
+            },
+        L"#SKIPPED"));
+
+    parse_csv(L"ABC\n\n", make_empty_physical_line_aware(std::move(scanner)));
+    ASSERT_EQ(L"[\"ABC\"][\"#SKIPPED\"]"s, std::move(s).str());
 }
 
 static_assert(std::uses_allocator_v<table_scanner, std::allocator<char>>);
