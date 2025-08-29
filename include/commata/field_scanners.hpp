@@ -582,21 +582,21 @@ public:
     }
 };
 
-template <class Sink, class Ch,
-    class Tr = std::char_traits<Ch>, class Allocator = std::allocator<Ch>,
-    class SkippingHandler = fail_if_skipped>
+template <class T, class Sink, class SkippingHandler = fail_if_skipped>
 class string_field_translator
 {
 public:
-    using value_type = std::basic_string<Ch, Tr, Allocator>;
-    using allocator_type = Allocator;
+    static_assert(detail::is_std_string_v<T>);
+
+    using value_type = T;
+    using allocator_type = typename T::allocator_type;
     using skipping_handler_type = SkippingHandler;
 
 private:
     using translator_t =
         detail::scanner::translator<value_type, Sink, SkippingHandler>;
 
-    detail::base_member_pair<Allocator, translator_t> at_;
+    detail::base_member_pair<allocator_type, translator_t> at_;
 
 public:
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
@@ -607,15 +607,15 @@ public:
         SinkR&& sink,
         SkippingHandlerR&& handle_skipping =
             std::decay_t<SkippingHandlerR>()) :
-        at_(Allocator(),
+        at_(allocator_type(),
             translator_t(std::forward<SinkR>(sink),
                          std::forward<SkippingHandlerR>(handle_skipping)))
     {}
 
     template <class SinkR, class SkippingHandlerR = SkippingHandler>
-    string_field_translator(
-        std::allocator_arg_t, const Allocator& alloc, SinkR&& sink,
-        SkippingHandlerR&& handle_skipping = SkippingHandler()) :
+    string_field_translator(std::allocator_arg_t,
+            const typename T::allocator_type& alloc, SinkR&& sink,
+            SkippingHandlerR&& handle_skipping = SkippingHandler()) :
         at_(alloc,
             translator_t(std::forward<SinkR>(sink),
                          std::forward<SkippingHandlerR>(handle_skipping)))
@@ -645,16 +645,16 @@ public:
         at_.member().field_skipped();
     }
 
-    void operator()(const Ch* begin, const Ch* end)
+    void operator()(
+        const typename T::value_type* begin, const typename T::value_type* end)
     {
-        at_.member().put(std::basic_string<Ch, Tr, Allocator>(
-            begin, end, get_allocator()));
+        at_.member().put(T(begin, end, get_allocator()));
     }
 
-    void operator()(std::basic_string<Ch, Tr, Allocator>&& value)
+    void operator()(T&& value)
     {
-        if constexpr (
-                !std::allocator_traits<Allocator>::is_always_equal::value) {
+        if constexpr (!std::allocator_traits<allocator_type>::
+                        is_always_equal::value) {
             if (value.get_allocator() != get_allocator()) {
                 // We don't try to construct string with move(value) and
                 // get_allocator() because some standard libs lack that ctor
@@ -667,15 +667,15 @@ public:
     }
 };
 
-template <class Sink, class Ch, class Tr = std::char_traits<Ch>,
-    class SkippingHandler = fail_if_skipped>
+template <class T, class Sink, class SkippingHandler = fail_if_skipped>
 class string_view_field_translator :
     detail::member_like_base<
-        detail::scanner::translator<
-            std::basic_string_view<Ch, Tr>, Sink, SkippingHandler>>
+        detail::scanner::translator<T, Sink, SkippingHandler>>
 {
 public:
-    using value_type = std::basic_string_view<Ch, Tr>;
+    static_assert(detail::is_std_string_view_v<T>);
+
+    using value_type = T;
     using skipping_handler_type = SkippingHandler;
 
 private:
@@ -717,9 +717,10 @@ public:
         this->get().field_skipped();
     }
 
-    void operator()(const Ch* begin, const Ch* end)
+    void operator()(
+        const typename T::value_type* begin, const typename T::value_type* end)
     {
-        this->get().put(std::basic_string_view<Ch, Tr>(begin, end - begin));
+        this->get().put(T(begin, end - begin));
     }
 };
 
@@ -954,29 +955,25 @@ locale_based_arithmetic_field_translator<T, Sink,
 // string_field_translator
 template <class T, class Sink,
     std::enable_if_t<detail::is_std_string_v<T>, std::nullptr_t> = nullptr>
-string_field_translator<Sink, typename T::value_type, typename T::traits_type,
-        typename T::allocator_type>
+string_field_translator<T, Sink>
     make_field_translator_na(Sink);
 
 template <class T, class Sink, class S, class... As,
     std::enable_if_t<detail::is_std_string_v<T>, std::nullptr_t> = nullptr>
-string_field_translator<Sink, typename T::value_type, typename T::traits_type,
-        typename T::allocator_type, skipping_handler_t<T, S>>
+string_field_translator<T, Sink, skipping_handler_t<T, S>>
     make_field_translator_na(Sink, S&&, As&&...);
 
 // string_view_field_translator
 template <class T, class Sink,
     std::enable_if_t<
         detail::is_std_string_view_v<T>, std::nullptr_t> = nullptr>
-string_view_field_translator<Sink, typename T::value_type,
-        typename T::traits_type>
+string_view_field_translator<T, Sink>
     make_field_translator_na(Sink);
 
 template <class T, class Sink, class S, class... As,
     std::enable_if_t<
         detail::is_std_string_view_v<T>, std::nullptr_t> = nullptr>
-string_view_field_translator<Sink, typename T::value_type,
-        typename T::traits_type, skipping_handler_t<T, S>>
+string_view_field_translator<T, Sink, skipping_handler_t<T, S>>
     make_field_translator_na(Sink, S&&, As&&...);
 
 } // end detail::scanner
@@ -1000,12 +997,12 @@ auto make_field_translator(Sink&& sink, Appendices&&... appendices)
              std::forward<Appendices>(appendices)...);
 }
 
-template <class T, class Allocator, class Sink, class... Appendices>
+template <class T, class Sink, class... Appendices>
 [[nodiscard]] auto make_field_translator(std::allocator_arg_t,
-    const Allocator& alloc, Sink&& sink, Appendices&&... appendices)
+        const typename T::allocator_type& alloc, Sink&& sink,
+        Appendices&&... appendices)
  -> std::enable_if_t<
         detail::is_std_string_v<T>
-     && std::is_same_v<Allocator, typename T::allocator_type>
      && (detail::scanner::is_output_iterator_v<std::decay_t<Sink>>
       || std::is_invocable_v<std::decay_t<Sink>&, T>),
         decltype(detail::scanner::make_field_translator_na<T>(
