@@ -21,7 +21,7 @@
 
 #include <gtest/gtest.h>
 
-#include <commata/field_scanners.hpp>
+#include <commata/text_value_translation.hpp>
 
 #include "BaseTest.hpp"
 
