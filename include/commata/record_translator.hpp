@@ -155,13 +155,15 @@ template <class FieldTranslatorFactory>
 class field_scanner_setter :
     member_like_base<FieldTranslatorFactory>
 {
+public:
     using target_type = typename FieldTranslatorFactory::target_type;
 
-    std::optional<target_type>* field_value_;
+private:
+    std::optional<unwrap_optional_t<target_type>>* field_value_;
 
 public:
     explicit field_scanner_setter(FieldTranslatorFactory factory,
-        std::optional<target_type>& field_value) :
+        std::optional<unwrap_optional_t<target_type>>& field_value) :
         member_like_base<FieldTranslatorFactory>(std::move(factory)),
         field_value_(std::addressof(field_value))
     {}
@@ -171,8 +173,34 @@ public:
         scanner.set_field_scanner(field_index, this->get()(
             [field_value = field_value_](auto&& v) {
                 using v_t = decltype(v);
-                field_value->emplace(std::forward<v_t>(v));
+                if constexpr (is_std_optional_v<target_type>) {
+                    *field_value = std::forward<v_t>(v);
+                } else {
+                    field_value->emplace(std::forward<v_t>(v));
+                }
             }));
+    }
+};
+
+template <class T>
+struct optionalized_target
+{
+    std::optional<T> o;
+
+    T&& unwrap() &&
+    {
+        return std::move(*o);
+    }
+};
+
+template <class T>
+struct optionalized_target<std::optional<T>>
+{
+    std::optional<T> o;
+
+    std::optional<T>&& unwrap() &&
+    {
+        return std::move(o);
     }
 };
 
@@ -186,7 +214,7 @@ class record_translator_header_field_scanner
 public:
     template <class... FieldSpecRs>
     explicit record_translator_header_field_scanner(
-        std::tuple<std::optional<Ts>...>& field_values,
+        std::tuple<optionalized_target<Ts>...>& field_values,
         FieldSpecRs&&... specs) :
         record_translator_header_field_scanner(
             field_values,
@@ -197,7 +225,7 @@ public:
 private:
     template <std::size_t I, class FieldSpecR, class... FieldSpecRs>
     record_translator_header_field_scanner(
-        std::tuple<std::optional<Ts>...>& field_values,
+        std::tuple<optionalized_target<Ts>...>& field_values,
         std::integral_constant<std::size_t, I>,
         FieldSpecR&& spec,
         FieldSpecRs&&... other_specs) :
@@ -212,12 +240,12 @@ private:
             forward_if<FieldSpecR>(spec.field_name),
             field_scanner_setter(
                 forward_if<FieldSpecR>(spec.factory),
-                std::get<I>(field_values)));
+                std::get<I>(field_values).o));
     }
 
     template <std::size_t I>
     explicit record_translator_header_field_scanner(
-        std::tuple<std::optional<Ts>...>&,
+        std::tuple<optionalized_target<Ts>...>&,
         std::integral_constant<std::size_t, I>)
     {
         static_assert(I == sizeof...(Ts));
@@ -254,9 +282,8 @@ class record_translator_record_end_scanner
 {
     static_assert(std::is_invocable_v<F, typename FieldSpecs::target_type...>);
 
-    // TODO: std::optional<std:::optional<int>> is dull
     using to_t =
-        std::tuple<std::optional<typename FieldSpecs::target_type>...>;
+        std::tuple<optionalized_target<typename FieldSpecs::target_type>...>;
     using h_t = record_translator_header_field_scanner<
         typename FieldSpecs::target_type...>;
 
@@ -298,7 +325,7 @@ public:
         std::apply(
             f_,
             transform(
-                [](auto& v) { return std::move(*v); },
+                [](auto& v) { return std::move(v).unwrap(); },
                 *field_values_));
     }
 };
