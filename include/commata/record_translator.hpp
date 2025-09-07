@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <functional>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -50,16 +51,15 @@ public:
 
     template <class Sink>
     arithmetic_field_translator<T, std::decay_t<Sink>,
-        SkippingHandler, ConversionErrorHandler> operator()(Sink&& sink) const
+        SkippingHandler, ConversionErrorHandler> operator()(Sink&& sink) &&
     {
-        // TODO: Make this member function &&-qualified
-        // (at this time, *this is stored in std::function and destructive
-        // invocation is not allowed)
         return arithmetic_field_translator<T, std::decay_t<Sink>,
                 SkippingHandler, ConversionErrorHandler>(
             std::forward<Sink>(sink),
-            this->detail::member_like_base<SkippingHandler>::get(),
-            this->detail::member_like_base<ConversionErrorHandler>::get());
+            std::move(this->
+                detail::member_like_base<SkippingHandler>::get()),
+            std::move(this->
+                detail::member_like_base<ConversionErrorHandler>::get()));
     }
 };
 
@@ -79,10 +79,10 @@ public:
 
     template <class Sink>
     string_field_translator<T, std::decay_t<Sink>, SkippingHandler>
-        operator()(Sink&& sink) const
+        operator()(Sink&& sink) &&
     {
         return string_field_translator<T, std::decay_t<Sink>, SkippingHandler>(
-            std::forward<Sink>(sink), this->get());
+            std::forward<Sink>(sink), std::move(this->get()));
     }
 };
 
@@ -102,11 +102,11 @@ public:
 
     template <class Sink>
     string_view_field_translator<T, std::decay_t<Sink>, SkippingHandler>
-        operator()(Sink&& sink) const
+        operator()(Sink&& sink) &&
     {
         return string_view_field_translator<
             T, std::decay_t<Sink>, SkippingHandler>(
-                std::forward<Sink>(sink), this->get());
+                std::forward<Sink>(sink), std::move(this->get()));
     }
 };
 
@@ -221,8 +221,16 @@ basic_field_spec<Ch, std::char_traits<Ch>, std::allocator<Ch>, T,
 
 namespace detail::record_xlate {
 
+struct field_scanner_setter
+{
+    virtual ~field_scanner_setter() {}
+    virtual void operator()(
+        std::size_t field_index, table_scanner& scanner) && = 0;
+};
+
 template <class FieldTranslatorFactory>
-class field_scanner_setter :
+class COMMATA_FULL_EBO typed_field_scanner_setter :
+    public field_scanner_setter,
     member_like_base<FieldTranslatorFactory>
 {
 public:
@@ -232,15 +240,16 @@ private:
     std::optional<unwrap_optional_t<target_type>>* field_value_;
 
 public:
-    explicit field_scanner_setter(FieldTranslatorFactory factory,
+    explicit typed_field_scanner_setter(FieldTranslatorFactory factory,
         std::optional<unwrap_optional_t<target_type>>& field_value) :
         member_like_base<FieldTranslatorFactory>(std::move(factory)),
         field_value_(std::addressof(field_value))
     {}
 
-    void operator()(std::size_t field_index, table_scanner& scanner)
+    void operator()(
+        std::size_t field_index, table_scanner& scanner) && override
     {
-        scanner.set_field_scanner(field_index, this->get()(
+        scanner.set_field_scanner(field_index, std::move(this->get())(
             [field_value = field_value_](auto&& v) {
                 using v_t = decltype(v);
                 if constexpr (is_std_optional_v<target_type>) {
@@ -278,7 +287,7 @@ template <class... Ts>
 class record_translator_header_field_scanner
 {
     std::map<std::string,
-             std::function<void (std::size_t, table_scanner&)>,
+             std::unique_ptr<field_scanner_setter>,
              std::less<>> m_;
 
 public:
@@ -306,11 +315,14 @@ private:
     {
         // I really want to employ a fold expression, but the counter (here I)
         // is required here
-        m_.emplace(
-            forward_if<FieldSpecR>(spec.field_name),
-            field_scanner_setter(
-                forward_if<FieldSpecR>(spec.factory),
-                std::get<I>(field_values).o));
+        using setter =
+            typed_field_scanner_setter<std::decay_t<decltype(spec.factory)>>;
+        std::unique_ptr<field_scanner_setter> p(new setter(
+            detail::forward_if<FieldSpecR>(spec.factory),
+            std::get<I>(field_values).o));
+        // TODO: Make typed_field_scanner_setter is allocated in terms of
+        // allocators
+        m_.emplace(forward_if<FieldSpecR>(spec.field_name), std::move(p));
     }
 
     template <std::size_t I>
@@ -331,7 +343,7 @@ public:
             const std::string_view field_name(field_value->first,
                                 field_value->second - field_value->first);
             if (const auto i = m_.find(field_name); i != m_.cend()) {
-                i->second(field_index, scanner);
+                std::move(*i->second)(field_index, scanner);
                 m_.erase(i); // makes duplicate fields ignored
             }
             return true;
@@ -340,7 +352,7 @@ public:
         for (const auto& e : m_) {
             // Make a field whose name did not appear in the header treated as
             // "skipped"
-            e.second(j, scanner);
+            std::move(*e.second)(j, scanner);
             ++j;
         }
         return false;
