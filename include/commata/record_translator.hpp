@@ -19,50 +19,94 @@
 #include "field_scanners.hpp"
 #include "table_scanner.hpp"
 
+#include "detail/full_ebo.hpp"
 #include "detail/tuple_transform.hpp"
 #include "detail/typing_aid.hpp"
 #include "detail/member_like_base.hpp"
 
 namespace commata {
 
-template <class T>
-struct arithmetic_field_translator_factory
+template <class T,
+    class SkippingHandler = std::conditional_t<detail::is_std_optional_v<T>,
+        ignore_if_skipped, fail_if_skipped>,
+    class ConversionErrorHandler =
+        std::conditional_t<detail::is_std_optional_v<T>,
+            ignore_if_conversion_failed, fail_if_conversion_failed>>
+class COMMATA_FULL_EBO arithmetic_field_translator_factory :
+    detail::member_like_base<SkippingHandler>,
+    detail::member_like_base<ConversionErrorHandler>
 {
+public:
     using target_type = T;
 
+    explicit arithmetic_field_translator_factory(
+            SkippingHandler skipping_handler = SkippingHandler(),
+            ConversionErrorHandler conversion_error_handler
+                = ConversionErrorHandler()) :
+        detail::member_like_base<SkippingHandler>(skipping_handler),
+        detail::member_like_base<ConversionErrorHandler>(
+            conversion_error_handler)
+    {}
+
     template <class Sink>
-    arithmetic_field_translator<T, std::decay_t<Sink>> operator()(Sink&& sink)
-        const
+    arithmetic_field_translator<T, std::decay_t<Sink>,
+        SkippingHandler, ConversionErrorHandler> operator()(Sink&& sink) const
     {
-        return arithmetic_field_translator<T, std::decay_t<Sink>>(
-            std::forward<Sink>(sink));
+        // TODO: Make this member function &&-qualified
+        // (at this time, *this is stored in std::function and destructive
+        // invocation is not allowed)
+        return arithmetic_field_translator<T, std::decay_t<Sink>,
+                SkippingHandler, ConversionErrorHandler>(
+            std::forward<Sink>(sink),
+            this->detail::member_like_base<SkippingHandler>::get(),
+            this->detail::member_like_base<ConversionErrorHandler>::get());
     }
 };
 
-template <class T>
-struct string_field_translator_factory
+template <class T,
+    class SkippingHandler = std::conditional_t<detail::is_std_optional_v<T>,
+        ignore_if_skipped, fail_if_skipped>>
+class string_field_translator_factory :
+    detail::member_like_base<SkippingHandler>
 {
+public:
     using target_type = T;
 
-    template <class Sink>
-    string_field_translator<T, std::decay_t<Sink>>operator()(Sink&& sink) const
-    {
-        return string_field_translator<T, std::decay_t<Sink>>(
-            std::forward<Sink>(sink));
-    }
-};
-
-template <class T>
-struct string_view_field_translator_factory
-{
-    using target_type = T;
+    explicit string_field_translator_factory(
+            SkippingHandler skipping_handler = SkippingHandler()) :
+        detail::member_like_base<SkippingHandler>(skipping_handler)
+    {}
 
     template <class Sink>
-    string_view_field_translator<T, std::decay_t<Sink>>
+    string_field_translator<T, std::decay_t<Sink>, SkippingHandler>
         operator()(Sink&& sink) const
     {
-        return string_view_field_translator<T, std::decay_t<Sink>>(
-            std::forward<Sink>(sink));
+        return string_field_translator<T, std::decay_t<Sink>, SkippingHandler>(
+            std::forward<Sink>(sink), this->get());
+    }
+};
+
+template <class T,
+    class SkippingHandler = std::conditional_t<detail::is_std_optional_v<T>,
+        ignore_if_skipped, fail_if_skipped>>
+class string_view_field_translator_factory :
+    detail::member_like_base<SkippingHandler>
+{
+public:
+    using target_type = T;
+
+    explicit string_view_field_translator_factory(
+            SkippingHandler skipping_handler = SkippingHandler()) :
+        detail::member_like_base<SkippingHandler>(skipping_handler)
+    {}
+
+    template <class Sink>
+    string_view_field_translator<T, std::decay_t<Sink>, SkippingHandler>
+        operator()(Sink&& sink) const
+    {
+        return string_view_field_translator<
+            T, std::decay_t<Sink>, SkippingHandler>(
+                std::forward<Sink>(sink), this->get());
     }
 };
 
@@ -71,7 +115,8 @@ struct default_field_translator_factory;
 
 template <class T>
 struct default_field_translator_factory<T,
-    std::enable_if_t<is_default_translatable_arithmetic_type_v<detail::unwrap_optional_t<T>>>>
+    std::enable_if_t<is_default_translatable_arithmetic_type_v<
+        detail::unwrap_optional_t<T>>>>
 {
     using type = arithmetic_field_translator_factory<T>;
 };
@@ -85,7 +130,8 @@ struct default_field_translator_factory<T,
 
 template <class T>
 struct default_field_translator_factory<T,
-    std::enable_if_t<detail::is_std_string_view_v<detail::unwrap_optional_t<T>>>>
+    std::enable_if_t<
+        detail::is_std_string_view_v<detail::unwrap_optional_t<T>>>>
 {
     using type = string_view_field_translator_factory<T>;
 };
@@ -112,11 +158,10 @@ struct basic_field_spec
 };
 
 template <class T, class Ch, class Tr, class Allocator,
-    class FieldTranslatorFactory = default_field_translator_factory_t<T>>
+    class FieldTranslatorFactory>
 basic_field_spec<Ch, Tr, Allocator, T, std::decay_t<FieldTranslatorFactory>>
     field_spec(std::basic_string<Ch, Tr, Allocator> text_field_name,
-        FieldTranslatorFactory field_translator_factory
-            = std::decay_t<FieldTranslatorFactory>())
+        FieldTranslatorFactory&& field_translator_factory)
 {
     return basic_field_spec<Ch, Tr, Allocator, T,
         std::decay_t<FieldTranslatorFactory>>(
@@ -124,29 +169,54 @@ basic_field_spec<Ch, Tr, Allocator, T, std::decay_t<FieldTranslatorFactory>>
             std::forward<FieldTranslatorFactory>(field_translator_factory));
 }
 
-template <class T, class Ch, class Tr,
-    class FieldTranslatorFactory = default_field_translator_factory_t<T>>
-basic_field_spec<Ch, Tr, std::allocator<Ch>, T, FieldTranslatorFactory>
+template <class T, class Ch, class Tr, class Allocator>
+basic_field_spec<Ch, Tr, Allocator, T>
+    field_spec(std::basic_string<Ch, Tr, Allocator> text_field_name)
+{
+    return basic_field_spec<Ch, Tr, Allocator, T,
+        default_field_translator_factory_t<T>>(
+            std::move(text_field_name));
+}
+
+template <class T, class Ch, class Tr, class FieldTranslatorFactory>
+basic_field_spec<Ch, Tr, std::allocator<Ch>, T>
     field_spec(std::basic_string_view<Ch, Tr> text_field_name,
-        FieldTranslatorFactory field_translator_factory
-            = std::decay_t<FieldTranslatorFactory>())
+        FieldTranslatorFactory&& field_translator_factory)
 {
     return field_spec<T>(
         std::basic_string<Ch, Tr, std::allocator<Ch>>(text_field_name),
         std::forward<FieldTranslatorFactory>(field_translator_factory));
 }
 
-template <class T, class Ch,
-    class FieldTranslatorFactory = default_field_translator_factory_t<T>>
+template <class T, class Ch, class Tr>
+basic_field_spec<Ch, Tr, std::allocator<Ch>, T,
+        default_field_translator_factory_t<T>>
+    field_spec(std::basic_string_view<Ch, Tr> text_field_name)
+{
+    return field_spec<T>(
+        std::basic_string<Ch, Tr, std::allocator<Ch>>(text_field_name),
+        default_field_translator_factory_t<T>());
+}
+
+template <class T, class FieldTranslatorFactory, class Ch>
 basic_field_spec<Ch, std::char_traits<Ch>, std::allocator<Ch>, T,
         FieldTranslatorFactory>
     field_spec(const Ch* text_field_name,
-        FieldTranslatorFactory&& field_translator_factory
-            = std::decay_t<FieldTranslatorFactory>())
+        FieldTranslatorFactory&& field_translator_factory)
 {
     return field_spec<T>(
         std::basic_string_view<Ch, std::char_traits<Ch>>(text_field_name),
         std::forward<FieldTranslatorFactory>(field_translator_factory));
+}
+
+template <class T, class Ch>
+basic_field_spec<Ch, std::char_traits<Ch>, std::allocator<Ch>, T,
+        default_field_translator_factory_t<T>>
+    field_spec(const Ch* text_field_name)
+{
+    return field_spec<T>(
+        std::basic_string_view<Ch, std::char_traits<Ch>>(text_field_name),
+        default_field_translator_factory_t<T>());
 }
 
 namespace detail::record_xlate {
