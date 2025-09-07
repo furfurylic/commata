@@ -35,7 +35,9 @@ TEST_F(TestRecordTranslator, All)
         },
         field_spec<std::string>("Name"),
         field_spec<std::optional<std::size_t>>("#"sv),
-        field_spec<double>("Mass"s, arithmetic_field_translator_factory<double, replace_if_skipped<double>>(-1.0)));
+        field_spec<double>("Mass"s,
+            arithmetic_field_translator_factory<
+                double, replace_if_skipped<double>>(-1.0)));
     parse_tsv(make_char_input(
         "#\tName\tMass\n"
         "3\tEarth\t1\n"
