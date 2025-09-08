@@ -172,6 +172,9 @@ struct basic_field_spec
     std::basic_string<Ch, Tr, Allocator> field_name;
     FieldTranslatorFactory factory; // TODO: Employ EBO
 
+    using char_type = Ch;
+    using traits_type = Tr;
+    using allocator_type = Allocator;
     using target_type = T;
 
     basic_field_spec(std::basic_string<Ch, Tr, Allocator> text_field_name,
@@ -251,16 +254,18 @@ basic_field_spec<Ch, std::char_traits<Ch>, std::allocator<Ch>, T,
 
 namespace detail::record_xlate {
 
+template <class Ch, class Tr, class Allocator>
 struct field_scanner_setter
 {
     virtual ~field_scanner_setter() {}
     virtual void operator()(
-        std::size_t field_index, table_scanner& scanner) && = 0;
+        std::size_t field_index,
+        basic_table_scanner<Ch, Tr, Allocator>& scanner) && = 0;
 };
 
-template <class FieldTranslatorFactory>
+template <class FieldTranslatorFactory, class Ch, class Tr, class Allocator>
 class COMMATA_FULL_EBO typed_field_scanner_setter :
-    public field_scanner_setter,
+    public field_scanner_setter<Ch, Tr, Allocator>,
     member_like_base<FieldTranslatorFactory>
 {
 public:
@@ -277,7 +282,8 @@ public:
     {}
 
     void operator()(
-        std::size_t field_index, table_scanner& scanner) && override
+        std::size_t field_index,
+        basic_table_scanner<Ch, Tr, Allocator>& scanner) && override
     {
         scanner.set_field_scanner(field_index, std::move(this->get())(
             [field_value = field_value_](auto&& v) {
@@ -313,11 +319,11 @@ struct optionalized_target<std::optional<T>>
     }
 };
 
-template <class... Ts>
+template <class Ch, class Tr, class Allocator, class... Ts>
 class record_translator_header_field_scanner
 {
     std::map<std::string,
-             std::unique_ptr<field_scanner_setter>,
+             std::unique_ptr<field_scanner_setter<Ch, Tr, Allocator>>,
              std::less<>> m_;
 
 public:
@@ -346,8 +352,8 @@ private:
         // I really want to employ a fold expression, but the counter (here I)
         // is required here
         using setter =
-            typed_field_scanner_setter<std::decay_t<decltype(spec.factory)>>;
-        std::unique_ptr<field_scanner_setter> p(new setter(
+            typed_field_scanner_setter<std::decay_t<decltype(spec.factory)>, Ch, Tr, Allocator>;
+        std::unique_ptr<field_scanner_setter<Ch, Tr, Allocator>> p(new setter(
             detail::forward_if<FieldSpecR>(spec.factory),
             std::get<I>(field_values).o));
         // TODO: Make typed_field_scanner_setter is allocated in terms of
@@ -369,10 +375,11 @@ public:
     bool operator()(
         std::size_t field_index,
         std::optional<std::pair<const char*, const char*>> field_value,
-        table_scanner& scanner)
+        basic_table_scanner<Ch, Tr, Allocator>& scanner)
+            // TODO: scanner's allocator need not be equal to Allocator
     {
         if (field_value) {
-            const std::string_view field_name(field_value->first,
+            const std::basic_string_view<Ch, Tr> field_name(field_value->first,
                                 field_value->second - field_value->first);
             if (const auto i = m_.find(field_name); i != m_.cend()) {
                 std::move(*i->second)(field_index, scanner);
@@ -389,14 +396,14 @@ public:
     }
 };
 
-template <class F, class... FieldSpecs>
+template <class Ch, class Tr, class Allocator, class F, class... FieldSpecs>
 class record_translator_record_end_scanner
 {
     static_assert(std::is_invocable_v<F, typename FieldSpecs::target_type...>);
 
     using to_t =
         std::tuple<optionalized_target<typename FieldSpecs::target_type>...>;
-    using h_t = record_translator_header_field_scanner<
+    using h_t = record_translator_header_field_scanner<Ch, Tr, Allocator,
         typename FieldSpecs::target_type...>;
 
     F f_;
@@ -442,17 +449,24 @@ public:
     }
 };
 
+template <class FieldSpec>
+using scanner_t = basic_table_scanner<
+    typename FieldSpec::char_type,
+    typename FieldSpec::traits_type,
+    typename FieldSpec::allocator_type>;
+
 }
 
 template <class FR, class... FieldSpecRs>
-table_scanner make_record_translator(FR&& f, FieldSpecRs&&... specs)
+detail::record_xlate::scanner_t<std::decay_t<detail::first_t<FieldSpecRs...>>> make_record_translator(FR&& f, FieldSpecRs&&... specs)
 {
     // "Provide a deduction guide for record_translator_record_end_scanner
     // and use it here" approach is repulsed by g++ 7.5.
     detail::record_xlate::record_translator_record_end_scanner<
+            char, std::char_traits<char>, std::allocator<char>,
             std::decay_t<FR>, std::decay_t<FieldSpecRs>...>
         s(std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
-    table_scanner scanner(s.header_field_scanner());
+    detail::record_xlate::scanner_t<std::decay_t<detail::first_t<FieldSpecRs...>>> scanner(s.header_field_scanner());
     scanner.set_record_end_scanner(std::move(s));
     return scanner;
 }

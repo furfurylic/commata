@@ -55,3 +55,8 @@ TEST_F(TestRecordTranslator, All)
     expected.emplace_back(0, "Sedna", -1.0);
     ASSERT_EQ(expected, planets);
 }
+
+TEST_F(TestRecordTranslator, Wide)
+{
+    field_spec<std::wstring>(L"Genus");
+}
