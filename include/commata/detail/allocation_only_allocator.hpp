@@ -49,6 +49,7 @@ class allocation_only_allocator :
     using base_traits_t = typename std::allocator_traits<A>;
 
 public:
+    using base_type = A;
     using pointer = typename base_traits_t::pointer;
     using const_pointer = typename base_traits_t::const_pointer;
     using void_pointer = typename base_traits_t::void_pointer;
@@ -141,7 +142,8 @@ public:
         noexcept(noexcept(base_traits_t::select_on_container_copy_construction(
                             std::declval<const A&>())))
     {
-        return base_traits_t::select_on_container_copy_construction(base());
+        return allocation_only_allocator(
+            base_traits_t::select_on_container_copy_construction(base()));
     }
 
     using propagate_on_container_copy_assignment =
@@ -152,12 +154,12 @@ public:
         typename base_traits_t::propagate_on_container_swap;
     using is_always_equal = typename base_traits_t::is_always_equal;
 
-    decltype(auto) base() noexcept
+    A& base() noexcept
     {
         return this->get();
     }
 
-    decltype(auto) base() const noexcept
+    const A& base() const noexcept
     {
         return this->get();
     }
