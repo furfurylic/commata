@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "detail/allocate_deallocate.hpp"
 #include "detail/buffer_size.hpp"
 #include "detail/full_ebo.hpp"
 #include "detail/member_like_base.hpp"
@@ -2201,31 +2202,13 @@ private:
     {
         using t_t = std::decay_t<T>;
         using th_t = detail::stored::typed_end_record_handler<table_type, t_t>;
-
-        using at_t = typename std::allocator_traits<Allocator>::
-                        template rebind_traits<th_t>;
-        using a_t = typename at_t::allocator_type;
-        a_t a(table_->get_allocator());
-
-        const auto p = at_t::allocate(a, 1);                        // throw
-        try {
-            ::new (std::addressof(*p)) th_t(std::forward<T>(t));    // throw
-        } catch (...) {
-            at_t::deallocate(a, p, 1);
-            throw;
-        }
-        return p;
+        return detail::allocate_construct_g<th_t>(
+            table_->get_allocator(), std::forward<T>(t));
     }
 
     void destroy_deallocate(ph_t p) noexcept
     {
-        using at_t = typename std::allocator_traits<Allocator>::
-                        template rebind_traits<h_t>;
-        using a_t = typename at_t::allocator_type;
-        a_t a(table_->get_allocator());
-
-        p->~end_record_handler();
-        at_t::deallocate(a, p, 1);
+        detail::destroy_deallocate_g(table_->get_allocator(), p);
     }
 
 public:

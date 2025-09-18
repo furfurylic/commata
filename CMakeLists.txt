@@ -25,6 +25,7 @@ target_sources(commata INTERFACE
     include/commata/text_error.hpp
     include/commata/text_value_translation.hpp
     include/commata/wrapper_handlers.hpp
+    include/commata/detail/allocate_deallocate.hpp
     include/commata/detail/allocation_only_allocator.hpp
     include/commata/detail/base_parser.hpp
     include/commata/detail/base_source.hpp

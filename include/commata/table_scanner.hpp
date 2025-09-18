@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "detail/allocate_deallocate.hpp"
 #include "detail/allocation_only_allocator.hpp"
 #include "detail/buffer_size.hpp"
 #include "detail/full_ebo.hpp"
@@ -710,29 +711,14 @@ private:
     template <class T, class... Args>
     [[nodiscard]] auto allocate_construct(Args&&... args)
     {
-        using t_alloc_traits_t =
-            typename at_t::template rebind_traits<T>;
-        typename t_alloc_traits_t::allocator_type a(get_allocator());
-        const auto p = t_alloc_traits_t::allocate(a, 1);    // throw
-        try {
-            ::new(std::addressof(*p))
-                T(std::forward<Args>(args)...);             // throw
-        } catch (...) {
-            a.deallocate(p, 1);
-            throw;
-        }
-        return p;
+        return detail::allocate_construct_g<T>(
+            get_allocator(), std::forward<Args>(args)...);  // throw
     }
 
     template <class P>
     void destroy_deallocate(P p)
     {
-        assert(p);
-        using v_t = typename std::pointer_traits<P>::element_type;
-        p->~v_t();
-        using t_at_t = typename at_t::template rebind_traits<v_t>;
-        typename t_at_t::allocator_type a(get_allocator());
-        t_at_t::deallocate(a, p, 1);
+        detail::destroy_deallocate_g(get_allocator(), p);
     }
 
     std::pair<field_scanner*, bool> get_scanner()
