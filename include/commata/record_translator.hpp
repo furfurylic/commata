@@ -144,84 +144,97 @@ using default_field_translator_factory_t =
 
 template <class Ch, class Tr, class Allocator, class T,
     class FieldTranslatorFactory = default_field_translator_factory_t<T>>
-struct basic_field_spec
+class basic_field_spec :
+    detail::member_like_base<FieldTranslatorFactory>
 {
-    std::basic_string<Ch, Tr, Allocator> field_name;
-    FieldTranslatorFactory factory; // TODO: Employ EBO
+    std::basic_string<Ch, Tr, Allocator> field_name_;
 
+public:
     using char_type = Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
     using target_type = T;
 
-    basic_field_spec(std::basic_string<Ch, Tr, Allocator> text_field_name,
-        FieldTranslatorFactory field_translator_factory
-            = FieldTranslatorFactory()) :
-        field_name(std::move(text_field_name)),
-        factory(std::move(field_translator_factory))
+    basic_field_spec(std::basic_string<Ch, Tr, Allocator> field_name,
+            FieldTranslatorFactory factory = FieldTranslatorFactory()) :
+        detail::member_like_base<FieldTranslatorFactory>(std::move(factory)),
+        field_name_(std::move(field_name))
     {}
+
+    const std::basic_string<Ch, Tr, Allocator>& field_name() const noexcept
+    {
+        return field_name_;
+    }
+
+    std::basic_string<Ch, Tr, Allocator>& field_name() noexcept
+    {
+        return field_name_;
+    }
+
+    const FieldTranslatorFactory& factory() const noexcept
+    {
+        return this->get();
+    }
+
+    FieldTranslatorFactory& factory() noexcept
+    {
+        return this->get();
+    }
 };
 
 template <class T, class Ch, class Tr, class Allocator,
     class FieldTranslatorFactory>
 basic_field_spec<Ch, Tr, Allocator, T, std::decay_t<FieldTranslatorFactory>>
-    field_spec(std::basic_string<Ch, Tr, Allocator> text_field_name,
-        FieldTranslatorFactory&& field_translator_factory)
+    field_spec(std::basic_string<Ch, Tr, Allocator> field_name,
+        FieldTranslatorFactory&& factory)
 {
     return basic_field_spec<Ch, Tr, Allocator, T,
         std::decay_t<FieldTranslatorFactory>>(
-            std::move(text_field_name),
-            std::forward<FieldTranslatorFactory>(field_translator_factory));
+            std::move(field_name),
+            std::forward<FieldTranslatorFactory>(factory));
 }
 
 template <class T, class Ch, class Tr, class Allocator>
 basic_field_spec<Ch, Tr, Allocator, T>
-    field_spec(std::basic_string<Ch, Tr, Allocator> text_field_name)
+    field_spec(std::basic_string<Ch, Tr, Allocator> field_name)
 {
-    return basic_field_spec<Ch, Tr, Allocator, T,
-        default_field_translator_factory_t<T>>(
-            std::move(text_field_name));
+    return basic_field_spec<Ch, Tr, Allocator, T>(std::move(field_name));
 }
 
 template <class T, class Ch, class Tr, class FieldTranslatorFactory>
 basic_field_spec<Ch, Tr, std::allocator<Ch>, T>
-    field_spec(std::basic_string_view<Ch, Tr> text_field_name,
-        FieldTranslatorFactory&& field_translator_factory)
+    field_spec(std::basic_string_view<Ch, Tr> field_name,
+        FieldTranslatorFactory&& factory)
 {
     return field_spec<T>(
-        std::basic_string<Ch, Tr, std::allocator<Ch>>(text_field_name),
-        std::forward<FieldTranslatorFactory>(field_translator_factory));
+        std::basic_string<Ch, Tr, std::allocator<Ch>>(field_name),
+        std::forward<FieldTranslatorFactory>(factory));
 }
 
 template <class T, class Ch, class Tr>
-basic_field_spec<Ch, Tr, std::allocator<Ch>, T,
-        default_field_translator_factory_t<T>>
-    field_spec(std::basic_string_view<Ch, Tr> text_field_name)
+basic_field_spec<Ch, Tr, std::allocator<Ch>, T>
+    field_spec(std::basic_string_view<Ch, Tr> field_name)
 {
     return field_spec<T>(
-        std::basic_string<Ch, Tr, std::allocator<Ch>>(text_field_name),
-        default_field_translator_factory_t<T>());
+        std::basic_string<Ch, Tr, std::allocator<Ch>>(field_name));
 }
 
 template <class T, class FieldTranslatorFactory, class Ch>
 basic_field_spec<Ch, std::char_traits<Ch>, std::allocator<Ch>, T,
-        FieldTranslatorFactory>
-    field_spec(const Ch* text_field_name,
-        FieldTranslatorFactory&& field_translator_factory)
+        std::decay_t<FieldTranslatorFactory>>
+    field_spec(const Ch* field_name, FieldTranslatorFactory&& factory)
 {
     return field_spec<T>(
-        std::basic_string_view<Ch, std::char_traits<Ch>>(text_field_name),
-        std::forward<FieldTranslatorFactory>(field_translator_factory));
+        std::basic_string_view<Ch, std::char_traits<Ch>>(field_name),
+        std::forward<FieldTranslatorFactory>(factory));
 }
 
 template <class T, class Ch>
-basic_field_spec<Ch, std::char_traits<Ch>, std::allocator<Ch>, T,
-        default_field_translator_factory_t<T>>
-    field_spec(const Ch* text_field_name)
+basic_field_spec<Ch, std::char_traits<Ch>, std::allocator<Ch>, T>
+    field_spec(const Ch* field_name)
 {
     return field_spec<T>(
-        std::basic_string_view<Ch, std::char_traits<Ch>>(text_field_name),
-        default_field_translator_factory_t<T>());
+        std::basic_string_view<Ch, std::char_traits<Ch>>(field_name));
 }
 
 namespace detail::record_xlate {
@@ -351,19 +364,19 @@ private:
         // I really want to employ a fold expression, but the counter (here I)
         // is required here
         using typed_setter_t = typed_field_scanner_setter<
-            std::decay_t<decltype(spec.factory)>, Ch, Tr, Allocator>;
+            std::decay_t<decltype(spec.factory())>, Ch, Tr, Allocator>;
         m_mapped_t p = allocate_construct<typed_setter_t>(
-            detail::forward_if<FieldSpecR>(spec.factory),
+            detail::forward_if<FieldSpecR>(spec.factory()),
             std::get<I>(field_values).o);
         try {
             if constexpr (
                 std::is_constructible_v<
                     m_key_t,
-                    decltype(forward_if<FieldSpecR>(spec.field_name))>) {
-                m_.emplace(forward_if<FieldSpecR>(spec.field_name), p);
+                    decltype(forward_if<FieldSpecR>(spec.field_name()))>) {
+                m_.emplace(forward_if<FieldSpecR>(spec.field_name()), p);
             } else {
                 m_.emplace(
-                    m_key_t(spec.field_name.data(), spec.field_name.size(),
+                    m_key_t(spec.field_name().data(), spec.field_name().size(),
                         Allocator(m_.get_allocator().base())),
                     p);
             }
@@ -551,7 +564,7 @@ template <class FR, class... FieldSpecRs>
 detail::record_xlate::scanner_t<std::decay_t<detail::first_t<FieldSpecRs...>>>
 make_record_translator(FR&& f, FieldSpecRs&&... specs)
 {
-    auto a = std::get<0>(std::tie(specs...)).field_name.get_allocator();
+    auto a = std::get<0>(std::tie(specs...)).field_name().get_allocator();
     return make_record_translator(std::allocator_arg, a,
         std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
 }
