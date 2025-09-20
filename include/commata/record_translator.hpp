@@ -112,31 +112,40 @@ public:
     }
 };
 
+namespace detail::record_xlate {
+
 template <class T, class = void>
-struct default_field_translator_factory;
+struct default_field_translator_factory_impl
+{};
 
 template <class T>
-struct default_field_translator_factory<T,
+struct default_field_translator_factory_impl<T,
     std::enable_if_t<is_default_translatable_arithmetic_type_v<
-        detail::unwrap_optional_t<T>>>>
+        unwrap_optional_t<T>>>>
 {
     using type = arithmetic_field_translator_factory<T>;
 };
 
 template <class T>
-struct default_field_translator_factory<T,
-    std::enable_if_t<detail::is_std_string_v<detail::unwrap_optional_t<T>>>>
+struct default_field_translator_factory_impl<T,
+    std::enable_if_t<is_std_string_v<unwrap_optional_t<T>>>>
 {
     using type = string_field_translator_factory<T>;
 };
 
 template <class T>
-struct default_field_translator_factory<T,
-    std::enable_if_t<
-        detail::is_std_string_view_v<detail::unwrap_optional_t<T>>>>
+struct default_field_translator_factory_impl<T,
+    std::enable_if_t<is_std_string_view_v<unwrap_optional_t<T>>>>
 {
     using type = string_view_field_translator_factory<T>;
 };
+
+}
+
+template <class T>
+struct default_field_translator_factory :
+    detail::record_xlate::default_field_translator_factory_impl<T>
+{};
 
 template <class T>
 using default_field_translator_factory_t =
