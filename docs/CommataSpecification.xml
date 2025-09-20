@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-09-07 (UTC)</signature>
+<signature>2025-09-20 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -8085,6 +8085,101 @@ template &lt;class Allocator, class Container, class... Appendices>
           <remark>This overload shall not participate in overload resolution unless <c>Container::value_type</c> is a default translatable string type and <c><n>INSERTER</n>(values)</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
       </section>
+    </section>
+
+    <section id="hpp.record_translator.syn">
+      <name>Header <c>"commama/record_translator.hpp"</c> synopsis</name>
+
+      <codeblock>
+#include &lt;optional>
+#include &lt;string>
+#include &lt;string_view>
+
+#include "field_scanners.hpp"
+#include "table_scanner.hpp"
+
+namespace commata {
+  <c>// <n><xref id="arithmetic_field_translator_factory"/>, arithmetic_field_translator_factory:</n></c>
+  template &lt;class T, class SkippingHandler = <nc>see below</nc>, class ConversionErrorHandler = <nc>see below</nc>>
+    class arithmetic_field_translator_factory;
+
+  <c>// <n><xref id="string_field_translator_factory"/>, string_field_translator_factory:</n></c>
+  template &lt;class T, class SkippingHandler = <nc>see below</nc>>
+    class string_field_translator_factory;
+
+  <c>// <n><xref id="string_view_field_translator_factory"/>, string_view_field_translator_factory:</n></c>
+  template &lt;class T, class SkippingHandler = <nc>see below</nc>>
+    class string_view_field_translator_factory;
+
+  <c>// <n><xref id="default_field_translator_factory"/>, default_field_translator_factory:</n></c>
+  template &lt;class T> struct default_field_translator_factory;
+
+  template &lt;class T> using default_field_translator_factory_t =
+    typename default_field_translator_factory&lt;T>::type;
+
+  <c>// <n><xref id="basic_field_spec"/>, basic_field_spec:</n></c>
+  template &lt;class Ch, class Tr, class Allocator, class T,
+            class FieldTranslatorFactory = default_field_translator_factory_t&lt;T>>
+    class basic_field_spec;
+
+  <c>// <n><xref id="field_specs.creation"/>, creation of field specs:</n></c>
+  template &lt;class T, class Ch, class Tr, class Allocator, class FieldTranslatorFactory>
+    basic_field_spec&lt;<nc>see below</nc>>
+      field_spec(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; field_name,
+                 FieldTranslatorFactory&amp;&amp; factory);
+  template &lt;class T, class Ch, class Tr, class Allocator>
+    basic_field_spec&lt;<nc>see below</nc>>
+      field_spec(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; field_name);
+  template &lt;class T, class Ch, class Tr, class FieldTranslatorFactory>
+    basic_field_spec&lt;<nc>see below</nc>>
+      field_spec(std::basic_string_view&lt;Ch, Tr> field_name, FieldTranslatorFactory&amp;&amp; factory);
+  template &lt;class T, class Ch, class Tr>
+    basic_field_spec&lt;<nc>see below</nc>> field_spec(std::basic_string_view&lt;Ch, Tr> field_name);
+  template &lt;class T, class FieldTranslatorFactory, class Ch>
+    basic_field_spec&lt;<nc>see below</nc>>
+      field_spec(const Ch* field_name, FieldTranslatorFactory&amp;&amp; factory);
+  template &lt;class T, class Ch> basic_field_spec&lt;<nc>see below</nc>> field_spec(const Ch* field_name);
+
+  <c>// <n><xref id="record_translators.creation"/>, creation of record translators:</n></c>
+  template &lt;class Allocator, class FR, class... FieldSpecRs>
+    basic_table_scanner&lt;<nc>see below</nc>>
+      make_record_translator(std::allocator_arg_t, const Allocator&amp; alloc,
+                             FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+  template &lt;class FR, class... FieldSpecRs>
+    basic_table_scanner&lt;<nc>see below</nc>> make_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+      </codeblock>
+      <p>The header <c>"commama/record_translator.hpp"</c> defines TODO.</p>
+    </section>
+
+    <section id="basic_field_spec">
+      <name>Class template <c>basic_field_spec</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class Ch, class Tr, class Allocator, class T,
+            class FieldTranslatorFactory = default_field_translator_factory_t&lt;T>>
+    class basic_field_spec {
+  public:
+    using char_type      = Ch;
+    using traits_type    = Tr;
+    using allocator_type = Allocator;
+    using target_type    = T;
+
+    <c>// <n><xref id="basic_field_spec.cons"/>, construct/copy/destroy:</n></c>
+    basic_field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name,
+                     FieldTranslatorFactory&amp;&amp; factory = FieldTranslatorFactory());
+
+    const std::basic_string&lt;Ch, Tr, Allocator>&amp; field_name() const noexcept;
+          std::basic_string&lt;Ch, Tr, Allocator>&amp; field_name()       noexcept;
+    const FieldTranslatorFactory&amp; factory() const noexcept;
+          FieldTranslatorFactory&amp; factory()       noexcept;
+
+  private:
+      FieldTranslatorFactory fac;                        <c>// <n>exposition only</n></c>
+      std::basic_string&lt;Ch, Tr, Allocator> fname;        <c>// <n>exposition only</n></c>
+  };
+}
+      </codeblock>
     </section>
   </section>
 </section>
