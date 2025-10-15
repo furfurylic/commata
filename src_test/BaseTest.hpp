@@ -6,6 +6,7 @@
 #ifndef COMMATA_GUARD_324DC0E6_2E5C_4359_8AE3_8CFF2626E941
 #define COMMATA_GUARD_324DC0E6_2E5C_4359_8AE3_8CFF2626E941
 
+#include <algorithm>
 #include <locale>
 #include <sstream>
 #include <string>

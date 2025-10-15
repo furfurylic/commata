@@ -520,7 +520,7 @@ struct TestParseCsvFancy : BaseTest
 {};
 
 using Chs = testing::Types<char, wchar_t>;
-TYPED_TEST_SUITE(TestParseCsvFancy, Chs);
+TYPED_TEST_SUITE(TestParseCsvFancy, Chs, );
 
 TYPED_TEST(TestParseCsvFancy, Basics)
 {
