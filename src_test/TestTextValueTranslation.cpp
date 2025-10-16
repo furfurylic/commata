@@ -181,7 +181,7 @@ static_assert(!std::is_convertible_v<B, replace_if_conversion_failed<E>>);
 
 } // end unnamed
 
-TYPED_TEST_SUITE(TestReplaceIfConversionFailed, ReplacedTypes);
+TYPED_TEST_SUITE(TestReplaceIfConversionFailed, ReplacedTypes, );
 
 TYPED_TEST(TestReplaceIfConversionFailed, WithOneArgCtor)
 {
@@ -857,7 +857,7 @@ template <class ChNum>
 struct TestToArithmeticIntegrals : BaseTest
 {};
 
-TYPED_TEST_SUITE(TestToArithmeticIntegrals, ChIntegrals);
+TYPED_TEST_SUITE(TestToArithmeticIntegrals, ChIntegrals, );
 
 TYPED_TEST(TestToArithmeticIntegrals, Correct)
 {
@@ -1030,7 +1030,7 @@ template <class ChNum>
 struct TestToArithmeticFloatingPoints : BaseTest
 {};
 
-TYPED_TEST_SUITE(TestToArithmeticFloatingPoints, ChFloatingPoints);
+TYPED_TEST_SUITE(TestToArithmeticFloatingPoints, ChFloatingPoints, );
 
 TYPED_TEST(TestToArithmeticFloatingPoints, Correct)
 {
@@ -1207,7 +1207,7 @@ template <class T>
 struct TestNumPunctReplacerToC : BaseTestWithParam<T>
 {};
 
-TYPED_TEST_SUITE(TestNumPunctReplacerToC, Chs);
+TYPED_TEST_SUITE(TestNumPunctReplacerToC, Chs, );
 
 TYPED_TEST(TestNumPunctReplacerToC, Usual)
 {

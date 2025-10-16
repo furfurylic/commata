@@ -75,7 +75,7 @@ using ChsAlsoConst = testing::Types<char, wchar_t, const char, const wchar_t>;
 
 } // end unnamed
 
-TYPED_TEST_SUITE(TestStoredValueNoModification, ChsAlsoConst);
+TYPED_TEST_SUITE(TestStoredValueNoModification, ChsAlsoConst, );
 
 TYPED_TEST(TestStoredValueNoModification, Iterators)
 {
@@ -504,7 +504,7 @@ template <class Ch>
 struct TestStoredValue : BaseTest
 {};
 
-TYPED_TEST_SUITE(TestStoredValue, Chs);
+TYPED_TEST_SUITE(TestStoredValue, Chs, );
 
 TYPED_TEST(TestStoredValue, Iterators)
 {
@@ -1197,7 +1197,7 @@ using ContentLRs =testing::Types<
 
 } // end unnamed
 
-TYPED_TEST_SUITE(TestStoredTableMerge, ContentLRs);
+TYPED_TEST_SUITE(TestStoredTableMerge, ContentLRs, );
 
 TYPED_TEST(TestStoredTableMerge, Merge)
 {
@@ -1436,7 +1436,7 @@ struct TestStoredTableAllocatorPropagation : BaseTest
     }
 };
 
-TYPED_TEST_SUITE(TestStoredTableAllocatorPropagation, TF3);
+TYPED_TEST_SUITE(TestStoredTableAllocatorPropagation, TF3, );
 
 TYPED_TEST(TestStoredTableAllocatorPropagation, CopyAssignment)
 {

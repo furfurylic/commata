@@ -629,4 +629,4 @@ using ChBs = testing::Types<
 
 } // end unnamed
 
-INSTANTIATE_TYPED_TEST_SUITE_P(CharsBufferSizes, TestTablePull, ChBs);
+INSTANTIATE_TYPED_TEST_SUITE_P(CharsBufferSizes, TestTablePull, ChBs, );

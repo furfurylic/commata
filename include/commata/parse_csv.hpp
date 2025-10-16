@@ -652,16 +652,26 @@ constexpr bool are_make_csv_source_args_v =
     decltype(are_make_csv_source_args_impl::check<Args...>(nullptr))();
 
 template <class T>
-constexpr bool is_csv_source_v = false;
+struct is_csv_source : std::false_type
+{};
 
 template <class CharInput>
-constexpr bool is_csv_source_v<csv_source<CharInput>> = true;
+struct is_csv_source<csv_source<CharInput>> : std::true_type
+{};
 
 template <class T>
-constexpr bool is_indirect_t_v = false;
+constexpr bool is_csv_source_v = is_csv_source<T>::value;
+
+template <class T>
+struct is_indirect_t : std::false_type
+{};
 
 template <>
-constexpr bool is_indirect_t_v<indirect_t> = true;
+struct is_indirect_t<indirect_t> : std::true_type
+{};
+
+template <class T>
+constexpr bool is_indirect_t_v = is_indirect_t<T>::value;
 
 }
 

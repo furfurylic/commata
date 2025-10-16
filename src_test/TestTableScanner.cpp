@@ -50,7 +50,7 @@ struct TestFieldTranslatorForArithmeticTypes : BaseTest
 
 static_assert(is_default_translatable_arithmetic_type_v<int>);
 
-TYPED_TEST_SUITE(TestFieldTranslatorForArithmeticTypes, Chs);
+TYPED_TEST_SUITE(TestFieldTranslatorForArithmeticTypes, Chs, );
 
 TYPED_TEST(TestFieldTranslatorForArithmeticTypes, Correct)
 {
@@ -106,7 +106,7 @@ template <class Ch>
 struct TestFieldTranslatorForStringTypes : BaseTest
 {};
 
-TYPED_TEST_SUITE(TestFieldTranslatorForStringTypes, Chs);
+TYPED_TEST_SUITE(TestFieldTranslatorForStringTypes, Chs, );
 
 TYPED_TEST(TestFieldTranslatorForStringTypes, Correct)
 {
@@ -250,7 +250,7 @@ template <class Ch>
 struct TestLocaleBased : BaseTest
 {};
 
-TYPED_TEST_SUITE(TestLocaleBased, Chs);
+TYPED_TEST_SUITE(TestLocaleBased, Chs, );
 
 TYPED_TEST(TestLocaleBased, FrenchStyle)
 {
@@ -313,7 +313,7 @@ template <class Ch>
 struct TestTableScanner : BaseTest
 {};
 
-TYPED_TEST_SUITE(TestTableScanner, Chs);
+TYPED_TEST_SUITE(TestTableScanner, Chs, );
 
 TYPED_TEST(TestTableScanner, BufferSizeEOF)
 {
