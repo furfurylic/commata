@@ -546,36 +546,39 @@ using scanner_t = basic_table_scanner<
 
 }
 
-template <class Allocator, class FR, class... FieldSpecRs>
-detail::record_xlate::scanner_t<
-    std::decay_t<detail::first_t<FieldSpecRs...>>, Allocator>
+template <class Allocator, class FR, class FieldSpecR0, class... FieldSpecRs>
+detail::record_xlate::scanner_t<std::decay_t<FieldSpecR0>, Allocator>
 make_record_translator(std::allocator_arg_t, const Allocator& alloc,
-    FR&& f, FieldSpecRs&&... specs)
+    FR&& f, FieldSpecR0&& spec0, FieldSpecRs&&... specs)
 {
-    static_assert(sizeof...(FieldSpecRs) > 0);
     using table_scanner_t = detail::record_xlate::scanner_t<
-        std::decay_t<detail::first_t<FieldSpecRs...>>, Allocator>;
+        std::decay_t<FieldSpecR0>, Allocator>;
     using record_end_scanner_t =
         detail::record_xlate::record_translator_record_end_scanner<
             std::remove_const_t<typename table_scanner_t::char_type>,
             typename table_scanner_t::traits_type,
             Allocator,
-            std::decay_t<FR>, std::decay_t<FieldSpecRs>...>;
+            std::decay_t<FR>,
+            std::decay_t<FieldSpecR0>, std::decay_t<FieldSpecRs>...>;
 
     record_end_scanner_t s(std::allocator_arg, alloc,
-        std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
+        std::forward<FR>(f),
+        std::forward<FieldSpecR0>(spec0),
+        std::forward<FieldSpecRs>(specs)...);
     table_scanner_t scanner(s.bleed_header_field_scanner());
     scanner.set_record_end_scanner(std::move(s));
     return scanner;
 }
 
-template <class FR, class... FieldSpecRs>
-detail::record_xlate::scanner_t<std::decay_t<detail::first_t<FieldSpecRs...>>>
-make_record_translator(FR&& f, FieldSpecRs&&... specs)
+template <class FR, class FieldSpecR0, class... FieldSpecRs>
+detail::record_xlate::scanner_t<std::decay_t<FieldSpecR0>>
+make_record_translator(FR&& f, FieldSpecR0&& spec0, FieldSpecRs&&... specs)
 {
-    auto a = std::get<0>(std::tie(specs...)).field_name().get_allocator();
+    auto a = spec0.field_name().get_allocator();
     return make_record_translator(std::allocator_arg, a,
-        std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
+        std::forward<FR>(f),
+        std::forward<FieldSpecR0>(spec0),
+        std::forward<FieldSpecRs>(specs)...);
 }
 
 }
