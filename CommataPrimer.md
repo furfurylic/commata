@@ -660,6 +660,93 @@ void one_pass_scanning_optional_sample2()
 }
 ```
 
+### Record translators
+
+Suppose that you have a struct whose object describes a star:
+
+```C++
+struct star
+{
+  std::string name;
+  std::string constellation;
+  double apparent_magnitude;
+};
+```
+
+and that what you would like to do is to make objects of this `star` per
+record of `stars.csv` without knowledge to the order of fields (that is, for
+example, without knowing that the first field corresponds to the
+constellation, the second field corresponds to the name of star, and so on).
+
+`table_scanner` offers `set_record_end_scanner` member function that receives
+a _record end scanner_, which is a function object that is invoked on each
+end of records.
+So it could be done by writing a complex header field scanner and a record end
+scanner, which are tightly coupled in terms of the temporary store of values
+of the current record.
+It would be a tiresome work. Gee.
+
+Instead, you can call `make_record_translator` to make an
+already-fully-configured `table_scanner` object.
+See the following codes:
+
+```C++
+#include <commata/parse_csv.hpp>
+#include <commata/record_translator.hpp>
+
+using commata::field_spec;
+using commata::make_record_translator;
+using commata::parse_csv;
+
+struct star
+{
+  std::string name;
+  std::string constellation;
+  std::optional<double> distance;
+};
+
+void one_pass_scanning_sample4()
+{
+  std::vector<star> stars;
+
+  table_scanner scanner = make_record_translator(
+    [&stars](std::string name, std::string constellation,
+             std::optional<double> distance) {
+          stars.push_back(
+              { std::move(name), std::move(constellation),
+                std::move(distance) });
+    },
+    field_spec<std::string>("Name"),
+    field_spec<std::string>("Constellation"),
+    field_spec<std::optional<double>>("Distance, in parsec"));
+
+  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
+
+  std::cout << stars.size() << std::endl;       // will print "8"
+
+  std::cout << stars[0].name << std::endl;      // will print "Spica"
+  std::cout << stars[0].distance.value() << std::endl;
+                          // will print "77" or something like that
+
+  std::cout << stars[4].name << std::endl;      // will print "Deneb"
+  std::cout << stars[4].distance.value_or(-1.0) << std::endl;
+                          // will print "-1" or something like that
+}
+```
+
+As above, the first argument to `make_record_translator` is a function object
+invoked per record, which receives the field values of the record as rvalues.
+The second and subsequent arguments are _field spec_ objects, whose target
+types (`std::string`, `std::string` and `std::optional<double>` as template
+arguments of `field_spec` above) describes the types of parameters to the
+first argument (which is a function object), and which have the corresponding
+field names.
+
+Here the field names are specified as the field values of the first record.
+The second and subsequent records are never regarded as header records,
+so invocation of the first argument of `make_record_translator` begins on the
+second record.
+
 ## Making your own table handler types
 
 So far, the second arguments to `parse_csv` were the return value of
