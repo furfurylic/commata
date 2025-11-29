@@ -203,187 +203,7 @@ Of course, you can write a class whose object wraps a `stored_table` object and
 which provides by-name field access facilities, but Commata itself does not
 have it.
 
-## One-pass scanning
-
-Commata has facilities to perform one-pass scanning and on-the-fly type
-conversion on CSV texts. To process CSV texts in this manner may be less
-flexible but can be far more efficient than to process with fully-loaded images
-of CSV texts. Here is an example to parse `stars.csv` and extract only the
-names and the apparent magnitudes of the stars with those facilities:
-
-```C++
-#include <commata/field_scanners.hpp>   // for make_field_translator
-#include <commata/parse_csv.hpp>
-#include <commata/table_scanner.hpp>    // for table_scanner
-
-using commata::table_scanner;
-using commata::make_field_translator;
-using commata::parse_csv;
-
-void one_pass_scanning_sample()
-{
-  std::set<std::string, std::less<>> constellation_set;
-  std::vector<std::string> names;
-  std::deque<double> magnitudes;
-
-  table_scanner scanner(1 /* means that the first one record is a header */);
-  scanner.set_field_scanner(0, make_field_translator(constellation_set));
-    // sets a body field scanner for field #0 (zero-based)
-  scanner.set_field_scanner(1, make_field_translator(names));
-    // sets a body field scanner for field #1 (zero-based)
-  scanner.set_field_scanner(2, make_field_translator(magnitudes));
-    // sets a body field scanner for field #2 (zero-based)
-
-  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
-
-  std::cout << constellation_set.size() << std::endl;
-                                                // will print "2"
-  std::copy(constellation_set.cbegin(), constellation_set.cend(),
-            std::ostream_iterator<std::string>(std::cout, ' '));
-                                                // will print "Cygnus Virgo "
-                                                // or something like that
-  std::cout << std::endl;
-  std::cout << names.size() << std::endl;       // will print "8"
-  std::cout << names.back() << std::endl;       // will print "Fawaris"
-  std::cout << magnitudes.size() << std::endl;  // will print "8"
-  std::cout << magnitudes[2] << std::endl;      // will print "2.74"
-                                                // or something like that
-}
-```
-
-`make_field_translator` makes a _body field scanner_ object which transfers
-the translated field value to its argument.
-
-The argument of it can be either of:
-
-- an lvalue to a non-const container object at the right position or the back
-  of which the translated field value is inserted,
-- an output iterator object which receives the translated field value, or
-- a function object which receives the translated field value as its one and
-  only parameter.
-
-In the last two cases, the type to which the field values are translated
-must be specified explicitly as the first template argument of
-`make_field_translator`. See the following sample:
-
-```C++
-#include <commata/field_scanners.hpp>
-#include <commata/parse_csv.hpp>
-#include <commata/table_scanner.hpp>
-
-using commata::table_scanner;
-using commata::make_field_translator;
-using commata::parse_csv;
-
-void one_pass_scanning_sample2()
-{
-  table_scanner scanner(1);
-
-  // The body field scanner for field #1 will print the name of stars to the
-  // standard output
-  scanner.set_field_scanner(1,
-    make_field_translator<std::string>(     // <std::string> is required
-      std::ostream_iterator<std::string>(std::cout, "\n")));
-
-  // The body field scanner for field #2 will make max_magnitude the magnitude
-  // of the brightest star (note that brighter stars have smaller magnitudes)
-  double max_magnitude = std::numeric_limits<double>::max();
-  scanner.set_field_scanner(2,
-    make_field_translator<double>(          // <double> is required
-      [&max_magnitude] (double magnitude) {
-        max_magnitude = std::min(max_magnitude, magnitude);
-      }));
-
-  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
-    // Here the body field scanner for field #1 will print the names of stars
-    // to the standard output on the fly
-
-  std::cout << max_magnitude << std::endl;  // will print "0.97"
-                                            // or something like that
-}
-```
-
-`make_field_translator` makes a body field scanner that translates the field
-values into the following types:
-
-- arithmetic types: `char`, `signed char`, `unsigned char`, `short`,
-  `unsigned short`, `int`, `unsigned int`, `long`, `unsigned long`,
-  `long long`, `unsigned long long`, `float`, `double`, `long double`,
-- standard string types: `std::basic_string<Ch, Tr, Allocator>` where `Ch` is
-  the identical type to the character type of the input text, and
-- standard string view types: `std::basic_string_view<Ch, Tr>` where `Ch` is
-  the identical type to the character type of the input text.
-
-To translate strings into arithmetic values, Commata employs C function
-`std::strtol` and its comrades declared in `<cstdlib>`.
-
-### Installing body field scanners lazily referencing the values of the header fields
-
-`table_scanner` can be configured to scan some first records as header records
-and can be set body field scanners lazily. See the following (somewhat lengthy)
-example:
-
-```C++
-#include <commata/field_scanners.hpp>
-#include <commata/parse_csv.hpp>
-#include <commata/table_scanner.hpp>
-
-using commata::table_scanner;
-using commata::make_field_translator;
-using commata::parse_csv;
-
-void one_pass_scanning_sample3()
-{
-  std::vector<std::string> names;
-
-  table_scanner scanner(
-    [&names, names_attached = false]
-    (std::size_t field_index,
-     std::optional<std::pair<const char*, const char*>> field_value,
-     table_scanner& scanner) mutable {
-      if (field_value) {
-        // The value of field_index-th (zero-based) header field is notified,
-        // whose value is [field_value->first, field_value->second)
-        if (std::string_view(field_value->first,
-                             field_value->second - field_value->first)
-            == "Name") {
-          scanner.set_field_scanner(
-            field_index, make_field_translator(names));
-          names_attached = true;
-        } else {
-          return true;  // true to instruct the table scanner to continue to
-                        // report the header fields
-        }
-      } else {
-        // An end of a header record is notified
-        if (!names_attached) {
-          throw std::runtime_error(
-            "Cannot find a field of the names of the stars");
-        }
-      }
-      return false; // false to tell the scanner to uninstall this header field
-                    // scanner, and to tell it that here the header records end
-                    // and the next record will be the first body record
-    });
-
-  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
-
-  std::cout << names.front() << std::endl;  // will print "Spica"
-  std::cout << names[4] << std::endl;       // will print "Deneb"
-}
-```
-
-As above, you can construct a `table_scanner` object with a three-parameter
-function object, which is called a _header field scanner_.
-With this constructor, the constructed `table_scanner` object initially owns
-a copy of the specified header field scanner installed, and invoke it on
-every header field and every end of every header record.
-The header field scanner is unstalled from the `table_scanner` object just
-after it returns `false`.
-
-## Errors
-
-### Parse errors
+## Parse errors
 
 Suppose that `stars2.csv` is like this:
 
@@ -481,6 +301,184 @@ which is defaulted to `1`.
 Class `text_error` and `text_error_info` are defined in the header
 `"commata/text_error.hpp"`.
 
+## One-pass scanning
+
+Commata has facilities to perform one-pass scanning and on-the-fly type
+conversion on CSV texts. To process CSV texts in this manner may be less
+flexible but can be far more efficient than to process with fully-loaded images
+of CSV texts. Here is an example to parse `stars.csv` and extract only the
+names and the apparent magnitudes of the stars with those facilities:
+
+```C++
+#include <commata/field_scanners.hpp>   // for make_field_translator
+#include <commata/parse_csv.hpp>
+#include <commata/table_scanner.hpp>    // for table_scanner
+
+using commata::make_field_translator;
+using commata::parse_csv;
+using commata::table_scanner;
+
+void one_pass_scanning_sample()
+{
+  std::set<std::string, std::less<>> constellation_set;
+  std::vector<std::string> names;
+  std::deque<double> magnitudes;
+
+  table_scanner scanner(1 /* means that the first one record is a header */);
+  scanner.set_field_scanner(0, make_field_translator(constellation_set));
+    // sets a body field scanner for field #0 (zero-based)
+  scanner.set_field_scanner(1, make_field_translator(names));
+    // sets a body field scanner for field #1 (zero-based)
+  scanner.set_field_scanner(2, make_field_translator(magnitudes));
+    // sets a body field scanner for field #2 (zero-based)
+
+  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
+
+  std::cout << constellation_set.size() << std::endl;
+                                                // will print "2"
+  std::copy(constellation_set.cbegin(), constellation_set.cend(),
+            std::ostream_iterator<std::string>(std::cout, ' '));
+                                                // will print "Cygnus Virgo "
+                                                // or something like that
+  std::cout << std::endl;
+  std::cout << names.size() << std::endl;       // will print "8"
+  std::cout << names.back() << std::endl;       // will print "Fawaris"
+  std::cout << magnitudes.size() << std::endl;  // will print "8"
+  std::cout << magnitudes[2] << std::endl;      // will print "2.74"
+                                                // or something like that
+}
+```
+
+`make_field_translator` makes a _body field scanner_ object which transfers
+the translated field value to its argument.
+
+The argument of it can be either of:
+
+- an lvalue to a non-const container object at the right position or the back
+  of which the translated field value is inserted,
+- an output iterator object which receives the translated field value, or
+- a function object which receives the translated field value as its one and
+  only parameter.
+
+In the last two cases, the type to which the field values are translated
+must be specified explicitly as the first template argument of
+`make_field_translator`. See the following sample:
+
+```C++
+#include <commata/field_scanners.hpp>
+#include <commata/parse_csv.hpp>
+#include <commata/table_scanner.hpp>
+
+using commata::make_field_translator;
+using commata::parse_csv;
+using commata::table_scanner;
+
+void one_pass_scanning_sample2()
+{
+  table_scanner scanner(1);
+
+  // The body field scanner for field #1 will print the name of stars to the
+  // standard output
+  scanner.set_field_scanner(1,
+    make_field_translator<std::string>(     // <std::string> is required
+      std::ostream_iterator<std::string>(std::cout, "\n")));
+
+  // The body field scanner for field #2 will make max_magnitude the magnitude
+  // of the brightest star (note that brighter stars have smaller magnitudes)
+  double max_magnitude = std::numeric_limits<double>::max();
+  scanner.set_field_scanner(2,
+    make_field_translator<double>(          // <double> is required
+      [&max_magnitude] (double magnitude) {
+        max_magnitude = std::min(max_magnitude, magnitude);
+      }));
+
+  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
+    // Here the body field scanner for field #1 will print the names of stars
+    // to the standard output on the fly
+
+  std::cout << max_magnitude << std::endl;  // will print "0.97"
+                                            // or something like that
+}
+```
+
+`make_field_translator` makes a body field scanner that translates the field
+values into the following types:
+
+- arithmetic types: `char`, `signed char`, `unsigned char`, `short`,
+  `unsigned short`, `int`, `unsigned int`, `long`, `unsigned long`,
+  `long long`, `unsigned long long`, `float`, `double`, `long double`,
+- standard string types: `std::basic_string<Ch, Tr, Allocator>` where `Ch` is
+  the identical type to the character type of the input text, and
+- standard string view types: `std::basic_string_view<Ch, Tr>` where `Ch` is
+  the identical type to the character type of the input text.
+
+To translate strings into arithmetic values, Commata employs C function
+`std::strtol` and its comrades declared in `<cstdlib>`.
+
+### Installing body field scanners lazily referencing the values of the header fields
+
+`table_scanner` can be configured to scan some first records as header records
+and can be set body field scanners lazily. See the following (somewhat lengthy)
+example:
+
+```C++
+#include <commata/field_scanners.hpp>
+#include <commata/parse_csv.hpp>
+#include <commata/table_scanner.hpp>
+
+using commata::make_field_translator;
+using commata::parse_csv;
+using commata::table_scanner;
+
+void one_pass_scanning_sample3()
+{
+  std::vector<std::string> names;
+
+  table_scanner scanner(
+    [&names, names_attached = false]
+    (std::size_t field_index,
+     std::optional<std::pair<const char*, const char*>> field_value,
+     table_scanner& scanner) mutable {
+      if (field_value) {
+        // The value of field_index-th (zero-based) header field is notified,
+        // whose value is [field_value->first, field_value->second)
+        if (std::string_view(field_value->first,
+                             field_value->second - field_value->first)
+            == "Name") {
+          scanner.set_field_scanner(
+            field_index, make_field_translator(names));
+          names_attached = true;
+        } else {
+          return true;  // true to instruct the table scanner to continue to
+                        // report the header fields
+        }
+      } else {
+        // An end of a header record is notified
+        if (!names_attached) {
+          throw std::runtime_error(
+            "Cannot find a field of the names of the stars");
+        }
+      }
+      return false; // false to tell the scanner to uninstall this header field
+                    // scanner, and to tell it that here the header records end
+                    // and the next record will be the first body record
+    });
+
+  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
+
+  std::cout << names.front() << std::endl;  // will print "Spica"
+  std::cout << names[4] << std::endl;       // will print "Deneb"
+}
+```
+
+As above, you can construct a `table_scanner` object with a three-parameter
+function object, which is called a _header field scanner_.
+With this constructor, the constructed `table_scanner` object initially owns
+a copy of the specified header field scanner installed, and invoke it on
+every header field and every end of every header record.
+The header field scanner is unstalled from the `table_scanner` object just
+after it returns `false`.
+
 ### Conversion errors in one-pass scanning
 
 Suppose that you would like to get the average distance of the stars in
@@ -491,9 +489,9 @@ Suppose that you would like to get the average distance of the stars in
 #include <commata/parse_csv.hpp>
 #include <commata/table_scanner.hpp>
 
-using commata::table_scanner;
 using commata::make_field_translator;
 using commata::parse_csv;
+using commata::table_scanner;
 
 void one_pass_scanning_error_sample()
 {
@@ -534,10 +532,10 @@ if you want to ignore any occurrences of empty field values, you can do this:
 #include <commata/parse_csv.hpp>
 #include <commata/table_scanner.hpp>
 
-using commata::table_scanner;
 using commata::make_field_translator;
 using commata::parse_csv;
 using commata::replacement_ignore;
+using commata::table_scanner;
 
 void one_pass_scanning_error_sample2()
 {
@@ -579,6 +577,88 @@ The constant variable `replacement_ignore` is defined by including the header
 If necessary, you can do more elaborate treatment for anomalous conditions with
 class templates `replace_if_skipped` and `replace_if_conversion_failed`
 defined by including the same header `"commata/field_scanners.hpp"`.
+
+### Optional values
+
+In contrast to the above-mentioned approach, you can employ
+always-receive-as-an-optional method to handle the distance of Deneb,
+which is an empty string.
+See the following codes:
+
+```C++
+#include <commata/field_scanners.hpp>
+#include <commata/parse_csv.hpp>
+#include <commata/table_scanner.hpp>
+
+using commata::make_field_translator;
+using commata::parse_csv;
+using commata::table_scanner;
+
+void one_pass_scanning_optional_sample()
+{
+  double distance_sum = 0.0;
+  std::size_t distance_num = 0;
+
+  table_scanner scanner(1);
+  scanner.set_field_scanner(3,
+    make_field_translator<std::optional<double>>(
+      [&distance_sum, &distance_num](std::optional<double> distance) {
+        if (distance) {
+          distance_sum += *distance;
+          ++distance_num;
+        }
+      }));
+
+  parse_csv(std::ifstream("stars.csv"), std::move(scanner));
+
+  std::cout << distance_sum / distance_num << std::endl;
+    // will print the average distance
+}
+```
+
+For each type `T` you can specify as a template argument of
+`make_field_translator` as the type to which field values are converted,
+you can also specify `std::optional<T>`.
+If you do so, instead of a `T` object, the first argument to
+`make_field_translator` will receive a `std::optional<T>` object that contains
+a value if and only if the field exists and the value of the field can be
+converted to a value of `T`.
+
+(You can configure this behaviour, for example, so that the absence of the
+field should produce a `std::optional<T>` object that does not contain a value
+but an conversion error should be reported through an exception, with
+additionally specifying `replacement_ignore` and `replacement_fail` as the
+arguments of`make_field_translator`.)
+
+You can likewise populate a container of a specialization of `std::optional`:
+
+```C++
+#include <commata/field_scanners.hpp>
+#include <commata/parse_csv.hpp>
+#include <commata/table_scanner.hpp>
+
+using commata::table_scanner;
+using commata::make_field_translator;
+using commata::parse_csv;
+
+void one_pass_scanning_optional_sample2()
+{
+    std::vector<std::optional<double>> distances;
+
+    table_scanner scanner(1);
+    scanner.set_field_scanner(3, make_field_translator(distances));
+
+    parse_csv(std::ifstream("stars.csv"), std::move(scanner));
+
+    std::cout << distances.size() << std::endl;
+    std::cout << *distances[0] << std::endl;
+      // Will prints Spica's distance, which is "77" or something like that
+    std::cout << distances[4].has_value() << std::endl;
+      // Will prints "false" or "0" or something like that because Deneb has
+      // an empty string as its distance and it cannot be converted into a
+      // double value, so distances[4] does not contain a value
+}
+```
 
 ## Making your own table handler types
 
