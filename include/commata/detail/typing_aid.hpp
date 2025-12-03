@@ -71,7 +71,7 @@ struct first<Head, Tail...>
 template <class... Ts>
 using first_t = typename first<Ts...>::type;
 
-template <class E, class Category>
+template <class E, class Category = std::input_iterator_tag>
 struct is_range_accessible_impl
 {
     template <class T>
@@ -95,7 +95,7 @@ struct is_range_accessible_impl
     static auto check(...)->std::false_type;
 };
 
-template <class T, class E, class Category>
+template <class T, class E, class Category = std::input_iterator_tag>
 constexpr bool is_range_accessible_v =
     decltype(is_range_accessible_impl<E, Category>::
         template check<T>(nullptr))::value;

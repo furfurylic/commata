@@ -62,8 +62,9 @@ struct TestRecordExtractorStringPred : BaseTest
 TEST_F(TestRecordExtractorStringPred, NullTerminatedEq)
 {
     const null_terminated abc = { "ABC" };
-    const auto eq =
-        detail::record_extraction::make_eq<char, std::char_traits<char>>(abc);
+    const auto eq = detail::record_extraction::
+        make_string_pred<char, std::char_traits<char>>(
+            abc, std::allocator<char>());
     ASSERT_FALSE(eq("ABCD"));
     ASSERT_FALSE(eq("AB"));
     ASSERT_FALSE(eq("ABc"));
