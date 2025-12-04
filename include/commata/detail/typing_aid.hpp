@@ -38,6 +38,21 @@ constexpr bool is_std_optional_v = false;
 template <class T>
 constexpr bool is_std_optional_v<std::optional<T>> = true;
 
+template <class T>
+struct unwrap_optional
+{
+    using type = T;
+};
+
+template <class T>
+struct unwrap_optional<std::optional<T>>
+{
+    using type = T;
+};
+
+template <class T>
+using unwrap_optional_t = typename unwrap_optional<T>::type;
+
 template <class... Ts>
 struct first;
 
@@ -93,6 +108,17 @@ bool invoke_returning_bool(F&& f, As&&... as)
         return true;
     } else {
         return std::invoke(std::forward<F>(f), std::forward<As>(as)...);
+    }
+}
+
+template <class U, class T>
+constexpr auto forward_if(T& t) noexcept
+ -> std::conditional_t<std::is_lvalue_reference_v<U>, T&, T&&>
+{
+    if constexpr (std::is_lvalue_reference_v<U>) {
+        return t;
+    } else {
+        return std::move(t);
     }
 }
 

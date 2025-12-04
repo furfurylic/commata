@@ -341,19 +341,24 @@ constexpr bool is_output_iterator_v = is_output_iterator<T>::value;
 template <class T, class H, class F>
 void field_skipped_impl(H h, [[maybe_unused]] F f)
 {
-    auto r = invoke_typing_as<T>(h);
-    using r_t = decltype(r);
-    static_assert(std::is_convertible_v<r_t, std::optional<T>>);
-    if constexpr (std::is_convertible_v<r_t, T>) {
-        f(std::move(r));
-    } else if constexpr (is_std_optional_v<r_t>) {
-        if (r) {
-            f(std::move(*r));
-        }
-    } else if constexpr (!std::is_same_v<std::nullopt_t, r_t>) {
-        std::optional<T> r2(std::move(r));
-        if (r2) {
-            f(std::move(*r2));
+    static_assert(std::is_invocable_v<F, T>);
+    if constexpr (is_std_optional_v<T>) {
+        f(invoke_typing_as<unwrap_optional_t<T>>(h));
+    } else {
+        auto r = invoke_typing_as<T>(h);
+        using r_t = decltype(r);
+        static_assert(std::is_convertible_v<r_t, std::optional<T>>);
+        if constexpr (std::is_convertible_v<r_t, T>) {
+            f(std::move(r));
+        } else if constexpr (is_std_optional_v<r_t>) {
+            if (r) {
+                f(std::move(*r));
+            }
+        } else if constexpr (!std::is_same_v<std::nullopt_t, r_t>) {
+            std::optional<T> r2(std::move(r));
+            if (r2) {
+                f(std::move(*r2));
+            }
         }
     }
 }
@@ -390,27 +395,26 @@ public:
             });
     }
 
-public:
     template <class U>
     void put(U&& value)
     {
-        if constexpr (is_output_iterator_v<Sink>) {
-            *sink_ = std::forward<U>(value);
-            ++sink_;
-        } else {
-            sink_(std::forward<U>(value));
-        }
-    }
-
-    template <class U>
-    void put(std::optional<U>&& value)
-    {
-        if (value.has_value()) {
+        if constexpr (is_std_optional_v<std::decay_t<U>>
+                   && !is_std_optional_v<T>) {
+            if (!value.has_value()) {
+                return;
+            }
             if constexpr (is_output_iterator_v<Sink>) {
-                *sink_ = std::move(*value);
+                *sink_ = forward_if<U>(*value);
                 ++sink_;
             } else {
-                sink_(std::move(*value));
+                sink_(forward_if<U>(*value));
+            }
+        } else {
+            if constexpr (is_output_iterator_v<Sink>) {
+                *sink_ = std::forward<U>(value);
+                ++sink_;
+            } else {
+                sink_(std::forward<U>(value));
             }
         }
     }
@@ -419,19 +423,25 @@ public:
 } // end detail::scanner
 
 template <class T, class Sink,
-    class SkippingHandler = fail_if_skipped,
-    class ConversionErrorHandler = fail_if_conversion_failed>
+    class SkippingHandler = std::conditional_t<
+        detail::is_std_optional_v<T>,
+        ignore_if_skipped, fail_if_skipped>,
+    class ConversionErrorHandler = std::conditional_t<
+        detail::is_std_optional_v<T>,
+        ignore_if_conversion_failed, fail_if_conversion_failed>>
 class arithmetic_field_translator
 {
-    using translator_t = detail::scanner::translator<T, Sink, SkippingHandler>;
-
-    detail::base_member_pair<ConversionErrorHandler, translator_t> ct_;
-
 public:
     using value_type = T;
+    using target_type = detail::unwrap_optional_t<T>;
     using skipping_handler_type = SkippingHandler;
     using conversion_error_handler_type = ConversionErrorHandler;
 
+private:
+    using translator_t = detail::scanner::translator<T, Sink, SkippingHandler>;
+    detail::base_member_pair<ConversionErrorHandler, translator_t> ct_;
+
+public:
     template <class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler,
               std::enable_if_t<
@@ -484,10 +494,14 @@ public:
                       || std::is_same_v<Ch, wchar_t>>
     {
         *end = Ch();
-        auto converted = to_arithmetic<std::optional<T>>(
+        auto converted = to_arithmetic<std::optional<target_type>>(
             arithmetic_convertible<Ch>{ begin, end }, ct_.base());
-        if (converted) {
-            ct_.member().put(*converted);
+        if constexpr (detail::is_std_optional_v<value_type>) {
+            ct_.member().put(std::move(converted));
+        } else {
+            if (converted) {
+                ct_.member().put(std::move(*converted));
+            }
         }
     }
 
@@ -511,8 +525,12 @@ private:
 };
 
 template <class T, class Sink,
-    class SkippingHandler = fail_if_skipped,
-    class ConversionErrorHandler = fail_if_conversion_failed>
+    class SkippingHandler = std::conditional_t<
+        detail::is_std_optional_v<T>,
+        ignore_if_skipped, fail_if_skipped>,
+    class ConversionErrorHandler = std::conditional_t<
+        detail::is_std_optional_v<T>,
+        ignore_if_conversion_failed, fail_if_conversion_failed>>
 class locale_based_arithmetic_field_translator
 {
     numpunct_replacer_to_c remove_;
@@ -521,6 +539,7 @@ class locale_based_arithmetic_field_translator
 
 public:
     using value_type = T;
+    using target_type = typename decltype(out_)::target_type;
     using skipping_handler_type = SkippingHandler;
     using conversion_error_handler_type = ConversionErrorHandler;
 
@@ -582,14 +601,17 @@ public:
     }
 };
 
-template <class T, class Sink, class SkippingHandler = fail_if_skipped>
+template <class T, class Sink,
+    class SkippingHandler = std::conditional_t<
+        detail::is_std_optional_v<T>, ignore_if_skipped, fail_if_skipped>>
 class string_field_translator
 {
 public:
-    static_assert(detail::is_std_string_v<T>);
+    static_assert(detail::is_std_string_v<detail::unwrap_optional_t<T>>);
 
     using value_type = T;
-    using allocator_type = typename T::allocator_type;
+    using target_type = detail::unwrap_optional_t<T>;
+    using allocator_type = typename target_type::allocator_type;
     using skipping_handler_type = SkippingHandler;
 
 private:
@@ -614,7 +636,7 @@ public:
 
     template <class SinkR, class SkippingHandlerR = SkippingHandler>
     string_field_translator(std::allocator_arg_t,
-            const typename T::allocator_type& alloc, SinkR&& sink,
+            const allocator_type& alloc, SinkR&& sink,
             SkippingHandlerR&& handle_skipping = SkippingHandler()) :
         at_(alloc,
             translator_t(std::forward<SinkR>(sink),
@@ -646,12 +668,17 @@ public:
     }
 
     void operator()(
-        const typename T::value_type* begin, const typename T::value_type* end)
+        const typename target_type::value_type* begin,
+        const typename target_type::value_type* end)
     {
-        at_.member().put(T(begin, end, get_allocator()));
+        if constexpr (detail::is_std_optional_v<T>) {
+            at_.member().put(T(std::in_place, begin, end, get_allocator()));
+        } else {
+            at_.member().put(T(begin, end, get_allocator()));
+        }
     }
 
-    void operator()(T&& value)
+    void operator()(target_type&& value)
     {
         if constexpr (!std::allocator_traits<allocator_type>::
                         is_always_equal::value) {
@@ -663,19 +690,26 @@ public:
                 return;
             }
         }
-        at_.member().put(std::move(value));
+        if constexpr (detail::is_std_optional_v<T>) {
+            at_.member().put(T(std::in_place, std::move(value)));
+        } else {
+            at_.member().put(std::move(value));
+        }
     }
 };
 
-template <class T, class Sink, class SkippingHandler = fail_if_skipped>
+template <class T, class Sink,
+    class SkippingHandler = std::conditional_t<
+        detail::is_std_optional_v<T>, ignore_if_skipped, fail_if_skipped>>
 class string_view_field_translator :
     detail::member_like_base<
         detail::scanner::translator<T, Sink, SkippingHandler>>
 {
 public:
-    static_assert(detail::is_std_string_view_v<T>);
+    static_assert(detail::is_std_string_view_v<detail::unwrap_optional_t<T>>);
 
     using value_type = T;
+    using target_type = detail::unwrap_optional_t<T>;
     using skipping_handler_type = SkippingHandler;
 
 private:
@@ -718,9 +752,14 @@ public:
     }
 
     void operator()(
-        const typename T::value_type* begin, const typename T::value_type* end)
+        const typename target_type::value_type* begin,
+        const typename target_type::value_type* end)
     {
-        this->get().put(T(begin, end - begin));
+        if constexpr (detail::is_std_optional_v<T>) {
+            this->get().put(T(std::in_place, begin, end - begin));
+        } else {
+            this->get().put(T(begin, end - begin));
+        }
     }
 };
 
@@ -905,75 +944,86 @@ using conversion_error_handler_t =
 // arithmetic_field_translator
 template <class T, class Sink,
     std::enable_if_t<
-        !detail::is_std_string_v<T>
-     && !detail::is_std_string_view_v<T>, std::nullptr_t> = nullptr>
+        !detail::is_std_string_v<unwrap_optional_t<T>>
+     && !detail::is_std_string_view_v<unwrap_optional_t<T>>,
+        std::nullptr_t> = nullptr>
 arithmetic_field_translator<T, Sink>
     make_field_translator_na(Sink);
 
 template <class T, class Sink, class S,
     std::enable_if_t<
-        !detail::is_std_string_v<T>
-     && !detail::is_std_string_view_v<T>
+        !detail::is_std_string_v<unwrap_optional_t<T>>
+     && !detail::is_std_string_view_v<unwrap_optional_t<T>>
      && !std::is_base_of_v<std::locale, std::decay_t<S>>,
         std::nullptr_t> = nullptr>
-arithmetic_field_translator<T, Sink, skipping_handler_t<T, S>>
+arithmetic_field_translator<
+        T, Sink, skipping_handler_t<unwrap_optional_t<T>, S>>
     make_field_translator_na(Sink, S&&);
 
 template <class T, class Sink, class S, class C, class... As,
     std::enable_if_t<
-        !detail::is_std_string_v<T>
-     && !detail::is_std_string_view_v<T>
+        !detail::is_std_string_v<unwrap_optional_t<T>>
+     && !detail::is_std_string_view_v<unwrap_optional_t<T>>
      && !std::is_base_of_v<std::locale, std::decay_t<S>>,
         std::nullptr_t> = nullptr>
 arithmetic_field_translator<T, Sink,
-        skipping_handler_t<T, S>, conversion_error_handler_t<T, C>>
+        skipping_handler_t<unwrap_optional_t<T>, S>,
+        conversion_error_handler_t<unwrap_optional_t<T>, C>>
     make_field_translator_na(Sink, S&&, C&&, As&&...);
 
 // locale_based_arithmetic_field_translator
 template <class T, class Sink,
     std::enable_if_t<
-        !detail::is_std_string_v<T>
-     && !detail::is_std_string_view_v<T>, std::nullptr_t> = nullptr>
+        !detail::is_std_string_v<unwrap_optional_t<T>>
+     && !detail::is_std_string_view_v<unwrap_optional_t<T>>,
+        std::nullptr_t> = nullptr>
 locale_based_arithmetic_field_translator<T, Sink>
     make_field_translator_na(Sink, std::locale);
 
 template <class T, class Sink, class S,
     std::enable_if_t<
-        !detail::is_std_string_v<T>
-     && !detail::is_std_string_view_v<T>, std::nullptr_t> = nullptr>
-locale_based_arithmetic_field_translator<T, Sink, skipping_handler_t<T, S>>
+        !detail::is_std_string_v<unwrap_optional_t<T>>
+     && !detail::is_std_string_view_v<unwrap_optional_t<T>>,
+        std::nullptr_t> = nullptr>
+locale_based_arithmetic_field_translator<
+        T, Sink, skipping_handler_t<unwrap_optional_t<T>, S>>
     make_field_translator_na(Sink, std::locale, S&&);
 
 template <class T, class Sink, class S, class C, class... As,
     std::enable_if_t<
-        !detail::is_std_string_v<T>
-     && !detail::is_std_string_view_v<T>, std::nullptr_t> = nullptr>
+        !detail::is_std_string_v<unwrap_optional_t<T>>
+     && !detail::is_std_string_view_v<unwrap_optional_t<T>>,
+        std::nullptr_t> = nullptr>
 locale_based_arithmetic_field_translator<T, Sink,
-        skipping_handler_t<T, S>, conversion_error_handler_t<T, C>>
+        skipping_handler_t<unwrap_optional_t<T>, S>,
+        conversion_error_handler_t<unwrap_optional_t<T>, C>>
     make_field_translator_na(Sink, std::locale, S&&, C&&, As&&...);
 
 // string_field_translator
 template <class T, class Sink,
-    std::enable_if_t<detail::is_std_string_v<T>, std::nullptr_t> = nullptr>
+    std::enable_if_t<detail::is_std_string_v<unwrap_optional_t<T>>,
+        std::nullptr_t> = nullptr>
 string_field_translator<T, Sink>
     make_field_translator_na(Sink);
 
 template <class T, class Sink, class S, class... As,
-    std::enable_if_t<detail::is_std_string_v<T>, std::nullptr_t> = nullptr>
-string_field_translator<T, Sink, skipping_handler_t<T, S>>
+    std::enable_if_t<detail::is_std_string_v<unwrap_optional_t<T>>,
+        std::nullptr_t> = nullptr>
+string_field_translator<T, Sink, skipping_handler_t<unwrap_optional_t<T>, S>>
     make_field_translator_na(Sink, S&&, As&&...);
 
 // string_view_field_translator
 template <class T, class Sink,
-    std::enable_if_t<
-        detail::is_std_string_view_v<T>, std::nullptr_t> = nullptr>
+    std::enable_if_t<detail::is_std_string_view_v<unwrap_optional_t<T>>,
+        std::nullptr_t> = nullptr>
 string_view_field_translator<T, Sink>
     make_field_translator_na(Sink);
 
 template <class T, class Sink, class S, class... As,
-    std::enable_if_t<
-        detail::is_std_string_view_v<T>, std::nullptr_t> = nullptr>
-string_view_field_translator<T, Sink, skipping_handler_t<T, S>>
+    std::enable_if_t<detail::is_std_string_view_v<unwrap_optional_t<T>>,
+        std::nullptr_t> = nullptr>
+string_view_field_translator<unwrap_optional_t<T>, Sink,
+        skipping_handler_t<unwrap_optional_t<T>, S>>
     make_field_translator_na(Sink, S&&, As&&...);
 
 } // end detail::scanner
@@ -982,9 +1032,10 @@ template <class T, class Sink, class... Appendices>
 [[nodiscard]]
 auto make_field_translator(Sink&& sink, Appendices&&... appendices)
  -> std::enable_if_t<
-        (is_default_translatable_arithmetic_type_v<T>
-      || detail::is_std_string_v<T>
-      || detail::is_std_string_view_v<T>)
+        (is_default_translatable_arithmetic_type_v<
+            detail::unwrap_optional_t<T>>
+      || detail::is_std_string_v<detail::unwrap_optional_t<T>>
+      || detail::is_std_string_view_v<detail::unwrap_optional_t<T>>)
      && (detail::scanner::is_output_iterator_v<std::decay_t<Sink>>
       || std::is_invocable_v<std::decay_t<Sink>&, T>),
         decltype(detail::scanner::make_field_translator_na<T>(
@@ -1002,7 +1053,7 @@ template <class T, class Sink, class... Appendices>
         const typename T::allocator_type& alloc, Sink&& sink,
         Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_std_string_v<T>
+        detail::is_std_string_v<detail::unwrap_optional_t<T>>
      && (detail::scanner::is_output_iterator_v<std::decay_t<Sink>>
       || std::is_invocable_v<std::decay_t<Sink>&, T>),
         decltype(detail::scanner::make_field_translator_na<T>(
@@ -1086,7 +1137,7 @@ struct any_insert_iterator<Container,
 };
 
 template <class Container, class... Appendices>
-struct arithmetic_populator
+struct default_populator
 {
     using type = decltype(
         make_field_translator_na<typename Container::value_type>(
@@ -1113,13 +1164,14 @@ template <class Container, class... Appendices>
 auto make_field_translator(Container& values, Appendices&&... appendices)
  -> typename std::enable_if_t<
         (is_default_translatable_arithmetic_type_v<
-            typename Container::value_type>
-      || detail::is_std_string_v<typename Container::value_type>)
+            detail::unwrap_optional_t<typename Container::value_type>>
+      || detail::is_std_string_v<
+            detail::unwrap_optional_t<typename Container::value_type>>)
      && detail::scanner::is_any_insertable_v<Container>,
         std::conditional_t<
             detail::is_std_string_v<typename Container::value_type>,
             detail::scanner::string_populator<Container, Appendices...>,
-            detail::scanner::arithmetic_populator<Container, Appendices...>
+            detail::scanner::default_populator<Container, Appendices...>
         >>::type
 {
     using value_t = typename Container::value_type;
@@ -1139,7 +1191,8 @@ template <class Container, class... Appendices>
     const typename Container::value_type::allocator_type& alloc,
     Container& values, Appendices&&... appendices)
  -> std::enable_if_t<
-        detail::is_std_string_v<typename Container::value_type>
+        detail::is_std_string_v<
+            detail::unwrap_optional_t<typename Container::value_type>>
      && detail::scanner::is_any_insertable_v<Container>,
         typename detail::scanner::
             string_populator<Container, Appendices...>::type>
