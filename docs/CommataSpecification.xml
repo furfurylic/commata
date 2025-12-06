@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-09-07 (UTC)</signature>
+<signature>2025-11-29 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3471,7 +3471,7 @@ template &lt;class StreambufR>
         <returns><c>owned_streambuf_input&lt;StreamBuf>(std::forward&lt;StreambufR>(in))</c>.</returns>
         <remark>This overload shall not participate in overload resolution unless the template parameter <c>StreambufR</c> is not an lvalue reference,
                 both of <c>StreamBuf::char_type</c> and <c>StreamBuf::traits_type</c> names types, and
-                <c>StreamBuf</c> is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;StreamBuf::char_type, StreamBuf::Tr></c> without regard to cv-qualifiers.
+                <c>StreamBuf</c> is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;StreamBuf::char_type, StreamBuf::traits_type></c> without regard to cv-qualifiers.
                 The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Streambuf></c>.</remark>
       </code-item>
 
