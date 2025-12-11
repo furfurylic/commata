@@ -5975,12 +5975,12 @@ template &lt;class InputIterator, class InputIteratorEnd>
   value_type&amp; rewrite_value(value_type&amp; value,
                             InputIterator new_value_begin, InputIteratorEnd new_value_end);
           </code>
-          <requires><c>InputIterator</c> shall be a input iterator type whose value type <c>T</c> satisfies that <c>std::is_convertible_v&lt;T, char_type></c> is <c>true</c>.
-                    <c>InputIteratorEnd</c> shall meet the <c>IteratorEnd</c> requirements for <c>InputIterator</c> (<xref id="iterator_end.requirements"/>).
+          <requires><c>new_value_begin</c> and <c>new_value_end</c> shall form an accessible range for <c>char_type</c> (<xref id="form_accessible_range"/>).
                     <c>value</c> shall be backed by <c>*this</c>.</requires>
           <postcondition><c>value</c> shall be unchangedly backed by <c>*this</c>.
-                         <c>value</c> shall be equal to the range [<c>new_value_begin</c>, <c>new_value_end</c>) (<xref id="form_accessible_range"/>) before the call in terms of <c>traits_type::eq</c>.</postcondition>
+                         <c>value</c> shall be equal to the range [<c>new_value_begin</c>, <c>new_value_end</c>) before the call in terms of <c>traits_type::eq</c>.</postcondition>
           <returns><c>value</c>.</returns>
+          <note>Before the call, two ranges [<c>value.cbegin()</c>, <c>value.cend()</c>) and [<c>new_value_begin</c>, <c>new_value_end</c>) may overlap.</note>
         </code-item>
 
         <code-item>
