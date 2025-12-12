@@ -6,9 +6,9 @@
 #ifndef COMMATA_GUARD_794F5003_D1ED_48ED_9D52_59EDE1761698
 #define COMMATA_GUARD_794F5003_D1ED_48ED_9D52_59EDE1761698
 
+#include <algorithm>
 #include <cstddef>
 #include <functional>
-#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -16,6 +16,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "field_scanners.hpp"
 #include "table_scanner.hpp"
@@ -321,10 +322,10 @@ class record_translator_header_field_scanner
     using m_setter_t = field_scanner_setter<Ch, Tr, Allocator>;
     using m_mapped_t = typename std::allocator_traits<
         typename at_t::template rebind_alloc<m_setter_t>>::pointer;
-    using m_value_t = std::pair<const m_key_t, m_mapped_t>;
+    using m_value_t = std::pair<m_key_t, m_mapped_t>;
     using m_value_a_t = allocation_only_allocator<
         typename at_t::template rebind_alloc<m_value_t>>;
-    using m_t = std::map<m_key_t, m_mapped_t, std::less<>, m_value_a_t>;
+    using m_t = std::vector<m_value_t, m_value_a_t>;
 
     m_t m_;
 
@@ -382,9 +383,9 @@ private:
                 std::is_constructible_v<
                     m_key_t,
                     decltype(forward_if<FieldSpecR>(spec.field_name()))>) {
-                m_.emplace(forward_if<FieldSpecR>(spec.field_name()), p);
+                m_.emplace_back(forward_if<FieldSpecR>(spec.field_name()), p);
             } else {
-                m_.emplace(
+                m_.emplace_back(
                     m_key_t(spec.field_name().data(), spec.field_name().size(),
                         Allocator(m_.get_allocator().base())),
                     p);
@@ -402,6 +403,7 @@ private:
         std::integral_constant<std::size_t, I>) : m_(m_value_a_t(alloc))
     {
         static_assert(I == sizeof...(Ts));
+        m_.reserve(I);
     }
 
     template <class T, class... Args>
@@ -426,10 +428,14 @@ public:
         if (field_value) {
             const std::basic_string_view<Ch, Tr> field_name(field_value->first,
                                 field_value->second - field_value->first);
-            if (const auto i = m_.find(field_name); i != m_.cend()) {
+            if (const auto i = std::find_if(m_.rbegin(), m_.rend(),
+                    [field_name](const auto& e) {
+                        return e.first == field_name;
+                    }); i != m_.crend()) {
                 std::move(*i->second)(field_index, scanner);
                 destroy_deallocate(i->second);
-                m_.erase(i); // makes duplicate fields ignored
+                m_.erase(std::prev(i.base()));
+                    // makes duplicate fields ignored
             }
             return true;
         }
