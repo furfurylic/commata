@@ -147,6 +147,26 @@ public:
         return ws;
     }
 
+    static Ch toupper(Ch c)
+    {
+        if constexpr (std::is_same_v<Ch, char>) {
+            const auto uc = static_cast<unsigned char>(c);
+            return static_cast<char>(std::toupper(uc));
+        } else {
+            return std::towupper(c);
+        }
+    }
+
+    static Ch tolower(Ch c)
+    {
+        if constexpr (std::is_same_v<Ch, char>) {
+            const auto uc = static_cast<unsigned char>(c);
+            return static_cast<char>(std::tolower(uc));
+        } else {
+            return std::towlower(c);
+        }
+    }
+
 private:
     static const std::ctype<Ch>& ctype()
     {
