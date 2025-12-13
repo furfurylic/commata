@@ -48,9 +48,9 @@ TYPED_TEST(TestRecordTranslator, All)
                    double mass) {
             planets.emplace_back(index.value_or(0U), std::move(name), mass);
         },
-        field_spec<string_t>(str("Name").c_str()),
+        field_spec<string_t>(str("Name")),
         field_spec<std::optional<std::size_t>>(string_view_t(str("#"))),
-        field_spec<double>(str("Mass"),
+        field_spec(str("Mass").c_str(),
             arithmetic_field_translator_factory<
                 double, replace_if_skipped<double>>(-1.0)));
     parse_tsv(

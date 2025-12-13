@@ -12,6 +12,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "typing_aid.hpp"
+
 namespace commata::detail {
 
 template <class Ch, class Tr, class Allocator>
@@ -73,6 +75,42 @@ decltype(auto) make_string_pred(T&& s, const Allocator& alloc)
         return std::forward<T>(s);
     }
 }
+
+template <class Ch, class Tr, class Allocator>
+auto make_string_pred(std::basic_string<Ch, Tr, Allocator>&& s)
+{
+    return string_eq(std::move(s));
+}
+
+template <class Ch, class Tr>
+auto make_string_pred(std::basic_string_view<Ch, Tr> s)
+{
+    return string_eq(std::basic_string<Ch, Tr>(s));
+}
+
+template <class Ch>
+auto make_string_pred(const Ch* s)
+{
+    return make_string_pred<Ch, std::char_traits<Ch>>(
+        std::basic_string_view<Ch, std::char_traits<Ch>>(s));
+}
+
+template <class Ch, class Tr, class T,
+    std::enable_if_t<!(is_std_string_v<std::decay_t<T>>
+                    || is_std_string_view_v<std::decay_t<T>>
+                    || std::is_same_v<const Ch*, std::decay_t<T>>)>* = nullptr>
+decltype(auto) make_string_pred(T&& s)
+{
+    if constexpr (is_range_accessible_v<std::remove_reference_t<T>, Ch>) {
+        return make_string_pred<Ch, Tr>(std::forward<T>(s), std::allocator<Ch>());
+    } else {
+        return std::forward<T>(s);
+    }
+}
+
+template <class Ch, class Tr, class... Ts>
+using string_pred_t = std::decay_t<decltype(
+    make_string_pred<Ch, Tr>(std::declval<Ts>()...))>;
 
 }
 
