@@ -92,6 +92,10 @@ std::enable_if_t<!is_std_string_v<std::decay_t<T>>,
     return make_string_pred<Ch, Tr>(std::forward<T>(s), std::allocator<Ch>());
 }
 
+template <class Ch, class Tr, class... Ts>
+using string_pred_t = std::decay_t<decltype(
+    make_string_pred<Ch, Tr>(std::declval<Ts>()...))>;
+
 }
 
 #endif
