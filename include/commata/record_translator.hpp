@@ -24,6 +24,7 @@
 #include "detail/allocate_deallocate.hpp"
 #include "detail/allocation_only_allocator.hpp"
 #include "detail/full_ebo.hpp"
+#include "detail/string_pred.hpp"
 #include "detail/tuple_transform.hpp"
 #include "detail/typing_aid.hpp"
 #include "detail/member_like_base.hpp"
@@ -314,11 +315,38 @@ struct optionalized_target<std::optional<T>>
     }
 };
 
+template <class Ch, class Tr>
+struct field_name_pred
+{
+    virtual ~field_name_pred()
+    {}
+
+    virtual bool operator()(
+        std::basic_string_view<Ch, Tr> field_name) const = 0;
+};
+
+template <class Ch, class Tr, class P>
+struct COMMATA_FULL_EBO typed_field_name_pred :
+    field_name_pred<Ch, Tr>, private member_like_base<P>
+{
+    typed_field_name_pred(P pred) :
+        member_like_base<P>(std::move(pred))
+    {}
+
+    bool operator()(
+        std::basic_string_view<Ch, Tr> field_name) const override
+    {
+        return this->get()(field_name);
+    }
+};
+
 template <class Ch, class Tr, class Allocator, class... Ts>
 class record_translator_header_field_scanner
 {
     using at_t = std::allocator_traits<Allocator>;
-    using m_key_t = std::basic_string<Ch, Tr, Allocator>;
+    using m_pred_t = field_name_pred<Ch, Tr>;
+    using m_key_t = typename std::allocator_traits<
+        typename at_t::template rebind_alloc<m_pred_t>>::pointer;
     using m_setter_t = field_scanner_setter<Ch, Tr, Allocator>;
     using m_mapped_t = typename std::allocator_traits<
         typename at_t::template rebind_alloc<m_setter_t>>::pointer;
@@ -353,6 +381,7 @@ public:
     ~record_translator_header_field_scanner()
     {
         for (const auto& e : m_) {
+            destroy_deallocate(e.first);
             destroy_deallocate(e.second);
         }
     }
@@ -373,25 +402,21 @@ private:
     {
         // I really want to employ a fold expression, but the counter (here I)
         // is required here
-        using typed_setter_t = typed_field_scanner_setter<
-            std::decay_t<decltype(spec.factory())>, Ch, Tr, Allocator>;
-        m_mapped_t p = allocate_construct<typed_setter_t>(
-            detail::forward_if<FieldSpecR>(spec.factory()),
-            std::get<I>(field_values).o);
+
+        const m_key_t k = create_key(
+            forward_if<FieldSpecR>(spec.field_name()));     // throw
         try {
-            if constexpr (
-                std::is_constructible_v<
-                    m_key_t,
-                    decltype(forward_if<FieldSpecR>(spec.field_name()))>) {
-                m_.emplace_back(forward_if<FieldSpecR>(spec.field_name()), p);
-            } else {
-                m_.emplace_back(
-                    m_key_t(spec.field_name().data(), spec.field_name().size(),
-                        Allocator(m_.get_allocator().base())),
-                    p);
+            const m_mapped_t m = create_mapped(
+                forward_if<FieldSpecR>(spec.factory()),
+                std::get<I>(field_values).o);               // throw
+            try {
+                m_.emplace_back(k, m);  // throw
+            } catch (...) {
+                destroy_deallocate(m);
+                throw;
             }
         } catch (...) {
-            destroy_deallocate(p);
+            destroy_deallocate(k);
             throw;
         }
     }
@@ -419,6 +444,32 @@ private:
         destroy_deallocate_g(m_.get_allocator().base(), p);
     }
 
+    m_key_t create_key(std::basic_string<Ch, Tr, Allocator> field_name)
+    {
+        using eq_t = string_eq<Ch, Tr, Allocator>;
+        using typed_pred_t = typed_field_name_pred<Ch, Tr, eq_t>;
+
+        if constexpr (std::is_constructible_v<
+                eq_t, std::basic_string<Ch, Tr, Allocator>>) {
+            return  allocate_construct<typed_pred_t>(
+                eq_t(std::move(field_name)));                       // throw
+        } else {
+            return allocate_construct<typed_pred_t>(
+                eq_t(string_t(
+                        field_name.data(), field_name.size(),
+                        Allocator(m_.get_allocator().base()))));    // throw
+        }
+    }
+
+    template <class F, class U>
+    m_mapped_t create_mapped(F&& factory, std::optional<U>& o)
+    {
+        using typed_setter_t = typed_field_scanner_setter<
+            std::decay_t<F>, Ch, Tr, Allocator>;
+        return allocate_construct<typed_setter_t>(
+            std::forward<F>(factory), o);   // throw
+    }
+
 public:
     bool operator()(
         std::size_t field_index,
@@ -430,9 +481,10 @@ public:
                                 field_value->second - field_value->first);
             if (const auto i = std::find_if(m_.rbegin(), m_.rend(),
                     [field_name](const auto& e) {
-                        return e.first == field_name;
+                        return (*e.first)(field_name);
                     }); i != m_.crend()) {
                 std::move(*i->second)(field_index, scanner);
+                destroy_deallocate(i->first);
                 destroy_deallocate(i->second);
                 m_.erase(std::prev(i.base()));
                     // makes duplicate fields ignored
