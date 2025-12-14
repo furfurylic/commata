@@ -55,15 +55,26 @@ public:
 
     template <class Sink>
     arithmetic_field_translator<T, std::decay_t<Sink>,
+        SkippingHandler, ConversionErrorHandler> operator()(Sink&& sink) const&
+    {
+        return arithmetic_field_translator<T, std::decay_t<Sink>,
+                SkippingHandler, ConversionErrorHandler>(
+            std::forward<Sink>(sink),
+            this->detail::member_like_base<SkippingHandler>::get(),
+            this->detail::member_like_base<ConversionErrorHandler>::get());
+    }
+
+    template <class Sink>
+    arithmetic_field_translator<T, std::decay_t<Sink>,
         SkippingHandler, ConversionErrorHandler> operator()(Sink&& sink) &&
     {
         return arithmetic_field_translator<T, std::decay_t<Sink>,
                 SkippingHandler, ConversionErrorHandler>(
             std::forward<Sink>(sink),
-            std::move(this->
-                detail::member_like_base<SkippingHandler>::get()),
-            std::move(this->
-                detail::member_like_base<ConversionErrorHandler>::get()));
+            std::move(this->detail::
+                member_like_base<SkippingHandler>::get()),
+            std::move(this->detail::
+                member_like_base<ConversionErrorHandler>::get()));
     }
 };
 
@@ -80,6 +91,14 @@ public:
             SkippingHandler skipping_handler = SkippingHandler()) :
         detail::member_like_base<SkippingHandler>(skipping_handler)
     {}
+
+    template <class Sink>
+    string_field_translator<T, std::decay_t<Sink>, SkippingHandler>
+        operator()(Sink&& sink) const&
+    {
+        return string_field_translator<T, std::decay_t<Sink>, SkippingHandler>(
+            std::forward<Sink>(sink), this->get());
+    }
 
     template <class Sink>
     string_field_translator<T, std::decay_t<Sink>, SkippingHandler>
@@ -106,11 +125,20 @@ public:
 
     template <class Sink>
     string_view_field_translator<T, std::decay_t<Sink>, SkippingHandler>
-        operator()(Sink&& sink) const
+        operator()(Sink&& sink) const&
     {
         return string_view_field_translator<
             T, std::decay_t<Sink>, SkippingHandler>(
                 std::forward<Sink>(sink), std::move(this->get()));
+    }
+
+    template <class Sink>
+    string_view_field_translator<T, std::decay_t<Sink>, SkippingHandler>
+        operator()(Sink&& sink) &&
+    {
+        return string_view_field_translator<
+            T, std::decay_t<Sink>, SkippingHandler>(
+                std::forward<Sink>(sink), this->get());
     }
 };
 
@@ -254,14 +282,20 @@ template <class Ch, class Tr, class Allocator>
 struct field_scanner_setter
 {
     virtual ~field_scanner_setter() {}
+    virtual bool operator()(
+        std::size_t field_index,
+        std::basic_string_view<Ch, Tr> field_name,
+        basic_table_scanner<Ch, Tr, Allocator>& scanner) = 0;
     virtual void operator()(
         std::size_t field_index,
-        basic_table_scanner<Ch, Tr, Allocator>& scanner) && = 0;
+        basic_table_scanner<Ch, Tr, Allocator>& scanner) = 0;
 };
 
-template <class FieldTranslatorFactory, class Ch, class Tr, class Allocator>
+template <class FieldNamePred, class FieldTranslatorFactory,
+    class Ch, class Tr, class Allocator>
 class COMMATA_FULL_EBO typed_field_scanner_setter :
     public field_scanner_setter<Ch, Tr, Allocator>,
+    member_like_base<FieldNamePred>,
     member_like_base<FieldTranslatorFactory>
 {
 public:
@@ -271,17 +305,32 @@ private:
     std::optional<unwrap_optional_t<target_type>>* field_value_;
 
 public:
-    explicit typed_field_scanner_setter(FieldTranslatorFactory factory,
+    explicit typed_field_scanner_setter(FieldNamePred pred,
+        FieldTranslatorFactory factory,
         std::optional<unwrap_optional_t<target_type>>& field_value) :
+        member_like_base<FieldNamePred>(std::move(pred)),
         member_like_base<FieldTranslatorFactory>(std::move(factory)),
         field_value_(std::addressof(field_value))
     {}
 
+    bool operator()(
+        std::size_t field_index,
+        std::basic_string_view<Ch, Tr> field_name,
+        basic_table_scanner<Ch, Tr, Allocator>& scanner) override
+    {
+        if (get_pred()(field_name)) {
+            (*this)(field_index, scanner);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     void operator()(
         std::size_t field_index,
-        basic_table_scanner<Ch, Tr, Allocator>& scanner) && override
+        basic_table_scanner<Ch, Tr, Allocator>& scanner) override
     {
-        scanner.set_field_scanner(field_index, std::move(this->get())(
+        scanner.set_field_scanner(field_index, get_factory()(
             [field_value = field_value_](auto&& v) {
                 using v_t = decltype(v);
                 if constexpr (is_std_optional_v<target_type>) {
@@ -290,6 +339,17 @@ public:
                     field_value->emplace(std::forward<v_t>(v));
                 }
             }));
+    }
+
+private:
+    FieldNamePred& get_pred() &
+    {
+        return this->member_like_base<FieldNamePred>::get();
+    }
+
+    FieldTranslatorFactory& get_factory() &
+    {
+        return this->member_like_base<FieldTranslatorFactory>::get();
     }
 };
 
@@ -315,42 +375,13 @@ struct optionalized_target<std::optional<T>>
     }
 };
 
-template <class Ch, class Tr>
-struct field_name_pred
-{
-    virtual ~field_name_pred()
-    {}
-
-    virtual bool operator()(
-        std::basic_string_view<Ch, Tr> field_name) const = 0;
-};
-
-template <class Ch, class Tr, class P>
-struct COMMATA_FULL_EBO typed_field_name_pred :
-    field_name_pred<Ch, Tr>, private member_like_base<P>
-{
-    typed_field_name_pred(P pred) :
-        member_like_base<P>(std::move(pred))
-    {}
-
-    bool operator()(
-        std::basic_string_view<Ch, Tr> field_name) const override
-    {
-        return this->get()(field_name);
-    }
-};
-
 template <class Ch, class Tr, class Allocator, class... Ts>
 class record_translator_header_field_scanner
 {
     using at_t = std::allocator_traits<Allocator>;
-    using m_pred_t = field_name_pred<Ch, Tr>;
-    using m_key_t = typename std::allocator_traits<
-        typename at_t::template rebind_alloc<m_pred_t>>::pointer;
     using m_setter_t = field_scanner_setter<Ch, Tr, Allocator>;
-    using m_mapped_t = typename std::allocator_traits<
+    using m_value_t = typename allocation_only_allocator<
         typename at_t::template rebind_alloc<m_setter_t>>::pointer;
-    using m_value_t = std::pair<m_key_t, m_mapped_t>;
     using m_value_a_t = allocation_only_allocator<
         typename at_t::template rebind_alloc<m_value_t>>;
     using m_t = std::vector<m_value_t, m_value_a_t>;
@@ -381,8 +412,7 @@ public:
     ~record_translator_header_field_scanner()
     {
         for (const auto& e : m_) {
-            destroy_deallocate(e.first);
-            destroy_deallocate(e.second);
+            destroy_deallocate(e);
         }
     }
 
@@ -403,20 +433,16 @@ private:
         // I really want to employ a fold expression, but the counter (here I)
         // is required here
 
-        const m_key_t k = create_key(
-            forward_if<FieldSpecR>(spec.field_name()));     // throw
+        auto pred = make_string_pred(
+            forward_if<FieldSpecR>(spec.field_name()),
+            Allocator(m_.get_allocator().base()));  // throw
+        const auto setter = create_setter(
+            std::move(pred), forward_if<FieldSpecR>(spec.factory()),
+            std::get<I>(field_values).o);           // throw
         try {
-            const m_mapped_t m = create_mapped(
-                forward_if<FieldSpecR>(spec.factory()),
-                std::get<I>(field_values).o);               // throw
-            try {
-                m_.emplace_back(k, m);  // throw
-            } catch (...) {
-                destroy_deallocate(m);
-                throw;
-            }
+            m_.emplace_back(setter);                // throw
         } catch (...) {
-            destroy_deallocate(k);
+            destroy_deallocate(setter);
             throw;
         }
     }
@@ -444,30 +470,16 @@ private:
         destroy_deallocate_g(m_.get_allocator().base(), p);
     }
 
-    m_key_t create_key(std::basic_string<Ch, Tr, Allocator> field_name)
+    template <class FieldNamePred, class Factory, class U>
+    auto create_setter(FieldNamePred&& pred, Factory&& factory,
+        std::optional<U>& o)
     {
-        using eq_t = string_eq<Ch, Tr, Allocator>;
-        using typed_pred_t = typed_field_name_pred<Ch, Tr, eq_t>;
-
-        if constexpr (std::is_constructible_v<
-                eq_t, std::basic_string<Ch, Tr, Allocator>>) {
-            return  allocate_construct<typed_pred_t>(
-                eq_t(std::move(field_name)));                       // throw
-        } else {
-            return allocate_construct<typed_pred_t>(
-                eq_t(string_t(
-                        field_name.data(), field_name.size(),
-                        Allocator(m_.get_allocator().base()))));    // throw
-        }
-    }
-
-    template <class F, class U>
-    m_mapped_t create_mapped(F&& factory, std::optional<U>& o)
-    {
-        using typed_setter_t = typed_field_scanner_setter<
-            std::decay_t<F>, Ch, Tr, Allocator>;
-        return allocate_construct<typed_setter_t>(
-            std::forward<F>(factory), o);   // throw
+        using typed_t = typed_field_scanner_setter<
+            std::decay_t<FieldNamePred>, std::decay_t<Factory>,
+            Ch, Tr, Allocator>;
+        return allocate_construct<typed_t>(
+            std::forward<FieldNamePred>(pred),
+            std::forward<Factory>(factory), o);     // throw
     }
 
 public:
@@ -477,17 +489,17 @@ public:
         basic_table_scanner<Ch, Tr, Allocator>& scanner)
     {
         if (field_value) {
-            const std::basic_string_view<Ch, Tr> field_name(field_value->first,
-                                field_value->second - field_value->first);
-            if (const auto i = std::find_if(m_.rbegin(), m_.rend(),
-                    [field_name](const auto& e) {
-                        return (*e.first)(field_name);
-                    }); i != m_.crend()) {
-                std::move(*i->second)(field_index, scanner);
-                destroy_deallocate(i->first);
-                destroy_deallocate(i->second);
-                m_.erase(std::prev(i.base()));
-                    // makes duplicate fields ignored
+            const std::basic_string_view<Ch, Tr> field_name(
+                field_value->first,
+                field_value->second - field_value->first);
+            for (decltype(m_.size()) i = m_.size(); i > 0U; --i) {
+                const auto ii = i - 1;
+                auto& setter = *m_[ii];
+                if (setter(field_index, field_name, scanner)) {
+                    destroy_deallocate(m_[ii]);
+                    m_.erase(m_.begin() + (ii));
+                        // makes duplicate fields ignored
+                }
             }
             return true;
         }
@@ -495,7 +507,7 @@ public:
         for (const auto& e : m_) {
             // Make a field whose name did not appear in the header treated as
             // "skipped"
-            std::move(*e.second)(j, scanner);
+            (*e)(j, scanner);
             ++j;
         }
         return false;
