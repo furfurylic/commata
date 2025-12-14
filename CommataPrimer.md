@@ -128,7 +128,7 @@ std::cout << (table[1][3] < std::to_string(75)) << std::endl;
   // comparison of "77" and "75"
 ```
 
-### Editting a loaded table
+### Editing a loaded table
 
 A `stored_value` object is not read-only.
 You can modify and erase some charaters in place:
