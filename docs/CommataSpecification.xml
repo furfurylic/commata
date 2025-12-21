@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2025-11-25 (UTC)</signature>
+<signature>2025-12-08 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3471,7 +3471,7 @@ template &lt;class StreambufR>
         <returns><c>owned_streambuf_input&lt;StreamBuf>(std::forward&lt;StreambufR>(in))</c>.</returns>
         <remark>This overload shall not participate in overload resolution unless the template parameter <c>StreambufR</c> is not an lvalue reference,
                 both of <c>StreamBuf::char_type</c> and <c>StreamBuf::traits_type</c> names types, and
-                <c>StreamBuf</c> is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;StreamBuf::char_type, StreamBuf::Tr></c> without regard to cv-qualifiers.
+                <c>StreamBuf</c> is the same type as, or is a derived type of, <c>std::basic_streambuf&lt;StreamBuf::char_type, StreamBuf::traits_type></c> without regard to cv-qualifiers.
                 The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Streambuf></c>.</remark>
       </code-item>
 
@@ -4709,30 +4709,32 @@ bool is_in_header() const noexcept;
     <section id="record_extractor.creation">
       <name><c>record_extractor</c> and <c>record_extractor_with_indexed_key</c> creation functions</name>
 
-      <p>In this subclause, for a certain expression <c>t</c> whose type is <c>T</c>, an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c> is defined as following:</p>
+      <p>In this subclause, for a certain expression <c>t</c> whose type is <c>T</c> and a similarly certain expression <c>a</c> whose cv-removed type <c>Allocator</c> meets the <c>Allocator</c> requirements,
+         and letting <c>TR</c> be <c>T&amp;</c> if <c>t</c> is an lvalue or be <c>T</c> otherwise,
+         an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t, a)</c> is defined as following:</p>
       <ul>
-        <li>if <c>std::is_convertible_v&lt;T&amp;, const Ch*></c> (if <c>t</c> is an lvalue) or <c>std::is_convertible_v&lt;T, const Ch*></c> (otherwise) is <c>true</c>,
+        <li>if <c>t</c> is an rvalue and <c>T</c> is cv-unqualified <c>std::basic_string&lt;Ch, Tr, Allocator2></c> for a certain type <c>Allocator2</c>,
             a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
-              <li>that holds a <c>std::basic_string_view&lt;Ch, Tr></c> object (hereinafter called <c>v</c>) initialized with a value of <c>const Ch*</c> converted from an lvaue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>,</li>
-              <li>that tells if a string view object is equal to <c>v</c>, and</li>
+              <li>that holds a <c>std::basic_string&lt;Ch, Tr, Allocator2></c> object (hereinafter called <c>w</c>) initialized with an rvalue <c>t</c>,</li>
+              <li>that tells if a string view object is equal to <c>w</c>, and</li>
               <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
             </ul>
         </li>
-        <li>otherwise, if <c>t</c> is an lvalue and <c>T</c> meets the <c>ForwardAccessibleRange</c> requirements for <c>Ch</c> (<xref id="accessible_range.requirements"/>),
+        <li>otherwise, if <c>std::is_constructible_v&lt;std::basic_string&lt;Ch, Tr, Allocator>, TR, const Allocator&amp;></c> is <c>true</c>,
             a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
-              <li>that holds the return value of <c>std::addressof(t)</c> (hereinafter called <c>p</c>),</li>
-              <li>that tells if a string view object is equal to the range formed by <c>*p</c> (<xref id="form_accessible_range"/>) in terms of <c>Tr::eq</c>, and</li>
+              <li>that holds a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object (hereinafter called <c>v</c>) initialized with <c>std::forward&lt;TR>(t)</c> and <c>a</c>,</li>
+              <li>that tells if a string view object is equal to <c>v</c>, and</li>
               <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
             </ul>
         </li>
         <li>otherwise, if <c>T</c> meets the <c>ForwardAccessibleRange</c> requirements for <c>Ch</c> (<xref id="accessible_range.requirements"/>),
             a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
             <ul>
-              <li>that holds a copy of <c>t</c> (hereinafter called <c>u</c>) constructed with an xvalue of <c>t</c>,</li>
-              <li>that tells if a string view object is equal to the range formed by <c>u</c> (<xref id="form_accessible_range"/>) in terms of <c>Tr::eq</c>, and</li>
-              <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == std::is_nothrow_move_constructible_v&lt;T></c>,</li>
+              <li>that holds a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object (hereinafter called <c>v</c>) whose allocator is initialized with <c>a</c> and that is populated with the range formed by <c>t</c> (<xref id="form_accessible_range"/>),</li>
+              <li>that tells if a string view object is equal to <c>v</c>, and</li>
+              <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
             </ul>
         </li>
         <li>otherwise, an lvalue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>.</li>
@@ -4749,15 +4751,15 @@ template &lt;class FieldNamePred, class FieldValuePred,
                                                 Appendices&amp;&amp;... appendices);
         </code>
         <effects><p>Equivalent to:</p>
-                 <code>auto fnp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred));
-auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred));
+                 <code>auto fnp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred), alloc);
+auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred), alloc);
 return record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
          std::allocator_arg, alloc,
          out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
         </effects>
-        <remark>This overload shall not participate in overload resolution unless both of <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldNamePred>())</c> and
-                <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>())</c> are well-formed when treated as unevaluated operands, and
-                for each type (hereinafter called <c>T</c>) of their types, <c>std::declval&lt;bool&amp;>() = std::declval&lt;T&amp;>()(std::declval&lt;std::basic_string_view&lt;Ch, Tr>&amp;>()</c> is well-formed when treated as an unevaluated operand.</remark>
+        <remark>This overload shall not participate in overload resolution unless both of <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldNamePred>(), std::declval&lt;const Allocator&amp;>())</c> and
+                <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>(), std::declval&lt;const Allocator&amp;>())</c> are well-formed when treated as unevaluated operands, and
+                for each type (hereinafter called <c>T</c>) of their types, <c>std::is_invocable_r_v&lt;bool, T&amp;, std::basic_string_view&lt;Ch, Tr>></c> is <c>true</c>.</remark>
       </code-item>
 
       <code-item>
@@ -4771,13 +4773,13 @@ template &lt;class FieldValuePred,
                                                 Appendices&amp;&amp;... appendices);
         </code>
         <effects><p>Equivalent to:</p>
-                 <code>auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred));
+                 <code>auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred), alloc);
 return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(
          std::allocator_arg, alloc,
          out, target_field_index, std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
         </effects>
-        <remark>This overload shall not participate in overload resolution unless <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>())</c> is well-formed when treated as an unevaluated operand, and
-                for its type <c>T</c>, <c>std::declval&lt;bool&amp;>() = std::declval&lt;T&amp;>()(std::declval&lt;std::basic_string_view&lt;Ch, Tr>&amp;>()</c> is well-formed when treated as an unevaluated operand.</remark>
+        <remark>This overload shall not participate in overload resolution unless <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>(), std::declval&lt;const Allocator&amp;>())</c> is well-formed when treated as an unevaluated operand, and
+                for its type <c>T</c>, <c>std::is_invocable_r_v&lt;bool, T&amp;, std::basic_string_view&lt;Ch, Tr>></c> is <c>true</c>.</remark>
       </code-item>
 
       <code-item>
@@ -5973,12 +5975,12 @@ template &lt;class InputIterator, class InputIteratorEnd>
   value_type&amp; rewrite_value(value_type&amp; value,
                             InputIterator new_value_begin, InputIteratorEnd new_value_end);
           </code>
-          <requires><c>InputIterator</c> shall be a input iterator type whose value type <c>T</c> satisfies that <c>std::is_convertible_v&lt;T, char_type></c> is <c>true</c>.
-                    <c>InputIteratorEnd</c> shall meet the <c>IteratorEnd</c> requirements for <c>InputIterator</c> (<xref id="iterator_end.requirements"/>).
+          <requires><c>new_value_begin</c> and <c>new_value_end</c> shall form an accessible range for <c>char_type</c> (<xref id="form_accessible_range"/>).
                     <c>value</c> shall be backed by <c>*this</c>.</requires>
           <postcondition><c>value</c> shall be unchangedly backed by <c>*this</c>.
-                         <c>value</c> shall be equal to the range [<c>new_value_begin</c>, <c>new_value_end</c>) (<xref id="form_accessible_range"/>) before the call in terms of <c>traits_type::eq</c>.</postcondition>
+                         <c>value</c> shall be equal to the range [<c>new_value_begin</c>, <c>new_value_end</c>) before the call in terms of <c>traits_type::eq</c>.</postcondition>
           <returns><c>value</c>.</returns>
+          <note>Before the call, two ranges [<c>value.cbegin()</c>, <c>value.cend()</c>) and [<c>new_value_begin</c>, <c>new_value_end</c>) may overlap.</note>
         </code-item>
 
         <code-item>
