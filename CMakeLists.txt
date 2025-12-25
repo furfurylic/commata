@@ -38,6 +38,7 @@ target_sources(commata INTERFACE
     include/commata/detail/key_chars.hpp
     include/commata/detail/member_like_base.hpp
     include/commata/detail/propagation_controlled_allocator.hpp
+    include/commata/detail/string_pred.hpp
     include/commata/detail/string_value.hpp
     include/commata/detail/tuple_transform.hpp
     include/commata/detail/typing_aid.hpp
