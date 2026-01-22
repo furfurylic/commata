@@ -937,7 +937,7 @@ in advance.
 
 ### &#x2018;Direct&#x2019; sources and the reduced functionality of `table_pull` by it
 
-With `slurp`, which is a function that read all contents from a file into a
+With `slurp`, which is a function that reads all contents from a file into a
 string introduced above, you might want to write codes like:
 
 ```C++
