@@ -8088,6 +8088,530 @@ template &lt;class Allocator, class Container, class... Appendices>
         </code-item>
       </section>
     </section>
+
+    <section id="hpp.record_translator.syn">
+      <name>Header <c>"commama/record_translator.hpp"</c> synopsis</name>
+
+      <codeblock>
+#include &lt;optional>
+#include &lt;string>
+#include &lt;string_view>
+
+#include "field_scanners.hpp"
+#include "table_scanner.hpp"
+
+namespace commata {
+  <c>// <n><xref id="arithmetic_field_translator_factory"/>, arithmetic_field_translator_factory:</n></c>
+  template &lt;class T, class SkippingHandler = <nc>see below</nc>, class ConversionErrorHandler = <nc>see below</nc>>
+    class arithmetic_field_translator_factory;
+
+  <c>// <n><xref id="string_field_translator_factory"/>, string_field_translator_factory:</n></c>
+  template &lt;class T, class SkippingHandler = <nc>see below</nc>>
+    class string_field_translator_factory;
+
+  <c>// <n><xref id="string_view_field_translator_factory"/>, string_view_field_translator_factory:</n></c>
+  template &lt;class T, class SkippingHandler = <nc>see below</nc>>
+    class string_view_field_translator_factory;
+
+  <c>// <n><xref id="default_field_translator_factory"/>, default_field_translator_factory:</n></c>
+  template &lt;class T> struct default_field_translator_factory;
+
+  template &lt;class T> using default_field_translator_factory_t =
+    typename default_field_translator_factory&lt;T>::type;
+
+  <c>// <n><xref id="basic_field_spec"/>, basic_field_spec:</n></c>
+  template &lt;class Ch, class Tr, class Allocator, class T,
+            class FieldTranslatorFactory = default_field_translator_factory_t&lt;T>>
+    class basic_field_spec;
+
+  <c>// <n><xref id="field_specs.creation"/>, creation of field specs:</n></c>
+  template &lt;class T, class Ch, class Tr, class Allocator, class FieldTranslatorFactory>
+    basic_field_spec&lt;<nc>see below</nc>>
+      field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name,
+                 FieldTranslatorFactory&amp;&amp; factory);
+  template &lt;class T, class Ch, class Tr, class Allocator>
+    basic_field_spec&lt;<nc>see below</nc>> field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name);
+  template &lt;class T, class Ch, class Tr, class FieldTranslatorFactory>
+    basic_field_spec&lt;<nc>see below</nc>>
+      field_spec(std::basic_string_view&lt;Ch, Tr> field_name, FieldTranslatorFactory&amp;&amp; factory);
+  template &lt;class T, class Ch, class Tr>
+    basic_field_spec&lt;<nc>see below</nc>> field_spec(std::basic_string_view&lt;Ch, Tr> field_name);
+  template &lt;class T, class FieldTranslatorFactory, class Ch>
+    basic_field_spec&lt;<nc>see below</nc>>
+      field_spec(const Ch* field_name, FieldTranslatorFactory&amp;&amp; factory);
+  template &lt;class T, class Ch> basic_field_spec&lt;<nc>see below</nc>> field_spec(const Ch* field_name);
+
+  <c>// <n><xref id="record_translators.creation"/>, creation of record translators:</n></c>
+  template &lt;class Allocator, class FR, class FieldSpecR0, class... FieldSpecRs>
+    basic_table_scanner&lt;<nc>see below</nc>>
+      make_record_translator(std::allocator_arg_t, const Allocator&amp; alloc,
+                             FR&amp;&amp; f, FieldSpecR0&amp;&amp; spec0, FieldSpecRs&amp;&amp;... specs);
+  template &lt;class FR, class FieldSpecR0, class... FieldSpecRs>
+    basic_table_scanner&lt;<nc>see below</nc>>
+      make_record_translator(FR&amp;&amp; f, FieldSpecR0&amp;&amp; spec0, FieldSpecRs&amp;&amp;... specs);
+      </codeblock>
+      <p>The header <c>"commama/record_translator.hpp"</c> defines facilities to make a <n>record translator</n> object, which is a <c>basic_table_scanner</c> object configured to invoke its associated function object with translated text values (<xref id="xlate.general"/>) of text fields once every record.</p>
+    </section>
+
+    <section id="field_translator_factory.requirements">
+      <name><c>FieldTranslatorFactory</c> requirements</name>
+
+      <p>A <c>FieldTranslatorFactory</c> type is a function object type each object of which is to be held by a <c>basic_field_spec</c> (<xref id="basic_field_spec"/>) object and used as a factory of one <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) object.
+         A type <c>F</c> meets the <c>FieldTranslatorFactory</c> requirements for the target type <c>T</c> if:</p>
+      <ul>
+        <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+        <li>the expressions shown in <xref id="table.field_translator_factory.requirements"/> are valid and have the indicated semantics.</li>
+      </ul>
+
+      <p>In <xref id="table.field_translator_factory.requirements"/>, <c>rt</c> is an rvalue whose type is cv-unqualified <c>F</c>.
+        <c>rs</c> is an rvalue of an arbitrary cv-unqualified type that meets the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.</p>
+
+      <table id="table.field_translator_factory.requirements">
+        <caption><c>FieldTranslatorFactory</c> requirements</caption>
+        <col width="1"/><col width="3"/><col width="19"/>
+
+        <tr>
+          <th>#</th>
+          <th>Expression</th>
+          <th>Return type</th>
+        </tr>
+
+        <tr>
+          <td>(1)</td>
+          <td><c>F::target_type</c></td>
+          <td><c>T</c></td>
+        </tr>
+
+        <tr>
+          <td>(2)</td>
+          <td><c>rt(rs)</c></td>
+          <td>A type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) for the target type <c>T</c></td>
+        </tr>
+      </table>
+    </section>
+
+    <section id="builtin.field_translator_factories">
+      <name>Default field translator factory classes</name>
+
+      <section id="arithmetic_field_translator_factory">
+        <name>Class template <c>arithmetic_field_translator_factory</c></name>
+
+        <codeblock>
+namespace commata {
+  template &lt;class T, class SkippingHandler = <nc>see below</nc>, class ConversionErrorHandler = <nc>see below</nc>>
+    class arithmetic_field_translator_factory {
+  public:
+    using target_type = T;
+
+    <c>// <n><xref id="arithmetic_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    explicit arithmetic_field_translator_factory(
+      SkippingHandler skipping_handler = SkippingHandler(),
+      ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+
+    <c>// <n><xref id="arithmetic_field_translator_factory.inv"/>, invocation:</n></c>
+    template &lt;class Sink>
+      arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>
+        operator()(Sink&amp;&amp; sink) &amp;&amp;;
+
+  private:
+    SkippingHandler sh;           // exposition only
+    ConversionErrorHandler ceh;   // exposition only
+  };
+}
+        </codeblock>
+
+        <p>The <c>arithmetic_field_translator_factory</c> class template offers function object types each object of which is a factory of an <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable arithmetic type (<xref id="xlate.arithmetic"/>).
+           The template parameters <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
+        <p>The default template-arguments for the template parameter <c>SkippingHandler</c> and <c>ConversionHandler</c> are
+           <c>ignore_if_skipped</c> (<xref id="ignore_if_skipped"/>) and <c>ignore_if_conversion_failed</c> (<xref id="ignore_if_conversion_failed"/>) respectively if <c>T</c> is a specialization of <c>std::optional</c>,
+           <c>fail_if_skipped</c> (<xref id="fail_if_skipped"/>) and <c>fail_if_conversion_failed</c> (<xref id="fail_if_conversion_failed"/>) respectively otherwise.</p>
+
+        <section id="arithmetic_field_translator_factory.cons">
+          <name><c>arithmetic_field_translator_factory</c> construct/copy/destroy</name>
+          <code-item>
+            <code>
+explicit arithmetic_field_translator_factory(
+  SkippingHandler skipping_handler = SkippingHandler(),
+  ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+            </code>
+            <effects>Initializes <c>sh</c> and <c>ceh</c> with <c>std::move(skipping_handler)</c> and <c>std::move(conversion_error_handler</c> respectively.</effects>
+          </code-item>
+        </section>
+
+        <section id="arithmetic_field_translator_factory.inv">
+          <name><c>arithmetic_field_translator_factory</c> invocation</name>
+          <code-item>
+            <code>
+template &lt;class Sink>
+  arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>
+    operator()(Sink&amp;&amp; sink) &amp;&amp;;
+            </code>
+            <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.</requires>
+            <returns><c>arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>(std::forward&lt;Sink>(sink), std::move(sh), std::move(ceh))</c>.</returns>
+          </code-item>
+        </section>
+      </section>
+
+      <section id="string_field_translator_factory">
+        <name>Class template <c>string_field_translator_factory</c></name>
+
+        <codeblock>
+namespace commata {
+  template &lt;class T, class SkippingHandler = <nc>see below</nc>>
+    class string_field_translator_factory {
+  public:
+    using target_type = T;
+
+    <c>// <n><xref id="string_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    explicit string_field_translator_factory(
+      SkippingHandler skipping_handler = SkippingHandler());
+
+    <c>// <n><xref id="string_field_translator_factory.inv"/>, invocation:</n></c>
+    template &lt;class Sink>
+      string_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>
+        operator()(Sink&amp;&amp; sink) &amp;&amp;;
+
+  private:
+    SkippingHandler sh;           // exposition only
+  };
+}
+        </codeblock>
+
+        <p>The <c>string_field_translator_factory</c> class template offers function object types each object of which is a factory of a <c>string_field_translator</c> (<xref id="string_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable string type (<xref id="scan.builtin.body_field_scanners"/>).
+           The template parameter <c>SkippingHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.</p>
+        <p>The default template-argument for the template parameter <c>SkippingHandler</c> is
+           <c>ignore_if_skipped</c> (<xref id="ignore_if_skipped"/>) if <c>T</c> is a specialization of <c>std::optional</c>,
+           <c>fail_if_skipped</c> (<xref id="fail_if_skipped"/>) otherwise.</p>
+
+        <section id="string_field_translator_factory.cons">
+          <name><c>string_field_translator_factory</c> construct/copy/destroy</name>
+          <code-item>
+            <code>
+explicit string_field_translator_factory(
+  SkippingHandler skipping_handler = SkippingHandler());
+            </code>
+            <effects>Initializes <c>sh</c> with <c>std::move(skipping_handler)</c>.</effects>
+          </code-item>
+        </section>
+
+        <section id="string_field_translator_factory.inv">
+          <name><c>string_field_translator_factory</c> invocation</name>
+          <code-item>
+            <code>
+template &lt;class Sink>
+  string_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>
+    operator()(Sink&amp;&amp; sink) &amp;&amp;;
+            </code>
+            <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.</requires>
+            <returns><c>string_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>(std::forward&lt;Sink>(sink), std::move(sh))</c>.</returns>
+          </code-item>
+        </section>
+      </section>
+
+      <section id="string_view_field_translator_factory">
+        <name>Class template <c>string_view_field_translator_factory</c></name>
+
+        <codeblock>
+namespace commata {
+  template &lt;class T, class SkippingHandler = <nc>see below</nc>>
+    class string_view_field_translator_factory {
+  public:
+    using target_type = T;
+
+    <c>// <n><xref id="string_view_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    explicit string_view_field_translator_factory(
+      SkippingHandler skipping_handler = SkippingHandler()) :
+
+    <c>// <n><xref id="string_view_field_translator_factory.inv"/>, invocation:</n></c>
+    template &lt;class Sink>
+      string_view_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>
+        operator()(Sink&amp;&amp; sink) &amp;&amp;;
+
+  private:
+    SkippingHandler sh;           // exposition only
+  };
+}
+        </codeblock>
+
+        <p>The <c>string_view_field_translator_factory</c> class template offers function object types each object of which is a factory of a <c>string_view_field_translator</c> (<xref id="string_view_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable string view type (<xref id="scan.builtin.body_field_scanners"/>).
+           The template parameter <c>SkippingHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.</p>
+        <p>The default template-argument for the template parameter <c>SkippingHandler</c> is
+           <c>ignore_if_skipped</c> (<xref id="ignore_if_skipped"/>) if <c>T</c> is a specialization of <c>std::optional</c>,
+           <c>fail_if_skipped</c> (<xref id="fail_if_skipped"/>) otherwise.</p>
+
+        <section id="string_view_field_translator_factory.cons">
+          <name><c>string_view_field_translator_factory</c> construct/copy/destroy</name>
+          <code-item>
+            <code>
+explicit string_view_field_translator_factory(
+  SkippingHandler skipping_handler = SkippingHandler());
+            </code>
+            <effects>Initializes <c>sh</c> with <c>std::move(skipping_handler)</c>.</effects>
+          </code-item>
+        </section>
+
+        <section id="string_view_field_translator_factory.inv">
+          <name><c>string_view_field_translator_factory</c> invocation</name>
+          <code-item>
+            <code>
+template &lt;class Sink>
+  string_view_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>
+    operator()(Sink&amp;&amp; sink) &amp;&amp;;
+            </code>
+            <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.</requires>
+            <returns><c>string_view_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>(std::forward&lt;Sink>(sink), std::move(sh))</c>.</returns>
+          </code-item>
+        </section>
+      </section>
+
+      <section id="default_field_translator_factory">
+        <name>Class template <c>default_field_translator_factory</c></name>
+
+        <codeblock>
+namespace commata {
+  template &lt;class T> class default_field_translator_factory {
+  public:
+    <c>// <n><xref id="default_field_translator_factory.types"/>, member types:</n></c>
+    using type = <nc>see below</nc>;
+  };
+}
+        </codeblock>
+
+        <section id="default_field_translator_factory.types">
+          <name><c>default_field_translator_factory</c> member types</name>
+          <code-item>
+            <code>
+using type = <nc>see below</nc>;
+            </code>
+            <type>Let <c>U</c> be <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.
+                  Then if <c>is_default_translatable_arithmetic_type_v&lt;U></c> is <c>true</c>, <c>arithmetic_field_translator_factory&lt;T></c>.
+                  Otherwise, if <c>U</c> is a specialization of <c>std::basic_string</c>, <c>string_field_translator_factory&lt;T></c>.
+                  Otherwise, if <c>U</c> is a specialization of <c>std::basic_string_view</c>, <c>string_view_field_translator_factory&lt;T></c>.
+                  Otherwise, this member type shall not be declared.</type>
+          </code-item>
+        </section>
+      </section>
+    </section>
+
+    <section id="basic_field_spec">
+      <name>Class template <c>basic_field_spec</c></name>
+
+      <codeblock>
+namespace commata {
+  template &lt;class Ch, class Tr, class Allocator, class T,
+            class FieldTranslatorFactory = default_field_translator_factory_t&lt;T>>
+    class basic_field_spec {
+  public:
+    using char_type      = Ch;
+    using traits_type    = Tr;
+    using allocator_type = Allocator;
+    using target_type    = T;
+
+    <c>// <n><xref id="basic_field_spec.cons"/>, construct/copy/destroy:</n></c>
+    basic_field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name,
+                     FieldTranslatorFactory factory = FieldTranslatorFactory());
+
+    <c>// <n><xref id="basic_field_spec.observe"/>, observers:</n></c>
+    const std::basic_string&lt;Ch, Tr, Allocator>&amp; field_name() const noexcept;
+          std::basic_string&lt;Ch, Tr, Allocator>&amp; field_name()       noexcept;
+    const FieldTranslatorFactory&amp; factory() const noexcept;
+          FieldTranslatorFactory&amp; factory()       noexcept;
+
+  private:
+      FieldTranslatorFactory fac;                        <c>// <n>exposition only</n></c>
+      std::basic_string&lt;Ch, Tr, Allocator> fname;        <c>// <n>exposition only</n></c>
+  };
+}
+      </codeblock>
+
+      <p>Class template <c>basic_field_spec</c> describes objects each of which is virtually a pair of a field name and a <c>FieldTranslatorFactory</c> (<xref id="field_translator_factory.requirements"/>) object that makes a <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) object for the text field specified by field name.
+         Objects of <c>basic_field_spec</c> are required to make a record translator object (<xref id="hpp.record_translator.syn"/>, <xref id="record_translators.creation"/>).</p>
+      <p>The template parameter <c>Ch</c> shall be a char-like type.
+         The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.
+         The template parameter <c>Allocator</c> shall be a type that meets the <c>Allocator</c> requirements for <c>Ch</c>.
+         The template parameter <c>FieldTranslatorFactory</c> shall meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) for the target type <c>T</c>.</p>
+
+      <section id="basic_field_spec.cons">
+        <name><c>basic_field_spec</c> construct/copy/destroy</name>
+        <code-item>
+          <code>
+basic_field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name,
+                 FieldTranslatorFactory factory = FieldTranslatorFactory());
+          </code>
+          <effects>Initializes <c>fac</c> and <c>fname</c> with <c>std::move(factory)</c> and <c>std::move(field_name)</c> respectively.</effects>
+        </code-item>
+      </section>
+
+      <section id="basic_field_spec.observe">
+        <name><c>basic_field_spec</c> observers</name>
+        <code-item>
+          <code>
+const std::basic_string&lt;Ch, Tr, Allocator>&amp; field_name() const noexcept;
+      std::basic_string&lt;Ch, Tr, Allocator>&amp; field_name()       noexcept;
+          </code>
+          <effects>Equivalent to: <c>return fname;</c></effects>
+        </code-item>
+
+        <code-item>
+          <code>
+const FieldTranslatorFactory&amp; factory() const noexcept;
+      FieldTranslatorFactory&amp; factory()       noexcept;
+          </code>
+          <effects>Equivalent to: <c>return fac;</c></effects>
+        </code-item>
+      </section>
+    </section>
+
+    <section id="field_specs.creation">
+      <name>Creation of field specs</name>
+      <code-item>
+        <code>
+template &lt;class T, class Ch, class Tr, class Allocator, class FieldTranslatorFactory>
+  basic_field_spec&lt;<nc>see below</nc>>
+    field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name,
+               FieldTranslatorFactory&amp;&amp; factory);
+        </code>
+        <effects><p>Equivalent to:</p>
+                 <code>return basic_field_spec&lt;Ch, Tr, Allocator, T, std::decay_t&lt;FieldTranslatorFactory>>(
+  std::move(field_name), std::forward&lt;FieldTranslatorFactory>(factory));</code></effects>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class T, class Ch, class Tr, class Allocator>
+  basic_field_spec&lt;<nc>see below</nc>> field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name);
+        </code>
+        <effects>Equivalent to: <c>return basic_field_spec&lt;Ch, Tr, Allocator, T>(std::move(field_name));</c></effects>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class T, class Ch, class Tr, class FieldTranslatorFactory>
+  basic_field_spec&lt;<nc>see below</nc>>
+    field_spec(std::basic_string_view&lt;Ch, Tr> field_name, FieldTranslatorFactory&amp;&amp; factory);
+        </code>
+        <effects>Equivalent to: <c>return field_spec&lt;T>(std::basic_string&lt;Ch, Tr>(field_name), std::forward&lt;FieldTranslatorFactory>(factory));</c></effects>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class T, class Ch, class Tr>
+  basic_field_spec&lt;<nc>see below</nc>> field_spec(std::basic_string_view&lt;Ch, Tr> field_name);
+        </code>
+        <effects>Equivalent to: <c>return field_spec&lt;T>(std::basic_string&lt;Ch, Tr>(field_name));</c></effects>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class T, class FieldTranslatorFactory, class Ch>
+  basic_field_spec&lt;<nc>see below</nc>>
+    field_spec(const Ch* field_name, FieldTranslatorFactory&amp;&amp; factory);
+        </code>
+        <effects>Equivalent to: <c>return field_spec&lt;T>(std::basic_string&lt;Ch>(field_name), std::forward&lt;FieldTranslatorFactory>(factory));</c></effects>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class T, class Ch> basic_field_spec&lt;<nc>see below</nc>> field_spec(const Ch* field_name);
+        </code>
+        <effects>Equivalent to: <c>return field_spec&lt;T>(std::basic_string&lt;Ch>(field_name));</c></effects>
+      </code-item>
+    </section>
+
+    <section id="record_translators.creation">
+      <name>Creation of record translators</name>
+
+      <p>In this subclause, a <n>record store</n> for types <c>T0</c>, <c>T1</c>, ... denotes a collection of heterogeneous, fixed-size collections of optional objects of the types.</p>
+
+      <p>A <n>record translator record end scanner</n> type for a specialization of <c>basic_table_scanner</c> type (<xref id="basic_table_scanner"/>) <c>T</c> is a type:</p>
+      <ul>
+        <li>that meets the <c>RecordEndScanner</c> requirements (<xref id="record_end_scanner.requirements"/>) for <c>T</c>,</li>
+        <li>whose object holds a reference to a record store,</li>
+        <li>whose object holds a function object that is invocable with rvalues of the types of the record store,</li>
+        <li>whose object holds an object of <c>T::allocator_type</c> and use it to allocate and deallocate memories dynamically, and</li>
+        <li>whose object evaluates <c>f(rts...)</c>, destroys all contained values in the optional objects in the record store, and does not return <c>false</c>
+            when it is invoked in a manner specified in the <c>RecordEndScanner</c> requirements
+            where <c>f</c> is an lvalue of the function object held by it and <c>rts...</c> denotes rvalues of the values of the record store referenced by it.</li>
+      </ul>
+
+      <p>A <n>record translator header field scanner</n> type for a specialization of <c>basic_table_scanner</c> type <c>T</c> and specializations of <c>basic_field_spec</c> types <c>FieldSpecs...</c> is a type:</p>
+      <ul>
+        <li>that meets the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>T</c>,</li>
+        <li>whose object holds a reference to a record store for <c>FieldSpecs::target_type...</c>,</li>
+        <li>whose object holds objects <c>specs...</c> each <c>i</c>-th of which is an object whose types is the <c>i</c>-th of <c>FieldSpecs...</c>,</li>
+        <li>whose object holds an object of <c>T::allocator_type</c> and use it to allocate and deallocate memories dynamically, and</li>
+        <li>
+          <p>for each lvalue <c>h</c> of which, letting <c>j</c> be an rvalue of <c>std::size_t</c>,
+             <c>v</c> be an lvalue of <c>const std::optional&lt;std::pair&lt;T::char_type*, T::char_type*>></c> and
+             <c>t</c> be an lvalue of <c>T</c>, evaluating <c>h(j, v, t)</c> causes, letting <c>N</c> be <c>sizeof...(FieldSpecs)</c>:</p>
+          <ul>
+            <li>(1) if <c>v.has_value()</c> is <c>true</c> and [<c>v->first</c>, <c>v->second</c>) is an equal range to <c>specs[i].field_name()</c> in terms of <c>T::traits_type</c> for a certain integer value <c>i</c> in [<c>0</c>, <c>N</c>),
+                    then <c>t.set_field_scanner(j, std::move(specs[in]).factory())(rp(in))</c> is evaluated and returns <c>true</c>
+                    where <c>in</c> is the lowest non-negative integral value that makes <c>specs[in].field_name()</c> equal to <c>*v</c> in terms of <c>T::traits_type</c>,</li>
+            <li>(2) if <c>v.has_value()</c> is <c>true</c> and [<c>v->first</c>, <c>v->second</c>) is not an equal range to <c>specs[i].field_name()</c> in terms of <c>T::traits_type</c> for any integer value <c>i</c> in [<c>0</c>, <c>N</c>),
+                    then simply returns <c>true</c>,</li>
+            <li>(3) otherwise <span class="note">that is, if <c>v.has_value()</c> is <c>false</c></span>,
+                    letting <n>Ix</n> be a set of integers in [0, <c>N</c>) appeared as <c>in</c> in the preceding occurrences of (1) so far,
+                    <c>nx</c> be the number of elements of <n>Ix</n>, and
+                    <c>M</c> be the integer value of <c>static_cast&lt;std::size_t>(-1)</c>,
+                    first for each <c>ix</c> in <n>Ix</n>,
+                    <c>t.set_field_scanner(jx, std::move(specs[ix]).factory())(rp(ix))</c> is evaluated
+                    where <c>jx</c> is a value of <c>std::size_t</c> in [<c>M - (nx - 1)</c>, <c>M</c>] uniquely decided for each value of <c>ix</c>.
+                    <span class="note">The intention of this behaviour is that all of <c>specs</c> whose field names do not match any text values of the header fields shall be associated to the maximum possible field indices in order that text fields represented by these field specs might be likely to be reported as skipped through a <c>SkippingHandler</c> object (<xref id="skipping_handler.requirements"/>).</span>
+                    Then returns <c>false</c>.
+                    <span class="note">This means that a record translator header field scanner regards the first text record as the sole header record.</span></li>
+          </ul>
+          <p>where:</p>
+          <ul>
+            <li><c>specs[i]</c> denotes the <c>i</c>-th (zero-based) of <c>specs...</c> held by it,</li>
+            <li><c>FieldSpecs[i]</c> denotes the <c>i</c>-th (zero-based) of <c>FieldSpecs...</c>, and</li>
+            <li><c>rp(i)</c> is an rvalue of a function object that makes <c>rp(i)(rs(i))</c> a valid expression where <c>rs(i)</c> is an rvalue whose type meets the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for <c>FieldSpecs[i]::target_type</c>
+                and makes it return a <c>BodyFieldScanner</c> object (<xref id="body_field_scanner.requirements"/>) for <c>FieldSpecs[i]::target_type</c>, <c>FieldSpecs[i]::traits_type</c> and <c>Allocator</c> that move constructs values at the <c>i</c>-th position (zero-based) in the record store from its received values.</li>
+          </ul>
+          <p><span class="note"><c>T::char_type</c> is const-qualified.</span></p>
+          <p></p>
+        </li>
+      </ul>
+
+      <code-item>
+        <code>
+template &lt;class Allocator, class FR, class FieldSpecR0, class... FieldSpecRs>
+  basic_table_scanner&lt;<nc>see below</nc>>
+    make_record_translator(std::allocator_arg_t, const Allocator&amp; alloc,
+                           FR&amp;&amp; f, FieldSpecR0&amp;&amp; spec0, FieldSpecRs&amp;&amp;... specs);
+        </code>
+        <requires><c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>std::decay_t&lt;FieldSpecR0>::char_type</c>.
+                  For each type <c>FieldSpecR</c> in <c>FieldSpecR0</c> and <c>FieldSpecRs...</c>, <c>std::decay_t&lt;FieldSpecR></c> shall be a specialization of <c>basic_field_spec</c> (<xref id="basic_field_spec"/>).
+                  <c>FR</c> shall be a type that has <c>std::is_invocable_v&lt;FR, std::decay_t&lt;FieldSpecR0>::target_type, std::decay_t&lt;FieldSpecRs>::target_type...></c> be <c>true</c>.</requires>
+        <effects>Let <c>FieldSpecs</c> be a pack formed with <c>std::decay_t&lt;FieldSpecR0></c> and <c>std::decay_t&lt;FieldSpecRs>...</c>,
+                 and <c>TableScanner</c> be <c>basic_table_scanner&lt;std::decay_t&lt;FieldSpecR0>::char_type, std::decay_t&lt;FieldSpecR0>::traits_type, Allocator></c>.
+                 Creates a record store whose types are <c>FieldSpecs::target_type...</c>.
+                 Makes a variable <c>h</c> whose type is a record translator header field scanner type for <c>TableScanner</c> and <c>FieldSpecs...</c>
+                 that holds a reference to the record store and objects constructed from <c>std::forward&lt;FieldSpecR0>(spec0)...</c>,
+                 <c>std::forward&lt;FieldSpecsRs>(specs)...</c> and <c>alloc</c>.
+                 Makes a variable <c>s</c> whose type is <c>TableScanner</c> with <c>std::move(h)</c>.
+                 Makes a variable <c>e</c> whose type is a record translator record end scanner type for <c>TableScanner</c>
+                 that holds a reference to the record store and takes over the ownership of it, and
+                 holds a function object constructed with <c>std::forward&lt;FR>(f)</c> and <c>alloc</c>.
+                 Evaluates <c>s.set_record_end_scanner(std::move(e))</c>.
+                 Finally returns <c>s</c>.</effects>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class FR, class FieldSpecR0, class... FieldSpecRs>
+  basic_table_scanner&lt;<nc>see below</nc>>
+    make_record_translator(FR&amp;&amp; f, FieldSpecR0&amp;&amp; spec0, FieldSpecRs&amp;&amp;... specs);
+        </code>
+        <requires><c>std::decay_t&lt;FieldSpecR0></c> shall be a specialization of <c>basic_field_spec</c> (<xref id="basic_field_spec"/>).</requires>
+        <effects><p>Equivalent to:</p>
+                 <code>return make_record_translator(std::allocator_arg, spec0.field_name().get_allocator(),
+  std::forward&lt;FR>(f), std::forward&lt;FieldSpecR0>(spec0), std::forward&lt;FieldSpecRs>(specs)...);</code></effects>
+      </code-item>
+    </section>
   </section>
 </section>
 
