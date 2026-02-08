@@ -639,14 +639,61 @@ template <class FieldValuePred,
         std::forward<Appendices>(appendices)...);
 }
 
-template <class Ch, class Tr, class... Appendices>
+template <class FieldNamePred, class FieldValuePred,
+    class Ch, class Tr, class... Appendices>
 [[nodiscard]] auto make_record_extractor(
-    std::basic_streambuf<Ch, Tr>& out, Appendices&&... appendices)
- -> decltype(make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
-        out, std::forward<Appendices>(appendices)...))
+    std::basic_streambuf<Ch, Tr>& out,
+    FieldNamePred&& field_name_pred, FieldValuePred&& field_value_pred,
+    Appendices&&... appendices)
+ -> std::enable_if_t<
+        detail::is_string_pred_v<std::decay_t<
+            decltype(detail::make_string_pred<Ch, Tr>(
+                std::declval<FieldNamePred>()))>,
+            Ch, Tr>
+     && detail::is_string_pred_v<std::decay_t<
+            decltype(detail::make_string_pred<Ch, Tr>(
+                std::declval<FieldValuePred>()))>,
+            Ch, Tr>,
+        record_extractor<
+            std::decay_t<
+                decltype(detail::make_string_pred<Ch, Tr>(
+                    std::declval<FieldNamePred>()))>,
+            std::decay_t<
+                decltype(detail::make_string_pred<Ch, Tr>(
+                    std::declval<FieldValuePred>()))>,
+            Ch, Tr, std::allocator<Ch>>>
 {
-    return make_record_extractor(std::allocator_arg, std::allocator<Ch>(),
-        out, std::forward<Appendices>(appendices)...);
+    auto fnp = detail::make_string_pred<Ch, Tr>(
+        std::forward<FieldNamePred>(field_name_pred));
+    auto fvp = detail::make_string_pred<Ch, Tr>(
+        std::forward<FieldValuePred>(field_value_pred));
+    return record_extractor(
+        std::allocator_arg, std::allocator<Ch>(), out,
+        std::move(fnp), std::move(fvp),
+        std::forward<Appendices>(appendices)...);
+}
+
+template <class FieldValuePred, class Ch, class Tr, class... Appendices>
+[[nodiscard]] auto make_record_extractor(
+    std::basic_streambuf<Ch, Tr>& out,
+    std::size_t target_field_index, FieldValuePred&& field_value_pred,
+    Appendices&&... appendices)
+ -> std::enable_if_t<
+        detail::is_string_pred_v<std::decay_t<
+            decltype(detail::make_string_pred<Ch, Tr>(
+                std::declval<FieldValuePred>()))>,
+            Ch, Tr>,
+        record_extractor_with_indexed_key<std::decay_t<
+            decltype(detail::make_string_pred<Ch, Tr>(
+                std::declval<FieldValuePred>()))>,
+            Ch, Tr, std::allocator<Ch>>>
+{
+    auto fvp = detail::make_string_pred<Ch, Tr>(
+        std::forward<FieldValuePred>(field_value_pred));
+    return record_extractor_with_indexed_key(
+        std::allocator_arg, std::allocator<Ch>(), out,
+        static_cast<std::size_t>(target_field_index), std::move(fvp),
+        std::forward<Appendices>(appendices)...);
 }
 
 }
