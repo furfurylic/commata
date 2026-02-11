@@ -4361,9 +4361,14 @@ namespace commata {
                                                   std::size_t target_field_index,
                                                   FieldValuePred&amp;&amp; field_value_pred,
                                                   Appendices&amp;&amp;... appendices);
-  template &lt;class FieldIdentifier, class FieldValuePred, class Ch, class Tr, class... Appendices>
+  template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class... Appendices>
     [[nodiscard]] <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
-                                                  FieldIdentifier&amp;&amp; field_id,
+                                                  FieldNamePred&amp;&amp; field_name_pred,
+                                                  FieldValuePred&amp;&amp; field_value_pred,
+                                                  Appendices&amp;&amp;... appendices);
+  template &lt;class FieldValuePred, class Ch, class Tr, class... Appendices>
+    [[nodiscard]] <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
+                                                  std::size_t target_field_index,
                                                   FieldValuePred&amp;&amp; field_value_pred,
                                                   Appendices&amp;&amp;... appendices);
 }
@@ -4711,7 +4716,7 @@ bool is_in_header() const noexcept;
 
       <p>In this subclause, for a certain expression <c>t</c> whose type is <c>T</c> and a similarly certain expression <c>a</c> whose cv-removed type <c>Allocator</c> meets the <c>Allocator</c> requirements,
          and letting <c>TR</c> be <c>T&amp;</c> if <c>t</c> is an lvalue or be <c>T</c> otherwise,
-         an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t, a)</c> is defined as following:</p>
+         an expression <c><nc>STRING_PRED_A</nc>&lt;Ch, Tr>(t, a)</c> is defined as following:</p>
       <ul>
         <li>if <c>t</c> is an rvalue and <c>T</c> is cv-unqualified <c>std::basic_string&lt;Ch, Tr, Allocator2></c> for a certain type <c>Allocator2</c>,
             a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
@@ -4740,6 +4745,19 @@ bool is_in_header() const noexcept;
         <li>otherwise, an lvalue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>.</li>
       </ul>
 
+      <p>With the same notation on <c>t</c> and <c>T</c>, an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c> is defined as following:</p>
+      <ul>
+        <li>if <c>T</c> is possibly const-qualified <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain type <c>Allocator</c>,
+            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            <ul>
+              <li>that holds a <c>std::basic_string&lt;Ch, Tr></c> object (hereinafter called <c>w</c>) initialized with <c>t</c> with its value category preserved,</li>
+              <li>that tells if a string view object is equal to <c>w</c>, and</li>
+              <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
+            </ul>
+        </li>
+        <li>otherwise, <c><nc>STRING_PRED_A</nc>&lt;Ch, Tr>(t, std::allocator&lt;Ch>())</c>.</li>
+      </ul>
+
       <code-item>
         <code>
 template &lt;class FieldNamePred, class FieldValuePred,
@@ -4751,8 +4769,8 @@ template &lt;class FieldNamePred, class FieldValuePred,
                                                 Appendices&amp;&amp;... appendices);
         </code>
         <effects><p>Equivalent to:</p>
-                 <code>auto fnp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred), alloc);
-auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred), alloc);
+                 <code>auto fnp = <n>STRING_PRED_A</n>&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred), alloc);
+auto fvp = <n>STRING_PRED_A</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred), alloc);
 return record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
          std::allocator_arg, alloc,
          out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
@@ -4773,7 +4791,7 @@ template &lt;class FieldValuePred,
                                                 Appendices&amp;&amp;... appendices);
         </code>
         <effects><p>Equivalent to:</p>
-                 <code>auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred), alloc);
+                 <code>auto fvp = <n>STRING_PRED_A</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred), alloc);
 return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(
          std::allocator_arg, alloc,
          out, target_field_index, std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
@@ -4784,15 +4802,35 @@ return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(
 
       <code-item>
         <code>
-template &lt;class FieldIdentifier, class FieldValuePred, class Ch, class Tr, class... Appendices>
+template &lt;class FieldNamePred, class FieldValuePred, class Ch, class Tr, class... Appendices>
   [[nodiscard]] <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
-                                                FieldIdentifier&amp;&amp; field_id,
+                                                FieldNamePred&amp;&amp; field_name_pred,
                                                 FieldValuePred&amp;&amp; field_value_pred,
                                                 Appendices&amp;&amp;... appendices);
         </code>
         <effects><p>Equivalent to:</p>
-                 <code>return make_record_extractor(std::allocator_arg, std::allocator&lt;Ch>(),
-                             out, std::forward&lt;Appendices>(appendices)...);</code>
+                 <code>auto fnp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldNamePred>(field_name_pred));
+auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred));
+return record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, std::allocator&lt;Ch>>(
+         std::allocator_arg, std::allocator&lt;Ch>(),
+         out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
+        </effects>
+        <remark>This overload shall not participate in overload resolution unless <c>make_record_extractor(std::declval&lt;std::allocator_arg_t>(), std::declval&lt;std::allocator&lt;Ch>>(), std::declval&lt;std::basic_streambuf&lt;Ch, Tr>&amp;>(), std::declval&lt;Appendices>()...)</c> is well-formed when treated as an unevaluated operand.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class FieldValuePred, class Ch, class Tr, class... Appendices>
+  [[nodiscard]] <nc>see below</nc> make_record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
+                                                std::size_t target_field_index,
+                                                FieldValuePred&amp;&amp; field_value_pred,
+                                                Appendices&amp;&amp;... appendices);
+        </code>
+        <effects><p>Equivalent to:</p>
+                 <code>auto fvp = <n>STRING_PRED</n>&lt;Ch, Tr>(std::forward&lt;FieldValuePred>(field_value_pred));
+return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, std::allocator&lt;Ch>>(
+         std::allocator_arg, std::allocator&lt;Ch>(),
+         out, target_field_index, std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
         </effects>
         <remark>This overload shall not participate in overload resolution unless <c>make_record_extractor(std::declval&lt;std::allocator_arg_t>(), std::declval&lt;std::allocator&lt;Ch>>(), std::declval&lt;std::basic_streambuf&lt;Ch, Tr>&amp;>(), std::declval&lt;Appendices>()...)</c> is well-formed when treated as an unevaluated operand.</remark>
       </code-item>

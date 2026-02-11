@@ -54,6 +54,7 @@ decltype(auto) make_string_pred(T&& s, const Allocator& alloc)
     using string_t = std::basic_string<Ch, Tr, Allocator>;
 
     if constexpr (std::is_constructible_v<string_t, T, const Allocator&>) {
+        // Arrays are captured here
         return string_eq(string_t(std::forward<T>(s), alloc));
     } else if constexpr (
             is_range_accessible_v<std::remove_reference_t<T>, Ch>) {
@@ -72,6 +73,21 @@ decltype(auto) make_string_pred(T&& s, const Allocator& alloc)
     } else {
         return std::forward<T>(s);
     }
+}
+
+template <class Ch, class Tr, class Allocator>
+auto make_string_pred(std::basic_string<Ch, Tr, Allocator> s)
+{
+    return string_eq(std::move(s));
+}
+
+template <class Ch, class Tr, class T>
+std::enable_if_t<!is_std_string_v<std::decay_t<T>>,
+        decltype(make_string_pred<Ch, Tr>(
+            std::declval<T>(), std::declval<std::allocator<Ch>>()))>
+    make_string_pred(T&& s)
+{
+    return make_string_pred<Ch, Tr>(std::forward<T>(s), std::allocator<Ch>());
 }
 
 }
