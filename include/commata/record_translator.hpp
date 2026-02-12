@@ -159,6 +159,8 @@ class COMMATA_FULL_EBO basic_field_spec :
     detail::member_like_base<FieldTranslatorFactory>
 {
 public:
+    using predicate_type = FieldNamePred;
+    using factory_type = FieldTranslatorFactory;
     using value_type = typename FieldTranslatorFactory::value_type;
 
     basic_field_spec(FieldNamePred field_name_pred,
@@ -167,15 +169,22 @@ public:
         detail::member_like_base<FieldTranslatorFactory>(std::move(factory))
     {}
 
+    std::pair<FieldNamePred&&, FieldTranslatorFactory&&> move() && noexcept
+    {
+        auto& pred = this->detail::member_like_base<FieldNamePred>::get();
+        auto& fac =
+            this->detail::member_like_base<FieldTranslatorFactory>::get();
+        return { std::move(pred), std::move(fac) };
+    }
+
     const FieldNamePred& field_name_pred() const noexcept
     {
         return this->detail::member_like_base<FieldNamePred>::get();
     }
 
-    FieldTranslatorFactory&& factory() && noexcept
+    const FieldTranslatorFactory& factory() const noexcept
     {
-        return std::move(this->
-            detail::member_like_base<FieldTranslatorFactory>::get());
+        return this->detail::member_like_base<FieldTranslatorFactory>::get();
     }
 };
 
@@ -197,65 +206,6 @@ basic_field_spec<
     return { std::forward<FieldNamePred>(field_name_pred) };
 }
 
-template <class Ch, class Tr, class Allocator, class FieldTranslatorFactory>
-basic_field_spec<
-        detail::string_pred_t<Ch, Tr, std::basic_string<Ch, Tr, Allocator>>,
-        std::decay_t<FieldTranslatorFactory>>
-    field_spec(std::basic_string<Ch, Tr, Allocator> field_name,
-        FieldTranslatorFactory&& factory)
-{
-    return { detail::make_string_pred<Ch, Tr>(std::move(field_name)),
-             std::forward<FieldTranslatorFactory>(factory) };
-}
-
-template <class T, class Ch, class Tr, class Allocator>
-basic_field_spec<
-        detail::string_pred_t<Ch, Tr, std::basic_string<Ch, Tr, Allocator>>,
-        default_field_translator_factory_t<T>>
-    field_spec(std::basic_string<Ch, Tr, Allocator> field_name)
-{
-    return { detail::make_string_pred<Ch, Tr>(std::move(field_name)) };
-}
-
-template <class Ch, class Tr, class FieldTranslatorFactory>
-basic_field_spec<
-        detail::string_pred_t<Ch, Tr, std::basic_string_view<Ch, Tr>>,
-        std::decay_t<FieldTranslatorFactory>>
-    field_spec(std::basic_string_view<Ch, Tr> field_name,
-        FieldTranslatorFactory&& factory)
-{
-    return { detail::make_string_pred<Ch, Tr>(std::move(field_name)),
-             std::forward<FieldTranslatorFactory>(factory) };
-}
-
-template <class T, class Ch, class Tr>
-basic_field_spec<
-        detail::string_pred_t<Ch, Tr, std::basic_string_view<Ch, Tr>>,
-        default_field_translator_factory_t<T>>
-    field_spec(std::basic_string_view<Ch, Tr> field_name)
-{
-    return { detail::make_string_pred<Ch, Tr>(std::move(field_name)) };
-}
-
-template <class Ch, class FieldTranslatorFactory>
-basic_field_spec<
-        detail::string_pred_t<Ch, std::char_traits<Ch>, const Ch*>,
-        std::decay_t<FieldTranslatorFactory>>
-    field_spec(const Ch* field_name, FieldTranslatorFactory&& factory)
-{
-    return { detail::make_string_pred<Ch, std::char_traits<Ch>>(field_name),
-             std::forward<FieldTranslatorFactory>(factory) };
-}
-
-template <class T, class Ch>
-basic_field_spec<
-        detail::string_pred_t<Ch, std::char_traits<Ch>, const Ch*>,
-        default_field_translator_factory_t<T>>
-    field_spec(const Ch* field_name)
-{
-    return { detail::make_string_pred<Ch, std::char_traits<Ch>>(field_name) };
-}
-
 namespace detail::record_xlate {
 
 template <class Ch, class Tr, class Allocator>
@@ -270,22 +220,24 @@ struct field_scanner_setter
         basic_table_scanner<Ch, Tr, Allocator>& scanner) && = 0;
 };
 
-template <class FieldSpec,
+template <class FieldNamePred, class FieldTranslatorFactory,
     class Ch, class Tr, class Allocator>
 class COMMATA_FULL_EBO typed_field_scanner_setter :
     public field_scanner_setter<Ch, Tr, Allocator>,
-    member_like_base<FieldSpec>
+    member_like_base<FieldNamePred>, member_like_base<FieldTranslatorFactory>
 {
 public:
-    using value_type = typename FieldSpec::value_type;
+    using value_type = typename FieldTranslatorFactory::value_type;
 
 private:
     std::optional<unwrap_optional_t<value_type>>* field_value_;
 
 public:
-    explicit typed_field_scanner_setter(FieldSpec spec,
+    explicit typed_field_scanner_setter(FieldNamePred field_name_pred,
+        FieldTranslatorFactory factory,
         std::optional<unwrap_optional_t<value_type>>& field_value) :
-        member_like_base<FieldSpec>(std::move(spec)),
+        member_like_base<FieldNamePred>(std::move(field_name_pred)),
+        member_like_base<FieldTranslatorFactory>(std::move(factory)),
         field_value_(std::addressof(field_value))
     {}
 
@@ -293,14 +245,15 @@ public:
         [[maybe_unused]] std::size_t field_index,
         std::basic_string_view<Ch, Tr> field_name) const override
     {
-        return spec().field_name_pred()(field_name);
+        return this->member_like_base<FieldNamePred>::get()(field_name);
     }
 
     void set(
         std::size_t field_index,
         basic_table_scanner<Ch, Tr, Allocator>& scanner) && override
     {
-        scanner.set_field_scanner(field_index, std::move(spec()).factory()(
+        scanner.set_field_scanner(field_index,
+            std::move(this->member_like_base<FieldTranslatorFactory>::get())(
             [field_value = field_value_](auto&& v) {
                 using v_t = decltype(v);
                 if constexpr (is_std_optional_v<value_type>) {
@@ -309,17 +262,6 @@ public:
                     field_value->emplace(std::forward<v_t>(v));
                 }
             }));
-    }
-
-private:
-    FieldSpec& spec() noexcept
-    {
-        return this->member_like_base<FieldSpec>::get();
-    }
-
-    const FieldSpec& spec() const noexcept
-    {
-        return this->member_like_base<FieldSpec>::get();
     }
 };
 
@@ -440,9 +382,11 @@ private:
     template <class FieldSpecR, class U>
     auto create_setter(FieldSpecR&& spec, std::optional<U>& o)
     {
+        auto [pred_src, fac] = std::move(spec).move();
+        auto pred = make_string_pred<Ch, Tr>(std::move(pred_src));
         using typed_t = typed_field_scanner_setter<
-            std::decay_t<FieldSpecR>, Ch, Tr, Allocator>;
-        return allocate_construct<typed_t>(std::forward<FieldSpecR>(spec), o);
+            decltype(pred), std::decay_t<decltype(fac)>, Ch, Tr, Allocator>;
+        return allocate_construct<typed_t>(std::move(pred), std::move(fac), o);
             // throw
     }
 
