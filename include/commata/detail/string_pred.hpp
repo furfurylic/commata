@@ -12,6 +12,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "typing_aid.hpp"
+
 namespace commata::detail {
 
 template <class Ch, class Tr, class Allocator>
