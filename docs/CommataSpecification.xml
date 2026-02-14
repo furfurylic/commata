@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-02-08 (UTC)</signature>
+<signature>2026-02-14 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4775,8 +4775,8 @@ return record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
          std::allocator_arg, alloc,
          out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
         </effects>
-        <remark>This overload shall not participate in overload resolution unless both of <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldNamePred>(), std::declval&lt;const Allocator&amp;>())</c> and
-                <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>(), std::declval&lt;const Allocator&amp;>())</c> are well-formed when treated as unevaluated operands, and
+        <remark>This overload shall not participate in overload resolution unless both of <c><n>STRING_PRED_A</n>&lt;Ch, Tr>(std::declval&lt;FieldNamePred>(), std::declval&lt;const Allocator&amp;>())</c> and
+                <c><n>STRING_PRED_A</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>(), std::declval&lt;const Allocator&amp;>())</c> are well-formed when treated as unevaluated operands, and
                 for each type (hereinafter called <c>T</c>) of their types, <c>std::is_invocable_r_v&lt;bool, T&amp;, std::basic_string_view&lt;Ch, Tr>></c> is <c>true</c>.</remark>
       </code-item>
 
@@ -4796,7 +4796,7 @@ return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(
          std::allocator_arg, alloc,
          out, target_field_index, std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
         </effects>
-        <remark>This overload shall not participate in overload resolution unless <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>(), std::declval&lt;const Allocator&amp;>())</c> is well-formed when treated as an unevaluated operand, and
+        <remark>This overload shall not participate in overload resolution unless <c><n>STRING_PRED_A</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>(), std::declval&lt;const Allocator&amp;>())</c> is well-formed when treated as an unevaluated operand, and
                 for its type <c>T</c>, <c>std::is_invocable_r_v&lt;bool, T&amp;, std::basic_string_view&lt;Ch, Tr>></c> is <c>true</c>.</remark>
       </code-item>
 
