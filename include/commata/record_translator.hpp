@@ -502,7 +502,8 @@ basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator(
         std::forward<FR>(f),
         std::forward<FieldSpecR0>(spec0),
         std::forward<FieldSpecRs>(specs)...);
-    table_scanner_t scanner(s.bleed_header_field_scanner());
+    table_scanner_t scanner(std::allocator_arg, alloc,
+        s.bleed_header_field_scanner());
     scanner.set_record_end_scanner(std::move(s));
     return scanner;
 }
