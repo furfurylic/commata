@@ -154,43 +154,7 @@ using default_field_translator_factory_t =
     typename default_field_translator_factory<T>::type;
 
 template <class FieldNamePred, class FieldTranslatorFactory>
-class COMMATA_FULL_EBO basic_field_spec :
-    detail::member_like_base<FieldNamePred>,
-    detail::member_like_base<FieldTranslatorFactory>
-{
-public:
-    using predicate_type = FieldNamePred;
-    using factory_type = FieldTranslatorFactory;
-    using value_type = typename FieldTranslatorFactory::value_type;
-
-    basic_field_spec(FieldNamePred field_name_pred,
-            FieldTranslatorFactory factory = FieldTranslatorFactory()) :
-        detail::member_like_base<FieldNamePred>(std::move(field_name_pred)),
-        detail::member_like_base<FieldTranslatorFactory>(std::move(factory))
-    {}
-
-    std::pair<FieldNamePred&&, FieldTranslatorFactory&&> move() && noexcept
-    {
-        auto& pred = this->detail::member_like_base<FieldNamePred>::get();
-        auto& fac =
-            this->detail::member_like_base<FieldTranslatorFactory>::get();
-        return { std::move(pred), std::move(fac) };
-    }
-
-    const FieldNamePred& field_name_pred() const noexcept
-    {
-        return this->detail::member_like_base<FieldNamePred>::get();
-    }
-
-    const FieldTranslatorFactory& factory() const noexcept
-    {
-        return this->detail::member_like_base<FieldTranslatorFactory>::get();
-    }
-};
-
-template <class FieldNamePred, class FieldTranslatorFactory>
-basic_field_spec<
-        std::decay_t<FieldNamePred>, std::decay_t<FieldTranslatorFactory>>
+std::tuple<std::decay_t<FieldNamePred>, std::decay_t<FieldTranslatorFactory>>
     field_spec(FieldNamePred&& field_name_pred,
                FieldTranslatorFactory&& factory)
 {
@@ -199,11 +163,11 @@ basic_field_spec<
 }
 
 template <class T, class FieldNamePred>
-basic_field_spec<
-        std::decay_t<FieldNamePred>, default_field_translator_factory_t<T>>
+std::tuple<std::decay_t<FieldNamePred>, default_field_translator_factory_t<T>>
     field_spec(FieldNamePred&& field_name_pred)
 {
-    return { std::forward<FieldNamePred>(field_name_pred) };
+    return { std::forward<FieldNamePred>(field_name_pred),
+             default_field_translator_factory_t<T>() };
 }
 
 namespace detail::record_xlate {
@@ -382,8 +346,8 @@ private:
     template <class FieldSpecR, class U>
     auto create_setter(FieldSpecR&& spec, std::optional<U>& o)
     {
-        auto [pred_src, fac] = std::move(spec).move();
-        auto pred = make_string_pred<Ch, Tr>(std::move(pred_src));
+        auto pred = make_string_pred<Ch, Tr>(std::move(std::get<0>(spec)));
+        auto&& fac = std::move(std::get<1>(spec));
         using typed_t = typed_field_scanner_setter<
             decltype(pred), std::decay_t<decltype(fac)>, Ch, Tr, Allocator>;
         return allocate_construct<typed_t>(std::move(pred), std::move(fac), o);
@@ -425,18 +389,21 @@ public:
 
 template <class... FieldSpecs>
 using record_translator_targets_t =
-    std::tuple<optionalized_target<typename FieldSpecs::value_type>...>;
+    std::tuple<
+        optionalized_target<
+            typename std::tuple_element_t<1, FieldSpecs>::value_type>...>;
 
 template <class Ch, class Tr, class Allocator, class F, class... FieldSpecs>
 class record_translator_record_end_scanner :
     member_like_base<typename std::allocator_traits<Allocator>::template
         rebind_alloc<record_translator_targets_t<FieldSpecs...>>>
 {
-    static_assert(std::is_invocable_v<F, typename FieldSpecs::value_type...>);
+    static_assert(std::is_invocable_v<F,
+        typename std::tuple_element_t<1, FieldSpecs>::value_type...>);
 
     using to_t = record_translator_targets_t<FieldSpecs...>;
     using h_t = record_translator_header_field_scanner<Ch, Tr, Allocator,
-        typename FieldSpecs::value_type...>;
+        typename std::tuple_element_t<1, FieldSpecs>::value_type...>;
     using a_t = typename std::allocator_traits<Allocator>::template
         rebind_alloc<to_t>;
     using at_t = std::allocator_traits<a_t>;
