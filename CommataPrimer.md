@@ -710,11 +710,10 @@ void one_pass_scanning_sample4()
   std::vector<star> stars;
 
   table_scanner scanner = make_record_translator(
-    [&stars](std::string name, std::string constellation,
-             std::optional<double> distance) {
-          stars.push_back(
-              { std::move(name), std::move(constellation),
-                std::move(distance) });
+    [&stars](std::string&& name, std::string&& constellation,
+             std::optional<double>&& distance) {
+      stars.push_back(
+        { std::move(name), std::move(constellation), std::move(distance) });
     },
     field_spec<std::string>("Name"),
     field_spec<std::string>("Constellation"),
@@ -742,18 +741,59 @@ arguments of `field_spec` above) describes the types of parameters to the
 first argument (which is a function object), and which have the corresponding
 field names.
 
-Just to be sure, the order of the field specs above and the order of actual
-fields in `stars.csv` need not be the same at all.
-It is the order of the field specs and the order of the parameters of the
-first argument to `make_record_translator` that must be coincident.
-
 Here the field names are specified as the field values of the first record.
 The second and subsequent records are never regarded as header records,
 so invocation of the first argument of `make_record_translator` begins on the
 second record.
 
+Just to be sure, the order of the field specs above and the order of actual
+fields in `stars.csv` need not be the same at all.
+It is the order of the field specs and the order of the parameters of the
+first argument to `make_record_translator` that must be coincident.
+
+Notice that a field spec becomes depleted when it matches a field name in the
+header record, which inhibits one field spec match two or more fields.
+Additionally, it would be noteworthy that a field spec specified earlier in
+the order in the arguments of `make_record_translator` is depleted earlier
+when there are multiple field specs that match one actual field name.
+
 Function templates `field_spec` and `make_record_translator` are declared in
 the header `"commata/field_scanners.hpp"`.
+
+#### Field name predicates
+
+In the previous sample, we specified the exact field names `"Name"`,
+`"Constellation"` and `"Distance, in parsec"`. But in this real world,
+what we can know about the input CSV in advance might be so limited that
+we would like to do fuzzy search. In those situations, we can specify
+field name predicates. For example, instead of the field spec above:
+
+```C++
+field_spec<std::string>("Name")
+```
+
+you can specify more 'flexible' matching criteria:
+
+```C++
+field_spec<std::string>(
+  // Here is a field name predicate...
+  [](std::string_view field_name) {
+    // ...that performs case-insensitive matching with "name"
+    constexpr std::string_view name = "name"sv;
+    return std::equal(
+      field_name.cbegin(), field_name.cend(),
+      name.cbegin(), name.cend(),
+      [](char l, char r) {
+        return std::tolower(static_cast<unsigned char>(l)) == r;
+      });
+  })
+```
+
+As seen above, you can specify a unary predicate that takes one
+`std::string_view` object in place of the exact field name `"Name"`.
+
+Again, you cannot make one field spec match multiple field names. Once it
+matches a field name, it becomes depleted.
 
 ## Making your own table handler types
 
