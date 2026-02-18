@@ -6491,16 +6491,19 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
       <section id="body_field_scanner.requirements">
         <name><c>BodyFieldScanner</c> requirements</name>
 
-        <p>A type <c>S</c> meets the <c>BodyFieldScanner</c> requirements for <c>Ch</c> that is a char-like type, <c>Tr</c> that is a character traits type of <c>Ch</c>, and <c>Allocator</c> that is an allocator type of <c>Ch</c> if:</p>
+        <p>A type <c>S</c> meets the <c>BodyFieldScanner</c> requirements for a specialization of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) <c>T</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
           <li>the expressions shown in <xref id="table.field_scanner.requirements"/> are valid and have the indicated semantics.</li>
         </ul>
 
-        <p>In <xref id="table.field_scanner.requirements"/>, <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
+        <p>In <xref id="table.field_scanner.requirements"/>,
+           <c>Ch</c>, <c>Tr</c>, <c>Allocator</c> and <c>String</c> denote <c>std::remove_const&lt;T::char_type></c>, <c>T::traits_type</c>, <c>T::allocator_type</c> and <c>std::basic_string&lt;Ch, Tr, Allocator></c> respectively.
+           <span class="note"><c>T::char_type</c> is const-qualified.</span>
+           <c>s</c> is an lvalue of cv-unqualified <c>S</c>.
            <c>b</c> and <c>e</c> are rvalues of <c>Ch*</c>.
            <c>c</c> and <c>f</c> are rvalues of <c>const Ch*</c>.
-           <c>rv</c> is an rvalue of <c>std::basic_string&lt;Ch, Tr, Allocator></c>.</p>
+           <c>rv</c> is an rvalue of <c>String</c>.</p>
 
         <p>Requirements shown as (1), (2) and (3) in <xref id="table.field_scanner.requirements"/> are optional, but at least one of them shall be satisfied without falling back to the default behaviours, because they are defined in a cross-referencing manner.
            If more than one of (1), (2) and (3) are valid expressions, it is unspecified which one is evaluated by the table scanner.</p>
@@ -6525,7 +6528,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
                 Any pointers in the range [<c>b</c>, <c>e</c>] are dereferenceable and any values stored at them are modifiable except that <c>*e</c> can only be modified to <c>Ch()</c>.
                 Initially the range [<c>b</c>, <c>e</c>) represents the text value of the field and the value of <c>*e</c> is unspecified.
                 The range [<c>b</c>, <c>e</c>] may be invalidated after the invocation exits.</td>
-            <td>Creates a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>b</c>, <c>e</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
+            <td>Evaluates (2) with <c>b</c> and <c>e</c>.</td>
           </tr>
 
           <tr>
@@ -6536,7 +6539,7 @@ template &lt;stored_table_builder_option Options = stored_table_builder_option::
                 Any pointers in the range [<c>c</c>, <c>f</c>) are dereferenceable.
                 The range [<c>c</c>, <c>f</c>) represents the text value of the field.
                 The range [<c>c</c>, <c>f</c>) may be invalidated after the invocation exits.</td>
-            <td>Creates a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object with the range [<c>c</c>, <c>f</c>) and the table scanner’s allocator, and then calls (3) with it.</td>
+            <td>Makes a <c>String</c> object with the range [<c>c</c>, <c>f</c>) and the table scanner’s allocator, and then evaluates (3) with an rvalue of it.</td>
           </tr>
 
           <tr>
@@ -6800,7 +6803,7 @@ template &lt;class T = std::nullptr_t> void set_field_scanner(std::size_t j, T&a
           </code>
           <preface>Let <c>U</c> be <c>std::decay_t&lt;T></c>.</preface>
           <requires><c>U</c> shall either be <c>std::nullptr_t</c> or
-                    meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) for <c>Ch</c>, <c>Tr</c> and <c>Allocator</c>.</requires>
+                    meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) for <c>basic_table_scanner&lt;Ch, Tr, Allocator></c>.</requires>
           <effects>If <c>U</c> is <c>std::nullptr_t</c>, uninstalls the body field scanner installed at zero-based field index <c>j</c> if any.
                    Otherwise, uninstalls the body field scanner installed there if any, and installs an object of <c>U</c> constructed with <c>std::forward&lt;T>(s)</c> as a body field scanner in place of it.</effects>
           <remark>If an exception is thrown by this function, this function has no effects.</remark>
@@ -7333,12 +7336,15 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c>.</p>
+        <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation of <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) for arithmetic types.</p>
         <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
            The template parameter <c>Sink</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.
            The template parameters <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
         <p>The default template-argument for the template parameter <c>SkippingHandler</c> is <c>ignore_if_skipped</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_skipped</c> otherwise.
            The default template-argument for the template parameter <c>ConversionHandler</c> is <c>ignore_if_conversion_failed</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_conversion_failed</c> otherwise.</p>
+        <p>Any specialization of <c>arithmetic_field_translator</c> meets the <c>BodyFieldScanner</c> requirements
+           for <c>basic_table_scanner&lt;Ch, Tr, Allocator></c> where <c>Ch</c> is <c>char</c> or <c>wchar_t</c>, <c>Tr</c> is a charcater traits for <c>Ch</c> and <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>Ch</c>.
+           The value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) of <c>arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler></c> is <c>T</c>.</p>
 
         <section id="arithmetic_field_translator.types">
           <name><c>arithmetic_field_translator</c> member types</name>
@@ -7496,13 +7502,17 @@ private:
 }
         </codeblock>
 
-        <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
-          The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C library locale.</p>
+        <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation of a body field scanner (<xref id="body_field_scanner.requirements"/>)
+           for arithmetic types in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
+           The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C library locale.</p>
         <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
            The template parameter <c>Sink</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.
            The template parameters <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
         <p>The default template-argument for the template parameter <c>SkippingHandler</c> is <c>ignore_if_skipped</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_skipped</c> otherwise.
            The default template-argument for the template parameter <c>ConversionHandler</c> is <c>ignore_if_conversion_failed</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_conversion_failed</c> otherwise.</p>
+        <p>Any specialization of <c>locale_based_arithmetic_field_translator</c> meets the <c>BodyFieldScanner</c> requirements
+           for <c>basic_table_scanner&lt;Ch, Tr, Allocator></c> where <c>Ch</c> is <c>char</c> or <c>wchar_t</c>, <c>Tr</c> is a charcater traits for <c>Ch</c> and <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>Ch</c>.
+           The value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) of <c>locale_based_arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler></c> is <c>T</c>.</p>
 
         <section id="locale_based_arithmetic_field_translator.types">
           <name><c>locale_based_arithmetic_field_translator</c> member types</name>
@@ -7614,9 +7624,12 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is <c>T</c>.</p>
+        <p>The <c>string_field_translator</c> class template provides a simple implementation of <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) for the standard string type.</p>
         <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable string type.
            The template parameters <c>Sink</c> and <c>SkippingHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c> and the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
+        <p><c>string_field_translator&lt;T, Sink, SkippingHandler></c> meets the <c>BodyFieldScanner</c> requirements
+           for <c>basic_table_scanner&lt;T::value_type, T::traits_type, T::allocator_type></c>.
+           Its value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is <c>T</c>.</p>
 
         <section id="string_field_translator.types">
           <name><c>string_field_translator</c> member types</name>
@@ -7765,9 +7778,12 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>string_view_field_translator</c> class template provides a simple implementation for the standard string view type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose value type is <c>T</c>.</p>
+        <p>The <c>string_view_field_translator</c> class template provides a simple implementation of <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) for the standard string view type.</p>
         <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable string view type.
            The template parameters <c>Sink</c> and <c>SkippingHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c> and the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
+        <p><c>string_view_field_translator&lt;T, Sink, SkippingHandler></c> meets the <c>BodyFieldScanner</c> requirements
+           for <c>basic_table_scanner&lt;T::value_type, T::traits_type, Allocator></c> where <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>T::value_type</c>.
+           Its value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is <c>T</c>.</p>
         <p><span class="note">A range referenced by a <c>basic_string_view</c> objects put to a <c>Sink</c> object by an object of <c>string_view_field_translator</c> will be invalidated soon after being put.
            Therefore, <c>Sink</c> objects should not store received ranges to a store that remains alive after the putting operation.</span></p>
 
@@ -7899,8 +7915,11 @@ namespace commata {
 
         <p>The <c>string_field_inserter</c> class template provides a simple implementation of <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) to populate a container of a standard string type.</p>
         <p>The template parameter <c>Container</c> shall be a sequence container type, an associative container type or an unordered associative container type.
-           <c>Container::value_type</c> shall be a specialization of <c>std::basic_string</c>, which is called <c>S</c> in this paragraph and the next.
+           <c>Container::value_type</c> shall be a specialization of <c>std::basic_string</c>, which is called <c>S</c> in this and the next two paragraphs.
            The template parameter <c>SkippingHandler</c> shall be a <c>SkippingHandler</c> type (<xref id="skipping_handler.requirements"/>) for <c>std::basic_string_view&lt;S::value_type, S::traits_type></c>.</p>
+        <p><c>string_field_inserter&lt;Container, SkippingHandler></c> meets the <c>BodyFieldScanner</c> requirements
+           for <c>basic_table_scanner&lt;S::value_type</c>, <c>S::traits_type</c>, <c>S::allocator_type></c>.
+           Its value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is <c>S</c>.</p>
         <p>An object of <c>string_field_inserter&lt;Container, SkippingHandler></c> holds a reference to a container object of the type <c>Container</c> into which objects of the type <c>S</c> are inserted or emplaced,
            an allocator object of the type <c>S::allocator_type</c> used when inserted or emplaced objects of the type <c>S</c> objects are created,
            and a skipping handler object of the type <c>SkippingHandler</c>.</p>
