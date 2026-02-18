@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-02-14 (UTC)</signature>
+<signature>2026-02-18 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -8320,7 +8320,7 @@ namespace commata {
         </codeblock>
 
         <p>The <c>string_field_translator_factory</c> class template offers function object types each object of which is a factory of a <c>string_field_translator</c> (<xref id="string_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
-        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable string type (<xref id="scan.builtin.body_field_scanners"/>).
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable string type.
            The template parameter <c>SkippingHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.</p>
         <p>The default template-argument for the template parameter <c>SkippingHandler</c> is
            <c>ignore_if_skipped</c> (<xref id="ignore_if_skipped"/>) if <c>T</c> is a specialization of <c>std::optional</c>,
@@ -8377,7 +8377,7 @@ namespace commata {
         </codeblock>
 
         <p>The <c>string_view_field_translator_factory</c> class template offers function object types each object of which is a factory of a <c>string_view_field_translator</c> (<xref id="string_view_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
-        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable string view type (<xref id="scan.builtin.body_field_scanners"/>).
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable string view type.
            The template parameter <c>SkippingHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.</p>
         <p>The default template-argument for the template parameter <c>SkippingHandler</c> is
            <c>ignore_if_skipped</c> (<xref id="ignore_if_skipped"/>) if <c>T</c> is a specialization of <c>std::optional</c>,
@@ -8427,8 +8427,8 @@ namespace commata {
             <code>
 using type = <nc>see below</nc>;
             </code>
-            <type>Let <c>U</c> be <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.
-                  Then if <c>is_default_translatable_arithmetic_type_v&lt;U></c> is <c>true</c>, <c>arithmetic_field_translator_factory&lt;T></c>.
+            <type>Let <c>U</c> be <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>).
+                  Then if <c>is_default_translatable_arithmetic_type_v&lt;U></c> is <c>true</c> (<xref id="is_default_translatable_arithmetic_type"/>), <c>arithmetic_field_translator_factory&lt;T></c>.
                   Otherwise, if <c>U</c> is a specialization of <c>std::basic_string</c>, <c>string_field_translator_factory&lt;T></c>.
                   Otherwise, if <c>U</c> is a specialization of <c>std::basic_string_view</c>, <c>string_view_field_translator_factory&lt;T></c>.
                   Otherwise, this member type shall not be declared.</type>
