@@ -492,7 +492,8 @@ public:
             record_translator_record_end_scanner&& other) :
         member_like_base<a_t>(std::move(other.get())),
         f_(std::move(other.f_)),
-        field_values_(std::exchange(other.field_values_, nullptr))
+        field_values_(std::exchange(other.field_values_, nullptr)),
+        header_field_scanner_(std::move(other.header_field_scanner_))
     {}
 
     ~record_translator_record_end_scanner()
