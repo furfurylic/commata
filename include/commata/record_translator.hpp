@@ -484,76 +484,60 @@ private:
 };
 
 template <class Ch, class Tr, bool UsesAllocatorForPred, class Allocator,
-          class FR, class FieldSpecR0, class... FieldSpecRs>
+          class FR, class... FieldSpecRs>
 basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator_impl(
-    const Allocator& alloc,
-    FR&& f, FieldSpecR0&& spec0, FieldSpecRs&&... specs)
+    const Allocator& alloc, FR&& f, FieldSpecRs&&... specs)
 {
     using table_scanner_t = basic_table_scanner<Ch, Tr, Allocator>;
     using record_end_scanner_t =
         detail::record_xlate::record_translator_record_end_scanner<
-            Ch, Tr,
-            Allocator,
-            UsesAllocatorForPred,
-            std::decay_t<FR>,
-            std::decay_t<FieldSpecR0>, std::decay_t<FieldSpecRs>...>;
+            Ch, Tr, Allocator, UsesAllocatorForPred,
+            std::decay_t<FR>, std::decay_t<FieldSpecRs>...>;
 
     record_end_scanner_t s(std::allocator_arg, alloc, std::forward<FR>(f));
     table_scanner_t scanner(
-        s.make_header_field_scanner(std::forward<FieldSpecR0>(spec0),
-                                    std::forward<FieldSpecRs>(specs)...));
+        std::allocator_arg, alloc,
+        s.make_header_field_scanner(std::forward<FieldSpecRs>(specs)...));
     scanner.set_record_end_scanner(std::move(s));
     return scanner;
 }
 
 }
 
-template <class Ch, class Tr, class Allocator, class FR,
-          class FieldSpecR0, class... FieldSpecRs>
+template <class Ch, class Tr, class Allocator, class FR, class... FieldSpecRs>
 basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator(
     std::allocator_arg_t, const Allocator& alloc,
-    FR&& f, FieldSpecR0&& spec0, FieldSpecRs&&... specs)
+    FR&& f, FieldSpecRs&&... specs)
 {
     return detail::record_xlate::
         make_basic_record_translator_impl<Ch, Tr, true>(
-            alloc, std::forward<FR>(f),
-            std::forward<FieldSpecR0>(spec0),
-            std::forward<FieldSpecRs>(specs)...);
+            alloc, std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
 }
 
-template <class Ch, class Tr, class FR,
-          class FieldSpecR0, class... FieldSpecRs>
-auto make_basic_record_translator(
-    FR&& f, FieldSpecR0&& spec0, FieldSpecRs&&... specs)
+template <class Ch, class Tr, class FR, class... FieldSpecRs>
+auto make_basic_record_translator(FR&& f, FieldSpecRs&&... specs)
  -> std::enable_if_t<
         !std::is_base_of_v<std::allocator_arg_t, std::decay_t<FR>>,
-        basic_table_scanner<Ch, Tr, std::allocator<Ch>>>
+        basic_table_scanner<Ch, Tr>>
 {
     return detail::record_xlate::
         make_basic_record_translator_impl<Ch, Tr, false>(
             std::allocator<Ch>(), std::forward<FR>(f),
-            std::forward<FieldSpecR0>(spec0),
             std::forward<FieldSpecRs>(specs)...);
 }
 
-template <class FR, class FieldSpecR0, class... FieldSpecRs>
-table_scanner make_record_translator(
-    FR&& f, FieldSpecR0&& spec0, FieldSpecRs&&... specs)
+template <class FR, class... FieldSpecRs>
+table_scanner make_record_translator(FR&& f, FieldSpecRs&&... specs)
 {
     return make_basic_record_translator<char, std::char_traits<char>>(
-        std::forward<FR>(f),
-        std::forward<FieldSpecR0>(spec0),
-        std::forward<FieldSpecRs>(specs)...);
+        std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
 }
 
-template <class FR, class FieldSpecR0, class... FieldSpecRs>
-wtable_scanner make_wrecord_translator(
-    FR&& f, FieldSpecR0&& spec0, FieldSpecRs&&... specs)
+template <class FR, class... FieldSpecRs>
+wtable_scanner make_wrecord_translator(FR&& f, FieldSpecRs&&... specs)
 {
     return make_basic_record_translator<wchar_t, std::char_traits<wchar_t>>(
-        std::forward<FR>(f),
-        std::forward<FieldSpecR0>(spec0),
-        std::forward<FieldSpecRs>(specs)...);
+        std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
 }
 
 }
