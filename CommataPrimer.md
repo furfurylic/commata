@@ -742,10 +742,18 @@ arguments of `field_spec` above) describes the types of parameters to the
 first argument (which is a function object), and which have the corresponding
 field names.
 
+Just to be sure, the order of the field specs above and the order of actual
+fields in `stars.csv` need not be the same at all.
+It is the order of the field specs and the order of the parameters of the
+first argument to `make_record_translator` that must be coincident.
+
 Here the field names are specified as the field values of the first record.
 The second and subsequent records are never regarded as header records,
 so invocation of the first argument of `make_record_translator` begins on the
 second record.
+
+Function templates `field_spec` and `make_record_translator` are declared in
+the header `"commata/field_scanners.hpp"`.
 
 ## Making your own table handler types
 
