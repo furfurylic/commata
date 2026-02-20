@@ -263,7 +263,7 @@ class record_translator_header_field_scanner
         typename at_t::template rebind_alloc<m_value_t>>;
     using m_t = std::vector<m_value_t, m_value_a_t>;
 
-    m_t m_;
+    m_t m_; // has field_scanner_setter in reverse order
 
 public:
     template <class... FieldSpecRs>
@@ -381,13 +381,14 @@ public:
             const std::basic_string_view<Ch, Tr> field_name(
                 field_value->first,
                 field_value->second - field_value->first);
+            // reverse order seach of reversely ordered container m_
             for (decltype(m_.size()) i = m_.size(); i > 0U; --i) {
                 const auto ii = i - 1;
                 auto& setter = *m_[ii];
                 if (setter.matches(field_index, field_name)) {
                     std::move(setter).set(field_index, scanner);
                     destroy_deallocate(m_[ii]);
-                    m_.erase(m_.begin() + (ii));
+                    m_.erase(m_.begin() + ii);
                         // makes duplicate fields ignored
                 }
             }
