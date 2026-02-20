@@ -440,7 +440,8 @@ public:
     {}
 
     record_translator_record_end_scanner(
-            record_translator_record_end_scanner&& other) :
+        record_translator_record_end_scanner&& other)
+            noexcept(std::is_nothrow_move_constructible_v<F>) :
         member_like_base<a_t>(std::move(other.get())),
         f_(std::move(other.f_)),
         field_values_(std::exchange(other.field_values_, nullptr))
