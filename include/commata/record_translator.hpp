@@ -194,9 +194,11 @@ using default_field_translator_factory_t =
     typename default_field_translator_factory<T>::type;
 
 template <class FieldNamePred, class FieldTranslatorFactory>
-std::tuple<std::decay_t<FieldNamePred>, std::decay_t<FieldTranslatorFactory>>
-    field_spec(FieldNamePred&& field_name_pred,
-               FieldTranslatorFactory&& factory)
+auto field_spec(FieldNamePred&& field_name_pred, FieldTranslatorFactory&& factory)
+ -> std::enable_if_t<
+        !std::is_base_of_v<std::locale, std::decay_t<FieldTranslatorFactory>>,
+        std::tuple<std::decay_t<FieldNamePred>,
+                   std::decay_t<FieldTranslatorFactory>>>
 {
     return { std::forward<FieldNamePred>(field_name_pred),
              std::forward<FieldTranslatorFactory>(factory) };
@@ -208,6 +210,17 @@ std::tuple<std::decay_t<FieldNamePred>, default_field_translator_factory_t<T>>
 {
     return { std::forward<FieldNamePred>(field_name_pred),
              default_field_translator_factory_t<T>() };
+}
+
+template <class T, class FieldNamePred>
+auto field_spec(FieldNamePred&& field_name_pred, const std::locale& loc)
+ -> std::enable_if_t<
+        is_default_translatable_arithmetic_type_v<T>,
+        std::tuple<std::decay_t<FieldNamePred>,
+                   locale_based_arithmetic_field_translator_factory<T>>>
+{
+    return { std::forward<FieldNamePred>(field_name_pred),
+             locale_based_arithmetic_field_translator_factory<T>(loc) };
 }
 
 namespace detail::record_xlate {

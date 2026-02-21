@@ -8243,6 +8243,9 @@ namespace commata {
   template &lt;class T, class FieldNamePred>
     std::tuple&lt;std::decay_t&lt;FieldNamePred, default_field_translator_factory&lt;T>>
       field_spec(FieldNamePred&amp;&amp; field_name_pred);
+  template &lt;class T, class FieldNamePred>
+    std::tuple&lt;std::decay_t&lt;FieldNamePred, locale_based_arithmetic_field_translator_factory&lt;T>>
+      field_spec(FieldNamePred&amp;&amp; field_name_pred, const std::locale&amp; loc);
 
   <c>// <n><xref id="record_translators.creation"/>, creation of record translators:</n></c>
   template &lt;class Ch, class Tr, class Allocator, class FR, class... FieldSpecRs>
@@ -8598,6 +8601,7 @@ template &lt;class FieldNamePred, class class FieldTranslatorFactory>
         <effects><p>Equivalent to:</p>
                  <code>return { std::forward&lt;FieldNamePred>(field_name_pred),
          std::forward&lt;FieldTranslatorFactory>(factory) };</code></effects>
+        <remark>This overload shall not participate in overload resolution unless <c>std::is_base_of_v&lt;std::locale, std::decay_t&lt;FieldTranslatorFactory>></c> is <c>false</c>.</remark>
       </code-item>
 
       <code-item>
@@ -8609,6 +8613,18 @@ template &lt;class T, class FieldNamePred>
         <effects><p>Equivalent to:</p>
                  <code>return { std::forward&lt;FieldNamePred>(field_name_pred),
          std::forward&lt;default_field_translator_factory_t&lt;T>>() };</code></effects>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class T, class FieldNamePred>
+  std::tuple&lt;std::decay_t&lt;FieldNamePred, locale_based_arithmetic_field_translator_factory&lt;T>>
+    field_spec(FieldNamePred&amp;&amp; field_name_pred, const std::locale&amp; loc);
+        </code>
+        <effects><p>Equivalent to:</p>
+                 <code>return { std::forward&lt;FieldNamePred>(field_name_pred),
+         locale_based_arithmetic_field_translator_factory&lt;T>(loc) };</code></effects>
+        <remark>This overload shall not participate in overload resolution unless <c>is_default_translatable_arithmetic_type_v&lt;T></c> is <c>true</c>.</remark>
       </code-item>
     </section>
 
