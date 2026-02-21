@@ -385,9 +385,12 @@ private:
                 m_.emplace(forward_if<FieldSpecR>(spec.field_name()), p);
             } else {
                 m_.emplace(
-                    m_key_t(spec.field_name().data(), spec.field_name().size(),
+                    std::piecewise_construct,
+                    std::forward_as_tuple(
+                        spec.field_name().data(),
+                        spec.field_name().size(),
                         Allocator(m_.get_allocator().base())),
-                    p);
+                    std::forward_as_tuple(p));
             }
         } catch (...) {
             destroy_deallocate(p);
