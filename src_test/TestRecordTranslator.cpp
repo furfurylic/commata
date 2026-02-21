@@ -52,8 +52,11 @@ TYPED_TEST(TestRecordTranslator, All)
         field_spec<string_t>(str("Name")),
         field_spec<std::optional<std::size_t>>(string_view_t(str("#"))),
         field_spec(str("Mass").c_str(),
-            arithmetic_field_translator_factory<
-                double, replace_if_skipped<double>>(-1.0)),
+            locale_based_arithmetic_field_translator_factory<
+                    double, replace_if_skipped<double>>(
+                std::locale(std::locale::classic(),
+                    new french_style_numpunct<char_t>),
+                -1.0)),
         field_spec<double>(
             [name = str("orbital period")](string_view_t s) {
                 return std::equal(
@@ -68,9 +71,9 @@ TYPED_TEST(TestRecordTranslator, All)
         make_char_input(str(
             "#\tName\tOrbital Period\tMass\n"
             "3\tEarth\t1\t1\n"
-            "2\tVenus\t0.615\t0.815\n"
-            "4\tMars\t1.88\t0.107\n"
-            "\tEris\t561\t0.000276\n"
+            "2\tVenus\t0.615\t0,815\n"
+            "4\tMars\t1.88\t0,107\n"
+            "\tEris\t561\t0,000276\n"
             "\tSedna\t1.29e4\n")),
         std::move(t));
 

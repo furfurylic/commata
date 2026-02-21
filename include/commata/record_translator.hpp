@@ -69,6 +69,46 @@ public:
 
 template <class T,
     class SkippingHandler = std::conditional_t<detail::is_std_optional_v<T>,
+        ignore_if_skipped, fail_if_skipped>,
+    class ConversionErrorHandler =
+        std::conditional_t<detail::is_std_optional_v<T>,
+            ignore_if_conversion_failed, fail_if_conversion_failed>>
+class COMMATA_FULL_EBO locale_based_arithmetic_field_translator_factory :
+    detail::member_like_base<SkippingHandler>,
+    detail::member_like_base<ConversionErrorHandler>
+{
+    std::locale loc_;
+
+public:
+    using value_type = T;
+
+    locale_based_arithmetic_field_translator_factory(
+            const std::locale& loc,
+            SkippingHandler skipping_handler = SkippingHandler(),
+            ConversionErrorHandler conversion_error_handler
+                = ConversionErrorHandler()) :
+        detail::member_like_base<SkippingHandler>(skipping_handler),
+        detail::member_like_base<ConversionErrorHandler>(
+            conversion_error_handler),
+        loc_(loc)
+    {}
+
+    template <class Sink>
+    locale_based_arithmetic_field_translator<T, std::decay_t<Sink>,
+        SkippingHandler, ConversionErrorHandler> operator()(Sink&& sink) &&
+    {
+        return locale_based_arithmetic_field_translator<T, std::decay_t<Sink>,
+                SkippingHandler, ConversionErrorHandler>(
+            std::forward<Sink>(sink), loc_,
+            std::move(this->
+                detail::member_like_base<SkippingHandler>::get()),
+            std::move(this->
+                detail::member_like_base<ConversionErrorHandler>::get()));
+    }
+};
+
+template <class T,
+    class SkippingHandler = std::conditional_t<detail::is_std_optional_v<T>,
         ignore_if_skipped, fail_if_skipped>>
 class string_field_translator_factory :
     detail::member_like_base<SkippingHandler>

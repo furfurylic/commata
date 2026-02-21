@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-02-23 (UTC)</signature>
+<signature>2026-02-24 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -8218,6 +8218,10 @@ namespace commata {
   template &lt;class T, class SkippingHandler = <nc>see below</nc>, class ConversionErrorHandler = <nc>see below</nc>>
     class arithmetic_field_translator_factory;
 
+  <c>// <n><xref id="locale_based_arithmetic_field_translator_factory"/>, locale_based_arithmetic_field_translator_factory:</n></c>
+  template &lt;class T, class SkippingHandler = <nc>see below</nc>, class ConversionErrorHandler = <nc>see below</nc>>
+    class locale_based_arithmetic_field_translator_factory;
+
   <c>// <n><xref id="string_field_translator_factory"/>, string_field_translator_factory:</n></c>
   template &lt;class T, class SkippingHandler = <nc>see below</nc>>
     class string_field_translator_factory;
@@ -8363,6 +8367,71 @@ template &lt;class Sink>
             </code>
             <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</requires>
             <returns><c>arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>(std::forward&lt;Sink>(sink), std::move(sh), std::move(ceh))</c>.</returns>
+          </code-item>
+        </section>
+      </section>
+
+      <section id="locale_based_arithmetic_field_translator_factory">
+        <name>Class template <c>locale_based_arithmetic_field_translator_factory</c></name>
+
+        <codeblock>
+namespace commata {
+  template &lt;class T, class SkippingHandler = <nc>see below</nc>, class ConversionErrorHandler = <nc>see below</nc>>
+    class locale_based_arithmetic_field_translator_factory {
+  public:
+    using value_type = T;
+
+    <c>// <n><xref id="locale_based_arithmetic_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    explicit locale_based_arithmetic_field_translator_factory(
+      const std::locale&amp; loc,
+      SkippingHandler skipping_handler = SkippingHandler(),
+      ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+
+    <c>// <n><xref id="locale_based_arithmetic_field_translator_factory.inv"/>, invocation:</n></c>
+    template &lt;class Sink> locale_based_arithmetic_field_translator&lt;
+        T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>
+      operator()(Sink&amp;&amp; sink) &amp;&amp;;
+
+  private:
+    SkippingHandler sh;           // exposition only
+    ConversionErrorHandler ceh;   // exposition only
+    std::locale l;                // exposition only
+  };
+}
+        </codeblock>
+
+        <p>The <c>locale_based_arithmetic_field_translator_factory</c> class template offers function object types each object of which is a factory of an <c>locale_based_arithmetic_field_translator</c> (<xref id="locale_based_arithmetic_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose value type is the template parameter <c>T</c>.</p>
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable arithmetic type (<xref id="xlate.arithmetic"/>).
+           The template parameters <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
+        <p>The default template-arguments for the template parameter <c>SkippingHandler</c> and <c>ConversionHandler</c> are
+           <c>ignore_if_skipped</c> (<xref id="ignore_if_skipped"/>) and <c>ignore_if_conversion_failed</c> (<xref id="ignore_if_conversion_failed"/>) respectively if <c>T</c> is a specialization of <c>std::optional</c>,
+           <c>fail_if_skipped</c> (<xref id="fail_if_skipped"/>) and <c>fail_if_conversion_failed</c> (<xref id="fail_if_conversion_failed"/>) respectively otherwise.</p>
+        <p><c>locale_based_arithmetic_field_translator_factory&lt;T, SkippingHander, ConversionErrorHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
+           for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;Ch, Tr, Allocator></c> where <c>Ch</c> is <c>char</c> or <c>wchar_t</c>, <c>Ch</c> is a character traits type for <c>Ch</c>, and <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>Ch</c>.</p>
+
+        <section id="locale_based_arithmetic_field_translator_factory.cons">
+          <name><c>locale_based_arithmetic_field_translator_factory</c> construct/copy/destroy</name>
+          <code-item>
+            <code>
+explicit locale_based_arithmetic_field_translator_factory(
+  const std::locale&amp; loc,
+  SkippingHandler skipping_handler = SkippingHandler(),
+  ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+            </code>
+            <effects>Initializes <c>sh</c>, <c>ceh</c> and <c>l</c> with <c>std::move(skipping_handler)</c>, <c>std::move(conversion_error_handler</c> and <c>loc</c> respectively.</effects>
+          </code-item>
+        </section>
+
+        <section id="locale_based_arithmetic_field_translator_factory.inv">
+          <name><c>locale_based_arithmetic_field_translator_factory</c> invocation</name>
+          <code-item>
+            <code>
+template &lt;class Sink> locale_based_arithmetic_field_translator&lt;
+    T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>
+  operator()(Sink&amp;&amp; sink) &amp;&amp;;
+            </code>
+            <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</requires>
+            <returns><c>locale_based_arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>(l, std::forward&lt;Sink>(sink), std::move(sh), std::move(ceh))</c>.</returns>
           </code-item>
         </section>
       </section>
