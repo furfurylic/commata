@@ -468,35 +468,19 @@ class record_translator_record_end_scanner :
     F f_;
     typename at_t::pointer field_values_;
 
-#ifdef NDEBUG
-    h_t header_field_scanner_;
-#else
-    std::optional<h_t> header_field_scanner_;
-#endif
-
 public:
-    template <class FR, class... FieldSpecRs>
+    template <class FR>
     record_translator_record_end_scanner(
-            std::allocator_arg_t, const Allocator& alloc,
-            FR&& f, FieldSpecRs&&... specs) :
-        member_like_base<a_t>(alloc),
-        f_(std::forward<FR>(f)),
-        field_values_(allocate_construct<to_t>()),
-#ifdef NDEBUG
-        header_field_scanner_(std::allocator_arg, alloc,
-            *field_values_, std::forward<FieldSpecRs>(specs)...)
-#else
-        header_field_scanner_(std::in_place, std::allocator_arg, alloc,
-            *field_values_, std::forward<FieldSpecRs>(specs)...)
-#endif
+            std::allocator_arg_t, const Allocator& alloc, FR&& f) :
+        member_like_base<a_t>(alloc), f_(std::forward<FR>(f)),
+        field_values_(allocate_construct<to_t>())
     {}
 
     record_translator_record_end_scanner(
             record_translator_record_end_scanner&& other) :
         member_like_base<a_t>(std::move(other.get())),
         f_(std::move(other.f_)),
-        field_values_(std::exchange(other.field_values_, nullptr)),
-        header_field_scanner_(std::move(other.header_field_scanner_))
+        field_values_(std::exchange(other.field_values_, nullptr))
     {}
 
     ~record_translator_record_end_scanner()
@@ -506,14 +490,11 @@ public:
         }
     }
 
-    decltype(auto) bleed_header_field_scanner()
+    template <class... FieldSpecRs>
+    auto make_header_field_scanner(FieldSpecRs&&... specs)
     {
-#ifdef NDEBUG
-        return std::move(header_field_scanner_);
-#else
-        assert(header_field_scanner_.has_value());
-        return std::move(*header_field_scanner_);
-#endif
+        return h_t(std::allocator_arg, Allocator(this->get()),
+            *field_values_, std::forward<FieldSpecRs>(specs)...);
     }
 
     void operator()()
@@ -565,11 +546,11 @@ make_record_translator(std::allocator_arg_t, const Allocator& alloc,
             std::decay_t<FR>,
             std::decay_t<FieldSpecR0>, std::decay_t<FieldSpecRs>...>;
 
-    record_end_scanner_t s(std::allocator_arg, alloc,
-        std::forward<FR>(f),
-        std::forward<FieldSpecR0>(spec0),
-        std::forward<FieldSpecRs>(specs)...);
-    table_scanner_t scanner(s.bleed_header_field_scanner());
+    record_end_scanner_t s(std::allocator_arg, alloc, std::forward<FR>(f));
+    table_scanner_t scanner(
+        std::allocator_arg, alloc,
+        s.make_header_field_scanner(std::forward<FieldSpecR0>(spec0),
+                                    std::forward<FieldSpecRs>(specs)...));
     scanner.set_record_end_scanner(std::move(s));
     return scanner;
 }
