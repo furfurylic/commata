@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-02-18 (UTC)</signature>
+<signature>2026-02-19 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6885,13 +6885,13 @@ bool is_in_header() const noexcept;
 
       <p>The Commata library offers four default body field scanner types that meet the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>):
          <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>), <c>locale_based_arithmetic_field_translator</c> (<xref id="locale_based_arithmetic_field_translator"/>), <c>string_field_translator</c> (<xref id="string_view_field_translator"/>) and <c>string_view_field_translator</c> (<xref id="string_view_field_translator"/>).</p>
-      <p>An object of these types translates a text value of a text field (<xref id="xlate.general"/>) into a value of its <n>target type</n> and forwards it into its installed <n>sink</n>.</p>
+      <p>An object of these types translates a text value of a text field (<xref id="xlate.general"/>) into a value of its <n>value type</n> and forwards it into its installed <n>sink</n>.</p>
       <p>Behaviours of these default body scanner objects can be customized through the three concepts: <c>FieldTranslatorSink</c> (<xref id="field_translator_sink.requirements"/>), <c>SkippingHandler</c> (<xref id="skipping_handler.requirements"/>) and <c>ConversionErrorHandler</c> (<xref id="conversion_error_handler.requirements"/>).</p>
 
       <section id="field_translator_sink.requirements">
         <name><c>FieldTranslatorSink</c> requirements</name>
 
-        <p>A type <c>S</c> is a <c>FieldTranslatorSink</c> type for the target type <c>T</c> if:</p>
+        <p>A type <c>S</c> is a <c>FieldTranslatorSink</c> type for the value type <c>T</c> if:</p>
         <ul>
           <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
           <li>it is an output iterator type for the type <c>T</c> or a callable type for an argument of an rvalue of cv-unqualified <c>T</c>.</li>
@@ -7333,9 +7333,9 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c>.</p>
+        <p>The <c>arithmetic_field_translator</c> class template provides a simple implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c>.</p>
         <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
-           The template parameter <c>Sink</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.
+           The template parameter <c>Sink</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.
            The template parameters <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
         <p>The default template-argument for the template parameter <c>SkippingHandler</c> is <c>ignore_if_skipped</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_skipped</c> otherwise.
            The default template-argument for the template parameter <c>ConversionHandler</c> is <c>ignore_if_conversion_failed</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_conversion_failed</c> otherwise.</p>
@@ -7496,10 +7496,10 @@ private:
 }
         </codeblock>
 
-        <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
+        <p>The <c>locale_based_arithmetic_field_translator</c> class template provides an implementation for arithmetic types that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is the template parameter <c>T</c> in addition to the <c>arithmetic_field_translator</c> class template (<xref id="arithmetic_field_translator"/>).
           The difference is that an object of <c>locale_based_arithmetic_field_translator</c> can correctly handle the decimal radix separator character and the digit group separator character that differ from those of the C library locale.</p>
         <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable arithmeric type (<xref id="xlate.arithmetic"/>).
-           The template parameter <c>Sink</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.
+           The template parameter <c>Sink</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.
            The template parameters <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
         <p>The default template-argument for the template parameter <c>SkippingHandler</c> is <c>ignore_if_skipped</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_skipped</c> otherwise.
            The default template-argument for the template parameter <c>ConversionHandler</c> is <c>ignore_if_conversion_failed</c> if <c>T</c> is a specialization of <c>std::optional</c>, <c>fail_if_conversion_failed</c> otherwise.</p>
@@ -7614,9 +7614,9 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is <c>T</c>.</p>
+        <p>The <c>string_field_translator</c> class template provides a simple implementation for the standard string type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is <c>T</c>.</p>
         <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable string type.
-           The template parameters <c>Sink</c> and <c>SkippingHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c> and the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
+           The template parameters <c>Sink</c> and <c>SkippingHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c> and the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
 
         <section id="string_field_translator.types">
           <name><c>string_field_translator</c> member types</name>
@@ -7765,9 +7765,9 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>string_view_field_translator</c> class template provides a simple implementation for the standard string view type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose target type is <c>T</c>.</p>
+        <p>The <c>string_view_field_translator</c> class template provides a simple implementation for the standard string view type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) whose value type is <c>T</c>.</p>
         <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> a default translatable string view type.
-           The template parameters <c>Sink</c> and <c>SkippingHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c> and the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
+           The template parameters <c>Sink</c> and <c>SkippingHandler</c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c> and the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
         <p><span class="note">A range referenced by a <c>basic_string_view</c> objects put to a <c>Sink</c> object by an object of <c>string_view_field_translator</c> will be invalidated soon after being put.
            Therefore, <c>Sink</c> objects should not store received ranges to a store that remains alive after the putting operation.</span></p>
 
@@ -8198,14 +8198,14 @@ namespace commata {
       <name><c>FieldTranslatorFactory</c> requirements</name>
 
       <p>A <c>FieldTranslatorFactory</c> type is a function object type each object of which is to be held by a <c>basic_field_spec</c> (<xref id="basic_field_spec"/>) object and used as a factory of one <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) object.
-         A type <c>F</c> meets the <c>FieldTranslatorFactory</c> requirements for the target type <c>T</c> if:</p>
+         A type <c>F</c> meets the <c>FieldTranslatorFactory</c> requirements for the value type <c>T</c> if:</p>
       <ul>
         <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
         <li>the expressions shown in <xref id="table.field_translator_factory.requirements"/> are valid and have the indicated semantics.</li>
       </ul>
 
       <p>In <xref id="table.field_translator_factory.requirements"/>, <c>rt</c> is an rvalue whose type is cv-unqualified <c>F</c>.
-        <c>rs</c> is an rvalue of an arbitrary cv-unqualified type that meets the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.</p>
+        <c>rs</c> is an rvalue of an arbitrary cv-unqualified type that meets the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</p>
 
       <table id="table.field_translator_factory.requirements">
         <caption><c>FieldTranslatorFactory</c> requirements</caption>
@@ -8219,14 +8219,14 @@ namespace commata {
 
         <tr>
           <td>(1)</td>
-          <td><c>F::target_type</c></td>
+          <td><c>F::value_type</c></td>
           <td><c>T</c></td>
         </tr>
 
         <tr>
           <td>(2)</td>
           <td><c>rt(rs)</c></td>
-          <td>A type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) for the target type <c>T</c></td>
+          <td>A type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>)</td>
         </tr>
       </table>
     </section>
@@ -8242,7 +8242,7 @@ namespace commata {
   template &lt;class T, class SkippingHandler = <nc>see below</nc>, class ConversionErrorHandler = <nc>see below</nc>>
     class arithmetic_field_translator_factory {
   public:
-    using target_type = T;
+    using value_type = T;
 
     <c>// <n><xref id="arithmetic_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
     explicit arithmetic_field_translator_factory(
@@ -8261,7 +8261,7 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>arithmetic_field_translator_factory</c> class template offers function object types each object of which is a factory of an <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
+        <p>The <c>arithmetic_field_translator_factory</c> class template offers function object types each object of which is a factory of an <c>arithmetic_field_translator</c> (<xref id="arithmetic_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose value type is the template parameter <c>T</c>.</p>
         <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable arithmetic type (<xref id="xlate.arithmetic"/>).
            The template parameters <c>SkippingHandler</c> and <c>ConversionErrorHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) and the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> respectively.</p>
         <p>The default template-arguments for the template parameter <c>SkippingHandler</c> and <c>ConversionHandler</c> are
@@ -8288,7 +8288,7 @@ template &lt;class Sink>
   arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>
     operator()(Sink&amp;&amp; sink) &amp;&amp;;
             </code>
-            <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.</requires>
+            <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</requires>
             <returns><c>arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>(std::forward&lt;Sink>(sink), std::move(sh), std::move(ceh))</c>.</returns>
           </code-item>
         </section>
@@ -8302,7 +8302,7 @@ namespace commata {
   template &lt;class T, class SkippingHandler = <nc>see below</nc>>
     class string_field_translator_factory {
   public:
-    using target_type = T;
+    using value_type = T;
 
     <c>// <n><xref id="string_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
     explicit string_field_translator_factory(
@@ -8319,8 +8319,8 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>string_field_translator_factory</c> class template offers function object types each object of which is a factory of a <c>string_field_translator</c> (<xref id="string_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
-        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable string type.
+        <p>The <c>string_field_translator_factory</c> class template offers function object types each object of which is a factory of a <c>string_field_translator</c> (<xref id="string_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose value type is the template parameter <c>T</c>.</p>
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable string type (<xref id="scan.builtin.body_field_scanners"/>).
            The template parameter <c>SkippingHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.</p>
         <p>The default template-argument for the template parameter <c>SkippingHandler</c> is
            <c>ignore_if_skipped</c> (<xref id="ignore_if_skipped"/>) if <c>T</c> is a specialization of <c>std::optional</c>,
@@ -8345,7 +8345,7 @@ template &lt;class Sink>
   string_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>
     operator()(Sink&amp;&amp; sink) &amp;&amp;;
             </code>
-            <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.</requires>
+            <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</requires>
             <returns><c>string_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>(std::forward&lt;Sink>(sink), std::move(sh))</c>.</returns>
           </code-item>
         </section>
@@ -8359,7 +8359,7 @@ namespace commata {
   template &lt;class T, class SkippingHandler = <nc>see below</nc>>
     class string_view_field_translator_factory {
   public:
-    using target_type = T;
+    using value_type = T;
 
     <c>// <n><xref id="string_view_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
     explicit string_view_field_translator_factory(
@@ -8376,8 +8376,8 @@ namespace commata {
 }
         </codeblock>
 
-        <p>The <c>string_view_field_translator_factory</c> class template offers function object types each object of which is a factory of a <c>string_view_field_translator</c> (<xref id="string_view_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose target type is the template parameter <c>T</c>.</p>
-        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable string view type.
+        <p>The <c>string_view_field_translator_factory</c> class template offers function object types each object of which is a factory of a <c>string_view_field_translator</c> (<xref id="string_view_field_translator"/>) object and that meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) whose value type is the template parameter <c>T</c>.</p>
+        <p>The template parameter <c>T</c> shall be a type that makes <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>) a default translatable string view type (<xref id="scan.builtin.body_field_scanners"/>).
            The template parameter <c>SkippingHandler</c> shall meet the <c>SkippingHandler</c> requirements (<xref id="skipping_handler.requirements"/>) for the target type <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.</p>
         <p>The default template-argument for the template parameter <c>SkippingHandler</c> is
            <c>ignore_if_skipped</c> (<xref id="ignore_if_skipped"/>) if <c>T</c> is a specialization of <c>std::optional</c>,
@@ -8402,7 +8402,7 @@ template &lt;class Sink>
   string_view_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>
     operator()(Sink&amp;&amp; sink) &amp;&amp;;
             </code>
-            <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the target type <c>T</c>.</requires>
+            <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</requires>
             <returns><c>string_view_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>(std::forward&lt;Sink>(sink), std::move(sh))</c>.</returns>
           </code-item>
         </section>
@@ -8449,7 +8449,7 @@ namespace commata {
     using char_type      = Ch;
     using traits_type    = Tr;
     using allocator_type = Allocator;
-    using target_type    = T;
+    using value_type    = T;
 
     <c>// <n><xref id="basic_field_spec.cons"/>, construct/copy/destroy:</n></c>
     basic_field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name,
@@ -8473,7 +8473,7 @@ namespace commata {
       <p>The template parameter <c>Ch</c> shall be a char-like type.
          The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.
          The template parameter <c>Allocator</c> shall be a type that meets the <c>Allocator</c> requirements for <c>Ch</c>.
-         The template parameter <c>FieldTranslatorFactory</c> shall meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) for the target type <c>T</c>.</p>
+         The template parameter <c>FieldTranslatorFactory</c> shall meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) for the value type <c>T</c>.</p>
 
       <section id="basic_field_spec.cons">
         <name><c>basic_field_spec</c> construct/copy/destroy</name>
@@ -8581,7 +8581,7 @@ template &lt;class T, class Ch> basic_field_spec&lt;<nc>see below</nc>> field_sp
       <p>A <n>record translator header field scanner</n> type for a specialization of <c>basic_table_scanner</c> type <c>T</c> and specializations of <c>basic_field_spec</c> types <c>FieldSpecs...</c> is a type:</p>
       <ul>
         <li>that meets the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>T</c>,</li>
-        <li>whose object holds a reference to a record store for <c>FieldSpecs::target_type...</c>,</li>
+        <li>whose object holds a reference to a record store for <c>FieldSpecs::value_type...</c>,</li>
         <li>whose object holds objects <c>specs...</c> each <c>i</c>-th of which is an object whose types is the <c>i</c>-th of <c>FieldSpecs...</c>,</li>
         <li>whose object holds an object of <c>T::allocator_type</c> and use it to allocate and deallocate memories dynamically, and</li>
         <li>
@@ -8609,8 +8609,8 @@ template &lt;class T, class Ch> basic_field_spec&lt;<nc>see below</nc>> field_sp
           <ul>
             <li><c>specs[i]</c> denotes the <c>i</c>-th (zero-based) of <c>specs...</c> held by it,</li>
             <li><c>FieldSpecs[i]</c> denotes the <c>i</c>-th (zero-based) of <c>FieldSpecs...</c>, and</li>
-            <li><c>rp(i)</c> is an rvalue of a function object that makes <c>rp(i)(rs(i))</c> a valid expression where <c>rs(i)</c> is an rvalue whose type meets the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for <c>FieldSpecs[i]::target_type</c>
-                and makes it return a <c>BodyFieldScanner</c> object (<xref id="body_field_scanner.requirements"/>) for <c>FieldSpecs[i]::target_type</c>, <c>FieldSpecs[i]::traits_type</c> and <c>Allocator</c> that move constructs values at the <c>i</c>-th position (zero-based) in the record store from its received values.</li>
+            <li><c>rp(i)</c> is an rvalue of a function object that makes <c>rp(i)(rs(i))</c> a valid expression where <c>rs(i)</c> is an rvalue whose type meets the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for <c>FieldSpecs[i]::value_type</c>
+                and makes it return a <c>BodyFieldScanner</c> object (<xref id="body_field_scanner.requirements"/>) for <c>FieldSpecs[i]::value_type</c>, <c>FieldSpecs[i]::traits_type</c> and <c>Allocator</c> that move constructs values at the <c>i</c>-th position (zero-based) in the record store from its received values.</li>
           </ul>
           <p><span class="note"><c>T::char_type</c> is const-qualified.</span></p>
           <p></p>
@@ -8626,10 +8626,10 @@ template &lt;class Allocator, class FR, class FieldSpecR0, class... FieldSpecRs>
         </code>
         <requires><c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>std::decay_t&lt;FieldSpecR0>::char_type</c>.
                   For each type <c>FieldSpecR</c> in <c>FieldSpecR0</c> and <c>FieldSpecRs...</c>, <c>std::decay_t&lt;FieldSpecR></c> shall be a specialization of <c>basic_field_spec</c> (<xref id="basic_field_spec"/>).
-                  <c>FR</c> shall be a type that has <c>std::is_invocable_v&lt;FR, std::decay_t&lt;FieldSpecR0>::target_type, std::decay_t&lt;FieldSpecRs>::target_type...></c> be <c>true</c>.</requires>
+                  <c>FR</c> shall be a type that has <c>std::is_invocable_v&lt;FR, std::decay_t&lt;FieldSpecR0>::value_type, std::decay_t&lt;FieldSpecRs>::value_type...></c> be <c>true</c>.</requires>
         <effects>Let <c>FieldSpecs</c> be a pack formed with <c>std::decay_t&lt;FieldSpecR0></c> and <c>std::decay_t&lt;FieldSpecRs>...</c>,
                  and <c>TableScanner</c> be <c>basic_table_scanner&lt;std::decay_t&lt;FieldSpecR0>::char_type, std::decay_t&lt;FieldSpecR0>::traits_type, Allocator></c>.
-                 Creates a record store whose types are <c>FieldSpecs::target_type...</c>.
+                 Creates a record store whose types are <c>FieldSpecs::value_type...</c>.
                  Makes a variable <c>h</c> whose type is a record translator header field scanner type for <c>TableScanner</c> and <c>FieldSpecs...</c>
                  that holds a reference to the record store and objects constructed from <c>std::forward&lt;FieldSpecR0>(spec0)...</c>,
                  <c>std::forward&lt;FieldSpecsRs>(specs)...</c> and <c>alloc</c>.
