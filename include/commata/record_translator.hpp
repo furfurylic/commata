@@ -40,7 +40,7 @@ class COMMATA_FULL_EBO arithmetic_field_translator_factory :
     detail::member_like_base<ConversionErrorHandler>
 {
 public:
-    using target_type = T;
+    using value_type = T;
 
     explicit arithmetic_field_translator_factory(
             SkippingHandler skipping_handler = SkippingHandler(),
@@ -72,7 +72,7 @@ class string_field_translator_factory :
     detail::member_like_base<SkippingHandler>
 {
 public:
-    using target_type = T;
+    using value_type = T;
 
     explicit string_field_translator_factory(
             SkippingHandler skipping_handler = SkippingHandler()) :
@@ -95,7 +95,7 @@ class string_view_field_translator_factory :
     detail::member_like_base<SkippingHandler>
 {
 public:
-    using target_type = T;
+    using value_type = T;
 
     explicit string_view_field_translator_factory(
             SkippingHandler skipping_handler = SkippingHandler()) :
@@ -162,7 +162,7 @@ public:
     using char_type = Ch;
     using traits_type = Tr;
     using allocator_type = Allocator;
-    using target_type = T;
+    using value_type = T;
 
     basic_field_spec(std::basic_string<Ch, Tr, Allocator> field_name,
             FieldTranslatorFactory factory = FieldTranslatorFactory()) :
@@ -263,14 +263,14 @@ class COMMATA_FULL_EBO typed_field_scanner_setter :
     member_like_base<FieldTranslatorFactory>
 {
 public:
-    using target_type = typename FieldTranslatorFactory::target_type;
+    using value_type = typename FieldTranslatorFactory::value_type;
 
 private:
-    std::optional<unwrap_optional_t<target_type>>* field_value_;
+    std::optional<unwrap_optional_t<value_type>>* field_value_;
 
 public:
     explicit typed_field_scanner_setter(FieldTranslatorFactory factory,
-        std::optional<unwrap_optional_t<target_type>>& field_value) :
+        std::optional<unwrap_optional_t<value_type>>& field_value) :
         member_like_base<FieldTranslatorFactory>(std::move(factory)),
         field_value_(std::addressof(field_value))
     {}
@@ -282,7 +282,7 @@ public:
         scanner.set_field_scanner(field_index, std::move(this->get())(
             [field_value = field_value_](auto&& v) {
                 using v_t = decltype(v);
-                if constexpr (is_std_optional_v<target_type>) {
+                if constexpr (is_std_optional_v<value_type>) {
                     *field_value = std::forward<v_t>(v);
                 } else {
                     field_value->emplace(std::forward<v_t>(v));
@@ -449,18 +449,18 @@ public:
 
 template <class... FieldSpecs>
 using record_translator_targets_t =
-    std::tuple<optionalized_target<typename FieldSpecs::target_type>...>;
+    std::tuple<optionalized_target<typename FieldSpecs::value_type>...>;
 
 template <class Ch, class Tr, class Allocator, class F, class... FieldSpecs>
 class record_translator_record_end_scanner :
     member_like_base<typename std::allocator_traits<Allocator>::template
         rebind_alloc<record_translator_targets_t<FieldSpecs...>>>
 {
-    static_assert(std::is_invocable_v<F, typename FieldSpecs::target_type...>);
+    static_assert(std::is_invocable_v<F, typename FieldSpecs::value_type...>);
 
     using to_t = record_translator_targets_t<FieldSpecs...>;
     using h_t = record_translator_header_field_scanner<Ch, Tr, Allocator,
-        typename FieldSpecs::target_type...>;
+        typename FieldSpecs::value_type...>;
     using a_t = typename std::allocator_traits<Allocator>::template
         rebind_alloc<to_t>;
     using at_t = std::allocator_traits<a_t>;
