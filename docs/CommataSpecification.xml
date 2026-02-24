@@ -8504,8 +8504,8 @@ namespace commata {
             <code>
 using type = <nc>see below</nc>;
             </code>
-            <type>Let <c>U</c> be <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c>.
-                  Then if <c>is_default_translatable_arithmetic_type_v&lt;U></c> is <c>true</c>, <c>arithmetic_field_translator_factory&lt;T></c>.
+            <type>Let <c>U</c> be <c><nc>UNWRAP_OPTIONAL</nc>&lt;T></c> (<xref id="scan.builtin.body_field_scanners"/>).
+                  Then if <c>is_default_translatable_arithmetic_type_v&lt;U></c> is <c>true</c> (<xref id="is_default_translatable_arithmetic_type"/>), <c>arithmetic_field_translator_factory&lt;T></c>.
                   Otherwise, if <c>U</c> is a specialization of <c>std::basic_string</c>, <c>string_field_translator_factory&lt;T></c>.
                   Otherwise, if <c>U</c> is a specialization of <c>std::basic_string_view</c>, <c>string_view_field_translator_factory&lt;T></c>.
                   Otherwise, this member type shall not be declared.</type>
