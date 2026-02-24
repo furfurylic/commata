@@ -197,7 +197,7 @@ private:
     std::optional<unwrap_optional_t<value_type>>* field_value_;
 
 public:
-    explicit typed_field_scanner_setter(FieldNamePred field_name_pred,
+    typed_field_scanner_setter(FieldNamePred field_name_pred,
         FieldTranslatorFactory factory,
         std::optional<unwrap_optional_t<value_type>>& field_value) :
         member_like_base<FieldNamePred>(std::move(field_name_pred)),
