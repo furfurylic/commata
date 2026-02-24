@@ -189,10 +189,15 @@
         <xsl:choose>
           <xsl:when test="p|code|ul|ol">
             <div class="elaborated-desc">
-              <p><xsl:copy-of select="$heading"/><xsl:apply-templates select="p[1]/node()"/></p>
-              <xsl:for-each select="p[1]/following-sibling::*">
+              <xsl:for-each select="p|code|ul|ol">
+                <xsl:if test="position() = 1">
+                  <xsl:choose>
+                    <xsl:when test="local-name(.) = 'p'"><p><xsl:copy-of select="$heading"/><xsl:apply-templates select="node()"/></p></xsl:when>
+                    <xsl:otherwise><p><xsl:copy-of select="$heading"/></p></xsl:otherwise>
+                  </xsl:choose>
+                </xsl:if>
                 <xsl:choose>
-                  <xsl:when test="local-name(.) = 'p'"><p><xsl:apply-templates/></p></xsl:when>
+                  <xsl:when test="local-name(.) = 'p' and position() &gt; 1"><p><xsl:apply-templates/></p></xsl:when>
                   <xsl:when test="local-name(.) = 'code'"><pre><code><xsl:apply-templates mode="code"/></code></pre></xsl:when>
                   <xsl:when test="local-name(.) = 'ul' or local-name(.) = 'ol'"><xsl:apply-templates select="."/></xsl:when>
                 </xsl:choose>
