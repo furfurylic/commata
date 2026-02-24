@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-02-19 (UTC)</signature>
+<signature>2026-02-23 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -621,6 +621,96 @@
 
       <p>Additionally, let <c>t</c> is an expression whose type <c>T</c> meets the <c>AccessibleRange</c> requirements.
          Then if <c>std::cbegin(t)</c> and <c>std::cend(t)</c> form an accessible range, the range [<c>std::cbegin(t)</c>, <c>std::cend(t)</c>) is called the range <n>formed by</n> <c>t</c>.</p>
+    </section>
+
+    <section id="string_criteria">
+      <name>String criteria</name>
+
+      <p>For a certain expression <c>t</c> whose type is <c>T</c> and a similarly certain lvalue <c>a</c>
+         whose type is const-qualified and volatile-unqualified and
+         whose cv-removed type <c>Allocator</c> meets the <c>Allocator</c> requirements,
+         and letting <c>TR</c> be <c>T&amp;</c> if <c>t</c> is an lvalue or be <c>T</c> otherwise,
+         an expression <c><nc>STRING_PRED_A</nc>&lt;Ch, Tr>(t, a)</c> is defined as following:</p>
+      <ul>
+        <li>if <c>t</c> is an rvalue and <c>T</c> is cv-unqualified <c>std::basic_string&lt;Ch, Tr, Allocator2></c> for a certain type <c>Allocator2</c>,
+            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            <ul>
+              <li>that holds a <c>std::basic_string&lt;Ch, Tr, Allocator2></c> object (hereinafter called <c>w</c>) initialized with an rvalue <c>t</c>,</li>
+              <li>that tells if a string view object is equal to <c>w</c>, and</li>
+              <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
+            </ul>
+        </li>
+        <li>otherwise, if <c>std::is_constructible_v&lt;std::basic_string&lt;Ch, Tr, Allocator>, TR, const Allocator&amp;></c> is <c>true</c>,
+            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            <ul>
+              <li>that holds a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object (hereinafter called <c>v</c>) initialized with <c>std::forward&lt;TR>(t)</c> and <c>a</c>,</li>
+              <li>that tells if a string view object is equal to <c>v</c>, and</li>
+              <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
+            </ul>
+        </li>
+        <li>otherwise, if <c>T</c> meets the <c>ForwardAccessibleRange</c> requirements for <c>Ch</c> (<xref id="accessible_range.requirements"/>),
+            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            <ul>
+              <li>that holds a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object (hereinafter called <c>v</c>) whose allocator is initialized with <c>a</c> and that is populated with the range formed by <c>t</c> (<xref id="form_accessible_range"/>),</li>
+              <li>that tells if a string view object is equal to <c>v</c>, and</li>
+              <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
+            </ul>
+        </li>
+        <li>otherwise, an lvalue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>.</li>
+      </ul>
+
+      <p>With the same notation on <c>t</c> and <c>T</c>, an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c> is defined as following:</p>
+      <ul>
+        <li>if <c>T</c> is possibly const-qualified <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain type <c>Allocator</c>,
+            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
+            <ul>
+              <li>that holds a <c>std::basic_string&lt;Ch, Tr></c> object (hereinafter called <c>w</c>) initialized with <c>t</c> with its value category preserved,</li>
+              <li>that tells if a string view object is equal to <c>w</c>, and</li>
+              <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
+            </ul>
+        </li>
+        <li>otherwise, <c><nc>STRING_PRED_A</nc>&lt;Ch, Tr>(t, std::allocator&lt;Ch>())</c>.</li>
+      </ul>
+
+      <p>A type <c>U</c> meets the <c>StringCriteriaWithAllocator</c> requirements for a char-like type <c>Ch</c>, a character traits type <c>Tr</c> for <c>Ch</c> and a type <c>A</c> that meets the <c>Allocator</c> requirements if:</p>
+      <ul>
+        <li><c><n>STRING_PRED_A</n>&lt;Ch, Tr>(std::declval&lt;U>(), std::declval&lt;const A&amp;>())</c> is well-formed when treated as unevaluated operands, and</li>
+        <li><c>X</c>, which is the cv-removed and reference-removed type of <c><n>STRING_PRED_A</n>&lt;Ch, Tr>(std::declval&lt;U>(), std::declval&lt;const A&amp;>())</c>, satisfies that:
+          <ul>
+            <li><c>X</c> meets the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+            <li>for each lvalue <c>x</c> of <c>X</c> and rvalue <c>v</c> of <c>std::basic_string_view&lt;Ch, Tr></c>,
+                <c>x(v)</c> is well-formed and contextually convertible to <c>bool</c>.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <p>A type <c>U</c> meets the <c>StringCriteria</c> requirements for a char-like type <c>Ch</c> and a character traits type <c>Tr</c> for <c>Ch</c> if:</p>
+      <ul>
+        <li><c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;U>())</c> is well-formed when treated as unevaluated operands, and</li>
+        <li><c>X</c>, which is the cv-removed and reference-removed type of <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;U>())</c>, satisfies that:
+          <ul>
+            <li><c>X</c> meets the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+            <li>for each lvalue <c>x</c> of <c>X</c> and rvalue <c>v</c> of <c>std::basic_string_view&lt;Ch, Tr></c>,
+                <c>x(v)</c> is well-formed and contextually convertible to <c>bool</c>.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <p>An expression <c><nc>FORMS_STRING_CRITERIA_A</nc>&lt;Ch, Tr, U, A></c>, which is an rvalue of <c>bool</c>, has a value of <c>true</c> if and only if:</p>
+      <ul>
+        <li><c><n>STRING_PRED_A</n>&lt;Ch, Tr>(std::declval&lt;U>(), std::declval&lt;const A&amp;>())</c> is well-formed when treated as unevaluated operands, and</li>
+        <li>letting <c>X</c> be the cv-removed and reference-removed type of <c><n>STRING_PRED_A</n>&lt;Ch, Tr>(std::declval&lt;U>(), std::declval&lt;const A&amp;>())</c>,
+            <c>std::is_invocable_r_v&lt;bool, X, std::basic_string_view&lt;Ch, Tr>></c> is <c>true</c>.</li>
+      </ul>
+
+      <p>An expression <c><nc>FORMS_STRING_CRITERIA</nc>&lt;Ch, Tr, U></c>, which is an rvalue of <c>bool</c>, has a value of <c>true</c> if and only if:</p>
+      <ul>
+        <li><c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;U>())</c> is well-formed when treated as unevaluated operands, and</li>
+        <li>letting <c>X</c> be the cv-removed and reference-removed type of <c><n>STRING_PRED</n>&lt;Ch, Tr>(std::declval&lt;U>())</c>,
+            <c>std::is_invocable_r_v&lt;bool, X, std::basic_string_view&lt;Ch, Tr>></c> is <c>true</c>.</li>
+      </ul>
+
+      <p><span class="note">The type <c>U</c> appeared in this subclause can be a reference type.</span></p>
     </section>
   </section>
 </section>
@@ -4714,50 +4804,6 @@ bool is_in_header() const noexcept;
     <section id="record_extractor.creation">
       <name><c>record_extractor</c> and <c>record_extractor_with_indexed_key</c> creation functions</name>
 
-      <p>In this subclause, for a certain expression <c>t</c> whose type is <c>T</c> and a similarly certain expression <c>a</c> whose cv-removed type <c>Allocator</c> meets the <c>Allocator</c> requirements,
-         and letting <c>TR</c> be <c>T&amp;</c> if <c>t</c> is an lvalue or be <c>T</c> otherwise,
-         an expression <c><nc>STRING_PRED_A</nc>&lt;Ch, Tr>(t, a)</c> is defined as following:</p>
-      <ul>
-        <li>if <c>t</c> is an rvalue and <c>T</c> is cv-unqualified <c>std::basic_string&lt;Ch, Tr, Allocator2></c> for a certain type <c>Allocator2</c>,
-            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
-            <ul>
-              <li>that holds a <c>std::basic_string&lt;Ch, Tr, Allocator2></c> object (hereinafter called <c>w</c>) initialized with an rvalue <c>t</c>,</li>
-              <li>that tells if a string view object is equal to <c>w</c>, and</li>
-              <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
-            </ul>
-        </li>
-        <li>otherwise, if <c>std::is_constructible_v&lt;std::basic_string&lt;Ch, Tr, Allocator>, TR, const Allocator&amp;></c> is <c>true</c>,
-            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
-            <ul>
-              <li>that holds a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object (hereinafter called <c>v</c>) initialized with <c>std::forward&lt;TR>(t)</c> and <c>a</c>,</li>
-              <li>that tells if a string view object is equal to <c>v</c>, and</li>
-              <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
-            </ul>
-        </li>
-        <li>otherwise, if <c>T</c> meets the <c>ForwardAccessibleRange</c> requirements for <c>Ch</c> (<xref id="accessible_range.requirements"/>),
-            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
-            <ul>
-              <li>that holds a <c>std::basic_string&lt;Ch, Tr, Allocator></c> object (hereinafter called <c>v</c>) whose allocator is initialized with <c>a</c> and that is populated with the range formed by <c>t</c> (<xref id="form_accessible_range"/>),</li>
-              <li>that tells if a string view object is equal to <c>v</c>, and</li>
-              <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
-            </ul>
-        </li>
-        <li>otherwise, an lvalue (if <c>t</c> is an lvalue) or an xvalue (otherwise) of <c>t</c>.</li>
-      </ul>
-
-      <p>With the same notation on <c>t</c> and <c>T</c>, an expression <c><nc>STRING_PRED</nc>&lt;Ch, Tr>(t)</c> is defined as following:</p>
-      <ul>
-        <li>if <c>T</c> is possibly const-qualified <c>std::basic_string&lt;Ch, Tr, Allocator></c> for a certain type <c>Allocator</c>,
-            a prvalue of a unary predicate object taking a <c>std::basic_string_view&lt;Ch, Tr></c> parameter and returning <c>bool</c>:
-            <ul>
-              <li>that holds a <c>std::basic_string&lt;Ch, Tr></c> object (hereinafter called <c>w</c>) initialized with <c>t</c> with its value category preserved,</li>
-              <li>that tells if a string view object is equal to <c>w</c>, and</li>
-              <li>whose type <c>S</c> is unspecified and satisfies <c>std::is_nothrow_move_constructible_v&lt;S> == true</c>,</li>
-            </ul>
-        </li>
-        <li>otherwise, <c><nc>STRING_PRED_A</nc>&lt;Ch, Tr>(t, std::allocator&lt;Ch>())</c>.</li>
-      </ul>
-
       <code-item>
         <code>
 template &lt;class FieldNamePred, class FieldValuePred,
@@ -4775,9 +4821,10 @@ return record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, Allocator>(
          std::allocator_arg, alloc,
          out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
         </effects>
-        <remark>This overload shall not participate in overload resolution unless both of <c><n>STRING_PRED_A</n>&lt;Ch, Tr>(std::declval&lt;FieldNamePred>(), std::declval&lt;const Allocator&amp;>())</c> and
-                <c><n>STRING_PRED_A</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>(), std::declval&lt;const Allocator&amp;>())</c> are well-formed when treated as unevaluated operands, and
-                for each type (hereinafter called <c>T</c>) of their types, <c>std::is_invocable_r_v&lt;bool, T&amp;, std::basic_string_view&lt;Ch, Tr>></c> is <c>true</c>.</remark>
+        <remark>This overload shall not participate in overload resolution unless both of
+                <c><n>FORMS_STRING_CRITERIA_A</n>&lt;Ch, Tr, FieldNamePred, Allocator></c> and
+                <c><n>FORMS_STRING_CRITERIA_A</n>&lt;Ch, Tr, FieldValuePred, Allocator></c> are
+                <c>true</c> (<xref id="string_criteria"/>).</remark>
       </code-item>
 
       <code-item>
@@ -4796,8 +4843,9 @@ return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, Allocator>(
          std::allocator_arg, alloc,
          out, target_field_index, std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
         </effects>
-        <remark>This overload shall not participate in overload resolution unless <c><n>STRING_PRED_A</n>&lt;Ch, Tr>(std::declval&lt;FieldValuePred>(), std::declval&lt;const Allocator&amp;>())</c> is well-formed when treated as an unevaluated operand, and
-                for its type <c>T</c>, <c>std::is_invocable_r_v&lt;bool, T&amp;, std::basic_string_view&lt;Ch, Tr>></c> is <c>true</c>.</remark>
+        <remark>This overload shall not participate in overload resolution unless
+                <c><n>FORMS_STRING_CRITERIA_A</n>&lt;Ch, Tr, FieldValuePred, Allocator></c> is
+                <c>true</c> (<xref id="string_criteria"/>).</remark>
       </code-item>
 
       <code-item>
@@ -4815,7 +4863,10 @@ return record_extractor&lt;decltype(fnp), decltype(fvp), Ch, Tr, std::allocator&
          std::allocator_arg, std::allocator&lt;Ch>(),
          out, std::move(fnp), std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
         </effects>
-        <remark>This overload shall not participate in overload resolution unless <c>make_record_extractor(std::declval&lt;std::allocator_arg_t>(), std::declval&lt;std::allocator&lt;Ch>>(), std::declval&lt;std::basic_streambuf&lt;Ch, Tr>&amp;>(), std::declval&lt;Appendices>()...)</c> is well-formed when treated as an unevaluated operand.</remark>
+        <remark>This overload shall not participate in overload resolution unless both of
+                <c><n>FORMS_STRING_CRITERIA</n>&lt;Ch, Tr, FieldNamePred></c> and
+                <c><n>FORMS_STRING_CRITERIA</n>&lt;Ch, Tr, FieldValuePred></c> are
+                <c>true</c> (<xref id="string_criteria"/>).</remark>
       </code-item>
 
       <code-item>
@@ -4832,7 +4883,9 @@ return record_extractor_with_indexed_key&lt;decltype(fvp), Ch, Tr, std::allocato
          std::allocator_arg, std::allocator&lt;Ch>(),
          out, target_field_index, std::move(fvp), std::forward&lt;Appendices>(appendices)...);</code>
         </effects>
-        <remark>This overload shall not participate in overload resolution unless <c>make_record_extractor(std::declval&lt;std::allocator_arg_t>(), std::declval&lt;std::allocator&lt;Ch>>(), std::declval&lt;std::basic_streambuf&lt;Ch, Tr>&amp;>(), std::declval&lt;Appendices>()...)</c> is well-formed when treated as an unevaluated operand.</remark>
+        <remark>This overload shall not participate in overload resolution unless
+                <c><n>FORMS_STRING_CRITERIA</n>&lt;Ch, Tr, std::decay_t&lt;FieldValuePred>></c> is
+                <c>true</c> (<xref id="string_criteria"/>).</remark>
       </code-item>
     </section>
   </section>
@@ -8179,36 +8232,24 @@ namespace commata {
   template &lt;class T> using default_field_translator_factory_t =
     typename default_field_translator_factory&lt;T>::type;
 
-  <c>// <n><xref id="basic_field_spec"/>, basic_field_spec:</n></c>
-  template &lt;class Ch, class Tr, class Allocator, class T,
-            class FieldTranslatorFactory = default_field_translator_factory_t&lt;T>>
-    class basic_field_spec;
-
   <c>// <n><xref id="field_specs.creation"/>, creation of field specs:</n></c>
-  template &lt;class T, class Ch, class Tr, class Allocator, class FieldTranslatorFactory>
-    basic_field_spec&lt;<nc>see below</nc>>
-      field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name,
-                 FieldTranslatorFactory&amp;&amp; factory);
-  template &lt;class T, class Ch, class Tr, class Allocator>
-    basic_field_spec&lt;<nc>see below</nc>> field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name);
-  template &lt;class T, class Ch, class Tr, class FieldTranslatorFactory>
-    basic_field_spec&lt;<nc>see below</nc>>
-      field_spec(std::basic_string_view&lt;Ch, Tr> field_name, FieldTranslatorFactory&amp;&amp; factory);
-  template &lt;class T, class Ch, class Tr>
-    basic_field_spec&lt;<nc>see below</nc>> field_spec(std::basic_string_view&lt;Ch, Tr> field_name);
-  template &lt;class T, class FieldTranslatorFactory, class Ch>
-    basic_field_spec&lt;<nc>see below</nc>>
-      field_spec(const Ch* field_name, FieldTranslatorFactory&amp;&amp; factory);
-  template &lt;class T, class Ch> basic_field_spec&lt;<nc>see below</nc>> field_spec(const Ch* field_name);
+  template &lt;class FieldNamePred, class class FieldTranslatorFactory>
+    std::tuple&lt;std::decay_t&lt;FieldNamePred, std::decay_t&lt;FieldTranslatorFactory>>
+      field_spec(FieldNamePred&amp;&amp; field_name_pred, FieldTranslatorFactory&amp;&amp; factory);
+  template &lt;class T, class FieldNamePred>
+    std::tuple&lt;std::decay_t&lt;FieldNamePred, default_field_translator_factory&lt;T>>
+      field_spec(FieldNamePred&amp;&amp; field_name_pred);
 
   <c>// <n><xref id="record_translators.creation"/>, creation of record translators:</n></c>
-  template &lt;class Allocator, class FR, class FieldSpecR0, class... FieldSpecRs>
-    basic_table_scanner&lt;<nc>see below</nc>>
-      make_record_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                             FR&amp;&amp; f, FieldSpecR0&amp;&amp; spec0, FieldSpecRs&amp;&amp;... specs);
-  template &lt;class FR, class FieldSpecR0, class... FieldSpecRs>
-    basic_table_scanner&lt;<nc>see below</nc>>
-      make_record_translator(FR&amp;&amp; f, FieldSpecR0&amp;&amp; spec0, FieldSpecRs&amp;&amp;... specs);
+  template &lt;class Ch, class Tr, class Allocator, class FR, class... FieldSpecRs>
+    basic_table_scanner&lt;Ch, Tr, Allocator> make_basic_record_translator(
+      std::allocator_arg_t, const Allocator&amp; alloc, FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+  template &lt;class Ch, class Tr, class FR, class... FieldSpecRs>
+    basic_table_scanner&lt;Ch, Tr> make_basic_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+  template &lt;class FR, class... FieldSpecRs>
+    table_scanner make_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+  template &lt;class FR, class... FieldSpecRs>
+    wtable_scanner make_wrecord_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
       </codeblock>
       <p>The header <c>"commama/record_translator.hpp"</c> defines facilities to make a <n>record translator</n> object, which is a <c>basic_table_scanner</c> object configured to invoke its associated function object with translated text values (<xref id="xlate.general"/>) of text fields once every record.</p>
     </section>
@@ -8216,8 +8257,8 @@ namespace commata {
     <section id="field_translator_factory.requirements">
       <name><c>FieldTranslatorFactory</c> requirements</name>
 
-      <p>A <c>FieldTranslatorFactory</c> type is a function object type each object of which is to be held by a <c>basic_field_spec</c> (<xref id="basic_field_spec"/>) object and used as a factory of one <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) object.
-         A type <c>F</c> meets the <c>FieldTranslatorFactory</c> requirements for the value type <c>T</c> if:</p>
+      <p>A <c>FieldTranslatorFactory</c> type is a function object type each object of which is to be held by a <c>FieldSpec</c> (<xref id="field_spec.requirements"/>) object and used as a factory of one <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) object.
+         A type <c>F</c> meets the <c>FieldTranslatorFactory</c> requirements for the value type <c>T</c> and the table scanner type <c>S</c>, which is a specialization of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>), if:</p>
       <ul>
         <li>it satisfies the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
         <li>the expressions shown in <xref id="table.field_translator_factory.requirements"/> are valid and have the indicated semantics.</li>
@@ -8245,9 +8286,20 @@ namespace commata {
         <tr>
           <td>(2)</td>
           <td><c>rt(rs)</c></td>
-          <td>A type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>)</td>
+          <td>A type that meets the <c>BodyFieldScanner</c> requirements (<xref id="body_field_scanner.requirements"/>) for <c>S</c></td>
         </tr>
       </table>
+    </section>
+
+    <section id="field_spec.requirements">
+      <name><c>FieldSpec</c> requirements</name>
+
+      <p>A type <c>S</c> meets the <c>FieldSpec</c> requirements for a specialization of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) <c>T</c> if it is the same type as <c>std::pair&lt;P, F></c> or <c>std::tuple&lt;P, F></c> where:</p>
+      <ul>
+        <li><c>P</c> is a type that meets the requirements of <c>MoveConstructible</c>, <c>Destructible</c>, and
+            <c>StringCriteria</c> requirements (<xref id="string_criteria"/>) for <c>std::remove_const_t&lt;T::char_type></c> and <c>T::traits_type</c>, and</li>
+        <li><c>F</c> is a type that meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) for a certain value type and the table scanner type <c>T</c>.</li>
+      </ul>
     </section>
 
     <section id="builtin.field_translator_factories">
@@ -8286,6 +8338,8 @@ namespace commata {
         <p>The default template-arguments for the template parameter <c>SkippingHandler</c> and <c>ConversionHandler</c> are
            <c>ignore_if_skipped</c> (<xref id="ignore_if_skipped"/>) and <c>ignore_if_conversion_failed</c> (<xref id="ignore_if_conversion_failed"/>) respectively if <c>T</c> is a specialization of <c>std::optional</c>,
            <c>fail_if_skipped</c> (<xref id="fail_if_skipped"/>) and <c>fail_if_conversion_failed</c> (<xref id="fail_if_conversion_failed"/>) respectively otherwise.</p>
+        <p><c>arithmetic_field_translator_factory&lt;T, SkippingHander, ConversionErrorHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
+           for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;Ch, Tr, Allocator></c> where <c>Ch</c> is <c>char</c> or <c>wchar_t</c>, <c>Ch</c> is a character traits type for <c>Ch</c>, and <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>Ch</c>.</p>
 
         <section id="arithmetic_field_translator_factory.cons">
           <name><c>arithmetic_field_translator_factory</c> construct/copy/destroy</name>
@@ -8344,6 +8398,8 @@ namespace commata {
         <p>The default template-argument for the template parameter <c>SkippingHandler</c> is
            <c>ignore_if_skipped</c> (<xref id="ignore_if_skipped"/>) if <c>T</c> is a specialization of <c>std::optional</c>,
            <c>fail_if_skipped</c> (<xref id="fail_if_skipped"/>) otherwise.</p>
+        <p><c>string_field_translator_factory&lt;T, SkippingHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
+           for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;T::value_type, T::traits_type, T::allocator_type></c>.</p>
 
         <section id="string_field_translator_factory.cons">
           <name><c>string_field_translator_factory</c> construct/copy/destroy</name>
@@ -8401,6 +8457,8 @@ namespace commata {
         <p>The default template-argument for the template parameter <c>SkippingHandler</c> is
            <c>ignore_if_skipped</c> (<xref id="ignore_if_skipped"/>) if <c>T</c> is a specialization of <c>std::optional</c>,
            <c>fail_if_skipped</c> (<xref id="fail_if_skipped"/>) otherwise.</p>
+        <p><c>string_view_field_translator_factory&lt;T, SkippingHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
+           for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;T::value_type, T::traits_type, Allocator></c> where <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>T::value_type</c>.</p>
 
         <section id="string_view_field_translator_factory.cons">
           <name><c>string_view_field_translator_factory</c> construct/copy/destroy</name>
@@ -8456,169 +8514,84 @@ using type = <nc>see below</nc>;
       </section>
     </section>
 
-    <section id="basic_field_spec">
-      <name>Class template <c>basic_field_spec</c></name>
-
-      <codeblock>
-namespace commata {
-  template &lt;class Ch, class Tr, class Allocator, class T,
-            class FieldTranslatorFactory = default_field_translator_factory_t&lt;T>>
-    class basic_field_spec {
-  public:
-    using char_type      = Ch;
-    using traits_type    = Tr;
-    using allocator_type = Allocator;
-    using value_type    = T;
-
-    <c>// <n><xref id="basic_field_spec.cons"/>, construct/copy/destroy:</n></c>
-    basic_field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name,
-                     FieldTranslatorFactory factory = FieldTranslatorFactory());
-
-    <c>// <n><xref id="basic_field_spec.observe"/>, observers:</n></c>
-    const std::basic_string&lt;Ch, Tr, Allocator>&amp; field_name() const noexcept;
-          std::basic_string&lt;Ch, Tr, Allocator>&amp; field_name()       noexcept;
-    const FieldTranslatorFactory&amp; factory() const noexcept;
-          FieldTranslatorFactory&amp; factory()       noexcept;
-
-  private:
-      FieldTranslatorFactory fac;                        <c>// <n>exposition only</n></c>
-      std::basic_string&lt;Ch, Tr, Allocator> fname;        <c>// <n>exposition only</n></c>
-  };
-}
-      </codeblock>
-
-      <p>Class template <c>basic_field_spec</c> describes objects each of which is virtually a pair of a field name and a <c>FieldTranslatorFactory</c> (<xref id="field_translator_factory.requirements"/>) object that makes a <c>BodyFieldScanner</c> (<xref id="body_field_scanner.requirements"/>) object for the text field specified by field name.
-         Objects of <c>basic_field_spec</c> are required to make a record translator object (<xref id="hpp.record_translator.syn"/>, <xref id="record_translators.creation"/>).</p>
-      <p>The template parameter <c>Ch</c> shall be a char-like type.
-         The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.
-         The template parameter <c>Allocator</c> shall be a type that meets the <c>Allocator</c> requirements for <c>Ch</c>.
-         The template parameter <c>FieldTranslatorFactory</c> shall meet the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) for the value type <c>T</c>.</p>
-
-      <section id="basic_field_spec.cons">
-        <name><c>basic_field_spec</c> construct/copy/destroy</name>
-        <code-item>
-          <code>
-basic_field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name,
-                 FieldTranslatorFactory factory = FieldTranslatorFactory());
-          </code>
-          <effects>Initializes <c>fac</c> and <c>fname</c> with <c>std::move(factory)</c> and <c>std::move(field_name)</c> respectively.</effects>
-        </code-item>
-      </section>
-
-      <section id="basic_field_spec.observe">
-        <name><c>basic_field_spec</c> observers</name>
-        <code-item>
-          <code>
-const std::basic_string&lt;Ch, Tr, Allocator>&amp; field_name() const noexcept;
-      std::basic_string&lt;Ch, Tr, Allocator>&amp; field_name()       noexcept;
-          </code>
-          <effects>Equivalent to: <c>return fname;</c></effects>
-        </code-item>
-
-        <code-item>
-          <code>
-const FieldTranslatorFactory&amp; factory() const noexcept;
-      FieldTranslatorFactory&amp; factory()       noexcept;
-          </code>
-          <effects>Equivalent to: <c>return fac;</c></effects>
-        </code-item>
-      </section>
-    </section>
-
     <section id="field_specs.creation">
       <name>Creation of field specs</name>
+
+      <p>Commata provides the function templates <c>field_spec</c> so that creation of arguments to
+         <c>make_basic_record_extractor</c>, <c>make_record_extractor</c> and <c>make_wrecord_extractor</c> (<xref id="record_translators.creation"/>) can be more lucid.</p>
+
       <code-item>
         <code>
-template &lt;class T, class Ch, class Tr, class Allocator, class FieldTranslatorFactory>
-  basic_field_spec&lt;<nc>see below</nc>>
-    field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name,
-               FieldTranslatorFactory&amp;&amp; factory);
+template &lt;class FieldNamePred, class class FieldTranslatorFactory>
+  std::tuple&lt;std::decay_t&lt;FieldNamePred, std::decay_t&lt;FieldTranslatorFactory>>
+    field_spec(FieldNamePred&amp;&amp; field_name_pred, FieldTranslatorFactory&amp;&amp; factory);
         </code>
         <effects><p>Equivalent to:</p>
-                 <code>return basic_field_spec&lt;Ch, Tr, Allocator, T, std::decay_t&lt;FieldTranslatorFactory>>(
-  std::move(field_name), std::forward&lt;FieldTranslatorFactory>(factory));</code></effects>
+                 <code>return { std::forward&lt;FieldNamePred>(field_name_pred),
+         std::forward&lt;FieldTranslatorFactory>(factory) };</code></effects>
       </code-item>
 
       <code-item>
         <code>
-template &lt;class T, class Ch, class Tr, class Allocator>
-  basic_field_spec&lt;<nc>see below</nc>> field_spec(std::basic_string&lt;Ch, Tr, Allocator> field_name);
+template &lt;class T, class FieldNamePred>
+  std::tuple&lt;std::decay_t&lt;FieldNamePred, default_field_translator_factory_t&lt;T>>
+    field_spec(FieldNamePred&amp;&amp; field_name_pred);
         </code>
-        <effects>Equivalent to: <c>return basic_field_spec&lt;Ch, Tr, Allocator, T>(std::move(field_name));</c></effects>
-      </code-item>
-
-      <code-item>
-        <code>
-template &lt;class T, class Ch, class Tr, class FieldTranslatorFactory>
-  basic_field_spec&lt;<nc>see below</nc>>
-    field_spec(std::basic_string_view&lt;Ch, Tr> field_name, FieldTranslatorFactory&amp;&amp; factory);
-        </code>
-        <effects>Equivalent to: <c>return field_spec&lt;T>(std::basic_string&lt;Ch, Tr>(field_name), std::forward&lt;FieldTranslatorFactory>(factory));</c></effects>
-      </code-item>
-
-      <code-item>
-        <code>
-template &lt;class T, class Ch, class Tr>
-  basic_field_spec&lt;<nc>see below</nc>> field_spec(std::basic_string_view&lt;Ch, Tr> field_name);
-        </code>
-        <effects>Equivalent to: <c>return field_spec&lt;T>(std::basic_string&lt;Ch, Tr>(field_name));</c></effects>
-      </code-item>
-
-      <code-item>
-        <code>
-template &lt;class T, class FieldTranslatorFactory, class Ch>
-  basic_field_spec&lt;<nc>see below</nc>>
-    field_spec(const Ch* field_name, FieldTranslatorFactory&amp;&amp; factory);
-        </code>
-        <effects>Equivalent to: <c>return field_spec&lt;T>(std::basic_string&lt;Ch>(field_name), std::forward&lt;FieldTranslatorFactory>(factory));</c></effects>
-      </code-item>
-
-      <code-item>
-        <code>
-template &lt;class T, class Ch> basic_field_spec&lt;<nc>see below</nc>> field_spec(const Ch* field_name);
-        </code>
-        <effects>Equivalent to: <c>return field_spec&lt;T>(std::basic_string&lt;Ch>(field_name));</c></effects>
+        <effects><p>Equivalent to:</p>
+                 <code>return { std::forward&lt;FieldNamePred>(field_name_pred),
+         std::forward&lt;default_field_translator_factory_t&lt;T>>() };</code></effects>
       </code-item>
     </section>
 
     <section id="record_translators.creation">
       <name>Creation of record translators</name>
 
-      <p>In this subclause, a <n>record store</n> for types <c>T0</c>, <c>T1</c>, ... denotes a collection of heterogeneous, fixed-size collections of optional objects of the types.</p>
+      <p>In this subclause, a <n>record store</n> type for types <c>T0</c>, <c>T1</c>, ... represents a collection of heterogeneous, fixed-size collections of optional objects of the types.</p>
 
-      <p>A <n>record translator record end scanner</n> type for a specialization of <c>basic_table_scanner</c> type (<xref id="basic_table_scanner"/>) <c>T</c> is a type:</p>
+      <p>Similarly, a <n>record translator record end scanner</n> type for
+         a record store type, which is for <c>T0</c>, <c>T1</c>, ..., and
+         a table scanner type <c>T</c>, which is a specialization of <c>basic_table_scanner</c> type (<xref id="basic_table_scanner"/>) <c>T</c> is a type:</p>
       <ul>
         <li>that meets the <c>RecordEndScanner</c> requirements (<xref id="record_end_scanner.requirements"/>) for <c>T</c>,</li>
         <li>whose object holds a reference to a record store,</li>
-        <li>whose object holds a function object that is invocable with rvalues of the types of the record store,</li>
-        <li>whose object holds an object of <c>T::allocator_type</c> and use it to allocate and deallocate memories dynamically, and</li>
-        <li>whose object evaluates <c>f(rts...)</c>, destroys all contained values in the optional objects in the record store, and does not return <c>false</c>
+        <li>whose object holds a <n>record handler</n> object, which is a function object whose type <c>F</c> satisfies that <c>std::is_invocable_v&lt;F, T0&amp;&amp;, T1&amp;&amp;, ...></c> is <c>true</c>,</li>
+        <li>whose object holds an object of <c>T::allocator_type</c> and use it to allocate and deallocate memories dynamically,</li>
+        <li>whose object evaluates <c>f(rts...)</c>, destroys all contained values in the optional objects in the record store, and returns without a return value
             when it is invoked in a manner specified in the <c>RecordEndScanner</c> requirements
-            where <c>f</c> is an lvalue of the function object held by it and <c>rts...</c> denotes rvalues of the values of the record store referenced by it.</li>
+            where <c>f</c> is an lvalue of the record handler object and
+            <c>rts...</c> are rvalues of the values in the record store being referenced.</li>
+        <li>whose move constructor move constructs its record handler object.</li>
       </ul>
 
-      <p>A <n>record translator header field scanner</n> type for a specialization of <c>basic_table_scanner</c> type <c>T</c> and specializations of <c>basic_field_spec</c> types <c>FieldSpecs...</c> is a type:</p>
+      <p>Also similarly, a <n>record translator header field scanner</n> type for
+         a record store type, which is for <c>T0</c>, <c>T1</c>, ..., and
+         a table scanner type <c>T</c>, which is a specialization of <c>basic_table_scanner</c>, is a type,
+         given <c>Ch</c>, <c>Tr</c> and <c>Allocator</c> denoting <c>std::remove_const_t&lt;T::char_type></c>, <c>T::traits_type</c> and <c>T::allocator_type</c> respectively,
+         and <c>N</c> denoting the number of types <c>T0</c>, <c>T1</c>, ...:</p>
       <ul>
         <li>that meets the <c>HeaderFieldScanner</c> requirements (<xref id="header_field_scanner.requirements"/>) for <c>T</c>,</li>
-        <li>whose object holds a reference to a record store for <c>FieldSpecs::value_type...</c>,</li>
-        <li>whose object holds objects <c>specs...</c> each <c>i</c>-th of which is an object whose types is the <c>i</c>-th of <c>FieldSpecs...</c>,</li>
-        <li>whose object holds an object of <c>T::allocator_type</c> and use it to allocate and deallocate memories dynamically, and</li>
+        <li>whose object holds a reference to the record store,</li>
+        <li>whose object holds <c>N</c> <n>field name predicate</n> objects, denoted as <c>field_name_preds...</c>, each of which is an object whose type <c>Pi</c> satisfies that <c>std::invocable_r_v&lt;Pi, bool, std::basic_string_view&lt;Ch, Tr>></c> is <c>true</c> respectively,</li>
+        <li>whose object holds <c>N</c> <n>field translator factory</n> objects, denoted as <c>factories...</c>, each of which is an object whose type meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) for a certain value type respectively,</li>
+        <li>whose object holds an object of <c>Allocator</c> and use it to allocate and deallocate memories dynamically, and</li>
         <li>
           <p>for each lvalue <c>h</c> of which, letting <c>j</c> be an rvalue of <c>std::size_t</c>,
-             <c>v</c> be an lvalue of <c>const std::optional&lt;std::pair&lt;T::char_type*, T::char_type*>></c> and
-             <c>t</c> be an lvalue of <c>T</c>, evaluating <c>h(j, v, t)</c> causes, letting <c>N</c> be <c>sizeof...(FieldSpecs)</c>:</p>
+             <c>v</c> be an lvalue of <c>const std::optional&lt;std::pair&lt;const Ch*, const Ch*>></c> and
+             <c>t</c> be an lvalue of <c>T</c>, evaluating <c>h(j, v, t)</c> causes:</p>
           <ul>
-            <li>(1) if <c>v.has_value()</c> is <c>true</c> and [<c>v->first</c>, <c>v->second</c>) is an equal range to <c>specs[i].field_name()</c> in terms of <c>T::traits_type</c> for a certain integer value <c>i</c> in [<c>0</c>, <c>N</c>),
-                    then <c>t.set_field_scanner(j, std::move(specs[in]).factory())(rp(in))</c> is evaluated and returns <c>true</c>
-                    where <c>in</c> is the lowest non-negative integral value that makes <c>specs[in].field_name()</c> equal to <c>*v</c> in terms of <c>T::traits_type</c>,</li>
-            <li>(2) if <c>v.has_value()</c> is <c>true</c> and [<c>v->first</c>, <c>v->second</c>) is not an equal range to <c>specs[i].field_name()</c> in terms of <c>T::traits_type</c> for any integer value <c>i</c> in [<c>0</c>, <c>N</c>),
-                    then simply returns <c>true</c>,</li>
-            <li>(3) otherwise <span class="note">that is, if <c>v.has_value()</c> is <c>false</c></span>,
-                    letting <n>Ix</n> be a set of integers in [0, <c>N</c>) appeared as <c>in</c> in the preceding occurrences of (1) so far,
+            <li>(1) if <c>v.has_value()</c> evaluates to <c>true</c>:
+                <ul>
+                  <li>(1a) if the predicate <c>field_name_preds[i]</c> evaluates to <c>true</c> on [<c>v->first</c>, <c>v->second</c>) for a certain integer value <c>i</c> in [<c>0</c>, <c>N</c>) that never appeared as <c>i</c> itself in the preceding occurrences of this (that is, (1a)) so far,
+                    then evaluates <c>t.set_field_scanner(j, std::move(factories[i])(rp(i)))</c> and returns <c>true</c>,</li>
+                  <li>(1b) otherwise, then simply returns <c>true</c>,</li>
+                </ul>
+            </li>
+            <li>(2) otherwise (that is, if <c>v.has_value()</c> evaluates to <c>false</c>),
+                    letting <n>Ix</n> be a set of integers in [0, <c>N</c>) appeared as <c>i</c> in the preceding occurrences of (1a) so far,
                     <c>nx</c> be the number of elements of <n>Ix</n>, and
                     <c>M</c> be the integer value of <c>static_cast&lt;std::size_t>(-1)</c>,
                     first for each <c>ix</c> in <n>Ix</n>,
-                    <c>t.set_field_scanner(jx, std::move(specs[ix]).factory())(rp(ix))</c> is evaluated
+                    evaluates <c>t.set_field_scanner(jx, std::move(factories[ix]))(rp(ix))</c>
                     where <c>jx</c> is a value of <c>std::size_t</c> in [<c>M - (nx - 1)</c>, <c>M</c>] uniquely decided for each value of <c>ix</c>.
                     <span class="note">The intention of this behaviour is that all of <c>specs</c> whose field names do not match any text values of the header fields shall be associated to the maximum possible field indices in order that text fields represented by these field specs might be likely to be reported as skipped through a <c>SkippingHandler</c> object (<xref id="skipping_handler.requirements"/>).</span>
                     Then returns <c>false</c>.
@@ -8626,50 +8599,84 @@ template &lt;class T, class Ch> basic_field_spec&lt;<nc>see below</nc>> field_sp
           </ul>
           <p>where:</p>
           <ul>
-            <li><c>specs[i]</c> denotes the <c>i</c>-th (zero-based) of <c>specs...</c> held by it,</li>
-            <li><c>FieldSpecs[i]</c> denotes the <c>i</c>-th (zero-based) of <c>FieldSpecs...</c>, and</li>
-            <li><c>rp(i)</c> is an rvalue of a function object that makes <c>rp(i)(rs(i))</c> a valid expression where <c>rs(i)</c> is an rvalue whose type meets the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for <c>FieldSpecs[i]::value_type</c>
-                and makes it return a <c>BodyFieldScanner</c> object (<xref id="body_field_scanner.requirements"/>) for <c>FieldSpecs[i]::value_type</c>, <c>FieldSpecs[i]::traits_type</c> and <c>Allocator</c> that move constructs values at the <c>i</c>-th position (zero-based) in the record store from its received values.</li>
+            <li><c>field_name_preds[i]</c> denotes the <c>i</c>-th (zero-based) of <c>field_name_preds...</c> held by it,</li>
+            <li><c>factories[i]</c> denotes the <c>i</c>-th (zero-based) of <c>factories...</c> held by it,</li>
+            <li><c>rp(i)</c> is an rvalue of a function object that makes <c>rp(i)(rs(i))</c> a valid expression where
+                <c>rs(i)</c> is an rvalue whose type meets the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for <c>decltype(factories[i])::value_type</c>
+                and makes it return a <c>BodyFieldScanner</c> object (<xref id="body_field_scanner.requirements"/>) for <c>Ch</c>, <c>Tr</c> and <c>Allocator</c> that move constructs values at the <c>i</c>-th position (zero-based) in the record store from its received values.</li>
           </ul>
-          <p><span class="note"><c>T::char_type</c> is const-qualified.</span></p>
-          <p></p>
         </li>
       </ul>
 
       <code-item>
         <code>
-template &lt;class Allocator, class FR, class FieldSpecR0, class... FieldSpecRs>
-  basic_table_scanner&lt;<nc>see below</nc>>
-    make_record_translator(std::allocator_arg_t, const Allocator&amp; alloc,
-                           FR&amp;&amp; f, FieldSpecR0&amp;&amp; spec0, FieldSpecRs&amp;&amp;... specs);
+template &lt;class Ch, class Tr, class Allocator, class FR, class... FieldSpecRs>
+  basic_table_scanner&lt;Ch, Tr, Allocator> make_basic_record_translator(
+    std::allocator_arg_t, const Allocator&amp; alloc, FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+template &lt;class Ch, class Tr, class FR, class... FieldSpecRs>
+  basic_table_scanner&lt;Ch, Tr> make_basic_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
         </code>
-        <requires><c>Allocator</c> shall meet the <c>Allocator</c> requirements for the type <c>std::decay_t&lt;FieldSpecR0>::char_type</c>.
-                  For each type <c>FieldSpecR</c> in <c>FieldSpecR0</c> and <c>FieldSpecRs...</c>, <c>std::decay_t&lt;FieldSpecR></c> shall be a specialization of <c>basic_field_spec</c> (<xref id="basic_field_spec"/>).
-                  <c>FR</c> shall be a type that has <c>std::is_invocable_v&lt;FR, std::decay_t&lt;FieldSpecR0>::value_type, std::decay_t&lt;FieldSpecRs>::value_type...></c> be <c>true</c>.</requires>
-        <effects>Let <c>FieldSpecs</c> be a pack formed with <c>std::decay_t&lt;FieldSpecR0></c> and <c>std::decay_t&lt;FieldSpecRs>...</c>,
-                 and <c>TableScanner</c> be <c>basic_table_scanner&lt;std::decay_t&lt;FieldSpecR0>::char_type, std::decay_t&lt;FieldSpecR0>::traits_type, Allocator></c>.
-                 Creates a record store whose types are <c>FieldSpecs::value_type...</c>.
-                 Makes a variable <c>h</c> whose type is a record translator header field scanner type for <c>TableScanner</c> and <c>FieldSpecs...</c>
-                 that holds a reference to the record store and objects constructed from <c>std::forward&lt;FieldSpecR0>(spec0)...</c>,
-                 <c>std::forward&lt;FieldSpecsRs>(specs)...</c> and <c>alloc</c>.
-                 Makes a variable <c>s</c> whose type is <c>TableScanner</c> with <c>std::move(h)</c>.
-                 Makes a variable <c>e</c> whose type is a record translator record end scanner type for <c>TableScanner</c>
-                 that holds a reference to the record store and takes over the ownership of it, and
-                 holds a function object constructed with <c>std::forward&lt;FR>(f)</c> and <c>alloc</c>.
-                 Evaluates <c>s.set_record_end_scanner(std::move(e))</c>.
-                 Finally returns <c>s</c>.</effects>
+        <preface>Let <c>FieldSpecs</c> be a pack formed with <c>std::decay_t&lt;FieldSpecRs>...</c>
+                 and <c>TableScanner</c> be <c>basic_table_scanner&lt;Ch, Tr, Allocator></c> (in the first form) or <c>basic_table_scanner&lt;Ch, Tr></c> (in the second form).</preface>
+        <requires><c>Ch</c> shall be a char-like type.
+                  <c>Tr</c> shall be a character traits type for <c>Ch</c>.
+                  <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>Ch</c> in the first form.
+                  For each type <c>FieldSpec</c> in <c>FieldSpecs...</c>,
+                  <c>FieldSpec</c> shall meet the <c>FieldSpec</c> requirements (<xref id="field_spec.requirements"/>) for <c>TableScanner</c>.
+                  <c>FR</c> shall be a type that has <c>std::is_invocable_v&lt;FR&amp;, std::tuple_element_t&lt;1, FieldSpecs>::value_type...></c> be <c>true</c>.</requires>
+        <effects><ol>
+                   <li>Creates a record store whose types are <c>std::tuple_element_t&lt;1, FieldSpecs>::value_type...</c>.</li>
+                   <li>Makes a variable <c>h</c> whose type is a record translator header field scanner type
+                       for the type of the record store and the table scanner type <c>TableScanner</c> that holds:
+                       <ul>
+                         <li>a reference to the record store,</li>
+                         <li>field name predicate objects each of which is copy constructed or move constructed from each of:
+                             <ul>
+                               <li><c><nc>STRING_PRED_A</nc>&lt;Ch, Tr>(std::get&lt;0>(std::forward&lt;FieldSpecRs>(specs)), alloc)...</c> (in the first form), or</li>
+                               <li><c><nc>STRING_PRED</nc>&lt;Ch, Tr>(std::get&lt;0>(std::forward&lt;FieldSpecRs>(specs)))...</c> (in the second form),</li>
+                             </ul>
+                         </li>
+                         <li>field translator factory objects each of which is copy constructed or move constructed from
+                             each of <c>std::get&lt;1>(std::forward&lt;FieldSpecRs>(specs))...</c>, and</li>
+                         <li>an allocator object copy constructed from <c>alloc</c> (in the first form) or <c>std::allocator&lt;Ch>()</c> (in the second form).</li>
+                       </ul>
+                   </li>
+                   <li>Makes a variable <c>s</c> whose type is <c>TableScanner</c> with <c>std::allocator_arg</c>, <c>alloc</c> and <c>std::move(h)</c>.</li>
+                   <li>Makes a variable <c>e</c> whose type is a record translator record end scanner type
+                       for the type of the record store and the table scanner type <c>TableScanner</c> that holds:
+                      <ul>
+                        <li>a reference to the record store and takes over the ownership of it,</li>
+                        <li>a record handler object copy constructed or move constructed with <c>std::forward&lt;FR>(f)</c>, and</li>
+                        <li>an allocator object copy constructed from <c>alloc</c> (in the first form) or <c>std::allocator&lt;Ch>()</c> (in the second form).</li>
+                      </ul>
+                    </li>
+                   <li>Evaluates <c>s.set_record_end_scanner(std::move(e))</c>.</li>
+                   <li>Finally returns <c>s</c>.</li>
+                 </ol>
+        </effects>
+        <remark>The overload of the second form shall not participate in overload resolution if <c>std::is_base_of_v&lt;std::allocator_arg_t, std::decay_t&lt;FR>></c> is <c>true</c>.</remark>
       </code-item>
 
       <code-item>
         <code>
-template &lt;class FR, class FieldSpecR0, class... FieldSpecRs>
-  basic_table_scanner&lt;<nc>see below</nc>>
-    make_record_translator(FR&amp;&amp; f, FieldSpecR0&amp;&amp; spec0, FieldSpecRs&amp;&amp;... specs);
+template &lt;class FR, class... FieldSpecRs>
+  table_scanner make_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
         </code>
-        <requires><c>std::decay_t&lt;FieldSpecR0></c> shall be a specialization of <c>basic_field_spec</c> (<xref id="basic_field_spec"/>).</requires>
         <effects><p>Equivalent to:</p>
-                 <code>return make_record_translator(std::allocator_arg, spec0.field_name().get_allocator(),
-  std::forward&lt;FR>(f), std::forward&lt;FieldSpecR0>(spec0), std::forward&lt;FieldSpecRs>(specs)...);</code></effects>
+                 <code>return make_basic_record_translator&lt;char, std::char_traits&lt;char>>(
+  std::allocator_arg, std::allocator&lt;char>(),
+  std::forward&lt;FR>(f), std::forward&lt;FieldSpecRs>(specs)...);</code></effects>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;class FR, class... FieldSpecRs>
+  wtable_scanner make_wrecord_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+        </code>
+        <effects><p>Equivalent to:</p>
+                 <code>return make_basic_record_translator&lt;wchar_t, std::char_traits&lt;wchar_t>>(
+  std::allocator_arg, std::allocator&lt;wchar_t>(),
+  std::forward&lt;FR>(f), std::forward&lt;FieldSpecRs>(specs)...);</code></effects>
       </code-item>
     </section>
   </section>
