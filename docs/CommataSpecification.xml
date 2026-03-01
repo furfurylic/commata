@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-02-23 (UTC)</signature>
+<signature>2026-03-01 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -8664,7 +8664,6 @@ template &lt;class FR, class... FieldSpecRs>
         </code>
         <effects><p>Equivalent to:</p>
                  <code>return make_basic_record_translator&lt;char, std::char_traits&lt;char>>(
-  std::allocator_arg, std::allocator&lt;char>(),
   std::forward&lt;FR>(f), std::forward&lt;FieldSpecRs>(specs)...);</code></effects>
       </code-item>
 
@@ -8675,7 +8674,6 @@ template &lt;class FR, class... FieldSpecRs>
         </code>
         <effects><p>Equivalent to:</p>
                  <code>return make_basic_record_translator&lt;wchar_t, std::char_traits&lt;wchar_t>>(
-  std::allocator_arg, std::allocator&lt;wchar_t>(),
   std::forward&lt;FR>(f), std::forward&lt;FieldSpecRs>(specs)...);</code></effects>
       </code-item>
     </section>
