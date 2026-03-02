@@ -8296,10 +8296,11 @@ namespace commata {
 
       <p>A type <c>S</c> meets the <c>FieldSpec</c> requirements for a specialization of <c>basic_table_scanner</c> (<xref id="basic_table_scanner"/>) <c>T</c> if it is the same type as <c>std::pair&lt;P, F></c> or <c>std::tuple&lt;P, F></c> where:</p>
       <ul>
-        <li><c>P</c> is a type that meets the requirements of <c>MoveConstructible</c>, <c>Destructible</c>, and
-            <c>StringCriteria</c> requirements (<xref id="string_criteria"/>) for <c>std::remove_const_t&lt;T::char_type></c> and <c>T::traits_type</c>, and</li>
-        <li><c>F</c> is a type that meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) for a certain value type and the table scanner type <c>T</c>.</li>
+        <li><c>P</c> is a type that meets the <c>StringCriteria</c> requirements (<xref id="string_criteria"/>) for <c>std::remove_const_t&lt;T::char_type></c> and <c>T::traits_type</c>,</li>
+        <li><c>std::decay_t&lt;P></c> is a type that meets the requirements of <c>MoveConstructible</c> and <c>Destructible</c>, and</li>
+        <li><c>std::decay_t&lt;F></c> is a type that meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>) for a certain value type and the table scanner type <c>T</c>.</li>
       </ul>
+      <p><span class="note"><c>P</c> and <c>F</c> themselves may be reference types.</span></p>
     </section>
 
     <section id="builtin.field_translator_factories">
@@ -8623,9 +8624,9 @@ template &lt;class Ch, class Tr, class FR, class... FieldSpecRs>
                   <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>Ch</c> in the first form.
                   For each type <c>FieldSpec</c> in <c>FieldSpecs...</c>,
                   <c>FieldSpec</c> shall meet the <c>FieldSpec</c> requirements (<xref id="field_spec.requirements"/>) for <c>TableScanner</c>.
-                  <c>FR</c> shall be a type that has <c>std::is_invocable_v&lt;FR&amp;, std::tuple_element_t&lt;1, FieldSpecs>::value_type...></c> be <c>true</c>.</requires>
+                  <c>FR</c> shall be a type that has <c>std::is_invocable_v&lt;FR&amp;, std::decay_t&lt;std::tuple_element_t&lt;1, FieldSpecs>>::value_type...></c> be <c>true</c>.</requires>
         <effects><ol>
-                   <li>Creates a record store whose types are <c>std::tuple_element_t&lt;1, FieldSpecs>::value_type...</c>.</li>
+                   <li>Creates a record store whose types are <c>std::decay_t&lt;std::tuple_element_t&lt;1, FieldSpecs>>::value_type...</c>.</li>
                    <li>Makes a variable <c>h</c> whose type is a record translator header field scanner type
                        for the type of the record store and the table scanner type <c>TableScanner</c> that holds:
                        <ul>

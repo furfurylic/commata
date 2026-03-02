@@ -350,13 +350,15 @@ private:
         if constexpr (UsesAllocatorForPred) {
             allocation_only_allocator a(m_.get_allocator());
             return create_setter_core(
-                make_string_pred<Ch, Tr>(std::move(std::get<0>(spec)), a),
-                std::move(std::get<1>(spec)),
+                make_string_pred<Ch, Tr>(
+                    std::get<0>(std::forward<FieldSpecR>(spec)), a),
+                std::get<1>(std::forward<FieldSpecR>(spec)),
                 o);     // throw
         } else {
             return create_setter_core(
-                make_string_pred<Ch, Tr>(std::move(std::get<0>(spec))),
-                std::move(std::get<1>(spec)),
+                make_string_pred<Ch, Tr>(
+                    std::get<0>(std::forward<FieldSpecR>(spec))),
+                std::get<1>(std::forward<FieldSpecR>(spec)),
                 o);     // throw
         }
     }
@@ -409,7 +411,8 @@ template <class... FieldSpecs>
 using record_translator_targets_t =
     std::tuple<
         optionalized_target<
-            typename std::tuple_element_t<1, FieldSpecs>::value_type>...>;
+            typename std::decay_t<std::tuple_element_t<1, FieldSpecs>>::
+                value_type>...>;
 
 template <class Ch, class Tr, class Allocator, bool UsesAllocatorForPred,
           class F, class... FieldSpecs>
@@ -418,12 +421,14 @@ class record_translator_record_end_scanner :
         rebind_alloc<record_translator_targets_t<FieldSpecs...>>>
 {
     static_assert(std::is_invocable_v<F,
-        typename std::tuple_element_t<1, FieldSpecs>::value_type...>);
+        typename std::decay_t<std::tuple_element_t<1, FieldSpecs>>::
+            value_type...>);
 
     using to_t = record_translator_targets_t<FieldSpecs...>;
     using h_t = record_translator_header_field_scanner<Ch, Tr, Allocator,
         UsesAllocatorForPred,
-        typename std::tuple_element_t<1, FieldSpecs>::value_type...>;
+        typename std::decay_t<std::tuple_element_t<1, FieldSpecs>>::
+            value_type...>;
     using a_t = typename std::allocator_traits<Allocator>::template
         rebind_alloc<to_t>;
     using at_t = std::allocator_traits<a_t>;

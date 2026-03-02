@@ -11,6 +11,7 @@
 #include <vector>
 
 #include <commata/char_input.hpp>
+#include <commata/parse_csv.hpp>
 #include <commata/parse_tsv.hpp>
 #include <commata/record_translator.hpp>
 
@@ -22,7 +23,7 @@ using namespace commata;
 using namespace commata::test;
 
 template <class Ch>
-struct TestRecordTranslator : BaseTest
+struct TestRecordTranslatorBasics : BaseTest
 {};
 
 namespace {
@@ -31,9 +32,9 @@ using Chs = testing::Types<char, wchar_t>;
 
 } // end unnamed
 
-TYPED_TEST_SUITE(TestRecordTranslator, Chs, );
+TYPED_TEST_SUITE(TestRecordTranslatorBasics, Chs, );
 
-TYPED_TEST(TestRecordTranslator, All)
+TYPED_TEST(TestRecordTranslatorBasics, All)
 {
     using char_t = TypeParam;
     using string_t = std::basic_string<char_t>;
@@ -86,4 +87,32 @@ TYPED_TEST(TestRecordTranslator, All)
     expected.emplace_back(
         0, str("Sedna"), -1.0, std::stod("1.29e4"));
     ASSERT_EQ(expected, planets);
+}
+
+struct TestRecordTranslatorRefs : BaseTest
+{};
+
+TEST_F(TestRecordTranslatorRefs, All)
+{
+    const std::string name = "Name"s;
+    const arithmetic_field_translator_factory<int> to_int;
+
+    std::vector<std::pair<std::string, int>> actual;
+    auto s = make_record_translator(
+        [&actual](std::string&& name, int&& value) {
+            actual.emplace_back(std::move(name), std::move(value));
+        },
+        // tuple<&, &&>
+        std::tuple_cat(
+            std::tie(name),
+            std::forward_as_tuple(
+                string_field_translator_factory<std::string>())),
+        // tuple<&&, &>
+        std::tuple_cat(
+            std::forward_as_tuple("Value"s),
+            std::tie(to_int)));
+    parse_csv("Name,Value\nHaircut,100", std::move(s));
+
+    decltype(actual) expected = {{ "Haircut", 100 }};
+    ASSERT_EQ(expected, actual);
 }
