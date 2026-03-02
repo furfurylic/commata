@@ -69,6 +69,46 @@ public:
 
 template <class T,
     class SkippingHandler = std::conditional_t<detail::is_std_optional_v<T>,
+        ignore_if_skipped, fail_if_skipped>,
+    class ConversionErrorHandler =
+        std::conditional_t<detail::is_std_optional_v<T>,
+            ignore_if_conversion_failed, fail_if_conversion_failed>>
+class COMMATA_FULL_EBO locale_based_arithmetic_field_translator_factory :
+    detail::member_like_base<SkippingHandler>,
+    detail::member_like_base<ConversionErrorHandler>
+{
+    std::locale loc_;
+
+public:
+    using value_type = T;
+
+    locale_based_arithmetic_field_translator_factory(
+            const std::locale& loc,
+            SkippingHandler skipping_handler = SkippingHandler(),
+            ConversionErrorHandler conversion_error_handler
+                = ConversionErrorHandler()) :
+        detail::member_like_base<SkippingHandler>(skipping_handler),
+        detail::member_like_base<ConversionErrorHandler>(
+            conversion_error_handler),
+        loc_(loc)
+    {}
+
+    template <class Sink>
+    locale_based_arithmetic_field_translator<T, std::decay_t<Sink>,
+        SkippingHandler, ConversionErrorHandler> operator()(Sink&& sink) &&
+    {
+        return locale_based_arithmetic_field_translator<T, std::decay_t<Sink>,
+                SkippingHandler, ConversionErrorHandler>(
+            std::forward<Sink>(sink), loc_,
+            std::move(this->
+                detail::member_like_base<SkippingHandler>::get()),
+            std::move(this->
+                detail::member_like_base<ConversionErrorHandler>::get()));
+    }
+};
+
+template <class T,
+    class SkippingHandler = std::conditional_t<detail::is_std_optional_v<T>,
         ignore_if_skipped, fail_if_skipped>>
 class string_field_translator_factory :
     detail::member_like_base<SkippingHandler>
@@ -154,9 +194,11 @@ using default_field_translator_factory_t =
     typename default_field_translator_factory<T>::type;
 
 template <class FieldNamePred, class FieldTranslatorFactory>
-std::tuple<std::decay_t<FieldNamePred>, std::decay_t<FieldTranslatorFactory>>
-    field_spec(FieldNamePred&& field_name_pred,
-               FieldTranslatorFactory&& factory)
+auto field_spec(FieldNamePred&& field_name_pred, FieldTranslatorFactory&& factory)
+ -> std::enable_if_t<
+        !std::is_base_of_v<std::locale, std::decay_t<FieldTranslatorFactory>>,
+        std::tuple<std::decay_t<FieldNamePred>,
+                   std::decay_t<FieldTranslatorFactory>>>
 {
     return { std::forward<FieldNamePred>(field_name_pred),
              std::forward<FieldTranslatorFactory>(factory) };
@@ -168,6 +210,17 @@ std::tuple<std::decay_t<FieldNamePred>, default_field_translator_factory_t<T>>
 {
     return { std::forward<FieldNamePred>(field_name_pred),
              default_field_translator_factory_t<T>() };
+}
+
+template <class T, class FieldNamePred>
+auto field_spec(FieldNamePred&& field_name_pred, const std::locale& loc)
+ -> std::enable_if_t<
+        is_default_translatable_arithmetic_type_v<T>,
+        std::tuple<std::decay_t<FieldNamePred>,
+                   locale_based_arithmetic_field_translator_factory<T>>>
+{
+    return { std::forward<FieldNamePred>(field_name_pred),
+             locale_based_arithmetic_field_translator_factory<T>(loc) };
 }
 
 namespace detail::record_xlate {
