@@ -18,7 +18,7 @@ Semantic Versioning mandates.
 
 Commata is written in C++17 and consists only of headers.
 All C++ codes in this repository shall compile and link with
-Microsoft Visual Studio 2019, 2022, GCC 7.3 and Clang 7.0.
+Microsoft Visual Studio 2019, 2022, GCC 8.5 and Clang 20.1.
 
 This repository also contains a test of it in `src_test` directory.
 Tests are written on [GoogleTest](https://github.com/google/googletest) v1.14.0.
