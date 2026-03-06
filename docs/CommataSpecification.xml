@@ -8335,6 +8335,11 @@ namespace commata {
     SkippingHandler sh;           // exposition only
     ConversionErrorHandler ceh;   // exposition only
   };
+
+  template &lt;class T> arithmetic_field_translator_factory(T)
+   -> arithmetic_field_translator_factory&lt;T>;
+  template &lt;class T, class U> arithmetic_field_translator_factory(T, U)
+   -> arithmetic_field_translator_factory&lt;<nc>see below</nc>>;
 }
         </codeblock>
 
@@ -8356,6 +8361,18 @@ explicit arithmetic_field_translator_factory(
   ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
             </code>
             <effects>Initializes <c>sh</c> and <c>ceh</c> with <c>std::move(skipping_handler)</c> and <c>std::move(conversion_error_handler</c> respectively.</effects>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class T> arithmetic_field_translator_factory(T)
+ -> arithmetic_field_translator_factory&lt;T>;
+template &lt;class T, class U> arithmetic_field_translator_factory(T, U)
+ -> arithmetic_field_translator_factory&lt;<nc>see below</nc>>;
+            </code>
+            <remark>These deduction guides shall participate in overload resolution if and only if <c>T</c> is a default translatable arithmetic type (<xref id="xlate.arithmetic"/>).
+                    In that case, for the second form, the deduced type is <c>arithmetic_field_translator_factory&lt;T, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, U>></c>
+                    (<xref id="scan.builtin.body_field_scanners.creation"/>).</remark>
           </code-item>
         </section>
 
@@ -8399,6 +8416,13 @@ namespace commata {
     ConversionErrorHandler ceh;   // exposition only
     std::locale l;                // exposition only
   };
+
+  template &lt;class T>
+    locale_based_arithmetic_field_translator_factory(const std::locale&amp;, T)
+     -> locale_based_arithmetic_field_translator_factory&lt;T>;
+  template &lt;class T, class U>
+    locale_based_arithmetic_field_translator_factory(const std::locale&amp;, T, U)
+     -> locale_based_arithmetic_field_translator_factory&lt;<nc>see below</nc>>;
 }
         </codeblock>
 
@@ -8421,6 +8445,20 @@ explicit locale_based_arithmetic_field_translator_factory(
   ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
             </code>
             <effects>Initializes <c>sh</c>, <c>ceh</c> and <c>l</c> with <c>std::move(skipping_handler)</c>, <c>std::move(conversion_error_handler</c> and <c>loc</c> respectively.</effects>
+          </code-item>
+
+          <code-item>
+            <code>
+template &lt;class T>
+  locale_based_arithmetic_field_translator_factory(const std::locale&amp;, T)
+   -> locale_based_arithmetic_field_translator_factory&lt;T>;
+template &lt;class T, class U>
+  locale_based_arithmetic_field_translator_factory(const std::locale&amp;, T, U)
+   -> locale_based_arithmetic_field_translator_factory&lt;<nc>see below</nc>>;
+            </code>
+            <remark>These deduction guides shall participate in overload resolution if and only if <c>T</c> is a default translatable arithmetic type (<xref id="xlate.arithmetic"/>).
+                    In that case, for the second form, the deduced type is <c>locale_based_arithmetic_field_translator_factory&lt;T, <nc>DEDUCED_CONVERSION_ERROR_HANDLER_TYPE</nc>&lt;T, U>></c>
+                    (<xref id="scan.builtin.body_field_scanners.creation"/>).</remark>
           </code-item>
         </section>
 
@@ -8460,6 +8498,22 @@ namespace commata {
   private:
     SkippingHandler sh;           // exposition only
   };
+
+  template &lt;class Ch, class Tr, class Allocator>
+    string_field_translator_factory(std::basic_string&lt;Ch, Tr, Allocator>)
+     -> string_field_translator_factory&lt;
+          std::basic_string&lt;Ch, Tr, Allocator>,
+          replace_if_skipped&lt;std::basic_string&lt;Ch, Tr, Allocator>>>;
+  template &lt;class Ch, class Tr>
+    string_field_translator_factory(std::basic_string_view&lt;Ch, Tr>)
+     -> string_field_translator_factory&lt;
+          std::basic_string&lt;Ch, Tr>,
+          replace_if_skipped&lt;std::basic_string&lt;Ch, Tr>>>;
+  template &lt;class Ch>
+    string_field_translator_factory(const Ch*)
+     -> string_field_translator_factory&lt;
+          std::basic_string&lt;Ch>,
+          replace_if_skipped&lt;std::basic_string&lt;Ch>>>;
 }
         </codeblock>
 
@@ -8519,6 +8573,17 @@ namespace commata {
   private:
     SkippingHandler sh;           // exposition only
   };
+
+  template &lt;class Ch, class Tr>
+    string_view_field_translator_factory(std::basic_string_view&lt;Ch, Tr>)
+     -> string_view_field_translator_factory&lt;
+          std::basic_string_view&lt;Ch, Tr>,
+          replace_if_skipped&lt;std::basic_string_view&lt;Ch, Tr>>>;
+  template &lt;class Ch>
+    string_view_field_translator_factory(const Ch*)
+     -> string_view_field_translator_factory&lt;
+          std::basic_string_view&lt;Ch>,
+          replace_if_skipped&lt;std::basic_string_view&lt;Ch>>>;
 }
         </codeblock>
 

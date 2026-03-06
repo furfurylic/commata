@@ -56,8 +56,7 @@ TYPED_TEST(TestRecordTranslatorBasics, All)
         field_spec<string_t>(str("Name")),
         field_spec<std::optional<std::size_t>>(string_view_t(str("#"))),
         field_spec(str("Mass").c_str(),
-            locale_based_arithmetic_field_translator_factory<
-                double, replace_if_skipped<double>>(loc, -1.0)),
+            locale_based_arithmetic_field_translator_factory(loc, -1.0)),
         field_spec<double>(string_view_t(str("Eccentricity")), loc),
         field_spec<double>(
             [name = str("orbital period")](string_view_t s) {
@@ -120,3 +119,65 @@ TEST_F(TestRecordTranslatorRefs, All)
     decltype(actual) expected = {{ "Haircut", 100 }};
     ASSERT_EQ(expected, actual);
 }
+
+// Compile-time tests of deduction guides
+
+static_assert(std::is_same_v<
+    arithmetic_field_translator_factory<int,
+        replace_if_skipped<int>>,
+    decltype(arithmetic_field_translator_factory(100))>);
+static_assert(std::is_same_v<
+    arithmetic_field_translator_factory<double,
+        replace_if_skipped<double>, replace_if_conversion_failed<double>>,
+    decltype(arithmetic_field_translator_factory(-0.1, 1.2))>);
+static_assert(std::is_same_v<
+    arithmetic_field_translator_factory<float,
+        replace_if_skipped<float>, fail_if_conversion_failed>,
+    decltype(arithmetic_field_translator_factory(-0.1f, replacement_fail))>);
+static_assert(std::is_same_v<
+    arithmetic_field_translator_factory<char,
+        replace_if_skipped<char>, ignore_if_conversion_failed>,
+    decltype(arithmetic_field_translator_factory('?', replacement_ignore))>);
+
+static_assert(std::is_same_v<
+    locale_based_arithmetic_field_translator_factory<double,
+        replace_if_skipped<double>>,
+    decltype(locale_based_arithmetic_field_translator_factory(
+        std::declval<std::locale>(), 1.0))>);
+static_assert(std::is_same_v<
+    locale_based_arithmetic_field_translator_factory<unsigned,
+        replace_if_skipped<unsigned>, replace_if_conversion_failed<unsigned>>,
+    decltype(locale_based_arithmetic_field_translator_factory(
+        std::declval<std::locale>(), 5U, 10U))>);
+static_assert(std::is_same_v<
+    locale_based_arithmetic_field_translator_factory<long,
+        replace_if_skipped<long>, fail_if_conversion_failed>,
+    decltype(locale_based_arithmetic_field_translator_factory(
+        std::declval<std::locale>(), 5L, replacement_fail))>);
+static_assert(std::is_same_v<
+    locale_based_arithmetic_field_translator_factory<unsigned long,
+        replace_if_skipped<unsigned long>, ignore_if_conversion_failed>,
+    decltype(locale_based_arithmetic_field_translator_factory(
+        std::declval<std::locale>(), 0UL, replacement_ignore))>);
+
+static_assert(std::is_same_v<
+    string_field_translator_factory<std::string,
+        replace_if_skipped<std::string>>,
+    decltype(string_field_translator_factory("..."s))>);
+static_assert(std::is_same_v<
+    string_field_translator_factory<std::string,
+        replace_if_skipped<std::string>>,
+    decltype(string_field_translator_factory("..."sv))>);
+static_assert(std::is_same_v<
+    string_field_translator_factory<std::wstring,
+        replace_if_skipped<std::wstring>>,
+    decltype(string_field_translator_factory(L"..."))>);
+
+static_assert(std::is_same_v<
+    string_view_field_translator_factory<std::wstring_view,
+        replace_if_skipped<std::wstring_view>>,
+    decltype(string_view_field_translator_factory(L"!!!"sv))>);
+static_assert(std::is_same_v<
+    string_view_field_translator_factory<std::string_view,
+        replace_if_skipped<std::string_view>>,
+    decltype(string_view_field_translator_factory("!!!"))>);
