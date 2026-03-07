@@ -752,9 +752,9 @@ It is the order of the field specs and the order of the parameters of the
 first argument to `make_record_translator` that must be coincident.
 
 Notice that a field spec becomes depleted when it matches a field name in the
-header record, which inhibits one field spec match two or more fields.
+header record, which inhibits one field spec from matching two or more fields.
 Additionally, it would be noteworthy that a field spec specified earlier in
-the order in the arguments of `make_record_translator` is depleted earlier
+the order of the arguments of `make_record_translator` is consumed earlier
 when there are multiple field specs that match one actual field name.
 
 Function templates `field_spec` and `make_record_translator` are declared in
