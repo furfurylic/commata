@@ -31,7 +31,7 @@ public:
 
 struct fail_if_skipped
 {
-    explicit fail_if_skipped(replacement_fail_t = replacement_fail)
+    fail_if_skipped(replacement_fail_t = replacement_fail)
     {}
 
     template <class T>
@@ -45,7 +45,7 @@ struct fail_if_skipped
 
 struct ignore_if_skipped
 {
-    explicit ignore_if_skipped(replacement_ignore_t = replacement_ignore)
+    ignore_if_skipped(replacement_ignore_t = replacement_ignore)
     {}
 
     std::nullopt_t operator()() const
@@ -236,20 +236,6 @@ public:
     template <class U = T,
         std::enable_if_t<
             std::is_constructible_v<T, U>
-         && !std::is_convertible_v<U&&, T>
-         && !(std::is_base_of_v<replace_if_skipped, std::decay_t<U>>
-           || std::is_base_of_v<replacement_fail_t, std::decay_t<U>>
-           || std::is_base_of_v<replacement_ignore_t, std::decay_t<U>>)>*
-                = nullptr>
-    explicit replace_if_skipped(U&& u = std::decay_t<U>())
-        noexcept(std::is_nothrow_constructible_v<T, U>) :
-        store_(generic_args_t(), std::forward<U>(u))
-    {}
-
-    template <class U = T,
-        std::enable_if_t<
-            std::is_constructible_v<T, U>
-         && std::is_convertible_v<U&&, T>
          && !(std::is_base_of_v<replace_if_skipped, std::decay_t<U>>
            || std::is_base_of_v<replacement_fail_t, std::decay_t<U>>
            || std::is_base_of_v<replacement_ignore_t, std::decay_t<U>>)>*
@@ -259,11 +245,11 @@ public:
         store_(generic_args_t(), std::forward<U>(u))
     {}
 
-    explicit replace_if_skipped(replacement_fail_t) noexcept :
+    replace_if_skipped(replacement_fail_t) noexcept :
         store_(detail::replace_mode::fail)
     {}
 
-    explicit replace_if_skipped(replacement_ignore_t) noexcept :
+    replace_if_skipped(replacement_ignore_t) noexcept :
         store_(detail::replace_mode::ignore)
     {}
 
