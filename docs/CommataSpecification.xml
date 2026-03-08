@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-03-06 (UTC)</signature>
+<signature>2026-03-07 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1935,7 +1935,7 @@ namespace commata {
         <codeblock>
 namespace commata {
   struct fail_if_conversion_failed {
-    explicit fail_if_conversion_failed(replacement_fail_t = replacement_fail) {}
+    fail_if_conversion_failed(replacement_fail_t = replacement_fail) {}
 
     template &lt;class T, class Ch>
       [[noreturn]] T operator()(invalid_format_t, const Ch*, const Ch*, T* = nullptr) const;
@@ -1981,7 +1981,7 @@ template &lt;class T>
         <codeblock>
 namespace commata {
   struct ignore_if_conversion_failed {
-    explicit ignore_if_conversion_failed(replacement_ignore_t = replacement_ignore) {}
+    ignore_if_conversion_failed(replacement_ignore_t = replacement_ignore) {}
 
     std::nullopt_t operator()(invalid_format_t) const;
     std::nullopt_t operator()(out_of_range_t) const;
@@ -2016,7 +2016,7 @@ namespace commata {
 
     <c>// <n><xref id="replace_if_conversion_failed.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class All = T>
-      <nc>EXPLICIT</nc> replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
+      replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
     template &lt;class Empty, class AllButEmpty>
       replace_if_conversion_failed(Empty&amp;&amp;            on_empty,
                                    const AllButEmpty&amp; for_all_but_empty) noexcept(<nc>see below</nc>);
@@ -2131,12 +2131,11 @@ static constexpr std::size_t size = <nc>see below</nc>;
           <code-item>
             <code>
 template &lt;class All = T>
-  <nc>EXPLICIT</nc> replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
+  replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
             </code>
             <effects>Arranges all configurable replacement actions from <c>for_all</c>.</effects>
             <remark>This overload shall not participate in overload resolution unless <c><nc>IS_ACCEPTABLE</nc>&lt;const All&amp;></c> is <c>true</c>.
-                    The expression inside <c>noexcept</c> is equvalent to <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, const All&amp;></c>.
-                    This constructor is explicit if and only if <c>std::is_convertible_v&lt;const All&amp;, T></c> is <c>false</c>.</remark>
+                    The expression inside <c>noexcept</c> is equvalent to <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, const All&amp;></c>.</remark>
           </code-item>
 
           <code-item>
@@ -7104,7 +7103,7 @@ namespace commata {
         <codeblock>
 namespace commata {
   struct fail_if_skipped {
-    explicit fail_if_skipped(replacement_fail_t = replacement_fail) {}
+    fail_if_skipped(replacement_fail_t = replacement_fail) {}
     template &lt;class T> [[noreturn]] T operator()(T* = nullptr) const;
   };
 }
@@ -7127,7 +7126,7 @@ template &lt;class T> [[noreturn]] T operator()(T* = nullptr) const;
         <codeblock>
 namespace commata {
   struct ignore_if_skipped {
-    explicit ignore_if_skipped(replacement_ignore_t = replacement_ignore) {}
+    ignore_if_skipped(replacement_ignore_t = replacement_ignore) {}
     std::nullopt_t operator()() const;
   };
 }
@@ -7155,9 +7154,9 @@ namespace commata {
 
     <c>// <n><xref id="replace_if_skipped.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class U = T>
-      <nc>EXPLICIT</nc> replace_if_skipped(U&amp;&amp; u = std::decay_t&lt;U>()) noexcept(<nc>see below</nc>);
-    explicit replace_if_skipped(replacement_fail_t) noexcept;
-    explicit replace_if_skipped(replacement_ignore_t) noexcept;
+      replace_if_skipped(U&amp;&amp; u = std::decay_t&lt;U>()) noexcept(<nc>see below</nc>);
+    replace_if_skipped(replacement_fail_t) noexcept;
+    replace_if_skipped(replacement_ignore_t) noexcept;
     replace_if_skipped(const replace_if_skipped&amp;  other) noexcept(<nc>see below</nc>);
     replace_if_skipped(      replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~replace_if_skipped();
@@ -7194,27 +7193,26 @@ namespace commata {
           <code-item>
             <code>
 template &lt;class U = T>
-  <nc>EXPLICIT</nc> replace_if_skipped(U&amp;&amp; u = std::decay_t&lt;U>()) noexcept(<nc>see below</nc>);
+  replace_if_skipped(U&amp;&amp; u = std::decay_t&lt;U>()) noexcept(<nc>see below</nc>);
             </code>
             <effects>Configures the replacement action to be <c>copy</c> with an object of <c>T</c> constructed from <c>std::forward&lt;U>(u)</c>.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_constructible_v&lt;T, U></c> is <c>true</c>,
                     <c>std::is_base_of_v&lt;replace_if_skipped&lt;T>, std::decay&lt;U>></c> is <c>false</c>,
                     <c>std::is_base_of_v&lt;replacement_fail_t, std::decay&lt;U>></c> is <c>false</c>, and
                     <c>std::is_base_of_v&lt;replacement_ignore_t, std::decay&lt;U>></c> is <c>false</c>.
-                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;T, U></c>.
-                    This constructor is explicit if and only if <c>std::is_convertible_v&lt;U&amp;&amp;, T></c> is <c>false</c>.</remark>
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;T, U></c>.</remark>
           </code-item>
 
           <code-item>
             <code>
-explicit replace_if_skipped(replacement_fail_t) noexcept;
+replace_if_skipped(replacement_fail_t) noexcept;
             </code>
             <effects>Configures the replacement action to be <c>fail</c>.</effects>
           </code-item>
 
           <code-item>
             <code>
-explicit replace_if_skipped(replacement_ignore_t) noexcept;
+replace_if_skipped(replacement_ignore_t) noexcept;
             </code>
             <effects>Configures the replacement action to be <c>ignore</c>.</effects>
           </code-item>
