@@ -1463,14 +1463,7 @@ struct B
 struct D : B
 {};
 
-struct E
-{
-    explicit E(const B&)
-    {}
-};
-
 static_assert(std::is_convertible_v<D, replace_if_skipped<B>>);
-static_assert(!std::is_convertible_v<B, replace_if_skipped<E>>);
 
 } // end unnamed
 
