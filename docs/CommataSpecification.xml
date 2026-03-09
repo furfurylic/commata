@@ -2231,8 +2231,8 @@ replace_if_conversion_failed(replace_if_conversion_failed&amp;&amp; other) noexc
 template &lt;class... Ts>
   replace_if_conversion_failed(Ts...) -> replace_if_conversion_failed&lt;<nc>see below</nc>>;
             </code>
-            <remark>This deduction guide participates in overload resolution if and only if <c>std::common_type_t&lt;Us...></c> is defined where <c>Us</c> denotes types in <c>Ts...</c> excluding types which imply neither a fail action nor a ignore action.
-                    In that case, the deduced type is <c>std::common_type_t&lt;Us...></c> above.</remark>
+            <remark>This deduction guide shall participate in overload resolution if and only if <c>std::common_type_t&lt;Us...></c> is defined where <c>Us</c> denotes types in <c>Ts...</c> excluding types which imply neither a fail action nor a ignore action.
+                    In that case, the deduced type is <c>replace_if_conversion_failed&lt;std::common_type_t&lt;Us...>></c>.</remark>
           </code-item>
 
           <code-item>
