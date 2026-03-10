@@ -16,31 +16,64 @@ namespace commata::detail {
 template <class T, class Allocator, class... Args>
 [[nodiscard]] auto allocate_construct_g(const Allocator& alloc, Args&&... args)
 {
-    using t_at_t = typename std::allocator_traits<Allocator>::template
-        rebind_traits<T>;
-    typename t_at_t::allocator_type a(alloc);
-    const auto p = t_at_t::allocate(a, 1);                          // throw
+    using c_at_t = typename std::allocator_traits<Allocator>::template
+        rebind_traits<char>;
+    typename c_at_t::allocator_type a(alloc);
+    const auto p = c_at_t::allocate(a, sizeof(T));                  // throw
     try {
-        ::new(std::addressof(*p)) T(std::forward<Args>(args)...);   // throw
+        ::new(static_cast<T*>(static_cast<void*>(&*p)))
+            T(std::forward<Args>(args)...);                         // throw
     } catch (...) {
-        a.deallocate(p, 1);
+        a.deallocate(p, sizeof(T));
         throw;
     }
-    return p;
+
+    using t_at_t = typename std::allocator_traits<Allocator>::template
+        rebind_traits<T>;
+    using t_p_t = typename t_at_t::pointer;
+    return std::pointer_traits<t_p_t>::pointer_to(
+                *static_cast<T*>(static_cast<void*>(&*p)));
 }
 
-// Destructs an object with no allocator
-// and deallocates memory with a rebound copy of the specified allocator
 template <class Allocator, class P>
-void destroy_deallocate_g(const Allocator& alloc, P p)
+void destroy_deallocate_g_impl(
+    const Allocator& alloc, P p, std::size_t size_of)
 {
     assert(p);
     using v_t = typename std::pointer_traits<P>::element_type;
     p->~v_t();
-    using t_at_t = typename std::allocator_traits<Allocator>::template
-        rebind_traits<v_t>;
-    typename t_at_t::allocator_type a(alloc);
-    t_at_t::deallocate(a, p, 1);
+    using c_at_t = typename std::allocator_traits<Allocator>::template
+        rebind_traits<char>;
+    using c_p_t = typename c_at_t::pointer;
+    typename c_at_t::allocator_type a(alloc);
+    c_at_t::deallocate(
+        a,
+        std::pointer_traits<c_p_t>::pointer_to(
+            *static_cast<char*>(static_cast<void*>(std::addressof(*p)))),
+        size_of);
+}
+
+// Destructs an object with no allocator
+// and deallocates memory with a rebound copy of the specified allocator
+// (The deallocation size is obtained with sizeof(*p),
+// so *p's dynamic type and its static type shall be the same type)
+template <class Allocator, class P>
+void destroy_deallocate_g_static(const Allocator& alloc, P p)
+{
+    using v_t = typename std::pointer_traits<P>::element_type;
+    assert(p && (typeid(*p) == typeid(v_t)));
+
+    destroy_deallocate_g_impl(alloc, p, sizeof(*p));
+}
+
+// Destructs an object with no allocator
+// and deallocates memory with a rebound copy of the specified allocator
+// (The deallocation size is obtained with p->size_of())
+template <class Allocator, class P>
+void destroy_deallocate_g_dynamic(const Allocator& alloc, P p)
+{
+    assert(p);
+    destroy_deallocate_g_impl(alloc, p, p->size_of());
 }
 
 }

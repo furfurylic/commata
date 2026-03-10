@@ -283,6 +283,7 @@ struct field_scanner_setter
     virtual void set(
         std::size_t field_index,
         basic_table_scanner<Ch, Tr, Allocator>& scanner) && = 0;
+    virtual std::size_t size_of() const noexcept = 0;
 };
 
 template <class FieldNamePred, class FieldTranslatorFactory,
@@ -327,6 +328,11 @@ public:
                     field_value->emplace(std::forward<v_t>(v));
                 }
             }));
+    }
+
+    std::size_t size_of() const noexcept override
+    {
+        return sizeof(typed_field_scanner_setter);
     }
 };
 
@@ -442,7 +448,7 @@ private:
     template <class P>
     void destroy_deallocate(P p) const
     {
-        destroy_deallocate_g(m_.get_allocator().base(), p);
+        destroy_deallocate_g_dynamic(m_.get_allocator().base(), p);
     }
 
     template <class FieldSpecR, class U>
@@ -587,7 +593,7 @@ private:
     template <class P>
     void destroy_deallocate(P p)
     {
-        destroy_deallocate_g(this->get(), p);
+        destroy_deallocate_g_static(this->get(), p);
     }
 };
 

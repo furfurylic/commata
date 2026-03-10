@@ -2080,6 +2080,7 @@ struct end_record_handler
 {
     virtual ~end_record_handler() {}
     virtual bool on_end_record(StoredTable& table) = 0;
+    virtual std::size_t size_of() const noexcept = 0;
 };
 
 template <class StoredTable, class T>
@@ -2093,7 +2094,7 @@ struct COMMATA_FULL_EBO typed_end_record_handler :
 
     typed_end_record_handler(typed_end_record_handler&&) = delete;
 
-    bool on_end_record(StoredTable& table)
+    bool on_end_record(StoredTable& table) override
     {
         if constexpr (std::is_invocable_v<T&, StoredTable&>) {
             return on_end_record_no_arg(
@@ -2101,6 +2102,11 @@ struct COMMATA_FULL_EBO typed_end_record_handler :
         } else {
             return on_end_record_no_arg(std::ref(this->get()));
         }
+    }
+
+    std::size_t size_of() const noexcept override
+    {
+        return sizeof(typed_end_record_handler);
     }
 
 private:
@@ -2208,7 +2214,7 @@ private:
 
     void destroy_deallocate(ph_t p) noexcept
     {
-        detail::destroy_deallocate_g(table_->get_allocator(), p);
+        detail::destroy_deallocate_g_dynamic(table_->get_allocator(), p);
     }
 
 public:
