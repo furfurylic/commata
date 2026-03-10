@@ -68,6 +68,17 @@ public:
 };
 
 template <class T,
+    std::enable_if_t<is_default_translatable_arithmetic_type_v<T>>* = nullptr>
+arithmetic_field_translator_factory(T)
+ -> arithmetic_field_translator_factory<T, replace_if_skipped<T>>;
+
+template <class T, class U,
+    std::enable_if_t<is_default_translatable_arithmetic_type_v<T>>* = nullptr>
+arithmetic_field_translator_factory(T, U)
+ -> arithmetic_field_translator_factory<T, replace_if_skipped<T>,
+        detail::scanner::conversion_error_handler_t<T, U>>;
+
+template <class T,
     class SkippingHandler = std::conditional_t<detail::is_std_optional_v<T>,
         ignore_if_skipped, fail_if_skipped>,
     class ConversionErrorHandler =
@@ -108,6 +119,17 @@ public:
 };
 
 template <class T,
+    std::enable_if_t<is_default_translatable_arithmetic_type_v<T>>* = nullptr>
+locale_based_arithmetic_field_translator_factory(const std::locale&, T)
+ -> locale_based_arithmetic_field_translator_factory<T, replace_if_skipped<T>>;
+
+template <class T, class U,
+    std::enable_if_t<is_default_translatable_arithmetic_type_v<T>>* = nullptr>
+locale_based_arithmetic_field_translator_factory(const std::locale&, T, U)
+ -> locale_based_arithmetic_field_translator_factory<T, replace_if_skipped<T>,
+        detail::scanner::conversion_error_handler_t<T, U>>;
+
+template <class T,
     class SkippingHandler = std::conditional_t<detail::is_std_optional_v<T>,
         ignore_if_skipped, fail_if_skipped>>
 class string_field_translator_factory :
@@ -115,6 +137,7 @@ class string_field_translator_factory :
 {
 public:
     using value_type = T;
+
 
     explicit string_field_translator_factory(
             SkippingHandler skipping_handler = SkippingHandler()) :
@@ -129,6 +152,21 @@ public:
             std::forward<Sink>(sink), std::move(this->get()));
     }
 };
+
+template <class Ch, class Tr, class Allocator>
+string_field_translator_factory(std::basic_string<Ch, Tr, Allocator>)
+ -> string_field_translator_factory<std::basic_string<Ch, Tr, Allocator>,
+        replace_if_skipped<std::basic_string<Ch, Tr, Allocator>>>;
+
+template <class Ch, class Tr>
+string_field_translator_factory(std::basic_string_view<Ch, Tr>)
+ -> string_field_translator_factory<std::basic_string<Ch, Tr>,
+        replace_if_skipped<std::basic_string<Ch, Tr>>>;
+
+template <class Ch>
+string_field_translator_factory(const Ch*)
+ -> string_field_translator_factory<std::basic_string<Ch>,
+        replace_if_skipped<std::basic_string<Ch>>>;
 
 template <class T,
     class SkippingHandler = std::conditional_t<detail::is_std_optional_v<T>,
@@ -153,6 +191,16 @@ public:
                 std::forward<Sink>(sink), std::move(this->get()));
     }
 };
+
+template <class T,
+    std::enable_if_t<detail::is_std_string_view_v<T>>* = nullptr>
+string_view_field_translator_factory(T)
+ -> string_view_field_translator_factory<T, replace_if_skipped<T>>;
+
+template <class Ch>
+string_view_field_translator_factory(const Ch*)
+ -> string_view_field_translator_factory<std::basic_string_view<Ch>,
+        replace_if_skipped<std::basic_string_view<Ch>>>;
 
 namespace detail::record_xlate {
 
