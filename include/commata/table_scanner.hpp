@@ -95,6 +95,7 @@ class basic_table_scanner
     struct header_field_scanner : field_scanner
     {
         virtual void so_much_for_header(basic_table_scanner& me) = 0;
+        virtual std::size_t size_of() const noexcept = 0;
     };
 
     template <class HeaderScanner>
@@ -150,6 +151,11 @@ class basic_table_scanner
             }
         }
 
+        std::size_t size_of() const noexcept override
+        {
+            return sizeof(typed_header_field_scanner);
+        }
+
     private:
         template <class C>
         void field_value_impl(C* begin, C* end, basic_table_scanner& me)
@@ -176,6 +182,7 @@ class basic_table_scanner
         field_scanner, detail::scanner::typable
     {
         virtual void field_skipped() = 0;
+        virtual std::size_t size_of() const noexcept = 0;
     };
 
     template <class FieldScanner>
@@ -227,6 +234,11 @@ class basic_table_scanner
             return typeid(FieldScanner);
         }
 
+        std::size_t size_of() const noexcept override
+        {
+            return sizeof(typed_body_field_scanner);
+        }
+
     private:
         template <class C>
         static void field_value_impl(FieldScanner& scanner,
@@ -265,6 +277,7 @@ class basic_table_scanner
     struct record_end_scanner : detail::scanner::typable
     {
         virtual bool end_record(basic_table_scanner& me) = 0;
+        virtual std::size_t size_of() const noexcept = 0;
     };
 
     template <class T>
@@ -291,6 +304,11 @@ class basic_table_scanner
         const std::type_info& get_type() const noexcept override
         {
             return typeid(T);
+        }
+
+        std::size_t size_of() const noexcept override
+        {
+            return sizeof(typed_record_end_scanner);
         }
 
     private:
@@ -718,7 +736,7 @@ private:
     template <class P>
     void destroy_deallocate(P p)
     {
-        detail::destroy_deallocate_g(get_allocator(), p);
+        detail::destroy_deallocate_g_dynamic(get_allocator(), p);
     }
 
     std::pair<field_scanner*, bool> get_scanner()
