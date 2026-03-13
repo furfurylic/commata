@@ -6,9 +6,8 @@
 #ifndef COMMATA_GUARD_794F5003_D1ED_48ED_9D52_59EDE1761698
 #define COMMATA_GUARD_794F5003_D1ED_48ED_9D52_59EDE1761698
 
-#include <algorithm>
 #include <cstddef>
-#include <functional>
+#include <locale>
 #include <memory>
 #include <optional>
 #include <string>
