@@ -2084,7 +2084,7 @@ struct end_record_handler
 };
 
 template <class StoredTable, class T>
-struct COMMATA_FULL_EBO typed_end_record_handler :
+struct COMMATA_FULL_EBO typed_end_record_handler final :
     end_record_handler<StoredTable>, private detail::member_like_base<T>
 {
     template <class U>
@@ -2106,7 +2106,7 @@ struct COMMATA_FULL_EBO typed_end_record_handler :
 
     std::size_t size_of() const noexcept override
     {
-        return sizeof(typed_end_record_handler);
+        return sizeof(*this);
     }
 
 private:

@@ -288,7 +288,7 @@ struct field_scanner_setter
 
 template <class FieldNamePred, class FieldTranslatorFactory,
     class Ch, class Tr, class Allocator>
-class COMMATA_FULL_EBO typed_field_scanner_setter :
+class COMMATA_FULL_EBO typed_field_scanner_setter final :
     public field_scanner_setter<Ch, Tr, Allocator>,
     member_like_base<FieldNamePred>, member_like_base<FieldTranslatorFactory>
 {
@@ -332,7 +332,7 @@ public:
 
     std::size_t size_of() const noexcept override
     {
-        return sizeof(typed_field_scanner_setter);
+        return sizeof(*this);
     }
 };
 
