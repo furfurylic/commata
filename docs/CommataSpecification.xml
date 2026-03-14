@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-03-07 (UTC)</signature>
+<signature>2026-03-13 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -8204,9 +8204,13 @@ template &lt;class Allocator, class Container, class... Appendices>
       <name>Header <c>"commama/record_translator.hpp"</c> synopsis</name>
 
       <codeblock>
+#include &lt;locale>
+#include &lt;memory>
 #include &lt;optional>
 #include &lt;string>
 #include &lt;string_view>
+#include &lt;tuple>
+#include &lt;type_traits>
 
 #include "field_scanners.hpp"
 #include "table_scanner.hpp"
