@@ -7947,7 +7947,7 @@ namespace commata {
         SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
     string_field_inserter(const string_field_inserter&amp;  other) noexcept(see below);
     string_field_inserter(      string_field_inserter&amp;&amp; other) noexcept(see below);
-    ~string_field_inserter();
+   ~string_field_inserter();
 
     <c>// <n><xref id="string_field_inserter.allocator"/>, allocator access:</n></c>
     allocator_type get_allocator() const noexcept;
