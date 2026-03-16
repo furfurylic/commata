@@ -16,6 +16,7 @@
 #include <commata/record_translator.hpp>
 
 #include "BaseTest.hpp"
+#include "logging_allocator.hpp"
 
 using namespace std::literals;
 
@@ -92,10 +93,10 @@ TYPED_TEST(TestRecordTranslatorBasics, All)
     ASSERT_EQ(expected, planets);
 }
 
-struct TestRecordTranslatorRefs : BaseTest
+struct TestRecordTranslator : BaseTest
 {};
 
-TEST_F(TestRecordTranslatorRefs, All)
+TEST_F(TestRecordTranslator, Refs)
 {
     const std::string name = "Name"s;
     const arithmetic_field_translator_factory<int> to_int;
@@ -118,6 +119,26 @@ TEST_F(TestRecordTranslatorRefs, All)
 
     decltype(actual) expected = {{ "Haircut", 100 }};
     ASSERT_EQ(expected, actual);
+}
+
+TEST_F(TestRecordTranslator, Allocators)
+{
+    std::vector<std::size_t> allocations;
+    logging_allocator<char> a(allocations);
+
+    std::vector<int> actual;
+    auto s = make_basic_record_translator<char, std::char_traits<char>>(
+        std::allocator_arg, a,
+        [&actual](int value) {
+            actual.emplace_back(value);
+        },
+        field_spec<int>(std::string(100, 'a')));
+    parse_csv(std::string(100, 'a') + "\n-10", std::move(s));
+
+    decltype(actual) expected = { -10 };
+    ASSERT_EQ(expected, actual);
+
+    ASSERT_FALSE(allocations.empty());
 }
 
 // Compile-time tests of deduction guides
