@@ -53,6 +53,9 @@ auto make_string_pred(
 template <class Ch, class Tr, class T, class Allocator>
 decltype(auto) make_string_pred(T&& s, const Allocator& alloc)
 {
+    static_assert(std::is_same_v<Ch,
+        typename std::allocator_traits<Allocator>::value_type>);
+
     using string_t = std::basic_string<Ch, Tr, Allocator>;
 
     if constexpr (std::is_constructible_v<string_t, T, const Allocator&>) {
