@@ -458,28 +458,26 @@ private:
     {
         if constexpr (UsesAllocatorForPred) {
             typename at_t::template rebind_alloc<Ch> a(m_.get_allocator());
-            return create_setter_core(
-                make_string_pred<Ch, Tr>(
-                    std::get<0>(std::forward<FieldSpecR>(spec)), a),
-                std::get<1>(std::forward<FieldSpecR>(spec)),
-                o);     // throw
+            return create_setter_impl(
+                std::forward<FieldSpecR>(spec), o, a);  // throw
         } else {
-            return create_setter_core(
-                make_string_pred<Ch, Tr>(
-                    std::get<0>(std::forward<FieldSpecR>(spec))),
-                std::get<1>(std::forward<FieldSpecR>(spec)),
-                o);     // throw
+            return create_setter_impl(
+                std::forward<FieldSpecR>(spec), o);     // throw
         }
     }
 
-    template <class Pred, class Factory, class U>
-    auto create_setter_core(Pred&& pred, Factory&& fac, std::optional<U>& o)
+    template <class FieldSpecR, class U, class... AllocatorsForPred>
+    auto create_setter_impl(FieldSpecR&& spec, std::optional<U>& o,
+        const AllocatorsForPred&... as)
     {
+        static_assert(sizeof...(AllocatorsForPred) < 2U);
+        auto p = make_string_pred<Ch, Tr>(
+            std::get<0>(std::forward<FieldSpecR>(spec)), as...);    // throw
+        auto f = std::get<1>(std::forward<FieldSpecR>(spec));       // throw
         using typed_t = typed_field_scanner_setter<
-            std::decay_t<Pred>, std::decay_t<Factory>, Ch, Tr, Allocator>;
+            decltype(p), decltype(f), Ch, Tr, Allocator>;
         return allocate_construct<typed_t>(
-            std::forward<Pred>(pred), std::forward<Factory>(fac), o);
-                        // throw
+            std::move(p), std::move(f), o);                         // throw
     }
 
 public:
