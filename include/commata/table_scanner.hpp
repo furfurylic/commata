@@ -99,7 +99,7 @@ class basic_table_scanner
     };
 
     template <class HeaderScanner>
-    class COMMATA_FULL_EBO typed_header_field_scanner :
+    class COMMATA_FULL_EBO typed_header_field_scanner final :
         public header_field_scanner, detail::member_like_base<HeaderScanner>
     {
         static constexpr bool const_ready = std::is_invocable_v<HeaderScanner&,
@@ -153,7 +153,7 @@ class basic_table_scanner
 
         std::size_t size_of() const noexcept override
         {
-            return sizeof(typed_header_field_scanner);
+            return sizeof(*this);
         }
 
     private:
@@ -186,7 +186,7 @@ class basic_table_scanner
     };
 
     template <class FieldScanner>
-    struct COMMATA_FULL_EBO typed_body_field_scanner :
+    struct COMMATA_FULL_EBO typed_body_field_scanner final :
         body_field_scanner, private detail::member_like_base<FieldScanner>
     {
         template <class T>
@@ -236,7 +236,7 @@ class basic_table_scanner
 
         std::size_t size_of() const noexcept override
         {
-            return sizeof(typed_body_field_scanner);
+            return sizeof(*this);
         }
 
     private:
@@ -281,7 +281,7 @@ class basic_table_scanner
     };
 
     template <class T>
-    struct COMMATA_FULL_EBO typed_record_end_scanner :
+    struct COMMATA_FULL_EBO typed_record_end_scanner final :
         record_end_scanner, private detail::member_like_base<T>
     {
         template <class U>
@@ -308,7 +308,7 @@ class basic_table_scanner
 
         std::size_t size_of() const noexcept override
         {
-            return sizeof(typed_record_end_scanner);
+            return sizeof(*this);
         }
 
     private:
