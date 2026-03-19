@@ -18,6 +18,9 @@ class logging_allocator
 {
     std::vector<std::size_t>* allocations_;
 
+    template <class U>
+    friend class logging_allocator;
+
 public:
     using value_type = T;
     using size_type = std::size_t;

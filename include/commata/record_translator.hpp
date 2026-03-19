@@ -361,12 +361,15 @@ template <class Ch, class Tr, class Allocator, bool UsesAllocatorForPred,
           class... Ts>
 class record_translator_header_field_scanner
 {
-    using at_t = std::allocator_traits<Allocator>;
+    static_assert(std::is_same_v<
+        Ch,
+        typename std::allocator_traits<Allocator>::value_type>);
+
+    using at_t = std::allocator_traits<allocation_only_allocator<Allocator>>;
     using m_setter_t = field_scanner_setter<Ch, Tr, Allocator>;
-    using m_value_t = typename allocation_only_allocator<
-        typename at_t::template rebind_alloc<m_setter_t>>::pointer;
-    using m_value_a_t = allocation_only_allocator<
-        typename at_t::template rebind_alloc<m_value_t>>;
+    using m_value_t =
+        typename at_t::template rebind_traits<m_setter_t>::pointer;
+    using m_value_a_t = typename at_t::template rebind_alloc<m_value_t>;
     using m_t = std::vector<m_value_t, m_value_a_t>;
 
     m_t m_; // has field_scanner_setter in reverse order
@@ -454,7 +457,7 @@ private:
     auto create_setter(FieldSpecR&& spec, std::optional<U>& o)
     {
         if constexpr (UsesAllocatorForPred) {
-            allocation_only_allocator a(m_.get_allocator());
+            typename at_t::template rebind_alloc<Ch> a(m_.get_allocator());
             return create_setter_core(
                 make_string_pred<Ch, Tr>(
                     std::get<0>(std::forward<FieldSpecR>(spec)), a),

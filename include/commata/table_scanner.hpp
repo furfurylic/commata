@@ -403,7 +403,6 @@ public:
 
     ~basic_table_scanner()
     {
-        auto a = get_allocator();
         if (header_field_scanner_) {
             destroy_deallocate(header_field_scanner_);
         }

@@ -4,6 +4,7 @@
  */
 
 #include <cstddef>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -16,8 +17,10 @@
 #include <commata/record_translator.hpp>
 
 #include "BaseTest.hpp"
+#include "logging_allocator.hpp"
 
 using namespace std::literals;
+using namespace std::placeholders;
 
 using namespace commata;
 using namespace commata::test;
@@ -92,10 +95,10 @@ TYPED_TEST(TestRecordTranslatorBasics, All)
     ASSERT_EQ(expected, planets);
 }
 
-struct TestRecordTranslatorRefs : BaseTest
+struct TestRecordTranslator : BaseTest
 {};
 
-TEST_F(TestRecordTranslatorRefs, All)
+TEST_F(TestRecordTranslator, Refs)
 {
     const std::string name = "Name"s;
     const arithmetic_field_translator_factory<int> to_int;
@@ -118,6 +121,35 @@ TEST_F(TestRecordTranslatorRefs, All)
 
     decltype(actual) expected = {{ "Haircut", 100 }};
     ASSERT_EQ(expected, actual);
+}
+
+TEST_F(TestRecordTranslator, Allocators)
+{
+    std::vector<std::size_t> allocations;
+    logging_allocator<char> a(allocations);
+
+    std::vector<int> actual;
+    std::basic_string a100(100, 'a', a);
+    default_field_translator_factory_t<int> fac;
+    auto s = make_basic_record_translator<char, std::char_traits<char>>(
+        std::allocator_arg, a,
+        [&actual](int value) {
+            actual.emplace_back(value);
+        },
+        std::tie(a100, fac));
+    parse_csv(a100 + "\n-10", std::move(s));
+
+    decltype(actual) expected = { -10 };
+    ASSERT_EQ(expected, actual);
+
+    ASSERT_GE(
+        std::count_if(
+            allocations.cbegin(), allocations.cend(),
+            std::bind(std::greater_equal<>(), _1, 100U)),
+        3U);
+        // #1: making of a100
+        // #2: making of a copy of a100 in the string pred
+        // #3: making of a100 + "\n-10"
 }
 
 // Compile-time tests of deduction guides
