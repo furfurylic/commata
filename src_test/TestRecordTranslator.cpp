@@ -4,6 +4,7 @@
  */
 
 #include <cstddef>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -19,6 +20,7 @@
 #include "logging_allocator.hpp"
 
 using namespace std::literals;
+using namespace std::placeholders;
 
 using namespace commata;
 using namespace commata::test;
@@ -127,18 +129,27 @@ TEST_F(TestRecordTranslator, Allocators)
     logging_allocator<char> a(allocations);
 
     std::vector<int> actual;
+    std::basic_string a100(100, 'a', a);
+    default_field_translator_factory_t<int> fac;
     auto s = make_basic_record_translator<char, std::char_traits<char>>(
         std::allocator_arg, a,
         [&actual](int value) {
             actual.emplace_back(value);
         },
-        field_spec<int>(std::string(100, 'a')));
-    parse_csv(std::string(100, 'a') + "\n-10", std::move(s));
+        std::tie(a100, fac));
+    parse_csv(a100 + "\n-10", std::move(s));
 
     decltype(actual) expected = { -10 };
     ASSERT_EQ(expected, actual);
 
-    ASSERT_FALSE(allocations.empty());
+    ASSERT_GE(
+        std::count_if(
+            allocations.cbegin(), allocations.cend(),
+            std::bind(std::greater_equal<>(), _1, 100U)),
+        3U);
+        // #1: making of a100
+        // #2: making of a copy of a100 in the string pred
+        // #3: making of a100 + "\n-10"
 }
 
 // Compile-time tests of deduction guides
