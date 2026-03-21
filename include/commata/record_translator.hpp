@@ -137,7 +137,6 @@ class string_field_translator_factory :
 public:
     using value_type = T;
 
-
     explicit string_field_translator_factory(
             SkippingHandler skipping_handler = SkippingHandler()) :
         detail::member_like_base<SkippingHandler>(skipping_handler)
