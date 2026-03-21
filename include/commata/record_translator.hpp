@@ -456,7 +456,7 @@ private:
     }
 
     template <class FieldSpecR, class U>
-    auto create_setter(FieldSpecR&& spec, std::optional<U>& o)
+    [[nodiscard]] auto create_setter(FieldSpecR&& spec, std::optional<U>& o)
     {
         if constexpr (UsesAllocatorForPred) {
             typename at_t::template rebind_alloc<Ch> a(m_.get_allocator());
@@ -475,7 +475,8 @@ private:
     }
 
     template <class Pred, class Factory, class U>
-    auto create_setter_core(Pred&& pred, Factory&& fac, std::optional<U>& o)
+    [[nodiscard]] auto create_setter_core(
+        Pred&& pred, Factory&& fac, std::optional<U>& o)
     {
         using typed_t = typed_field_scanner_setter<
             std::decay_t<Pred>, std::decay_t<Factory>, Ch, Tr, Allocator>;
@@ -485,7 +486,7 @@ private:
     }
 
 public:
-    bool operator()(
+    [[nodiscard]] bool operator()(
         std::size_t field_index,
         std::optional<std::pair<const Ch*, const Ch*>> field_value,
         basic_table_scanner<Ch, Tr, Allocator>& scanner)
@@ -571,7 +572,7 @@ public:
     }
 
     template <class... FieldSpecRs>
-    auto make_header_field_scanner(FieldSpecRs&&... specs)
+    [[nodiscard]] auto make_header_field_scanner(FieldSpecRs&&... specs)
     {
         return h_t(std::allocator_arg, Allocator(this->get()),
             *field_values_, std::forward<FieldSpecRs>(specs)...);
@@ -603,8 +604,9 @@ private:
 
 template <class Ch, class Tr, bool UsesAllocatorForPred, class Allocator,
           class FR, class... FieldSpecRs>
-basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator_impl(
-    const Allocator& alloc, FR&& f, FieldSpecRs&&... specs)
+[[nodiscard]] basic_table_scanner<Ch, Tr, Allocator>
+    make_basic_record_translator_impl(
+        const Allocator& alloc, FR&& f, FieldSpecRs&&... specs)
 {
     using table_scanner_t = basic_table_scanner<Ch, Tr, Allocator>;
     using record_end_scanner_t =
