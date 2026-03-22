@@ -380,10 +380,9 @@ public:
         std::tuple<optionalized_target<Ts>...>& field_values,
         FieldSpecRs&&... specs) :
         record_translator_header_field_scanner(
-            std::allocator_arg, alloc,
             field_values,
-            std::integral_constant<std::size_t, 0>(),
-            std::forward<FieldSpecRs>(specs)...)
+            std::forward_as_tuple(std::forward<FieldSpecRs>(specs)...),
+            alloc, std::make_index_sequence<sizeof...(Ts)>())
     {}
 
     record_translator_header_field_scanner(
@@ -402,41 +401,26 @@ public:
     }
 
 private:
-    template <std::size_t I, class FieldSpecR, class... FieldSpecRs>
+    template <class... FieldSpecRs, std::size_t... Is>
     record_translator_header_field_scanner(
-        std::allocator_arg_t, const Allocator& alloc,
         std::tuple<optionalized_target<Ts>...>& field_values,
-        std::integral_constant<std::size_t, I>,
-        FieldSpecR&& spec,
-        FieldSpecRs&&... other_specs) :
-        record_translator_header_field_scanner(
-            std::allocator_arg, alloc,
-            field_values,
-            std::integral_constant<std::size_t, I + 1>(),
-            std::forward<FieldSpecRs>(other_specs)...)
+        std::tuple<FieldSpecRs...> specs,
+        const Allocator& alloc, std::index_sequence<Is...>) :
+            m_(m_value_a_t(alloc))
     {
-        // I really want to employ a fold expression, but the counter (here I)
-        // is required here
-
-        const auto setter = create_setter(
-            std::forward<FieldSpecR>(spec), std::get<I>(field_values).o);
-                                                    // throw
+        m_.reserve(sizeof...(Ts));                          // throw
         try {
-            m_.emplace_back(setter);                // throw
+            (m_.push_back(
+                create_setter(                              // throw
+                    std::forward<FieldSpecRs>(std::get<Is>(specs)),
+                    std::get<Is>(field_values).o)),
+             ...);
         } catch (...) {
-            destroy_deallocate(setter);
+            for (const auto& e : m_) {
+                destroy_deallocate(e);
+            }
             throw;
         }
-    }
-
-    template <std::size_t I>
-    record_translator_header_field_scanner(
-        std::allocator_arg_t, const Allocator& alloc,
-        std::tuple<optionalized_target<Ts>...>&,
-        std::integral_constant<std::size_t, I>) : m_(m_value_a_t(alloc))
-    {
-        static_assert(I == sizeof...(Ts));
-        m_.reserve(I);
     }
 
     template <class T, class... Args>
