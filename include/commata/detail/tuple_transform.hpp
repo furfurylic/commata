@@ -28,12 +28,12 @@ constexpr auto transform_impl(std::index_sequence<Is...>,
 
 template <class F, class... Tuples>
 constexpr auto transform(F f, Tuples&&... ts) {
-    constexpr auto Min =
+    constexpr auto size_min =
         std::min({std::tuple_size_v<std::decay_t<Tuples>>...});
-    constexpr auto Max =
+    constexpr auto size_max =
         std::max({std::tuple_size_v<std::decay_t<Tuples>>...});
-    static_assert(Min == Max, "Inconsistent tuple sizes");
-    return transform_impl(std::make_index_sequence<Min>(),
+    static_assert(size_min == size_max, "Inconsistent tuple sizes");
+    return transform_impl(std::make_index_sequence<size_min>(),
                           std::move(f), std::forward<Tuples>(ts)...);
 }
 
