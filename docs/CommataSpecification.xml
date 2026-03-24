@@ -2978,7 +2978,6 @@ namespace commata {
           <code>
 explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
           </code>
-          <requires><c>sb</c> shall be <c>nullptr</c> or a pointer to a valid stream buffer object.</requires>
           <effects>Initializes <c>in</c> with <c>std::addressof(sb)</c>.</effects>
         </code-item>
       </section>
@@ -3636,7 +3635,7 @@ template &lt;class... Args>
 return indirect_input&lt;decltype(in)>(std::move(in));
 </code>
                  <p>Otherwise, equivalent to: <c>return indirect_input&lt;Args...>(std::forward&lt;Args>(args)...);</c></p></effects>
-        <remark>This overload shall not participate in overload resolution unless the first type in <c>std::decay_t&lt;Args>...</c> (if any) is not identical to or not derived from <c>indirect_t</c>, and either <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand or <c>sizeof...(Args)</c> is equal to <c>1</c>.
+        <remark>This overload shall not participate in overload resolution unless <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand or <c>sizeof...(Args)</c> is equal to <c>1</c>.
                 The expression inside <c>noexcept</c> is <c>true</c> unless the equivalent expressions described above is potentially-throwing.</remark>
       </code-item>
     </section>
