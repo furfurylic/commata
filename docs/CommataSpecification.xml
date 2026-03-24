@@ -8264,10 +8264,11 @@ namespace commata {
       field_spec(FieldNamePred&amp;&amp; field_name_pred, const std::locale&amp; loc);
 
   <c>// <n><xref id="record_translators.creation"/>, creation of record translators:</n></c>
-  template &lt;class Ch, class Tr, class Allocator, class FR, class... FieldSpecRs>
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>,
+            class Allocator, class FR, class... FieldSpecRs>
     basic_table_scanner&lt;Ch, Tr, Allocator> make_basic_record_translator(
       std::allocator_arg_t, const Allocator&amp; alloc, FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
-  template &lt;class Ch, class Tr, class FR, class... FieldSpecRs>
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class FR, class... FieldSpecRs>
     basic_table_scanner&lt;Ch, Tr> make_basic_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
   template &lt;class FR, class... FieldSpecRs>
     table_scanner make_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
@@ -8777,10 +8778,11 @@ template &lt;class T, class FieldNamePred>
 
       <code-item>
         <code>
-template &lt;class Ch, class Tr, class Allocator, class FR, class... FieldSpecRs>
+template &lt;class Ch, class Tr = std::char_traits&lt;Ch>,
+          class Allocator, class FR, class... FieldSpecRs>
   basic_table_scanner&lt;Ch, Tr, Allocator> make_basic_record_translator(
     std::allocator_arg_t, const Allocator&amp; alloc, FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
-template &lt;class Ch, class Tr, class FR, class... FieldSpecRs>
+template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class FR, class... FieldSpecRs>
   basic_table_scanner&lt;Ch, Tr> make_basic_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
         </code>
         <preface>Let <c>FieldSpecs</c> be a pack formed with <c>std::decay_t&lt;FieldSpecRs>...</c>
@@ -8830,7 +8832,7 @@ template &lt;class FR, class... FieldSpecRs>
   table_scanner make_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
         </code>
         <effects><p>Equivalent to:</p>
-                 <code>return make_basic_record_translator&lt;char, std::char_traits&lt;char>>(
+                 <code>return make_basic_record_translator&lt;char>(
   std::forward&lt;FR>(f), std::forward&lt;FieldSpecRs>(specs)...);</code></effects>
       </code-item>
 
@@ -8840,7 +8842,7 @@ template &lt;class FR, class... FieldSpecRs>
   wtable_scanner make_wrecord_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
         </code>
         <effects><p>Equivalent to:</p>
-                 <code>return make_basic_record_translator&lt;wchar_t, std::char_traits&lt;wchar_t>>(
+                 <code>return make_basic_record_translator&lt;wchar_t>(
   std::forward&lt;FR>(f), std::forward&lt;FieldSpecRs>(specs)...);</code></effects>
       </code-item>
     </section>

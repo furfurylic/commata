@@ -450,7 +450,7 @@ private:
     void destroy_deallocate(P p) const
     {
         destroy_deallocate_g_dynamic(m_.get_allocator().base(), p);
-    }
+    } 
 
     template <class FieldSpecR, class U>
     auto create_setter(FieldSpecR&& spec, std::optional<U>& o)
@@ -596,7 +596,7 @@ private:
     }
 };
 
-template <class Ch, class Tr, bool UsesAllocatorForPred, class Allocator,
+template <class Ch, class Tr = std::char_traits<Ch>, bool UsesAllocatorForPred, class Allocator,
           class FR, class... FieldSpecRs>
 basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator_impl(
     const Allocator& alloc, FR&& f, FieldSpecRs&&... specs)
@@ -617,7 +617,8 @@ basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator_impl(
 
 }
 
-template <class Ch, class Tr, class Allocator, class FR, class... FieldSpecRs>
+template <class Ch, class Tr = std::char_traits<Ch>,
+    class Allocator, class FR, class... FieldSpecRs>
 basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator(
     std::allocator_arg_t, const Allocator& alloc,
     FR&& f, FieldSpecRs&&... specs)
@@ -627,7 +628,8 @@ basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator(
             alloc, std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
 }
 
-template <class Ch, class Tr, class FR, class... FieldSpecRs>
+template <class Ch, class Tr = std::char_traits<Ch>,
+    class FR, class... FieldSpecRs>
 auto make_basic_record_translator(FR&& f, FieldSpecRs&&... specs)
  -> std::enable_if_t<
         !std::is_base_of_v<std::allocator_arg_t, std::decay_t<FR>>,
@@ -642,14 +644,14 @@ auto make_basic_record_translator(FR&& f, FieldSpecRs&&... specs)
 template <class FR, class... FieldSpecRs>
 table_scanner make_record_translator(FR&& f, FieldSpecRs&&... specs)
 {
-    return make_basic_record_translator<char, std::char_traits<char>>(
+    return make_basic_record_translator<char>(
         std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
 }
 
 template <class FR, class... FieldSpecRs>
 wtable_scanner make_wrecord_translator(FR&& f, FieldSpecRs&&... specs)
 {
-    return make_basic_record_translator<wchar_t, std::char_traits<wchar_t>>(
+    return make_basic_record_translator<wchar_t>(
         std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
 }
 
