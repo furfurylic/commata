@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-03-20 (UTC)</signature>
+<signature>2026-03-25 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -330,7 +330,7 @@
       </table>
 
       <p>A moved-from object whose type satisfies <c>TableHandler</c> requirements may cause undefined behaviour when used in terms of <xref id="table.table_handler.requirements"/>.</p>
-      <p>A type that meets the <c>TableHandler</c> requirements for a certain char-like type is called <n>deemed to have buffer control</n> if it satisfies both of (1) and (2) in <xref id="table.table_handler.requirements"/> without falling back on the defaults. Otherwise, it is called <n>deemed to have no buffer control</n>.</p>
+      <p>A type that meets the <c>TableHandler</c> requirements for a certain char-like type is called <n>deemed to have buffer control</n> if it satisfies both of (2) and (3) in <xref id="table.table_handler.requirements"/> without falling back on the defaults. Otherwise, it is called <n>deemed to have no buffer control</n>.</p>
     </section>
 
     <section id="table_parser.requirements">
