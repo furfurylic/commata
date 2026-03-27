@@ -50,7 +50,7 @@ TYPED_TEST(TestRecordTranslatorBasics, All)
     std::vector<planet_t> planets;
     const std::locale loc(std::locale::classic(),
         new french_style_numpunct<char_t>);
-    auto t = make_basic_record_translator<char_t, std::char_traits<char_t>>(
+    auto t = make_basic_record_translator<char_t>(
         [&planets](string_t&& name, std::optional<std::size_t> index,
                    double mass, double eccentricity, double orbital_period) {
             planets.emplace_back(index.value_or(0U),
@@ -131,7 +131,7 @@ TEST_F(TestRecordTranslator, Allocators)
     std::vector<int> actual;
     std::basic_string a100(100, 'a', a);
     default_field_translator_factory_t<int> fac;
-    auto s = make_basic_record_translator<char, std::char_traits<char>>(
+    auto s = make_basic_record_translator<char>(
         std::allocator_arg, a,
         [&actual](int value) {
             actual.emplace_back(value);

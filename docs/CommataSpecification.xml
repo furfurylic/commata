@@ -602,7 +602,8 @@
 
       <p><c>f</c> and <c>l</c> <n>form an accessible range</n> for a type <c>T</c> if and only if:</p>
       <ul>
-        <li><c>F</c> is a input iterator type whose value type <c>U</c> satisfies that <c>std::is_convertible_v&lt;U, T></c> is <c>true</c>,</li>
+        <li>both of <c>std::is_base_of&lt;std::input_iterator_tag, typename R::iterator_category></c> and
+            <c>std::is_convertible_v&lt;typename R::value_type, T></c> are <c>true</c> where <c>R</c> denotes <c>std::iterator_traits&lt;F></c>,</li>
         <li><c>L</c> meets the <c>IteratorEnd</c> requirements for <c>F</c> (<xref id="iterator_end.requirements"/>), and</li>
         <li>there exists an non-negative integer <c>n</c> whose type is <c>std::iterator_traits&lt;F>::difference_type</c> that satisfies:
             <ul>
@@ -1571,7 +1572,7 @@ template &lt;class HandlerR>
                    <c>empty_physical_line_aware_handler&lt;Handler></c> otherwise.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</requires>
           <returns>An object of <c>T</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c>.</returns>
-          <remark>This overload shall not participate in overload resolution unless <c>Handler</c> is not the same type as <c>std::reference_wrapper&lt;T></c> for any <c>T</c>.
+          <remark>This overload shall not participate in overload resolution unless <c>Handler</c> is not a specialization of <c>std::reference_wrapper</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;></c>.</remark>
         </code-item>
 
@@ -3933,7 +3934,10 @@ template &lt;class HandlerR>
           <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>).
                    <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object
                    and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object.</returns>
-          <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is deemed to have buffer control.
+          <remark>Let <c>Ch</c> be <c>std::remove_const_t&lt;Handler::char_type></c>.
+                  These operators shall not participate in overload resolution unless
+                  <c>std::declval&lt;std::pair&lt;Ch*, std::size_t>&amp;>() = std::declval&lt;T&amp;>().get_buffer()</c> and
+                  <c>std::declval&lt;Handler&amp;>().release_buffer(std::declval&lt;Ch>*>())</c> are well-formed when treated as unevaluated operands.
                   The expression inside <c>noexcept</c> is equivalent to
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible&lt;CharInput></c> (first form) or
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible&lt;CharInput></c> (second form).</remark>
@@ -3957,7 +3961,10 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
                    <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object,
                    an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
-          <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not a specialization of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
+          <remark>Let <c>Ch</c> be <c>std::remove_const_t&lt;Handler::char_type></c>.
+                  These operators shall not participate in overload resolution unless <c>Handler</c> is not a specialization of <c>std::reference_wrapper</c>, and
+                  any of <c>std::declval&lt;std::pair&lt;Ch*, std::size_t>&amp;>() = std::declval&lt;T&amp;>().get_buffer()</c> or
+                  <c>std::declval&lt;Handler&amp;>().release_buffer(std::declval&lt;Ch>*>())</c> are not well-formed when treated as unevaluated operands.
                   The expression inside <c>noexcept</c> is equivalent to
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (first form) or
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (second form).</remark>
@@ -4254,7 +4261,10 @@ template &lt;class HandlerR>
           <returns>A table parser object <c>p</c> for the TSV text format (<xref id="definitions.tsv_text"/>).
                    <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object
                    and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object.</returns>
-          <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is deemed to have buffer control.
+          <remark>Let <c>Ch</c> be <c>std::remove_const_t&lt;Handler::char_type></c>.
+                  These operators shall not participate in overload resolution unless
+                  <c>std::declval&lt;std::pair&lt;Ch*, std::size_t>&amp;>() = std::declval&lt;T&amp;>().get_buffer()</c> and
+                  <c>std::declval&lt;Handler&amp;>().release_buffer(std::declval&lt;Ch>*>())</c> are well-formed when treated as unevaluated operands.
                   The expression inside <c>noexcept</c> is equivalent to
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible&lt;CharInput></c> (first form) or
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible&lt;CharInput></c> (second form).</remark>
@@ -4278,7 +4288,10 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
                    <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object,
                    an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
-          <remark>These operators shall not participate in overload resolution unless <c>Handler</c> is not a specialization of <c>std::reference_wrapper</c> and is deemed to have no buffer control.
+          <remark>Let <c>Ch</c> be <c>std::remove_const_t&lt;Handler::char_type></c>.
+                  These operators shall not participate in overload resolution unless <c>Handler</c> is not a specialization of <c>std::reference_wrapper</c>, and
+                  any of <c>std::declval&lt;std::pair&lt;Ch*, std::size_t>&amp;>() = std::declval&lt;T&amp;>().get_buffer()</c> or
+                  <c>std::declval&lt;Handler&amp;>().release_buffer(std::declval&lt;Ch>*>())</c> are not well-formed when treated as unevaluated operands.
                   The expression inside <c>noexcept</c> is equivalent to
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (first form) or
                   <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;> &amp;&amp; std::is_nothrow_move_constructible_v&lt;CharInput> &amp;&amp; std::is_nothrow_copy_constructible_v&lt;Allocator></c> (second form).</remark>
@@ -6079,7 +6092,8 @@ template &lt;class InputIterator>
   value_type&amp; rewrite_value(value_type&amp; value, InputIterator new_value);
           </code>
           <effects>Equivalent to: <c>return rewrite_value(value, new_value, null_termination());</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>InputIterator</c> is an input iterator type.</remark>
+          <remark>This overload shall not participate in overload resolution unless
+                  <c>std::is_base_of&lt;std::input_iterator_tag, typename std::iterator_traits&lt;InputIterator>::iterator_category></c> is <c>true</c>.</remark>
         </code-item>
 
         <code-item>
@@ -8251,10 +8265,11 @@ namespace commata {
         field_spec(FieldNamePred&amp;&amp; field_name_pred, const std::locale&amp; loc);
 
   <c>// <n><xref id="record_translators.creation"/>, creation of record translators:</n></c>
-  template &lt;class Ch, class Tr, class Allocator, class FR, class... FieldSpecRs>
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>,
+            class Allocator, class FR, class... FieldSpecRs>
     [[nodiscard]] basic_table_scanner&lt;Ch, Tr, Allocator> make_basic_record_translator(
       std::allocator_arg_t, const Allocator&amp; alloc, FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
-  template &lt;class Ch, class Tr, class FR, class... FieldSpecRs>
+  template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class FR, class... FieldSpecRs>
     [[nodiscard]] basic_table_scanner&lt;Ch, Tr> make_basic_record_translator(
       FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
   template &lt;class FR, class... FieldSpecRs>
@@ -8766,11 +8781,13 @@ template &lt;class T, class FieldNamePred>
 
       <code-item>
         <code>
-template &lt;class Ch, class Tr, class Allocator, class FR, class... FieldSpecRs>
+template &lt;class Ch, class Tr = std::char_traits&lt;Ch>,
+          class Allocator, class FR, class... FieldSpecRs>
   [[nodiscard]] basic_table_scanner&lt;Ch, Tr, Allocator> make_basic_record_translator(
     std::allocator_arg_t, const Allocator&amp; alloc, FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
-template &lt;class Ch, class Tr, class FR, class... FieldSpecRs>
-  [[nodiscard]] basic_table_scanner&lt;Ch, Tr> make_basic_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class FR, class... FieldSpecRs>
+  [[nodiscard]] basic_table_scanner&lt;Ch, Tr> make_basic_record_translator(
+    FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
         </code>
         <preface>Let <c>FieldSpecs</c> be a pack formed with <c>std::decay_t&lt;FieldSpecRs>...</c>
                  and <c>TableScanner</c> be <c>basic_table_scanner&lt;Ch, Tr, Allocator></c> (in the first form) or <c>basic_table_scanner&lt;Ch, Tr></c> (in the second form).</preface>
@@ -8819,7 +8836,7 @@ template &lt;class FR, class... FieldSpecRs>
   [[nodiscard]] table_scanner make_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
         </code>
         <effects><p>Equivalent to:</p>
-                 <code>return make_basic_record_translator&lt;char, std::char_traits&lt;char>>(
+                 <code>return make_basic_record_translator&lt;char>(
   std::forward&lt;FR>(f), std::forward&lt;FieldSpecRs>(specs)...);</code></effects>
       </code-item>
 
@@ -8829,7 +8846,7 @@ template &lt;class FR, class... FieldSpecRs>
   [[nodiscard]] wtable_scanner make_wrecord_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
         </code>
         <effects><p>Equivalent to:</p>
-                 <code>return make_basic_record_translator&lt;wchar_t, std::char_traits&lt;wchar_t>>(
+                 <code>return make_basic_record_translator&lt;wchar_t>(
   std::forward&lt;FR>(f), std::forward&lt;FieldSpecRs>(specs)...);</code></effects>
       </code-item>
     </section>
