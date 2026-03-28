@@ -240,7 +240,8 @@ using default_field_translator_factory_t =
     typename default_field_translator_factory<T>::type;
 
 template <class FieldNamePred, class FieldTranslatorFactory>
-auto field_spec(FieldNamePred&& field_name_pred, FieldTranslatorFactory&& factory)
+[[nodiscard]] auto field_spec(
+        FieldNamePred&& field_name_pred, FieldTranslatorFactory&& factory)
  -> std::enable_if_t<
         !std::is_base_of_v<std::locale, std::decay_t<FieldTranslatorFactory>>,
         std::tuple<std::decay_t<FieldNamePred>,
@@ -251,7 +252,8 @@ auto field_spec(FieldNamePred&& field_name_pred, FieldTranslatorFactory&& factor
 }
 
 template <class T, class FieldNamePred>
-std::tuple<std::decay_t<FieldNamePred>, default_field_translator_factory_t<T>>
+[[nodiscard]] std::tuple<std::decay_t<FieldNamePred>,
+                         default_field_translator_factory_t<T>>
     field_spec(FieldNamePred&& field_name_pred)
 {
     return { std::forward<FieldNamePred>(field_name_pred),
@@ -259,7 +261,8 @@ std::tuple<std::decay_t<FieldNamePred>, default_field_translator_factory_t<T>>
 }
 
 template <class T, class FieldNamePred>
-auto field_spec(FieldNamePred&& field_name_pred, const std::locale& loc)
+[[nodiscard]] auto field_spec(
+        FieldNamePred&& field_name_pred, const std::locale& loc)
  -> std::enable_if_t<
         is_default_translatable_arithmetic_type_v<T>,
         std::tuple<std::decay_t<FieldNamePred>,
@@ -437,7 +440,7 @@ private:
     } 
 
     template <class FieldSpecR, class U>
-    auto create_setter(FieldSpecR&& spec, std::optional<U>& o)
+    [[nodiscard]] auto create_setter(FieldSpecR&& spec, std::optional<U>& o)
     {
         if constexpr (UsesAllocatorForPred) {
             typename at_t::template rebind_alloc<Ch> a(m_.get_allocator());
@@ -450,8 +453,8 @@ private:
     }
 
     template <class FieldSpecR, class U, class... AllocatorsForPred>
-    auto create_setter_impl(FieldSpecR&& spec, std::optional<U>& o,
-        const AllocatorsForPred&... as)
+    [[nodiscard]] auto create_setter_impl(
+        FieldSpecR&& spec, std::optional<U>& o, const AllocatorsForPred&... as)
     {
         static_assert(sizeof...(AllocatorsForPred) < 2U);
         auto p = make_string_pred<Ch, Tr>(
@@ -464,7 +467,7 @@ private:
     }
 
 public:
-    bool operator()(
+    [[nodiscard]] bool operator()(
         std::size_t field_index,
         std::optional<std::pair<const Ch*, const Ch*>> field_value,
         basic_table_scanner<Ch, Tr, Allocator>& scanner)
@@ -550,7 +553,7 @@ public:
     }
 
     template <class... FieldSpecRs>
-    auto make_header_field_scanner(FieldSpecRs&&... specs)
+    [[nodiscard]] auto make_header_field_scanner(FieldSpecRs&&... specs)
     {
         return h_t(std::allocator_arg, Allocator(this->get()),
             *field_values_, std::forward<FieldSpecRs>(specs)...);
@@ -582,8 +585,9 @@ private:
 
 template <class Ch, class Tr = std::char_traits<Ch>, bool UsesAllocatorForPred, class Allocator,
           class FR, class... FieldSpecRs>
-basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator_impl(
-    const Allocator& alloc, FR&& f, FieldSpecRs&&... specs)
+[[nodiscard]] basic_table_scanner<Ch, Tr, Allocator>
+    make_basic_record_translator_impl(
+        const Allocator& alloc, FR&& f, FieldSpecRs&&... specs)
 {
     using table_scanner_t = basic_table_scanner<Ch, Tr, Allocator>;
     using record_end_scanner_t =
@@ -603,9 +607,10 @@ basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator_impl(
 
 template <class Ch, class Tr = std::char_traits<Ch>,
     class Allocator, class FR, class... FieldSpecRs>
-basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator(
-    std::allocator_arg_t, const Allocator& alloc,
-    FR&& f, FieldSpecRs&&... specs)
+[[nodiscard]] basic_table_scanner<Ch, Tr, Allocator>
+    make_basic_record_translator(
+        std::allocator_arg_t, const Allocator& alloc,
+        FR&& f, FieldSpecRs&&... specs)
 {
     return detail::record_xlate::
         make_basic_record_translator_impl<Ch, Tr, true>(
@@ -614,7 +619,7 @@ basic_table_scanner<Ch, Tr, Allocator> make_basic_record_translator(
 
 template <class Ch, class Tr = std::char_traits<Ch>,
     class FR, class... FieldSpecRs>
-auto make_basic_record_translator(FR&& f, FieldSpecRs&&... specs)
+[[nodiscard]] auto make_basic_record_translator(FR&& f, FieldSpecRs&&... specs)
  -> std::enable_if_t<
         !std::is_base_of_v<std::allocator_arg_t, std::decay_t<FR>>,
         basic_table_scanner<Ch, Tr>>
@@ -626,14 +631,16 @@ auto make_basic_record_translator(FR&& f, FieldSpecRs&&... specs)
 }
 
 template <class FR, class... FieldSpecRs>
-table_scanner make_record_translator(FR&& f, FieldSpecRs&&... specs)
+[[nodiscard]] table_scanner
+    make_record_translator(FR&& f, FieldSpecRs&&... specs)
 {
     return make_basic_record_translator<char>(
         std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
 }
 
 template <class FR, class... FieldSpecRs>
-wtable_scanner make_wrecord_translator(FR&& f, FieldSpecRs&&... specs)
+[[nodiscard]] wtable_scanner
+    make_wrecord_translator(FR&& f, FieldSpecRs&&... specs)
 {
     return make_basic_record_translator<wchar_t>(
         std::forward<FR>(f), std::forward<FieldSpecRs>(specs)...);
