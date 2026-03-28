@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <memory>
+#include <type_traits>
 
 namespace commata::detail {
 
@@ -72,7 +73,10 @@ void destroy_deallocate_g_static(const Allocator& alloc, P p)
 template <class Allocator, class P>
 void destroy_deallocate_g_dynamic(const Allocator& alloc, P p)
 {
+    static_assert(
+        std::is_polymorphic_v<std::remove_reference_t<decltype(*p)>>);
     assert(p);
+
     destroy_deallocate_g_impl(alloc, p, p->size_of());
 }
 

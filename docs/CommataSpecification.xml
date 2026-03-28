@@ -8253,26 +8253,28 @@ namespace commata {
 
   <c>// <n><xref id="field_specs.creation"/>, creation of field specs:</n></c>
   template &lt;class FieldNamePred, class class FieldTranslatorFactory>
-    std::tuple&lt;std::decay_t&lt;FieldNamePred, std::decay_t&lt;FieldTranslatorFactory>>
-      field_spec(FieldNamePred&amp;&amp; field_name_pred, FieldTranslatorFactory&amp;&amp; factory);
+    [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred, std::decay_t&lt;FieldTranslatorFactory>>
+        field_spec(FieldNamePred&amp;&amp; field_name_pred, FieldTranslatorFactory&amp;&amp; factory);
   template &lt;class T, class FieldNamePred>
-    std::tuple&lt;std::decay_t&lt;FieldNamePred, default_field_translator_factory&lt;T>>
-      field_spec(FieldNamePred&amp;&amp; field_name_pred);
+    [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred, default_field_translator_factory&lt;T>>
+        field_spec(FieldNamePred&amp;&amp; field_name_pred);
   template &lt;class T, class FieldNamePred>
-    std::tuple&lt;std::decay_t&lt;FieldNamePred, locale_based_arithmetic_field_translator_factory&lt;T>>
-      field_spec(FieldNamePred&amp;&amp; field_name_pred, const std::locale&amp; loc);
+    [[nodiscard]]
+      std::tuple&lt;std::decay_t&lt;FieldNamePred, locale_based_arithmetic_field_translator_factory&lt;T>>
+        field_spec(FieldNamePred&amp;&amp; field_name_pred, const std::locale&amp; loc);
 
   <c>// <n><xref id="record_translators.creation"/>, creation of record translators:</n></c>
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>,
             class Allocator, class FR, class... FieldSpecRs>
-    basic_table_scanner&lt;Ch, Tr, Allocator> make_basic_record_translator(
+    [[nodiscard]] basic_table_scanner&lt;Ch, Tr, Allocator> make_basic_record_translator(
       std::allocator_arg_t, const Allocator&amp; alloc, FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class FR, class... FieldSpecRs>
-    basic_table_scanner&lt;Ch, Tr> make_basic_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+    [[nodiscard]] basic_table_scanner&lt;Ch, Tr> make_basic_record_translator(
+      FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
   template &lt;class FR, class... FieldSpecRs>
-    table_scanner make_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+    [[nodiscard]] table_scanner make_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
   template &lt;class FR, class... FieldSpecRs>
-    wtable_scanner make_wrecord_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+    [[nodiscard]] wtable_scanner make_wrecord_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
       </codeblock>
       <p>The header <c>"commama/record_translator.hpp"</c> defines facilities to make a <n>record translator</n> object, which is a <c>basic_table_scanner</c> object configured to invoke its associated function object with translated text values (<xref id="xlate.general"/>) of text fields once every record.</p>
     </section>
@@ -8677,7 +8679,7 @@ using type = <nc>see below</nc>;
       <code-item>
         <code>
 template &lt;class FieldNamePred, class class FieldTranslatorFactory>
-  std::tuple&lt;std::decay_t&lt;FieldNamePred, std::decay_t&lt;FieldTranslatorFactory>>
+  [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred, std::decay_t&lt;FieldTranslatorFactory>>
     field_spec(FieldNamePred&amp;&amp; field_name_pred, FieldTranslatorFactory&amp;&amp; factory);
         </code>
         <effects><p>Equivalent to:</p>
@@ -8689,7 +8691,7 @@ template &lt;class FieldNamePred, class class FieldTranslatorFactory>
       <code-item>
         <code>
 template &lt;class T, class FieldNamePred>
-  std::tuple&lt;std::decay_t&lt;FieldNamePred, default_field_translator_factory_t&lt;T>>
+  [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred, default_field_translator_factory_t&lt;T>>
     field_spec(FieldNamePred&amp;&amp; field_name_pred);
         </code>
         <effects><p>Equivalent to:</p>
@@ -8700,8 +8702,9 @@ template &lt;class T, class FieldNamePred>
       <code-item>
         <code>
 template &lt;class T, class FieldNamePred>
-  std::tuple&lt;std::decay_t&lt;FieldNamePred, locale_based_arithmetic_field_translator_factory&lt;T>>
-    field_spec(FieldNamePred&amp;&amp; field_name_pred, const std::locale&amp; loc);
+  [[nodiscard]]
+    std::tuple&lt;std::decay_t&lt;FieldNamePred, locale_based_arithmetic_field_translator_factory&lt;T>>
+      field_spec(FieldNamePred&amp;&amp; field_name_pred, const std::locale&amp; loc);
         </code>
         <effects><p>Equivalent to:</p>
                  <code>return { std::forward&lt;FieldNamePred>(field_name_pred),
@@ -8779,10 +8782,11 @@ template &lt;class T, class FieldNamePred>
         <code>
 template &lt;class Ch, class Tr = std::char_traits&lt;Ch>,
           class Allocator, class FR, class... FieldSpecRs>
-  basic_table_scanner&lt;Ch, Tr, Allocator> make_basic_record_translator(
+  [[nodiscard]] basic_table_scanner&lt;Ch, Tr, Allocator> make_basic_record_translator(
     std::allocator_arg_t, const Allocator&amp; alloc, FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
 template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class FR, class... FieldSpecRs>
-  basic_table_scanner&lt;Ch, Tr> make_basic_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+  [[nodiscard]] basic_table_scanner&lt;Ch, Tr> make_basic_record_translator(
+    FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
         </code>
         <preface>Let <c>FieldSpecs</c> be a pack formed with <c>std::decay_t&lt;FieldSpecRs>...</c>
                  and <c>TableScanner</c> be <c>basic_table_scanner&lt;Ch, Tr, Allocator></c> (in the first form) or <c>basic_table_scanner&lt;Ch, Tr></c> (in the second form).</preface>
@@ -8828,7 +8832,7 @@ template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class FR, class... Fi
       <code-item>
         <code>
 template &lt;class FR, class... FieldSpecRs>
-  table_scanner make_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+  [[nodiscard]] table_scanner make_record_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
         </code>
         <effects><p>Equivalent to:</p>
                  <code>return make_basic_record_translator&lt;char>(
@@ -8838,7 +8842,7 @@ template &lt;class FR, class... FieldSpecRs>
       <code-item>
         <code>
 template &lt;class FR, class... FieldSpecRs>
-  wtable_scanner make_wrecord_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
+  [[nodiscard]] wtable_scanner make_wrecord_translator(FR&amp;&amp; f, FieldSpecRs&amp;&amp;... specs);
         </code>
         <effects><p>Equivalent to:</p>
                  <code>return make_basic_record_translator&lt;wchar_t>(
