@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-03-24 (UTC)</signature>
+<signature>2026-03-25 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -330,7 +330,7 @@
       </table>
 
       <p>A moved-from object whose type satisfies <c>TableHandler</c> requirements may cause undefined behaviour when used in terms of <xref id="table.table_handler.requirements"/>.</p>
-      <p>A type that meets the <c>TableHandler</c> requirements for a certain char-like type is called <n>deemed to have buffer control</n> if it satisfies both of (1) and (2) in <xref id="table.table_handler.requirements"/> without falling back on the defaults. Otherwise, it is called <n>deemed to have no buffer control</n>.</p>
+      <p>A type that meets the <c>TableHandler</c> requirements for a certain char-like type is called <n>deemed to have buffer control</n> if it satisfies both of (2) and (3) in <xref id="table.table_handler.requirements"/> without falling back on the defaults. Otherwise, it is called <n>deemed to have no buffer control</n>.</p>
     </section>
 
     <section id="table_parser.requirements">
@@ -2978,7 +2978,6 @@ namespace commata {
           <code>
 explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
           </code>
-          <requires><c>sb</c> shall be <c>nullptr</c> or a pointer to a valid stream buffer object.</requires>
           <effects>Initializes <c>in</c> with <c>std::addressof(sb)</c>.</effects>
         </code-item>
       </section>
@@ -3636,7 +3635,7 @@ template &lt;class... Args>
 return indirect_input&lt;decltype(in)>(std::move(in));
 </code>
                  <p>Otherwise, equivalent to: <c>return indirect_input&lt;Args...>(std::forward&lt;Args>(args)...);</c></p></effects>
-        <remark>This overload shall not participate in overload resolution unless the first type in <c>std::decay_t&lt;Args>...</c> (if any) is not identical to or not derived from <c>indirect_t</c>, and either <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand or <c>sizeof...(Args)</c> is equal to <c>1</c>.
+        <remark>This overload shall not participate in overload resolution unless <c>make_char_input(std::declval&lt;Args>()...)</c> is well-formed when treated as unevaluated operand or <c>sizeof...(Args)</c> is equal to <c>1</c>.
                 The expression inside <c>noexcept</c> is <c>true</c> unless the equivalent expressions described above is potentially-throwing.</remark>
       </code-item>
     </section>
