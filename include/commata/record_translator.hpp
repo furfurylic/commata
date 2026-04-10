@@ -583,8 +583,8 @@ private:
     }
 };
 
-template <class Ch, class Tr = std::char_traits<Ch>, bool UsesAllocatorForPred, class Allocator,
-          class FR, class... FieldSpecRs>
+template <class Ch, class Tr = std::char_traits<Ch>, bool UsesAllocatorForPred,
+          class Allocator, class FR, class... FieldSpecRs>
 [[nodiscard]] basic_table_scanner<Ch, Tr, Allocator>
     make_basic_record_translator_impl(
         const Allocator& alloc, FR&& f, FieldSpecRs&&... specs)
