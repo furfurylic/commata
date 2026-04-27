@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-03-25 (UTC)</signature>
+<signature>2026-05-01 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -8751,8 +8751,9 @@ template &lt;class T, class FieldNamePred>
           <ul>
             <li>(1) if <c>v.has_value()</c> evaluates to <c>true</c>:
                 <ul>
-                  <li>(1a) if the predicate <c>field_name_preds[i]</c> evaluates to <c>true</c> on [<c>v->first</c>, <c>v->second</c>) for a certain integer value <c>i</c> in [<c>0</c>, <c>N</c>) that never appeared as <c>i</c> itself in the preceding occurrences of this (that is, (1a)) so far,
-                    then evaluates <c>t.set_field_scanner(j, std::move(factories[i])(rp(i)))</c> and returns <c>true</c>,</li>
+                  <li>(1a) if the predicate <c>field_name_preds[i]</c> evaluates to <c>true</c> on [<c>v->first</c>, <c>v->second</c>) for a certain integer value <c>i</c> in [<c>0</c>, <c>N</c>) that never appeared as <c>imin</c> in the preceding occurrences of this (that is, (1a)) so far,
+                    then evaluates <c>t.set_field_scanner(j, std::move(factories[i])(rp(imin)))</c> where <c>imin</c> is the minimum of the qualified values of <c>i</c>,
+                    and returns <c>true</c>,</li>
                   <li>(1b) otherwise, then simply returns <c>true</c>,</li>
                 </ul>
             </li>
