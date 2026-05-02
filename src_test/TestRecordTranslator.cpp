@@ -152,6 +152,30 @@ TEST_F(TestRecordTranslator, Allocators)
         // #3: making of a100 + "\n-10"
 }
 
+TEST_F(TestRecordTranslator, Duplication)
+{
+    std::string s1;
+    double s2;
+    int s3;
+
+    auto t = make_record_translator(
+        [&s1, &s2, &s3](std::string&& f1, double f2, int f3) {
+            std::tie(s1, s2, s3) =
+                std::forward_as_tuple(std::move(f1), f2, f3);
+        },
+        field_spec<std::string>("ABC"),
+        field_spec<double>("ABC"),
+        field_spec<int>("ABC"));
+    parse_tsv(
+        make_char_input(
+            "ABC\tABC\tABC\n"
+            "1\t2\t3\n"),
+        std::move(t));
+    ASSERT_EQ("1"sv, s1);
+    ASSERT_EQ(2.0, s2);
+    ASSERT_EQ(3, s3);
+}
+
 // Compile-time tests of deduction guides
 
 static_assert(std::is_same_v<
