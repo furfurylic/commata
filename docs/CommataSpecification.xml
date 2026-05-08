@@ -9238,21 +9238,21 @@ primitive_table_pull_state state() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(1)</c></td>
+            <td>(1)</td>
             <td><c>before_parse</c></td>
             <td><c>operator()</c> has never been called yet.</td>
             <td>0</td>
           </tr>
 
           <tr>
-            <td><c>(2)</c></td>
+            <td>(2)</td>
             <td><c>eof</c></td>
             <td>The table parser has already consumed all content of its tied table source.</td>
             <td>0</td>
           </tr>
 
           <tr>
-            <td><c>(3)</c></td>
+            <td>(3)</td>
             <td><c>start_buffer</c></td>
             <td>The front of the event queue is the invocation of <c>start_buffer</c> on <c>h</c>.
                 The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
@@ -9261,7 +9261,7 @@ primitive_table_pull_state state() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(4)</c></td>
+            <td>(4)</td>
             <td><c>end_buffer</c></td>
             <td>The front of the event queue is the invocation of <c>end_buffer</c> on <c>h</c>.
                 The argument of the invocation is available as <c>(*this)[0]</c>
@@ -9271,7 +9271,7 @@ primitive_table_pull_state state() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(5)</c></td>
+            <td>(5)</td>
             <td><c>empty_physical_line</c></td>
             <td>The front of the event queue is the invocation of <c>empty_physical_line</c> on <c>h</c>.
                 The argument of the invocation is available as <c>(*this)[0]</c>
@@ -9280,7 +9280,7 @@ primitive_table_pull_state state() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(6)</c></td>
+            <td>(6)</td>
             <td><c>start_record</c></td>
             <td>The front of the event queue is the invocation of <c>start_record</c> on <c>h</c>.
                 The argument of the invocation is available as <c>(*this)[0]</c>
@@ -9289,7 +9289,7 @@ primitive_table_pull_state state() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(7)</c></td>
+            <td>(7)</td>
             <td><c>end_record</c></td>
             <td>The front of the event queue is the invocation of <c>end_record</c> on <c>h</c>.
                 The argument of the invocation is available as <c>(*this)[0]</c>
@@ -9298,7 +9298,7 @@ primitive_table_pull_state state() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(8)</c></td>
+            <td>(8)</td>
             <td><c>update</c></td>
             <td>The front of the event queue is the invocation of <c>update</c> on <c>h</c>.
                 The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
@@ -9307,7 +9307,7 @@ primitive_table_pull_state state() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(9)</c></td>
+            <td>(9)</td>
             <td><c>finalize</c></td>
             <td>The front of the event queue is the invocation of <c>finalize</c> on <c>h</c>.
                 The arguments of the invocation are available as <c>(*this)[0]</c> and <c>(*this)[1]</c> in order
@@ -9610,7 +9610,7 @@ table_pull_state state() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(1)</c></td>
+            <td>(1)</td>
             <td><c>before_parse</c></td>
             <td>Neither <c>operator()</c> nor <c>skip_record</c> has never been called yet.</td>
             <td>An empty string</td>
@@ -9618,7 +9618,7 @@ table_pull_state state() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(2)</c></td>
+            <td>(2)</td>
             <td><c>eof</c></td>
             <td><c>*this</c> has already consumed all content of the table source.</td>
             <td>An empty string</td>
@@ -9626,7 +9626,7 @@ table_pull_state state() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(3)</c></td>
+            <td>(3)</td>
             <td><c>field</c></td>
             <td><c>*this</c> has reached a text field with the latest call of <c>operator()</c>.</td>
             <td>The text value of the text field</td>
@@ -9634,7 +9634,7 @@ table_pull_state state() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(4)</c></td>
+            <td>(4)</td>
             <td><c>record_end</c></td>
             <td><c>*this</c> has reached an end of the a text record with the latest call of <c>operator()</c> or <c>skip_record</c>.</td>
             <td>An empty string</td>
@@ -9691,28 +9691,28 @@ std::pair&lt;std::size_t, std::size_t> get_position() const noexcept;
           </tr>
 
           <tr>
-            <td><c>(1)</c></td>
+            <td>(1)</td>
             <td><c>before_parse</c></td>
             <td>Unspecified</td>
             <td>Unspecified</td>
           </tr>
 
           <tr>
-            <td><c>(2)</c></td>
+            <td>(2)</td>
             <td><c>eof</c></td>
             <td>The number of text records successfully read</td>
             <td>The number of text fields successfully read after the last text record successfully read</td>
           </tr>
 
           <tr>
-            <td><c>(3)</c></td>
+            <td>(3)</td>
             <td><c>field</c></td>
             <td>The zero-based index of the text record</td>
             <td>The zero-based index of the field in the text record</td>
           </tr>
 
           <tr>
-            <td><c>(4)</c></td>
+            <td>(4)</td>
             <td><c>record_end</c></td>
             <td>The zero-based index of the text record</td>
             <td>The number of the text fields contained in the text record</td>
