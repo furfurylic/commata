@@ -11,16 +11,17 @@
     <head>
       <title><xsl:apply-templates select="title/node()" mode="title"/></title>
       <style type="text/css"><xsl:text disable-output-escaping="yes">
-        body { margin: 1em 5% 90em 5%; font-family: sans-serif; line-height: 1.3em }
-        h1 { font-size: 250%; margin-bottom: 0.4em; font-weight: normal }
-        h2 { font-size: 220%; margin: 1.6em 0 0.8em 0; font-weight: normal }
-        h3 { font-size: 180%; margin: 2em 0 1em 0; font-weight: normal }
+        body { margin: 0; padding: 0; font-family: sans-serif; line-height: 1.3em }
+        div#body { margin: 1em 3% 90em 3% }
+        h1 { font-size: 250%; margin-bottom: 0.4em; font-weight: normal; line-height: 1.3em }
+        h2 { font-size: 220%; margin: 1.6em 0 0.8em 0; font-weight: normal; line-height: 1.3em }
+        h3 { font-size: 180%; margin: 2em 0 1em 0; font-weight: normal; line-height: 1.3em }
         h2 + h3 { margin-top: 1em }
-        h4 { font-size: 160%; margin: 2em 0 1em 0; font-weight: normal }
+        h4 { font-size: 160%; margin: 2em 0 1em 0; font-weight: normal; line-height: 1.3em }
         h3 + h4 { margin-top: 1em }
-        h5 { font-size: 140%; margin: 2.4em 0 1.2em 0; font-weight: normal }
+        h5 { font-size: 140%; margin: 2.4em 0 1.2em 0; font-weight: normal; line-height: 1.3em }
         h4 + h5 { margin-top: 1.2em }
-        h6 { font-size: 120%; margin: 2.4em 0 1.2em 0; font-weight: normal }
+        h6 { font-size: 120%; margin: 2.4em 0 1.2em 0; font-weight: normal; line-height: 1.3em }
         h5 + h6 { margin-top: 1.2em }
         p, ul, li { margin: 0.5em 0 }
 
@@ -65,21 +66,50 @@
         div#toc li { margin: 0.2em 0 }
         div#toc a code  { color: inherit }
 
+        div#nav { display: none }
+
+        @media screen and (min-width: 96em) {
+          div#body { margin-left: calc(24em + 4%) }
+
+          p#nav-heading { font-size: 120%; margin-bottom: 0.8em }
+          div#nav { display: block; position: fixed; top: 0; bottom: 0; left: 0; overflow: auto; width: 23em; margin: 0.5em }
+          div#nav ul { padding-left: 1em; list-style-type: none; margin: 0 }
+          div#nav > ul { padding-left: 0 }
+          div#nav > ul > li > ul { padding-left: 0.5em }
+          div#nav li { margin: 0.2em 0; overflow-wrap: anywhere }
+          div#nav a:link { text-decoration: none }
+          div#nav a code  { color: inherit; font-family: inherit }
+          div#nav li.nav-1 > span.nav-line { font-weight: bold }
+          div#nav li.nav-1 > ul { padding-bottom: 0.8em }
+          div#nav li.nav-2 > ul { padding-bottom: 0.4em }
+          div#nav li.nav-3 > span.nav-line { font-size: 96% }
+          div#nav li.nav-4 > span.nav-line { font-size: 92% }
+          div#nav li.nav-5 > span.nav-line { font-size: 88% }
+        }
+
         @media print {
           body { margin: 0; font-family: sans-serif }
         }
       </xsl:text></style>
     </head>
     <body>
-      <h1><xsl:apply-templates select="title/node()"/></h1>
-      <p id="signature"><xsl:apply-templates select="signature"/></p>
-      <div id="toc">
-        <p id="toc-heading">Contents</p>
+      <div id="nav">
+        <p id="nav-heading">Contents</p>
         <ul>
-          <xsl:apply-templates select="section" mode="toc"/>
+          <xsl:apply-templates select="section" mode="nav"/>
         </ul>
       </div>
-      <xsl:apply-templates select="section"/>
+      <div id="body">
+        <h1><xsl:apply-templates select="title/node()"/></h1>
+        <p id="signature"><xsl:apply-templates select="signature"/></p>
+        <div id="toc">
+          <p id="toc-heading">Contents</p>
+          <ul>
+            <xsl:apply-templates select="section" mode="toc"/>
+          </ul>
+        </div>
+        <xsl:apply-templates select="section"/>
+      </div>
     </body>
   </html>
 </xsl:template>
@@ -94,6 +124,18 @@
     <xsl:if test="section">
       <ul>
         <xsl:apply-templates select="section" mode="toc"/>
+      </ul>
+    </xsl:if>
+  </li>
+</xsl:template>
+
+<xsl:template match="section" mode="nav">
+  <xsl:variable name="depth"><xsl:apply-templates select="." mode="depth"/></xsl:variable>
+  <li class="nav-{$depth}">
+    <span class="nav-line"><xsl:call-template name="toc-xref"/></span>
+    <xsl:if test="section">
+      <ul>
+        <xsl:apply-templates select="section" mode="nav"/>
       </ul>
     </xsl:if>
   </li>
