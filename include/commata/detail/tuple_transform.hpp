@@ -27,7 +27,7 @@ constexpr auto transform_impl(std::index_sequence<Is...>,
     [[maybe_unused]] F&& f, [[maybe_unused]] Tuples&&... ts)
 {
     using r_t = std::tuple<decltype(
-        apply<Is>(std::forward<F>(f), std::forward<Tuples>(ts)...))...>;
+        apply<Is>(std::declval<F&&>(), std::declval<Tuples&&>()...))...>;
     return r_t(apply<Is>(std::forward<F>(f), std::forward<Tuples>(ts)...)...);
 }
 
