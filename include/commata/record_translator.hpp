@@ -565,7 +565,9 @@ public:
         std::apply(
             f_,
             transform(
-                [](auto& v) -> decltype(auto) { return std::move(v).unwrap(); },
+                [](auto& v) -> decltype(auto) {
+                    return std::move(v).unwrap();
+                },
                 *field_values_));
     }
 
