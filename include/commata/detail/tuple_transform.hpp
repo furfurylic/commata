@@ -15,20 +15,28 @@
 
 namespace commata::detail {
 
-template <std::size_t I, class F, class... Tuples>
-constexpr decltype(auto) apply(F&& f, Tuples&&... t)
+template <std::size_t I, bool IsL, class F, class... Tuples>
+constexpr decltype(auto) apply(F f, Tuples&&... t)
 {
-    return std::invoke(std::forward<F>(f),
-                       std::get<I>(std::forward<Tuples>(t))...);
+    if constexpr (IsL) {
+        return std::invoke(f,
+                           std::get<I>(std::forward<Tuples>(t))...);
+    } else {
+        return std::invoke(std::move(f),
+                           std::get<I>(std::forward<Tuples>(t))...);
+    }
 }
 
 template <std::size_t... Is, class F, class... Tuples>
 constexpr auto transform_impl(std::index_sequence<Is...>,
     [[maybe_unused]] F&& f, [[maybe_unused]] Tuples&&... ts)
 {
+    constexpr bool IsL = std::is_lvalue_reference_v<F>;
     using r_t = std::tuple<decltype(
-        apply<Is>(std::forward<F>(f), std::forward<Tuples>(ts)...))...>;
-    return r_t(apply<Is>(std::forward<F>(f), std::forward<Tuples>(ts)...)...);
+        apply<Is, IsL>(f, std::declval<Tuples>()...))...>;
+    return r_t(apply<Is, IsL>(f, std::forward<Tuples>(ts)...)...);
+        // Multiple forwarding of the elements of ts would not occur
+        // because "apply" forwards only one element pointed by "I"
 }
 
 template <class F, class... Tuples>
