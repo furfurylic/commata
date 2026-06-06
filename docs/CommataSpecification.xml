@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-05-01 (UTC)</signature>
+<signature>2026-06-06 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2107,24 +2107,24 @@ static constexpr std::size_t size = <nc>see below</nc>;
         <section id="replace_if_conversion_failed.cons">
           <name><c>replace_if_conversion_failed</c> construct/copy/destroy</name>
 
-          <p>In this subclause, a type <c>A</c> <n>implies a fail action</n> if and only if <c>std::is_base_of_v&lt;replacement_fail_t, std::decay_t&lt;A>></c> is <c>true</c>.
-             Similarly, a type <c>A</c> <n>implies an ignore action</n> if and only if <c>std::is_base_of_v&lt;replacement_ignore_t, std::decay_t&lt;A>></c> is <c>true</c>.
-             In addition, let <c><nc>IS_ACCEPTABLE</nc>&lt;A></c> be a <c>bool</c> value that is <c>true</c> if and only if:</p>
+          <p>In this subclause, a type <c>A</c> <n>implies a fail action</n> if and only if <c>std::is_base_of_v&lt;replacement_fail_t, A></c> is <c>true</c>.
+             Similarly, a type <c>A</c> <n>implies an ignore action</n> if and only if <c>std::is_base_of_v&lt;replacement_ignore_t, A></c> is <c>true</c>.
+             In addition, let <c><nc>IS_ACCEPTABLE</nc>&lt;T, A></c> be a <c>bool</c> value that is <c>true</c> if and only if:</p>
           <ul>
-            <li><c>A</c> implies a fail action,</li>
-            <li><c>A</c> implies an ignore action,</li>
-            <li><c>std::is_contructible_v&lt;T, A&amp;&amp;></c> is <c>true</c>.</li>
+            <li><c>std::remove_reference_t&lt;A></c> implies a fail action,</li>
+            <li><c>std::remove_reference_t&lt;A></c> implies an ignore action,</li>
+            <li><c>std::is_contructible_v&lt;T, A></c> is <c>true</c>.</li>
           </ul>
-          <p>And let <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;A></c> be a <c>bool</c> value that is <c>true</c> if and only if:</p>
+          <p>And let <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, A></c> be a <c>bool</c> value that is <c>true</c> if and only if:</p>
           <ul>
-            <li><c>A</c> implies a fail action,</li>
-            <li><c>A</c> implies an ignore action,</li>
-            <li><c>std::is_nothrow_contructible_v&lt;T, A&amp;&amp;></c> is <c>true</c>.</li>
+            <li><c>std::remove_reference_t&lt;A></c> implies a fail action,</li>
+            <li><c>std::remove_reference_t&lt;A></c> implies an ignore action,</li>
+            <li><c>std::is_nothrow_contructible_v&lt;T, A></c> is <c>true</c>.</li>
           </ul>
           <p>To <n>arrage</n> a replacement action from an expression <c>a</c> means:</p>
           <ul>
-            <li>if <c>decltype(a)</c> implies a fail action, the replacement action is configured to be <c>fail</c>,</li>
-            <li>if <c>decltype(a)</c> implies a ignore action, the replacement action is configured to be <c>ignore</c>,</li>
+            <li>if <c>std::remove_reference_t&lt;decltype(a)></c> implies a fail action, the replacement action is configured to be <c>fail</c>,</li>
+            <li>if <c>std::remove_reference_t&lt;decltype(a)></c> implies a ignore action, the replacement action is configured to be <c>ignore</c>,</li>
             <li>otherwise, the replacement action is configured to be <c>copy</c> with an object of <c>T</c> constructed from <c>a</c>.</li>
           </ul>
           <p>To <n>move-arrage</n> a replacement action from an lvalue <c>a</c> means to arrange a replacement action from <c>std::move(a)</c>.</p>
@@ -2135,7 +2135,7 @@ template &lt;class All = T>
   replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
             </code>
             <effects>Arranges all configurable replacement actions from <c>for_all</c>.</effects>
-            <remark>This overload shall not participate in overload resolution unless <c><nc>IS_ACCEPTABLE</nc>&lt;const All&amp;></c> is <c>true</c>.
+            <remark>This overload shall not participate in overload resolution unless <c><nc>IS_ACCEPTABLE</nc>&lt;T, const All&amp;></c> is <c>true</c>.
                     The expression inside <c>noexcept</c> is equvalent to <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, const All&amp;></c>.</remark>
           </code-item>
 
@@ -2147,8 +2147,8 @@ template &lt;class Empty, class AllButEmpty>
             </code>
             <effects>Move-arranges <c>action_on_empty</c> from <c>on_empty</c>.
                      Arranges all other configurable replacement actions from <c>for_all_but_empty</c>.</effects>
-            <remark>This overload shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c> and <c>const AllButEmpty&amp;</c>.
-                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c> and <c>const AllButEmpty&amp;</c>.</remark>
+            <remark>This overload shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;T, U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c> and <c>const AllButEmpty&amp;</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c> and <c>const AllButEmpty&amp;</c>.</remark>
           </code-item>
 
           <code-item>
@@ -2161,8 +2161,8 @@ template &lt;class Empty, class InvalidFormat, class AllOutOfRanges>
             <effects>Move-arranges <c>action_on_empty</c> and <c>action_on_invalid_format</c> from <c>on_empty</c> and <c>on_invalid_format</c> respectively.
                      Arranges all other configurable replacement actions from <c>for_all_out_of_ranges</c>.</effects>
             <remark>This overload shall not be declared if <c>T</c> is an unsigned integer type.
-                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c>, <c>InvalidFormat&amp;&amp;</c> and <c>const AllOutOfRanges&amp;</c>.
-                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c>, <c>InvalidFormat&amp;&amp;</c> and <c>const AllOutOfRanges&amp;</c>.</remark>
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;T, U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c>, <c>InvalidFormat&amp;&amp;</c> and <c>const AllOutOfRanges&amp;</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, U></c> is <c>false</c> for each type <c>U</c> in <c>Empty&amp;&amp;</c>, <c>InvalidFormat&amp;&amp;</c> and <c>const AllOutOfRanges&amp;</c>.</remark>
           </code-item>
 
           <code-item>
@@ -2175,8 +2175,8 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit>
             <effects>Move-arranges <c>action_on_empty</c>, <c>action_on_invalid_format</c> and <c>action_on_above_upper_limit</c> from <c>on_empty</c>, <c>on_invalid_format</c> and <c>on_above_upper_limit</c> respectively.
                      Configures <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> to be <c>fail</c>.</effects>
             <remark>This overload shall not be declared unless <c>T</c> is an unsigned integer type.
-                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.
-                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.</remark>
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;T, U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c> and <c>AboveUpperLimit</c>.</remark>
           </code-item>
 
           <code-item>
@@ -2190,8 +2190,8 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
             <effects>Move-arranges <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c> and <c>action_on_below_lower_limit</c> from <c>on_empty</c>, <c>on_invalid_format</c>, <c>on_above_upper_limit</c> and <c>on_below_lower_limit</c> respectively.
                      Configures <c>action_on_underflow</c> to be <c>fail</c>.</effects>
             <remark>This overload shall not be declared unless <c>T</c> is an signed integer type.
-                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.
-                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.</remark>
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;T, U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c> and <c>BelowLowerLimit</c>.</remark>
           </code-item>
 
           <code-item>
@@ -2206,8 +2206,8 @@ template &lt;class Empty, class InvalidFormat, class AboveUpperLimit, class Belo
             </code>
             <effects>Move-arranges <c>action_on_empty</c>, <c>action_on_invalid_format</c>, <c>action_on_above_upper_limit</c>, <c>action_on_below_lower_limit</c> and <c>action_on_underflow</c> from <c>on_empty</c>, <c>on_invalid_format</c>, <c>on_above_upper_limit</c>, <c>on_below_lower_limit</c> and <c>on_below_lower_limit</c> respectively.</effects>
             <remark>This overload shall not be declared if <c>T</c> is an integer type.
-                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.
-                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.</remark>
+                    It shall not participate in overload resolution if any of <c><nc>IS_ACCEPTABLE</nc>&lt;T, U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.
+                    The expression inside <c>noexcept</c> is <c>true</c> if and only if none of <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, U&amp;&amp;></c> is <c>false</c> for each type <c>U</c> in <c>Empty</c>, <c>InvalidFormat</c>, <c>AboveUpperLimit</c>, <c>BelowLowerLimit</c> and <c>Underflow</c>.</remark>
           </code-item>
 
           <code-item>
