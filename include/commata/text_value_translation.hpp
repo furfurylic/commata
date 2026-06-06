@@ -379,7 +379,7 @@ struct converter<T, std::void_t<typename numeric_type_traits<T>::raw_type>> :
 
 struct fail_if_conversion_failed
 {
-    fail_if_conversion_failed(replacement_fail_t = replacement_fail)
+    explicit fail_if_conversion_failed(replacement_fail_t = replacement_fail)
     {}
 
     template <class T, class Ch>
@@ -479,7 +479,8 @@ private:
 
 struct ignore_if_conversion_failed
 {
-    ignore_if_conversion_failed(replacement_ignore_t = replacement_ignore)
+    explicit ignore_if_conversion_failed(
+        replacement_ignore_t = replacement_ignore)
     {}
 
     std::nullopt_t operator()(invalid_format_t) const
@@ -836,7 +837,15 @@ template <class T>
 struct base<T, 3> : base_base<T, 3>
 {
     template <class All = T,
-        std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<!std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+    explicit base(const All& for_all = All()) :
+        base(for_all, for_all, for_all)
+    {}
+
+    template <class All = T,
+        std::enable_if_t<std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
     base(const All& for_all = All()) :
         base(for_all, for_all, for_all)
     {}
@@ -875,7 +884,15 @@ template <class T>
 struct base<T, 4> : base_base<T, 4>
 {
     template <class All = T,
-        std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<!std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+    explicit base(const All& for_all = All()) :
+        base(for_all, for_all, for_all, for_all)
+    {}
+
+    template <class All = T,
+        std::enable_if_t<std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
     base(const All& for_all = All()) :
         base(for_all, for_all, for_all, for_all)
     {}
@@ -931,7 +948,15 @@ template <class T>
 struct base<T, 5> : base_base<T, 5>
 {
     template <class All = T,
-        std::enable_if_t<is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<!std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+    explicit base(const All& for_all = All()) :
+        base(for_all, for_all, for_all, for_all, for_all)
+    {}
+
+    template <class All = T,
+        std::enable_if_t<std::is_convertible_v<const All&, T>
+                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
     base(const All& for_all = All()) :
         base(for_all, for_all, for_all, for_all, for_all)
     {}
