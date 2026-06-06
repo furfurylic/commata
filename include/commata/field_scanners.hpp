@@ -259,11 +259,11 @@ public:
         store_(generic_args_t(), std::forward<U>(u))
     {}
 
-    explicit replace_if_skipped(replacement_fail_t) noexcept :
+    replace_if_skipped(replacement_fail_t) noexcept :
         store_(detail::replace_mode::fail)
     {}
 
-    explicit replace_if_skipped(replacement_ignore_t) noexcept :
+    replace_if_skipped(replacement_ignore_t) noexcept :
         store_(detail::replace_mode::ignore)
     {}
 

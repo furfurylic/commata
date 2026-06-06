@@ -7169,8 +7169,8 @@ namespace commata {
     <c>// <n><xref id="replace_if_skipped.cons"/>, construct/copy/destroy:</n></c>
     template &lt;class U = T>
       <nc>EXPLICIT</nc> replace_if_skipped(U&amp;&amp; u = std::decay_t&lt;U>()) noexcept(<nc>see below</nc>);
-    explicit replace_if_skipped(replacement_fail_t) noexcept;
-    explicit replace_if_skipped(replacement_ignore_t) noexcept;
+    replace_if_skipped(replacement_fail_t) noexcept;
+    replace_if_skipped(replacement_ignore_t) noexcept;
     replace_if_skipped(const replace_if_skipped&amp;  other) noexcept(<nc>see below</nc>);
     replace_if_skipped(      replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
    ~replace_if_skipped();
@@ -7220,14 +7220,14 @@ template &lt;class U = T>
 
           <code-item>
             <code>
-explicit replace_if_skipped(replacement_fail_t) noexcept;
+replace_if_skipped(replacement_fail_t) noexcept;
             </code>
             <effects>Configures the replacement action to be <c>fail</c>.</effects>
           </code-item>
 
           <code-item>
             <code>
-explicit replace_if_skipped(replacement_ignore_t) noexcept;
+replace_if_skipped(replacement_ignore_t) noexcept;
             </code>
             <effects>Configures the replacement action to be <c>ignore</c>.</effects>
           </code-item>
