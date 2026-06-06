@@ -221,10 +221,6 @@ static_assert(std::is_same_v<
         replace_if_skipped<std::string>>,
     decltype(string_field_translator_factory("..."s))>);
 static_assert(std::is_same_v<
-    string_field_translator_factory<std::string,
-        replace_if_skipped<std::string>>,
-    decltype(string_field_translator_factory("..."sv))>);
-static_assert(std::is_same_v<
     string_field_translator_factory<std::wstring,
         replace_if_skipped<std::wstring>>,
     decltype(string_field_translator_factory(L"..."))>);

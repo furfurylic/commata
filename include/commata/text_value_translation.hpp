@@ -379,7 +379,7 @@ struct converter<T, std::void_t<typename numeric_type_traits<T>::raw_type>> :
 
 struct fail_if_conversion_failed
 {
-    explicit fail_if_conversion_failed(replacement_fail_t = replacement_fail)
+    fail_if_conversion_failed(replacement_fail_t = replacement_fail)
     {}
 
     template <class T, class Ch>
@@ -479,8 +479,7 @@ private:
 
 struct ignore_if_conversion_failed
 {
-    explicit ignore_if_conversion_failed(
-        replacement_ignore_t = replacement_ignore)
+    ignore_if_conversion_failed(replacement_ignore_t = replacement_ignore)
     {}
 
     std::nullopt_t operator()(invalid_format_t) const

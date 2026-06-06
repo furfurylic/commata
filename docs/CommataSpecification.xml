@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-05-01 (UTC)</signature>
+<signature>2026-06-06 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1936,7 +1936,7 @@ namespace commata {
         <codeblock>
 namespace commata {
   struct fail_if_conversion_failed {
-    explicit fail_if_conversion_failed(replacement_fail_t = replacement_fail) {}
+    fail_if_conversion_failed(replacement_fail_t = replacement_fail) {}
 
     template &lt;class T, class Ch>
       [[noreturn]] T operator()(invalid_format_t, const Ch*, const Ch*, T* = nullptr) const;
@@ -1982,7 +1982,7 @@ template &lt;class T>
         <codeblock>
 namespace commata {
   struct ignore_if_conversion_failed {
-    explicit ignore_if_conversion_failed(replacement_ignore_t = replacement_ignore) {}
+    ignore_if_conversion_failed(replacement_ignore_t = replacement_ignore) {}
 
     std::nullopt_t operator()(invalid_format_t) const;
     std::nullopt_t operator()(out_of_range_t) const;
@@ -7117,7 +7117,7 @@ namespace commata {
         <codeblock>
 namespace commata {
   struct fail_if_skipped {
-    explicit fail_if_skipped(replacement_fail_t = replacement_fail) {}
+    fail_if_skipped(replacement_fail_t = replacement_fail) {}
     template &lt;class T> [[noreturn]] T operator()(T* = nullptr) const;
   };
 }
@@ -7140,7 +7140,7 @@ template &lt;class T> [[noreturn]] T operator()(T* = nullptr) const;
         <codeblock>
 namespace commata {
   struct ignore_if_skipped {
-    explicit ignore_if_skipped(replacement_ignore_t = replacement_ignore) {}
+    ignore_if_skipped(replacement_ignore_t = replacement_ignore) {}
     std::nullopt_t operator()() const;
   };
 }

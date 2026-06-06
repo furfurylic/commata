@@ -31,7 +31,7 @@ public:
 
 struct fail_if_skipped
 {
-    explicit fail_if_skipped(replacement_fail_t = replacement_fail)
+    fail_if_skipped(replacement_fail_t = replacement_fail)
     {}
 
     template <class T>
@@ -45,7 +45,7 @@ struct fail_if_skipped
 
 struct ignore_if_skipped
 {
-    explicit ignore_if_skipped(replacement_ignore_t = replacement_ignore)
+    ignore_if_skipped(replacement_ignore_t = replacement_ignore)
     {}
 
     std::nullopt_t operator()() const
