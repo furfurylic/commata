@@ -70,6 +70,10 @@
 
         div#nav { display: none }
 
+        @media screen {
+          pre { padding: 0.4em }
+        }
+
         @media screen and (min-width: 96em) {
           div#body { margin-left: calc(24em + 4%) }
 
