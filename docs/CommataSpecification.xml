@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-06-06 (UTC)</signature>
+<signature>2026-06-07 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2137,7 +2137,8 @@ template &lt;class All = T>
             <effects>Arranges all configurable replacement actions from <c>for_all</c>.</effects>
             <remark>This overload shall not participate in overload resolution unless <c><nc>IS_ACCEPTABLE</nc>&lt;const All&amp;></c> is <c>true</c>.
                     The expression inside <c>noexcept</c> is equvalent to <c><nc>IS_NOTHROW_ACCEPTABLE</nc>&lt;T, const All&amp;></c>.
-                    This constructor is explicit if and only if <c>std::is_convertible_v&lt;const All&amp;, T></c> is <c>false</c>.</remark>
+                    This constructor is explicit if and only if <c>All</c> is either <c>replacement_fail_t</c> or <c>replacement_ignore_t</c>,
+                    or <c>std::is_convertible_v&lt;const All&amp;, T></c> is <c>false</c>.</remark>
           </code-item>
 
           <code-item>

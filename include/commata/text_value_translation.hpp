@@ -788,16 +788,24 @@ void swap(nontrivial_store<T, N>& left, nontrivial_store<T, N>& right)
     left.swap(right);
 }
 
+template <class A>
+constexpr bool is_replacement_tag_v =
+    std::is_base_of_v<replacement_fail_t, A>
+ || std::is_base_of_v<replacement_ignore_t, A>;
+
 template <class T, class A>
 constexpr bool is_acceptable_arg_v =
-    std::is_base_of_v<replacement_fail_t, std::decay_t<A>>
- || std::is_base_of_v<replacement_ignore_t, std::decay_t<A>>
+    is_replacement_tag_v<std::remove_reference_t<A>>
  || std::is_constructible_v<T, A>;
 
 template <class T, class A>
+constexpr bool is_implicitly_acceptable_arg_v =
+    is_replacement_tag_v<std::remove_reference_t<A>>
+ || std::is_convertible_v<A, T>;
+
+template <class T, class A>
 constexpr bool is_nothrow_arg_v =
-    std::is_base_of_v<replacement_fail_t, std::decay_t<A>>
- || std::is_base_of_v<replacement_ignore_t, std::decay_t<A>>
+    is_replacement_tag_v<std::remove_reference_t<A>>
  || std::is_nothrow_constructible_v<T, A>;
 
 template <class T, unsigned N>
@@ -836,15 +844,16 @@ template <class T>
 struct base<T, 3> : base_base<T, 3>
 {
     template <class All = T,
-        std::enable_if_t<!std::is_convertible_v<const All&, T>
-                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<
+            is_acceptable_arg_v<T, const All&>
+         && !is_implicitly_acceptable_arg_v<T, const All&>>* = nullptr>
     explicit base(const All& for_all = All()) :
         base(for_all, for_all, for_all)
     {}
 
     template <class All = T,
-        std::enable_if_t<std::is_convertible_v<const All&, T>
-                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<
+            is_implicitly_acceptable_arg_v<T, const All&>>* = nullptr>
     base(const All& for_all = All()) :
         base(for_all, for_all, for_all)
     {}
@@ -883,15 +892,16 @@ template <class T>
 struct base<T, 4> : base_base<T, 4>
 {
     template <class All = T,
-        std::enable_if_t<!std::is_convertible_v<const All&, T>
-                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<
+            is_acceptable_arg_v<T, const All&>
+         && !is_implicitly_acceptable_arg_v<T, const All&>>* = nullptr>
     explicit base(const All& for_all = All()) :
         base(for_all, for_all, for_all, for_all)
     {}
 
     template <class All = T,
-        std::enable_if_t<std::is_convertible_v<const All&, T>
-                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<
+            is_implicitly_acceptable_arg_v<T, const All&>>* = nullptr>
     base(const All& for_all = All()) :
         base(for_all, for_all, for_all, for_all)
     {}
@@ -947,15 +957,16 @@ template <class T>
 struct base<T, 5> : base_base<T, 5>
 {
     template <class All = T,
-        std::enable_if_t<!std::is_convertible_v<const All&, T>
-                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<
+            is_acceptable_arg_v<T, const All&>
+         && !is_implicitly_acceptable_arg_v<T, const All&>>* = nullptr>
     explicit base(const All& for_all = All()) :
         base(for_all, for_all, for_all, for_all, for_all)
     {}
 
     template <class All = T,
-        std::enable_if_t<std::is_convertible_v<const All&, T>
-                      && is_acceptable_arg_v<T, const All&>>* = nullptr>
+        std::enable_if_t<
+            is_implicitly_acceptable_arg_v<T, const All&>>* = nullptr>
     base(const All& for_all = All()) :
         base(for_all, for_all, for_all, for_all, for_all)
     {}
