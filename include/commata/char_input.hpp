@@ -112,6 +112,12 @@ public:
         in_(std::move(in))
     {}
 
+    template <class... Args>
+    explicit owned_streambuf_input(std::in_place_t, Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<Streambuf, Args...>) :
+        in_(std::forward<Args>(args)...)
+    {}
+
     owned_streambuf_input(owned_streambuf_input&& other) = default;
     ~owned_streambuf_input() = default;
     owned_streambuf_input& operator=(owned_streambuf_input&& other) = default;
@@ -193,6 +199,12 @@ public:
     explicit owned_istream_input(IStream&& in)
         noexcept(std::is_nothrow_move_constructible_v<IStream>) :
         in_(std::move(in))
+    {}
+
+    template <class... Args>
+    explicit owned_istream_input(std::in_place_t, Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<IStream, Args...>) :
+        in_(std::forward<Args>(args)...)
     {}
 
     owned_istream_input(owned_istream_input&& other) = default;
@@ -315,6 +327,13 @@ public:
     explicit owned_string_input(std::basic_string<Ch, Tr, Allocator>&& str)
         noexcept :
         s_(std::move(str)), head_(0), front_(s_[head_])
+    {}
+
+    template <class... Args>
+    explicit owned_string_input(std::in_place_t, Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<
+            std::basic_string<Ch, Tr, Allocator>, Args...>) :
+        s_(std::forward<Args>(args)...), head_(0), front_(s_[head_])
     {}
 
     owned_string_input(owned_string_input&& other) noexcept :
