@@ -179,6 +179,15 @@ struct E
 static_assert(std::is_convertible_v<D, replace_if_conversion_failed<B>>);
 static_assert(!std::is_convertible_v<B, replace_if_conversion_failed<E>>);
 
+static_assert(
+    !std::is_convertible_v<
+        std::string_view,
+        replace_if_conversion_failed<std::string>>);
+static_assert(
+    std::is_constructible_v<
+        replace_if_conversion_failed<std::string>,
+        std::string_view>);
+
 } // end unnamed
 
 TYPED_TEST_SUITE(TestReplaceIfConversionFailed, ReplacedTypes, );
