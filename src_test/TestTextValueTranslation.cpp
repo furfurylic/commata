@@ -170,7 +170,27 @@ struct B
 struct D : B
 {};
 
+struct E
+{
+    explicit E(const B&)
+    {}
+};
+
 static_assert(std::is_convertible_v<D, replace_if_conversion_failed<B>>);
+static_assert(!std::is_convertible_v<B, replace_if_conversion_failed<E>>);
+
+static_assert(
+    std::is_convertible_v<
+        replacement_fail_t,
+        replace_if_conversion_failed<std::string>>);
+static_assert(
+    !std::is_convertible_v<
+        std::string_view,
+        replace_if_conversion_failed<std::string>>);
+static_assert(
+    std::is_constructible_v<
+        replace_if_conversion_failed<std::string>,
+        std::string_view>);
 
 } // end unnamed
 
