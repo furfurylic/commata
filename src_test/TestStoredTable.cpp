@@ -263,7 +263,7 @@ TYPED_TEST(TestStoredValueNoModification, Strings)
 {
     using char_t = TypeParam;
     using decayed_char_t = std::remove_const_t<char_t>;
-    using string_t =std::basic_string<decayed_char_t>;
+    using string_t = std::basic_string<decayed_char_t>;
     using value_t = basic_stored_value<char_t>;
 
     const auto str0 = char_helper<decayed_char_t>::str0;
@@ -1178,7 +1178,7 @@ struct TestStoredTableMerge : BaseTest
 
 namespace {
 
-using ContentLRs =testing::Types<
+using ContentLRs = testing::Types<
     std::pair<
         std::vector<std::vector<stored_value>>,
         std::vector<std::vector<stored_value>>>,
