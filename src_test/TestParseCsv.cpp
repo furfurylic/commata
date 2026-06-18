@@ -431,14 +431,14 @@ public:
 TEST_P(TestParseCsvBasics, ParsePointGood)
 {
     const auto l = "ABCD,EFGH,\"IJKL\"\r\n"sv;
-    const auto r =make_csv_source(l)(aborting_handler())();
+    const auto r = make_csv_source(l)(aborting_handler())();
     ASSERT_EQ(l.size(), get_parse_point(r));
 }
 
 TEST_P(TestParseCsvBasics, ParsePointAbortStartRecord)
 {
     const auto l = "ABCD,EFGH,\"ABORT start_record\"\r\n"sv;
-    const auto r =make_csv_source(std::string(l) + "\"IJKL\"")
+    const auto r = make_csv_source(std::string(l) + "\"IJKL\"")
         (aborting_handler())();
     ASSERT_EQ(l.size(), get_parse_point(r));
 }
@@ -446,7 +446,7 @@ TEST_P(TestParseCsvBasics, ParsePointAbortStartRecord)
 TEST_P(TestParseCsvBasics, ParsePointAbortEndRecord)
 {
     const auto l = "ABCD,EFGH,\"ABORT end_record\""sv;
-    const auto r =make_csv_source(std::string(l) + "\r\r\n")
+    const auto r = make_csv_source(std::string(l) + "\r\r\n")
         (aborting_handler())();
     ASSERT_EQ(l.size(), get_parse_point(r));
 }
@@ -454,7 +454,7 @@ TEST_P(TestParseCsvBasics, ParsePointAbortEndRecord)
 TEST_P(TestParseCsvBasics, ParsePointAbortEmptyPhysicalLine)
 {
     const auto l = "ABCD,EFGH,\"ABORT empty_physical_line\"\n"sv;
-    const auto r =make_csv_source(std::string(l) + "\nXYZ\n")
+    const auto r = make_csv_source(std::string(l) + "\nXYZ\n")
         (aborting_handler())();
     ASSERT_EQ(l.size(), get_parse_point(r));
 }
@@ -462,7 +462,7 @@ TEST_P(TestParseCsvBasics, ParsePointAbortEmptyPhysicalLine)
 TEST_P(TestParseCsvBasics, ParsePointAbortFinalize)
 {
     const auto l = "ABCD,EFGH,\"ABORT \"\"finalize\"\"\""sv;
-    const auto r =make_csv_source(std::string(l) + "\r\n")
+    const auto r = make_csv_source(std::string(l) + "\r\n")
         (aborting_handler())();
     ASSERT_EQ(l.size(), get_parse_point(r));
 }

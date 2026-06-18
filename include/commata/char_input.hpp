@@ -79,7 +79,7 @@ public:
     {}
 
     streambuf_input(const streambuf_input& other) = default;
-    streambuf_input& operator=(const streambuf_input&) =default;
+    streambuf_input& operator=(const streambuf_input&) = default;
 
     size_type operator()(Ch* out, size_type n)
     {
@@ -162,7 +162,7 @@ public:
     {}
 
     istream_input(const istream_input& other) = default;
-    istream_input& operator=(const istream_input&) =default;
+    istream_input& operator=(const istream_input&) = default;
 
     size_type operator()(Ch* out, size_type n)
     {
