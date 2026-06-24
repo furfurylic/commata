@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-06-07 (UTC)</signature>
+<signature>2026-06-23 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1567,13 +1567,15 @@ template &lt;class HandlerR>
   [[nodiscard]] <nc>see below</nc>
     make_empty_physical_line_aware(HandlerR&amp;&amp; handler) noexcept(<nc>see below</nc>);
           </code>
-          <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.
-                   Also let <c>T</c> be <c>Handler</c> if <c>Handler</c> has <c>empty_physical_line</c> member function that meets to the <c>TableHandler</c> requirements,
-                   <c>empty_physical_line_aware_handler&lt;Handler></c> otherwise.</preface>
-          <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</requires>
-          <returns>An object of <c>T</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c>.</returns>
-          <remark>This overload shall not participate in overload resolution unless <c>Handler</c> is not a specialization of <c>std::reference_wrapper</c>.
-                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;Handler, HandlerR&amp;&amp;></c>.</remark>
+          <requires><c>std::decay_t&lt;HandlerR></c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</requires>
+          <returns><p>An object of <c>T</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> where <c>T</c> is:</p>
+                   <ul>
+                     <li><c>std::decay_t&lt;HandlerR></c> if <c>std::declval&lt;std::decay_t&lt;HandlerR>&amp;>().empty_physical_line(std::declval&lt;typename std::decay_t&lt;HandlerR>::char_type*>())</c> is well-formed when treated as an unevaluated operand, or</li>
+                     <li><c>empty_physical_line_aware_handler&lt;Handler></c> otherwise.</li>
+                   </ul>
+          </returns>
+          <remark>This overload shall not participate in overload resolution unless <c>std::decay_t&lt;HandlerR></c> is not a specialization of <c>std::reference_wrapper</c>.
+                  The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;std::decay_t&lt;HandlerR>, HandlerR&amp;&amp;></c>.</remark>
         </code-item>
 
         <code-item>
