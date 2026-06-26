@@ -147,7 +147,8 @@ template <class Handler, class D>
 struct release_buffer_t<Handler, D,
     std::enable_if_t<has_release_buffer_v<Handler>>>
 {
-    auto release_buffer(typename Handler::char_type* buffer)
+    auto release_buffer(
+        std::remove_const_t<typename Handler::char_type>* buffer)
      -> decltype(std::declval<Handler&>().release_buffer(buffer))
     {
         return static_cast<D*>(this)->base().release_buffer(buffer);
