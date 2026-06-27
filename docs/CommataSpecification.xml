@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-06-23 (UTC)</signature>
+<signature>2026-06-26 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1065,7 +1065,7 @@ namespace commata {
 
     <c>// <n><xref id="reference_handler.inv"/>, invocation:</n></c>
     <nc>see below</nc> get_buffer();
-    <nc>see below</nc> release_buffer(char_type* buffer);
+    <nc>see below</nc> release_buffer(std::remove_const_t&lt;char_type>* buffer);
     template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
     template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
     template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
@@ -1148,10 +1148,12 @@ handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> release_buffer(char_type* buffer);
+<nc>see below</nc> release_buffer(std::remove_const_t&lt;char_type>* buffer);
           </code>
           <effects>Equivalent to: <c>return base().release_buffer(buffer);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().release_buffer(buffer)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().release_buffer(std::declval&lt;std::remove_const_t&lt;char_type*>>())</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This member function shall not be declared unless <c>E</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1310,7 +1312,7 @@ namespace commata {
 
     <c>// <n><xref id="empty_physical_line_aware_handler.inv"/>, invocation:</n></c>
     <nc>see below</nc> get_buffer();
-    <nc>see below</nc> release_buffer(char_type* buffer);
+    <nc>see below</nc> release_buffer(std::remove_const_t&lt;char_type>* buffer);
     template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
     template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
     template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
@@ -1444,10 +1446,12 @@ const handler_type&amp; base() const noexcept;
 
         <code-item>
           <code>
-<nc>see below</nc> release_buffer(char_type* buffer);
+<nc>see below</nc> release_buffer(std::remove_const_t&lt;char_type>* buffer);
           </code>
           <effects>Equivalent to: <c>return base().release_buffer(buffer);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().release_buffer(buffer)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().release_buffer(std::declval&lt;std::remove_const_t&lt;char_type*>>())</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This member function shall not be declared unless <c>E</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
