@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-06-26 (UTC)</signature>
+<signature>2026-06-29 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1143,7 +1143,11 @@ handler_type&amp; base() const noexcept;
 <nc>see below</nc> get_buffer();
           </code>
           <effects>Equivalent to: <c>return base().get_buffer();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().get_buffer()</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().get_buffer()</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This member function shall not be declared unless
+                  <c>std::declval&lt;std::pair&lt;std::remove_const_t&lt;char_type>*, std::size_t>&amp;>() = E</c>
+                  is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1161,10 +1165,12 @@ handler_type&amp; base() const noexcept;
 template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().start_buffer(std::declval&lt;Ch*>(), std::declval&lt;Ch*>())</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This overload shall not participate in overload resolution unless
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
-                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
-                  and <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>, and
+                  <c>E</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1172,10 +1178,12 @@ template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buf
 template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().end_buffer(std::declval&lt;Ch*>())</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This overload shall not participate in overload resolution unless
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
-                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
-                  and <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>, and
+                  <c>E</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1183,10 +1191,12 @@ template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
 template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
           </code>
           <effects>Equivalent to: <c>return empty_physical_line(where);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().empty_physical_line(std::declval&lt;Ch*>())</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This overload shall not participate in overload resolution unless
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
                   <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
-                  and <c>std::declval&lt;Handler&amp;>().empty_physical_line(where)</c> is well-formed when treated as an unevaluated operand.</remark>
+                  and <c>E</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1194,7 +1204,8 @@ template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
 template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
           </code>
           <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+          <remark>The return type is <c>std::declval&lt;Handler&amp;>().start_record(std::declval&lt;Ch*>())</c>.
+                  This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
@@ -1203,7 +1214,8 @@ template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
 template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
           </code>
           <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+          <remark>The return type is <c>std::declval&lt;Handler&amp;>().end_record(std::declval&lt;Ch*>())</c>.
+                  This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
@@ -1212,7 +1224,8 @@ template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
 template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+          <remark>The return type is <c>std::declval&lt;Handler&amp;>().update(std::declval&lt;Ch*>(), std::declval&lt;Ch*>())</c>.
+                  This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
@@ -1221,7 +1234,8 @@ template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
 template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+          <remark>The return type is <c>std::declval&lt;Handler&amp;>().finalize(std::declval&lt;Ch*>(), std::declval&lt;Ch*>())</c>.
+                  This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
@@ -1230,7 +1244,11 @@ template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
 <nc>see below</nc> yield(std::size_t p);
           </code>
           <effects>Equivalent to: <c>return base().yield(p);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().yield(p)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>Let be <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().yield(std::declval&lt;std::size_t>())</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This member function shall not be declared unless
+                  <c>std::declval&lt;bool&amp;>() = E</c>
+                  is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1238,7 +1256,11 @@ template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
 <nc>see below</nc> yield_location() const;
           </code>
           <effects>Equivalent to: <c>return base().yield_location();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;const Handler&amp;>().yield_location()</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;const Handler&amp;>().yield_location()</c>
+                  The return type is <c>decltype(E)</c>.
+                  This member function shall not be declared unless
+                  <c>std::declval&lt;std::size_t&amp;>() = E</c>
+                  is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1246,7 +1268,9 @@ template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
 <nc>see below</nc> handle_exception();
           </code>
           <effects>Equivalent to: <c>return base().handle_exception();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().handle_exception()</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().handle_exception()</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This member function shall not be declared unless <c>E</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
       </section>
 
@@ -1441,7 +1465,11 @@ const handler_type&amp; base() const noexcept;
 <nc>see below</nc> get_buffer();
           </code>
           <effects>Equivalent to: <c>return base().get_buffer();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().get_buffer()</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().get_buffer()</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This member function shall not be declared unless
+                  <c>std::declval&lt;std::pair&lt;std::remove_const_t&lt;char_type>*, std::size_t>&amp;>() = E</c>
+                  is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1459,10 +1487,12 @@ const handler_type&amp; base() const noexcept;
 template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().start_buffer(buffer_begin, buffer_end);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().start_buffer(std::declval&lt;Ch*>(), std::declval&lt;Ch*>())</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This overload shall not participate in overload resolution unless
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
-                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
-                  and <c>std::declval&lt;Handler&amp;>().start_buffer(buffer_begin, buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>, and
+                  <c>E</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1470,10 +1500,12 @@ template &lt;class Ch> <nc>see below</nc> start_buffer(Ch* buffer_begin, Ch* buf
 template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
           </code>
           <effects>Equivalent to: <c>return base().end_buffer(buffer_end);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().end_buffer(std::declval&lt;Ch*>())</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This overload shall not participate in overload resolution unless
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
-                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>,
-                  and <c>std::declval&lt;Handler&amp;>().end_buffer(buffer_end)</c> is well-formed when treated as an unevaluated operand.</remark>
+                  <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>, and
+                  <c>E</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1481,10 +1513,20 @@ template &lt;class Ch> <nc>see below</nc> end_buffer(Ch* buffer_end);
 template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
           </code>
           <effects>First calls <c>base().start_record(where)</c>, and unless the return type is contextually convertible to <c>bool</c> and the contextually converted value of the return value to <c>bool</c> is <c>false</c>, next calls <c>base().end_record(where)</c>.</effects>
-          <returns>If both of the return types of <c>base().start_record(where)</c> and <c>base().end_record(where)</c> are <c>void</c>, the return type shall be <c>void</c>.
-                   Otherwise, the return type shall be <c>bool</c>, and the return value shall be <c>true</c> unless either call of <c>base().start_record(where)</c> or <c>base().end_record(where)</c> returned a value whose type is contextually convertible to <c>bool</c> and whose contexually converted value to <c>bool</c> is <c>false</c>.</returns>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
-                  <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
+          <returns><p>On the premise that the return type is <c>bool</c>:</p>
+                   <ul>
+                    <li><c>true</c> unless either call of <c>base().start_record(where)</c> or <c>base().end_record(where)</c> returned a value whose type is contextually convertible to <c>bool</c> and whose contexually converted value to <c>bool</c> is <c>false</c>, or</li>
+                    <li><c>false</c> otherwise.</li>
+                   </ul>
+          </returns>
+          <remark><p>The return type is:</p>
+                  <ul>
+                    <li><c>void</c> if both of the return types of <c>std::declval&lt;Handler&amp;>().start_record(std::declval&lt;Ch*>())</c> and <c>std::declval&lt;Handler&amp;>().end_record(std::declval&lt;Ch*>())</c> are <c>void</c>, or</li>
+                    <li><c>bool</c> otherwise.</li>
+                  </ul>
+                  <p>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+                     <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</p>
+          </remark>
         </code-item>
 
         <code-item>
@@ -1492,7 +1534,8 @@ template &lt;class Ch> <nc>see below</nc> empty_physical_line(Ch* where);
 template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
           </code>
           <effects>Equivalent to: <c>return base().start_record(record_begin);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+          <remark>The return type is <c>std::declval&lt;Handler&amp;>().start_record(std::declval&lt;Ch*>())</c>.
+                  This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
@@ -1501,7 +1544,8 @@ template &lt;class Ch> <nc>see below</nc> start_record(Ch* record_begin);
 template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
           </code>
           <effects>Equivalent to: <c>return base().end_record(record_end);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+          <remark>The return type is <c>std::declval&lt;Handler&amp;>().end_record(std::declval&lt;Ch*>())</c>.
+                  This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
@@ -1510,7 +1554,8 @@ template &lt;class Ch> <nc>see below</nc> end_record(Ch* record_end);
 template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().update(first, last);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+          <remark>The return type is <c>std::declval&lt;Handler&amp;>().update(std::declval&lt;Ch*>(), std::declval&lt;Ch*>())</c>.
+                  This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
@@ -1519,7 +1564,8 @@ template &lt;class Ch> <nc>see below</nc> update(Ch* first, Ch* last);
 template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
           </code>
           <effects>Equivalent to: <c>return base().finalize(first, last);</c></effects>
-          <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
+          <remark>The return type is <c>std::declval&lt;Handler&amp;>().finalize(std::declval&lt;Ch*>(), std::declval&lt;Ch*>())</c>.
+                  This overload shall not participate in overload resolution unless <c>Ch</c> is an identical type to <c>std::remove_const_t&lt;char_type></c>,
                   <c>std::remove_const_t&lt;Ch></c> is an identical type to <c>std::remove_const_t&lt;char_type></c> and <c>std::is_convertible_v&lt;Ch*, char_type*></c> is <c>true</c>.</remark>
         </code-item>
 
@@ -1528,7 +1574,11 @@ template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
 <nc>see below</nc> yield(std::size_t p);
           </code>
           <effects>Equivalent to: <c>return base().yield(p);</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().yield(p)</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().yield(std::declval&lt;std::size_t>())</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This member function shall not be declared unless
+                  <c>std::declval&lt;bool&amp;>() = E</c>
+                  is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1536,7 +1586,11 @@ template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
 <nc>see below</nc> yield_location() const;
           </code>
           <effects>Equivalent to: <c>return base().yield_location();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;const Handler&amp;>().yield_location()</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;const Handler&amp;>().yield_location()</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This member function shall not be declared unless
+                  <c>std::declval&lt;std::size_t&amp;>() = E</c>
+                  is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
 
         <code-item>
@@ -1544,7 +1598,9 @@ template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
 <nc>see below</nc> handle_exception();
           </code>
           <effects>Equivalent to: <c>return base().handle_exception();</c></effects>
-          <remark>This member function shall not be declared unless <c>std::declval&lt;Handler&amp;>().handle_exception()</c> is well-formed when treated as an unevaluated operand.</remark>
+          <remark>Let <c>E</c> be an expression <c>std::declval&lt;Handler&amp;>().handle_exception()</c>.
+                  The return type is <c>decltype(E)</c>.
+                  This member function shall not be declared unless <c>E</c> is well-formed when treated as an unevaluated operand.</remark>
         </code-item>
       </section>
 
