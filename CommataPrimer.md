@@ -221,7 +221,7 @@ Cygnus,Fawaris,2.89,51
 ```
 
 This is not a well-formed CSV text because the second line (one-based) has a
-double quote that voilates the CSV format.
+double quote that violates the CSV format.
 
 If you call `parse_csv` with a stream with this content, it will throw an
 exception.
