@@ -61,8 +61,8 @@ void destroy_deallocate_g_impl(
 template <class Allocator, class P>
 void destroy_deallocate_g_static(const Allocator& alloc, P p)
 {
-    using v_t = typename std::pointer_traits<P>::element_type;
-    assert(p && (typeid(*p) == typeid(v_t)));
+    assert(p &&
+        (typeid(*p) == typeid(typename std::pointer_traits<P>::element_type)));
 
     destroy_deallocate_g_impl(alloc, p, sizeof(*p));
 }
