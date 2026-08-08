@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-06-29 (UTC)</signature>
+<signature>2026-08-08 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -750,6 +750,7 @@ namespace commata {
   template &lt;class Tr>
     std::basic_ostream&lt;wchar_t, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;wchar_t, Tr>&amp; os,
                                                 const text_error_info&amp; i);
+
   std::string to_string(const text_error_info&amp; i);
   std::wstring to_wstring(const text_error_info&amp; i);
 }
@@ -765,7 +766,7 @@ namespace commata {
   public:
     static constexpr std::size_t npos = -1;
 
-    <c>// <n><xref id="text_error.cons"/>, constructors and assignment operators:</n></c>
+    <c>// <n><xref id="text_error.ctor"/>, constructors:</n></c>
     text_error() noexcept;
     template &lt;class Tr>
       explicit text_error(std::basic_string_view&lt;char, Tr> what_arg);
@@ -774,6 +775,11 @@ namespace commata {
     text_error(const char* what_arg);
     text_error(const text_error&amp; other) noexcept;
     text_error(text_error&amp;&amp; other) noexcept;
+
+    <c>// <n><xref id="text_error.dtor"/>, destructor:</n></c>
+   ~text_error();
+
+    <c>// <n><xref id="text_error.assign"/>, assignment:</n></c>
     text_error&amp; operator=(const text_error&amp; other) noexcept;
     text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
 
@@ -790,8 +796,8 @@ namespace commata {
       <p>An object of <c>text_error</c> can optionally have a physical position information (<xref id="definitions.others"/>), which consists of the line number and the column number of the point in the input text that has made the exception thrown.
          <c>npos</c> is a special value for the line number and the column number which indicates &#x2018;no information&#x2019;.</p>
 
-      <section id="text_error.cons">
-        <name><c>text_error</c> constructors and assignment operators</name>
+      <section id="text_error.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -837,12 +843,27 @@ text_error(text_error&amp;&amp; other) noexcept;
           </code>
           <postcondition><c>(std::strcmp(what(), c.what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be <c>true</c> where <c>c</c> is an object that should be copy constructed from <c>other</c> before the call.</postcondition>
         </code-item>
+      </section>
+
+      <section id="text_error.dtor">
+        <name>Destructor</name>
+
+        <code-item>
+          <code>
+~text_error();
+          </code>
+          <remark>Destroys an object of class <c>text_error</c>.</remark>
+        </code-item>
+      </section>
+
+      <section id="text_error.assign">
+        <name>Assignment</name>
 
         <code-item>
           <code>
 text_error&amp; operator=(const text_error&amp; other) noexcept;
           </code>
-          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (other.get_physical_position() ? (*other.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be <c>true</c>.</postcondition>
+          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (get_physical_position() == other.get_physical_position())</c> shall be <c>true</c>.</postcondition>
           <returns><c>*this</c>.</returns>
         </code-item>
 
@@ -850,19 +871,20 @@ text_error&amp; operator=(const text_error&amp; other) noexcept;
           <code>
 text_error&amp; operator=(text_error&amp;&amp; other) noexcept;
           </code>
-          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be <c>true</c> where <c>c</c> is an object that should be copy constructed from <c>other</c> before the call.</postcondition>
+          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (get_physical_position() == c.get_physical_position())</c> shall be <c>true</c> where <c>c</c> is an object that should be copy constructed from <c>other</c> before the call.</postcondition>
           <returns><c>*this</c>.</returns>
         </code-item>
       </section>
 
       <section id="text_error.physical_position">
-        <name><c>text_error</c> physical position information</name>
+        <name>Physical position information</name>
 
         <code-item>
           <code>
 text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col = npos) noexcept;
           </code>
-          <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>*this</c> holds no physical position information and <c>!get_physical_position()</c> shall be <c>true</c>. Otherwise, <c>*this</c> holds a physical position information and <c>*get_physical_position() == std::make_pair(line, col)</c> shall be <c>true</c>.</postcondition>
+          <postcondition>If both of <c>line</c> and <c>col</c> are equal to <c>npos</c>, <c>*this</c> holds no physical position information and <c>get_physical_position().has_value()</c> shall be <c>false</c>.
+                         Otherwise, <c>*this</c> holds a physical position information and <c>*get_physical_position() == std::make_pair(line, col)</c> shall be <c>true</c>.</postcondition>
           <returns><c>*this</c>.</returns>
           <remark><c>line</c> and <c>col</c> shall be <c>npos</c> or zero-based numbers of the row and the column.
                   <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
@@ -872,7 +894,8 @@ text_error&amp; set_physical_position(std::size_t line = npos, std::size_t col =
           <code>
 std::optional&lt;std::pair&lt;std::size_t, std::size_t>> get_physical_position() const noexcept;
           </code>
-          <returns>If <c>*this</c> holds a physical position information possibly set by the last invocation of <c>set_physical_position</c>, an pair of its line number and column number. Otherwise, <c>std::nullopt</c>.</returns>
+          <returns>If <c>*this</c> holds a physical position information possibly set by the last invocation of <c>set_physical_position</c>, an pair of its line number and column number.
+                   Otherwise, <c>std::nullopt</c>.</returns>
           <remark><c>p->first</c> and <c>p->second</c> shall be <c>npos</c> or zero-based numbers of the row and the column where <c>p</c> is the return value that contains a value.
                   <c>npos</c> shall mean &#x2018;no information&#x2019;.</remark>
           <note>If the return value <c>p</c> contains a value, at least one of <c>p->first</c> or <c>p->second</c> shall not be equal to <c>npos</c>.</note>
@@ -887,9 +910,11 @@ std::optional&lt;std::pair&lt;std::size_t, std::size_t>> get_physical_position()
 namespace commata {
   class text_error_info {
   public:
-    <c>// <n><xref id="text_error_info.cons"/>, constructors and assignment operators:</n></c>
+    <c>// <n><xref id="text_error_info.ctor"/>, constructors:</n></c>
     text_error_info(const text_error&amp; ex, std::size_t base = 1) noexcept;
     text_error_info(const text_error_info&amp; other) = default;
+
+    <c>// <n>assignment:</n></c>
     text_error_info&amp; operator=(const text_error_info&amp; other) = default;
 
     <c>// <n><xref id="text_error_info.observe"/>, observers:</n></c>
@@ -901,13 +926,15 @@ namespace commata {
     std::size_t b;        <c>// <n>exposition only</n></c>
   };
 
-  <c>// <n><xref id="text_error_info.char_repr"/>, chracter representations:</n></c>
+  <c>// <n><xref id="text_error_info.io"/>, inserters:</n></c>
   template &lt;class Tr>
     std::basic_ostream&lt;char, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;char, Tr>&amp; os,
                                              const text_error_info&amp; i);
   template &lt;class Tr>
     std::basic_ostream&lt;wchar_t, Tr>&amp; operator&lt;&lt;(std::basic_ostream&lt;wchar_t, Tr>&amp; os,
                                                 const text_error_info&amp; i);
+
+  <c>// <n><xref id="text_error_info.conv"/>, conversion:</n></c>
   std::string to_string(const text_error_info&amp; i);
   std::wstring to_wstring(const text_error_info&amp; i);
 }
@@ -918,8 +945,8 @@ namespace commata {
 
       <p><c>text_error_info</c> shall be a trivially copyable type.</p>
 
-      <section id="text_error_info.cons">
-        <name><c>text_error_info</c> constructors and assignment operators</name>
+      <section id="text_error_info.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -930,7 +957,7 @@ text_error_info(const text_error&amp; ex, std::size_t base = 1) noexcept;
       </section>
 
       <section id="text_error_info.observe">
-        <name><c>text_error_info</c> observers</name>
+        <name>Observers</name>
 
         <code-item>
           <code>
@@ -947,8 +974,8 @@ std::size_t get_base() const noexcept;
         </code-item>
       </section>
 
-      <section id="text_error_info.char_repr">
-        <name><c>text_error_info</c> character representations</name>
+      <section id="text_error_info.io">
+        <name>Inserters</name>
 
         <code-item>
           <code>
@@ -966,6 +993,10 @@ template &lt;class Tr>
           <remark>The second function template shall widen each character <c>c</c> in the null-terminated byte string pointed by <c>i.error().what()</c> with <c>os.widen(c)</c>.</remark>
           <note>The second function template may not recover the full information of <c>i.error().what()</c> when it is an NTMBS because of the nature of <c>std::basic_ostream&lt;wchar_t, Tr>::widen</c>.</note>
         </code-item>
+      </section>
+
+      <section id="text_error_info.conv">
+        <name>Conversion</name>
 
         <code-item>
           <code>
