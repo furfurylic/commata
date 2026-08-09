@@ -83,6 +83,7 @@ public:
 
     text_error(const text_error& other) = default;
     text_error(text_error&& other) = default;
+    ~text_error() = default;
 
     text_error& operator=(const text_error& other) noexcept
     {
