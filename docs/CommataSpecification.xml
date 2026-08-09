@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-08-09 (UTC)</signature>
+<signature>2026-08-28 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1085,9 +1085,11 @@ namespace commata {
     using char_type    = typename Handler::char_type;
     using handler_type = Handler;
 
-    <c>// <n><xref id="reference_handler.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="reference_handler.ctor"/>, constructors:</n></c>
     reference_handler(Handler&amp; handler) noexcept;
     reference_handler(Handler&amp;&amp; handler) = delete;
+
+    <c>// <n><xref id="reference_handler.assign"/>, assignment:</n></c>
     reference_handler(const reference_handler&amp; other) noexcept;
     reference_handler&amp; operator=(const reference_handler&amp; other) noexcept;
 
@@ -1130,8 +1132,8 @@ namespace commata {
       <p><c>reference_handler&lt;Handler></c> meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Handler::char_type</c>.
          Each specialization of <c>reference_handler</c> shall be a trivially copyable type.</p>
 
-      <section id="reference_handler.cons">
-        <name><c>reference_handler</c> construct/copy/destroy</name>
+      <section id="reference_handler.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -1146,6 +1148,10 @@ reference_handler(const reference_handler&amp; other) noexcept;
           </code>
           <effects>Constructs an <c>reference_handler</c> object that stores a reference to <c>other.base()</c>.</effects>
         </code-item>
+      </section>
+
+      <section id="reference_handler.assign">
+        <name>Assignment</name>
 
         <code-item>
           <code>
@@ -1156,7 +1162,7 @@ reference_handler&amp; operator=(const reference_handler&amp; other) noexcept;
       </section>
 
       <section id="reference_handler.access">
-        <name><c>reference_handler</c> access</name>
+        <name>Access</name>
 
         <code-item>
           <code>
@@ -1167,7 +1173,7 @@ handler_type&amp; base() const noexcept;
       </section>
 
       <section id="reference_handler.inv">
-        <name><c>reference_handler</c> invocation</name>
+        <name>Invocation</name>
 
         <code-item>
           <code>
@@ -1306,7 +1312,7 @@ template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
       </section>
 
       <section id="reference_handler.creation">
-        <name><c>reference_handler</c> creation functions</name>
+        <name>Creation functions</name>
 
         <code-item>
           <code>
@@ -1348,14 +1354,18 @@ namespace commata {
     using char_type    = typename Handler::char_type;
     using handler_type = Handler;
 
-    <c>// <n><xref id="empty_physical_line_aware_handler.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="empty_physical_line_aware_handler.ctor"/>, constructors:</n></c>
     explicit empty_physical_line_aware_handler(const Handler&amp;  handler) noexcept(<nc>see below</nc>);
     explicit empty_physical_line_aware_handler(      Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
     empty_physical_line_aware_handler(
       const empty_physical_line_aware_handler&amp;  other) noexcept(<nc>see below</nc>);
     empty_physical_line_aware_handler(
             empty_physical_line_aware_handler&amp;&amp; other) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="empty_physical_line_aware_handler.dtor"/>, destructor:</n></c>
    ~empty_physical_line_aware_handler();
+
+    <c>// <n><xref id="empty_physical_line_aware_handler.assign"/>, assignment:</n></c>
     empty_physical_line_aware_handler&amp; operator=(
       const empty_physical_line_aware_handler&amp;  other) noexcept(<nc>see below</nc>);
     empty_physical_line_aware_handler&amp; operator=(
@@ -1405,8 +1415,8 @@ namespace commata {
       <p><c>empty_physical_line_aware_handler&lt;Handler></c> meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Handler::char_type</c>.
          It shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;Handler></c> is <c>true</c>.</p>
 
-      <section id="empty_physical_line_aware_handler.cons">
-        <name><c>empty_physical_line_aware_handler</c> construct/copy/destroy</name>
+      <section id="empty_physical_line_aware_handler.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -1443,6 +1453,10 @@ empty_physical_line_aware_handler(
           <effects>Constructs an <c>empty_physical_line_aware_handler</c> object that stores a <c>Handler</c> object constructed with <c>std::move(other.base())</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Handler></c>.</remark>
         </code-item>
+      </section>
+
+      <section id="empty_physical_line_aware_handler.dtor">
+        <name>Destructor</name>
 
         <code-item>
           <code>
@@ -1450,6 +1464,10 @@ empty_physical_line_aware_handler(
           </code>
           <effects>Destroys the stored <c>Handler</c> object.</effects>
         </code-item>
+      </section>
+
+      <section id="empty_physical_line_aware_handler.assign">
+        <name>Assignment</name>
 
         <code-item>
           <code>
@@ -1477,7 +1495,7 @@ return *this;</code>
       </section>
 
       <section id="empty_physical_line_aware_handler.access">
-        <name><c>empty_physical_line_aware_handler</c> access</name>
+        <name>Access</name>
 
         <code-item>
           <code>
@@ -1489,7 +1507,7 @@ const handler_type&amp; base() const noexcept;
       </section>
 
       <section id="empty_physical_line_aware_handler.inv">
-        <name><c>empty_physical_line_aware_handler</c> invocation</name>
+        <name>Invocation</name>
 
         <code-item>
           <code>
@@ -1636,7 +1654,7 @@ template &lt;class Ch> <nc>see below</nc> finalize(Ch* first, Ch* last);
       </section>
 
       <section id="empty_physical_line_aware_handler.special">
-        <name><c>empty_physical_line_aware_handler</c> specialized algorithms</name>
+        <name>Specialized algorithms</name>
 
         <code-item>
           <code>
@@ -1650,7 +1668,7 @@ template &lt;class Handler> void swap(
       </section>
 
       <section id="empty_physical_line_aware_handler.creation">
-        <name><c>empty_physical_line_aware_handler</c> creation functions</name>
+        <name>Creation functions</name>
 
         <code-item>
           <code>
