@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-08-08 (UTC)</signature>
+<signature>2026-08-09 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -803,7 +803,7 @@ namespace commata {
           <code>
 text_error() noexcept;
           </code>
-          <postcondition><c>(*what() == '\0') &amp;&amp; !get_physical_position()</c> shall be <c>true</c>.</postcondition>
+          <postcondition><c>(*what() == '\0') &amp;&amp; !get_physical_position().has_value()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -811,7 +811,7 @@ text_error() noexcept;
 template &lt;class Tr>
   explicit text_error(std::basic_string_view&lt;char, Tr> what_arg);
           </code>
-          <postcondition><c>(std::strcmp(what(), w.c_str()) == 0) &amp;&amp; !get_physical_position()</c> shall be <c>true</c> where <c>w</c> is an object of <c>std::string</c> constructed with <c>what_arg</c>.</postcondition>
+          <postcondition><c>(std::strcmp(what(), w.c_str()) == 0) &amp;&amp; !get_physical_position().has_value()</c> shall be <c>true</c> where <c>w</c> is an object of <c>std::string</c> constructed with <c>what_arg</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -819,7 +819,7 @@ template &lt;class Tr>
 template &lt;class Tr, class Allocator>
   explicit text_error(std::basic_string&lt;char, Tr, Allocator>&amp;&amp; what_arg);
           </code>
-          <postcondition><c>(std::strcmp(what(), w.c_str()) == 0) &amp;&amp; !get_physical_position()</c> shall be <c>true</c> where <c>w</c> is an object that would be copy constructed from <c>what_arg</c> before the call.</postcondition>
+          <postcondition><c>(std::strcmp(what(), w.c_str()) == 0) &amp;&amp; !get_physical_position().has_value()</c> shall be <c>true</c> where <c>w</c> is an object that would be copy constructed from <c>what_arg</c> before the call.</postcondition>
         </code-item>
 
         <code-item>
@@ -827,21 +827,21 @@ template &lt;class Tr, class Allocator>
 explicit text_error(const char* what_arg);
           </code>
           <requires><c>what_arg</c> shall be a valid pointer to an element in a null terminated sequence.</requires>
-          <postcondition><c>(std::strcmp(what(), what_arg) == 0) &amp;&amp; !get_physical_position()</c> shall be <c>true</c>.</postcondition>
+          <postcondition><c>(std::strcmp(what(), what_arg) == 0) &amp;&amp; !get_physical_position().has_value()</c> shall be <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
           <code>
 text_error(const text_error&amp; other) noexcept;
           </code>
-          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (other.get_physical_position() ? (*other.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> is <c>true</c>.</postcondition>
+          <postcondition><c>(std::strcmp(what(), other.what()) == 0) &amp;&amp; (get_physical_position() == other.get_physical_position())</c> is <c>true</c>.</postcondition>
         </code-item>
 
         <code-item>
           <code>
 text_error(text_error&amp;&amp; other) noexcept;
           </code>
-          <postcondition><c>(std::strcmp(what(), c.what()) == 0) &amp;&amp; (c.get_physical_position() ? (*c.get_physical_position() == *get_physical_position()) : !get_physical_position())</c> shall be <c>true</c> where <c>c</c> is an object that should be copy constructed from <c>other</c> before the call.</postcondition>
+          <postcondition><c>(std::strcmp(what(), c.what()) == 0) &amp;&amp; (get_physical_position() == c.get_physical_position())</c> shall be <c>true</c> where <c>c</c> is an object that should be copy constructed from <c>other</c> before the call.</postcondition>
         </code-item>
       </section>
 
