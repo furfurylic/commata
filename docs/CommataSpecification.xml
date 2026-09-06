@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-08-28 (UTC)</signature>
+<signature>2026-09-01 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -2126,7 +2126,7 @@ namespace commata {
     using value_type = T;
     static constexpr std::size_t size = <nc>see below</nc>;
 
-    <c>// <n><xref id="replace_if_conversion_failed.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="replace_if_conversion_failed.ctor"/>, constructors:</n></c>
     template &lt;class All = T>
       <nc>EXPLICIT</nc> replace_if_conversion_failed(const All&amp; for_all = All()) noexcept(<nc>see below</nc>);
     template &lt;class Empty, class AllButEmpty>
@@ -2154,7 +2154,11 @@ namespace commata {
                                    Underflow&amp;&amp;       on_underflow) noexcept(<nc>see below</nc>);
     replace_if_conversion_failed(const replace_if_conversion_failed&amp;  other) noexcept(<nc>see below</nc>);
     replace_if_conversion_failed(      replace_if_conversion_failed&amp;&amp; other) noexcept(<nc>see below</nc>);
-   ~replace_if_conversion_failed();
+
+    <c>// <n><xref id="replace_if_conversion_failed.dtor"/>, destructor:</n></c>
+    ~replace_if_conversion_failed();
+
+    <c>// <n><xref id="replace_if_conversion_failed.assign"/>, assignment:</n></c>
     replace_if_conversion_failed&amp; operator=(const replace_if_conversion_failed&amp;  other)
       noexcept(<nc>see below</nc>);
     replace_if_conversion_failed&amp; operator=(      replace_if_conversion_failed&amp;&amp; other)
@@ -2199,7 +2203,7 @@ namespace commata {
         <p><span class="note">For types <c>T</c> and <c>U</c> that satisfy <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>, <c>replace_if_conversion_failed&lt;T></c> meets the <c>ConversionErrorHandler</c> requirements for not only <c>T</c> but also <c>U</c> as its target type.</span></p>
 
         <section id="replace_if_conversion_failed.props">
-          <name><c>replace_if_conversion_failed</c> properties</name>
+          <name>Properties</name>
 
           <code-item>
             <code>
@@ -2215,8 +2219,8 @@ static constexpr std::size_t size = <nc>see below</nc>;
           </code-item>
         </section>
 
-        <section id="replace_if_conversion_failed.cons">
-          <name><c>replace_if_conversion_failed</c> construct/copy/destroy</name>
+        <section id="replace_if_conversion_failed.ctor">
+          <name>Constructors</name>
 
           <p>In this subclause, a type <c>A</c> <n>implies a fail action</n> if and only if <c>std::is_base_of_v&lt;replacement_fail_t, A></c> is <c>true</c>.
              Similarly, a type <c>A</c> <n>implies an ignore action</n> if and only if <c>std::is_base_of_v&lt;replacement_ignore_t, A></c> is <c>true</c>.
@@ -2348,6 +2352,21 @@ template &lt;class... Ts>
             <remark>This deduction guide shall participate in overload resolution if and only if <c>std::common_type_t&lt;Us...></c> is defined where <c>Us</c> denotes types in <c>Ts...</c> excluding types which imply neither a fail action nor a ignore action.
                     In that case, the deduced type is <c>replace_if_conversion_failed&lt;std::common_type_t&lt;Us...>></c>.</remark>
           </code-item>
+        </section>
+
+        <section id="replace_if_conversion_failed.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~replace_if_conversion_failed();
+            </code>
+            <effects>Destroys an object of class <c>replace_if_conversion_failed&lt;T></c>.</effects>
+          </code-item>
+        </section>
+
+        <section id="replace_if_conversion_failed.assign">
+          <name>Assignment</name>
 
           <code-item>
             <code>
@@ -2375,7 +2394,7 @@ replace_if_conversion_failed&amp; operator=(replace_if_conversion_failed&amp;&am
         </section>
 
         <section id="replace_if_conversion_failed.inv">
-          <name><c>replace_if_conversion_failed</c> invocation</name>
+          <name>Invocation</name>
 
           <code-item>
             <code>
@@ -2541,7 +2560,7 @@ template &lt;class Ch, class U = T>
         </section>
 
         <section id="replace_if_conversion_failed.modifiers">
-          <name><c>replace_if_conversion_failed</c> modifiers</name>
+          <name>Modifiers</name>
 
           <code-item>
             <code>
@@ -2556,7 +2575,7 @@ void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
         </section>
 
         <section id="replace_if_conversion_failed.special">
-          <name><c>replace_if_conversion_failed</c> specialized algorithms</name>
+          <name>Specialized algorithms</name>
 
           <code-item>
             <code>
@@ -2804,11 +2823,12 @@ template &lt;class T, class A> T to_arithmetic(const A&amp; a);
         <codeblock>
 namespace commata {
   class numpunct_replacer_to_c {
-    <c>// <n><xref id="numpunct_replacer_to_c.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="numpunct_replacer_to_c.ctor"/>, constructors:</n></c>
     explicit numpunct_replacer_to_c(const std::locale&amp; loc) noexcept;
     numpunct_replacer_to_c(const numpunct_replacer_to_c&amp; other) noexcept;
-    numpunct_replacer_to_c&amp; operator=(const numpunct_replacer_to_c&amp; other) noexcept;
+
    ~numpunct_replacer_to_c();
+    numpunct_replacer_to_c&amp; operator=(const numpunct_replacer_to_c&amp; other) noexcept;
 
     <c>// <n><xref id="numpunct_replacer_to_c.inv"/>, invocation:</n></c>
     template &lt;class ForwardIterator, class ForwardIteratorEnd>
@@ -2825,8 +2845,8 @@ namespace commata {
         <p>The behaviour of a program is undefined if it modifies the C library locale between the construction of an object (possibly copied-from one) of this class and the invocation of <c>operator()</c> on it.
            <span class="note">This allows and encourages the implementation to cache information about the C library locale into an object of this class.</span></p>
 
-        <section id="numpunct_replacer_to_c.cons">
-          <name><c>numpunct_replacer_to_c</c> construct/copy/destroy</name>
+        <section id="numpunct_replacer_to_c.ctor">
+          <name>Constructors</name>
 
           <code-item>
             <code>
@@ -2837,7 +2857,7 @@ explicit numpunct_replacer_to_c(const std::locale&amp; loc) noexcept;
         </section>
 
         <section id="numpunct_replacer_to_c.inv">
-          <name><c>numpunct_replacer_to_c</c> invocation</name>
+          <name>Invocation</name>
 
           <p>In this subclause, let <c>Ch</c> be the type <c>std::iterator_traits&lt;ForwardIterator>::value_type</c> or <c>std::iterator_traits&lt;InputIterator>::value_type</c>
              and <c>npf</c> be <c>std::use_facet&lt;std::numpunct&lt;Ch>>(loc)</c> where <c>loc</c> is an lvalue to the an object of <c>std::locale</c> stored in <c>*this</c>.</p>
