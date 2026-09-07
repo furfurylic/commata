@@ -864,6 +864,20 @@ using ChFloatingPoints = testing::Types<
     std::pair<wchar_t, long double>
 >;
 
+class trivially_copy_constructible
+{
+    trivially_copy_constructible& operator=(
+        const trivially_copy_constructible&)
+    {
+        return *this;
+    }
+};
+
+static_assert(std::is_trivially_copy_constructible_v<
+    trivially_copy_constructible>);
+static_assert(std::is_trivially_copy_constructible_v<
+    replace_if_conversion_failed<trivially_copy_constructible>>);
+
 } // end unnamed
 
 template <class ChNum>
