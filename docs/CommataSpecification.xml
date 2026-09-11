@@ -3474,11 +3474,15 @@ namespace commata {
 
     static constexpr size_type npos = -1;
 
-    <c>// <n><xref id="owned_string_input.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="owned_string_input.ctor"/>, constructors:</n></c>
     owned_string_input() noexcept(<nc>see below</nc>);
     explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; str) noexcept;
     owned_string_input(owned_string_input&amp;&amp; other) noexcept;
+
+    <c>// <n>destructor:</n></c>
    ~owned_string_input() = default;
+
+    <c>// <n><xref id="owned_string_input.assign"/>, assignment:</n></c>
     owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) noexcept(<nc>see below</nc>);
 
     <c>// <n><xref id="owned_string_input.inv"/>, invocation:</n></c>
@@ -3506,8 +3510,8 @@ namespace commata {
       <p>Each specialization of <c>owned_string_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c>
          and implements its optional nonconst-direct interface.</p>
 
-      <section id="owned_string_input.cons">
-        <name><c>owned_string_input</c> construct/copy/destroy</name>
+      <section id="owned_string_input.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -3531,6 +3535,10 @@ owned_string_input(owned_string_input&amp;&amp; other) noexcept;
           <effects>Initializes <c>s</c> with <c>std::move(other.s)</c>, <c>head</c> with <c>other.head</c> and <c>front</c> with <c>other.front</c>.
                    Then assigns <c>other.size()</c> to <c>other.head</c>.</effects>
         </code-item>
+      </section>
+
+      <section id="owned_string_input.assign">
+        <name>Assignment</name>
 
         <code-item>
           <code>
@@ -3543,7 +3551,7 @@ owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) noexcept(<
       </section>
 
       <section id="owned_string_input.inv">
-        <name><c>owned_string_input</c> invocation</name>
+        <name>Invocation</name>
 
         <code-item>
           <code>
@@ -3574,7 +3582,7 @@ front = s[head];</code>
       </section>
 
       <section id="owned_string_input.modifiers">
-        <name><c>owned_string_input</c> modifiers</name>
+        <name>Modifiers</name>
 
         <code-item>
           <code>
@@ -3586,7 +3594,7 @@ void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
       </section>
 
       <section id="owned_string_input.special">
-        <name><c>owned_string_input</c> specialized algorithms</name>
+        <name>Specialized algorithms</name>
 
         <code-item>
           <code>
