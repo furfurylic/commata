@@ -3144,11 +3144,15 @@ namespace commata {
     using traits_type    = typename Streambuf::traits_type;
     using size_type      = std::make_unsigned_t&lt;std::streamsize>;
 
-    <c>// <n><xref id="owned_streambuf_input.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="owned_streambuf_input.ctor"/>, constructors:</n></c>
     owned_streambuf_input() = default;
     explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</nc>);
     owned_streambuf_input(owned_streambuf_input&amp;&amp; other) = default;
+
+    <c>// <n>destructor:</n></c>
    ~owned_streambuf_input() = default;
+
+    <c>// <n>assignment:</n></c>
     owned_streambuf_input&amp; operator=(owned_streambuf_input&amp;&amp; other) = default;
 
     <c>// <n><xref id="owned_streambuf_input.inv"/>, invocation:</n></c>
@@ -3172,8 +3176,8 @@ namespace commata {
       <p>The template parameter <c>Streambuf</c> shall be the same type as, or be a derived type of, <c>std::basic_streambuf&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</p>
       <p>Each specialization of <c>owned_streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Streambuf::char_type</c>.</p>
 
-      <section id="owned_streambuf_input.cons">
-        <name><c>owned_streambuf_input</c> construct/copy/destroy</name>
+      <section id="owned_streambuf_input.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -3186,7 +3190,7 @@ explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</n
       </section>
 
       <section id="owned_streambuf_input.inv">
-        <name><c>owned_streambuf_input</c> invocation</name>
+        <name>Invocation</name>
 
         <code-item>
           <code>
@@ -3200,7 +3204,7 @@ size_type operator()(Ch* out, size_type n);
       </section>
 
       <section id="owned_streambuf_input.special">
-        <name><c>owned_streambuf_input</c> specialized algorithms</name>
+        <name>Specialized algorithms</name>
 
         <code-item>
           <code>
