@@ -3230,10 +3230,12 @@ namespace commata {
     using traits_type  = Tr;
     using size_type    = std::make_unsigned_t&lt;std::streamsize>;
 
-    <c>// <n><xref id="istream_input.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="istream_input.ctor"/>, constructors:</n></c>
     istream_input() noexcept : in(nullptr) {}
     explicit istream_input(std::basic_streambuf&lt;Ch, Tr>&amp; s) noexcept;
     istream_input(const istream_input&amp; other) = default;
+
+    <c>// <n>assignment:</n></c>
     istream_input&amp; operator=(const istream_input&amp; other) = default;
 
     <c>// <n><xref id="istream_input.inv"/>, invocation:</n></c>
@@ -3249,8 +3251,8 @@ namespace commata {
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
       <p>Each specialization of <c>istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c> and is a trivially copyable type.</p>
 
-      <section id="istream_input.cons">
-        <name><c>istream_input</c> construct/copy/destroy</name>
+      <section id="istream_input.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -3261,7 +3263,7 @@ explicit istream_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
       </section>
 
       <section id="istream_input.inv">
-        <name><c>istream_input</c> invocation</name>
+        <name>Invocation</name>
 
         <code-item>
           <code>
@@ -3288,11 +3290,15 @@ namespace commata {
     using traits_type  = typename IStream::traits_type;
     using size_type    = std::make_unsigned_t&lt;std::streamsize>;
 
-    <c>// <n><xref id="owned_istream_input.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="owned_istream_input.ctor"/>, constructors:</n></c>
     owned_istream_input() = default;
     explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
     owned_istream_input(owned_istream_input&amp;&amp; other) = default;
+
+    <c>// <n>destructor:</n></c>
    ~owned_istream_input() = default;
+
+    <c>// <n>assignment:</n></c>
     owned_istream_input&amp; operator=(owned_istream_input&amp;&amp; other) = default;
 
     <c>// <n><xref id="owned_istream_input.inv"/>, invocation:</n></c>
@@ -3316,8 +3322,8 @@ namespace commata {
       <p>The template parameter <c>IStream</c> shall be the same type as, or be a derived type of, <c>std::basic_istream&lt;Ch, Tr></c> for a certain combination of <c>Ch</c> and <c>Tr</c>.</p>
       <p>Each specialization of <c>owned_istream_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>IStream::char_type</c>.</p>
 
-      <section id="owned_istream_input.cons">
-        <name><c>owned_istream_input</c> construct/copy/destroy</name>
+      <section id="owned_istream_input.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -3330,7 +3336,7 @@ explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
       </section>
 
       <section id="owned_istream_input.inv">
-        <name><c>owned_istream_input</c> invocation</name>
+        <name>Invocation</name>
 
         <code-item>
           <code>
@@ -3345,7 +3351,7 @@ size_type operator()(Ch* out, size_type n);
       </section>
 
       <section id="owned_istream_input.special">
-        <name><c>owned_istream_input</c> specialized algorithms</name>
+        <name>Specialized algorithms</name>
 
         <code-item>
           <code>
