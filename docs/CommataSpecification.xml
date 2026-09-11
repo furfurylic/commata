@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-09-01 (UTC)</signature>
+<signature>2026-09-11 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3085,10 +3085,12 @@ namespace commata {
     using traits_type    = Tr;
     using size_type      = std::make_unsigned_t&lt;std::streamsize>;
 
-    <c>// <n><xref id="streambuf_input.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="streambuf_input.ctor"/>, constructors:</n></c>
     streambuf_input() noexcept : in(nullptr) {}
     explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
     streambuf_input(const streambuf_input&amp; other) = default;
+
+    <c>// <n>assignment:</n></c>
     streambuf_input&amp; operator=(const streambuf_input&amp; other) = default;
 
     <c>// <n><xref id="streambuf_input.inv"/>, invocation:</n></c>
@@ -3104,8 +3106,8 @@ namespace commata {
       <p>The template parameter <c>Ch</c> shall be a char-like type. The template parameter <c>Tr</c> shall be a character traits type for <c>Ch</c>.</p>
       <p>Each specialization of <c>streambuf_input</c> meets the <c>CharInput</c> requirements (<xref id="char_input.requirements"/>) for <c>Ch</c> and is a trivially copyable type.</p>
 
-      <section id="streambuf_input.cons">
-        <name><c>streambuf_input</c> construct/copy/destroy</name>
+      <section id="streambuf_input.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -3116,7 +3118,7 @@ explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
       </section>
 
       <section id="streambuf_input.inv">
-        <name><c>streambuf_input</c> invocation</name>
+        <name>Invocation</name>
 
         <code-item>
           <code>
