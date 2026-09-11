@@ -3619,13 +3619,17 @@ namespace commata {
     using traits_type = typename Input::traits_type;
     using size_type   = typename Input::size_type;
 
-    <c>// <n><xref id="indirect_input.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="indirect_input.ctor"/>, constructors:</n></c>
     indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
     explicit indirect_input(Input base) noexcept(std::is_nothrow_move_constructible_v&lt;Input>) :
       input(std::move(base)) {}
     indirect_input(const indirect_input&amp;)  = default;
     indirect_input(      indirect_input&amp;&amp;) = default;
+
+    <c>// <n>destructor:</n></c>
    ~indirect_input() = default;
+
+    <c>// <n>assignment:</n></c>
     indirect_input&amp; operator=(const indirect_input&amp;)  = default;
     indirect_input&amp; operator=(      indirect_input&amp;&amp;) = default;
 
@@ -3655,8 +3659,8 @@ namespace commata {
       <p><c>indirect_input&lt;Input></c> meets the <c>CharInput</c> requirements for <c>Input::char_type</c> with its indirect interface and without its direct interface,
          and is a trivially copyable type if <c>CharInput</c> is a trivially copyable type.</p>
 
-      <section id="indirect_input.cons">
-        <name><c>indirect_input</c> construct/copy/destroy</name>
+      <section id="indirect_input.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -3668,7 +3672,7 @@ indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
       </section>
 
       <section id="indirect_input.inv">
-        <name><c>indirect_input</c> invocation</name>
+        <name>Invocation</name>
 
         <code-item>
           <code>
@@ -3679,7 +3683,7 @@ size_type operator()(Ch* out, size_type n);
       </section>
 
       <section id="indirect_input.special">
-        <name><c>indirect_input</c> specialized algorithms</name>
+        <name>Specialized algorithms</name>
 
         <code-item>
           <code>
