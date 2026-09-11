@@ -237,9 +237,7 @@ public:
 
     static constexpr size_type npos = static_cast<size_type>(-1);
 
-    string_input() noexcept :
-        v_()
-    {}
+    string_input() noexcept = default;
 
     explicit string_input(const Ch* str) :
         v_(str)

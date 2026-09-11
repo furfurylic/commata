@@ -3378,14 +3378,16 @@ namespace commata {
 
     static constexpr size_type npos = -1;
 
-    <c>// <n><xref id="string_input.cons"/>, construct/copy/destroy:</n></c>
-    string_input() noexcept {}
+    <c>// <n><xref id="string_input.ctor"/>, constructors:</n></c>
+    string_input() noexcept = default;
     explicit string_input(const Ch* str);
     template &lt;class Allocator>
       explicit string_input(const std::basic_string&lt;Ch, Tr, Allocator>&amp; str) noexcept;
     explicit string_input(std::basic_string_view&lt;Ch, Tr> str) noexcept;
     string_input(const Ch* data, std::size_t length);
     string_input(const string_input&amp; other) = default;
+
+    <c>// <n>assignment:</n></c>
     string_input&amp; operator=(const string_input&amp; other) = default;
 
     <c>// <n><xref id="string_input.inv"/>, invocation:</n></c>
@@ -3404,8 +3406,8 @@ namespace commata {
          implements its optional const-direct interface,
          and is a trivially copyable type.</p>
 
-      <section id="string_input.cons">
-        <name><c>string_input</c> construct/copy/destroy</name>
+      <section id="string_input.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -3430,7 +3432,7 @@ string_input(const Ch* data, std::size_t length);
       </section>
 
       <section id="string_input.inv">
-        <name><c>string_input</c> invocation</name>
+        <name>Invocation</name>
 
         <code-item>
           <code>
