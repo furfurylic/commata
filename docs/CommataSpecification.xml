@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-09-11 (UTC)</signature>
+<signature>2026-09-12 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -3975,12 +3975,16 @@ namespace commata {
     using traits_type = typename CharInput::traits_type;
     template &lt;class Handler, class Allocator = void> using parser_type = <nc>see below</nc>;
 
-    <c>// <n><xref id="csv_source.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="csv_source.ctor"/>, constructors:</n></c>
     explicit csv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
     explicit csv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
     csv_source(const csv_source&amp; other) = default;
     csv_source(csv_source&amp;&amp; other) = default;
+
+    <c>// <n>destructor:</n></c>
    ~csv_source() = default;
+
+    <c>// <n>assignment:</n></c>
     csv_source&amp; operator=(const csv_source&amp; other) = default;
     csv_source&amp; operator=(csv_source&amp;&amp; other) = default;
 
@@ -4037,7 +4041,7 @@ namespace commata {
       <p><c>csv_source&lt;CharInput></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;CharInput></c> is <c>true</c>.</p>
 
       <section id="csv_source.types">
-        <name><c>csv_source</c> member types</name>
+        <name>Member types</name>
 
         <code-item>
           <code>
@@ -4054,8 +4058,8 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
         </code-item>
       </section>
 
-      <section id="csv_source.cons">
-        <name><c>csv_source</c> construct/copy/destroy</name>
+      <section id="csv_source.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -4076,7 +4080,7 @@ explicit csv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
       </section>
 
       <section id="csv_source.inv">
-        <name><c>csv_source</c> invocation</name>
+        <name>Invocation</name>
 
         <code-item>
           <code>
@@ -4152,7 +4156,7 @@ template &lt;class Handler, class... Args>
       </section>
 
       <section id="csv_source.special">
-        <name><c>csv_source</c> specialized algorithms</name>
+        <name>Specialized algorithms</name>
 
         <code-item>
           <code>
@@ -4166,7 +4170,7 @@ template &lt;class CharInput>
       </section>
 
       <section id="csv_source.creation">
-        <name><c>csv_source</c> creation functions</name>
+        <name>Creation functions</name>
 
         <code-item>
           <code>
