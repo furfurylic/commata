@@ -4306,12 +4306,16 @@ namespace commata {
     using traits_type = typename CharInput::traits_type;
     template &lt;class Handler, class Allocator = void> using parser_type = <nc>see below</nc>;
 
-    <c>// <n><xref id="tsv_source.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="tsv_source.ctor"/>, constructor:</n></c>
     explicit tsv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
     explicit tsv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
     tsv_source(const tsv_source&amp; other) = default;
     tsv_source(tsv_source&amp;&amp; other) = default;
+
+    <c>// <n>destructor:</n></c>
    ~tsv_source() = default;
+
+    <c>// <n>assignment:</n></c>
     tsv_source&amp; operator=(const tsv_source&amp; other) = default;
     tsv_source&amp; operator=(tsv_source&amp;&amp; other) = default;
 
@@ -4368,7 +4372,7 @@ namespace commata {
       <p><c>tsv_source&lt;CharInput></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;CharInput></c> is <c>true</c>.</p>
 
       <section id="tsv_source.types">
-        <name><c>tsv_source</c> member types</name>
+        <name>Member types</name>
 
         <code-item>
           <code>
@@ -4385,8 +4389,8 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
         </code-item>
       </section>
 
-      <section id="tsv_source.cons">
-        <name><c>tsv_source</c> construct/copy/destroy</name>
+      <section id="tsv_source.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -4407,7 +4411,7 @@ explicit tsv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
       </section>
 
       <section id="tsv_source.inv">
-        <name><c>tsv_source</c> invocation</name>
+        <name>Invocation</name>
 
         <code-item>
           <code>
@@ -4483,7 +4487,7 @@ template &lt;class Handler, class... Args>
       </section>
 
       <section id="tsv_source.special">
-        <name><c>tsv_source</c> specialized algorithms</name>
+        <name>Specialized algorithms</name>
 
         <code-item>
           <code>
@@ -4497,7 +4501,7 @@ template &lt;class CharInput>
       </section>
 
       <section id="tsv_source.creation">
-        <name><c>tsv_source</c> creation functions</name>
+        <name>Creation functions</name>
 
         <code-item>
           <code>
