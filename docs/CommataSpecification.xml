@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-09-12 (UTC)</signature>
+<signature>2026-09-20 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -7332,14 +7332,18 @@ namespace commata {
   public:
     using value_type = T;
 
-    <c>// <n><xref id="replace_if_skipped.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="replace_if_skipped.ctor"/>, constructors:</n></c>
     template &lt;class U = T>
       <nc>EXPLICIT</nc> replace_if_skipped(U&amp;&amp; u = std::decay_t&lt;U>()) noexcept(<nc>see below</nc>);
     replace_if_skipped(replacement_fail_t) noexcept;
     replace_if_skipped(replacement_ignore_t) noexcept;
     replace_if_skipped(const replace_if_skipped&amp;  other) noexcept(<nc>see below</nc>);
     replace_if_skipped(      replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="replace_if_skipped.dtor"/>, destructor:</n></c>
    ~replace_if_skipped();
+
+    <c>// <n><xref id="replace_if_skipped.assignment"/>, assignment:</n></c>
     replace_if_skipped&amp; operator=(const replace_if_skipped&amp;  other) noexcept(<nc>see below</nc>);
     replace_if_skipped&amp; operator=(      replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
 
@@ -7364,11 +7368,10 @@ namespace commata {
         <p><c>T</c> shall meet the <c>CopyConstructible</c> requirements and the <c>Destructible</c> requirements.
            <c>T</c> shall not be equal to possibly cv-qualified types <c>replacement_fail_t</c> or <c>replacement_ignore_t</c>.</p>
         <p>An object of a specialization of <c>replace_if_skipped</c> has a replacement action (<xref id="replacement_action"/>).</p>
-        <p><c>replace_if_skipped&lt;T></c> shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;T></c> is <c>true</c>.</p>
         <p><span class="note">For types <c>T</c> and <c>U</c> that satisfy <c>std::is_convertible_v&lt;const T&amp;, U></c> is <c>true</c>, <c>replace_if_skipped&lt;T></c> meets the <c>SkippingHandler</c> requirements for not only <c>T</c> but also <c>U</c> as its target type.</span></p>
 
-        <section id="replace_if_skipped.cons">
-          <name><c>replace_if_skipped</c> construct/copy/destroy</name>
+        <section id="replace_if_skipped.ctor">
+          <name>Constructors</name>
 
           <code-item>
             <code>
@@ -7403,7 +7406,9 @@ replace_if_skipped(replacement_ignore_t) noexcept;
 replace_if_skipped(const replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <effects>Configures the replacement action to be the same as <c>other</c>&#x2019;s.</effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T></c>.</remark>
+            <remark>If <c>std::is_trivially_copy_constructible&lt;T></c> is <c>true</c>,
+                    also <c>std::is_trivially_copy_constructible&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T></c>.</remark>
           </code-item>
 
           <code-item>
@@ -7411,7 +7416,9 @@ replace_if_skipped(const replace_if_skipped&amp; other) noexcept(<nc>see below</
 replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <effects>Configures the replacement action to be what <c>other</c> had as its replacement action before the call.</effects>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
+            <remark>If <c>std::is_trivially_move_constructible&lt;T></c> is <c>true</c>,
+                    also <c>std::is_trivially_move_constructible&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
           </code-item>
 
           <code-item>
@@ -7420,6 +7427,23 @@ template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
             </code>
             <remark>This deduction guide participates in overload resolution only if <c>T</c> is not the same type as or a derived class of <c>replacement_fail_t</c> or <c>replacement_ignore_t</c>.</remark>
           </code-item>
+        </section>
+
+        <section id="replace_if_skipped.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~replace_if_skipped();
+            </code>
+            <effects>Destroys the stored <c>T</c> object associated with a <c>copy</c> replacement action if any.</effects>
+            <remark>If <c>std::is_trivially_destructible&lt;T></c> is <c>true</c>,
+                    also <c>std::is_trivially_destructible&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.</remark>
+          </code-item>
+        </section>
+
+        <section id="replace_if_skipped.assignment">
+          <name>Assignment</name>
 
           <code-item>
             <code>
@@ -7428,7 +7452,9 @@ replace_if_skipped&amp; operator=(const replace_if_skipped&amp; other) noexcept(
             <requires><c>T</c> shall be <c>CopyAssignable</c>.</requires>
             <effects>Configures the replacement action to be the same as <c>other</c>&#x2019;s.</effects>
             <returns><c>*this</c>.</returns>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T> &amp;&amp; std::is_nothrow_copy_assignable_v&lt;T></c>.</remark>
+            <remark>If <c>std::is_trivially_copy_assignable&lt;T></c> is <c>true</c>,
+                    also <c>std::is_trivially_copy_assignable&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T> &amp;&amp; std::is_nothrow_copy_assignable_v&lt;T></c>.</remark>
           </code-item>
 
           <code-item>
@@ -7438,12 +7464,14 @@ replace_if_skipped&amp; operator=(replace_if_skipped&amp;&amp; other) noexcept(<
             <requires><c>T</c> shall be <c>MoveAssignable</c>.</requires>
             <effects>Configures the replacement action to be what <c>other</c> had as its replacement action before the call.</effects>
             <returns><c>*this</c>.</returns>
-            <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T> &amp;&amp; std::is_nothrow_move_assignable_v&lt;T></c>.</remark>
+            <remark>If <c>std::is_trivially_move_constructible&lt;T></c> is <c>true</c>,
+                    also <c>std::is_trivially_move_constructible&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
+                    The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T> &amp;&amp; std::is_nothrow_move_assignable_v&lt;T></c>.</remark>
           </code-item>
         </section>
 
         <section id="replace_if_skipped.inv">
-          <name><c>replace_if_skipped</c> invocation</name>
+          <name>Invocation</name>
 
           <code-item>
             <code>
@@ -7485,7 +7513,7 @@ template &lt;class U = T> std::optional&lt;U> operator()(U* = nullptr) const;
         </section>
 
         <section id="replace_if_skipped.modifiers">
-          <name><c>replace_if_skipped</c> modifiers</name>
+          <name>Modifiers</name>
 
           <code-item>
             <code>
@@ -7498,7 +7526,7 @@ void swap(replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
         </section>
 
         <section id="replace_if_skipped.special">
-          <name><c>replace_if_skipped</c> specialized algorithms</name>
+          <name>Specialized algorithms</name>
 
           <code-item>
             <code>
