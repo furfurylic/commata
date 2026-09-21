@@ -138,7 +138,7 @@ public:
         // Avoid self-moving in std::swap
         if (this != std::addressof(other)) {
             using std::swap;
-            base().swap(other.base());
+            swap(base(), other.base());
         }
     }
 };
