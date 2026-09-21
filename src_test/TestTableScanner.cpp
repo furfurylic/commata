@@ -1472,6 +1472,42 @@ struct E
 static_assert(std::is_convertible_v<D, replace_if_skipped<B>>);
 static_assert(!std::is_convertible_v<B, replace_if_skipped<E>>);
 
+static_assert(std::is_trivially_destructible_v<replace_if_skipped<int>>);
+static_assert(
+    !std::is_trivially_destructible_v<replace_if_skipped<std::string>>);
+static_assert(
+    std::is_destructible_v<replace_if_skipped<std::string>>);
+
+static_assert(std::is_trivially_move_assignable_v<replace_if_skipped<int>>);
+static_assert(
+    !std::is_trivially_move_assignable_v<replace_if_skipped<std::string>>);
+static_assert(
+    std::is_nothrow_move_assignable_v<replace_if_skipped<std::string>>);
+
+static_assert(std::is_trivially_copy_assignable_v<replace_if_skipped<int>>);
+static_assert(
+    !std::is_trivially_copy_assignable_v<replace_if_skipped<std::string>>);
+static_assert(
+    !std::is_nothrow_copy_assignable_v<replace_if_skipped<std::string>>);
+static_assert(
+    std::is_copy_assignable_v<replace_if_skipped<std::string>>);
+
+static_assert(
+std::is_trivially_move_constructible_v<replace_if_skipped<int>>);
+static_assert(
+    !std::is_trivially_move_constructible_v<replace_if_skipped<std::string>>);
+static_assert(
+    std::is_nothrow_move_constructible_v<replace_if_skipped<std::string>>);
+
+static_assert(
+    std::is_trivially_copy_constructible_v<replace_if_skipped<int>>);
+static_assert(
+    !std::is_trivially_copy_constructible_v<replace_if_skipped<std::string>>);
+static_assert(
+    !std::is_nothrow_copy_constructible_v<replace_if_skipped<std::string>>);
+static_assert(
+    std::is_copy_constructible_v<replace_if_skipped<std::string>>);
+
 } // end unnamed
 
 struct TestReplaceIfSkipped : BaseTest
