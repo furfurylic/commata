@@ -1357,23 +1357,21 @@ namespace commata {
     <c>// <n><xref id="empty_physical_line_aware_handler.ctor"/>, constructors:</n></c>
     explicit empty_physical_line_aware_handler(const Handler&amp;  handler) noexcept(<nc>see below</nc>);
     explicit empty_physical_line_aware_handler(      Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
-    empty_physical_line_aware_handler(
-      const empty_physical_line_aware_handler&amp;  other) noexcept(<nc>see below</nc>);
-    empty_physical_line_aware_handler(
-            empty_physical_line_aware_handler&amp;&amp; other) noexcept(<nc>see below</nc>);
+    empty_physical_line_aware_handler(const empty_physical_line_aware_handler&amp;  other) = default;
+    empty_physical_line_aware_handler(      empty_physical_line_aware_handler&amp;&amp; other) = default;
 
-    <c>// <n><xref id="empty_physical_line_aware_handler.dtor"/>, destructor:</n></c>
-   ~empty_physical_line_aware_handler();
+    <c>// <n>destructor:</n></c>
+   ~empty_physical_line_aware_handler() = default;
 
-    <c>// <n><xref id="empty_physical_line_aware_handler.assign"/>, assignment:</n></c>
+    <c>// <n>assignment:</n></c>
     empty_physical_line_aware_handler&amp; operator=(
-      const empty_physical_line_aware_handler&amp;  other) noexcept(<nc>see below</nc>);
+      const empty_physical_line_aware_handler&amp;  other) = default;
     empty_physical_line_aware_handler&amp; operator=(
-            empty_physical_line_aware_handler&amp;&amp; other) noexcept(<nc>see below</nc>);
+            empty_physical_line_aware_handler&amp;&amp; other) = default;
 
-    <c>// <n><xref id="empty_physical_line_aware_handler.access"/>, access:</n></c>
-    const handler_type&amp; base() const noexcept;
-          handler_type&amp; base()       noexcept;
+    <c>// <n>access:</n></c>
+    const handler_type&amp; base() const noexcept { return handler_; }
+          handler_type&amp; base()       noexcept { return handler_; }
 
     <c>// <n><xref id="empty_physical_line_aware_handler.inv"/>, invocation:</n></c>
     <nc>see below</nc> get_buffer();
@@ -1391,7 +1389,10 @@ namespace commata {
 
     void swap(empty_physical_line_aware_handler&amp; other)
         noexcept(std::is_nothrow_swappable_v&lt;Handler>)
-      { using std::swap; base().swap(other.base()); }
+      { if (this != std::addressof(other) { using std::swap; swap(base(), other.base()); } }
+
+  private:
+    Handler handler_;
   };
 
   <c>// <n><xref id="empty_physical_line_aware_handler.special"/>, specialized algorithms:</n></c>
@@ -1412,8 +1413,7 @@ namespace commata {
       <p>An object of <c>empty_physical_line_aware_handler&lt;Handler></c> is a wrapper around an object of <c>Handler</c> that is a table handler type.
          It offers functionality to translate an invocation of <c>empty_physical_line</c> to <c>start_record</c> and <c>end_record</c>.</p>
       <p>The template parameter <c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</p>
-      <p><c>empty_physical_line_aware_handler&lt;Handler></c> meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Handler::char_type</c>.
-         It shall be a trivially copyable type if <c>std::is_trivially_copyable_v&lt;Handler></c> is <c>true</c>.</p>
+      <p><c>empty_physical_line_aware_handler&lt;Handler></c> meets the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>Handler::char_type</c>.</p>
 
       <section id="empty_physical_line_aware_handler.ctor">
         <name>Constructors</name>
@@ -1423,7 +1423,7 @@ namespace commata {
 explicit empty_physical_line_aware_handler(const Handler&amp; handler) noexcept(<nc>see below</nc>);
           </code>
           <requires><c>std::is_copy_constructible_v&lt;Handler></c> shall be <c>true</c>.</requires>
-          <effects>Constructs an <c>empty_physical_line_aware_handler</c> object that stores a <c>Handler</c> object constructed with <c>handler</c>.</effects>
+          <effects>Initializes <c>handler_</c> with <c>handler</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;Handler></c>.</remark>
         </code-item>
 
@@ -1431,78 +1431,9 @@ explicit empty_physical_line_aware_handler(const Handler&amp; handler) noexcept(
           <code>
 explicit empty_physical_line_aware_handler(Handler&amp;&amp; handler) noexcept(<nc>see below</nc>);
           </code>
+          <effects>Initializes <c>handler_</c> with <c>std::move(handler)</c>.</effects>
           <effects>Constructs an <c>empty_physical_line_aware_handler</c> object that stores a <c>Handler</c> object constructed with <c>std::move(handler)</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Handler></c>.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-empty_physical_line_aware_handler(
-  const empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <requires><c>std::is_copy_constructible_v&lt;Handler></c> shall be <c>true</c>.</requires>
-          <effects>Constructs an <c>empty_physical_line_aware_handler</c> object that stores a <c>Handler</c> object constructed with <c>other.base()</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;Handler></c>.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-empty_physical_line_aware_handler(
-  empty_physical_line_aware_handler&amp;&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <effects>Constructs an <c>empty_physical_line_aware_handler</c> object that stores a <c>Handler</c> object constructed with <c>std::move(other.base())</c>.</effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Handler></c>.</remark>
-        </code-item>
-      </section>
-
-      <section id="empty_physical_line_aware_handler.dtor">
-        <name>Destructor</name>
-
-        <code-item>
-          <code>
-~empty_physical_line_aware_handler();
-          </code>
-          <effects>Destroys the stored <c>Handler</c> object.</effects>
-        </code-item>
-      </section>
-
-      <section id="empty_physical_line_aware_handler.assign">
-        <name>Assignment</name>
-
-        <code-item>
-          <code>
-empty_physical_line_aware_handler&amp; operator=(
-  const empty_physical_line_aware_handler&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <effects><p>Equivalent to:</p>
-                 <code>base() = other.base();
-return *this;</code>
-          </effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_assignable_v&lt;Handler></c>.</remark>
-        </code-item>
-
-        <code-item>
-          <code>
-empty_physical_line_aware_handler&amp; operator=(
-  empty_physical_line_aware_handler&amp;&amp; other) noexcept(<nc>see below</nc>);
-          </code>
-          <effects><p>Equivalent to:</p>
-                   <code>base() = std::move(other.base());
-return *this;</code>
-          </effects>
-          <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable_v&lt;Handler></c>.</remark>
-        </code-item>
-      </section>
-
-      <section id="empty_physical_line_aware_handler.access">
-        <name>Access</name>
-
-        <code-item>
-          <code>
-const handler_type&amp; base() const noexcept;
-      handler_type&amp; base()       noexcept;
-          </code>
-          <returns>A reference to the stored <c>Handler</c> object.</returns>
         </code-item>
       </section>
 
