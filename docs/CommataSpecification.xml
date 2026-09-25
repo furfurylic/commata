@@ -6905,10 +6905,7 @@ namespace commata {
     <section id="basic_table_scanner">
       <name>Class template <c>basic_table_scanner</c></name>
 
-      <section id="basic_table_scanner.overview">
-        <name>Class template <c>basic_table_scanner</c> overview</name>
-
-        <codeblock>
+      <codeblock>
 namespace commata {
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class basic_table_scanner {
@@ -6918,7 +6915,7 @@ namespace commata {
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits&lt;Allocator>::size_type;
 
-    <c>// <n><xref id="basic_table_scanner.cons"/>, construction:</n></c>
+    <c>// <n><xref id="basic_table_scanner.ctor"/>, constructors:</n></c>
     explicit basic_table_scanner(std::size_t header_record_count = 0);
     basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
                         std::size_t header_record_count = 0);
@@ -6929,6 +6926,7 @@ namespace commata {
                           HeaderFieldScanner&amp;&amp; s);
     basic_table_scanner(basic_table_scanner&amp;&amp; other) noexcept;
 
+    <c>// <n><xref id="basic_table_scanner.dtor"/>, destructor:</n></c>
    ~basic_table_scanner();
 
     <c>// <n><xref id="basic_table_scanner.allocator"/>, allocator access:</n></c>
@@ -6963,16 +6961,15 @@ namespace commata {
     bool is_in_header() const noexcept;
   };
 }
-        </codeblock>
+      </codeblock>
 
-        <p>The class template <c>basic_table_scanner</c> describes the table scanner objects (<xref id="scan.scanner.general"/>).
-           An instantiation of it satisfies the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.
-           An object of an instantiation of it can not be reused (that is, it can receive the parsing events that the parser emits only once).</p>
-        <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements and <c>Allocator::value_type</c> shall be a type identical to <c>Ch</c>.</p>
-      </section>
+      <p>The class template <c>basic_table_scanner</c> describes the table scanner objects (<xref id="scan.scanner.general"/>).
+          An instantiation of it satisfies the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.
+          An object of an instantiation of it can not be reused (that is, it can receive the parsing events that the parser emits only once).</p>
+      <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements and <c>Allocator::value_type</c> shall be a type identical to <c>Ch</c>.</p>
 
-      <section id="basic_table_scanner.cons">
-        <name><c>basic_table_scanner</c> construction</name>
+      <section id="basic_table_scanner.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -7003,8 +7000,19 @@ template &lt;class HeaderFieldScanner>
         </code-item>
       </section>
 
+      <section id="basic_table_scanner.dtor">
+        <name>Destructor</name>
+
+        <code-item>
+          <code>
+~basic_table_scanner();
+          </code>
+          <effects>Destroys an object of class <c>basic_table_scanner&lt;Ch, Tr, Allocator></c>.</effects>
+        </code-item>
+      </section>
+
       <section id="basic_table_scanner.allocator">
-        <name><c>basic_table_scanner</c> allocator access</name>
+        <name>Allocator access</name>
         <code-item>
           <code>
 allocator_type get_allocator() const noexcept;
@@ -7014,7 +7022,7 @@ allocator_type get_allocator() const noexcept;
       </section>
 
       <section id="basic_table_scanner.field_scanner_access">
-        <name><c>basic_table_scanner</c> body field scanner access</name>
+        <name>Body field scanner access</name>
 
         <code-item>
           <code>
@@ -7052,7 +7060,7 @@ template &lt;class T>       T* get_field_scanner(std::size_t j)       noexcept;
       </section>
 
       <section id="basic_table_scanner.record_end_scanner_access">
-        <name><c>basic_table_scanner</c> record-end scanner access</name>
+        <name>Record-end scanner access</name>
 
         <code-item>
           <code>
@@ -7089,7 +7097,8 @@ template &lt;class T>       T* get_record_end_scanner()       noexcept;
       </section>
 
       <section id="basic_table_scanner.processing_state">
-        <name><c>basic_table_scanner</c> processing state</name>
+        <name>Processing state</name>
+
         <code-item>
           <code>
 bool is_in_header() const noexcept;
