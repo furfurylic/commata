@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-09-20 (UTC)</signature>
+<signature>2026-09-26 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4602,7 +4602,7 @@ namespace commata {
     using traits_type = Tr;
     using allocator_type = Allocator;
 
-    <c>// <n><xref id="record_extractor.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="record_extractor.ctor"/>, constructors:</n></c>
     template &lt;class FieldNamePredR, class FieldValuePredR>
       record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
@@ -4615,6 +4615,8 @@ namespace commata {
                        header_forwarding header = header_forwarding::yes,
                        std::size_t max_record_num = 0);
     record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="record_extractor.dtor"/>, destructors:</n></c>
    ~record_extractor();
 
     <c>// <n><xref id="record_extractor.accessors"/>, accessors:</n></c>
@@ -4654,8 +4656,8 @@ namespace commata {
          <c>Allocator</c> shall meet the <c>Allocator</c> requirements.</p>
       <p>When the implementations of this class template throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c> (that is, with the C library locale).</p>
 
-      <section id="record_extractor.cons">
-        <name><c>record_extractor</c> constructors and assignment operators</name>
+      <section id="record_extractor.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -4723,8 +4725,20 @@ record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
         </code-item>
       </section>
 
+      <section id="record_extractor.dtor">
+        <name>Destructor</name>
+
+        <code-item>
+          <code>
+~record_extractor();
+          </code>
+          <effects>Destroys an object of class <c>record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, Allocator></c>.</effects>
+        </code-item>
+      </section>
+
       <section id="record_extractor.accessors">
-        <name><c>record_extractor</c> accessors</name>
+        <name>Accessors</name>
+
         <code-item>
           <code>
 allocator_type get_allocator() const noexcept;
@@ -4734,7 +4748,8 @@ allocator_type get_allocator() const noexcept;
       </section>
 
       <section id="record_extractor.processing_state">
-        <name><c>record_extractor</c> processing state</name>
+        <name>Processing state</name>
+
         <code-item>
           <code>
 bool is_in_header() const noexcept;
@@ -4759,7 +4774,7 @@ namespace commata {
     using traits_type = Tr;
     using allocator_type = Allocator;
 
-    <c>// <n><xref id="record_extractor_with_indexed_key.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="record_extractor_with_indexed_key.ctor"/>, constructors:</n></c>
     template &lt;class FieldValuePredR>
       record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                         std::size_t target_field_index,
@@ -4777,6 +4792,8 @@ namespace commata {
                                         std::size_t max_record_num = 0);
     record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; other)
                                       noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="record_extractor_with_indexed_key.dtor"/>, destructor:</n></c>
    ~record_extractor_with_indexed_key();
 
     <c>// <n><xref id="record_extractor_with_indexed_key.accessors"/>, accessors:</n></c>
@@ -4815,8 +4832,8 @@ namespace commata {
          <c>Tr</c> shall be a character traits type of <c>std::remove_const_t&lt;Ch></c>.
          <c>Allocator</c> shall meet the <c>Allocator</c> requirements.</p>
 
-      <section id="record_extractor_with_indexed_key.cons">
-        <name><c>record_extractor_with_indexed_key</c> constructors and assignment operators</name>
+      <section id="record_extractor_with_indexed_key.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -4886,8 +4903,20 @@ record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; ot
         </code-item>
       </section>
 
+      <section id="record_extractor_with_indexed_key.dtor">
+        <name>Destructor</name>
+
+        <code-item>
+          <code>
+~record_extractor_with_indexed_key();
+          </code>
+          <effects>Destroys an object of class <c>record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, Allocator></c>.</effects>
+        </code-item>
+      </section>
+
       <section id="record_extractor_with_indexed_key.accessors">
-        <name><c>record_extractor_with_indexed_key</c> accessors</name>
+        <name>Accessors</name>
+
         <code-item>
           <code>
 allocator_type get_allocator() const noexcept;
@@ -4897,7 +4926,8 @@ allocator_type get_allocator() const noexcept;
       </section>
 
       <section id="record_extractor_with_indexed_key.processing_state">
-        <name><c>record_extractor_with_indexed_key</c> processing state</name>
+        <name>Processing state</name>
+
         <code-item>
           <code>
 bool is_in_header() const noexcept;
