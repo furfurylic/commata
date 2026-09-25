@@ -7743,7 +7743,7 @@ namespace commata {
     using skipping_handler_type = SkippingHandler;
     using conversion_error_handler_type = ConversionErrorHandler;
 
-    <c>// <n><xref id="locale_based_arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="locale_based_arithmetic_field_translator.ctor"/>, constructors:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler>
     explicit locale_based_arithmetic_field_translator(
@@ -7755,6 +7755,8 @@ namespace commata {
       const locale_based_arithmetic_field_translator&amp;  other) = default;
     locale_based_arithmetic_field_translator(
             locale_based_arithmetic_field_translator&amp;&amp; other) = default;
+
+    <c>// <n><xref id="locale_based_arithmetic_field_translator.dtor"/>, destructor:</n></c>
    ~locale_based_arithmetic_field_translator() = default;
 
     <c>// <n><xref id="locale_based_arithmetic_field_translator.handler"/>, handler access:</n></c>
@@ -7788,7 +7790,8 @@ private:
            The value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) of <c>locale_based_arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler></c> is <c>T</c>.</p>
 
         <section id="locale_based_arithmetic_field_translator.types">
-          <name><c>locale_based_arithmetic_field_translator</c> member types</name>
+          <name>Member types</name>
+
           <code-item>
             <code>
 using target_type = <nc>see below</nc>;
@@ -7797,8 +7800,9 @@ using target_type = <nc>see below</nc>;
           </code-item>
         </section>
 
-        <section id="locale_based_arithmetic_field_translator.cons">
-          <name><c>locale_based_arithmetic_field_translator</c> construct/copy/destroy</name>
+        <section id="locale_based_arithmetic_field_translator.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
@@ -7816,8 +7820,20 @@ explicit locale_based_arithmetic_field_translator(
           </code-item>
         </section>
 
+        <section id="locale_based_arithmetic_field_translator.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~locale_based_arithmetic_field_translator();
+            </code>
+            <effects>Destroys an object of class <c>locale_based_arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler></c>.</effects>
+          </code-item>
+        </section>
+
         <section id="locale_based_arithmetic_field_translator.handler">
-          <name><c>locale_based_arithmetic_field_translator</c> handler access</name>
+          <name>Handler access</name>
+
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -7836,7 +7852,8 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
         </section>
 
         <section id="locale_based_arithmetic_field_translator.inv">
-          <name><c>locale_based_arithmetic_field_translator</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 template &lt;class Ch> void operator()(Ch* begin, Ch* end);
