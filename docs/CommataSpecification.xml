@@ -6562,10 +6562,12 @@ namespace commata {
     using table_type = basic_stored_table&lt;Content, Allocator>;
     using char_type = typename table_type::char_type;
 
-    <c>// <n><xref id="stored_table_builder.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="stored_table_builder.ctor"/>, constructors:</n></c>
     explicit stored_table_builder(table_type&amp; table, std::size_t max_record_num = 0);
     template &lt;class F> stored_table_builder(table_type&amp; table, F&amp;&amp; f);
     stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
+
+    <c>// <n><xref id="stored_table_builder.dtor"/>, destructor:</n></c>
    ~stored_table_builder();
 
     <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
@@ -6622,8 +6624,8 @@ namespace commata {
 
       <p>After parsing, even when it has exited via an exception, the targeted object shall be complete (<xref id="basic_stored_table.defs"/>) and have its content container not empty.</p>
 
-      <section id="stored_table_builder.cons">
-        <name><c>stored_table_builder</c> construct/copy/destroy</name>
+      <section id="stored_table_builder.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -6657,6 +6659,10 @@ stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
           <effects>Initializes an object of <c>stored_table_builder&lt;Content, Allocator, Options></c> that holds the same reference to the targeted object as <c>other</c>.</effects>
           <remark>This constructor does nothing on the targeted object.</remark>
         </code-item>
+      </section>
+
+      <section id="stored_table_builder.dtor">
+        <name>Destructor</name>
 
         <code-item>
           <code>
@@ -6667,7 +6673,7 @@ stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
       </section>
 
       <section id="stored_table_builder.creation">
-        <name><c>stored_table_builder</c> creation functions</name>
+        <name>Creation functions</name>
 
         <code-item>
           <code>
