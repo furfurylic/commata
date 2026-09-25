@@ -5221,12 +5221,14 @@ namespace commata {
 
     static constexpr size_type npos = -1;
 
-    <c>// <n><xref id="basic_stored_value.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="basic_stored_value.ctor"/>, constructors:</n></c>
     basic_stored_value() noexcept;
     basic_stored_value(Ch* begin, Ch* end);
     basic_stored_value(const basic_stored_value&amp; other) noexcept = default;
     template &lt;class OtherCh>
       basic_stored_value(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
+
+    <c>// <n><xref id="basic_stored_value.assign"/>, assignment:</n></c>
     basic_stored_value&amp; operator=(const basic_stored_value&amp; other) noexcept = default;
     template &lt;class OtherCh>
       basic_stored_value&amp; operator=(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
@@ -5418,8 +5420,8 @@ namespace commata {
         </tr>
       </table>
 
-      <section id="basic_stored_value.cons">
-        <name><c>basic_stored_value</c> constructors and assignment operators</name>
+      <section id="basic_stored_value.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -5446,6 +5448,10 @@ template &lt;class OtherCh>
           <effects>Initializes <c>b</c> with <c>other.begin()</c> and <c>e</c> with <c>other.end()</c>.</effects>
           <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
         </code-item>
+      </section>
+
+      <section id="basic_stored_value.assign">
+        <name>Assignment</name>
 
         <code-item>
           <code>
@@ -5458,7 +5464,7 @@ template &lt;class OtherCh>
       </section>
 
       <section id="basic_stored_value.iterators">
-        <name><c>basic_stored_value</c> iterator support</name>
+        <name>Iterator support</name>
 
         <code-item>
           <code>
@@ -5498,7 +5504,7 @@ const_reverse_iterator crend() const noexcept;
       </section>
 
       <section id="basic_stored_value.capacity">
-        <name><c>basic_stored_value</c> capacity</name>
+        <name>Capacity</name>
 
         <code-item>
           <code>
@@ -5531,7 +5537,7 @@ bool empty() const noexcept;
       </section>
 
       <section id="basic_stored_value.access">
-        <name><c>basic_stored_value</c> element access</name>
+        <name>Element access</name>
 
         <code-item>
           <code>
@@ -5603,7 +5609,7 @@ template &lt;class OtherTr = std::char_traits&lt;std::remove_const_t&lt;Ch>>,
       </section>
 
       <section id="basic_stored_value.modifiers">
-        <name><c>basic_stored_value</c> modifiers</name>
+        <name>Modifiers</name>
 
         <code-item>
           <code>
@@ -5651,7 +5657,7 @@ void pop_back();
       </section>
 
       <section id="basic_stored_value.comparison">
-        <name><c>basic_stored_value</c> comparison functions</name>
+        <name>Comparison functions</name>
 
         <p>Function templates described in this subclause that take template parameters <c>ChL</c> and <c>ChR</c> shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type.</p>
         <p>Function templates described in this subclause that take template parameters <c>ChC</c> and <c>Other</c> shall not participate in overload resolution unless <c>std::is_convertible_v&lt;Other, std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr></c> is not <c>false</c>.</p>
@@ -5791,7 +5797,7 @@ template &lt;class ChC, class Tr, class Other>
       </section>
 
       <section id="basic_stored_value.inserter">
-        <name><c>basic_stored_value</c> inserters</name>
+        <name>Inserters</name>
 
         <code-item>
           <code>
@@ -5804,7 +5810,7 @@ template &lt;class ChC, class Tr>
       </section>
 
       <section id="basic_stored_value.conversion">
-        <name><c>basic_stored_value</c> conversion</name>
+        <name>Conversion</name>
 
         <code-item>
           <code>
@@ -5830,7 +5836,7 @@ template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove
       </section>
 
       <section id="basic_stored_value.hash">
-        <name><c>basic_stored_value</c> hash support</name>
+        <name>Hash support</name>
 
         <codeblock>
 namespace std {
