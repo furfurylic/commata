@@ -8066,12 +8066,14 @@ namespace commata {
     using target_type = <nc>see below</nc>;
     using skipping_handler_type = SkippingHandler;
 
-    <c>// <n><xref id="string_view_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="string_view_field_translator.ctor"/>, constructors:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
       explicit string_view_field_translator(
         SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
     string_view_field_translator(const string_view_field_translator&amp;  other) noexcept(<nc>see below</nc>);
     string_view_field_translator(      string_view_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="string_view_field_translator.dtor"/>, destructor:</n></c>
    ~string_view_field_translator();
 
     <c>// <n><xref id="string_view_field_translator.handler"/>, handler access:</n></c>
@@ -8096,7 +8098,8 @@ namespace commata {
            Therefore, <c>Sink</c> objects should not store received ranges to a store that remains alive after the putting operation.</span></p>
 
         <section id="string_view_field_translator.types">
-          <name><c>string_view_field_translator</c> member types</name>
+          <name>Member types</name>
+
           <code-item>
             <code>
 using target_type = <nc>see below</nc>;
@@ -8105,8 +8108,9 @@ using target_type = <nc>see below</nc>;
           </code-item>
         </section>
 
-        <section id="string_view_field_translator.cons">
-          <name><c>string_view_field_translator</c> construct/copy/destroy</name>
+        <section id="string_view_field_translator.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
@@ -8137,8 +8141,20 @@ string_view_field_translator(string_view_field_translator&amp;&amp; other) noexc
           </code-item>
         </section>
 
+        <section id="string_view_field_translator.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~string_view_field_translator();
+            </code>
+            <effects>Destroys an object of class <c>string_view_field_translator&lt;T, Sink, SkippingHandler></c>.</effects>
+          </code-item>
+        </section>
+
         <section id="string_view_field_translator.handler">
-          <name><c>string_view_field_translator</c> handler access</name>
+          <name>Handler access</name>
+
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -8149,7 +8165,8 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
         </section>
 
         <section id="string_view_field_translator.inv">
-          <name><c>string_view_field_translator</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 void operator()(const typename target_type::value_type* begin,
