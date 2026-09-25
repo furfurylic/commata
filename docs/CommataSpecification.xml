@@ -7886,7 +7886,7 @@ namespace commata {
     using allocator_type = typename T::allocator_type;
     using skipping_handler_type = SkippingHandler;
 
-    <c>// <n><xref id="string_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="string_field_translator.ctor"/>, constructors:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
       explicit string_field_translator(
         SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
@@ -7896,6 +7896,8 @@ namespace commata {
         SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
     string_field_translator(const string_field_translator&amp;  other) noexcept(<nc>see below</nc>);
     string_field_translator(      string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="string_field_translator.dtor"/>, destructor:</n></c>
    ~string_field_translator();
 
     <c>// <n><xref id="string_field_translator.allocator"/>, allocator access:</n></c>
@@ -7922,7 +7924,8 @@ namespace commata {
            Its value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is <c>T</c>.</p>
 
         <section id="string_field_translator.types">
-          <name><c>string_field_translator</c> member types</name>
+          <name>Member types</name>
+
           <code-item>
             <code>
 using target_type = <nc>see below</nc>;
@@ -7931,8 +7934,9 @@ using target_type = <nc>see below</nc>;
           </code-item>
         </section>
 
-        <section id="string_field_translator.cons">
-          <name><c>string_field_translator</c> construct/copy/destroy</name>
+        <section id="string_field_translator.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
@@ -7975,8 +7979,20 @@ string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>se
           </code-item>
         </section>
 
+        <section id="string_field_translator.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~string_field_translator();
+            </code>
+            <effects>Destroys an object of class <c>string_field_translator&lt;T, Sink, SkippingHandler></c>.</effects>
+          </code-item>
+        </section>
+
         <section id="string_field_translator.allocator">
-          <name><c>string_field_translator</c> allocator access</name>
+          <name>Allocator access</name>
+
           <code-item>
             <code>
 allocator_type get_allocator() const noexcept;
@@ -7986,7 +8002,8 @@ allocator_type get_allocator() const noexcept;
         </section>
 
         <section id="string_field_translator.handler">
-          <name><c>string_field_translator</c> handler access</name>
+          <name>Handler access</name>
+
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -7997,7 +8014,8 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
         </section>
 
         <section id="string_field_translator.inv">
-          <name><c>string_field_translator</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 void operator()(const typename target_type::value_type* begin,
