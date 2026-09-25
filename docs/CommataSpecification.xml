@@ -8619,10 +8619,13 @@ namespace commata {
   public:
     using value_type = T;
 
-    <c>// <n><xref id="arithmetic_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="arithmetic_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit arithmetic_field_translator_factory(
       SkippingHandler skipping_handler = SkippingHandler(),
       ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+
+    <c>// <n>destructor:</n></c>
+   ~arithmetic_field_translator_factory() = default;
 
     <c>// <n><xref id="arithmetic_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>
@@ -8650,8 +8653,9 @@ namespace commata {
         <p><c>arithmetic_field_translator_factory&lt;T, SkippingHander, ConversionErrorHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
            for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;Ch, Tr, Allocator></c> where <c>Ch</c> is <c>char</c> or <c>wchar_t</c>, <c>Ch</c> is a character traits type for <c>Ch</c>, and <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>Ch</c>.</p>
 
-        <section id="arithmetic_field_translator_factory.cons">
-          <name><c>arithmetic_field_translator_factory</c> construct/copy/destroy</name>
+        <section id="arithmetic_field_translator_factory.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 explicit arithmetic_field_translator_factory(
@@ -8675,7 +8679,8 @@ template &lt;class T, class U> arithmetic_field_translator_factory(T, U)
         </section>
 
         <section id="arithmetic_field_translator_factory.inv">
-          <name><c>arithmetic_field_translator_factory</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 template &lt;class Sink>
@@ -8698,11 +8703,14 @@ namespace commata {
   public:
     using value_type = T;
 
-    <c>// <n><xref id="locale_based_arithmetic_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="locale_based_arithmetic_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit locale_based_arithmetic_field_translator_factory(
       const std::locale&amp; loc,
       SkippingHandler skipping_handler = SkippingHandler(),
       ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+
+    <c>// <n>destructor:</n></c>
+   ~locale_based_arithmetic_field_translator_factory() = default;
 
     <c>// <n><xref id="locale_based_arithmetic_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink> locale_based_arithmetic_field_translator&lt;
@@ -8733,8 +8741,9 @@ namespace commata {
         <p><c>locale_based_arithmetic_field_translator_factory&lt;T, SkippingHander, ConversionErrorHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
            for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;Ch, Tr, Allocator></c> where <c>Ch</c> is <c>char</c> or <c>wchar_t</c>, <c>Ch</c> is a character traits type for <c>Ch</c>, and <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>Ch</c>.</p>
 
-        <section id="locale_based_arithmetic_field_translator_factory.cons">
-          <name><c>locale_based_arithmetic_field_translator_factory</c> construct/copy/destroy</name>
+        <section id="locale_based_arithmetic_field_translator_factory.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 explicit locale_based_arithmetic_field_translator_factory(
@@ -8761,7 +8770,8 @@ template &lt;class T, class U>
         </section>
 
         <section id="locale_based_arithmetic_field_translator_factory.inv">
-          <name><c>locale_based_arithmetic_field_translator_factory</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 template &lt;class Sink> locale_based_arithmetic_field_translator&lt;
@@ -8784,9 +8794,12 @@ namespace commata {
   public:
     using value_type = T;
 
-    <c>// <n><xref id="string_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="string_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit string_field_translator_factory(
       SkippingHandler skipping_handler = SkippingHandler());
+
+    <c>// <n>destructor:</n></c>
+   ~string_field_translator_factory();
 
     <c>// <n><xref id="string_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>
@@ -8824,8 +8837,9 @@ namespace commata {
         <p><c>string_field_translator_factory&lt;T, SkippingHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
            for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;T::value_type, T::traits_type, T::allocator_type></c>.</p>
 
-        <section id="string_field_translator_factory.cons">
-          <name><c>string_field_translator_factory</c> construct/copy/destroy</name>
+        <section id="string_field_translator_factory.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 explicit string_field_translator_factory(
@@ -8836,7 +8850,8 @@ explicit string_field_translator_factory(
         </section>
 
         <section id="string_field_translator_factory.inv">
-          <name><c>string_field_translator_factory</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 template &lt;class Sink>
@@ -8859,9 +8874,12 @@ namespace commata {
   public:
     using value_type = T;
 
-    <c>// <n><xref id="string_view_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="string_view_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit string_view_field_translator_factory(
-      SkippingHandler skipping_handler = SkippingHandler()) :
+      SkippingHandler skipping_handler = SkippingHandler());
+
+    <c>// <n>destructor:</n></c>
+   ~string_view_field_translator_factory();
 
     <c>// <n><xref id="string_view_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>
@@ -8894,8 +8912,9 @@ namespace commata {
         <p><c>string_view_field_translator_factory&lt;T, SkippingHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
            for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;T::value_type, T::traits_type, Allocator></c> where <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>T::value_type</c>.</p>
 
-        <section id="string_view_field_translator_factory.cons">
-          <name><c>string_view_field_translator_factory</c> construct/copy/destroy</name>
+        <section id="string_view_field_translator_factory.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 explicit string_view_field_translator_factory(
@@ -8906,8 +8925,9 @@ explicit string_view_field_translator_factory(
         </section>
 
         <section id="string_view_field_translator_factory.inv">
-          <name><c>string_view_field_translator_factory</c> invocation</name>
-          <code-item>
+          <name>Invocation</name>
+
+            <code-item>
             <code>
 template &lt;class Sink>
   string_view_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>
@@ -8933,7 +8953,8 @@ namespace commata {
         </codeblock>
 
         <section id="default_field_translator_factory.types">
-          <name><c>default_field_translator_factory</c> member types</name>
+          <name>Member types</name>
+
           <code-item>
             <code>
 using type = <nc>see below</nc>;
