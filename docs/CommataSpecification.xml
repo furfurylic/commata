@@ -6496,7 +6496,8 @@ namespace commata {
          Its underlying type is an unspecified unsigned integer type.</p>
 
       <section id="stored_table_builder_option.ops">
-        <name><c>stored_table_builder_option</c> operations</name>
+        <name>Operations</name>
+
         <p>In this subclause, <c>U</c> denotes <c>std::underlying_type_t&lt;stored_table_builder_option></c>.</p>
         <code-item>
           <code>
