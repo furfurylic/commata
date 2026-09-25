@@ -7568,7 +7568,7 @@ namespace commata {
     using skipping_handler_type = SkippingHandler;
     using conversion_error_handler_type = ConversionErrorHandler;
 
-    <c>// <n><xref id="arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="arithmetic_field_translator.ctor"/>, constructors:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler>
       explicit arithmetic_field_translator(
@@ -7577,6 +7577,8 @@ namespace commata {
           std::decay_t&lt;ConversionErrorHandlerR>());
     arithmetic_field_translator(const arithmetic_field_translator&amp;  other) noexcept(<nc>see below</nc>);
     arithmetic_field_translator(      arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="arithmetic_field_translator.dtor"/>, destructor:</n></c>
    ~arithmetic_field_translator();
 
     <c>// <n><xref id="arithmetic_field_translator.handler"/>, handler access:</n></c>
@@ -7603,7 +7605,8 @@ namespace commata {
            The value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) of <c>arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler></c> is <c>T</c>.</p>
 
         <section id="arithmetic_field_translator.types">
-          <name><c>arithmetic_field_translator</c> member types</name>
+          <name>Member types</name>
+
           <code-item>
             <code>
 using target_type = <nc>see below</nc>;
@@ -7612,8 +7615,9 @@ using target_type = <nc>see below</nc>;
           </code-item>
         </section>
 
-        <section id="arithmetic_field_translator.cons">
-          <name><c>arithmetic_field_translator</c> construct/copy/destroy</name>
+        <section id="arithmetic_field_translator.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
@@ -7648,8 +7652,20 @@ arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcep
           </code-item>
         </section>
 
+        <section id="arithmetic_field_translator.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~arithmetic_field_translator();
+            </code>
+            <effects>Destroys an object of class <c>arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler></c>.</effects>
+          </code-item>
+        </section>
+
         <section id="arithmetic_field_translator.handler">
-          <name><c>arithmetic_field_translator</c> handler access</name>
+          <name>Handler access</name>
+
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -7668,7 +7684,8 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
         </section>
 
         <section id="arithmetic_field_translator.inv">
-          <name><c>arithmetic_field_translator</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 template &lt;class Ch> void operator()(Ch* begin, Ch* end);
