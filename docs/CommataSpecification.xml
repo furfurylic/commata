@@ -5851,7 +5851,7 @@ namespace std {
       <name>Class template <c>basic_stored_table</c></name>
 
       <section id="basic_stored_table.overview">
-        <name>Class template <c>basic_stored_table</c> overview</name>
+        <name>Overview</name>
 
         <codeblock>
 namespace commata {
@@ -5866,7 +5866,7 @@ namespace commata {
     using traits_type     = typename value_type::traits_type;
     using size_type       = typename content_type::size_type;
 
-    <c>// <n><xref id="basic_stored_table.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="basic_stored_table.ctor"/>, constructors:</n></c>
     explicit basic_stored_table(std::size_t buffer_size = 0) :
       basic_stored_table(std::allocator_arg, Allocator(), buffer_size) {}
     basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t buffer_size = 0U);
@@ -5877,7 +5877,11 @@ namespace commata {
     basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                              basic_stored_table&amp;&amp; other)
       noexcept(std::allocator_traits&lt;Allocator>::is_always_equal::value);
+
+    <c>// <n><xref id="basic_stored_table.dtor"/>, destructor:</n></c>
    ~basic_stored_table();
+
+    <c>// <n><xref id="basic_stored_table.assign"/>, assignment:</n></c>
     basic_stored_table&amp; operator=(const basic_stored_table&amp;  other);
     basic_stored_table&amp; operator=(      basic_stored_table&amp;&amp; other)
       noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment::value
@@ -5970,7 +5974,7 @@ namespace commata {
         <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>Content</c>.</p>
 
         <section id="basic_stored_table.parts">
-          <name><c>basic_stored_table</c> constituents</name>
+          <name>Constituents</name>
 
           <p>Let <c>Ch</c> be a type denoted with <c>Content::value_type::value_type::value_type</c>.</p>
           <p>An object of <c>basic_stored_table&lt;Content, Allocator></c> consists of the four following constituents:</p>
@@ -6026,8 +6030,8 @@ namespace commata {
         </section>
       </section>
 
-      <section id="basic_stored_table.cons">
-        <name><c>basic_stored_table</c> construct/copy/destroy</name>
+      <section id="basic_stored_table.ctor">
+        <name>Constructors</name>
 
         <p>In this subclause, <c>AT</c> denotes <c>std::allocator_traits&lt;Allocator></c>, <c>CAT</c> denotes <c>typename AT::template rebind_traits&lt;Ch></c> and <c>CA</c> denotes <c>typename CAT::allocator_type</c>.</p>
         <p>All constructors and assignment operators shall make an appropriate decision about propagation of the allocator in accordance with <c>AT::select_on_container_copy_construnction</c>, <c>AT::propagete_on_container_copy_assignment</c> and <c>AT::propagete_on_container_move_assignment</c>.</p>
@@ -6078,6 +6082,10 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
           <throws>Nothing if <c>other.get_allocator() == alloc</c> is not <c>false</c>.</throws>
           <remark>The states of <c>other</c> shall not be changed if the call exits via an exception.</remark>
         </code-item>
+      </section>
+
+      <section id="basic_stored_table.dtor">
+        <name>Destructor</name>
 
         <code-item>
           <code>
@@ -6085,6 +6093,10 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
           </code>
           <effects>Destroys the content container, deallocates all buffers in the store, and destroys the allocator.</effects>
         </code-item>
+      </section>
+
+      <section id="basic_stored_table.assign">
+        <name>Assignment</name>
 
         <code-item>
           <code>
@@ -6108,7 +6120,7 @@ basic_stored_table&amp; operator=(basic_stored_table&amp;&amp; other)
       </section>
 
       <section id="basic_stored_table.constituents">
-        <name><c>basic_stored_table</c> constituent access</name>
+        <name>Constituent access</name>
 
         <code-item>
           <code>
@@ -6168,7 +6180,8 @@ void clear() noexcept(<nc>see below</nc>);
       </section>
 
       <section id="basic_stored_table.capacity">
-        <name><c>basic_stored_table</c> capacity</name>
+        <name>Capacity</name>
+
         <code-item>
           <code>
 void shrink_to_fit();
@@ -6179,7 +6192,7 @@ void shrink_to_fit();
       </section>
 
       <section id="basic_stored_table.rewrite">
-        <name><c>basic_stored_table</c> store operations</name>
+        <name>Store operations</name>
 
         <code-item>
           <code>
@@ -6268,7 +6281,7 @@ template &lt;class F> auto guard_rewrite(F f) -> decltype(f(*this));
       </section>
 
       <section id="basic_stored_table.primitives">
-        <name><c>basic_stored_table</c> primitive store operations</name>
+        <name>Primitive store operations</name>
 
         <code-item>
           <code>
@@ -6318,7 +6331,7 @@ void secure_current_upto(char_type* secured_last);
       </section>
 
       <section id="basic_stored_table.modifiers">
-        <name><c>basic_stored_table</c> modifiers</name>
+        <name>Modifiers</name>
 
         <p>To achieve clarity, in this subclause <c>operator[]</c> are used on an object <c>t</c> of a specialization of <c>basic_stored_table</c> that does not necessarily have them well-defined. In these cases, the semaintics of <c>t[n]</c> is the same as that of <c>*std::next(t.content().cbegin(), n)</c>.</p>
 
@@ -6382,7 +6395,7 @@ void swap(basic_stored_table&amp; other)
       </section>
 
       <section id="basic_stored_table.nonmember">
-        <name><c>basic_stored_table</c> non-member functions</name>
+        <name>Non-member functions</name>
 
         <code-item>
           <code>
@@ -6438,7 +6451,7 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
       </section>
 
       <section id="basic_stored_table.special">
-        <name><c>basic_stored_table</c> specialized algorithms</name>
+        <name>Specialized algorithms</name>
 
         <code-item>
           <code>
