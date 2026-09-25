@@ -8211,7 +8211,7 @@ namespace commata {
     using value_type            = std::basic_string_view&lt;char_type, traits_type>;
     using skipping_handler_type = SkippingHandler;
 
-    <c>// <n><xref id="string_field_inserter.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="string_field_inserter.ctor"/>, constructors:</n></c>
     template &lt;class SkippingHandlerR = SkippingHandler>
       explicit string_field_inserter(Container&amp; container,
         SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
@@ -8221,6 +8221,8 @@ namespace commata {
         SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
     string_field_inserter(const string_field_inserter&amp;  other) noexcept(see below);
     string_field_inserter(      string_field_inserter&amp;&amp; other) noexcept(see below);
+
+    <c>// <n><xref id="string_field_inserter.dtor"/>, destructors:</n></c>
    ~string_field_inserter();
 
     <c>// <n><xref id="string_field_inserter.allocator"/>, allocator access:</n></c>
@@ -8250,8 +8252,9 @@ namespace commata {
            and a skipping handler object of the type <c>SkippingHandler</c>.</p>
         <p>Insertion and emplacement to the container object shall be done to the end of it when <c>Container</c> is a sequence container type.</p>
 
-        <section id="string_field_inserter.cons">
-          <name><c>string_field_inserter</c> construct/copy/destroy</name>
+        <section id="string_field_inserter.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 template &lt;class SkippingHandlerR = SkippingHandler>
@@ -8293,8 +8296,20 @@ string_field_inserter(string_field_inserter&amp;&amp; other) noexcept(<nc>see be
           </code-item>
         </section>
 
+        <section id="string_field_inserter.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~string_field_inserter();
+            </code>
+            <effects>Destroys an object of class <c>string_field_inserter&lt;Container, SkippingHandler></c>.</effects>
+          </code-item>
+        </section>
+
         <section id="string_field_inserter.allocator">
-          <name><c>string_field_inserter</c> allocator access</name>
+          <name>Allocator access</name>
+
           <code-item>
             <code>
 allocator_type get_allocator() const noexcept;
@@ -8304,7 +8319,8 @@ allocator_type get_allocator() const noexcept;
         </section>
 
         <section id="string_field_inserter.handler">
-          <name><c>string_field_inserter</c> handler access</name>
+          <name>Handler access</name>
+
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -8315,7 +8331,8 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
         </section>
 
         <section id="string_field_inserter.inv">
-          <name><c>string_field_inserter</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 void operator()(const Ch* begin, const Ch* end);
