@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-09-20 (UTC)</signature>
+<signature>2026-09-26 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -9095,8 +9095,10 @@ namespace commata {
        Its underlying type is an unspecified unsigned integer type.</p>
 
     <section id="primitive_table_pull_handle.ops">
-      <name><c>primitive_table_pull_handle</c> operations</name>
+      <name>Operations</name>
+
       <p>In this subclause, <c>U</c> denotes <c>std::underlying_type_t&lt;primitive_table_pull_handle></c>.</p>
+
       <code-item>
         <code>
 constexpr primitive_table_pull_handle operator|(
@@ -9167,7 +9169,7 @@ namespace commata {
     static constexpr bool physical_position_available = <nc>see below</nc>;
     static constexpr std::size_t npos = -1;
 
-    <c>// <n><xref id="primitive_table_pull.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="primitive_table_pull.ctor"/>, constructors:</n></c>
     template &lt;class TableSourceR>
       explicit primitive_table_pull(TableSourceR&amp;&amp; in,
                                     std::size_t buffer_size = 0);
@@ -9175,6 +9177,8 @@ namespace commata {
       primitive_table_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
                            std::size_t buffer_size = 0);
     primitive_table_pull(primitive_table_pull&amp;&amp; other) noexcept;
+
+    <c>// <n><xref id="primitive_table_pull.dtor"/>, destructor:</n></c>
    ~primitive_table_pull();
 
     <c>// <n><xref id="primitive_table_pull.allocator"/>, allocator access:</n></c>
@@ -9224,7 +9228,8 @@ namespace commata {
        <c>primitive_table_pull_handle::all</c> has a representation of all one bits and is intended to be used to express &#x2018;ignore none&#x2019;.</p>
 
     <section id="primitive_table_pull.types">
-      <name><c>primitive_table_pull</c> member types</name>
+      <name>Member types</name>
+
       <code-item>
         <code>
 using char_type = <nc>see below</nc>;
@@ -9240,7 +9245,8 @@ using char_type = <nc>see below</nc>;
     </section>
 
     <section id="primitive_table_pull.physical_position_available">
-      <name><c>primitive_table_pull</c> physical position availability</name>
+      <name>Physical position availability</name>
+
       <code-item>
         <code>
 static constexpr bool physical_position_available = <nc>see below</nc>;
@@ -9251,8 +9257,9 @@ static constexpr bool physical_position_available = <nc>see below</nc>;
       </code-item>
     </section>
 
-    <section id="primitive_table_pull.cons">
-      <name><c>primitive_table_pull</c> construct/copy/destroy</name>
+    <section id="primitive_table_pull.ctor">
+      <name>Constructors</name>
+
       <code-item>
         <code>
 template &lt;class TableSourceR>
@@ -9294,8 +9301,19 @@ primitive_table_pull(primitive_table_pull&amp;&amp; other) noexcept;
       </code-item>
     </section>
 
+    <section id="primitive_table_pull.dtor">
+      <name>Destructor</name>
+
+      <code-item>
+        <code>
+~primitive_table_pull();
+        </code>
+        <effects>Destroys an object of class <c>primitive_table_pull&lt;TableSource, primitive_table_pull_handle, Allocator></c>.</effects>
+      </code-item>
+    </section>
+
     <section id="primitive_table_pull.allocator">
-      <name><c>primitive_table_pull</c> allocator access</name>
+      <name>Allocator access</name>
 
       <code-item>
         <code>
@@ -9306,7 +9324,7 @@ allocator_type get_allocator() const noexcept;
     </section>
 
     <section id="primitive_table_pull.tweaks">
-      <name><c>primitive_table_pull</c> tweaks</name>
+      <name>Tweaks</name>
 
       <code-item>
         <code>
@@ -9326,7 +9344,7 @@ primitive_table_pull&amp; set_discarding_data(bool b = true) noexcept;
     </section>
 
     <section id="primitive_table_pull.inv">
-      <name><c>primitive_table_pull</c> invocation</name>
+      <name>Invocation</name>
 
       <code-item>
         <code>
@@ -9343,7 +9361,7 @@ primitive_table_pull&amp; operator()();
     </section>
 
     <section id="primitive_table_pull.state">
-      <name><c>primitive_table_pull</c> state</name>
+      <name>State</name>
 
       <code-item>
         <code>
