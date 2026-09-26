@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-09-20 (UTC)</signature>
+<signature>2026-09-26 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -852,7 +852,7 @@ text_error(text_error&amp;&amp; other) noexcept;
           <code>
 ~text_error();
           </code>
-          <remark>Destroys an object of class <c>text_error</c>.</remark>
+          <effects>Destroys an object of class <c>text_error</c>.</effects>
         </code-item>
       </section>
 
