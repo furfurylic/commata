@@ -9547,13 +9547,15 @@ namespace commata {
     static constexpr bool physical_position_available = <nc>see below</nc>;
     static constexpr std::size_t npos = -1;
 
-    <c>// <n><xref id="table_pull.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="table_pull.ctor"/>, constructors:</n></c>
     template &lt;class TableSourceR>
       explicit table_pull(TableSourceR&amp;&amp; in, std::size_t buffer_size = 0);
     template &lt;class TableSourceR>
       table_pull(std::allocator_arg_t, const Allocator&amp; alloc, TableSourceR&amp;&amp; in,
                  std::size_t buffer_size = 0);
     table_pull(table_pull&amp;&amp; other) noexcept;
+
+    <c>// <n><xref id="table_pull.dtor"/>, destructor:</n></c>
    ~table_pull();
 
     <c>// <n><xref id="table_pull.allocator"/>, allocator access:</n></c>
@@ -9608,7 +9610,8 @@ namespace commata {
     <p>Each specialization of <c>table_pull</c> meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>char_type</c> only if <c>char_type</c> is not const-qualified (<xref id="table_pull.types"/>).</p>
 
     <section id="table_pull.types">
-      <name><c>table_pull</c> member types</name>
+      <name>Member types</name>
+
       <code-item>
         <code>
 using char_type = <nc>see below</nc>;
@@ -9624,7 +9627,8 @@ using char_type = <nc>see below</nc>;
     </section>
 
     <section id="table_pull.physical_position_available">
-      <name><c>table_pull</c> physical position availability</name>
+      <name>Physical position availability</name>
+
       <code-item>
         <code>
 static constexpr bool physical_position_available = <nc>see below</nc>;
@@ -9635,8 +9639,9 @@ static constexpr bool physical_position_available = <nc>see below</nc>;
       </code-item>
     </section>
 
-    <section id="table_pull.cons">
-      <name><c>table_pull</c> construct/copy/destroy</name>
+    <section id="table_pull.ctor">
+      <name>Constructors</name>
+
       <code-item>
         <code>
 template &lt;class TableSourceR>
@@ -9671,8 +9676,19 @@ table_pull(table_pull&amp;&amp; other) noexcept;
       </code-item>
     </section>
 
+    <section id="table_pull.dtor">
+      <name>Destructor</name>
+
+      <code-item>
+        <code>
+~table_pull();
+        </code>
+        <effects>Destroys an object of class <c>table_pull&lt;TableSource, Allocator></c>.</effects>
+      </code-item>
+    </section>
+
     <section id="table_pull.allocator">
-      <name><c>table_pull</c> allocator access</name>
+      <name>Allocator access</name>
 
       <code-item>
         <code>
@@ -9683,7 +9699,7 @@ allocator_type get_allocator() const noexcept;
     </section>
 
     <section id="table_pull.tweaks">
-      <name><c>table_pull</c> tweaks</name>
+      <name>Tweaks</name>
 
       <code-item>
         <code>
@@ -9702,7 +9718,7 @@ table_pull&amp; set_empty_physical_line_aware(bool b = true) noexcept;
     </section>
 
     <section id="table_pull.inv">
-      <name><c>table_pull</c> invocation</name>
+      <name>Invocation</name>
 
       <code-item>
         <code>
@@ -9732,7 +9748,7 @@ table_pull&amp; skip_record(std::size_t n = 0);
     </section>
 
     <section id="table_pull.state">
-      <name><c>table_pull</c> state</name>
+      <name>State</name>
 
       <code-item>
         <code>
@@ -9883,7 +9899,7 @@ const view_type* operator->() const noexcept;
     </section>
 
     <section id="table_pull.mod">
-      <name><c>table_pull</c> in-place string value modification</name>
+      <name>In-place string value modification</name>
 
       <code-item>
         <code>
@@ -9903,7 +9919,7 @@ template &lt;class F> table_pull&amp; rewrite(F f);
     </section>
 
     <section id="table_pull.creation">
-      <name><c>table_pull</c> creation functions</name>
+      <name>Creation functions</name>
       <code-item>
         <code>
 template &lt;class TableSource, class... Appendices>
