@@ -37,6 +37,7 @@ set(TEST_COMMATA_SOURCES
     TestParseTsv.cpp
     TestRecordExtractor.cpp
     TestRecordTranslator.cpp
+    TestReplaceIfConversionFailed.cpp
     TestStoredTable.cpp
     TestTablePull.cpp
     TestTableScanner.cpp
