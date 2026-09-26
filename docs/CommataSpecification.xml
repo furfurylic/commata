@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-09-20 (UTC)</signature>
+<signature>2026-09-26 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -4602,7 +4602,7 @@ namespace commata {
     using traits_type = Tr;
     using allocator_type = Allocator;
 
-    <c>// <n><xref id="record_extractor.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="record_extractor.ctor"/>, constructors:</n></c>
     template &lt;class FieldNamePredR, class FieldValuePredR>
       record_extractor(std::basic_streambuf&lt;Ch, Tr>&amp; out,
                        FieldNamePredR&amp;&amp; field_name_pred, FieldValuePredR&amp;&amp; field_value_pred,
@@ -4615,6 +4615,8 @@ namespace commata {
                        header_forwarding header = header_forwarding::yes,
                        std::size_t max_record_num = 0);
     record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="record_extractor.dtor"/>, destructors:</n></c>
    ~record_extractor();
 
     <c>// <n><xref id="record_extractor.accessors"/>, accessors:</n></c>
@@ -4654,8 +4656,8 @@ namespace commata {
          <c>Allocator</c> shall meet the <c>Allocator</c> requirements.</p>
       <p>When the implementations of this class template throw an exception whose type is <c>text_error</c> or one of its derived classes, the message retrieved with a call to <c>what</c> member function on the exception object may be an NTMBS converted from an wide character string with <c>std::wcrtomb</c> or <c>std::wcsrtombs</c> (that is, with the C library locale).</p>
 
-      <section id="record_extractor.cons">
-        <name><c>record_extractor</c> constructors and assignment operators</name>
+      <section id="record_extractor.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -4723,8 +4725,20 @@ record_extractor(record_extractor&amp;&amp; other) noexcept(<nc>see below</nc>);
         </code-item>
       </section>
 
+      <section id="record_extractor.dtor">
+        <name>Destructor</name>
+
+        <code-item>
+          <code>
+~record_extractor();
+          </code>
+          <effects>Destroys an object of class <c>record_extractor&lt;FieldNamePred, FieldValuePred, Ch, Tr, Allocator></c>.</effects>
+        </code-item>
+      </section>
+
       <section id="record_extractor.accessors">
-        <name><c>record_extractor</c> accessors</name>
+        <name>Accessors</name>
+
         <code-item>
           <code>
 allocator_type get_allocator() const noexcept;
@@ -4734,7 +4748,8 @@ allocator_type get_allocator() const noexcept;
       </section>
 
       <section id="record_extractor.processing_state">
-        <name><c>record_extractor</c> processing state</name>
+        <name>Processing state</name>
+
         <code-item>
           <code>
 bool is_in_header() const noexcept;
@@ -4759,7 +4774,7 @@ namespace commata {
     using traits_type = Tr;
     using allocator_type = Allocator;
 
-    <c>// <n><xref id="record_extractor_with_indexed_key.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="record_extractor_with_indexed_key.ctor"/>, constructors:</n></c>
     template &lt;class FieldValuePredR>
       record_extractor_with_indexed_key(std::basic_streambuf&lt;Ch, Tr>&amp; out,
                                         std::size_t target_field_index,
@@ -4777,6 +4792,8 @@ namespace commata {
                                         std::size_t max_record_num = 0);
     record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; other)
                                       noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="record_extractor_with_indexed_key.dtor"/>, destructor:</n></c>
    ~record_extractor_with_indexed_key();
 
     <c>// <n><xref id="record_extractor_with_indexed_key.accessors"/>, accessors:</n></c>
@@ -4815,8 +4832,8 @@ namespace commata {
          <c>Tr</c> shall be a character traits type of <c>std::remove_const_t&lt;Ch></c>.
          <c>Allocator</c> shall meet the <c>Allocator</c> requirements.</p>
 
-      <section id="record_extractor_with_indexed_key.cons">
-        <name><c>record_extractor_with_indexed_key</c> constructors and assignment operators</name>
+      <section id="record_extractor_with_indexed_key.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -4886,8 +4903,20 @@ record_extractor_with_indexed_key(record_extractor_with_indexed_key&amp;&amp; ot
         </code-item>
       </section>
 
+      <section id="record_extractor_with_indexed_key.dtor">
+        <name>Destructor</name>
+
+        <code-item>
+          <code>
+~record_extractor_with_indexed_key();
+          </code>
+          <effects>Destroys an object of class <c>record_extractor_with_indexed_key&lt;FieldValuePred, Ch, Tr, Allocator></c>.</effects>
+        </code-item>
+      </section>
+
       <section id="record_extractor_with_indexed_key.accessors">
-        <name><c>record_extractor_with_indexed_key</c> accessors</name>
+        <name>Accessors</name>
+
         <code-item>
           <code>
 allocator_type get_allocator() const noexcept;
@@ -4897,7 +4926,8 @@ allocator_type get_allocator() const noexcept;
       </section>
 
       <section id="record_extractor_with_indexed_key.processing_state">
-        <name><c>record_extractor_with_indexed_key</c> processing state</name>
+        <name>Processing state</name>
+
         <code-item>
           <code>
 bool is_in_header() const noexcept;
@@ -5191,12 +5221,14 @@ namespace commata {
 
     static constexpr size_type npos = -1;
 
-    <c>// <n><xref id="basic_stored_value.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="basic_stored_value.ctor"/>, constructors:</n></c>
     basic_stored_value() noexcept;
     basic_stored_value(Ch* begin, Ch* end);
     basic_stored_value(const basic_stored_value&amp; other) noexcept = default;
     template &lt;class OtherCh>
       basic_stored_value(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
+
+    <c>// <n><xref id="basic_stored_value.assign"/>, assignment:</n></c>
     basic_stored_value&amp; operator=(const basic_stored_value&amp; other) noexcept = default;
     template &lt;class OtherCh>
       basic_stored_value&amp; operator=(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
@@ -5388,8 +5420,8 @@ namespace commata {
         </tr>
       </table>
 
-      <section id="basic_stored_value.cons">
-        <name><c>basic_stored_value</c> constructors and assignment operators</name>
+      <section id="basic_stored_value.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -5416,6 +5448,10 @@ template &lt;class OtherCh>
           <effects>Initializes <c>b</c> with <c>other.begin()</c> and <c>e</c> with <c>other.end()</c>.</effects>
           <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
         </code-item>
+      </section>
+
+      <section id="basic_stored_value.assign">
+        <name>Assignment</name>
 
         <code-item>
           <code>
@@ -5428,7 +5464,7 @@ template &lt;class OtherCh>
       </section>
 
       <section id="basic_stored_value.iterators">
-        <name><c>basic_stored_value</c> iterator support</name>
+        <name>Iterator support</name>
 
         <code-item>
           <code>
@@ -5468,7 +5504,7 @@ const_reverse_iterator crend() const noexcept;
       </section>
 
       <section id="basic_stored_value.capacity">
-        <name><c>basic_stored_value</c> capacity</name>
+        <name>Capacity</name>
 
         <code-item>
           <code>
@@ -5501,7 +5537,7 @@ bool empty() const noexcept;
       </section>
 
       <section id="basic_stored_value.access">
-        <name><c>basic_stored_value</c> element access</name>
+        <name>Element access</name>
 
         <code-item>
           <code>
@@ -5573,7 +5609,7 @@ template &lt;class OtherTr = std::char_traits&lt;std::remove_const_t&lt;Ch>>,
       </section>
 
       <section id="basic_stored_value.modifiers">
-        <name><c>basic_stored_value</c> modifiers</name>
+        <name>Modifiers</name>
 
         <code-item>
           <code>
@@ -5621,7 +5657,7 @@ void pop_back();
       </section>
 
       <section id="basic_stored_value.comparison">
-        <name><c>basic_stored_value</c> comparison functions</name>
+        <name>Comparison functions</name>
 
         <p>Function templates described in this subclause that take template parameters <c>ChL</c> and <c>ChR</c> shall not participate in overload resolution unless <c>std::remove_const_t&lt;ChL></c> and <c>std::remove_const_t&lt;ChR></c> are the same type.</p>
         <p>Function templates described in this subclause that take template parameters <c>ChC</c> and <c>Other</c> shall not participate in overload resolution unless <c>std::is_convertible_v&lt;Other, std::basic_string_view&lt;std::remove_const_t&lt;ChC>, Tr></c> is not <c>false</c>.</p>
@@ -5761,7 +5797,7 @@ template &lt;class ChC, class Tr, class Other>
       </section>
 
       <section id="basic_stored_value.inserter">
-        <name><c>basic_stored_value</c> inserters</name>
+        <name>Inserters</name>
 
         <code-item>
           <code>
@@ -5774,7 +5810,7 @@ template &lt;class ChC, class Tr>
       </section>
 
       <section id="basic_stored_value.conversion">
-        <name><c>basic_stored_value</c> conversion</name>
+        <name>Conversion</name>
 
         <code-item>
           <code>
@@ -5800,7 +5836,7 @@ template &lt;class Ch, class Tr, class Allocator = std::allocator&lt;std::remove
       </section>
 
       <section id="basic_stored_value.hash">
-        <name><c>basic_stored_value</c> hash support</name>
+        <name>Hash support</name>
 
         <codeblock>
 namespace std {
@@ -5815,7 +5851,7 @@ namespace std {
       <name>Class template <c>basic_stored_table</c></name>
 
       <section id="basic_stored_table.overview">
-        <name>Class template <c>basic_stored_table</c> overview</name>
+        <name>Overview</name>
 
         <codeblock>
 namespace commata {
@@ -5830,7 +5866,7 @@ namespace commata {
     using traits_type     = typename value_type::traits_type;
     using size_type       = typename content_type::size_type;
 
-    <c>// <n><xref id="basic_stored_table.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="basic_stored_table.ctor"/>, constructors:</n></c>
     explicit basic_stored_table(std::size_t buffer_size = 0) :
       basic_stored_table(std::allocator_arg, Allocator(), buffer_size) {}
     basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc, std::size_t buffer_size = 0U);
@@ -5841,7 +5877,11 @@ namespace commata {
     basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
                              basic_stored_table&amp;&amp; other)
       noexcept(std::allocator_traits&lt;Allocator>::is_always_equal::value);
+
+    <c>// <n><xref id="basic_stored_table.dtor"/>, destructor:</n></c>
    ~basic_stored_table();
+
+    <c>// <n><xref id="basic_stored_table.assign"/>, assignment:</n></c>
     basic_stored_table&amp; operator=(const basic_stored_table&amp;  other);
     basic_stored_table&amp; operator=(      basic_stored_table&amp;&amp; other)
       noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_move_assignment::value
@@ -5934,7 +5974,7 @@ namespace commata {
         <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>Content</c>.</p>
 
         <section id="basic_stored_table.parts">
-          <name><c>basic_stored_table</c> constituents</name>
+          <name>Constituents</name>
 
           <p>Let <c>Ch</c> be a type denoted with <c>Content::value_type::value_type::value_type</c>.</p>
           <p>An object of <c>basic_stored_table&lt;Content, Allocator></c> consists of the four following constituents:</p>
@@ -5990,8 +6030,8 @@ namespace commata {
         </section>
       </section>
 
-      <section id="basic_stored_table.cons">
-        <name><c>basic_stored_table</c> construct/copy/destroy</name>
+      <section id="basic_stored_table.ctor">
+        <name>Constructors</name>
 
         <p>In this subclause, <c>AT</c> denotes <c>std::allocator_traits&lt;Allocator></c>, <c>CAT</c> denotes <c>typename AT::template rebind_traits&lt;Ch></c> and <c>CA</c> denotes <c>typename CAT::allocator_type</c>.</p>
         <p>All constructors and assignment operators shall make an appropriate decision about propagation of the allocator in accordance with <c>AT::select_on_container_copy_construnction</c>, <c>AT::propagete_on_container_copy_assignment</c> and <c>AT::propagete_on_container_move_assignment</c>.</p>
@@ -6042,6 +6082,10 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
           <throws>Nothing if <c>other.get_allocator() == alloc</c> is not <c>false</c>.</throws>
           <remark>The states of <c>other</c> shall not be changed if the call exits via an exception.</remark>
         </code-item>
+      </section>
+
+      <section id="basic_stored_table.dtor">
+        <name>Destructor</name>
 
         <code-item>
           <code>
@@ -6049,6 +6093,10 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
           </code>
           <effects>Destroys the content container, deallocates all buffers in the store, and destroys the allocator.</effects>
         </code-item>
+      </section>
+
+      <section id="basic_stored_table.assign">
+        <name>Assignment</name>
 
         <code-item>
           <code>
@@ -6072,7 +6120,7 @@ basic_stored_table&amp; operator=(basic_stored_table&amp;&amp; other)
       </section>
 
       <section id="basic_stored_table.constituents">
-        <name><c>basic_stored_table</c> constituent access</name>
+        <name>Constituent access</name>
 
         <code-item>
           <code>
@@ -6132,7 +6180,8 @@ void clear() noexcept(<nc>see below</nc>);
       </section>
 
       <section id="basic_stored_table.capacity">
-        <name><c>basic_stored_table</c> capacity</name>
+        <name>Capacity</name>
+
         <code-item>
           <code>
 void shrink_to_fit();
@@ -6143,7 +6192,7 @@ void shrink_to_fit();
       </section>
 
       <section id="basic_stored_table.rewrite">
-        <name><c>basic_stored_table</c> store operations</name>
+        <name>Store operations</name>
 
         <code-item>
           <code>
@@ -6232,7 +6281,7 @@ template &lt;class F> auto guard_rewrite(F f) -> decltype(f(*this));
       </section>
 
       <section id="basic_stored_table.primitives">
-        <name><c>basic_stored_table</c> primitive store operations</name>
+        <name>Primitive store operations</name>
 
         <code-item>
           <code>
@@ -6282,7 +6331,7 @@ void secure_current_upto(char_type* secured_last);
       </section>
 
       <section id="basic_stored_table.modifiers">
-        <name><c>basic_stored_table</c> modifiers</name>
+        <name>Modifiers</name>
 
         <p>To achieve clarity, in this subclause <c>operator[]</c> are used on an object <c>t</c> of a specialization of <c>basic_stored_table</c> that does not necessarily have them well-defined. In these cases, the semaintics of <c>t[n]</c> is the same as that of <c>*std::next(t.content().cbegin(), n)</c>.</p>
 
@@ -6346,7 +6395,7 @@ void swap(basic_stored_table&amp; other)
       </section>
 
       <section id="basic_stored_table.nonmember">
-        <name><c>basic_stored_table</c> non-member functions</name>
+        <name>Non-member functions</name>
 
         <code-item>
           <code>
@@ -6402,7 +6451,7 @@ template &lt;class ContentL, class AllocatorL, class ContentR, class AllocatorR>
       </section>
 
       <section id="basic_stored_table.special">
-        <name><c>basic_stored_table</c> specialized algorithms</name>
+        <name>Specialized algorithms</name>
 
         <code-item>
           <code>
@@ -6447,7 +6496,8 @@ namespace commata {
          Its underlying type is an unspecified unsigned integer type.</p>
 
       <section id="stored_table_builder_option.ops">
-        <name><c>stored_table_builder_option</c> operations</name>
+        <name>Operations</name>
+
         <p>In this subclause, <c>U</c> denotes <c>std::underlying_type_t&lt;stored_table_builder_option></c>.</p>
         <code-item>
           <code>
@@ -6512,10 +6562,12 @@ namespace commata {
     using table_type = basic_stored_table&lt;Content, Allocator>;
     using char_type = typename table_type::char_type;
 
-    <c>// <n><xref id="stored_table_builder.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="stored_table_builder.ctor"/>, constructors:</n></c>
     explicit stored_table_builder(table_type&amp; table, std::size_t max_record_num = 0);
     template &lt;class F> stored_table_builder(table_type&amp; table, F&amp;&amp; f);
     stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
+
+    <c>// <n><xref id="stored_table_builder.dtor"/>, destructor:</n></c>
    ~stored_table_builder();
 
     <c>// <n>six member functions below are declared and defined to meet the TableHandler</n>
@@ -6572,8 +6624,8 @@ namespace commata {
 
       <p>After parsing, even when it has exited via an exception, the targeted object shall be complete (<xref id="basic_stored_table.defs"/>) and have its content container not empty.</p>
 
-      <section id="stored_table_builder.cons">
-        <name><c>stored_table_builder</c> construct/copy/destroy</name>
+      <section id="stored_table_builder.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -6607,6 +6659,10 @@ stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
           <effects>Initializes an object of <c>stored_table_builder&lt;Content, Allocator, Options></c> that holds the same reference to the targeted object as <c>other</c>.</effects>
           <remark>This constructor does nothing on the targeted object.</remark>
         </code-item>
+      </section>
+
+      <section id="stored_table_builder.dtor">
+        <name>Destructor</name>
 
         <code-item>
           <code>
@@ -6617,7 +6673,7 @@ stored_table_builder(stored_table_builder&amp;&amp; other) noexcept;
       </section>
 
       <section id="stored_table_builder.creation">
-        <name><c>stored_table_builder</c> creation functions</name>
+        <name>Creation functions</name>
 
         <code-item>
           <code>
@@ -6849,10 +6905,7 @@ namespace commata {
     <section id="basic_table_scanner">
       <name>Class template <c>basic_table_scanner</c></name>
 
-      <section id="basic_table_scanner.overview">
-        <name>Class template <c>basic_table_scanner</c> overview</name>
-
-        <codeblock>
+      <codeblock>
 namespace commata {
   template &lt;class Ch, class Tr = std::char_traits&lt;Ch>, class Allocator = std::allocator&lt;Ch>>
     class basic_table_scanner {
@@ -6862,7 +6915,7 @@ namespace commata {
     using allocator_type = Allocator;
     using size_type = typename std::allocator_traits&lt;Allocator>::size_type;
 
-    <c>// <n><xref id="basic_table_scanner.cons"/>, construction:</n></c>
+    <c>// <n><xref id="basic_table_scanner.ctor"/>, constructors:</n></c>
     explicit basic_table_scanner(std::size_t header_record_count = 0);
     basic_table_scanner(std::allocator_arg_t, const Allocator&amp; alloc,
                         std::size_t header_record_count = 0);
@@ -6873,6 +6926,7 @@ namespace commata {
                           HeaderFieldScanner&amp;&amp; s);
     basic_table_scanner(basic_table_scanner&amp;&amp; other) noexcept;
 
+    <c>// <n><xref id="basic_table_scanner.dtor"/>, destructor:</n></c>
    ~basic_table_scanner();
 
     <c>// <n><xref id="basic_table_scanner.allocator"/>, allocator access:</n></c>
@@ -6907,16 +6961,15 @@ namespace commata {
     bool is_in_header() const noexcept;
   };
 }
-        </codeblock>
+      </codeblock>
 
-        <p>The class template <c>basic_table_scanner</c> describes the table scanner objects (<xref id="scan.scanner.general"/>).
-           An instantiation of it satisfies the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.
-           An object of an instantiation of it can not be reused (that is, it can receive the parsing events that the parser emits only once).</p>
-        <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements and <c>Allocator::value_type</c> shall be a type identical to <c>Ch</c>.</p>
-      </section>
+      <p>The class template <c>basic_table_scanner</c> describes the table scanner objects (<xref id="scan.scanner.general"/>).
+          An instantiation of it satisfies the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for the template parameter <c>Ch</c>.
+          An object of an instantiation of it can not be reused (that is, it can receive the parsing events that the parser emits only once).</p>
+      <p>The template parameter <c>Allocator</c> shall meet the <c>Allocator</c> requirements and <c>Allocator::value_type</c> shall be a type identical to <c>Ch</c>.</p>
 
-      <section id="basic_table_scanner.cons">
-        <name><c>basic_table_scanner</c> construction</name>
+      <section id="basic_table_scanner.ctor">
+        <name>Constructors</name>
 
         <code-item>
           <code>
@@ -6947,8 +7000,19 @@ template &lt;class HeaderFieldScanner>
         </code-item>
       </section>
 
+      <section id="basic_table_scanner.dtor">
+        <name>Destructor</name>
+
+        <code-item>
+          <code>
+~basic_table_scanner();
+          </code>
+          <effects>Destroys an object of class <c>basic_table_scanner&lt;Ch, Tr, Allocator></c>.</effects>
+        </code-item>
+      </section>
+
       <section id="basic_table_scanner.allocator">
-        <name><c>basic_table_scanner</c> allocator access</name>
+        <name>Allocator access</name>
         <code-item>
           <code>
 allocator_type get_allocator() const noexcept;
@@ -6958,7 +7022,7 @@ allocator_type get_allocator() const noexcept;
       </section>
 
       <section id="basic_table_scanner.field_scanner_access">
-        <name><c>basic_table_scanner</c> body field scanner access</name>
+        <name>Body field scanner access</name>
 
         <code-item>
           <code>
@@ -6996,7 +7060,7 @@ template &lt;class T>       T* get_field_scanner(std::size_t j)       noexcept;
       </section>
 
       <section id="basic_table_scanner.record_end_scanner_access">
-        <name><c>basic_table_scanner</c> record-end scanner access</name>
+        <name>Record-end scanner access</name>
 
         <code-item>
           <code>
@@ -7033,7 +7097,8 @@ template &lt;class T>       T* get_record_end_scanner()       noexcept;
       </section>
 
       <section id="basic_table_scanner.processing_state">
-        <name><c>basic_table_scanner</c> processing state</name>
+        <name>Processing state</name>
+
         <code-item>
           <code>
 bool is_in_header() const noexcept;
@@ -7503,7 +7568,7 @@ namespace commata {
     using skipping_handler_type = SkippingHandler;
     using conversion_error_handler_type = ConversionErrorHandler;
 
-    <c>// <n><xref id="arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="arithmetic_field_translator.ctor"/>, constructors:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler>
       explicit arithmetic_field_translator(
@@ -7512,6 +7577,8 @@ namespace commata {
           std::decay_t&lt;ConversionErrorHandlerR>());
     arithmetic_field_translator(const arithmetic_field_translator&amp;  other) noexcept(<nc>see below</nc>);
     arithmetic_field_translator(      arithmetic_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="arithmetic_field_translator.dtor"/>, destructor:</n></c>
    ~arithmetic_field_translator();
 
     <c>// <n><xref id="arithmetic_field_translator.handler"/>, handler access:</n></c>
@@ -7538,7 +7605,8 @@ namespace commata {
            The value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) of <c>arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler></c> is <c>T</c>.</p>
 
         <section id="arithmetic_field_translator.types">
-          <name><c>arithmetic_field_translator</c> member types</name>
+          <name>Member types</name>
+
           <code-item>
             <code>
 using target_type = <nc>see below</nc>;
@@ -7547,8 +7615,9 @@ using target_type = <nc>see below</nc>;
           </code-item>
         </section>
 
-        <section id="arithmetic_field_translator.cons">
-          <name><c>arithmetic_field_translator</c> construct/copy/destroy</name>
+        <section id="arithmetic_field_translator.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
@@ -7583,8 +7652,20 @@ arithmetic_field_translator(arithmetic_field_translator&amp;&amp; other) noexcep
           </code-item>
         </section>
 
+        <section id="arithmetic_field_translator.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~arithmetic_field_translator();
+            </code>
+            <effects>Destroys an object of class <c>arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler></c>.</effects>
+          </code-item>
+        </section>
+
         <section id="arithmetic_field_translator.handler">
-          <name><c>arithmetic_field_translator</c> handler access</name>
+          <name>Handler access</name>
+
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -7603,7 +7684,8 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
         </section>
 
         <section id="arithmetic_field_translator.inv">
-          <name><c>arithmetic_field_translator</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 template &lt;class Ch> void operator()(Ch* begin, Ch* end);
@@ -7661,7 +7743,7 @@ namespace commata {
     using skipping_handler_type = SkippingHandler;
     using conversion_error_handler_type = ConversionErrorHandler;
 
-    <c>// <n><xref id="locale_based_arithmetic_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="locale_based_arithmetic_field_translator.ctor"/>, constructors:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
               class ConversionErrorHandlerR = ConversionErrorHandler>
     explicit locale_based_arithmetic_field_translator(
@@ -7673,6 +7755,8 @@ namespace commata {
       const locale_based_arithmetic_field_translator&amp;  other) = default;
     locale_based_arithmetic_field_translator(
             locale_based_arithmetic_field_translator&amp;&amp; other) = default;
+
+    <c>// <n><xref id="locale_based_arithmetic_field_translator.dtor"/>, destructor:</n></c>
    ~locale_based_arithmetic_field_translator() = default;
 
     <c>// <n><xref id="locale_based_arithmetic_field_translator.handler"/>, handler access:</n></c>
@@ -7706,7 +7790,8 @@ private:
            The value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) of <c>locale_based_arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler></c> is <c>T</c>.</p>
 
         <section id="locale_based_arithmetic_field_translator.types">
-          <name><c>locale_based_arithmetic_field_translator</c> member types</name>
+          <name>Member types</name>
+
           <code-item>
             <code>
 using target_type = <nc>see below</nc>;
@@ -7715,8 +7800,9 @@ using target_type = <nc>see below</nc>;
           </code-item>
         </section>
 
-        <section id="locale_based_arithmetic_field_translator.cons">
-          <name><c>locale_based_arithmetic_field_translator</c> construct/copy/destroy</name>
+        <section id="locale_based_arithmetic_field_translator.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 template &lt;class SinkR, class SkippingHandlerR = SkippingHandler,
@@ -7734,8 +7820,20 @@ explicit locale_based_arithmetic_field_translator(
           </code-item>
         </section>
 
+        <section id="locale_based_arithmetic_field_translator.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~locale_based_arithmetic_field_translator();
+            </code>
+            <effects>Destroys an object of class <c>locale_based_arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler></c>.</effects>
+          </code-item>
+        </section>
+
         <section id="locale_based_arithmetic_field_translator.handler">
-          <name><c>locale_based_arithmetic_field_translator</c> handler access</name>
+          <name>Handler access</name>
+
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -7754,7 +7852,8 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
         </section>
 
         <section id="locale_based_arithmetic_field_translator.inv">
-          <name><c>locale_based_arithmetic_field_translator</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 template &lt;class Ch> void operator()(Ch* begin, Ch* end);
@@ -7787,7 +7886,7 @@ namespace commata {
     using allocator_type = typename T::allocator_type;
     using skipping_handler_type = SkippingHandler;
 
-    <c>// <n><xref id="string_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="string_field_translator.ctor"/>, constructors:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
       explicit string_field_translator(
         SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
@@ -7797,6 +7896,8 @@ namespace commata {
         SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
     string_field_translator(const string_field_translator&amp;  other) noexcept(<nc>see below</nc>);
     string_field_translator(      string_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="string_field_translator.dtor"/>, destructor:</n></c>
    ~string_field_translator();
 
     <c>// <n><xref id="string_field_translator.allocator"/>, allocator access:</n></c>
@@ -7823,7 +7924,8 @@ namespace commata {
            Its value type (<xref id="scan.builtin.body_field_scanners.requirements"/>) is <c>T</c>.</p>
 
         <section id="string_field_translator.types">
-          <name><c>string_field_translator</c> member types</name>
+          <name>Member types</name>
+
           <code-item>
             <code>
 using target_type = <nc>see below</nc>;
@@ -7832,8 +7934,9 @@ using target_type = <nc>see below</nc>;
           </code-item>
         </section>
 
-        <section id="string_field_translator.cons">
-          <name><c>string_field_translator</c> construct/copy/destroy</name>
+        <section id="string_field_translator.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
@@ -7876,8 +7979,20 @@ string_field_translator(string_field_translator&amp;&amp; other) noexcept(<nc>se
           </code-item>
         </section>
 
+        <section id="string_field_translator.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~string_field_translator();
+            </code>
+            <effects>Destroys an object of class <c>string_field_translator&lt;T, Sink, SkippingHandler></c>.</effects>
+          </code-item>
+        </section>
+
         <section id="string_field_translator.allocator">
-          <name><c>string_field_translator</c> allocator access</name>
+          <name>Allocator access</name>
+
           <code-item>
             <code>
 allocator_type get_allocator() const noexcept;
@@ -7887,7 +8002,8 @@ allocator_type get_allocator() const noexcept;
         </section>
 
         <section id="string_field_translator.handler">
-          <name><c>string_field_translator</c> handler access</name>
+          <name>Handler access</name>
+
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -7898,7 +8014,8 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
         </section>
 
         <section id="string_field_translator.inv">
-          <name><c>string_field_translator</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 void operator()(const typename target_type::value_type* begin,
@@ -7949,12 +8066,14 @@ namespace commata {
     using target_type = <nc>see below</nc>;
     using skipping_handler_type = SkippingHandler;
 
-    <c>// <n><xref id="string_view_field_translator.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="string_view_field_translator.ctor"/>, constructors:</n></c>
     template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
       explicit string_view_field_translator(
         SinkR&amp;&amp; sink, SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
     string_view_field_translator(const string_view_field_translator&amp;  other) noexcept(<nc>see below</nc>);
     string_view_field_translator(      string_view_field_translator&amp;&amp; other) noexcept(<nc>see below</nc>);
+
+    <c>// <n><xref id="string_view_field_translator.dtor"/>, destructor:</n></c>
    ~string_view_field_translator();
 
     <c>// <n><xref id="string_view_field_translator.handler"/>, handler access:</n></c>
@@ -7979,7 +8098,8 @@ namespace commata {
            Therefore, <c>Sink</c> objects should not store received ranges to a store that remains alive after the putting operation.</span></p>
 
         <section id="string_view_field_translator.types">
-          <name><c>string_view_field_translator</c> member types</name>
+          <name>Member types</name>
+
           <code-item>
             <code>
 using target_type = <nc>see below</nc>;
@@ -7988,8 +8108,9 @@ using target_type = <nc>see below</nc>;
           </code-item>
         </section>
 
-        <section id="string_view_field_translator.cons">
-          <name><c>string_view_field_translator</c> construct/copy/destroy</name>
+        <section id="string_view_field_translator.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 template &lt;class SinkR, class SkippingHandlerR = SkippingHandler>
@@ -8020,8 +8141,20 @@ string_view_field_translator(string_view_field_translator&amp;&amp; other) noexc
           </code-item>
         </section>
 
+        <section id="string_view_field_translator.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~string_view_field_translator();
+            </code>
+            <effects>Destroys an object of class <c>string_view_field_translator&lt;T, Sink, SkippingHandler></c>.</effects>
+          </code-item>
+        </section>
+
         <section id="string_view_field_translator.handler">
-          <name><c>string_view_field_translator</c> handler access</name>
+          <name>Handler access</name>
+
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -8032,7 +8165,8 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
         </section>
 
         <section id="string_view_field_translator.inv">
-          <name><c>string_view_field_translator</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 void operator()(const typename target_type::value_type* begin,
@@ -8077,7 +8211,7 @@ namespace commata {
     using value_type            = std::basic_string_view&lt;char_type, traits_type>;
     using skipping_handler_type = SkippingHandler;
 
-    <c>// <n><xref id="string_field_inserter.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="string_field_inserter.ctor"/>, constructors:</n></c>
     template &lt;class SkippingHandlerR = SkippingHandler>
       explicit string_field_inserter(Container&amp; container,
         SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
@@ -8087,6 +8221,8 @@ namespace commata {
         SkippingHandlerR&amp;&amp; handle_skipping = std::decay_t&lt;SkippingHandlerR>());
     string_field_inserter(const string_field_inserter&amp;  other) noexcept(see below);
     string_field_inserter(      string_field_inserter&amp;&amp; other) noexcept(see below);
+
+    <c>// <n><xref id="string_field_inserter.dtor"/>, destructors:</n></c>
    ~string_field_inserter();
 
     <c>// <n><xref id="string_field_inserter.allocator"/>, allocator access:</n></c>
@@ -8116,8 +8252,9 @@ namespace commata {
            and a skipping handler object of the type <c>SkippingHandler</c>.</p>
         <p>Insertion and emplacement to the container object shall be done to the end of it when <c>Container</c> is a sequence container type.</p>
 
-        <section id="string_field_inserter.cons">
-          <name><c>string_field_inserter</c> construct/copy/destroy</name>
+        <section id="string_field_inserter.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 template &lt;class SkippingHandlerR = SkippingHandler>
@@ -8159,8 +8296,20 @@ string_field_inserter(string_field_inserter&amp;&amp; other) noexcept(<nc>see be
           </code-item>
         </section>
 
+        <section id="string_field_inserter.dtor">
+          <name>Destructor</name>
+
+          <code-item>
+            <code>
+~string_field_inserter();
+            </code>
+            <effects>Destroys an object of class <c>string_field_inserter&lt;Container, SkippingHandler></c>.</effects>
+          </code-item>
+        </section>
+
         <section id="string_field_inserter.allocator">
-          <name><c>string_field_inserter</c> allocator access</name>
+          <name>Allocator access</name>
+
           <code-item>
             <code>
 allocator_type get_allocator() const noexcept;
@@ -8170,7 +8319,8 @@ allocator_type get_allocator() const noexcept;
         </section>
 
         <section id="string_field_inserter.handler">
-          <name><c>string_field_inserter</c> handler access</name>
+          <name>Handler access</name>
+
           <code-item>
             <code>
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
@@ -8181,7 +8331,8 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
         </section>
 
         <section id="string_field_inserter.inv">
-          <name><c>string_field_inserter</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 void operator()(const Ch* begin, const Ch* end);
@@ -8468,10 +8619,13 @@ namespace commata {
   public:
     using value_type = T;
 
-    <c>// <n><xref id="arithmetic_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="arithmetic_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit arithmetic_field_translator_factory(
       SkippingHandler skipping_handler = SkippingHandler(),
       ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+
+    <c>// <n>destructor:</n></c>
+   ~arithmetic_field_translator_factory() = default;
 
     <c>// <n><xref id="arithmetic_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>
@@ -8499,8 +8653,9 @@ namespace commata {
         <p><c>arithmetic_field_translator_factory&lt;T, SkippingHander, ConversionErrorHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
            for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;Ch, Tr, Allocator></c> where <c>Ch</c> is <c>char</c> or <c>wchar_t</c>, <c>Ch</c> is a character traits type for <c>Ch</c>, and <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>Ch</c>.</p>
 
-        <section id="arithmetic_field_translator_factory.cons">
-          <name><c>arithmetic_field_translator_factory</c> construct/copy/destroy</name>
+        <section id="arithmetic_field_translator_factory.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 explicit arithmetic_field_translator_factory(
@@ -8524,7 +8679,8 @@ template &lt;class T, class U> arithmetic_field_translator_factory(T, U)
         </section>
 
         <section id="arithmetic_field_translator_factory.inv">
-          <name><c>arithmetic_field_translator_factory</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 template &lt;class Sink>
@@ -8547,11 +8703,14 @@ namespace commata {
   public:
     using value_type = T;
 
-    <c>// <n><xref id="locale_based_arithmetic_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="locale_based_arithmetic_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit locale_based_arithmetic_field_translator_factory(
       const std::locale&amp; loc,
       SkippingHandler skipping_handler = SkippingHandler(),
       ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+
+    <c>// <n>destructor:</n></c>
+   ~locale_based_arithmetic_field_translator_factory() = default;
 
     <c>// <n><xref id="locale_based_arithmetic_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink> locale_based_arithmetic_field_translator&lt;
@@ -8582,8 +8741,9 @@ namespace commata {
         <p><c>locale_based_arithmetic_field_translator_factory&lt;T, SkippingHander, ConversionErrorHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
            for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;Ch, Tr, Allocator></c> where <c>Ch</c> is <c>char</c> or <c>wchar_t</c>, <c>Ch</c> is a character traits type for <c>Ch</c>, and <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>Ch</c>.</p>
 
-        <section id="locale_based_arithmetic_field_translator_factory.cons">
-          <name><c>locale_based_arithmetic_field_translator_factory</c> construct/copy/destroy</name>
+        <section id="locale_based_arithmetic_field_translator_factory.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 explicit locale_based_arithmetic_field_translator_factory(
@@ -8610,7 +8770,8 @@ template &lt;class T, class U>
         </section>
 
         <section id="locale_based_arithmetic_field_translator_factory.inv">
-          <name><c>locale_based_arithmetic_field_translator_factory</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 template &lt;class Sink> locale_based_arithmetic_field_translator&lt;
@@ -8633,9 +8794,12 @@ namespace commata {
   public:
     using value_type = T;
 
-    <c>// <n><xref id="string_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="string_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit string_field_translator_factory(
       SkippingHandler skipping_handler = SkippingHandler());
+
+    <c>// <n>destructor:</n></c>
+   ~string_field_translator_factory();
 
     <c>// <n><xref id="string_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>
@@ -8673,8 +8837,9 @@ namespace commata {
         <p><c>string_field_translator_factory&lt;T, SkippingHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
            for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;T::value_type, T::traits_type, T::allocator_type></c>.</p>
 
-        <section id="string_field_translator_factory.cons">
-          <name><c>string_field_translator_factory</c> construct/copy/destroy</name>
+        <section id="string_field_translator_factory.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 explicit string_field_translator_factory(
@@ -8685,7 +8850,8 @@ explicit string_field_translator_factory(
         </section>
 
         <section id="string_field_translator_factory.inv">
-          <name><c>string_field_translator_factory</c> invocation</name>
+          <name>Invocation</name>
+
           <code-item>
             <code>
 template &lt;class Sink>
@@ -8708,9 +8874,12 @@ namespace commata {
   public:
     using value_type = T;
 
-    <c>// <n><xref id="string_view_field_translator_factory.cons"/>, construct/copy/destroy:</n></c>
+    <c>// <n><xref id="string_view_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit string_view_field_translator_factory(
-      SkippingHandler skipping_handler = SkippingHandler()) :
+      SkippingHandler skipping_handler = SkippingHandler());
+
+    <c>// <n>destructor:</n></c>
+   ~string_view_field_translator_factory();
 
     <c>// <n><xref id="string_view_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>
@@ -8743,8 +8912,9 @@ namespace commata {
         <p><c>string_view_field_translator_factory&lt;T, SkippingHander></c> meets the <c>FieldTranslatorFactory</c> requirements (<xref id="field_translator_factory.requirements"/>)
            for the value type <c>T</c> and the table scanner type <c>basic_table_scanner&lt;T::value_type, T::traits_type, Allocator></c> where <c>Allocator</c> is an allocator type that meets the <c>Allocator</c> requirements for <c>T::value_type</c>.</p>
 
-        <section id="string_view_field_translator_factory.cons">
-          <name><c>string_view_field_translator_factory</c> construct/copy/destroy</name>
+        <section id="string_view_field_translator_factory.ctor">
+          <name>Constructors</name>
+
           <code-item>
             <code>
 explicit string_view_field_translator_factory(
@@ -8755,8 +8925,9 @@ explicit string_view_field_translator_factory(
         </section>
 
         <section id="string_view_field_translator_factory.inv">
-          <name><c>string_view_field_translator_factory</c> invocation</name>
-          <code-item>
+          <name>Invocation</name>
+
+            <code-item>
             <code>
 template &lt;class Sink>
   string_view_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>
@@ -8782,7 +8953,8 @@ namespace commata {
         </codeblock>
 
         <section id="default_field_translator_factory.types">
-          <name><c>default_field_translator_factory</c> member types</name>
+          <name>Member types</name>
+
           <code-item>
             <code>
 using type = <nc>see below</nc>;
