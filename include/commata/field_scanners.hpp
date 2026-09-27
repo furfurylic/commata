@@ -57,163 +57,284 @@ struct ignore_if_skipped
 namespace detail::scanner::replace_if_skipped_impl {
 
 template <class T>
-class trivial_store
+class store
 {
-    alignas(T) char value_[sizeof(T)] = {};
+    alignas(T) char data_[sizeof(T)] = {};
     replace_mode mode_ = static_cast<replace_mode>(0);
 
 public:
     template <class... Args>
-    trivial_store(generic_args_t, Args&&... args)
+    store(generic_args_t, Args&&... args)
         noexcept(std::is_nothrow_constructible_v<T, Args&&...>) :
         mode_(replace_mode::replace)
     {
-        emplace(std::forward<Args>(args)...);
+        ::new(data_) T(std::forward<Args>(args)...);    // throw
     }
 
-    explicit trivial_store(replace_mode mode) noexcept :
+    store(replace_mode mode) noexcept :
         mode_(mode)
     {}
 
-    replace_mode mode() const noexcept
+    void* data() noexcept
+    {
+        return data_;
+    }
+
+    const void* data() const noexcept
+    {
+        return data_;
+    }
+
+    T& value() noexcept
+    {
+        return *static_cast<T*>(static_cast<void*>(data_));
+    }
+
+    const T& value() const noexcept
+    {
+        return *static_cast<const T*>(static_cast<const void*>(data_));
+    }
+
+    replace_mode& mode() noexcept
     {
         return mode_;
     }
 
-    const T& value() const
-    {
-        assert(mode_ == replace_mode::replace);
-        return *static_cast<const T*>(static_cast<const void*>(value_));
-    }
-
-protected:
-    replace_mode& mode_ref() noexcept
+    const replace_mode& mode() const noexcept
     {
         return mode_;
-    }
-
-    template <class... Args>
-    void emplace(Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<T, Args&&...>)
-    {
-        ::new(value_) T(std::forward<Args>(args)...);
-    }
-
-    T& value()
-    {
-        assert(mode_ == replace_mode::replace);
-        return *static_cast<T*>(static_cast<void*>(value_));
     }
 };
 
 template <class T>
-class nontrivial_store : trivial_store<T>
+struct enable_dtor : store<T>
 {
-public:
-    using trivial_store<T>::trivial_store;
+    using store<T>::store;
 
-    nontrivial_store(const nontrivial_store& other)
-        noexcept(std::is_nothrow_copy_constructible_v<T>) :
-        trivial_store<T>(other.mode())
-    {
-        if (this->mode() == replace_mode::replace) {
-            this->emplace(other.value());                       // throw
-        }
-    }
-
-    nontrivial_store(nontrivial_store&& other)
-        noexcept(std::is_nothrow_move_constructible_v<T>) :
-        trivial_store<T>(other.mode())
-    {
-        if (this->mode() == replace_mode::replace) {
-            this->emplace(std::move(other.value()));            // throw
-        }
-    }
-
-    ~nontrivial_store()
+    ~enable_dtor()
     {
         if (this->mode() == replace_mode::replace) {
             this->value().~T();
         }
     }
+};
 
-    nontrivial_store& operator=(const nontrivial_store& other)
-        noexcept(std::is_nothrow_copy_constructible_v<T>
-              && std::is_nothrow_copy_assignable_v<T>)
-    {
-        assign(other);
-        return *this;
-    }
+template <class T>
+using dtor_enabled_store =
+    std::conditional_t<
+        std::is_trivially_destructible_v<T>,
+        store<T>,
+        enable_dtor<T>>;
 
-    nontrivial_store& operator=(nontrivial_store&& other)
+template <class T>
+struct enable_move_assign : dtor_enabled_store<T>
+{
+    template <class... Args>
+    enable_move_assign(generic_args_t, Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<
+            dtor_enabled_store<T>, generic_args_t, Args&&...>) :
+        dtor_enabled_store<T>(
+            generic_args_t(), std::forward<Args>(args)...)
+    {}
+
+    enable_move_assign(replace_mode mode) noexcept :
+        dtor_enabled_store<T>(mode)
+    {}
+
+    enable_move_assign& operator=(enable_move_assign&& other)
         noexcept(std::is_nothrow_move_constructible_v<T>
               && std::is_nothrow_move_assignable_v<T>)
     {
-        assign(std::move(other));
+        if (this->mode() == replace_mode::replace) {
+            if (other.mode() == replace_mode::replace) {
+                if (this == std::addressof(other)) {
+                    // Avoid self move assignment, which is unsafe at least
+                    // for standard library types
+                    return *this;
+                }
+                this->value() = std::move(other.value());       // throw
+            } else {
+                this->value().~T();
+            }
+        } else if (other.mode() == replace_mode::replace) {
+            ::new(this->data()) T(std::move(other.value()));    // throw
+        }
+        this->mode() = other.mode();
         return *this;
     }
 
-    using trivial_store<T>::mode;
-    using trivial_store<T>::value;
+    enable_move_assign() = default;
+    enable_move_assign(const enable_move_assign&) = default;
+    enable_move_assign(enable_move_assign&&) = default;
+    enable_move_assign& operator=(const enable_move_assign&) = default;
+};
 
-private:
-    template <class Other>
-    void assign(Other&& other)
+template <class T>
+using move_assign_enabled_store =
+    std::conditional_t<
+        std::is_trivially_move_assignable_v<T>,
+        dtor_enabled_store<T>,
+        enable_move_assign<T>>;
+
+template <class T>
+struct enable_copy_assign : move_assign_enabled_store<T>
+{
+    template <class... Args>
+    enable_copy_assign(generic_args_t, Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<
+            move_assign_enabled_store<T>, generic_args_t, Args&&...>) :
+        move_assign_enabled_store<T>(
+            generic_args_t(), std::forward<Args>(args)...)
+    {}
+
+    enable_copy_assign(replace_mode mode) noexcept :
+        move_assign_enabled_store<T>(mode)
+    {}
+
+    enable_copy_assign& operator=(const enable_copy_assign& other)
+        noexcept(std::is_nothrow_copy_constructible_v<T>
+              && std::is_nothrow_copy_assignable_v<T>)
     {
-        using f_t = std::conditional_t<
-            std::is_lvalue_reference_v<Other>, const T&, T>;
         if (this->mode() == replace_mode::replace) {
             if (other.mode() == replace_mode::replace) {
-                if (this != std::addressof(other)) {
-                    // Avoid self move assignment, which is unsafe at least
-                    // for standard library types
-                    this->value() =
-                        std::forward<f_t>(other.value());       // throw
-                }
-                return;
+                this->value() = other.value();      // throw
             } else {
                 this->value().~T();
             }
         } else if (other.mode() == replace_mode::replace) {
-            this->emplace(std::forward<f_t>(other.value()));    // throw
+            ::new(this->data()) T(other.value());   // throw
         }
-        this->mode_ref() = other.mode();
+        this->mode() = other.mode();
+        return *this;
     }
 
-public:
-    void swap(nontrivial_store& other)
-        noexcept(std::is_nothrow_swappable_v<T>
-              && std::is_nothrow_move_constructible_v<T>)
+    enable_copy_assign() = default;
+    enable_copy_assign(const enable_copy_assign&) = default;
+    enable_copy_assign(enable_copy_assign&&) = default;
+    enable_copy_assign& operator=(enable_copy_assign&&) = default;
+};
+
+template <class T>
+using copy_assign_enabled_store =
+    std::conditional_t<
+        std::is_trivially_copy_assignable_v<T>,
+        move_assign_enabled_store<T>,
+        enable_copy_assign<T>>;
+
+template <class T>
+struct enable_move_ctor : copy_assign_enabled_store<T>
+{
+    template <class... Args>
+    enable_move_ctor(generic_args_t, Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<
+            copy_assign_enabled_store<T>, generic_args_t, Args&&...>) :
+        copy_assign_enabled_store<T>(
+            generic_args_t(), std::forward<Args>(args)...)
+    {}
+
+    enable_move_ctor(replace_mode mode) noexcept :
+        copy_assign_enabled_store<T>(mode)
+    {}
+
+    enable_move_ctor(enable_move_ctor&& other)
+            noexcept(std::is_nothrow_move_constructible_v<T>) :
+        copy_assign_enabled_store<T>(other)
     {
+        if (other.mode() == replace_mode::replace) {
+            ::new(this->data()) T(std::move(other.value()));
+        }
+    }
+
+    enable_move_ctor() = default;
+    enable_move_ctor(const enable_move_ctor&) = default;
+    enable_move_ctor& operator=(const enable_move_ctor&) = default;
+    enable_move_ctor& operator=(enable_move_ctor&&) = default;
+};
+
+template <class T>
+using move_ctor_enabled_store =
+    std::conditional_t<
+        std::is_trivially_move_constructible_v<T>,
+        copy_assign_enabled_store<T>,
+        enable_move_ctor<T>>;
+
+template <class T>
+struct enable_copy_ctor : move_ctor_enabled_store<T>
+{
+    template <class... Args>
+    enable_copy_ctor(generic_args_t, Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<
+            move_ctor_enabled_store<T>, generic_args_t, Args&&...>) :
+        move_ctor_enabled_store<T>(
+            generic_args_t(), std::forward<Args>(args)...)
+    {}
+
+    enable_copy_ctor(replace_mode mode) noexcept :
+        move_ctor_enabled_store<T>(mode)
+    {}
+
+    enable_copy_ctor(const enable_copy_ctor& other)
+            noexcept(std::is_nothrow_copy_constructible_v<T>) :
+        move_ctor_enabled_store<T>(other)
+    {
+        if (other.mode() == replace_mode::replace) {
+            ::new(this->data()) T(other.value());
+        }
+    }
+
+    enable_copy_ctor() = default;
+    enable_copy_ctor(enable_copy_ctor&&) = default;
+    enable_copy_ctor& operator=(const enable_copy_ctor&) = default;
+    enable_copy_ctor& operator=(enable_copy_ctor&&) = default;
+};
+
+template <class T>
+using copy_ctor_enabled_store =
+    std::conditional_t<
+        std::is_trivially_copy_constructible_v<T>,
+        move_ctor_enabled_store<T>,
+        enable_copy_ctor<T>>;
+
+template <class T>
+struct swap_enabled_store : copy_ctor_enabled_store<T>
+{
+    using copy_ctor_enabled_store<T>::copy_ctor_enabled_store;
+
+    void swap(swap_enabled_store& other)
+        noexcept(std::is_nothrow_swappable_v<T>)
+    {
+        // At least for the standard library types, there is no guarantee of
+        // self-safeness for moving, and thus, no likelihood of aversion to
+        // memcpy for moving of trivially copyable T objects
+        if (this == std::addressof(other)) {
+            return;
+        }
+
         using std::swap;
         if (this->mode() == replace_mode::replace) {
             if (other.mode() == replace_mode::replace) {
-                swap(this->value(), other.value());             // throw
+                swap(this->value(), other.value());                 // throw
                 return;
             } else {
-                other.emplace(std::move(this->value()));        // throw
+                ::new(other.data()) T(std::move(this->value()));    // throw
                 this->value().~T();
             }
         } else if (other.mode() == replace_mode::replace) {
-            this->emplace(std::move(other.value()));            // throw
+            ::new(this->data()) T(std::move(other.value()));        // throw
             other.value().~T();
         }
-        swap(this->mode_ref(), other.mode_ref());
+        swap(this->mode(), other.mode());
     }
 };
 
 template <class T>
-void swap(nontrivial_store<T>& left, nontrivial_store<T>& right)
+void swap(swap_enabled_store<T>& left, swap_enabled_store<T>& right)
     noexcept(noexcept(left.swap(right)))
 {
     left.swap(right);
 }
 
-template <class T>
-using store_t = std::conditional_t<std::is_trivially_copyable_v<T>,
-    trivial_store<T>, nontrivial_store<T>>;
-
-}
+} // detail::scanner::replace_if_skipped_impl
 
 template <class T>
 class replace_if_skipped
@@ -222,7 +343,8 @@ class replace_if_skipped
 
     using generic_args_t = detail::generic_args_t;
 
-    using store_t = detail::scanner::replace_if_skipped_impl::store_t<T>;
+    using store_t = detail::scanner::replace_if_skipped_impl::
+                        swap_enabled_store<T>;
     store_t store_;
 
 public:
@@ -291,13 +413,8 @@ public:
     void swap(replace_if_skipped& other)
         noexcept(std::is_nothrow_swappable_v<store_t>)
     {
-        // See comments on replace_if_conversion_failed::swap
-        // (But it seems that valgrind does not report 'memcpy for overlapping
-        // buffers' even with Clang7 even if this self-check is absent)
-        if (this != std::addressof(other)) {
-            using std::swap;
-            swap(store_, other.store_);
-        }
+        using std::swap;
+        swap(store_, other.store_);
     }
 };
 
