@@ -852,7 +852,7 @@ text_error(text_error&amp;&amp; other) noexcept;
           <code>
 ~text_error();
           </code>
-          <remark>Destroys an object of class <c>text_error</c>.</remark>
+          <effects>Destroys an object of class <c>text_error</c>.</effects>
         </code-item>
       </section>
 
