@@ -106,12 +106,12 @@ public:
     }
 };
 
-template <class T>
-struct enable_dtor : store<T>
+template <class T, bool = std::is_trivially_destructible_v<T>>
+struct dtor_enabled_store : store<T>
 {
     using store<T>::store;
 
-    ~enable_dtor()
+    ~dtor_enabled_store()
     {
         if (this->mode() == replace_mode::replace) {
             this->value().~T();
@@ -120,28 +120,18 @@ struct enable_dtor : store<T>
 };
 
 template <class T>
-using dtor_enabled_store =
-    std::conditional_t<
-        std::is_trivially_destructible_v<T>,
-        store<T>,
-        enable_dtor<T>>;
-
-template <class T>
-struct enable_move_assign : dtor_enabled_store<T>
+struct dtor_enabled_store<T, true> : store<T>
 {
-    template <class... Args>
-    enable_move_assign(generic_args_t, Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<
-            dtor_enabled_store<T>, generic_args_t, Args&&...>) :
-        dtor_enabled_store<T>(
-            generic_args_t(), std::forward<Args>(args)...)
-    {}
+    using store<T>::store;
+};
 
-    enable_move_assign(replace_mode mode) noexcept :
-        dtor_enabled_store<T>(mode)
-    {}
+template <class T, bool = std::is_trivially_move_assignable_v<T>>
+struct move_assign_enabled_store : dtor_enabled_store<T>
+{
+    using dtor_enabled_store<T>::dtor_enabled_store;
 
-    enable_move_assign& operator=(enable_move_assign&& other)
+    move_assign_enabled_store& operator=(
+            move_assign_enabled_store&& other)
         noexcept(std::is_nothrow_move_constructible_v<T>
               && std::is_nothrow_move_assignable_v<T>)
     {
@@ -163,35 +153,26 @@ struct enable_move_assign : dtor_enabled_store<T>
         return *this;
     }
 
-    enable_move_assign() = default;
-    enable_move_assign(const enable_move_assign&) = default;
-    enable_move_assign(enable_move_assign&&) = default;
-    enable_move_assign& operator=(const enable_move_assign&) = default;
+    move_assign_enabled_store() = default;
+    move_assign_enabled_store(const move_assign_enabled_store&) = default;
+    move_assign_enabled_store(move_assign_enabled_store&&) = default;
+    move_assign_enabled_store& operator=(
+        const move_assign_enabled_store&) = default;
 };
 
 template <class T>
-using move_assign_enabled_store =
-    std::conditional_t<
-        std::is_trivially_move_assignable_v<T>,
-        dtor_enabled_store<T>,
-        enable_move_assign<T>>;
-
-template <class T>
-struct enable_copy_assign : move_assign_enabled_store<T>
+struct move_assign_enabled_store<T, true> : dtor_enabled_store<T>
 {
-    template <class... Args>
-    enable_copy_assign(generic_args_t, Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<
-            move_assign_enabled_store<T>, generic_args_t, Args&&...>) :
-        move_assign_enabled_store<T>(
-            generic_args_t(), std::forward<Args>(args)...)
-    {}
+    using dtor_enabled_store<T>::dtor_enabled_store;
+};
 
-    enable_copy_assign(replace_mode mode) noexcept :
-        move_assign_enabled_store<T>(mode)
-    {}
+template <class T, bool = std::is_trivially_copy_assignable_v<T>>
+struct copy_assign_enabled_store : move_assign_enabled_store<T>
+{
+    using move_assign_enabled_store<T>::move_assign_enabled_store;
 
-    enable_copy_assign& operator=(const enable_copy_assign& other)
+    copy_assign_enabled_store& operator=(
+            const copy_assign_enabled_store& other)
         noexcept(std::is_nothrow_copy_constructible_v<T>
               && std::is_nothrow_copy_assignable_v<T>)
     {
@@ -208,35 +189,25 @@ struct enable_copy_assign : move_assign_enabled_store<T>
         return *this;
     }
 
-    enable_copy_assign() = default;
-    enable_copy_assign(const enable_copy_assign&) = default;
-    enable_copy_assign(enable_copy_assign&&) = default;
-    enable_copy_assign& operator=(enable_copy_assign&&) = default;
+    copy_assign_enabled_store() = default;
+    copy_assign_enabled_store(const copy_assign_enabled_store&) = default;
+    copy_assign_enabled_store(copy_assign_enabled_store&&) = default;
+    copy_assign_enabled_store& operator=(
+        copy_assign_enabled_store&&) = default;
 };
 
 template <class T>
-using copy_assign_enabled_store =
-    std::conditional_t<
-        std::is_trivially_copy_assignable_v<T>,
-        move_assign_enabled_store<T>,
-        enable_copy_assign<T>>;
-
-template <class T>
-struct enable_move_ctor : copy_assign_enabled_store<T>
+struct copy_assign_enabled_store<T, true> : move_assign_enabled_store<T>
 {
-    template <class... Args>
-    enable_move_ctor(generic_args_t, Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<
-            copy_assign_enabled_store<T>, generic_args_t, Args&&...>) :
-        copy_assign_enabled_store<T>(
-            generic_args_t(), std::forward<Args>(args)...)
-    {}
+    using move_assign_enabled_store<T>::move_assign_enabled_store;
+};
 
-    enable_move_ctor(replace_mode mode) noexcept :
-        copy_assign_enabled_store<T>(mode)
-    {}
+template <class T, bool = std::is_trivially_move_constructible_v<T>>
+struct move_ctor_enabled_store : copy_assign_enabled_store<T>
+{
+    using copy_assign_enabled_store<T>::copy_assign_enabled_store;
 
-    enable_move_ctor(enable_move_ctor&& other)
+    move_ctor_enabled_store(move_ctor_enabled_store&& other)
             noexcept(std::is_nothrow_move_constructible_v<T>) :
         copy_assign_enabled_store<T>(other)
     {
@@ -245,35 +216,26 @@ struct enable_move_ctor : copy_assign_enabled_store<T>
         }
     }
 
-    enable_move_ctor() = default;
-    enable_move_ctor(const enable_move_ctor&) = default;
-    enable_move_ctor& operator=(const enable_move_ctor&) = default;
-    enable_move_ctor& operator=(enable_move_ctor&&) = default;
+    move_ctor_enabled_store() = default;
+    move_ctor_enabled_store(const move_ctor_enabled_store&) = default;
+    move_ctor_enabled_store& operator=(
+        const move_ctor_enabled_store&) = default;
+    move_ctor_enabled_store& operator=(
+        move_ctor_enabled_store&&) = default;
 };
 
 template <class T>
-using move_ctor_enabled_store =
-    std::conditional_t<
-        std::is_trivially_move_constructible_v<T>,
-        copy_assign_enabled_store<T>,
-        enable_move_ctor<T>>;
-
-template <class T>
-struct enable_copy_ctor : move_ctor_enabled_store<T>
+struct move_ctor_enabled_store<T, true> : move_assign_enabled_store<T>
 {
-    template <class... Args>
-    enable_copy_ctor(generic_args_t, Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<
-            move_ctor_enabled_store<T>, generic_args_t, Args&&...>) :
-        move_ctor_enabled_store<T>(
-            generic_args_t(), std::forward<Args>(args)...)
-    {}
+    using move_assign_enabled_store<T>::move_assign_enabled_store;
+};
 
-    enable_copy_ctor(replace_mode mode) noexcept :
-        move_ctor_enabled_store<T>(mode)
-    {}
+template <class T, bool = std::is_trivially_copy_constructible_v<T>>
+struct copy_ctor_enabled_store : move_ctor_enabled_store<T>
+{
+    using move_ctor_enabled_store<T>::move_ctor_enabled_store;
 
-    enable_copy_ctor(const enable_copy_ctor& other)
+    copy_ctor_enabled_store(const copy_ctor_enabled_store& other)
             noexcept(std::is_nothrow_copy_constructible_v<T>) :
         move_ctor_enabled_store<T>(other)
     {
@@ -282,18 +244,19 @@ struct enable_copy_ctor : move_ctor_enabled_store<T>
         }
     }
 
-    enable_copy_ctor() = default;
-    enable_copy_ctor(enable_copy_ctor&&) = default;
-    enable_copy_ctor& operator=(const enable_copy_ctor&) = default;
-    enable_copy_ctor& operator=(enable_copy_ctor&&) = default;
+    copy_ctor_enabled_store() = default;
+    copy_ctor_enabled_store(copy_ctor_enabled_store&&) = default;
+    copy_ctor_enabled_store& operator=(
+        const copy_ctor_enabled_store&) = default;
+    copy_ctor_enabled_store& operator=(
+        copy_ctor_enabled_store&&) = default;
 };
 
 template <class T>
-using copy_ctor_enabled_store =
-    std::conditional_t<
-        std::is_trivially_copy_constructible_v<T>,
-        move_ctor_enabled_store<T>,
-        enable_copy_ctor<T>>;
+struct copy_ctor_enabled_store<T, true> : move_ctor_enabled_store<T>
+{
+    using move_ctor_enabled_store<T>::move_ctor_enabled_store;
+};
 
 template <class T>
 struct swap_enabled_store : copy_ctor_enabled_store<T>
