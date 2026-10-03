@@ -511,7 +511,7 @@ enum slot : unsigned {
 struct copy_mode_t {};
 
 template <class T, unsigned N>
-struct trivial_store
+struct store
 {
 private:
     alignas(T) char replacements_[N][sizeof(T)] = {};
@@ -519,7 +519,7 @@ private:
     std::uint_fast8_t skips_ =0U;
 
 protected:
-    trivial_store(copy_mode_t, const trivial_store& other) noexcept :
+    store(copy_mode_t, const store& other) noexcept :
         has_(other.has_), skips_(other.skips_)
     {}
 
@@ -528,22 +528,22 @@ public:
     static constexpr unsigned size = N;
 
     template <class Head, class... Tails>
-    trivial_store(generic_args_t, Head&& head, Tails&&... tails) :
-        trivial_store(std::integral_constant<std::size_t, 0>(),
+    store(generic_args_t, Head&& head, Tails&&... tails) :
+        store(std::integral_constant<std::size_t, 0>(),
             std::forward<Head>(head), std::forward<Tails>(tails)...)
     {}
 
 private:
     template <std::size_t Slot, class Head, class... Tails>
-    trivial_store(std::integral_constant<std::size_t, Slot>,
+    store(std::integral_constant<std::size_t, Slot>,
                   Head&& head, Tails&&... tails) :
-        trivial_store(std::integral_constant<std::size_t, Slot + 1>(),
+        store(std::integral_constant<std::size_t, Slot + 1>(),
             std::forward<Tails>(tails)...)
     {
         init<Slot>(std::forward<Head>(head));
     }
 
-    trivial_store(std::integral_constant<std::size_t, N>) noexcept :
+    store(std::integral_constant<std::size_t, N>) noexcept :
         has_(0), skips_(0)
     {}
 
@@ -667,25 +667,121 @@ protected:
     }
 };
 
-template <class T, unsigned N>
-struct nontrivial_store : private trivial_store<T, N>
+template <class T, std::size_t N, bool = std::is_trivially_destructible_v<T>>
+struct dtor_enabled_store : store<T, N>
 {
-    using trivial_store<T, N>::trivial_store;
+    using store<T, N>::store;
 
-    nontrivial_store(const nontrivial_store& other)
-        noexcept(std::is_nothrow_copy_constructible_v<T>) :
-        trivial_store<T, N>(copy_mode_t(), other)
+    ~dtor_enabled_store()
     {
         for (unsigned r = 0; r < N; ++r) {
             if (this->has(r)) {
-                this->emplace(r, other[r]);
+                (*this)[r].~T();
             }
         }
     }
+};
 
-    nontrivial_store(nontrivial_store&& other)
-        noexcept(std::is_nothrow_move_constructible_v<T>) :
-        trivial_store<T, N>(copy_mode_t(), other)
+template <class T, std::size_t N>
+struct dtor_enabled_store<T, N, true> : store<T, N>
+{
+    using store<T, N>::store;
+};
+
+template <class T, std::size_t N,
+    bool = std::is_trivially_move_assignable_v<T>>
+struct move_assign_enabled_store : dtor_enabled_store<T, N>
+{
+    using dtor_enabled_store<T, N>::dtor_enabled_store;
+
+    move_assign_enabled_store& operator=(
+            move_assign_enabled_store&& other)
+        noexcept(std::is_nothrow_move_constructible_v<T>
+              && std::is_nothrow_move_assignable_v<T>)
+    {
+        if (this == std::addressof(other)) {
+            return *this;
+        }
+        for (unsigned r = 0; r < N; ++r) {
+            if (this->has(r)) {
+                if (other.has(r)) {
+                    (*this)[r] = std::move(other[r]);
+                    continue;
+                } else {
+                    (*this)[r].~T();
+                }
+            } else if (other.has(r)) {
+                this->emplace(r, std::move(other[r]));
+            }
+            this->set_has(r, other.has(r));
+            this->set_skips(r, other.skips(r));
+        }
+        return *this;
+    }
+
+    move_assign_enabled_store() = default;
+    move_assign_enabled_store(const move_assign_enabled_store&) = default;
+    move_assign_enabled_store(move_assign_enabled_store&&) = default;
+    move_assign_enabled_store& operator=(
+        const move_assign_enabled_store&) = default;
+};
+
+template <class T, std::size_t N>
+struct move_assign_enabled_store<T, N, true> : dtor_enabled_store<T, N>
+{
+    using dtor_enabled_store<T, N>::dtor_enabled_store;
+};
+
+template <class T, std::size_t N,
+    bool = std::is_trivially_copy_assignable_v<T>>
+struct copy_assign_enabled_store : move_assign_enabled_store<T, N>
+{
+    using move_assign_enabled_store<T, N>::move_assign_enabled_store;
+
+    copy_assign_enabled_store& operator=(
+            const copy_assign_enabled_store& other)
+        noexcept(std::is_nothrow_copy_constructible_v<T>
+              && std::is_nothrow_copy_assignable_v<T>)
+    {
+        for (unsigned r = 0; r < N; ++r) {
+            if (this->has(r)) {
+                if (other.has(r)) {
+                    (*this)[r] = other[r];
+                    continue;
+                } else {
+                    (*this)[r].~T();
+                }
+            } else if (other.has(r)) {
+                this->emplace(r, other[r]);
+            }
+            this->set_has(r, other.has(r));
+            this->set_skips(r, other.skips(r));
+        }
+        return *this;
+    }
+
+    copy_assign_enabled_store() = default;
+    copy_assign_enabled_store(const copy_assign_enabled_store&) = default;
+    copy_assign_enabled_store(copy_assign_enabled_store&&) = default;
+    copy_assign_enabled_store& operator=(
+        copy_assign_enabled_store&&) = default;
+};
+
+template <class T, std::size_t N>
+struct copy_assign_enabled_store<T, N, true> : move_assign_enabled_store<T, N>
+{
+    using move_assign_enabled_store<T, N>::move_assign_enabled_store;
+};
+
+template <class T, std::size_t N,
+    bool = std::is_trivially_move_constructible_v<T>>
+struct move_ctor_enabled_store : copy_assign_enabled_store<T, N>
+{
+    using copy_assign_enabled_store<T, N>::copy_assign_enabled_store;
+
+    move_ctor_enabled_store(move_ctor_enabled_store&& other)
+            noexcept(std::is_nothrow_move_constructible_v<T>) :
+        copy_assign_enabled_store<T, N>(copy_mode_t(), other)
     {
         for (unsigned r = 0; r < N; ++r) {
             if (this->has(r)) {
@@ -694,64 +790,66 @@ struct nontrivial_store : private trivial_store<T, N>
         }
     }
 
-    ~nontrivial_store()
+    move_ctor_enabled_store() = default;
+    move_ctor_enabled_store(const move_ctor_enabled_store&) = default;
+    move_ctor_enabled_store& operator=(
+        const move_ctor_enabled_store&) = default;
+    move_ctor_enabled_store& operator=(
+        move_ctor_enabled_store&&) = default;
+};
+
+template <class T, std::size_t N>
+struct move_ctor_enabled_store<T, N, true> : move_assign_enabled_store<T, N>
+{
+    using move_assign_enabled_store<T, N>::move_assign_enabled_store;
+};
+
+template <class T, std::size_t N,
+    bool = std::is_trivially_copy_constructible_v<T>>
+struct copy_ctor_enabled_store : move_ctor_enabled_store<T, N>
+{
+    using move_ctor_enabled_store<T, N>::move_ctor_enabled_store;
+
+    copy_ctor_enabled_store(const copy_ctor_enabled_store& other)
+            noexcept(std::is_nothrow_copy_constructible_v<T>) :
+        move_ctor_enabled_store<T, N>(copy_mode_t(), other)
     {
         for (unsigned r = 0; r < N; ++r) {
             if (this->has(r)) {
-                (*this)[r].~T();
+                this->emplace(r, other[r]);
             }
         }
     }
 
-    nontrivial_store& operator=(const nontrivial_store& other)
-        noexcept(std::is_nothrow_copy_constructible_v<T>
-              && std::is_nothrow_copy_assignable_v<T>)
-    {
-        assign(other);
-        return *this;
-    }
+    copy_ctor_enabled_store() = default;
+    copy_ctor_enabled_store(copy_ctor_enabled_store&&) = default;
+    copy_ctor_enabled_store& operator=(
+        const copy_ctor_enabled_store&) = default;
+    copy_ctor_enabled_store& operator=(
+        copy_ctor_enabled_store&&) = default;
+};
 
-    nontrivial_store& operator=(nontrivial_store&& other)
-        noexcept(std::is_nothrow_move_constructible_v<T>
-              && std::is_nothrow_move_assignable_v<T>)
-    {
-        assign(std::move(other));
-        return *this;
-    }
+template <class T, std::size_t N>
+struct copy_ctor_enabled_store<T, N, true> : move_ctor_enabled_store<T, N>
+{
+    using move_ctor_enabled_store<T, N>::move_ctor_enabled_store;
+};
 
-    using trivial_store<T, N>::size;
-    using trivial_store<T, N>::get;
+template <class T, std::size_t N>
+struct swap_enabled_store : copy_ctor_enabled_store<T, N>
+{
+    using copy_ctor_enabled_store<T, N>::copy_ctor_enabled_store;
 
-private:
-    template <class Other>
-    void assign(Other&& other)
+    void swap(swap_enabled_store& other)
+        noexcept(std::is_nothrow_swappable_v<T>)
     {
+        // At least for the standard library types, there is no guarantee of
+        // self-safeness for moving, and thus, no likelihood of aversion to
+        // memcpy for moving of trivially copyable T objects
         if (this == std::addressof(other)) {
-            return; // see comments in replace_if_skipped
+            return;
         }
-        using f_t = std::conditional_t<
-            std::is_lvalue_reference_v<Other>, const T&, T>;
-        for (unsigned r = 0; r < N; ++r) {
-            if (this->has(r)) {
-                if (other.has(r)) {
-                    (*this)[r] = std::forward<f_t>(other[r]);
-                    continue;
-                } else {
-                    (*this)[r].~T();
-                }
-            } else if (other.has(r)) {
-                this->emplace(r, std::forward<f_t>(other[r]));
-            }
-            this->set_has(r, other.has(r));
-            this->set_skips(r, other.skips(r));
-        }
-    }
 
-public:
-    void swap(nontrivial_store& other)
-        noexcept(std::is_nothrow_swappable_v<T>
-              && std::is_nothrow_constructible_v<T>)
-    {
         for (unsigned r = 0; r < N; ++r) {
             if (this->has(r)) {
                 if (other.has(r)) {
@@ -781,8 +879,8 @@ public:
     }
 };
 
-template <class T, unsigned N>
-void swap(nontrivial_store<T, N>& left, nontrivial_store<T, N>& right)
+template <class T, std::size_t N>
+void swap(swap_enabled_store<T, N>& left, swap_enabled_store<T, N>& right)
     noexcept(noexcept(left.swap(right)))
 {
     left.swap(right);
@@ -812,8 +910,7 @@ template <class T, unsigned N>
 struct base_base
 {
 protected:
-    using store_t = std::conditional_t<std::is_trivially_copyable_v<T>,
-        trivial_store<T, N>, nontrivial_store<T, N>>;
+    using store_t = swap_enabled_store<T, N>;
 
 private:
     store_t store_;
@@ -1073,7 +1170,7 @@ public:
     replace_if_conversion_failed(
         const replace_if_conversion_failed&) = default;
     replace_if_conversion_failed(
-        replace_if_conversion_failed&&) = default;
+        replace_if_conversion_failed&&)  = default;
     ~replace_if_conversion_failed() = default;
     replace_if_conversion_failed& operator=(
         const replace_if_conversion_failed&) = default;

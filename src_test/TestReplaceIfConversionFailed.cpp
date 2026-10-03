@@ -17,6 +17,7 @@
 #include <commata/text_value_translation.hpp>
 
 #include "BaseTest.hpp"
+#include "trivials.hpp"
 
 using namespace std::string_view_literals;
 
@@ -707,9 +708,11 @@ static_assert(std::is_nothrow_copy_assignable_v<ri_t>);
 static_assert(std::is_nothrow_move_assignable_v<ri_t>);
 static_assert(std::is_nothrow_swappable_v<ri_t>);
 
+static_assert(std::is_copy_constructible_v<rv_t>);
 static_assert(!std::is_nothrow_copy_constructible_v<rv_t>);
 static_assert(std::is_nothrow_move_constructible_v<rv_t>);
-static_assert(!std::is_nothrow_copy_assignable_v<rv_t>);
+static_assert(std::is_copy_assignable_v<rv_t>);
+static_assert(!std::is_nothrow_copy_assignable_v<std::vector<int>>);
 static_assert(std::is_nothrow_move_assignable_v<rv_t>);
 static_assert(std::is_nothrow_swappable_v<rv_t>);
 
@@ -719,5 +722,14 @@ static_assert(!std::is_constructible<replace_if_conversion_failed<int>,
     int, int, int, int, int>::value);
 static_assert(!std::is_constructible<replace_if_conversion_failed<unsigned>,
     unsigned, replacement_fail_t, replacement_ignore_t, long>::value);
+
+static_assert(std::is_trivially_copy_constructible_v<
+    replace_if_conversion_failed<trivially_copy_constructible>>);
+static_assert(std::is_trivially_move_constructible_v<
+    replace_if_conversion_failed<trivially_move_constructible>>);
+static_assert(std::is_trivially_copy_assignable_v<
+    replace_if_conversion_failed<trivially_copy_assignable>>);
+static_assert(std::is_trivially_move_assignable_v<
+    replace_if_conversion_failed<trivially_move_assignable>>);
 
 } // end unnamed
