@@ -34,6 +34,7 @@
 
 #include "BaseTest.hpp"
 #include "tracking_allocator.hpp"
+#include "trivials.hpp"
 
 using namespace std::string_literals;
 using namespace std::string_view_literals;
@@ -1564,6 +1565,30 @@ TEST_F(TestReplaceIfSkipped, CopyCtor)
     }
 }
 
+TEST_F(TestReplaceIfSkipped, CopyCtorTrivial)
+{
+    // copy
+    {
+        const replace_if_skipped<int> r0(123);
+        replace_if_skipped<int> r(r0);
+        ASSERT_EQ(123, r());
+    }
+
+    // ignore
+    {
+        const replace_if_skipped<int> r0(replacement_ignore);
+        replace_if_skipped<int> r(r0);
+        ASSERT_TRUE(!r());
+    }
+
+    // fail
+    {
+        const replace_if_skipped<int> r0(replacement_fail);
+        replace_if_skipped<int> r(r0);
+        ASSERT_THROW(r(), field_not_found);
+    }
+}
+
 TEST_F(TestReplaceIfSkipped, MoveCtor)
 {
     // copy
@@ -1584,6 +1609,30 @@ TEST_F(TestReplaceIfSkipped, MoveCtor)
     {
         replace_if_skipped<std::string> r0(replacement_fail);
         replace_if_skipped<std::string> r(std::move(r0));
+        ASSERT_THROW(r(), field_not_found);
+    }
+}
+
+TEST_F(TestReplaceIfSkipped, MoveCtorTrivial)
+{
+    // copy
+    {
+        replace_if_skipped<int> r0(-10);
+        replace_if_skipped<int> r(std::move(r0));
+        ASSERT_EQ(-10, r());
+    }
+
+    // ignore
+    {
+        replace_if_skipped<int> r0(replacement_ignore);
+        replace_if_skipped<int> r(std::move(r0));
+        ASSERT_TRUE(!r());
+    }
+
+    // fail
+    {
+        replace_if_skipped<int> r0(replacement_fail);
+        replace_if_skipped<int> r(std::move(r0));
         ASSERT_THROW(r(), field_not_found);
     }
 }
@@ -1675,6 +1724,92 @@ TEST_F(TestReplaceIfSkipped, CopyAssign)
     }
 }
 
+TEST_F(TestReplaceIfSkipped, CopyAssignTrivial)
+{
+    using r_t = replace_if_skipped<int>;
+
+    // from copy
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(-1);
+
+        r_t r0(5);
+
+        rs[0] = r0;
+        rs[1] = r0;
+        rs[2] = r0;
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_EQ(5, *rs[i]()) << i;
+        }
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
+        r0 = r0;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+        ASSERT_EQ(5, *r0());
+    }
+
+    // from ignore
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(10);
+
+        r_t r0(replacement_ignore);
+
+        rs[0] = r0;
+        rs[1] = r0;
+        rs[2] = r0;
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_TRUE(!rs[i]()) << i;
+        }
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
+        r0 = r0;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+        ASSERT_TRUE(!r0());
+    }
+
+    // from fail
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(40);
+
+        r_t r0(replacement_fail);
+
+        rs[0] = r0;
+        rs[1] = r0;
+        rs[2] = r0;
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_THROW(rs[i](), field_not_found) << i;
+        }
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
+        r0 = r0;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+        ASSERT_THROW(r0(), field_not_found);
+    }
+}
+
 TEST_F(TestReplaceIfSkipped, MoveAssign)
 {
     using r_t = replace_if_skipped<std::vector<int>>;
@@ -1694,9 +1829,6 @@ TEST_F(TestReplaceIfSkipped, MoveAssign)
         for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
             ASSERT_EQ(v, *rs[i]()) << i;
         }
-
-        rs[0] = std::move(rs[0]);
-        ASSERT_EQ(v, *rs[0]());
     }
 
     // from ignore
@@ -1712,9 +1844,6 @@ TEST_F(TestReplaceIfSkipped, MoveAssign)
         for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
             ASSERT_TRUE(!rs[i]()) << i;
         }
-
-        rs[0] = std::move(rs[0]);
-        ASSERT_TRUE(!rs[0]());
     }
 
     // from fail
@@ -1730,9 +1859,56 @@ TEST_F(TestReplaceIfSkipped, MoveAssign)
         for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
             ASSERT_THROW(rs[i](), field_not_found) << i;
         }
+    }
+}
 
-        rs[0] = std::move(rs[0]);
-        ASSERT_THROW(rs[0](), field_not_found);
+TEST_F(TestReplaceIfSkipped, MoveAssignTrivial)
+{
+    using r_t = replace_if_skipped<int>;
+
+    // from copy
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(10);
+
+        rs[0] = r_t(4);
+        rs[1] = r_t(4);
+        rs[2] = r_t(4);
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_EQ(4, *rs[i]()) << i;
+        }
+    }
+
+    // from ignore
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(12345);
+
+        rs[0] = r_t(replacement_ignore);
+        rs[1] = r_t(replacement_ignore);
+        rs[2] = r_t(replacement_ignore);
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_TRUE(!rs[i]()) << i;
+        }
+    }
+
+    // from fail
+    {
+        std::vector<r_t> rs;
+        rs.emplace_back(replacement_ignore);
+        rs.emplace_back(replacement_fail);
+        rs.emplace_back(666);
+
+        rs[0] = r_t(replacement_fail);
+        rs[1] = r_t(replacement_fail);
+        rs[2] = r_t(replacement_fail);
+        for (std::size_t i = 0, ie = rs.size(); i < ie; ++i) {
+            ASSERT_THROW(rs[i](), field_not_found) << i;
+        }
     }
 }
 
@@ -1781,6 +1957,57 @@ TEST_F(TestReplaceIfSkipped, Swap)
     // swap with self
     swap(rs[0], rs[0]);
     ASSERT_STREQ("ABC", rs[0]()->c_str());
+    swap(rs[1], rs[1]);
+    ASSERT_TRUE(!rs[1]());
+    swap(rs[2], rs[2]);
+    ASSERT_THROW(rs[2](), field_not_found);
+}
+
+TEST_F(TestReplaceIfSkipped, SwapTrivial)
+{
+    std::vector<replace_if_skipped<int>> rs;
+    rs.emplace_back(100);
+    rs.emplace_back(replacement_ignore);
+    rs.emplace_back(replacement_fail);
+    rs.emplace_back(-15);
+
+    using std::swap;
+
+    // copy vs ignore
+    swap(rs[0], rs[1]);
+    ASSERT_TRUE(!rs[0]());
+    ASSERT_EQ(100, rs[1]());
+    swap(rs[0], rs[1]);
+    ASSERT_EQ(100, rs[0]());
+    ASSERT_TRUE(!rs[1]());
+
+    // ignore vs fail
+    swap(rs[1], rs[2]);
+    ASSERT_TRUE(!rs[2]());
+    ASSERT_THROW(rs[1](), field_not_found);
+    swap(rs[1], rs[2]);
+    ASSERT_TRUE(!rs[1]());
+    ASSERT_THROW(rs[2](), field_not_found);
+
+    // fail vs copy
+    swap(rs[2], rs[3]);
+    ASSERT_EQ(-15, rs[2]());
+    ASSERT_THROW(rs[3](), field_not_found);
+    swap(rs[2], rs[3]);
+    ASSERT_EQ(-15, rs[3]());
+    ASSERT_THROW(rs[2](), field_not_found);
+
+    // copy vs copy
+    swap(rs[3], rs[0]);
+    ASSERT_EQ(100, rs[3]());
+    ASSERT_EQ(-15, rs[0]());
+    swap(rs[3], rs[0]);
+    ASSERT_EQ(-15, rs[3]());
+    ASSERT_EQ(100, rs[0]());
+
+    // swap with self
+    swap(rs[0], rs[0]);
+    ASSERT_EQ(100, rs[0]());
     swap(rs[1], rs[1]);
     ASSERT_TRUE(!rs[1]());
     swap(rs[2], rs[2]);
@@ -1847,5 +2074,14 @@ static_assert(std::is_nothrow_move_assignable_v<rv_t>);
 static_assert(std::is_nothrow_swappable_v<rv_t>);
 
 static_assert(std::is_trivially_copyable<ri_t>::value);
+
+static_assert(std::is_trivially_copy_constructible_v<
+    replace_if_skipped<trivially_copy_constructible>>);
+static_assert(std::is_trivially_move_constructible_v<
+    replace_if_skipped<trivially_move_constructible>>);
+static_assert(std::is_trivially_copy_assignable_v<
+    replace_if_skipped<trivially_copy_assignable>>);
+static_assert(std::is_trivially_move_assignable_v<
+    replace_if_skipped<trivially_move_assignable>>);
 
 } // end unnamed

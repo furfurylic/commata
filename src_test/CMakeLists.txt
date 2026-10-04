@@ -50,8 +50,9 @@ set(TEST_COMMATA_HEADERS
     fancy_allocator.hpp
     identified_allocator.hpp
     logging_allocator.hpp
-    tracking_allocator.hpp
     simple_transcriptor.hpp
+    tracking_allocator.hpp
+    trivials.hpp
     BaseTest.hpp
 )
 
