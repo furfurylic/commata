@@ -38,6 +38,7 @@ set(TEST_COMMATA_SOURCES
     TestRecordExtractor.cpp
     TestRecordTranslator.cpp
     TestReplaceIfConversionFailed.cpp
+    TestReplaceIfSkipped.cpp
     TestStoredTable.cpp
     TestTablePull.cpp
     TestTableScanner.cpp
