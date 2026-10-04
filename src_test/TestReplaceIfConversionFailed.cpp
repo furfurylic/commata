@@ -23,29 +23,6 @@ using namespace std::string_view_literals;
 using namespace commata;
 using namespace commata::test;
 
-namespace {
-
-class from_str
-{
-    std::stringstream str_;
-
-public:
-    from_str(const char* s)
-    {
-        str_ << s;
-    }
-
-    template <class T>
-    operator T() && noexcept
-    {
-        T num;
-        str_ >> num;
-        return num;
-    }
-};
-
-} // end unnamed
-
 template <class T>
 struct TestReplaceIfConversionFailed : BaseTestWithParam<T>
 {};
