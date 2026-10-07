@@ -3099,10 +3099,10 @@ namespace commata {
     size_type operator()(Ch* out, size_type n);
 
     void swap(owned_streambuf_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Streambuf>)
-      { using std::swap; swap(in, other.in); }
+      { using std::swap; swap(in_, other.in_); }
 
   private:
-    Streambuf in;   <c>// <n>exposition only</n></c>
+    Streambuf in_;  <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="owned_streambuf_input.special"/>, specialized algorithms:</n></c>
@@ -3123,7 +3123,7 @@ namespace commata {
           <code>
 explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Initializes <c>in</c> with <c>std::move(sb)</c>.</effects>
+          <effects>Initializes <c>in_</c> with <c>std::move(sb)</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Streambuf></c>.</remark>
           <note>This constructor can cause a so-called slicing.</note>
         </code-item>
@@ -3137,7 +3137,7 @@ explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</n
 size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>Assigns up to <c>n</c> characters obtained from <c>in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+          <effects>Assigns up to <c>n</c> characters obtained from <c>in_</c> to successive elements of the array whose first element is designated by <c>out</c>.
                    Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
           <returns>The number of characters assigned.</returns>
         </code-item>
