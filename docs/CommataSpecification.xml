@@ -3562,7 +3562,7 @@ namespace commata {
     <c>// <n><xref id="indirect_input.ctor"/>, constructors:</n></c>
     indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
     explicit indirect_input(Input base) noexcept(std::is_nothrow_move_constructible_v&lt;Input>) :
-      input(std::move(base)) {}
+      input_(std::move(base)) {}
     indirect_input(const indirect_input&amp;)  = default;
     indirect_input(      indirect_input&amp;&amp;) = default;
 
@@ -3574,17 +3574,17 @@ namespace commata {
     indirect_input&amp; operator=(      indirect_input&amp;&amp;) = default;
 
     <c>// <n>access:</n></c>
-    const Input&amp; base() const noexcept { return input; }
-          Input&amp; base()       noexcept { return input; }
+    const Input&amp; base() const noexcept { return input_; }
+          Input&amp; base()       noexcept { return input_; }
 
     <c>// <n><xref id="indirect_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
     void swap(indirect_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Input>)
-      { using std::swap; swap(input, other.input); }
+      { using std::swap; swap(input_, other.input_); }
 
   private:
-    Input input;  <c>// <n>exposition only</n></c>
+    Input input_; <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="indirect_input.special"/>, specialized algorithms:</n></c>
@@ -3607,7 +3607,7 @@ namespace commata {
 indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
           </code>
           <requires><c>Input</c> shall be <c>DefaultConstructible</c>.</requires>
-          <effects>Default constructs <c>input</c>.</effects>
+          <effects>Default constructs <c>input_</c>.</effects>
         </code-item>
       </section>
 
@@ -3618,7 +3618,7 @@ indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
           <code>
 size_type operator()(Ch* out, size_type n);
           </code>
-          <effects>Equivalent to: <c>return input(out, n);</c></effects>
+          <effects>Equivalent to: <c>return input_(out, n);</c></effects>
         </code-item>
       </section>
 
