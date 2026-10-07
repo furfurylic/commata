@@ -4219,7 +4219,7 @@ namespace commata {
     [[nodiscard]] auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
       -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
   template &lt;class CharInputR>
-    [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+    [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; input) noexcept(<nc>see below</nc>)
       -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
 
   <c>// <n><xref id="parse_tsv"/>, functions that utilize the TSV parser:</n></c>
@@ -4282,10 +4282,10 @@ namespace commata {
                            Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
     void swap(tsv_source&amp; other) noexcept(std::is_nothrow_swappable_v&lt;CharInput>)
-      { using std::swap; swap(in, other.in); }
+      { using std::swap; swap(input_, other.input_); }
 
   private:
-    CharInput in;   <c>// <n>exposition only</n></c>
+    CharInput input_;   <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="tsv_source.special"/>, specialized algorithms:</n></c>
@@ -4298,7 +4298,7 @@ namespace commata {
     [[nodiscard]] auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
       -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
   template &lt;class CharInputR>
-    [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+    [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; input) noexcept(<nc>see below</nc>)
       -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
 }
       </codeblock>
@@ -4337,7 +4337,7 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
 explicit tsv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
           </code>
           <requires><c>std::is_copy_constructible_v&lt;CharInput></c> shall be <c>true</c>.</requires>
-          <effects>Initializes <c>in</c> with <c>input</c>.</effects>
+          <effects>Initializes <c>input_</c> with <c>input</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;CharInput></c>.</remark>
         </code-item>
 
@@ -4345,7 +4345,7 @@ explicit tsv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
           <code>
 explicit tsv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Initializes <c>in</c> with <c>std::move(input)</c>.</effects>
+          <effects>Initializes <c>input_</c> with <c>std::move(input)</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;CharInput></c>.</remark>
         </code-item>
       </section>
@@ -4365,7 +4365,7 @@ template &lt;class HandlerR>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.</requires>
           <returns>A table parser object <c>p</c> for the TSV text format (<xref id="definitions.tsv_text"/>).
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>input_</c> (first form) or <c>std::move(input_)</c> (second form) as its tied character source object
                    and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object.</returns>
           <remark>Let <c>Ch</c> be <c>std::remove_const_t&lt;Handler::char_type></c>.
                   These operators shall not participate in overload resolution unless
@@ -4391,7 +4391,7 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
                     <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
           <returns>A table parser object <c>p</c> for the TSV text format (<xref id="definitions.tsv_text"/>).
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object,
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>input_</c> (first form) or <c>std::move(input_)</c> (second form) as its tied character source object,
                    an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
           <remark>Let <c>Ch</c> be <c>std::remove_const_t&lt;Handler::char_type></c>.
@@ -4457,11 +4457,11 @@ template &lt;class... Args>
         <code-item>
           <code>
 template &lt;class CharInputR>
-  [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+  [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; input) noexcept(<nc>see below</nc>)
     -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
           </code>
           <preface>Let <c>CharInput</c> be <c>std::decay_t&lt;CharInputR></c>.</preface>
-          <effects>Equivalent to: <c>return tsv_source&lt;CharInput>(make_char_input(std::forward&lt;CharInputR>(in)));</c></effects>
+          <effects>Equivalent to: <c>return tsv_source&lt;CharInput>(make_char_input(std::forward&lt;CharInputR>(input)));</c></effects>
           <remark>This overload shall participate in overload resolution if and only if <c>make_char_input(std::declval&lt;CharInputR&amp;&amp;>())</c> is not well-formed when treated as an unevaluated operand
                   and <c>std::is_invocable_r_v&lt;typename CharInput::size_type, CharInput&amp;, typename CharInput::char_type*, typename CharInput::size_type></c> is <c>true</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CharInput, CharInputR&amp;&amp;></c>.</remark>
