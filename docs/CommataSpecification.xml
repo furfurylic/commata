@@ -3245,10 +3245,10 @@ namespace commata {
     size_type operator()(Ch* out, size_type n);
 
     void swap(owned_istream_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;IStream>)
-      { using std::swap; swap(in, other.in); }
+      { using std::swap; swap(in_, other.in_); }
 
   private:
-    IStream in;     <c>// <n>exposition only</n></c>
+    IStream in_;    <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="owned_istream_input.special"/>, specialized algorithms:</n></c>
@@ -3269,7 +3269,7 @@ namespace commata {
           <code>
 explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Initializes <c>in</c> with <c>std::move(s)</c>.</effects>
+          <effects>Initializes <c>in_</c> with <c>std::move(s)</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;IStream></c>.</remark>
           <note>This constructor can cause a so-called slicing.</note>
         </code-item>
@@ -3283,10 +3283,10 @@ explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
 size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>Assigns up to <c>n</c> characters obtained from <c>in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+          <effects>Assigns up to <c>n</c> characters obtained from <c>in_</c> to successive elements of the array whose first element is designated by <c>out</c>.
                    Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
           <returns>The number of characters assigned.</returns>
-          <remark>This member function shall obtain characters from <c>*in</c> only by means of invoking <c>IStream::read</c> on <c>in</c>.</remark>
+          <remark>This member function shall obtain characters from <c>in_</c> only by means of invoking <c>IStream::read</c> on <c>in_</c>.</remark>
         </code-item>
       </section>
 
