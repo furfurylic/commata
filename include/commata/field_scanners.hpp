@@ -75,16 +75,6 @@ public:
         mode_(mode)
     {}
 
-    void* data() noexcept
-    {
-        return data_;
-    }
-
-    const void* data() const noexcept
-    {
-        return data_;
-    }
-
     T& value() noexcept
     {
         return *static_cast<T*>(static_cast<void*>(data_));
@@ -103,6 +93,13 @@ public:
     const replace_mode& mode() const noexcept
     {
         return mode_;
+    }
+
+protected:
+    template <class... Args>
+    void emplace(Args&&... args)
+    {
+        ::new(data_) T(std::forward<Args>(args)...);    // throw
     }
 };
 
@@ -147,7 +144,7 @@ struct move_assign_enabled_store : dtor_enabled_store<T>
                 this->value().~T();
             }
         } else if (other.mode() == replace_mode::replace) {
-            ::new(this->data()) T(std::move(other.value()));    // throw
+            this->emplace(std::move(other.value()));            // throw
         }
         this->mode() = other.mode();
         return *this;
@@ -183,7 +180,7 @@ struct copy_assign_enabled_store : move_assign_enabled_store<T>
                 this->value().~T();
             }
         } else if (other.mode() == replace_mode::replace) {
-            ::new(this->data()) T(other.value());   // throw
+            this->emplace(other.value());           // throw
         }
         this->mode() = other.mode();
         return *this;
@@ -212,7 +209,7 @@ struct move_ctor_enabled_store : copy_assign_enabled_store<T>
         copy_assign_enabled_store<T>(other)
     {
         if (other.mode() == replace_mode::replace) {
-            ::new(this->data()) T(std::move(other.value()));
+            this->emplace(std::move(other.value()));
         }
     }
 
@@ -240,7 +237,7 @@ struct copy_ctor_enabled_store : move_ctor_enabled_store<T>
         move_ctor_enabled_store<T>(other)
     {
         if (other.mode() == replace_mode::replace) {
-            ::new(this->data()) T(other.value());
+            this->emplace(other.value());
         }
     }
 
@@ -279,11 +276,11 @@ struct swap_enabled_store : copy_ctor_enabled_store<T>
                 swap(this->value(), other.value());                 // throw
                 return;
             } else {
-                ::new(other.data()) T(std::move(this->value()));    // throw
+                other.emplace(std::move(this->value()));            // throw
                 this->value().~T();
             }
         } else if (other.mode() == replace_mode::replace) {
-            ::new(this->data()) T(std::move(other.value()));        // throw
+            this->emplace(std::move(other.value()));                // throw
             other.value().~T();
         }
         swap(this->mode(), other.mode());
