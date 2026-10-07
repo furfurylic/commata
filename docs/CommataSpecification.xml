@@ -3026,7 +3026,7 @@ namespace commata {
     using size_type      = std::make_unsigned_t&lt;std::streamsize>;
 
     <c>// <n><xref id="streambuf_input.ctor"/>, constructors:</n></c>
-    streambuf_input() noexcept : in(nullptr) {}
+    streambuf_input() noexcept : in_(nullptr) {}
     explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
     streambuf_input(const streambuf_input&amp; other) = default;
 
@@ -3037,7 +3037,7 @@ namespace commata {
     size_type operator()(Ch* out, size_type n);
 
   private:
-    std::basic_streambuf&lt;Ch, Tr>* in;  <c>// <n>exposition only</n></c>
+    std::basic_streambuf&lt;Ch, Tr>* in_; <c>// <n>exposition only</n></c>
   };
 }
       </codeblock>
@@ -3053,7 +3053,7 @@ namespace commata {
           <code>
 explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
           </code>
-          <effects>Initializes <c>in</c> with <c>std::addressof(sb)</c>.</effects>
+          <effects>Initializes <c>in_</c> with <c>std::addressof(sb)</c>.</effects>
         </code-item>
       </section>
 
@@ -3065,7 +3065,7 @@ explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
 size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>If <c>in</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+          <effects>If <c>in_</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in_</c> to successive elements of the array whose first element is designated by <c>out</c>.
                    Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
           <returns>The number of characters assigned.</returns>
         </code-item>
