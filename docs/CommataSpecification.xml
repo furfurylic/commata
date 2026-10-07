@@ -8896,7 +8896,7 @@ namespace commata {
         operator()(Sink&amp;&amp; sink) &amp;&amp;;
 
   private:
-    SkippingHandler sh;           // exposition only
+    SkippingHandler skipping_handler_;   // exposition only
   };
 
   template &lt;class Ch, class Tr>
@@ -8929,7 +8929,7 @@ namespace commata {
 explicit string_view_field_translator_factory(
   SkippingHandler skipping_handler = SkippingHandler());
             </code>
-            <effects>Initializes <c>sh</c> with <c>std::move(skipping_handler)</c>.</effects>
+            <effects>Initializes <c>skipping_handler_</c> with <c>std::move(skipping_handler)</c>.</effects>
           </code-item>
         </section>
 
@@ -8943,7 +8943,7 @@ template &lt;class Sink>
     operator()(Sink&amp;&amp; sink) &amp;&amp;;
             </code>
             <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</requires>
-            <returns><c>string_view_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>(std::forward&lt;Sink>(sink), std::move(sh))</c>.</returns>
+            <returns><c>string_view_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>(std::forward&lt;Sink>(sink), std::move(skipping_handler_))</c>.</returns>
           </code-item>
         </section>
       </section>
