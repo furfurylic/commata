@@ -5297,8 +5297,8 @@ namespace commata {
     void pop_back();
 
   private:
-    Ch* b;    <c>// <n>exposition only</n></c>
-    Ch* e;    <c>// <n>exposition only</n></c>
+    Ch* begin_; <c>// <n>exposition only</n></c>
+    Ch* end_;   <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="basic_stored_value.comparison"/>, comparison functions:</n></c>
@@ -5380,9 +5380,9 @@ namespace commata {
 
       <p>The class template <c>basic_stored_value</c> describes an object that references the text value of a text field in a text table (<xref id="definitions.text_table"/>) represented by an object of a specialization of <c>basic_stored_table</c> (<xref id="basic_stored_table"/>).</p>
       <p><c>Ch</c> shall be a possibly const-qualified char-like type. <c>Tr</c> shall be a character traits type for <c>std::remove_const_t&lt;Ch></c>.</p>
-      <p>The text value is represented by the range [<c>b</c>, <c>e</c>). <c>*e</c> is always equal to <c>0</c>.
-         Programs can read from the range [<c>b</c>, <c>e</c>], and write to the range [<c>b</c>, <c>e</c>) if <c>Ch</c> is not const-qualified.
-         To modify the size (that is, <c>e - b</c>), programs can use the store-accessing facilities (<xref id="basic_stored_table.rewrite"/>) of the <c>basic_stored_table</c> object concerned.</p>
+      <p>The text value is represented by the range [<c>begin_</c>, <c>end_</c>). <c>*end_</c> is always equal to <c>0</c>.
+         Programs can read from the range [<c>begin_</c>, <c>end_</c>], and write to the range [<c>begin_</c>, <c>end_</c>) if <c>Ch</c> is not const-qualified.
+         To modify the size (that is, <c>end_ - begin_</c>), programs can use the store-accessing facilities (<xref id="basic_stored_table.rewrite"/>) of the <c>basic_stored_table</c> object concerned.</p>
       <p>Each specialization of <c>basic_stored_value</c> is a trivially copyable type and meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>value_type</c>.</p>
       <p>On the types <c>basic_stored_value&lt;Ch, Tr>::iterator</c> and <c>basic_stored_value&lt;Ch, Tr>::const_iterator</c>, it shall be satisfied that:</p>
       <ul>
@@ -5437,7 +5437,7 @@ namespace commata {
 basic_stored_value() noexcept;
           </code>
           <effects>Constructs an empty object of <c>basic_stored_value</c>.</effects>
-          <postcondition><c>b == e</c> and <c>*e</c> is equal to <c>0</c>.</postcondition>
+          <postcondition><c>begin_ == end_</c> and <c>*end_</c> is equal to <c>0</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -5446,7 +5446,7 @@ basic_stored_value(Ch* begin, Ch* end);
           </code>
           <requires>[<c>begin</c>, <c>end</c>] shall be a valid range. <c>*end</c> shall be equal to <c>0</c>.</requires>
           <throws>Nothing.</throws>
-          <effects>Initializes <c>b</c> with <c>begin</c> and <c>e</c> with <c>end</c>.</effects>
+          <effects>Initializes <c>begin_</c> with <c>begin</c> and <c>end_</c> with <c>end</c>.</effects>
         </code-item>
 
         <code-item>
@@ -5454,7 +5454,7 @@ basic_stored_value(Ch* begin, Ch* end);
 template &lt;class OtherCh>
   basic_stored_value(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
           </code>
-          <effects>Initializes <c>b</c> with <c>other.begin()</c> and <c>e</c> with <c>other.end()</c>.</effects>
+          <effects>Initializes <c>begin_</c> with <c>other.begin()</c> and <c>end_</c> with <c>other.end()</c>.</effects>
           <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
         </code-item>
       </section>
@@ -5467,7 +5467,7 @@ template &lt;class OtherCh>
 template &lt;class OtherCh>
   basic_stored_value&amp; operator=(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
           </code>
-          <effects>Assigns <c>b</c> from <c>other.begin()</c> and <c>e</c> from <c>other.end()</c>.</effects>
+          <effects>Assigns <c>begin_</c> from <c>other.begin()</c> and <c>end_</c> from <c>other.end()</c>.</effects>
           <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
         </code-item>
       </section>
@@ -5481,7 +5481,7 @@ iterator       begin()        noexcept;
 const_iterator begin()  const noexcept;
 const_iterator cbegin() const noexcept;
           </code>
-          <returns><c>b</c>.</returns>
+          <returns><c>begin_</c>.</returns>
         </code-item>
 
         <code-item>
@@ -5490,7 +5490,7 @@ iterator       end()        noexcept;
 const_iterator end()  const noexcept;
 const_iterator cend() const noexcept;
           </code>
-          <returns><c>e</c>.</returns>
+          <returns><c>end_</c>.</returns>
         </code-item>
 
         <code-item>
@@ -5595,7 +5595,7 @@ const_pointer c_str() const noexcept;
 pointer       data()        noexcept;
 const_pointer data()  const noexcept;
           </code>
-          <returns><c>b</c>.</returns>
+          <returns><c>begin_</c>.</returns>
           <remark>The range [<c>r</c>, <c>r + size()</c>] is readable and the range [<c>r</c>, <c>r + size()</c>) is writable where <c>r</c> is the returned value.</remark>
         </code-item>
 
@@ -5628,8 +5628,8 @@ iterator erase(const_iterator first, const_iterator last);
                     <c>last</c> shall point an element in [<c>first</c>, <c>cend()</c>].</requires>
           <throws>Nothing.</throws>
           <postcondition>Suppose that <c>prefix</c> is the string of [<c>cbegin()</c>, <c>first</c>) and <c>postfix</c> is of [<c>last</c>, <c>cend()</c>) before the call.
-                         Then the string of [<c>b</c>, <c>e</c>) shall be equal to <c>prefix</c> and <c>postfix</c> concatenated.
-                         <c>*e</c> shall be <c>0</c>.</postcondition>
+                         Then the string of [<c>begin_</c>, <c>end_</c>) shall be equal to <c>prefix</c> and <c>postfix</c> concatenated.
+                         <c>*end_</c> shall be <c>0</c>.</postcondition>
           <returns><c>begin() + off</c> where <c>off</c> is the value of <c>first - cbegin()</c> before the call.</returns>
           <remark>Calling this function invalidates all references, pointers, and iterators to the objects in the before-call range [<c>begin()</c>, <c>end()</c>].</remark>
         </code-item>
