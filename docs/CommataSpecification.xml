@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-10-04 (UTC)</signature>
+<signature>2026-10-07 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -922,8 +922,8 @@ namespace commata {
     std::size_t get_base() const noexcept;
 
   private:
-    const text_error* e;  <c>// <n>exposition only</n></c>
-    std::size_t b;        <c>// <n>exposition only</n></c>
+    const text_error* ex_;  <c>// <n>exposition only</n></c>
+    std::size_t base_;      <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="text_error_info.io"/>, inserters:</n></c>
@@ -952,7 +952,7 @@ namespace commata {
           <code>
 text_error_info(const text_error&amp; ex, std::size_t base = 1) noexcept;
           </code>
-          <effects>Initializes <c>e</c> with <c>std::addressof(ex)</c> and <c>b</c> with <c>base</c>.</effects>
+          <effects>Initializes <c>ex_</c> with <c>std::addressof(ex)</c> and <c>base_</c> with <c>base</c>.</effects>
         </code-item>
       </section>
 
@@ -963,14 +963,14 @@ text_error_info(const text_error&amp; ex, std::size_t base = 1) noexcept;
           <code>
 const text_error&amp; error() const noexcept;
           </code>
-          <returns><c>*e</c>.</returns>
+          <returns><c>*ex_</c>.</returns>
         </code-item>
 
         <code-item>
           <code>
 std::size_t get_base() const noexcept;
           </code>
-          <returns><c>b</c>.</returns>
+          <returns><c>base_</c>.</returns>
         </code-item>
       </section>
 
