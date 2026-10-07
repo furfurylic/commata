@@ -8642,8 +8642,8 @@ namespace commata {
         operator()(Sink&amp;&amp; sink) &amp;&amp;;
 
   private:
-    SkippingHandler sh;           // exposition only
-    ConversionErrorHandler ceh;   // exposition only
+    SkippingHandler skipping_hander_;                   // exposition only
+    ConversionErrorHandler conversion_error_handler_;   // exposition only
   };
 
   template &lt;class T> arithmetic_field_translator_factory(T)
@@ -8671,7 +8671,7 @@ explicit arithmetic_field_translator_factory(
   SkippingHandler skipping_handler = SkippingHandler(),
   ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
             </code>
-            <effects>Initializes <c>sh</c> and <c>ceh</c> with <c>std::move(skipping_handler)</c> and <c>std::move(conversion_error_handler</c> respectively.</effects>
+            <effects>Initializes <c>skipping_hander_</c> and <c>conversion_error_handler_</c> with <c>std::move(skipping_handler)</c> and <c>std::move(conversion_error_handler</c> respectively.</effects>
           </code-item>
 
           <code-item>
@@ -8697,7 +8697,7 @@ template &lt;class Sink>
     operator()(Sink&amp;&amp; sink) &amp;&amp;;
             </code>
             <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</requires>
-            <returns><c>arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>(std::forward&lt;Sink>(sink), std::move(sh), std::move(ceh))</c>.</returns>
+            <returns><c>arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>(std::forward&lt;Sink>(sink), std::move(skipping_hander_), std::move(conversion_error_handler_))</c>.</returns>
           </code-item>
         </section>
       </section>
