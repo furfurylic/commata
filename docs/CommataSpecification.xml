@@ -3171,7 +3171,7 @@ namespace commata {
     using size_type    = std::make_unsigned_t&lt;std::streamsize>;
 
     <c>// <n><xref id="istream_input.ctor"/>, constructors:</n></c>
-    istream_input() noexcept : in(nullptr) {}
+    istream_input() noexcept : in_(nullptr) {}
     explicit istream_input(std::basic_streambuf&lt;Ch, Tr>&amp; s) noexcept;
     istream_input(const istream_input&amp; other) = default;
 
@@ -3182,7 +3182,7 @@ namespace commata {
     size_type operator()(Ch* out, size_type n);
 
   private:
-    std::basic_istream&lt;Ch, Tr>* in;    <c>// <n>exposition only</n></c>
+    std::basic_istream&lt;Ch, Tr>* in_;   <c>// <n>exposition only</n></c>
   };
 }
       </codeblock>
@@ -3198,7 +3198,7 @@ namespace commata {
           <code>
 explicit istream_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
           </code>
-          <effects>Initializes <c>in</c> with <c>std::addressof(s)</c>.</effects>
+          <effects>Initializes <c>in_</c> with <c>std::addressof(s)</c>.</effects>
         </code-item>
       </section>
 
@@ -3210,10 +3210,10 @@ explicit istream_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
 size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>If <c>in</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+          <effects>If <c>in_</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in_</c> to successive elements of the array whose first element is designated by <c>out</c>.
                    Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
           <returns>The number of characters assigned.</returns>
-          <remark>This member function shall obtain characters from <c>*in</c> only by means of invoking <c>std::basic_istream&lt;Ch, Tr>::read</c> on <c>*in</c>.</remark>
+          <remark>This member function shall obtain characters from <c>*in_</c> only by means of invoking <c>std::basic_istream&lt;Ch, Tr>::read</c> on <c>*in_</c>.</remark>
         </code-item>
       </section>
     </section>
