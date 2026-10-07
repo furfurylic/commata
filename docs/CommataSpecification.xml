@@ -3335,7 +3335,7 @@ namespace commata {
     std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
 
   private:
-    std::basic_string_view&lt;Ch, Tr> v;   <c>// <n>exposition only</n></c>
+    std::basic_string_view&lt;Ch, Tr> v_;  <c>// <n>exposition only</n></c>
   };
 }
       </codeblock>
@@ -3357,7 +3357,7 @@ template &lt;class Allocator>
 explicit string_input(std::basic_string_view&lt;Ch, Tr> str) noexcept;
           </code>
           <requires>In the first form, <c>str</c> shall be a valid pointer to an element in a null terminated sequence.</requires>
-          <effects>Initializes <c>v</c> with <c>str</c>.</effects>
+          <effects>Initializes <c>v_</c> with <c>str</c>.</effects>
           <throws>Nothing.</throws>
         </code-item>
 
@@ -3366,7 +3366,7 @@ explicit string_input(std::basic_string_view&lt;Ch, Tr> str) noexcept;
 string_input(const Ch* data, std::size_t length);
           </code>
           <requires>[<c>data</c>, <c>data + length</c>) shall be a valid range.</requires>
-          <effects>Initializes <c>v</c> with <c>data</c> and <c>length</c>.</effects>
+          <effects>Initializes <c>v_</c> with <c>data</c> and <c>length</c>.</effects>
           <throws>Nothing.</throws>
         </code-item>
       </section>
@@ -3379,8 +3379,8 @@ string_input(const Ch* data, std::size_t length);
 size_type operator()(Ch* out, size_type n);
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>size_type rlen = v.copy(out, n);
-v.remove_prefix(rlen);
+                   <code>size_type rlen = v_.copy(out, n);
+v_.remove_prefix(rlen);
 return rlen;</code>
           </effects>
         </code-item>
@@ -3390,9 +3390,9 @@ return rlen;</code>
 std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>size_type rlen = std::min(n, v.size());
-std::pair&lt;const Ch*, size_type> r(v.data(), rlen);
-v.remove_prefix(rlen);
+                   <code>size_type rlen = std::min(n, v_.size());
+std::pair&lt;const Ch*, size_type> r(v_.data(), rlen);
+v_.remove_prefix(rlen);
 return r;</code>
           </effects>
         </code-item>
