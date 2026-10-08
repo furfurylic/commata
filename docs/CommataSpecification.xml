@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-10-04 (UTC)</signature>
+<signature>2026-10-07 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -922,8 +922,8 @@ namespace commata {
     std::size_t get_base() const noexcept;
 
   private:
-    const text_error* e;  <c>// <n>exposition only</n></c>
-    std::size_t b;        <c>// <n>exposition only</n></c>
+    const text_error* ex_;  <c>// <n>exposition only</n></c>
+    std::size_t base_;      <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="text_error_info.io"/>, inserters:</n></c>
@@ -952,7 +952,7 @@ namespace commata {
           <code>
 text_error_info(const text_error&amp; ex, std::size_t base = 1) noexcept;
           </code>
-          <effects>Initializes <c>e</c> with <c>std::addressof(ex)</c> and <c>b</c> with <c>base</c>.</effects>
+          <effects>Initializes <c>ex_</c> with <c>std::addressof(ex)</c> and <c>base_</c> with <c>base</c>.</effects>
         </code-item>
       </section>
 
@@ -963,14 +963,14 @@ text_error_info(const text_error&amp; ex, std::size_t base = 1) noexcept;
           <code>
 const text_error&amp; error() const noexcept;
           </code>
-          <returns><c>*e</c>.</returns>
+          <returns><c>*ex_</c>.</returns>
         </code-item>
 
         <code-item>
           <code>
 std::size_t get_base() const noexcept;
           </code>
-          <returns><c>b</c>.</returns>
+          <returns><c>base_</c>.</returns>
         </code-item>
       </section>
 
@@ -3026,7 +3026,7 @@ namespace commata {
     using size_type      = std::make_unsigned_t&lt;std::streamsize>;
 
     <c>// <n><xref id="streambuf_input.ctor"/>, constructors:</n></c>
-    streambuf_input() noexcept : in(nullptr) {}
+    streambuf_input() noexcept : in_(nullptr) {}
     explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
     streambuf_input(const streambuf_input&amp; other) = default;
 
@@ -3037,7 +3037,7 @@ namespace commata {
     size_type operator()(Ch* out, size_type n);
 
   private:
-    std::basic_streambuf&lt;Ch, Tr>* in;  <c>// <n>exposition only</n></c>
+    std::basic_streambuf&lt;Ch, Tr>* in_; <c>// <n>exposition only</n></c>
   };
 }
       </codeblock>
@@ -3053,7 +3053,7 @@ namespace commata {
           <code>
 explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
           </code>
-          <effects>Initializes <c>in</c> with <c>std::addressof(sb)</c>.</effects>
+          <effects>Initializes <c>in_</c> with <c>std::addressof(sb)</c>.</effects>
         </code-item>
       </section>
 
@@ -3065,7 +3065,7 @@ explicit streambuf_input(std::basic_streambuf&lt;Ch, Tr>&amp; sb) noexcept;
 size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>If <c>in</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+          <effects>If <c>in_</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in_</c> to successive elements of the array whose first element is designated by <c>out</c>.
                    Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
           <returns>The number of characters assigned.</returns>
         </code-item>
@@ -3099,10 +3099,10 @@ namespace commata {
     size_type operator()(Ch* out, size_type n);
 
     void swap(owned_streambuf_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Streambuf>)
-      { using std::swap; swap(in, other.in); }
+      { using std::swap; swap(in_, other.in_); }
 
   private:
-    Streambuf in;   <c>// <n>exposition only</n></c>
+    Streambuf in_;  <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="owned_streambuf_input.special"/>, specialized algorithms:</n></c>
@@ -3123,7 +3123,7 @@ namespace commata {
           <code>
 explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Initializes <c>in</c> with <c>std::move(sb)</c>.</effects>
+          <effects>Initializes <c>in_</c> with <c>std::move(sb)</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;Streambuf></c>.</remark>
           <note>This constructor can cause a so-called slicing.</note>
         </code-item>
@@ -3137,7 +3137,7 @@ explicit owned_streambuf_input(Streambuf&amp;&amp; sb) noexcept(<nc>see below</n
 size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>Assigns up to <c>n</c> characters obtained from <c>in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+          <effects>Assigns up to <c>n</c> characters obtained from <c>in_</c> to successive elements of the array whose first element is designated by <c>out</c>.
                    Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
           <returns>The number of characters assigned.</returns>
         </code-item>
@@ -3171,7 +3171,7 @@ namespace commata {
     using size_type    = std::make_unsigned_t&lt;std::streamsize>;
 
     <c>// <n><xref id="istream_input.ctor"/>, constructors:</n></c>
-    istream_input() noexcept : in(nullptr) {}
+    istream_input() noexcept : in_(nullptr) {}
     explicit istream_input(std::basic_streambuf&lt;Ch, Tr>&amp; s) noexcept;
     istream_input(const istream_input&amp; other) = default;
 
@@ -3182,7 +3182,7 @@ namespace commata {
     size_type operator()(Ch* out, size_type n);
 
   private:
-    std::basic_istream&lt;Ch, Tr>* in;    <c>// <n>exposition only</n></c>
+    std::basic_istream&lt;Ch, Tr>* in_;   <c>// <n>exposition only</n></c>
   };
 }
       </codeblock>
@@ -3198,7 +3198,7 @@ namespace commata {
           <code>
 explicit istream_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
           </code>
-          <effects>Initializes <c>in</c> with <c>std::addressof(s)</c>.</effects>
+          <effects>Initializes <c>in_</c> with <c>std::addressof(s)</c>.</effects>
         </code-item>
       </section>
 
@@ -3210,10 +3210,10 @@ explicit istream_input(std::basic_istream&lt;Ch, Tr>&amp; s) noexcept;
 size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>If <c>in</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+          <effects>If <c>in_</c> is not equal to <c>nullptr</c>, assigns up to <c>n</c> characters obtained from <c>*in_</c> to successive elements of the array whose first element is designated by <c>out</c>.
                    Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
           <returns>The number of characters assigned.</returns>
-          <remark>This member function shall obtain characters from <c>*in</c> only by means of invoking <c>std::basic_istream&lt;Ch, Tr>::read</c> on <c>*in</c>.</remark>
+          <remark>This member function shall obtain characters from <c>*in_</c> only by means of invoking <c>std::basic_istream&lt;Ch, Tr>::read</c> on <c>*in_</c>.</remark>
         </code-item>
       </section>
     </section>
@@ -3245,10 +3245,10 @@ namespace commata {
     size_type operator()(Ch* out, size_type n);
 
     void swap(owned_istream_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;IStream>)
-      { using std::swap; swap(in, other.in); }
+      { using std::swap; swap(in_, other.in_); }
 
   private:
-    IStream in;     <c>// <n>exposition only</n></c>
+    IStream in_;    <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="owned_istream_input.special"/>, specialized algorithms:</n></c>
@@ -3269,7 +3269,7 @@ namespace commata {
           <code>
 explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Initializes <c>in</c> with <c>std::move(s)</c>.</effects>
+          <effects>Initializes <c>in_</c> with <c>std::move(s)</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;IStream></c>.</remark>
           <note>This constructor can cause a so-called slicing.</note>
         </code-item>
@@ -3283,10 +3283,10 @@ explicit owned_istream_input(IStream&amp;&amp; s) noexcept(<nc>see below</nc>);
 size_type operator()(Ch* out, size_type n);
           </code>
           <requires>[<c>out</c>, <c>out + n</c>) shall be a valid range for output.</requires>
-          <effects>Assigns up to <c>n</c> characters obtained from <c>in</c> to successive elements of the array whose first element is designated by <c>out</c>.
+          <effects>Assigns up to <c>n</c> characters obtained from <c>in_</c> to successive elements of the array whose first element is designated by <c>out</c>.
                    Assigning stops when either <c>n</c> characters have been assigned or end-of-file would occur.</effects>
           <returns>The number of characters assigned.</returns>
-          <remark>This member function shall obtain characters from <c>*in</c> only by means of invoking <c>IStream::read</c> on <c>in</c>.</remark>
+          <remark>This member function shall obtain characters from <c>in_</c> only by means of invoking <c>IStream::read</c> on <c>in_</c>.</remark>
         </code-item>
       </section>
 
@@ -3335,7 +3335,7 @@ namespace commata {
     std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
 
   private:
-    std::basic_string_view&lt;Ch, Tr> v;   <c>// <n>exposition only</n></c>
+    std::basic_string_view&lt;Ch, Tr> v_;  <c>// <n>exposition only</n></c>
   };
 }
       </codeblock>
@@ -3357,7 +3357,7 @@ template &lt;class Allocator>
 explicit string_input(std::basic_string_view&lt;Ch, Tr> str) noexcept;
           </code>
           <requires>In the first form, <c>str</c> shall be a valid pointer to an element in a null terminated sequence.</requires>
-          <effects>Initializes <c>v</c> with <c>str</c>.</effects>
+          <effects>Initializes <c>v_</c> with <c>str</c>.</effects>
           <throws>Nothing.</throws>
         </code-item>
 
@@ -3366,7 +3366,7 @@ explicit string_input(std::basic_string_view&lt;Ch, Tr> str) noexcept;
 string_input(const Ch* data, std::size_t length);
           </code>
           <requires>[<c>data</c>, <c>data + length</c>) shall be a valid range.</requires>
-          <effects>Initializes <c>v</c> with <c>data</c> and <c>length</c>.</effects>
+          <effects>Initializes <c>v_</c> with <c>data</c> and <c>length</c>.</effects>
           <throws>Nothing.</throws>
         </code-item>
       </section>
@@ -3379,8 +3379,8 @@ string_input(const Ch* data, std::size_t length);
 size_type operator()(Ch* out, size_type n);
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>size_type rlen = v.copy(out, n);
-v.remove_prefix(rlen);
+                   <code>size_type rlen = v_.copy(out, n);
+v_.remove_prefix(rlen);
 return rlen;</code>
           </effects>
         </code-item>
@@ -3390,9 +3390,9 @@ return rlen;</code>
 std::pair&lt;const Ch*, size_type> operator()(size_type n = npos) noexcept;
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>size_type rlen = std::min(n, v.size());
-std::pair&lt;const Ch*, size_type> r(v.data(), rlen);
-v.remove_prefix(rlen);
+                   <code>size_type rlen = std::min(n, v_.size());
+std::pair&lt;const Ch*, size_type> r(v_.data(), rlen);
+v_.remove_prefix(rlen);
 return r;</code>
           </effects>
         </code-item>
@@ -3433,9 +3433,9 @@ namespace commata {
     void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
 
   private:
-    std::basic_string&lt;Ch, Tr, Allocator> s;     <c>// <n>exposition only</n></c>
-    size_type head;                             <c>// <n>exposition only</n></c>
-    Ch front;                                   <c>// <n>exposition only</n></c>
+    std::basic_string&lt;Ch, Tr, Allocator> str_;  <c>// <n>exposition only</n></c>
+    size_type head_;                            <c>// <n>exposition only</n></c>
+    Ch front_;                                  <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="owned_string_input.special"/>, specialized algorithms:</n></c>
@@ -3457,7 +3457,7 @@ namespace commata {
           <code>
 owned_string_input() noexcept(<nc>see below</nc>);
           </code>
-          <effects>Value-initializes <c>s</c>, initializes <c>head</c> with <c>0</c> and initializes <c>front</c> with <c>s[head]</c>.</effects>
+          <effects>Value-initializes <c>str_</c>, initializes <c>head_</c> with <c>0</c> and initializes <c>front_</c> with <c>str_[head_]</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_default_constructible_v&lt;std::basic_string&lt;Ch, Tr, Allocator>></c>.</remark>
         </code-item>
 
@@ -3465,15 +3465,15 @@ owned_string_input() noexcept(<nc>see below</nc>);
           <code>
 explicit owned_string_input(std::basic_string&lt;Ch, Tr, Allocator>&amp;&amp; str) noexcept;
           </code>
-          <effects>Initializes <c>s</c> with <c>std::move(str)</c>, <c>head</c> with <c>0</c> and <c>front</c> with <c>s[head]</c>.</effects>
+          <effects>Initializes <c>str_</c> with <c>std::move(str)</c>, <c>head_</c> with <c>0</c> and <c>front_</c> with <c>str_[head_]</c>.</effects>
         </code-item>
 
         <code-item>
           <code>
 owned_string_input(owned_string_input&amp;&amp; other) noexcept;
           </code>
-          <effects>Initializes <c>s</c> with <c>std::move(other.s)</c>, <c>head</c> with <c>other.head</c> and <c>front</c> with <c>other.front</c>.
-                   Then assigns <c>other.size()</c> to <c>other.head</c>.</effects>
+          <effects>Initializes <c>str_</c> with <c>std::move(other.str_)</c>, <c>head_</c> with <c>other.head_</c> and <c>front_</c> with <c>other.front_</c>.
+                   Then assigns <c>other.size()</c> to <c>other.head_</c>.</effects>
         </code-item>
       </section>
 
@@ -3484,8 +3484,8 @@ owned_string_input(owned_string_input&amp;&amp; other) noexcept;
           <code>
 owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Assigns <c>std::move(other.s)</c> to <c>s</c>, <c>other.head</c> to <c>head</c> and <c>other.front</c> to <c>front</c>.
-                   Then assigns <c>other.size()</c> to <c>other.head</c>.</effects>
+          <effects>Assigns <c>std::move(other.str_)</c> to <c>str_</c>, <c>other.head_</c> to <c>head_</c> and <c>other.front_</c> to <c>front_</c>.
+                   Then assigns <c>other.size()</c> to <c>other.head_</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_assignable_v&lt;std::basic_string&lt;Ch, Tr, Allocator>></c>.</remark>
         </code-item>
       </section>
@@ -3498,10 +3498,10 @@ owned_string_input&amp; operator=(owned_string_input&amp;&amp; other) noexcept(<
 size_type operator()(Ch* out, size_type n);
           </code>
           <effects><p>Equivalent to:</p>
-                   <code>s[head] = front;
-size_type rlen = s.copy(out, n, head);
-head += rlen;
-front = s[head];
+                   <code>str_[head_] = front_;
+size_type rlen = str_.copy(out, n, head_);
+head_ += rlen;
+front_ = str_[head_];
 return rlen;</code>
           </effects>
         </code-item>
@@ -3510,14 +3510,14 @@ return rlen;</code>
           <code>
 std::pair&lt;Ch*, size_type> operator()(size_type n = npos) noexcept;
           </code>
-          <preface>Let <c>rlen</c> be the smaller of <c>n</c> and <c>s.size() - head</c>.</preface>
+          <preface>Let <c>rlen</c> be the smaller of <c>n</c> and <c>str_.size() - head_</c>.</preface>
           <effects><p>Equivalent to:</p>
-                   <code>s[head] = front;
-std::pair&lt;Ch*, size_type> r(s.data() + head, rlen);
-head += rlen;
-front = s[head];</code>
+                   <code>str_[head_] = front_;
+std::pair&lt;Ch*, size_type> r(str_.data() + head_, rlen);
+head_ += rlen;
+front_ = str_[head_];
+return r;</code>
           </effects>
-          <returns><c>rlen</c>.</returns>
         </code-item>
       </section>
 
@@ -3528,7 +3528,7 @@ front = s[head];</code>
           <code>
 void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Exchanges <c>s</c> and <c>other.s</c>, <c>head</c> and <c>other.head</c>, and <c>front</c> and <c>other.front</c> respectively.</effects>
+          <effects>Exchanges <c>str_</c> and <c>other.str_</c>, <c>head_</c> and <c>other.head_</c>, and <c>front_</c> and <c>other.front_</c> respectively.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_swappable_v&lt;std::basic_string&lt;Ch, Tr, Allocator>></c>.</remark>
         </code-item>
       </section>
@@ -3562,7 +3562,7 @@ namespace commata {
     <c>// <n><xref id="indirect_input.ctor"/>, constructors:</n></c>
     indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
     explicit indirect_input(Input base) noexcept(std::is_nothrow_move_constructible_v&lt;Input>) :
-      input(std::move(base)) {}
+      input_(std::move(base)) {}
     indirect_input(const indirect_input&amp;)  = default;
     indirect_input(      indirect_input&amp;&amp;) = default;
 
@@ -3574,17 +3574,17 @@ namespace commata {
     indirect_input&amp; operator=(      indirect_input&amp;&amp;) = default;
 
     <c>// <n>access:</n></c>
-    const Input&amp; base() const noexcept { return input; }
-          Input&amp; base()       noexcept { return input; }
+    const Input&amp; base() const noexcept { return input_; }
+          Input&amp; base()       noexcept { return input_; }
 
     <c>// <n><xref id="indirect_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
     void swap(indirect_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Input>)
-      { using std::swap; swap(input, other.input); }
+      { using std::swap; swap(input_, other.input_); }
 
   private:
-    Input input;  <c>// <n>exposition only</n></c>
+    Input input_; <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="indirect_input.special"/>, specialized algorithms:</n></c>
@@ -3607,7 +3607,7 @@ namespace commata {
 indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
           </code>
           <requires><c>Input</c> shall be <c>DefaultConstructible</c>.</requires>
-          <effects>Default constructs <c>input</c>.</effects>
+          <effects>Default constructs <c>input_</c>.</effects>
         </code-item>
       </section>
 
@@ -3618,7 +3618,7 @@ indirect_input() noexcept(std::is_nothrow_default_constructible_v&lt;Input>);
           <code>
 size_type operator()(Ch* out, size_type n);
           </code>
-          <effects>Equivalent to: <c>return input(out, n);</c></effects>
+          <effects>Equivalent to: <c>return input_(out, n);</c></effects>
         </code-item>
       </section>
 
@@ -3888,7 +3888,7 @@ namespace commata {
     [[nodiscard]] auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
       -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
   template &lt;class CharInputR>
-    [[nodiscard]] auto make_csv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+    [[nodiscard]] auto make_csv_source(CharInputR&amp;&amp; input) noexcept(<nc>see below</nc>)
       -> csv_source&lt;std::decay_t&lt;CharInputR>>;
 
   <c>// <n><xref id="parse_csv"/>, functions that utilize the CSV parser:</n></c>
@@ -3951,10 +3951,10 @@ namespace commata {
                            Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
     void swap(csv_source&amp; other) noexcept(std::is_nothrow_swappable_v&lt;CharInput>)
-      { using std::swap; swap(in, other.in); }
+      { using std::swap; swap(input_, other.input_); }
 
   private:
-    CharInput in;   <c>// <n>exposition only</n></c>
+    CharInput input_;   <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="csv_source.special"/>, specialized algorithms:</n></c>
@@ -3967,7 +3967,7 @@ namespace commata {
     [[nodiscard]] auto make_csv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
       -> csv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
   template &lt;class CharInputR>
-    [[nodiscard]] auto make_csv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+    [[nodiscard]] auto make_csv_source(CharInputR&amp;&amp; input) noexcept(<nc>see below</nc>)
       -> csv_source&lt;std::decay_t&lt;CharInputR>>;
 }
       </codeblock>
@@ -4006,7 +4006,7 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
 explicit csv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
           </code>
           <requires><c>std::is_copy_constructible_v&lt;CharInput></c> shall be <c>true</c>.</requires>
-          <effects>Initializes <c>in</c> with <c>input</c>.</effects>
+          <effects>Initializes <c>input_</c> with <c>input</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;CharInput></c>.</remark>
         </code-item>
 
@@ -4014,7 +4014,7 @@ explicit csv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
           <code>
 explicit csv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Initializes <c>in</c> with <c>std::move(input)</c>.</effects>
+          <effects>Initializes <c>input_</c> with <c>std::move(input)</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;CharInput></c>.</remark>
         </code-item>
       </section>
@@ -4034,7 +4034,7 @@ template &lt;class HandlerR>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.</requires>
           <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>).
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>input_</c> (first form) or <c>std::move(input_)</c> (second form) as its tied character source object
                    and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object.</returns>
           <remark>Let <c>Ch</c> be <c>std::remove_const_t&lt;Handler::char_type></c>.
                   These operators shall not participate in overload resolution unless
@@ -4060,7 +4060,7 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
                     <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
           <returns>A table parser object <c>p</c> for the CSV text format (<xref id="definitions.csv_text"/>).
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object,
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>input_</c> (first form) or <c>std::move(input_)</c> (second form) as its tied character source object,
                    an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
           <remark>Let <c>Ch</c> be <c>std::remove_const_t&lt;Handler::char_type></c>.
@@ -4126,11 +4126,11 @@ template &lt;class... Args>
         <code-item>
           <code>
 template &lt;class CharInputR>
-  [[nodiscard]] auto make_csv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+  [[nodiscard]] auto make_csv_source(CharInputR&amp;&amp; input) noexcept(<nc>see below</nc>)
     -> csv_source&lt;std::decay_t&lt;CharInputR>>;
           </code>
           <preface>Let <c>CharInput</c> be <c>std::decay_t&lt;CharInputR></c>.</preface>
-          <effects>Equivalent to: <c>return csv_source&lt;CharInput>(std::forward&lt;CharInputR>(in));</c></effects>
+          <effects>Equivalent to: <c>return csv_source&lt;CharInput>(std::forward&lt;CharInputR>(input));</c></effects>
           <remark>This overload shall participate in overload resolution if and only if <c>make_char_input(std::declval&lt;CharInputR&amp;&amp;>())</c> is not well-formed when treated as an unevaluated operand
                   and <c>std::is_invocable_r_v&lt;typename CharInput::size_type, CharInput&amp;, typename CharInput::char_type*, typename CharInput::size_type></c> is <c>true</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CharInput, CharInputR&amp;&amp;></c>.</remark>
@@ -4219,7 +4219,7 @@ namespace commata {
     [[nodiscard]] auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
       -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
   template &lt;class CharInputR>
-    [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+    [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; input) noexcept(<nc>see below</nc>)
       -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
 
   <c>// <n><xref id="parse_tsv"/>, functions that utilize the TSV parser:</n></c>
@@ -4282,10 +4282,10 @@ namespace commata {
                            Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
     void swap(tsv_source&amp; other) noexcept(std::is_nothrow_swappable_v&lt;CharInput>)
-      { using std::swap; swap(in, other.in); }
+      { using std::swap; swap(input_, other.input_); }
 
   private:
-    CharInput in;   <c>// <n>exposition only</n></c>
+    CharInput input_;   <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="tsv_source.special"/>, specialized algorithms:</n></c>
@@ -4298,7 +4298,7 @@ namespace commata {
     [[nodiscard]] auto make_tsv_source(Args&amp;&amp;... args) noexcept(<nc>see below</nc>)
       -> tsv_source&lt;decltype(make_char_input(std::forward&lt;Args>(args)...))>;
   template &lt;class CharInputR>
-    [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+    [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; input) noexcept(<nc>see below</nc>)
       -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
 }
       </codeblock>
@@ -4337,7 +4337,7 @@ template &lt;class Handler, class Allocator = void> using parser_type = <nc>see 
 explicit tsv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
           </code>
           <requires><c>std::is_copy_constructible_v&lt;CharInput></c> shall be <c>true</c>.</requires>
-          <effects>Initializes <c>in</c> with <c>input</c>.</effects>
+          <effects>Initializes <c>input_</c> with <c>input</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;CharInput></c>.</remark>
         </code-item>
 
@@ -4345,7 +4345,7 @@ explicit tsv_source(const CharInput&amp; input) noexcept(<nc>see below</nc>);
           <code>
 explicit tsv_source(CharInput&amp;&amp; input) noexcept(<nc>see below</nc>);
           </code>
-          <effects>Initializes <c>in</c> with <c>std::move(input)</c>.</effects>
+          <effects>Initializes <c>input_</c> with <c>std::move(input)</c>.</effects>
           <remark>The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;CharInput></c>.</remark>
         </code-item>
       </section>
@@ -4365,7 +4365,7 @@ template &lt;class HandlerR>
           <preface>Let <c>Handler</c> be <c>std::decay_t&lt;HandlerR></c>.</preface>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.</requires>
           <returns>A table parser object <c>p</c> for the TSV text format (<xref id="definitions.tsv_text"/>).
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>input_</c> (first form) or <c>std::move(input_)</c> (second form) as its tied character source object
                    and an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object.</returns>
           <remark>Let <c>Ch</c> be <c>std::remove_const_t&lt;Handler::char_type></c>.
                   These operators shall not participate in overload resolution unless
@@ -4391,7 +4391,7 @@ template &lt;class HandlerR, class Allocator = std::allocator&lt;char_type>>
           <requires><c>Handler</c> shall meet the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>) for <c>char_type</c>.
                     <c>Allocator</c> shall meet the <c>Allocator</c> requirements for <c>char_type</c>.</requires>
           <returns>A table parser object <c>p</c> for the TSV text format (<xref id="definitions.tsv_text"/>).
-                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>in</c> (first form) or <c>std::move(in)</c> (second form) as its tied character source object,
+                   <c>p</c> holds an object of <c>CharInput</c> constructed with <c>input_</c> (first form) or <c>std::move(input_)</c> (second form) as its tied character source object,
                    an object of <c>Handler</c> constructed with <c>std::forward&lt;HandlerR>(handler)</c> as its tied table handler object, and a copy of <c>alloc</c> to allocate and deallocate the character buffer.
                    The length of the buffer allocated by <c>p</c> is unspecified, but <c>buffer_size</c> serves as a hint. <c>buffer_size</c> can be equal to zero, which means &#x2018;no hint&#x2019;.</returns>
           <remark>Let <c>Ch</c> be <c>std::remove_const_t&lt;Handler::char_type></c>.
@@ -4457,11 +4457,11 @@ template &lt;class... Args>
         <code-item>
           <code>
 template &lt;class CharInputR>
-  [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; in) noexcept(<nc>see below</nc>)
+  [[nodiscard]] auto make_tsv_source(CharInputR&amp;&amp; input) noexcept(<nc>see below</nc>)
     -> tsv_source&lt;std::decay_t&lt;CharInputR>>;
           </code>
           <preface>Let <c>CharInput</c> be <c>std::decay_t&lt;CharInputR></c>.</preface>
-          <effects>Equivalent to: <c>return tsv_source&lt;CharInput>(make_char_input(std::forward&lt;CharInputR>(in)));</c></effects>
+          <effects>Equivalent to: <c>return tsv_source&lt;CharInput>(make_char_input(std::forward&lt;CharInputR>(input)));</c></effects>
           <remark>This overload shall participate in overload resolution if and only if <c>make_char_input(std::declval&lt;CharInputR&amp;&amp;>())</c> is not well-formed when treated as an unevaluated operand
                   and <c>std::is_invocable_r_v&lt;typename CharInput::size_type, CharInput&amp;, typename CharInput::char_type*, typename CharInput::size_type></c> is <c>true</c>.
                   The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_constructible_v&lt;CharInput, CharInputR&amp;&amp;></c>.</remark>
@@ -5297,8 +5297,8 @@ namespace commata {
     void pop_back();
 
   private:
-    Ch* b;    <c>// <n>exposition only</n></c>
-    Ch* e;    <c>// <n>exposition only</n></c>
+    Ch* begin_; <c>// <n>exposition only</n></c>
+    Ch* end_;   <c>// <n>exposition only</n></c>
   };
 
   <c>// <n><xref id="basic_stored_value.comparison"/>, comparison functions:</n></c>
@@ -5380,9 +5380,9 @@ namespace commata {
 
       <p>The class template <c>basic_stored_value</c> describes an object that references the text value of a text field in a text table (<xref id="definitions.text_table"/>) represented by an object of a specialization of <c>basic_stored_table</c> (<xref id="basic_stored_table"/>).</p>
       <p><c>Ch</c> shall be a possibly const-qualified char-like type. <c>Tr</c> shall be a character traits type for <c>std::remove_const_t&lt;Ch></c>.</p>
-      <p>The text value is represented by the range [<c>b</c>, <c>e</c>). <c>*e</c> is always equal to <c>0</c>.
-         Programs can read from the range [<c>b</c>, <c>e</c>], and write to the range [<c>b</c>, <c>e</c>) if <c>Ch</c> is not const-qualified.
-         To modify the size (that is, <c>e - b</c>), programs can use the store-accessing facilities (<xref id="basic_stored_table.rewrite"/>) of the <c>basic_stored_table</c> object concerned.</p>
+      <p>The text value is represented by the range [<c>begin_</c>, <c>end_</c>). <c>*end_</c> is always equal to <c>0</c>.
+         Programs can read from the range [<c>begin_</c>, <c>end_</c>], and write to the range [<c>begin_</c>, <c>end_</c>) if <c>Ch</c> is not const-qualified.
+         To modify the size (that is, <c>end_ - begin_</c>), programs can use the store-accessing facilities (<xref id="basic_stored_table.rewrite"/>) of the <c>basic_stored_table</c> object concerned.</p>
       <p>Each specialization of <c>basic_stored_value</c> is a trivially copyable type and meets the <c>ArithmeticConvertible</c> requirements (<xref id="arithmetic_convertible.requirements"/>) for <c>value_type</c>.</p>
       <p>On the types <c>basic_stored_value&lt;Ch, Tr>::iterator</c> and <c>basic_stored_value&lt;Ch, Tr>::const_iterator</c>, it shall be satisfied that:</p>
       <ul>
@@ -5437,7 +5437,7 @@ namespace commata {
 basic_stored_value() noexcept;
           </code>
           <effects>Constructs an empty object of <c>basic_stored_value</c>.</effects>
-          <postcondition><c>b == e</c> and <c>*e</c> is equal to <c>0</c>.</postcondition>
+          <postcondition><c>begin_ == end_</c> and <c>*end_</c> is equal to <c>0</c>.</postcondition>
         </code-item>
 
         <code-item>
@@ -5446,7 +5446,7 @@ basic_stored_value(Ch* begin, Ch* end);
           </code>
           <requires>[<c>begin</c>, <c>end</c>] shall be a valid range. <c>*end</c> shall be equal to <c>0</c>.</requires>
           <throws>Nothing.</throws>
-          <effects>Initializes <c>b</c> with <c>begin</c> and <c>e</c> with <c>end</c>.</effects>
+          <effects>Initializes <c>begin_</c> with <c>begin</c> and <c>end_</c> with <c>end</c>.</effects>
         </code-item>
 
         <code-item>
@@ -5454,7 +5454,7 @@ basic_stored_value(Ch* begin, Ch* end);
 template &lt;class OtherCh>
   basic_stored_value(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
           </code>
-          <effects>Initializes <c>b</c> with <c>other.begin()</c> and <c>e</c> with <c>other.end()</c>.</effects>
+          <effects>Initializes <c>begin_</c> with <c>other.begin()</c> and <c>end_</c> with <c>other.end()</c>.</effects>
           <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
         </code-item>
       </section>
@@ -5467,7 +5467,7 @@ template &lt;class OtherCh>
 template &lt;class OtherCh>
   basic_stored_value&amp; operator=(const basic_stored_value&lt;OtherCh, Tr>&amp; other) noexcept;
           </code>
-          <effects>Assigns <c>b</c> from <c>other.begin()</c> and <c>e</c> from <c>other.end()</c>.</effects>
+          <effects>Assigns <c>begin_</c> from <c>other.begin()</c> and <c>end_</c> from <c>other.end()</c>.</effects>
           <remark>This overload shall not participate in overload resolution unless <c>Ch</c> and <c>const OtherCh</c> are the same type.</remark>
         </code-item>
       </section>
@@ -5481,7 +5481,7 @@ iterator       begin()        noexcept;
 const_iterator begin()  const noexcept;
 const_iterator cbegin() const noexcept;
           </code>
-          <returns><c>b</c>.</returns>
+          <returns><c>begin_</c>.</returns>
         </code-item>
 
         <code-item>
@@ -5490,7 +5490,7 @@ iterator       end()        noexcept;
 const_iterator end()  const noexcept;
 const_iterator cend() const noexcept;
           </code>
-          <returns><c>e</c>.</returns>
+          <returns><c>end_</c>.</returns>
         </code-item>
 
         <code-item>
@@ -5595,7 +5595,7 @@ const_pointer c_str() const noexcept;
 pointer       data()        noexcept;
 const_pointer data()  const noexcept;
           </code>
-          <returns><c>b</c>.</returns>
+          <returns><c>begin_</c>.</returns>
           <remark>The range [<c>r</c>, <c>r + size()</c>] is readable and the range [<c>r</c>, <c>r + size()</c>) is writable where <c>r</c> is the returned value.</remark>
         </code-item>
 
@@ -5628,8 +5628,8 @@ iterator erase(const_iterator first, const_iterator last);
                     <c>last</c> shall point an element in [<c>first</c>, <c>cend()</c>].</requires>
           <throws>Nothing.</throws>
           <postcondition>Suppose that <c>prefix</c> is the string of [<c>cbegin()</c>, <c>first</c>) and <c>postfix</c> is of [<c>last</c>, <c>cend()</c>) before the call.
-                         Then the string of [<c>b</c>, <c>e</c>) shall be equal to <c>prefix</c> and <c>postfix</c> concatenated.
-                         <c>*e</c> shall be <c>0</c>.</postcondition>
+                         Then the string of [<c>begin_</c>, <c>end_</c>) shall be equal to <c>prefix</c> and <c>postfix</c> concatenated.
+                         <c>*end_</c> shall be <c>0</c>.</postcondition>
           <returns><c>begin() + off</c> where <c>off</c> is the value of <c>first - cbegin()</c> before the call.</returns>
           <remark>Calling this function invalidates all references, pointers, and iterators to the objects in the before-call range [<c>begin()</c>, <c>end()</c>].</remark>
         </code-item>
@@ -7780,8 +7780,8 @@ namespace commata {
 
 private:
     arithmetic_field_translator&lt;T, Sink,
-                                SkippingHandler, ConversionErrorHandler> base;  // exposition only
-    numpunct_replacer_to_c replace;                                             // exposition only
+                                SkippingHandler, ConversionErrorHandler> base_; // exposition only
+    numpunct_replacer_to_c replace_;                                            // exposition only
   };
 }
         </codeblock>
@@ -7823,8 +7823,8 @@ explicit locale_based_arithmetic_field_translator(
     std::decay_t&lt;ConversionErrorHandlerR>());
             </code>
             <requires><c>std::is_constructible_v&lt;Sink, SinkR&amp;&amp;></c>, <c>std::is_constructible_v&lt;SkippingHandler, SkippingHandlerR&amp;&amp;></c> and <c>std::is_constructible_v&lt;ConversionErrorHandler, ConversionErrorHandlerR&amp;&amp;></c> shall all be <c>true</c>.</requires>
-            <effects>Initializes <c>base</c> with <c>std::forward&lt;SinkR>(sink)</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandlerR>(handle_conversion_error)</c>.
-                     Initializes <c>replace</c> with <c>loc</c>.</effects>
+            <effects>Initializes <c>base_</c> with <c>std::forward&lt;SinkR>(sink)</c>, <c>std::forward&lt;SkippingHandlerR>(handle_skipping)</c> and <c>std::forward&lt;ConversionErrorHandlerR>(handle_conversion_error)</c>.
+                     Initializes <c>replace_</c> with <c>loc</c>.</effects>
             <remark>This constructor shall not participate in overload resolution unless <c>std::is_base_of_v&lt;locale_based_arithmetic_field_translator&lt;T, Sink, SkippingHandler, ConversionErrorHandler>, std::decay_t&lt;SinkR>></c> is <c>false</c>.</remark>
           </code-item>
         </section>
@@ -7848,7 +7848,7 @@ explicit locale_based_arithmetic_field_translator(
 const SkippingHandler&amp; get_skipping_handler() const noexcept;
       SkippingHandler&amp; get_skipping_handler()       noexcept;
             </code>
-            <effects>Equivalent to: <c>base.get_skipping_handler()</c>.</effects>
+            <effects>Equivalent to: <c>base_.get_skipping_handler()</c>.</effects>
           </code-item>
 
           <code-item>
@@ -7856,7 +7856,7 @@ const SkippingHandler&amp; get_skipping_handler() const noexcept;
 const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
       ConversionErrorHandler&amp; get_conversion_error_handler()       noexcept;
             </code>
-            <effects>Equivalent to: <c>base.get_conversion_error_handler()</c>.</effects>
+            <effects>Equivalent to: <c>base_.get_conversion_error_handler()</c>.</effects>
           </code-item>
         </section>
 
@@ -7868,7 +7868,7 @@ const ConversionErrorHandler&amp; get_conversion_error_handler() const noexcept;
 template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             </code>
             <requires>The template parameter <c>ConversionErrorHandler</c> shall meet the <c>ConversionErrorHandler</c> requirements (<xref id="conversion_error_handler.requirements"/>) for <c>Ch</c>.</requires>
-            <effects>Equivalent to: <c>return base(begin, replace(begin, end));</c></effects>
+            <effects>Equivalent to: <c>return base_(begin, replace_(begin, end));</c></effects>
             <remark>This overload shall not participate in overload resolution unless <c>Ch</c> is <c>char</c> or <c>wchar_t</c>.</remark>
           </code-item>
 
@@ -7876,7 +7876,7 @@ template &lt;class Ch> void operator()(Ch* begin, Ch* end);
             <code>
 void operator()();
             </code>
-            <effects>Equivalent to: <c>base();</c></effects>
+            <effects>Equivalent to: <c>base_();</c></effects>
           </code-item>
         </section>
       </section>
@@ -8642,8 +8642,8 @@ namespace commata {
         operator()(Sink&amp;&amp; sink) &amp;&amp;;
 
   private:
-    SkippingHandler sh;           // exposition only
-    ConversionErrorHandler ceh;   // exposition only
+    SkippingHandler skipping_hander_;                   // exposition only
+    ConversionErrorHandler conversion_error_handler_;   // exposition only
   };
 
   template &lt;class T> arithmetic_field_translator_factory(T)
@@ -8671,7 +8671,7 @@ explicit arithmetic_field_translator_factory(
   SkippingHandler skipping_handler = SkippingHandler(),
   ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
             </code>
-            <effects>Initializes <c>sh</c> and <c>ceh</c> with <c>std::move(skipping_handler)</c> and <c>std::move(conversion_error_handler</c> respectively.</effects>
+            <effects>Initializes <c>skipping_hander_</c> and <c>conversion_error_handler_</c> with <c>std::move(skipping_handler)</c> and <c>std::move(conversion_error_handler</c> respectively.</effects>
           </code-item>
 
           <code-item>
@@ -8697,7 +8697,7 @@ template &lt;class Sink>
     operator()(Sink&amp;&amp; sink) &amp;&amp;;
             </code>
             <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</requires>
-            <returns><c>arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>(std::forward&lt;Sink>(sink), std::move(sh), std::move(ceh))</c>.</returns>
+            <returns><c>arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>(std::forward&lt;Sink>(sink), std::move(skipping_hander_), std::move(conversion_error_handler_))</c>.</returns>
           </code-item>
         </section>
       </section>
@@ -8727,9 +8727,9 @@ namespace commata {
       operator()(Sink&amp;&amp; sink) &amp;&amp;;
 
   private:
-    SkippingHandler sh;           // exposition only
-    ConversionErrorHandler ceh;   // exposition only
-    std::locale l;                // exposition only
+    SkippingHandler skipping_handler_;                  // exposition only
+    ConversionErrorHandler conversion_error_handler_;   // exposition only
+    std::locale loc_;                                   // exposition only
   };
 
   template &lt;class T>
@@ -8760,7 +8760,7 @@ explicit locale_based_arithmetic_field_translator_factory(
   SkippingHandler skipping_handler = SkippingHandler(),
   ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
             </code>
-            <effects>Initializes <c>sh</c>, <c>ceh</c> and <c>l</c> with <c>std::move(skipping_handler)</c>, <c>std::move(conversion_error_handler</c> and <c>loc</c> respectively.</effects>
+            <effects>Initializes <c>skipping_handler_</c>, <c>conversion_error_handler_</c> and <c>loc_</c> with <c>std::move(skipping_handler)</c>, <c>std::move(conversion_error_handler</c> and <c>loc</c> respectively.</effects>
           </code-item>
 
           <code-item>
@@ -8788,7 +8788,7 @@ template &lt;class Sink> locale_based_arithmetic_field_translator&lt;
   operator()(Sink&amp;&amp; sink) &amp;&amp;;
             </code>
             <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</requires>
-            <returns><c>locale_based_arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>(l, std::forward&lt;Sink>(sink), std::move(sh), std::move(ceh))</c>.</returns>
+            <returns><c>locale_based_arithmetic_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler, ConversionErrorHandler>(loc_, std::forward&lt;Sink>(sink), std::move(skipping_handler_), std::move(conversion_error_handler_))</c>.</returns>
           </code-item>
         </section>
       </section>
@@ -8816,7 +8816,7 @@ namespace commata {
         operator()(Sink&amp;&amp; sink) &amp;&amp;;
 
   private:
-    SkippingHandler sh;           // exposition only
+    SkippingHandler skipping_handler_;   // exposition only
   };
 
   template &lt;class Ch, class Tr, class Allocator>
@@ -8854,7 +8854,7 @@ namespace commata {
 explicit string_field_translator_factory(
   SkippingHandler skipping_handler = SkippingHandler());
             </code>
-            <effects>Initializes <c>sh</c> with <c>std::move(skipping_handler)</c>.</effects>
+            <effects>Initializes <c>skipping_handler_</c> with <c>std::move(skipping_handler)</c>.</effects>
           </code-item>
         </section>
 
@@ -8868,7 +8868,7 @@ template &lt;class Sink>
     operator()(Sink&amp;&amp; sink) &amp;&amp;;
             </code>
             <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</requires>
-            <returns><c>string_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>(std::forward&lt;Sink>(sink), std::move(sh))</c>.</returns>
+            <returns><c>string_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>(std::forward&lt;Sink>(sink), std::move(skipping_handler_))</c>.</returns>
           </code-item>
         </section>
       </section>
@@ -8896,7 +8896,7 @@ namespace commata {
         operator()(Sink&amp;&amp; sink) &amp;&amp;;
 
   private:
-    SkippingHandler sh;           // exposition only
+    SkippingHandler skipping_handler_;   // exposition only
   };
 
   template &lt;class Ch, class Tr>
@@ -8929,7 +8929,7 @@ namespace commata {
 explicit string_view_field_translator_factory(
   SkippingHandler skipping_handler = SkippingHandler());
             </code>
-            <effects>Initializes <c>sh</c> with <c>std::move(skipping_handler)</c>.</effects>
+            <effects>Initializes <c>skipping_handler_</c> with <c>std::move(skipping_handler)</c>.</effects>
           </code-item>
         </section>
 
@@ -8943,7 +8943,7 @@ template &lt;class Sink>
     operator()(Sink&amp;&amp; sink) &amp;&amp;;
             </code>
             <requires><c>std::decay_t&lt;Sink></c> shall meet the <c>FieldTranslatorSink</c> requirements (<xref id="field_translator_sink.requirements"/>) for the value type <c>T</c>.</requires>
-            <returns><c>string_view_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>(std::forward&lt;Sink>(sink), std::move(sh))</c>.</returns>
+            <returns><c>string_view_field_translator&lt;T, std::decay_t&lt;Sink>, SkippingHandler>(std::forward&lt;Sink>(sink), std::move(skipping_handler_))</c>.</returns>
           </code-item>
         </section>
       </section>
