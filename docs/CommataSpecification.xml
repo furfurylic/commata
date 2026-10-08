@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-10-03 (UTC)</signature>
+<signature>2026-10-04 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -7411,8 +7411,8 @@ replace_if_skipped(replacement_ignore_t) noexcept;
 replace_if_skipped(const replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <effects>Configures the replacement action to be the same as <c>other</c>&#x2019;s.</effects>
-            <remark>If <c>std::is_trivially_copy_constructible&lt;T></c> is <c>true</c>,
-                    also <c>std::is_trivially_copy_constructible&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
+            <remark>If <c>std::is_trivially_copy_constructible_v&lt;T></c> is <c>true</c>,
+                    also <c>std::is_trivially_copy_constructible_v&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
                     The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T></c>.</remark>
           </code-item>
 
@@ -7421,8 +7421,8 @@ replace_if_skipped(const replace_if_skipped&amp; other) noexcept(<nc>see below</
 replace_if_skipped(replace_if_skipped&amp;&amp; other) noexcept(<nc>see below</nc>);
             </code>
             <effects>Configures the replacement action to be what <c>other</c> had as its replacement action before the call.</effects>
-            <remark>If <c>std::is_trivially_move_constructible&lt;T></c> is <c>true</c>,
-                    also <c>std::is_trivially_move_constructible&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
+            <remark>If <c>std::is_trivially_move_constructible_v&lt;T></c> is <c>true</c>,
+                    also <c>std::is_trivially_move_constructible_v&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
                     The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T></c>.</remark>
           </code-item>
 
@@ -7442,8 +7442,8 @@ template &lt;class T> replace_if_skipped(T) -> replace_if_skipped&lt;T>;
 ~replace_if_skipped();
             </code>
             <effects>Destroys the stored <c>T</c> object associated with a <c>copy</c> replacement action if any.</effects>
-            <remark>If <c>std::is_trivially_destructible&lt;T></c> is <c>true</c>,
-                    also <c>std::is_trivially_destructible&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.</remark>
+            <remark>If <c>std::is_trivially_destructible_v&lt;T></c> is <c>true</c>,
+                    also <c>std::is_trivially_destructible_v&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.</remark>
           </code-item>
         </section>
 
@@ -7457,8 +7457,8 @@ replace_if_skipped&amp; operator=(const replace_if_skipped&amp; other) noexcept(
             <requires><c>T</c> shall be <c>CopyAssignable</c>.</requires>
             <effects>Configures the replacement action to be the same as <c>other</c>&#x2019;s.</effects>
             <returns><c>*this</c>.</returns>
-            <remark>If <c>std::is_trivially_copy_assignable&lt;T></c> is <c>true</c>,
-                    also <c>std::is_trivially_copy_assignable&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
+            <remark>If <c>std::is_trivially_copy_assignable_v&lt;T></c> is <c>true</c>,
+                    also <c>std::is_trivially_copy_assignable_v&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
                     The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_copy_constructible_v&lt;T> &amp;&amp; std::is_nothrow_copy_assignable_v&lt;T></c>.</remark>
           </code-item>
 
@@ -7469,8 +7469,8 @@ replace_if_skipped&amp; operator=(replace_if_skipped&amp;&amp; other) noexcept(<
             <requires><c>T</c> shall be <c>MoveAssignable</c>.</requires>
             <effects>Configures the replacement action to be what <c>other</c> had as its replacement action before the call.</effects>
             <returns><c>*this</c>.</returns>
-            <remark>If <c>std::is_trivially_move_constructible&lt;T></c> is <c>true</c>,
-                    also <c>std::is_trivially_move_constructible&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
+            <remark>If <c>std::is_trivially_move_constructible_v&lt;T></c> is <c>true</c>,
+                    also <c>std::is_trivially_move_constructible_v&lt;replace_if_skipped&lt;T>></c> shall be <c>true</c>.
                     The expression inside <c>noexcept</c> is equivalent to <c>std::is_nothrow_move_constructible_v&lt;T> &amp;&amp; std::is_nothrow_move_assignable_v&lt;T></c>.</remark>
           </code-item>
         </section>
