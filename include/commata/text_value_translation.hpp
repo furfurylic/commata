@@ -7,6 +7,7 @@
 #define COMMATA_GUARD_0DE728A7_BABE_4C3A_94B1_A05CB3D0C9E4
 
 #include <algorithm>
+#include <bitset>
 #include <cassert>
 #include <cctype>
 #include <cerrno>
@@ -500,7 +501,7 @@ struct ignore_if_conversion_failed
 
 namespace detail::xlate::replace_if_conversion_failed_impl {
 
-enum slot : unsigned {
+enum slot : std::size_t {
     slot_empty = 0,
     slot_invalid_format = 1,
     slot_above_upper_limit = 2,
@@ -510,22 +511,22 @@ enum slot : unsigned {
 
 struct copy_mode_t {};
 
-template <class T, unsigned N>
+template <class T, std::size_t N>
 struct store
 {
 private:
     alignas(T) char replacements_[N][sizeof(T)] = {};
-    std::uint_fast8_t has_ = 0U;
-    std::uint_fast8_t skips_ =0U;
+    std::bitset<N> has_;
+    std::bitset<N> skips_;
 
 protected:
-    store(copy_mode_t, const store& other) noexcept :
+    store(copy_mode_t, const store& other) :
         has_(other.has_), skips_(other.skips_)
     {}
 
 public:
     using value_type = T;
-    static constexpr unsigned size = N;
+    static constexpr std::size_t size = N;
 
     template <class Head, class... Tails>
     store(generic_args_t, Head&& head, Tails&&... tails) :
@@ -543,16 +544,15 @@ private:
         init<Slot>(std::forward<Head>(head));
     }
 
-    store(std::integral_constant<std::size_t, N>) noexcept :
-        has_(0), skips_(0)
+    store(std::integral_constant<std::size_t, N>) :
+        has_(), skips_()
     {}
 
-    template <unsigned Slot, class U, std::enable_if_t<
+    template <std::size_t Slot, class U, std::enable_if_t<
         (!std::is_base_of_v<replacement_fail_t, std::decay_t<U>>)
      && (!std::is_base_of_v<replacement_ignore_t, std::decay_t<U>>)>*
         = nullptr>
     void init(U&& value)
-        noexcept(std::is_nothrow_constructible_v<T, U&&>)
     {
         static_assert(Slot < N);
         assert(!has(Slot));
@@ -561,8 +561,8 @@ private:
         set_has(Slot);
     }
 
-    template <unsigned Slot>
-    void init() noexcept(std::is_nothrow_default_constructible_v<T>)
+    template <std::size_t Slot>
+    void init()
     {
         static_assert(Slot < N);
         assert(!has(Slot));
@@ -571,16 +571,16 @@ private:
         set_has(Slot);
     }
 
-    template <unsigned Slot>
-    void init(replacement_fail_t) noexcept
+    template <std::size_t Slot>
+    void init(replacement_fail_t)
     {
         static_assert(Slot < N);
         assert(!has(Slot));
         assert(!skips(Slot));
     }
 
-    template <unsigned Slot>
-    void init(replacement_ignore_t) noexcept
+    template <std::size_t Slot>
+    void init(replacement_ignore_t)
     {
         static_assert(Slot < N);
         assert(!has(Slot));
@@ -589,14 +589,14 @@ private:
     }
 
 public:
-    std::pair<replace_mode, const T*> get(unsigned r) const noexcept
+    std::pair<replace_mode, const T*> get(std::size_t r) const
     {
         return get_g(this, r);
     }
 
 private:
     template <class ThisType>
-    static auto get_g(ThisType* me, unsigned r) noexcept
+    static auto get_g(ThisType* me, std::size_t r)
     {
         using t_t = std::conditional_t<std::is_const_v<ThisType>, const T, T>;
         using pair_t = std::pair<replace_mode, t_t*>;
@@ -610,60 +610,41 @@ private:
     }
 
 protected:
-    T& operator[](unsigned r)
+    T& operator[](std::size_t r)
     {
         return *static_cast<T*>(static_cast<void*>(replacements_[r]));
     }
 
-    const T& operator[](unsigned r) const
+    const T& operator[](std::size_t r) const
     {
         return *static_cast<const T*>(
             static_cast<const void*>(replacements_[r]));
     }
 
     template <class... Args>
-    void emplace(unsigned r, Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<T, Args&&...>)
+    void emplace(std::size_t r, Args&&... args)
     {
         ::new(replacements_[r]) T(std::forward<Args>(args)...);
     }
 
-    bool has(unsigned r) const noexcept
+    bool has(std::size_t r) const
     {
-        return (has_ & (1 << r)) != 0;
+        return has_[r];
     }
 
-    void set_has(unsigned r) noexcept
+    void set_has(std::size_t r, bool v = true)
     {
-        has_ |= (1 << r);
+        has_.set(r, v);
     }
 
-    void set_has(unsigned r, bool v) noexcept
+    bool skips(std::size_t r) const
     {
-        if (v) {
-            set_has(r);
-        } else {
-            has_ &= ~(1 << r);
-        }
+        return skips_[r];
     }
 
-    bool skips(unsigned r) const noexcept
+    void set_skips(std::size_t r, bool v = true)
     {
-        return (skips_ & (1 << r)) != 0;
-    }
-
-    void set_skips(unsigned r) noexcept
-    {
-        skips_ |= (1 << r);
-    }
-
-    void set_skips(unsigned r, bool v) noexcept
-    {
-        if (v) {
-            set_skips(r);
-        } else {
-            skips_ &= ~(1 << r);
-        }
+        skips_.set(r, v);
     }
 };
 
@@ -674,7 +655,7 @@ struct dtor_enabled_store : store<T, N>
 
     ~dtor_enabled_store()
     {
-        for (unsigned r = 0; r < N; ++r) {
+        for (std::size_t r = 0; r < N; ++r) {
             if (this->has(r)) {
                 (*this)[r].~T();
             }
@@ -702,7 +683,7 @@ struct move_assign_enabled_store : dtor_enabled_store<T, N>
         if (this == std::addressof(other)) {
             return *this;
         }
-        for (unsigned r = 0; r < N; ++r) {
+        for (std::size_t r = 0; r < N; ++r) {
             if (this->has(r)) {
                 if (other.has(r)) {
                     (*this)[r] = std::move(other[r]);
@@ -743,7 +724,7 @@ struct copy_assign_enabled_store : move_assign_enabled_store<T, N>
         noexcept(std::is_nothrow_copy_constructible_v<T>
               && std::is_nothrow_copy_assignable_v<T>)
     {
-        for (unsigned r = 0; r < N; ++r) {
+        for (std::size_t r = 0; r < N; ++r) {
             if (this->has(r)) {
                 if (other.has(r)) {
                     (*this)[r] = other[r];
@@ -783,7 +764,7 @@ struct move_ctor_enabled_store : copy_assign_enabled_store<T, N>
             noexcept(std::is_nothrow_move_constructible_v<T>) :
         copy_assign_enabled_store<T, N>(copy_mode_t(), other)
     {
-        for (unsigned r = 0; r < N; ++r) {
+        for (std::size_t r = 0; r < N; ++r) {
             if (this->has(r)) {
                 this->emplace(r, std::move(other[r]));
             }
@@ -814,7 +795,7 @@ struct copy_ctor_enabled_store : move_ctor_enabled_store<T, N>
             noexcept(std::is_nothrow_copy_constructible_v<T>) :
         move_ctor_enabled_store<T, N>(copy_mode_t(), other)
     {
-        for (unsigned r = 0; r < N; ++r) {
+        for (std::size_t r = 0; r < N; ++r) {
             if (this->has(r)) {
                 this->emplace(r, other[r]);
             }
@@ -850,7 +831,7 @@ struct swap_enabled_store : copy_ctor_enabled_store<T, N>
             return;
         }
 
-        for (unsigned r = 0; r < N; ++r) {
+        for (std::size_t r = 0; r < N; ++r) {
             if (this->has(r)) {
                 if (other.has(r)) {
                     using std::swap;
@@ -906,7 +887,7 @@ constexpr bool is_nothrow_arg_v =
     is_replacement_tag_v<std::remove_reference_t<A>>
  || std::is_nothrow_constructible_v<T, A>;
 
-template <class T, unsigned N>
+template <class T, std::size_t N>
 struct base_base
 {
 protected:
@@ -934,7 +915,7 @@ protected:
     }
 };
 
-template <class T, unsigned N>
+template <class T, std::size_t N>
 struct base;
 
 template <class T>
@@ -1120,7 +1101,7 @@ struct base<T, 5> : base_base<T, 5>
 };
 
 template <class T>
-constexpr unsigned base_n =
+constexpr std::size_t base_n =
     std::is_integral_v<T> ? std::is_signed_v<T> ? 4 : 3 : 5;
 
 template <class T>
@@ -1134,18 +1115,18 @@ class replace_if_conversion_failed :
 {
     using replace_mode = detail::replace_mode;
 
-    static constexpr unsigned slot_empty =
+    static constexpr std::size_t slot_empty =
         detail::xlate::replace_if_conversion_failed_impl::slot_empty;
-    static constexpr unsigned slot_invalid_format =
+    static constexpr std::size_t slot_invalid_format =
         detail::xlate::replace_if_conversion_failed_impl::
             slot_invalid_format;
-    static constexpr unsigned slot_above_upper_limit =
+    static constexpr std::size_t slot_above_upper_limit =
         detail::xlate::replace_if_conversion_failed_impl::
             slot_above_upper_limit;
-    static constexpr unsigned slot_below_lower_limit =
+    static constexpr std::size_t slot_below_lower_limit =
         detail::xlate::replace_if_conversion_failed_impl::
             slot_below_lower_limit;
-    static constexpr unsigned slot_underflow =
+    static constexpr std::size_t slot_underflow =
         detail::xlate::replace_if_conversion_failed_impl::slot_underflow;
 
 private:
@@ -1222,17 +1203,8 @@ public:
         noexcept(std::is_nothrow_swappable_v<T>
               && std::is_nothrow_constructible_v<T>)
     {
-        // There seem to be pairs of a compiler and a standard library
-        // implementation (at least Clang 7) whose std::swap is not self-safe
-        // std::swap, which inherently employs move construction, which is not
-        // required to be self-safe
-        // (Clang7 seems to employ memcpy for move construction of trivially-
-        // copyable types, which itself is perfectly correct, and which is not,
-        // however, suitable for std::swap without self-check)
-        if (this != std::addressof(other)) {
-            using std::swap;
-            swap(this->store(), other.store());
-        }
+        using std::swap;
+        swap(this->store(), other.store());
     }
 
 private:
