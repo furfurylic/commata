@@ -10,6 +10,7 @@
 #include <locale>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #if defined(_MSC_VER) && defined(_DEBUG)
@@ -173,6 +174,25 @@ private:
         static const std::ctype<Ch>& static_ctype =
             std::use_facet<std::ctype<Ch>>(std::locale::classic());
         return static_ctype;
+    }
+};
+
+class from_str
+{
+    std::stringstream str_;
+
+public:
+    from_str(std::string_view s)
+    {
+        str_ << s;
+    }
+
+    template <class T>
+    operator T() && noexcept
+    {
+        T num;
+        str_ >> num;
+        return num;
     }
 };
 
