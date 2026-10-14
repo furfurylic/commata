@@ -22,7 +22,7 @@ Microsoft Visual Studio 2019, 2022, GCC 8.5 and Clang 20.1.
 
 This repository also contains a test of it in `src_test` directory.
 Tests are written on [GoogleTest](https://github.com/google/googletest) v1.14.0.
-Commata employs CMake 3.13 or later to make the test.
+Commata employs CMake 3.14 or later to make the test.
 You can build it as follows:
 
  1. At the top directory of the repository, prepare GoogleTest and the tests for
