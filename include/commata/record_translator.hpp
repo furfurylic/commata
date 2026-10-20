@@ -52,6 +52,16 @@ public:
             conversion_error_handler)
     {}
 
+    arithmetic_field_translator_factory(
+        const arithmetic_field_translator_factory&) = default;
+    arithmetic_field_translator_factory(
+        arithmetic_field_translator_factory&&) = default;
+    ~arithmetic_field_translator_factory() = default;
+    arithmetic_field_translator_factory& operator=(
+        const arithmetic_field_translator_factory&) = default;
+    arithmetic_field_translator_factory& operator=(
+        arithmetic_field_translator_factory&&) = default;
+
     template <class Sink>
     arithmetic_field_translator<T, std::decay_t<Sink>,
         SkippingHandler, ConversionErrorHandler> operator()(Sink&& sink) &&
@@ -103,6 +113,16 @@ public:
         loc_(loc)
     {}
 
+    locale_based_arithmetic_field_translator_factory(
+        const locale_based_arithmetic_field_translator_factory&) = default;
+    locale_based_arithmetic_field_translator_factory(
+        locale_based_arithmetic_field_translator_factory&&) = default;
+    ~locale_based_arithmetic_field_translator_factory() = default;
+    locale_based_arithmetic_field_translator_factory& operator=(
+        const locale_based_arithmetic_field_translator_factory&) = default;
+    locale_based_arithmetic_field_translator_factory& operator=(
+        locale_based_arithmetic_field_translator_factory&&) = default;
+
     template <class Sink>
     locale_based_arithmetic_field_translator<T, std::decay_t<Sink>,
         SkippingHandler, ConversionErrorHandler> operator()(Sink&& sink) &&
@@ -142,6 +162,16 @@ public:
         detail::member_like_base<SkippingHandler>(skipping_handler)
     {}
 
+    string_field_translator_factory(
+        const string_field_translator_factory&) = default;
+    string_field_translator_factory(
+        string_field_translator_factory&&) = default;
+    ~string_field_translator_factory() = default;
+    string_field_translator_factory& operator=(
+        const string_field_translator_factory&) = default;
+    string_field_translator_factory& operator=(
+        string_field_translator_factory&&) = default;
+
     template <class Sink>
     string_field_translator<T, std::decay_t<Sink>, SkippingHandler>
         operator()(Sink&& sink) &&
@@ -179,6 +209,16 @@ public:
             SkippingHandler skipping_handler = SkippingHandler()) :
         detail::member_like_base<SkippingHandler>(skipping_handler)
     {}
+
+    string_view_field_translator_factory(
+        const string_view_field_translator_factory&) = default;
+    string_view_field_translator_factory(
+        string_view_field_translator_factory&&) = default;
+    ~string_view_field_translator_factory() = default;
+    string_view_field_translator_factory& operator=(
+        const string_view_field_translator_factory&) = default;
+    string_view_field_translator_factory& operator=(
+        string_view_field_translator_factory&&) = default;
 
     template <class Sink>
     string_view_field_translator<T, std::decay_t<Sink>, SkippingHandler>
