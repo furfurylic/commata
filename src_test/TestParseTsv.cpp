@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <exception>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <ostream>
 #include <sstream>
@@ -320,4 +321,22 @@ TEST_F(TestParseTsv, PrefersNonconstWhenIndirect)
     parse_tsv(std::istringstream("12\t3" "45\t6\n\n" "789"), handler, 4);
     ASSERT_STREQ("{{((12))((345))((6))}}?{{((789))}}",
         std::move(str).str().c_str());
+}
+
+namespace {
+
+template <class T, class = void>
+struct parsable : std::false_type
+{};
+
+template <class T>
+struct parsable<T, std::void_t<decltype(
+        parse_tsv(std::declval<T>(), simple_transcriptor(std::cout)))>> :
+    std::true_type
+{};
+
+// SFINAEd-out call to parse_tsv with the first argument being an prvalue of
+// std::stringbuf*
+static_assert(!parsable<std::stringbuf*>::value);
+
 }

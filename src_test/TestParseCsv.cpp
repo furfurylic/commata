@@ -684,3 +684,23 @@ TEST_F(TestCsvSource, Swap)
     ASSERT_EQ(1U, field_values[0].size());
     ASSERT_STREQ("XYZ", field_values[0][0].c_str());
 }
+
+namespace {
+
+template <class T, class = void>
+struct callable : std::false_type
+{};
+
+template <class T>
+struct callable<T, std::void_t<decltype(
+    make_csv_source(std::declval<std::stringbuf&>())(
+        std::ref(std::declval<test_collector<char>&>()),
+        std::declval<T>()))>> :
+    std::true_type
+{};
+
+// SFINAEd-out call to csv_source::operator() with the second argument being
+// an prvalue of std::exception
+static_assert(!callable<std::exception>::value);
+
+}

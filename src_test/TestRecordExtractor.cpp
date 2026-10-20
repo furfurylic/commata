@@ -642,3 +642,20 @@ TEST_F(TestRecordExtractorMiscellaneous, EvadeCopyingIndexed)
                  "clarinet,woodwind\n", std::move(out).str().c_str());
     ASSERT_EQ(0U, total);
 }
+
+namespace {
+
+template <class T, class = void>
+struct makeable : std::false_type
+{};
+
+template <class T>
+struct makeable<T, std::void_t<decltype(
+    make_record_extractor(std::declval<T>(), "abc", 10))>> : std::true_type
+{};
+
+// SFINAEd-out call to make_record_extractor with the first argument being an
+// prvalue of std::stringbuf*
+static_assert(!makeable<std::stringbuf*>::value);
+
+}
