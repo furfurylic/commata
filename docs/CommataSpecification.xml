@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-10-07 (UTC)</signature>
+<signature>2026-10-17 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -9415,9 +9415,9 @@ namespace commata {
         <code>
 using char_type = <nc>see below</nc>;
         </code>
-        <type>If <c>TableSource</c> is nonconst-direct (<xref id="table_source.requirements"/>) or indirect, <c>typename TableSource::char_type</c>;
-              otherwise, if <c>TableSource</c> is direct, <c>const typename TableSource::char_type</c>;
-              otherwise, an unspecified type that is equal to either of <c>typename TableSource::char_type</c> or <c>const typename TableSource::char_type</c>.</type>
+        <type>Let <c>Ch</c> denote <c>typename TableSource::char_type</c>.
+              If <c>TableSource</c> is nonconst-direct (<xref id="table_source.requirements"/>) or indirect, <c>Ch</c>;
+              otherwise, <c>const Ch</c>.</type>
         <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
               For example, the program cannot overwrite character objects pointed by the return value of <c>operator[]</c> in such cases.
               If <c>TableSource</c> is a specialization of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
@@ -9797,9 +9797,9 @@ namespace commata {
         <code>
 using char_type = <nc>see below</nc>;
         </code>
-        <type>If <c>TableSource</c> is nonconst-direct (<xref id="table_source.requirements"/>) or indirect, <c>typename TableSource::char_type</c>;
-              otherwise, if <c>TableSource</c> is direct, <c>const typename TableSource::char_type</c>;
-              otherwise, an unspecified type that is equal to either of <c>typename TableSource::char_type</c> or <c>const typename TableSource::char_type</c>.</type>
+        <type>Let <c>Ch</c> denote <c>typename TableSource::char_type</c>.
+              If <c>TableSource</c> is nonconst-direct (<xref id="table_source.requirements"/>) or indirect, <c>Ch</c>;
+              otherwise, <c>const Ch</c>.</type>
         <note>It can reduce the functionatity of this class template that <c>char_type</c> is const-qualified.
               For example, <c>c_str</c> member function is not declared in such cases.
               If <c>TableSource</c> is a specialization of <c>csv_source</c> (<xref id="csv_source"/>) or <c>tsv_source</c> (<xref id="tsv_source"/>),
