@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-10-17 (UTC)</signature>
+<signature>2026-10-24 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -6043,7 +6043,6 @@ namespace commata {
         <name>Constructors</name>
 
         <p>In this subclause, <c>AT</c> denotes <c>std::allocator_traits&lt;Allocator></c>, <c>CAT</c> denotes <c>typename AT::template rebind_traits&lt;Ch></c> and <c>CA</c> denotes <c>typename CAT::allocator_type</c>.</p>
-        <p>All constructors and assignment operators shall make an appropriate decision about propagation of the allocator in accordance with <c>AT::select_on_container_copy_construnction</c>, <c>AT::propagete_on_container_copy_assignment</c> and <c>AT::propagete_on_container_move_assignment</c>.</p>
 
         <code-item>
           <code>
@@ -6061,6 +6060,7 @@ basic_stored_table(const basic_stored_table&amp; other);
           </code>
           <postcondition><c>get_buffer_size()</c> shall be the smaller of <c>CAT::max_size(CA(get_allocator()))</c> and <c>other.get_buffer_size()</c>.
                          If not undefined, also <c>content() == other.content()</c> shall be <c>true</c>.</postcondition>
+          <remark>This constructor shall make an appropriate decision about propagation of the allocator in accordance with <c>AT::select_on_container_copy_construction</c>.</remark>
         </code-item>
 
         <code-item>
@@ -6106,6 +6106,9 @@ basic_stored_table(std::allocator_arg_t, const Allocator&amp; alloc,
 
       <section id="basic_stored_table.assign">
         <name>Assignment</name>
+
+        <p>In this subclause, <c>AT</c> denotes <c>std::allocator_traits&lt;Allocator></c>, <c>CAT</c> denotes <c>typename AT::template rebind_traits&lt;Ch></c> and <c>CA</c> denotes <c>typename CAT::allocator_type</c>.</p>
+        <p>These assignment operators shall make an appropriate decision about propagation of the allocator in accordance with <c>AT::propagete_on_container_copy_assignment</c> and <c>AT::propagete_on_container_move_assignment</c>.</p>
 
         <code-item>
           <code>
