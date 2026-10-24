@@ -301,6 +301,7 @@ public:
 
     void swap(tsv_source& other) noexcept(base_t::swap_noexcept)
     {
+        // Self-safe already
         base_t::swap(other);
     }
 };

@@ -1553,6 +1553,9 @@ public:
         noexcept(cat_t::propagate_on_container_swap::value
               || cat_t::is_always_equal::value)
     {
+        if (this == std::addressof(other)) {
+            return;
+        }
         assert((cat_t::propagate_on_container_swap::value
              || (get_allocator() == other.get_allocator())) &&
                 "Swapping two basic_stored_tables with allocators of which "
