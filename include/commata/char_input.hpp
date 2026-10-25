@@ -355,10 +355,12 @@ public:
     void swap(owned_string_input& other) noexcept(
         std::is_nothrow_swappable_v<std::basic_string<Ch, Tr, Allocator>>)
     {
-        using std::swap;
-        swap(s_, other.s_);
-        swap(head_, other.head_);
-        swap(front_, other.front_);
+        if (this != std::addressof(other)) {
+            using std::swap;
+            swap(s_, other.s_);
+            swap(head_, other.head_);
+            swap(front_, other.front_);
+        }
     }
 };
 

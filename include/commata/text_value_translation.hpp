@@ -1204,7 +1204,7 @@ public:
               && std::is_nothrow_constructible_v<T>)
     {
         using std::swap;
-        swap(this->store(), other.store());
+        swap(this->store(), other.store()); // known to be self-safe
     }
 
 private:
