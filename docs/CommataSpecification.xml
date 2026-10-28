@@ -1387,9 +1387,10 @@ namespace commata {
     <nc>see below</nc> yield_location() const;
     <nc>see below</nc> handle_exception();
 
+    <c>// <n>swap:</n></c>
     void swap(empty_physical_line_aware_handler&amp; other)
         noexcept(std::is_nothrow_swappable_v&lt;Handler>)
-      { if (this != std::addressof(other) { using std::swap; swap(base(), other.base()); } }
+      { if (this != std::addressof(other)) { using std::swap; swap(base(), other.base()); } }
 
   private:
     Handler handler_;
@@ -2103,7 +2104,7 @@ namespace commata {
     template &lt;class Ch, class U = T>
       std::optional&lt;U> operator()(empty_t, U* = nullptr) const;
 
-    <c>// <n><xref id="replace_if_conversion_failed.modifiers"/>, modifiers:</n></c>
+    <c>// <n><xref id="replace_if_conversion_failed.swap"/>, swap:</n></c>
     void swap(replace_if_conversion_failed&amp; other) noexcept(<nc>see below</nc>);
   };
 
@@ -2499,8 +2500,8 @@ template &lt;class Ch, class U = T>
           </code-item>
         </section>
 
-        <section id="replace_if_conversion_failed.modifiers">
-          <name>Modifiers</name>
+        <section id="replace_if_conversion_failed.swap">
+          <name>Swap</name>
 
           <code-item>
             <code>
@@ -3098,8 +3099,9 @@ namespace commata {
     <c>// <n><xref id="owned_streambuf_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
+    <c>// <n>swap:</n></c>
     void swap(owned_streambuf_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Streambuf>)
-      { using std::swap; swap(in_, other.in_); }
+      { if (this != std::addressof(other)) { using std::swap; swap(in_, other.in_); } }
 
   private:
     Streambuf in_;  <c>// <n>exposition only</n></c>
@@ -3244,8 +3246,9 @@ namespace commata {
     <c>// <n><xref id="owned_istream_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
+    <c>// <n>swap:</n></c>
     void swap(owned_istream_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;IStream>)
-      { using std::swap; swap(in_, other.in_); }
+      { if (this != std::addressof(other)) { using std::swap; swap(in_, other.in_); } }
 
   private:
     IStream in_;    <c>// <n>exposition only</n></c>
@@ -3429,7 +3432,7 @@ namespace commata {
     size_type operator()(Ch* out, size_type n);
     std::pair&lt;Ch*, size_type> operator()(size_type n = npos) noexcept;
 
-    <c>// <n><xref id="owned_string_input.modifiers"/>, modifiers:</n></c>
+    <c>// <n><xref id="owned_string_input.swap"/>, swap:</n></c>
     void swap(owned_string_input&amp; other) noexcept(<nc>see below</nc>);
 
   private:
@@ -3521,8 +3524,8 @@ return r;</code>
         </code-item>
       </section>
 
-      <section id="owned_string_input.modifiers">
-        <name>Modifiers</name>
+      <section id="owned_string_input.swap">
+        <name>Swap</name>
 
         <code-item>
           <code>
@@ -3580,8 +3583,9 @@ namespace commata {
     <c>// <n><xref id="indirect_input.inv"/>, invocation:</n></c>
     size_type operator()(Ch* out, size_type n);
 
+    <c>// <n>swap:</n></c>
     void swap(indirect_input&amp; other) noexcept(std::is_nothrow_swappable_v&lt;Input>)
-      { using std::swap; swap(input_, other.input_); }
+      { if (this != std::addressof(other)) { using std::swap; swap(input_, other.input_); } }
 
   private:
     Input input_; <c>// <n>exposition only</n></c>
@@ -3950,8 +3954,9 @@ namespace commata {
       [[nodiscard]] <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                            Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
+    <c>// <n>swap:</n></c>
     void swap(csv_source&amp; other) noexcept(std::is_nothrow_swappable_v&lt;CharInput>)
-      { using std::swap; swap(input_, other.input_); }
+      { if (this != std::addressof(other)) { using std::swap; swap(input_, other.input_); } }
 
   private:
     CharInput input_;   <c>// <n>exposition only</n></c>
@@ -4281,8 +4286,9 @@ namespace commata {
       [[nodiscard]] <nc>see below</nc> operator()(std::reference_wrapper&lt;Handler> handler,
                            Args&amp;&amp;... args)     &amp;&amp; noexcept(<nc>see below</nc>);
 
+    <c>// <n>swap:</n></c>
     void swap(tsv_source&amp; other) noexcept(std::is_nothrow_swappable_v&lt;CharInput>)
-      { using std::swap; swap(input_, other.input_); }
+      { if (this != std::addressof(other)) { using std::swap; swap(input_, other.input_); } }
 
   private:
     CharInput input_;   <c>// <n>exposition only</n></c>
@@ -5936,6 +5942,8 @@ namespace commata {
     template &lt;class OtherContent, class OtherAllocator>
       basic_stored_table&amp; operator+=(
               basic_stored_table&lt;OtherContent, OtherAllocator>&amp;&amp; other);
+
+    <c>// <n><xref id="basic_stored_table.swap"/>, swap:</n></c>
     void swap(basic_stored_table&amp; other)
       noexcept(std::allocator_traits&lt;Allocator>::propagate_on_container_swap::value
             || std::allocator_traits&lt;Allocator>::is_always_equal::value);
@@ -6393,6 +6401,10 @@ template &lt;class OtherContent, class OtherAllocator>
             </ul>
           </remark>
         </code-item>
+      </section>
+
+      <section id="basic_stored_table.swap">
+        <name>Swap</name>
 
         <code-item>
           <code>
@@ -7358,7 +7370,7 @@ namespace commata {
     <c>// <n><xref id="replace_if_skipped.inv"/>, invocation:</n></c>
     template &lt;class U = T> std::optional&lt;U> operator()(U* = nullptr) const;
 
-    <c>// <n><xref id="replace_if_skipped.modifiers"/>, modifiers:</n></c>
+    <c>// <n><xref id="replace_if_skipped.swap"/>, swap:</n></c>
     void swap(replace_if_skipped&amp; other) noexcept(<nc>see below</nc>);
   };
 
@@ -7520,8 +7532,8 @@ template &lt;class U = T> std::optional&lt;U> operator()(U* = nullptr) const;
           </code-item>
         </section>
 
-        <section id="replace_if_skipped.modifiers">
-          <name>Modifiers</name>
+        <section id="replace_if_skipped.swap">
+          <name>Swap</name>
 
           <code-item>
             <code>
@@ -8635,9 +8647,17 @@ namespace commata {
     explicit arithmetic_field_translator_factory(
       SkippingHandler skipping_handler = SkippingHandler(),
       ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+    arithmetic_field_translator_factory(const arithmetic_field_translator_factory&amp; ) = default;
+    arithmetic_field_translator_factory(      arithmetic_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n>destructor:</n></c>
    ~arithmetic_field_translator_factory() = default;
+
+    <c>// <n>assignment:</n></c>
+    arithmetic_field_translator_factory&amp;
+      operator=(const arithmetic_field_translator_factory&amp; ) = default;
+    arithmetic_field_translator_factory&amp;
+      operator=(      arithmetic_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n><xref id="arithmetic_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>
@@ -8720,9 +8740,19 @@ namespace commata {
       const std::locale&amp; loc,
       SkippingHandler skipping_handler = SkippingHandler(),
       ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+    locale_based_arithmetic_field_translator_factory(
+      const locale_based_arithmetic_field_translator_factory&amp; ) = default;
+    locale_based_arithmetic_field_translator_factory(
+            locale_based_arithmetic_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n>destructor:</n></c>
    ~locale_based_arithmetic_field_translator_factory() = default;
+
+    <c>// <n>assignment:</n></c>
+    locale_based_arithmetic_field_translator_factory&amp;
+      operator=(const locale_based_arithmetic_field_translator_factory&amp; ) = default;
+    locale_based_arithmetic_field_translator_factory&amp;
+      operator=(      locale_based_arithmetic_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n><xref id="locale_based_arithmetic_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink> locale_based_arithmetic_field_translator&lt;
@@ -8809,9 +8839,15 @@ namespace commata {
     <c>// <n><xref id="string_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit string_field_translator_factory(
       SkippingHandler skipping_handler = SkippingHandler());
+    string_field_translator_factory(const string_field_translator_factory&amp; ) = default;
+    string_field_translator_factory(      string_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n>destructor:</n></c>
    ~string_field_translator_factory();
+
+    <c>// <n>assignment:</n></c>
+    string_field_translator_factory&amp; operator=(const string_field_translator_factory&amp; ) = default;
+    string_field_translator_factory&amp; operator=(      string_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n><xref id="string_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>
@@ -8889,9 +8925,17 @@ namespace commata {
     <c>// <n><xref id="string_view_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit string_view_field_translator_factory(
       SkippingHandler skipping_handler = SkippingHandler());
+    string_view_field_translator_factory(const string_view_field_translator_factory&amp; ) = default;
+    string_view_field_translator_factory(      string_view_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n>destructor:</n></c>
    ~string_view_field_translator_factory();
+
+    <c>// <n>assignment:</n></c>
+    string_view_field_translator_factory&amp; operator=(
+      const string_view_field_translator_factory&amp; ) = default;
+    string_view_field_translator_factory&amp; operator=(
+            string_view_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n><xref id="string_view_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>

@@ -887,13 +887,13 @@ private:
         n->attach(buffer, size);
         return n;
     } catch (...) {
-        // We'd better not call "consume_buffer" because it calls "hello,"
+        // We'd better not call "consume_buffer" because it calls "hello",
         // which is this function itself
         at_t::deallocate(this->get(), pt_t::pointer_to(*buffer), size);
         throw;
     }
 
-    // Detachs buffer from a node and then destroys the node; throws nothing
+    // Detaches buffer from a node and then destroys the node; throws nothing
     std::pair<std::pair<Ch*, std::size_t>, node_type*> byebye(node_type* p)
     {
         const auto next = p->next;
@@ -1553,10 +1553,13 @@ public:
         noexcept(cat_t::propagate_on_container_swap::value
               || cat_t::is_always_equal::value)
     {
+        if (this == std::addressof(other)) {
+            return;
+        }
         assert((cat_t::propagate_on_container_swap::value
              || (get_allocator() == other.get_allocator())) &&
                 "Swapping two basic_stored_tables with allocators of which "
-                "POCS is false and which do not equal each other delivers "
+                "POCS are false and which do not equal each other delivers "
                 "an undefined behaviour; this is it");
         using std::swap;
         swap(store_, other.store_);

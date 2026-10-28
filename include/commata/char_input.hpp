@@ -411,8 +411,10 @@ public:
     void swap(indirect_input& other) noexcept(
         std::is_nothrow_swappable_v<Input>)
     {
-        using std::swap;
-        swap(input_, other.input_);
+        if (this != std::addressof(other)) {
+            using std::swap;
+            swap(input_, other.input_);
+        }
     }
 };
 
