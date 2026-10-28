@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-10-18 (UTC)</signature>
+<signature>2026-10-22 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -8644,9 +8644,17 @@ namespace commata {
     explicit arithmetic_field_translator_factory(
       SkippingHandler skipping_handler = SkippingHandler(),
       ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+    arithmetic_field_translator_factory(const arithmetic_field_translator_factory&amp; ) = default;
+    arithmetic_field_translator_factory(      arithmetic_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n>destructor:</n></c>
    ~arithmetic_field_translator_factory() = default;
+
+    <c>// <n>assignment:</n></c>
+    arithmetic_field_translator_factory&amp;
+      operator=(const arithmetic_field_translator_factory&amp; ) = default;
+    arithmetic_field_translator_factory&amp;
+      operator=(      arithmetic_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n><xref id="arithmetic_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>
@@ -8729,9 +8737,19 @@ namespace commata {
       const std::locale&amp; loc,
       SkippingHandler skipping_handler = SkippingHandler(),
       ConversionErrorHandler conversion_error_handler = ConversionErrorHandler());
+    locale_based_arithmetic_field_translator_factory(
+      const locale_based_arithmetic_field_translator_factory&amp; ) = default;
+    locale_based_arithmetic_field_translator_factory(
+            locale_based_arithmetic_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n>destructor:</n></c>
    ~locale_based_arithmetic_field_translator_factory() = default;
+
+    <c>// <n>assignment:</n></c>
+    locale_based_arithmetic_field_translator_factory&amp;
+      operator=(const locale_based_arithmetic_field_translator_factory&amp; ) = default;
+    locale_based_arithmetic_field_translator_factory&amp;
+      operator=(      locale_based_arithmetic_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n><xref id="locale_based_arithmetic_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink> locale_based_arithmetic_field_translator&lt;
@@ -8818,9 +8836,15 @@ namespace commata {
     <c>// <n><xref id="string_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit string_field_translator_factory(
       SkippingHandler skipping_handler = SkippingHandler());
+    string_field_translator_factory(const string_field_translator_factory&amp; ) = default;
+    string_field_translator_factory(      string_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n>destructor:</n></c>
    ~string_field_translator_factory();
+
+    <c>// <n>assignment:</n></c>
+    string_field_translator_factory&amp; operator=(const string_field_translator_factory&amp; ) = default;
+    string_field_translator_factory&amp; operator=(      string_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n><xref id="string_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>
@@ -8898,9 +8922,17 @@ namespace commata {
     <c>// <n><xref id="string_view_field_translator_factory.ctor"/>, constructors:</n></c>
     explicit string_view_field_translator_factory(
       SkippingHandler skipping_handler = SkippingHandler());
+    string_view_field_translator_factory(const string_view_field_translator_factory&amp; ) = default;
+    string_view_field_translator_factory(      string_view_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n>destructor:</n></c>
    ~string_view_field_translator_factory();
+
+    <c>// <n>assignment:</n></c>
+    string_view_field_translator_factory&amp; operator=(
+      const string_view_field_translator_factory&amp; ) = default;
+    string_view_field_translator_factory&amp; operator=(
+            string_view_field_translator_factory&amp;&amp;) = default;
 
     <c>// <n><xref id="string_view_field_translator_factory.inv"/>, invocation:</n></c>
     template &lt;class Sink>
