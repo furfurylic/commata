@@ -1125,7 +1125,7 @@ TEST_F(TestStoredTable, MergeLists)
     ASSERT_EQ("oranges", table3.content().back().front());
 
     // merger of lists shall be done by splicing,
-    // so addesses of csv_values shall not be modified
+    // so addesses of stored_values shall not be modified
     ASSERT_EQ(field100, &table3.content().front().front());
     ASSERT_EQ(field200, &table3.content().back().front());
 }
