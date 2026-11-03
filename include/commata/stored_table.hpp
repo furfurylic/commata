@@ -931,6 +931,8 @@ public:
         noexcept(at_t::propagate_on_container_swap::value
               || at_t::is_always_equal::value)
     {
+        assert((this != std::addressof(other)) &&
+            "Self-swap shall be evaded externally");
         assert(at_t::propagate_on_container_swap::value
             || (get_allocator() == other.get_allocator()));
         swap_alloc(other, typename at_t::propagate_on_container_swap());

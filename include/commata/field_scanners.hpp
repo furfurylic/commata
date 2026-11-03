@@ -374,7 +374,7 @@ public:
         noexcept(std::is_nothrow_swappable_v<store_t>)
     {
         using std::swap;
-        swap(store_, other.store_);
+        swap(store_, other.store_); // known to be self-safe
     }
 };
 
