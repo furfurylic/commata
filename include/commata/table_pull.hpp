@@ -682,6 +682,39 @@ typename primitive_table_pull<TableSource, Handle, Allocator>::
 primitive_table_pull<TableSource, Handle, Allocator>::
     dq_moved_from = {};
 
+template <
+    primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
+    class TableSource, class... Appendices>
+[[nodiscard]]
+auto make_primitive_table_pull(TableSource&& in, Appendices&&... appendices)
+ -> std::enable_if_t<
+        std::is_constructible_v<
+            primitive_table_pull<std::decay_t<TableSource>, Handle>,
+            TableSource&&, Appendices&&...>,
+        primitive_table_pull<std::decay_t<TableSource>, Handle>>
+{
+    return primitive_table_pull<std::decay_t<TableSource>, Handle>(
+        std::forward<TableSource>(in),
+        std::forward<Appendices>(appendices)...);
+}
+
+template <
+    primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
+    class TableSource, class Allocator, class... Appendices>
+[[nodiscard]] auto make_primitive_table_pull(std::allocator_arg_t,
+    const Allocator& alloc, TableSource&& in, Appendices&&... appendices)
+ -> std::enable_if_t<
+        std::is_constructible_v<
+            primitive_table_pull<std::decay_t<TableSource>, Handle, Allocator>,
+            std::allocator_arg_t, const Allocator&,
+            TableSource&&, Appendices&&...>,
+        primitive_table_pull<std::decay_t<TableSource>, Handle, Allocator>>
+{
+    return primitive_table_pull<std::decay_t<TableSource>, Handle, Allocator>(
+        std::allocator_arg, alloc, std::forward<TableSource>(in),
+        std::forward<Appendices>(appendices)...);
+}
+
 enum class table_pull_state : std::uint_fast8_t
 {
     eof,

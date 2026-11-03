@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-10-24 (UTC)</signature>
+<signature>2026-11-03 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -9263,6 +9263,16 @@ namespace commata {
             class Allocator = std::allocator&lt;typename TableSource::char_type>>
     class primitive_table_pull;
 
+  template &lt;primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
+            class TableSource, class... Appendices>
+    [[nodiscard]] primitive_table_pull&lt;std::decay_t&lt;TableSource>, Handle>
+      make_primitive_table_pull(TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+  template &lt;primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
+            class TableSource, class Allocator, class... Appendices>
+    [[nodiscard]] primitive_table_pull&lt;std::decay_t&lt;TableSource>, Handle, Allocator>>
+      make_primitive_table_pull(std::allocator_arg_t, const Allocator&amp; alloc,
+                                TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+
   enum class table_pull_state : <nc>unspecified</nc> {
     before_parse = <nc>unspecified</nc>,
     eof          = <nc>unspecified</nc>,
@@ -9437,6 +9447,17 @@ namespace commata {
   template &lt;class TableSource, class Allocator, class... Args>
     primitive_table_pull(std::allocator_arg_t, Allocator, TableSource, Args...)
       -> primitive_table_pull&lt;TableSource, primitive_table_pull_handle::all, Allocator>;
+
+  <c>// <n><xref id="primitive_table_pull.creation"/>, creation functions:</n></c>
+  template &lt;primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
+            class TableSource, class... Appendices>
+    [[nodiscard]] primitive_table_pull&lt;std::decay_t&lt;TableSource>, Handle>
+      make_primitive_table_pull(TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+  template &lt;primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
+            class TableSource, class Allocator, class... Appendices>
+    [[nodiscard]] primitive_table_pull&lt;std::decay_t&lt;TableSource>, Handle, Allocator>>
+      make_primitive_table_pull(std::allocator_arg_t, const Allocator&amp; alloc,
+                                TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
 }
     </codeblock>
 
@@ -9752,6 +9773,37 @@ size_type data_size() const noexcept;
 size_type max_data_size() const noexcept;
         </code>
         <returns>The largest possible number that the member function <c>data_size</c> returns.</returns>
+      </code-item>
+    </section>
+
+    <section id="primitive_table_pull.creation">
+      <name>Creation functions</name>
+      <code-item>
+        <code>
+template &lt;primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
+          class TableSource, class... Appendices>
+  [[nodiscard]] primitive_table_pull&lt;std::decay_t&lt;TableSource>, Handle>
+    make_primitive_table_pull(TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+        </code>
+        <effects><p>Equivalent to:</p>
+                 <code>return primitive_table_pull&lt;std::decay_t&lt;TableSource, Handle>>(
+         std::forward&lt;TableSource>(in), std::forward&lt;Appendices>(appendices)...);</code></effects>
+        <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible_v&lt;primitive_table_pull&lt;std::decay_t&lt;TableSource, Handle>>, TableSource&amp;&amp;, Appendices&amp;&amp;...></c> is <c>true</c>.</remark>
+      </code-item>
+
+      <code-item>
+        <code>
+template &lt;primitive_table_pull_handle Handle = primitive_table_pull_handle::all,
+          class TableSource, class Allocator, class... Appendices>
+  [[nodiscard]] primitive_table_pull&lt;std::decay_t&lt;TableSource>, Handle, Allocator>>
+    make_primitive_table_pull(std::allocator_arg_t, const Allocator&amp; alloc,
+                              TableSource&amp;&amp; in, Appendices&amp;&amp;... appendices);
+        </code>
+        <effects><p>Equivalent to:</p>
+                 <code>return primitive_table_pull&lt;std::decay_t&lt;TableSource>, Handle, Allocator>(
+         std::allocator_arg, alloc,
+         std::forward&lt;TableSource>(in), std::forward&lt;Appendices>(appendices)...);</code></effects>
+        <remark>This overload shall not participate in overload resolution unless <c>std::is_constructible_v&lt;primitive_table_pull&lt;std::decay_t&lt;TableSource, Handle, Allocator>>, std::allocator_arg_t, const Allocator&amp;, TableSource&amp;&amp;, Appendices&amp;&amp;...></c> is <c>true</c>.</remark>
       </code-item>
     </section>
   </section>
