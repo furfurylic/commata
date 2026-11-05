@@ -151,6 +151,22 @@ TYPED_TEST_P(TestTablePull, PrimitiveBasicsOnTsv)
     static_assert(std::is_nothrow_move_constructible_v<decltype(pull)>);
 }
 
+TYPED_TEST_P(TestTablePull, PrimitivePartialOnCsv)
+{
+    using char_t = typename TypeParam::first_type;
+
+    const auto str = char_helper<char_t>::str;
+   
+    const auto csv = str(",10, 20, 30\nA,\"\",B,C,D");
+    auto source = make_csv_source(csv);
+    auto pull = make_primitive_table_pull<
+        primitive_table_pull_handle::update
+      | primitive_table_pull_handle::finalize>(
+        std::move(source), TypeParam::second_type::value);
+    std::basic_string<char_t> s = transcript_primitive(pull);
+    ASSERT_EQ(str("[][10][ 20][ 30][A][][B][C][D]"), s);
+}
+
 TYPED_TEST_P(TestTablePull, PrimitiveMove)
 {
     using char_t = typename TypeParam::first_type;
@@ -159,7 +175,7 @@ TYPED_TEST_P(TestTablePull, PrimitiveMove)
    
     const auto csv = str("A,B\nC,D");
     auto source = make_csv_source(csv);
-    primitive_table_pull pull(
+    auto pull = make_primitive_table_pull(
         std::move(source), TypeParam::second_type::value);
 
     // Skip first line
@@ -610,7 +626,7 @@ TYPED_TEST_P(TestTablePull, ParsePoint)
 }
 
 REGISTER_TYPED_TEST_SUITE_P(TestTablePull,
-    PrimitiveBasicsOnCsv, PrimitiveBasicsOnTsv,
+    PrimitiveBasicsOnCsv, PrimitiveBasicsOnTsv, PrimitivePartialOnCsv,
     PrimitiveMove, PrimitiveEvadeCopying, PrimitiveEvadeCopyingNonconst,
     Basics, SkipRecord, SkipField, Error, EvadeCopying, EvadeCopyingNonconst,
     Move, ToArithmetic, ParsePoint);
