@@ -29,6 +29,7 @@ set(TEST_COMMATA_SOURCES
     TestCharInput.cpp
     TestParseCsv.cpp
     TestParseTsv.cpp
+    TestPrimitiveTablePull.cpp
     TestRecordExtractor.cpp
     TestRecordTranslator.cpp
     TestReplaceIfConversionFailed.cpp
