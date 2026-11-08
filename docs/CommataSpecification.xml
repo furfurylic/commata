@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-11-03 (UTC)</signature>
+<signature>2026-11-08 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -10035,7 +10035,7 @@ table_pull&amp; skip_record(std::size_t n = 0);
 table_pull_state state() const noexcept;
         </code>
         <returns>A value of <c>table_pull_state</c> that tells the current status of <c>*this</c> as shown in <xref id="table.table_pull.state"/>.
-                 In <xref id="table.table_pull.state"/>, a <n>parse events</n> is that the internal table parser invokes one of <c>start_record</c>, <c>end_record</c>, <c>empty_physical_line</c>, <c>update</c> or <c>finalize</c> member functions on its tied table handler specified in the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</returns>
+                 In <xref id="table.table_pull.state"/>, a <n>parse event</n> is that the internal table parser invokes one of <c>start_record</c>, <c>end_record</c>, <c>empty_physical_line</c>, <c>update</c> or <c>finalize</c> member functions on its tied table handler specified in the <c>TableHandler</c> requirements (<xref id="table_handler.requirements"/>).</returns>
         <note>The reason why the latest parse events are specified here is to give practical use to <c>get_parse_point</c> and <c>get_physical_position</c> member functions of this class template.</note>
 
         <table id="table.table_pull.state">
