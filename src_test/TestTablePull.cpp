@@ -294,6 +294,7 @@ TYPED_TEST_P(TestTablePull, EvadeCopyingNonconst)
     auto source = make_csv_source(std::move(s));
     table_pull<decltype(source), std::allocator<char_t>>
         pull(std::move(source));
+    ASSERT_EQ(char_t(), *pull.c_str()); // before_parse
     std::size_t offset = 0;
     while (pull()) {
         if (pull.state() == table_pull_state::field) {
@@ -311,6 +312,7 @@ TYPED_TEST_P(TestTablePull, EvadeCopyingNonconst)
             offset += 5;
         }
     }
+    ASSERT_EQ(char_t(), *pull.c_str()); // eof
 }
 
 TYPED_TEST_P(TestTablePull, Move)
