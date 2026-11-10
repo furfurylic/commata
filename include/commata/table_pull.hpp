@@ -727,7 +727,13 @@ namespace detail::pull {
 
 template <class D, class Ch, class Tr>
 struct table_pull_base_evading_copy
-{};
+{
+protected:
+    static std::basic_string_view<Ch, Tr> empty() noexcept
+    {
+        return {};
+    }
+};
 
 template <class D, class Ch, class Tr>
 struct table_pull_base_not_evading_copy
@@ -751,7 +757,19 @@ struct table_pull_base_not_evading_copy
         }
         return static_cast<D&>(*this);
     }
+
+protected:
+    static std::basic_string_view<Ch, Tr> empty() noexcept
+    {
+        return { empty_, 0U };
+    }
+
+private:
+    static const Ch empty_[1];
 };
+
+template <class D, class Ch, class Tr>
+const Ch table_pull_base_not_evading_copy<D, Ch, Tr>::empty_[] = { Ch() };
 
 template <class TableSource, class Allocator>
 using primitive_for_t = primitive_table_pull<
@@ -763,22 +781,27 @@ using primitive_for_t = primitive_table_pull<
        | primitive_table_pull_handle::finalize),
         Allocator>;
 
+template <class TableSource, class Allocator, class TablePull>
+using table_pull_base_t =
+    std::conditional_t<
+        std::is_const_v<typename detail::pull::primitive_for_t<
+                                        TableSource, Allocator>::char_type>,
+        detail::pull::table_pull_base_evading_copy<
+            TablePull,
+            typename TableSource::char_type,
+            typename TableSource::traits_type>,
+        detail::pull::table_pull_base_not_evading_copy<
+            TablePull,
+            typename TableSource::char_type,
+            typename TableSource::traits_type>>;
+
 } // end detail::pull
 
 template <class TableSource,
     class Allocator = std::allocator<typename TableSource::char_type>>
 class table_pull :
-    public std::conditional_t<
-        std::is_const_v<typename detail::pull::primitive_for_t<
-                                        TableSource, Allocator>::char_type>,
-        detail::pull::table_pull_base_evading_copy<
-            table_pull<TableSource, Allocator>,
-            typename TableSource::char_type,
-            typename TableSource::traits_type>,
-        detail::pull::table_pull_base_not_evading_copy<
-            table_pull<TableSource, Allocator>,
-            typename TableSource::char_type,
-            typename TableSource::traits_type>>
+    public detail::pull::table_pull_base_t<
+        TableSource, Allocator, table_pull<TableSource, Allocator>>
 {
 public:
     using char_type = typename TableSource::char_type;
@@ -844,7 +867,7 @@ public:
         p_(std::allocator_arg, alloc, std::forward<TableSourceR>(in),
             buffer_size),
         empty_physical_line_aware_(false),
-        state_(table_pull_state::before_parse), view_(),
+        state_(table_pull_state::before_parse), view_(empty_view()),
         value_(alloc), i_(0), j_(0)
     {}
 
@@ -852,7 +875,7 @@ public:
         p_(std::move(other.p_)),
         empty_physical_line_aware_(other.empty_physical_line_aware_),
         state_(std::exchange(other.state_, table_pull_state::eof)),
-        view_(std::exchange(other.view_, view_type())),
+        view_(std::exchange(other.view_, empty_view())),
         value_(std::move(other.value_)),
         i_(std::exchange(other.i_, 0)),
         j_(std::exchange(other.j_, 0))
@@ -909,7 +932,7 @@ public:
             return *this;
         }
 
-        view_ = view_type();
+        view_= empty_view();
         value_.clear();
         switch (state_) {
         case table_pull_state::field:
@@ -1004,18 +1027,18 @@ private:
                 [[fallthrough]];
             case primitive_table_pull_state::end_record:
                 state_ = table_pull_state::record_end;
-                view_ = view_type();
+                view_= empty_view();
                 return;
             case primitive_table_pull_state::end_buffer:
                 if (!view_.empty()) {
                     value_.insert(value_.cend(),
                         view_.cbegin(), view_.cend());          // throw
-                    view_ = view_type();
+                view_= empty_view();
                 }
                 break;
             case primitive_table_pull_state::eof:
                 state_ = table_pull_state::eof;
-                view_ = view_type();
+                view_= empty_view();
                 return;
             default:
                 break;
@@ -1023,10 +1046,12 @@ private:
         }
     }
 
+    // Copies [first, last) into view_ or value_.
+    // To keep view_ and value_ consistent is caller's work.
     void do_update(buffer_char_t* first, buffer_char_t* last)
     {
         if (!value_.empty()) {
-            value_.insert(value_.cend(), first, last);              // throw
+            value_.insert(value_.cend(), first, last);          // throw
         } else if (!view_.empty()) {
             const auto len = last - first;
             traits_type::move(
@@ -1101,6 +1126,13 @@ public:
     const view_type* operator->() const noexcept
     {
         return &view_;
+    }
+
+private:
+    static view_type empty_view() noexcept
+    {
+        return detail::pull::table_pull_base_t<TableSource, Allocator,
+            table_pull<TableSource, Allocator>>::empty();
     }
 };
 
