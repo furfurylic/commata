@@ -26,6 +26,7 @@
 #include "BaseTest.hpp"
 
 using namespace std::string_literals;
+using namespace std::string_view_literals;
 
 using namespace commata;
 using namespace commata::test;
@@ -507,6 +508,30 @@ struct rvalue_handler
     }
 };
 
+class ambiguous
+{
+public:
+    const wchar_t* c_str() const noexcept
+    {
+        return L"1";
+    }
+
+    std::size_t size() const noexcept
+    {
+        return 1U;
+    }
+
+    const std::wstring_view* operator->() const noexcept
+    {
+        return std::addressof(s_);
+    }
+
+private:
+    static const std::wstring_view s_;
+};
+
+const std::wstring_view ambiguous::s_ = L"23"sv;
+
 }
 
 TEST_F(TestToArithmeticMiscellaneous, Rvalue)
@@ -518,6 +543,11 @@ TEST_F(TestToArithmeticMiscellaneous, ReferenceWrapper)
 {
     rvalue_handler h;
     ASSERT_EQ(1, to_arithmetic<int>("42x"s, std::ref(h)));
+}
+
+TEST_F(TestToArithmeticMiscellaneous, Ambiguity)
+{
+    ASSERT_EQ(1, to_arithmetic<int>(ambiguous()));
 }
 
 template <class T>
