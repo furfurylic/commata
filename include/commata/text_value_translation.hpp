@@ -1247,26 +1247,58 @@ replace_if_conversion_failed(Ts...)
 
 namespace detail::xlate {
 
+struct has_direct_c_str_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<const T&>().c_str(), std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+constexpr bool has_direct_c_str_v =
+    decltype(has_direct_c_str_impl::check<T>(nullptr))::value;
+
+struct has_direct_size_impl
+{
+    template <class T>
+    static auto check(T*) -> decltype(
+        std::declval<const T&>().size(), std::true_type());
+
+    template <class T>
+    static auto check(...) -> std::false_type;
+};
+
+template <class T>
+constexpr bool has_direct_size_v =
+    decltype(has_direct_size_impl::check<T>(nullptr))::value;
+
 template <class A>
-auto do_c_str(const A& a) -> decltype(a.c_str())
+auto do_c_str(const A& a)
+ -> std::enable_if_t<has_direct_c_str_v<A>, decltype(a.c_str())>
 {
     return a.c_str();
 }
 
 template <class A>
-auto do_c_str(const A& a, ...) -> decltype(a->c_str())
+auto do_c_str(const A& a)
+ -> std::enable_if_t<!has_direct_c_str_v<A>, decltype(a->c_str())>
 {
     return a->c_str();
 }
 
 template <class A>
-auto do_size(const A& a) -> decltype(a.size())
+auto do_size(const A& a)
+ -> std::enable_if_t<has_direct_size_v<A>, decltype(a.size())>
 {
     return a.size();
 }
 
 template <class A>
-auto do_size(const A& a, ...) -> decltype(a->size())
+auto do_size(const A& a)
+ -> std::enable_if_t<!has_direct_size_v<A>, decltype(a->size())>
 {
     return a->size();
 }
