@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-11-08 (UTC)</signature>
+<signature>2026-11-17 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -8555,14 +8555,14 @@ namespace commata {
 
   <c>// <n><xref id="field_specs.creation"/>, creation of field specs:</n></c>
   template &lt;class FieldNamePred, class class FieldTranslatorFactory>
-    [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred, std::decay_t&lt;FieldTranslatorFactory>>
+    [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred>, std::decay_t&lt;FieldTranslatorFactory>>
         field_spec(FieldNamePred&amp;&amp; field_name_pred, FieldTranslatorFactory&amp;&amp; factory);
   template &lt;class T, class FieldNamePred>
-    [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred, default_field_translator_factory&lt;T>>
+    [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred>, default_field_translator_factory&lt;T>>
         field_spec(FieldNamePred&amp;&amp; field_name_pred);
   template &lt;class T, class FieldNamePred>
     [[nodiscard]]
-      std::tuple&lt;std::decay_t&lt;FieldNamePred, locale_based_arithmetic_field_translator_factory&lt;T>>
+      std::tuple&lt;std::decay_t&lt;FieldNamePred>, locale_based_arithmetic_field_translator_factory&lt;T>>
         field_spec(FieldNamePred&amp;&amp; field_name_pred, const std::locale&amp; loc);
 
   <c>// <n><xref id="record_translators.creation"/>, creation of record translators:</n></c>
@@ -9034,7 +9034,7 @@ using type = <nc>see below</nc>;
       <code-item>
         <code>
 template &lt;class FieldNamePred, class class FieldTranslatorFactory>
-  [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred, std::decay_t&lt;FieldTranslatorFactory>>
+  [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred>, std::decay_t&lt;FieldTranslatorFactory>>
     field_spec(FieldNamePred&amp;&amp; field_name_pred, FieldTranslatorFactory&amp;&amp; factory);
         </code>
         <effects><p>Equivalent to:</p>
@@ -9046,7 +9046,7 @@ template &lt;class FieldNamePred, class class FieldTranslatorFactory>
       <code-item>
         <code>
 template &lt;class T, class FieldNamePred>
-  [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred, default_field_translator_factory_t&lt;T>>
+  [[nodiscard]] std::tuple&lt;std::decay_t&lt;FieldNamePred>, default_field_translator_factory_t&lt;T>>
     field_spec(FieldNamePred&amp;&amp; field_name_pred);
         </code>
         <effects><p>Equivalent to:</p>
@@ -9058,7 +9058,7 @@ template &lt;class T, class FieldNamePred>
         <code>
 template &lt;class T, class FieldNamePred>
   [[nodiscard]]
-    std::tuple&lt;std::decay_t&lt;FieldNamePred, locale_based_arithmetic_field_translator_factory&lt;T>>
+    std::tuple&lt;std::decay_t&lt;FieldNamePred>, locale_based_arithmetic_field_translator_factory&lt;T>>
       field_spec(FieldNamePred&amp;&amp; field_name_pred, const std::locale&amp; loc);
         </code>
         <effects><p>Equivalent to:</p>
