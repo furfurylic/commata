@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="Commata.xsl"?>
 <document>
 <title>Specification of Commata, which is just another C++17 CSV parser</title>
-<signature>2026-11-17 (UTC)</signature>
+<signature>2026-11-21 (UTC)</signature>
 
 <section id="introduction">
   <name>Introduction</name>
@@ -1088,9 +1088,12 @@ namespace commata {
     <c>// <n><xref id="reference_handler.ctor"/>, constructors:</n></c>
     reference_handler(Handler&amp; handler) noexcept;
     reference_handler(Handler&amp;&amp; handler) = delete;
+    reference_handler(const reference_handler&amp; other) noexcept;
+
+    <c>// <n><xref id="reference_handler.dtor"/>, destructor:</n></c>
+   ~reference_handler();
 
     <c>// <n><xref id="reference_handler.assign"/>, assignment:</n></c>
-    reference_handler(const reference_handler&amp; other) noexcept;
     reference_handler&amp; operator=(const reference_handler&amp; other) noexcept;
 
     <c>// <n><xref id="reference_handler.access"/>, access:</n></c>
@@ -1147,6 +1150,17 @@ reference_handler(Handler&amp; handler) noexcept;
 reference_handler(const reference_handler&amp; other) noexcept;
           </code>
           <effects>Constructs an <c>reference_handler</c> object that stores a reference to <c>other.base()</c>.</effects>
+        </code-item>
+      </section>
+
+      <section id="reference_handler.dtor">
+        <name>Destructor</name>
+
+        <code-item>
+          <code>
+~reference_handler();
+          </code>
+          <effects>Destroys an object of class <c>reference_handler&lt;Handler></c>.</effects>
         </code-item>
       </section>
 
